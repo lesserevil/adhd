@@ -1,0 +1,36 @@
+defmodule Hub.Assemble do
+  def run(["assemble", export, objects, out]) do
+    root = Path.expand("..", __DIR__)
+    files = Path.wildcard(Path.join(root, "**/*.{ex,exs}"))
+    Enum.each(files, fn path -> Code.string_to_quoted!(File.read!(path), file: path) end)
+    parts = ~w(validator.exs store.exs matcher.exs protocol.exs cli.exs tests/litai_test.exs)
+    script = Enum.map_join(parts, "\n", &File.read!(Path.join(root, &1))) <> "\nHub.CLI.main(System.argv())\n"
+    Code.string_to_quoted!(script)
+    File.mkdir_p!(objects)
+    File.mkdir_p!(out)
+    File.mkdir_p!(Path.dirname(export))
+    File.write!(export, script)
+    if not File.regular?(export), do: raise("export missing")
+  end
+  def run(["clean", export, objects, out]) do
+    root = Path.expand("..", __DIR__)
+    paths = [Path.expand(objects), Path.expand(out)]
+    Enum.each(paths, fn p ->
+      safe_output!(p, root)
+      File.rm_rf!(p)
+    end)
+    e = Path.expand(export)
+    safe_output!(e, root)
+    case File.rm(e) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok
+      _ -> raise("cannot remove export")
+    end
+  end
+  def run(_), do: raise("invalid build arguments")
+  defp safe_output!(p, root) do
+    if p == root or String.starts_with?(root, p <> "/") or p == Path.expand("/"), do: raise("unsafe cleanup path")
+    if String.starts_with?(p, root <> "/") and not String.starts_with?(p, Path.join(root, "_build") <> "/"), do: raise("refusing source cleanup")
+  end
+end
+Hub.Assemble.run(System.argv())

@@ -1,0 +1,97 @@
+defmodule ADHD.Invalid do
+  defexception message: "invalid request"
+end
+
+defmodule ADHD.DomainError do
+  defexception [:message]
+end
+
+defmodule ADHD.Domain do
+  @operations ~w(ack list_subscriptions poll publish search send subscribe unsubscribe whoami)
+  def describe, do: %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => @operations}
+  def check(true, _), do: :ok
+  def check(_, message), do: raise(ADHD.Invalid, message: message)
+  def string?(v, max), do: is_binary(v) and String.valid?(v) and byte_size(v) in 1..max
+  def nonblank?(v, max), do: string?(v, max) and String.trim(v) != ""
+  def identifier?(v), do: string?(v, 128) and Regex.match?(~r/\A[A-Za-z0-9._-]+\z/, v)
+  def integer?(v, low, high), do: is_integer(v) and v >= low and v <= high
+  def keys!(map, allowed, required \\ []) do
+    check(is_map(map), "expected object")
+    check(Enum.all?(Map.keys(map), &(&1 in allowed)), "unknown field")
+    check(Enum.all?(required, &Map.has_key?(map, &1)), "missing field")
+  end
+  def validate(command) do
+    check(is_map(command), "command must be an object")
+    op = command["op"]
+    fields = case op do
+      "whoami" -> []
+      "subscribe" -> ["description"]
+      "list_subscriptions" -> []
+      "unsubscribe" -> ["subscription_id"]
+      "publish" -> ["text", "data"]
+      "send" -> ["recipient_id", "text", "data"]
+      "poll" -> ["limit"]
+      "ack" -> ["delivery_ids"]
+      "search" -> ["query", "limit"]
+      _ -> raise ADHD.Invalid, message: "unsupported operation"
+    end
+    keys!(command, ["op", "project_id" | fields])
+    if Map.has_key?(command, "project_id"), do: check(identifier?(command["project_id"]), "invalid project_id")
+    case op do
+      "subscribe" -> check(nonblank?(command["description"], 4096), "invalid description")
+      "unsubscribe" -> check(string?(command["subscription_id"], 128), "invalid subscription_id")
+      "publish" -> content!(command)
+      "send" ->
+        check(identifier?(command["recipient_id"]), "invalid recipient_id")
+        content!(command)
+      "ack" ->
+        ids = command["delivery_ids"]
+        check(is_list(ids) and length(ids) in 1..100, "invalid delivery_ids")
+        check(Enum.all?(ids, &string?(&1, 128)) and length(Enum.uniq(ids)) == length(ids), "invalid delivery_ids")
+      "search" -> check(nonblank?(command["query"], 256), "invalid query")
+      _ -> :ok
+    end
+    if op in ["poll", "search"] and Map.has_key?(command, "limit"), do: check(integer?(command["limit"], 1, 100), "invalid limit")
+    command
+  end
+  defp content!(c) do
+    check(Map.has_key?(c, "text") or Map.has_key?(c, "data"), "content required")
+    if Map.has_key?(c, "text"), do: check(nonblank?(c["text"], 65536), "invalid text")
+    if Map.has_key?(c, "data"), do: check(is_map(c["data"]), "data must be an object")
+    content = Map.take(c, ["text", "data"])
+    check(byte_size(JSON.encode!(content)) <= 65536, "content too large")
+  end
+  def url?(v) do
+    if is_binary(v) and String.valid?(v) do
+      u = URI.parse(v)
+      u.scheme in ["http", "https"] and is_binary(u.host) and u.host != "" and integer?(u.port, 1, 65535) and is_nil(u.userinfo) and is_nil(u.fragment)
+    else
+      false
+    end
+  rescue
+    _ -> false
+  end
+  def config!(c) do
+    keys!(c, ~w(project_id store_path agents host port public_url matcher threshold_ppm), ~w(project_id store_path agents matcher))
+    check(identifier?(c["project_id"]), "invalid project_id")
+    check(nonblank?(c["store_path"], 32768), "invalid store_path")
+    agents = c["agents"]
+    check(is_map(agents) and map_size(agents) > 0, "invalid agents")
+    check(Enum.all?(agents, fn {id, token} -> identifier?(id) and is_binary(token) and String.valid?(token) and String.length(token) >= 24 and not String.contains?(token, ["\r", "\n"]) end), "invalid agents")
+    check(length(Enum.uniq(Map.values(agents))) == map_size(agents), "duplicate credentials")
+    c = Map.merge(%{"host" => "127.0.0.1", "port" => 8766, "threshold_ppm" => 900000}, c)
+    check(c["host"] == "127.0.0.1", "host must be loopback")
+    check(integer?(c["port"], 1, 65535), "invalid port")
+    check(integer?(c["threshold_ppm"], 1, 1000000), "invalid threshold_ppm")
+    c = Map.put_new(c, "public_url", "http://127.0.0.1:#{c["port"]}")
+    check(url?(c["public_url"]), "invalid public_url")
+    m = c["matcher"]
+    keys!(m, ~w(url model timeout_ms retry_ms), ~w(url model))
+    m = Map.merge(%{"timeout_ms" => 3000, "retry_ms" => 1000}, m)
+    check(url?(m["url"]), "invalid matcher url")
+    check(nonblank?(m["model"], 65536), "invalid matcher model")
+    check(integer?(m["timeout_ms"], 100, 30000) and integer?(m["retry_ms"], 100, 30000), "invalid matcher timing")
+    Map.put(c, "matcher", m)
+  end
+  def error(code), do: raise(ADHD.DomainError, message: code)
+end

@@ -1,0 +1,143 @@
+{
+  "schema": "literate-ai/component-acceptance-oracle@1",
+  "component": "hub",
+  "specification_set_identity": "sha256:3c72cfff7a31f04445fabf717be05df8a6d719c23f2473f46504efa37c2a3bae",
+  "cases": [
+    {
+      "case_id": "validate-ack-vector",
+      "arguments": [
+        "validate",
+        {
+          "op": "ack",
+          "delivery_ids": [
+            "oracle-first",
+            "oracle-second"
+          ]
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "ack"
+      }
+    },
+    {
+      "case_id": "validate-published-data",
+      "arguments": [
+        "validate",
+        {
+          "op": "publish",
+          "data": {
+            "state": "ready",
+            "sequence": 17
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "publish"
+      }
+    },
+    {
+      "case_id": "validate-independent-subscription",
+      "arguments": [
+        "validate",
+        {
+          "op": "subscribe",
+          "description": "Independent acceptance subscription for schema rollout notices."
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "subscribe"
+      }
+    },
+    {
+      "case_id": "validate-archive-status-envelope",
+      "arguments": [
+        "validate",
+        {
+          "op": "publish",
+          "information_type": "status",
+          "data": [
+            "private-oracle-vector",
+            {
+              "progress": 23
+            }
+          ],
+          "source": {
+            "kind": "agent",
+            "id": "oracle-agent",
+            "item_id": "oracle-status-23"
+          },
+          "occurred_at": "2026-10-18T12:15:00Z"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "publish"
+      }
+    },
+    {
+      "case_id": "validate-archive-retrieval",
+      "arguments": [
+        "validate",
+        {
+          "op": "get",
+          "publication_id": "oracle-publication-29"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get"
+      }
+    },
+    {
+      "case_id": "validate-filter-only-search",
+      "arguments": [
+        "validate",
+        {
+          "op": "search",
+          "source_kind": "teams",
+          "source_id": "oracle-channel",
+          "information_type": "status",
+          "limit": 13
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "search"
+      }
+    },
+    {
+      "case_id": "admin-safe-removal",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "remove_subscription",
+          "subscription_id": "oracle-subscription-73",
+          "confirm": true,
+          "message_id": "oracle-admin-mutation-73"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "remove_subscription"
+      }
+    },
+    {
+      "case_id": "admin-status-filter",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "jobs",
+          "status": "cancelled",
+          "limit": 19
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "jobs"
+      }
+    }
+  ]
+}

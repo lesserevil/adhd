@@ -1,0 +1,186 @@
+defmodule Hub.RPC do
+  def error(id, code, message, reason \\ nil) do
+    e = %{"code" => code, "message" => message}
+    e = if reason, do: Map.put(e, "data", [%{"@type" => "type.googleapis.com/google.rpc.ErrorInfo", "reason" => reason, "domain" => "adhd.hub", "metadata" => %{"code" => reason}}]), else: e
+    %{"jsonrpc" => "2.0", "id" => id, "error" => e}
+  end
+  def dispatch(body, version, actor, store, project) do
+    decoded = try do {:ok, JSON.decode!(body)} rescue _ -> :error end
+    case decoded do
+      :error -> error(nil, -32700, "Parse error")
+      {:ok, req} -> process(req, version, actor, store, project)
+    end
+  end
+  defp process(req, version, actor, store, project) do
+    valid_id = is_map(req) and (is_binary(req["id"]) or is_integer(req["id"]))
+    id = if valid_id, do: req["id"], else: nil
+    cond do
+      not valid_id or req["jsonrpc"] != "2.0" or not is_binary(req["method"]) -> error(id, -32600, "Invalid Request")
+      version != "1.0" -> error(id, -32600, "Unsupported A2A version")
+      req["method"] != "SendMessage" -> error(id, -32601, "Method not found")
+      true -> message(req, id, actor, store, project)
+    end
+  rescue
+    _ -> error(nil, -32603, "Internal error")
+  end
+  defp message(req, id, actor, store, project) do
+    try do
+      params = req["params"]
+      Hub.Validate.check(is_map(params) and not Map.has_key?(params, "taskId"))
+      m = params["message"]
+      Hub.Validate.check(is_map(m) and not Map.has_key?(m, "taskId"))
+      Hub.Validate.string(m["messageId"], 1, 1_048_576)
+      Hub.Validate.check(m["role"] == "ROLE_USER")
+      if Map.has_key?(m, "contextId"), do: Hub.Validate.string(m["contextId"], 1, 1_048_576)
+      Hub.Validate.check(is_list(m["parts"]) and length(m["parts"]) == 1)
+      [part] = m["parts"]
+      Hub.Validate.keys(part, ~w(data text mediaType))
+      Hub.Validate.check(Map.has_key?(part, "data") != Map.has_key?(part, "text"))
+      if Map.has_key?(part, "mediaType"), do: Hub.Validate.nonblank(part["mediaType"], 256)
+      c = if Map.has_key?(part, "data"), do: part["data"], else: JSON.decode!(part["text"])
+      Hub.Validate.command(c)
+      case Hub.Store.execute(store, actor, m["messageId"], c) do
+        {:ok, result} ->
+          sid = "hub-" <> Base.url_encode64(:crypto.strong_rand_bytes(18), padding: false)
+          %{"jsonrpc" => "2.0", "id" => id, "result" => %{"message" => %{"messageId" => sid, "contextId" => Map.get(m, "contextId", project), "role" => "ROLE_AGENT", "parts" => [%{"data" => result}]}}}
+        {:error, reason} -> error(id, -32000, "Hub command failed", reason)
+        {:invalid, _} -> error(id, -32602, "Invalid params")
+      end
+    rescue
+      _ -> error(id, -32602, "Invalid params")
+    catch
+      :exit, _ -> error(id, -32603, "Internal error")
+    end
+  end
+end
+
+defmodule Hub.HTTP do
+  @header_limit 16384
+  @body_limit 1048576
+  def serve(config, store) do
+    {:ok, listener} = :gen_tcp.listen(config["port"], [:binary, active: false, packet: :raw, ip: {127, 0, 0, 1}, reuseaddr: true, backlog: 128])
+    pid = spawn_link(fn -> accept(listener, store, config) end)
+    {listener, pid}
+  end
+  defp accept(listener, store, config) do
+    case :gen_tcp.accept(listener) do
+      {:ok, socket} ->
+        pid = spawn(fn -> receive do {:socket, s} -> handle(s, store, config) end end)
+        :ok = :gen_tcp.controlling_process(socket, pid)
+        send(pid, {:socket, socket})
+        accept(listener, store, config)
+      {:error, :closed} -> :ok
+      {:error, _} -> accept(listener, store, config)
+    end
+  end
+  defp handle(socket, store, config) do
+    try do
+      deadline = System.monotonic_time(:millisecond) + 5000
+      {head, rest} = headers(socket, "", deadline)
+      {method, path, h, size} = parse_headers(head)
+      body = body(socket, rest, size, deadline)
+      {status, result, extras} = route(method, path, h, body, store, config)
+      respond(socket, status, result, extras)
+    rescue
+      _ -> respond(socket, 400, %{"error" => "Bad request"}, [])
+    catch
+      {:http, status} -> respond(socket, status, %{"error" => "Invalid HTTP request"}, [])
+      _, _ -> respond(socket, 500, %{"error" => "Internal error"}, [])
+    after
+      :gen_tcp.close(socket)
+    end
+  end
+  defp read(socket, deadline, max_bytes) do
+    remaining = deadline - System.monotonic_time(:millisecond)
+    if remaining <= 0, do: throw({:http, 408})
+    # recv(0) obtains only a bounded driver packet; all accumulated bytes are capped.
+    case :gen_tcp.recv(socket, 0, remaining) do
+      {:ok, b} when byte_size(b) <= max_bytes -> b
+      {:ok, _} -> throw({:http, 413})
+      {:error, :timeout} -> throw({:http, 408})
+      _ -> throw({:http, 400})
+    end
+  end
+  defp headers(socket, bytes, deadline) do
+    case :binary.match(bytes, "\r\n\r\n") do
+      {n, 4} ->
+        if n + 4 > @header_limit, do: throw({:http, 431})
+        {binary_part(bytes, 0, n), binary_part(bytes, n + 4, byte_size(bytes) - n - 4)}
+      :nomatch ->
+        if byte_size(bytes) > @header_limit, do: throw({:http, 431})
+        headers(socket, bytes <> read(socket, deadline, @body_limit + @header_limit), deadline)
+    end
+  end
+  defp trim(v), do: String.replace(v, ~r/\A[ \t]+|[ \t]+\z/, "")
+  defp parse_headers(head) do
+    [first | lines] = String.split(head, "\r\n")
+    [method, path, version] = String.split(first, " ")
+    Hub.Validate.check(version == "HTTP/1.1" or version == "HTTP/1.0")
+    headers = Enum.reduce(lines, %{}, fn line, acc ->
+      [k, v] = String.split(line, ":", parts: 2)
+      Hub.Validate.check(Regex.match?(~r/\A[!#$%&'*+.^_`|~0-9A-Za-z-]+\z/, k))
+      key = String.downcase(k)
+      Hub.Validate.check(not Map.has_key?(acc, key))
+      value = trim(v)
+      Hub.Validate.check(not String.contains?(value, ["\r", "\n", <<0>>]))
+      Map.put(acc, key, value)
+    end)
+    Hub.Validate.check(not Map.has_key?(headers, "transfer-encoding"))
+    size = if Map.has_key?(headers, "content-length") do
+      v = headers["content-length"]
+      Hub.Validate.check(Regex.match?(~r/\A[0-9]+\z/, v) and byte_size(v) <= 10)
+      String.to_integer(v)
+    else
+      0
+    end
+    if size > @body_limit, do: throw({:http, 413})
+    {method, path, headers, size}
+  end
+  defp body(_socket, bytes, size, _deadline) when byte_size(bytes) >= size do
+    Hub.Validate.check(byte_size(bytes) == size)
+    bytes
+  end
+  defp body(socket, bytes, size, deadline), do: body(socket, bytes <> read(socket, deadline, size - byte_size(bytes)), size, deadline)
+  defp route("GET", "/health", _, _, store, _) do
+    Hub.Store.snapshot(store)
+    {200, %{"status" => "ready"}, []}
+  end
+  defp route("GET", "/.well-known/agent-card.json", _, _, _, config), do: {200, card(config["public_url"]), []}
+  defp route("POST", "/a2a", h, b, store, config) do
+    actor = authenticate(h["authorization"], config["agents"])
+    cond do
+      is_nil(actor) -> {401, %{"error" => "Unauthorized"}, [{"WWW-Authenticate", "Bearer"}]}
+      not json_type?(h["content-type"]) -> {415, %{"error" => "Unsupported media type"}, []}
+      true -> {200, Hub.RPC.dispatch(b, Map.get(h, "a2a-version", "1.0"), actor, store, config["project_id"]), []}
+    end
+  end
+  defp route(_, _, _, _, _, _), do: {404, %{"error" => "Not found"}, []}
+  defp json_type?(v) when is_binary(v), do: String.downcase(String.trim(hd(String.split(v, ";", parts: 2)))) == "application/json"
+  defp json_type?(_), do: false
+  def authenticate("Bearer " <> token, agents) do
+    Enum.find_value(agents, fn {actor, expected} -> if secure_equal(token, expected), do: actor end)
+  end
+  def authenticate(_, _), do: nil
+  defp secure_equal(a, b) do
+    if byte_size(a) == byte_size(b), do: :crypto.hash_equals(a, b), else: false
+  end
+  def card(base) do
+    %{"name" => "ADHD", "description" => "Private single-project coordination hub. One process per store.", "version" => "0.1.0", "supportedInterfaces" => [%{"url" => base <> "/a2a", "protocolBinding" => "JSONRPC", "protocolVersion" => "1.0"}], "capabilities" => %{"streaming" => false, "pushNotifications" => false, "extendedAgentCard" => false}, "securitySchemes" => %{"bearer" => %{"httpAuthSecurityScheme" => %{"scheme" => "bearer"}}}, "securityRequirements" => [%{"schemes" => %{"bearer" => %{"list" => []}}}], "defaultInputModes" => ["application/json"], "defaultOutputModes" => ["application/json"], "skills" => [%{"id" => "project-coordination", "name" => "Project coordination", "description" => "Publish information, subscribe, poll, acknowledge, message and search.", "tags" => ["coordination"]}]}
+  end
+  defp respond(socket, status, value, extras) do
+    body = JSON.encode!(value)
+    phrase = case status do
+      200 -> "OK"
+      400 -> "Bad Request"
+      401 -> "Unauthorized"
+      404 -> "Not Found"
+      408 -> "Request Timeout"
+      413 -> "Content Too Large"
+      415 -> "Unsupported Media Type"
+      431 -> "Request Header Fields Too Large"
+      _ -> "Internal Server Error"
+    end
+    extra = Enum.map(extras, fn {k, v} -> [k, ": ", v, "\r\n"] end)
+    :gen_tcp.send(socket, ["HTTP/1.1 ", Integer.to_string(status), " ", phrase, "\r\nContent-Type: application/json\r\nContent-Length: ", Integer.to_string(byte_size(body)), "\r\nConnection: close\r\n", extra, "\r\n", body])
+  end
+end

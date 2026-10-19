@@ -1,0 +1,299 @@
+defmodule Hub.Tests do
+  alias Hub.Domain, as: D
+  alias Hub.Validate, as: V
+  def assert_equal(actual, expected) do
+    if actual != expected, do: raise("Native behavior assertion failed")
+    :ok
+  end
+  def assert_error(code, f) do
+    result = try do
+      f.()
+      :missing_error
+    rescue
+      e in Hub.Error -> e.code
+    end
+    assert_equal(result, code)
+  end
+  def vectors do
+    [
+      {"describe-contract", ["describe"], %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => ["ack", "get", "list_subscriptions", "poll", "publish", "search", "send", "subscribe", "unsubscribe", "whoami"]}},
+      {"publication-json-null", ["validate", %{"op" => "publish", "data" => nil}], %{"valid" => true, "op" => "publish"}},
+      {"search-filter-only", ["validate", %{"op" => "search", "source_kind" => "teams", "limit" => 100}], %{"valid" => true, "op" => "search"}},
+      {"admin-retry-validation", ["validate-admin", %{"op" => "retry_jobs", "confirm" => true, "message_id" => "native-reset-17"}], %{"valid" => true, "op" => "retry_jobs"}},
+      {"ack-batch-boundary", ["validate", %{"op" => "ack", "delivery_ids" => ["native-delivery-1"]}], %{"valid" => true, "op" => "ack"}}
+    ]
+  end
+  def smoke, do: Hub.CLI.run(["describe"])
+  def cfg(path) do
+    V.config(%{"project_id" => "native-project", "store_path" => path,
+      "agents" => %{"alice" => String.duplicate("a", 28), "bob" => String.duplicate("b", 28)},
+      "admin_token" => String.duplicate("c", 40),
+      "matcher" => %{"url" => "http://127.0.0.1:1/v1/systemone", "model" => "native-model", "timeout_ms" => 100, "retry_ms" => 100}})
+  end
+  def command(s, c, actor, key, cfg), do: D.command(s, c, actor, key, cfg)
+  def validations do
+    Enum.each([
+      %{"op" => "poll", "limit" => 0}, %{"op" => "poll", "limit" => 1.0},
+      %{"op" => "whoami", "actor_id" => "bob"}, %{"op" => "publish"},
+      %{"op" => "publish", "text" => " "}, %{"op" => "send", "recipient_id" => "bob", "data" => []},
+      %{"op" => "publish", "source" => %{"kind" => "agent", "id" => "x", "extra" => true}, "data" => 1},
+      %{"op" => "publish", "occurred_at" => "2026-01-01", "data" => nil},
+      %{"op" => "search", "query" => "\t"}, %{"op" => "search"},
+      %{"op" => "ack", "delivery_ids" => ["x", "x"]}
+    ], fn c -> assert_error("INVALID_PARAMS", fn -> V.command(c) end) end)
+    Enum.each([%{"op" => "overview", "message_id" => "x"}, %{"op" => "retry_jobs", "confirm" => false, "message_id" => "x"}, %{"op" => "jobs", "status" => "running"}], fn c -> assert_error("INVALID_PARAMS", fn -> V.admin(c) end) end)
+    V.command(%{"op" => "publish", "data" => [nil, false, 42, %{"unicode" => "λ"}]})
+    V.command(%{"op" => "publish", "text" => String.duplicate("x", 65536)})
+    assert_error("INVALID_PARAMS", fn -> V.command(%{"op" => "publish", "text" => String.duplicate("x", 65537)}) end)
+    assert_equal(V.timestamp("2024-02-29T15:04:05+02:00"), "2024-02-29T13:04:05Z")
+  end
+  def transitions(config) do
+    s = D.empty(config["project_id"])
+    {pub0, s} = command(s, %{"op" => "publish", "data" => [1, nil, false]}, "alice", "before", config)
+    assert_equal(map_size(s.jobs), 0)
+    {sub, s} = command(s, %{"op" => "subscribe", "description" => "API changes"}, "bob", "sub-one", config)
+    sid = sub["subscription"]["id"]
+    {second, s} = command(s, %{"op" => "subscribe", "description" => "Interface changes"}, "bob", "sub-two", config)
+    assert_equal(map_size(s.jobs), 0)
+    assert_error("FORBIDDEN", fn -> command(s, %{"op" => "unsubscribe", "subscription_id" => sid}, "alice", "foreign", config) end)
+    assert_error("FORBIDDEN", fn -> command(s, %{"op" => "publish", "source" => %{"kind" => "agent", "id" => "bob"}, "data" => nil}, "alice", "forged", config) end)
+    c = %{"op" => "publish", "text" => "API changed", "data" => nil, "information_type" => "status", "source" => %{"kind" => "teams", "id" => "room", "item_id" => "event-51"}, "occurred_at" => "2025-03-01T01:00:00+01:00"}
+    {p, s} = command(s, c, "alice", "pub-one", config)
+    pid = p["publication"]["id"]
+    assert_equal(p["publication"]["occurred_at"], "2025-03-01T00:00:00Z")
+    assert_equal(map_size(s.jobs), 2)
+    assert_equal(command(s, c, "alice", "pub-one", config), {p, s})
+    {same, s} = command(s, c, "alice", "source-retry", config)
+    assert_equal(same, p)
+    assert_error("IDEMPOTENCY_CONFLICT", fn -> command(s, Map.put(c, "text", "changed"), "alice", "pub-one", config) end)
+    assert_error("SOURCE_CONFLICT", fn -> command(s, Map.put(c, "text", "changed"), "alice", "source-conflict", config) end)
+    assert_error("SOURCE_CONFLICT", fn -> command(s, Map.delete(c, "occurred_at"), "alice", "presence-conflict", config) end)
+    [j1, j2] = s.jobs |> Map.values() |> Enum.sort_by(& &1.seq)
+    failed = D.complete(s, j1.id, :error, config)
+    assert_equal(failed.jobs[j1.id].status, :pending)
+    assert_equal(failed.jobs[j1.id].retry_at > 0, true)
+    assert_equal(map_size(failed.deliveries), 0)
+    s = D.complete(failed, j1.id, 0.95, config)
+    {poll, s} = command(s, %{"op" => "poll"}, "bob", "read", config)
+    [delivery] = poll["deliveries"]
+    did = delivery["id"]
+    assert_equal(Map.take(delivery, ~w(data information_type source occurred_at)), Map.take(p["publication"], ~w(data information_type source occurred_at)))
+    {private, s} = command(s, %{"op" => "send", "recipient_id" => "alice", "text" => "SECRET PRIVATE API", "data" => %{}}, "bob", "private", config)
+    private_id = private["delivery"]["id"]
+    assert_error("FORBIDDEN", fn -> command(s, %{"op" => "ack", "delivery_ids" => [did, private_id]}, "bob", "mixed-ack", config) end)
+    assert_equal(s.deliveries[did].ack, false)
+    assert_error("NOT_FOUND", fn -> command(s, %{"op" => "ack", "delivery_ids" => [did, "missing"]}, "bob", "missing-ack", config) end)
+    {_, s} = command(s, %{"op" => "ack", "delivery_ids" => [did]}, "bob", "ack-one", config)
+    s = D.complete(s, j2.id, 0.999, config)
+    assert_equal(length(s.deliveries[did].value["matches"]), 2)
+    assert_equal(s.deliveries[did].ack, true)
+    assert_equal(D.complete(s, j1.id, 1, config), s)
+    assert_equal(elem(command(s, %{"op" => "poll"}, "bob", "poll2", config), 0), %{"deliveries" => []})
+    assert_equal(elem(command(s, %{"op" => "get", "publication_id" => pid}, "bob", "get", config), 0), %{"publication" => p["publication"]})
+    assert_error("NOT_FOUND", fn -> command(s, %{"op" => "get", "publication_id" => private_id}, "alice", "private-get", config) end)
+    assert_equal(elem(command(s, %{"op" => "search", "query" => "SECRET PRIVATE"}, "alice", "search", config), 0), %{"publications" => []})
+    assert_equal(elem(command(s, %{"op" => "search", "source_kind" => "teams", "information_type" => "status"}, "bob", "filtered", config), 0), %{"publications" => [p["publication"]]})
+    {all, _} = command(s, %{"op" => "search", "source_kind" => "agent"}, "alice", "all", config)
+    assert_equal(all, %{"publications" => [pub0["publication"]]})
+    {p2, s} = command(s, %{"op" => "publish", "data" => false}, "alice", "later", config)
+    pending = Enum.find(Map.values(s.jobs), &(&1.publication_id == p2["publication"]["id"] and &1.subscription_id == sid))
+    {_, s} = command(s, %{"op" => "unsubscribe", "subscription_id" => sid}, "bob", "remove", config)
+    s = D.complete(s, pending.id, 1, config)
+    assert_equal(s.jobs[pending.id].status, :cancelled)
+    assert_equal(map_size(s.deliveries), 2)
+    assert_equal(Map.has_key?(s.subscriptions, second["subscription"]["id"]), true)
+    remaining = Enum.find(Map.values(s.jobs), &(&1.publication_id == p2["publication"]["id"] and &1.status == :pending))
+    nonmatch = D.complete(s, remaining.id, 0.8999994, config)
+    assert_equal(nonmatch.jobs[remaining.id].status, :done)
+    assert_equal(map_size(nonmatch.deliveries), 2)
+    rounded = D.complete(s, remaining.id, 0.8999996, config)
+    assert_equal(map_size(rounded.deliveries), 3)
+    assert_error("PROJECT_MISMATCH", fn -> command(s, %{"op" => "whoami", "project_id" => "other"}, "alice", "p", config) end)
+    {s, c, p}
+  end
+  def admin_tests(s, cfg) do
+    health = %{"status" => "unavailable", "checked_at" => D.now(), "model" => "native-model"}
+    create = %{"op" => "create_subscription", "agent_id" => "alice", "description" => "Native admin subscription", "message_id" => "admin-one"}
+    {r, s} = D.admin(s, create, cfg, health)
+    assert_equal(D.admin(s, create, cfg, health), {r, s})
+    assert_error("IDEMPOTENCY_CONFLICT", fn -> D.admin(s, Map.put(create, "description", "different"), cfg, health) end)
+    assert_error("NOT_FOUND", fn -> D.admin(s, %{"op" => "subscriptions", "agent_id" => "unknown"}, cfg, health) end)
+    {visible, _} = D.admin(s, %{"op" => "deliveries"}, cfg, health)
+    Enum.each(visible["items"], fn item ->
+      assert_equal(Enum.all?(Map.keys(item), &(&1 in ~w(delivery_id recipient_id kind created_at acknowledged publication_id))), true)
+    end)
+    {summary, _} = D.admin(s, %{"op" => "overview"}, cfg, health)
+    assert_equal(summary["counts"]["agents"], 2)
+    assert_equal(summary["matcher"], health)
+    {retry, s} = D.admin(s, %{"op" => "retry_jobs", "confirm" => true, "message_id" => "admin-retry"}, cfg, health)
+    assert_equal(retry["retried"], Enum.count(s.jobs, fn {_, j} -> j.status == :pending end))
+    remove = %{"op" => "remove_subscription", "subscription_id" => r["subscription"]["id"], "confirm" => true, "message_id" => "admin-remove"}
+    {result, s} = D.admin(s, remove, cfg, health)
+    assert_equal(result, %{"removed" => true, "subscription_id" => r["subscription"]["id"]})
+    {s, create, r}
+  end
+  def legacy_tests(s, cfg, c, result) do
+    schema2 = Map.delete(s, :admin_idempotency)
+    upgraded = D.upgrade(schema2, cfg["project_id"])
+    {same, upgraded} = command(upgraded, c, "alice", "native-schema2-retry", cfg)
+    assert_equal(same, result)
+    assert_error("SOURCE_CONFLICT", fn -> command(upgraded, Map.put(c, "data", 123), "alice", "native-schema2-conflict", cfg) end)
+    legacy_publications = Map.new(s.publications, fn {id, r} -> {id, %{r | value: Map.drop(r.value, ~w(information_type source occurred_at))}} end)
+    legacy_deliveries = Map.new(s.deliveries, fn {id, r} -> {id, %{r | value: Map.drop(r.value, ~w(information_type source occurred_at))}} end)
+    legacy = %{s | schema: 1, publications: legacy_publications, deliveries: legacy_deliveries} |> Map.drop([:sources, :admin_idempotency])
+    upgraded = D.upgrade(legacy, cfg["project_id"])
+    assert_equal(upgraded.schema, 2)
+    assert_equal(upgraded.sources, %{})
+    assert_equal(upgraded.seq, legacy.seq)
+    assert_equal(upgraded.jobs, legacy.jobs)
+    assert_equal(upgraded.idempotency, legacy.idempotency)
+    Enum.each(upgraded.publications, fn {_, r} -> assert_equal(r.value["information_type"], "message"); assert_equal(r.value["occurred_at"], r.value["created_at"]) end)
+    old_binding = %{command: %{"op" => "publish", "data" => nil}, result: %{"publication" => %{"legacy" => true}, "matching" => "pending"}}
+    upgraded = put_in(upgraded.idempotency[{"alice", "historic"}], old_binding)
+    assert_equal(elem(command(upgraded, old_binding.command, "alice", "historic", cfg), 0), old_binding.result)
+    assert_error("STORE_INVALID", fn -> D.upgrade(%{legacy | project: "wrong"}, cfg["project_id"]) end)
+    assert_error("STORE_INVALID", fn -> D.upgrade(%{legacy | seq: -1}, cfg["project_id"]) end)
+    {legacy, schema2}
+  end
+  def durable_tests(path, s, cfg, c, p, create, admin_result, legacy, schema2) do
+    for {suffix, fixture} <- [{"legacy", legacy}, {"original2", schema2}, {"current", s}] do
+      file = path <> "-" <> suffix
+      {:ok, :adhd_state} = :dets.open_file(:adhd_state, file: String.to_charlist(file), type: :set)
+      :ok = :dets.insert(:adhd_state, {:state, fixture})
+      :ok = :dets.sync(:adhd_state)
+      :ok = :dets.close(:adhd_state)
+      config = Map.put(cfg, "store_path", file)
+      {:ok, store} = Hub.Store.start(config)
+      reopened = Hub.Store.snapshot(store)
+      assert_equal(reopened.seq, fixture.seq)
+      assert_equal(Map.keys(reopened.deliveries) |> Enum.sort(), Map.keys(fixture.deliveries) |> Enum.sort())
+      Enum.each(fixture.deliveries, fn {id, r} -> assert_equal(reopened.deliveries[id].ack, r.ack) end)
+      if suffix != "legacy" do
+        {:ok, same} = Hub.Store.transition(store, fn state, conf -> command(state, c, "alice", "disk-source-retry", conf) end)
+        assert_equal(same, p)
+        {:error, "SOURCE_CONFLICT"} = Hub.Store.transition(store, fn state, conf -> command(state, Map.put(c, "text", "disk conflict"), "alice", "disk-source-conflict", conf) end)
+      end
+      if suffix == "current" do
+        {:ok, same} = Hub.Store.transition(store, fn state, conf -> D.admin(state, create, conf, nil) end)
+        assert_equal(same, admin_result)
+      end
+      :ok = GenServer.stop(store)
+      {:ok, store} = Hub.Store.start(config)
+      assert_equal(Hub.Store.snapshot(store).seq, fixture.seq)
+      :ok = GenServer.stop(store)
+      File.rm!(file)
+    end
+  end
+  def matcher_tests(cfg) do
+    assert_equal(Hub.Matcher.probability(%{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => 0.9}}}, "native-model"), {:ok, 0.9})
+    Enum.each([true, -0.01, 1.01, nil, "0.9"], fn p -> assert_equal(Hub.Matcher.probability(%{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => p}}}, "native-model"), :error) end)
+    assert_equal(Hub.Matcher.probability(%{"probability" => 1}, "native-model"), :error)
+    assert_equal(Hub.Matcher.probability(%{"model" => "native-model", "answers" => [%{"noul" => 1}]}, "native-model"), :error)
+    payload = Hub.Matcher.request(%{"data" => nil, "information_type" => "status"}, "complete original subscription", "native-model")
+    assert_equal(payload["questions"]["relevance"]["type"], "noul")
+    assert_equal(String.contains?(payload["questions"]["relevance"]["instructions"], "complete original subscription"), true)
+    assert_equal(Hub.Matcher.infer(%{}, %{description: "native"}, cfg), :error)
+    assert_equal(Hub.Matcher.health(cfg)["status"], "unavailable")
+    for {response, expected} <- [
+      {%{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => 0.97}}}, 0.97},
+      {%{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => true}}}, :error},
+      {%{"model" => "native-model", "answers" => %{"relevance" => %{"noul" => 0.97}}}, :error},
+      {%{"probability" => 1}, :error}
+    ] do
+      {:ok, fixture} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}, reuseaddr: true])
+      {:ok, {_, port}} = :inet.sockname(fixture)
+      parent = self()
+      spawn(fn ->
+        {:ok, client} = :gen_tcp.accept(fixture)
+        {"POST", "/v1/systemone", _, body} = Hub.HTTP.parse(client)
+        send(parent, {:model_request, JSON.decode!(body)})
+        encoded = JSON.encode!(response)
+        :gen_tcp.send(client, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(encoded)}\r\nConnection: close\r\n\r\n" <> encoded)
+        :gen_tcp.close(client)
+      end)
+      config = cfg |> put_in(["matcher", "url"], "http://127.0.0.1:#{port}/v1/systemone") |> put_in(["matcher", "timeout_ms"], 1000)
+      assert_equal(Hub.Matcher.infer(%{"data" => [nil], "author_id" => "alice"}, %{description: "wire subscription"}, config), expected)
+      receive do
+        {:model_request, req} ->
+          assert_equal(req["state"]["publication"], %{"data" => [nil], "author_id" => "alice"})
+          assert_equal(req["questions"]["relevance"]["type"], "noul")
+          assert_equal(String.contains?(req["questions"]["relevance"]["instructions"], "wire subscription"), true)
+      after
+        2000 -> raise "Matcher fixture request missing"
+      end
+      :gen_tcp.close(fixture)
+    end
+  end
+  def wire(store, cfg, request) do
+    {:ok, listener} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}])
+    {:ok, {_, port}} = :inet.sockname(listener)
+    server = spawn(fn -> {:ok, client} = :gen_tcp.accept(listener); Hub.HTTP.handle(client, store, cfg) end)
+    {:ok, socket} = :gen_tcp.connect({127, 0, 0, 1}, port, [:binary, active: false], 1000)
+    :ok = :gen_tcp.send(socket, request)
+    response = wire_read(socket, "")
+    :gen_tcp.close(socket)
+    :gen_tcp.close(listener)
+    Process.exit(server, :normal)
+    [head, body] = String.split(response, "\r\n\r\n", parts: 2)
+    [status | headers] = String.split(head, "\r\n")
+    lengths = Enum.filter(headers, &String.starts_with?(&1, "Content-Length: "))
+    assert_equal(lengths, ["Content-Length: #{byte_size(body)}"])
+    {status, headers, body}
+  end
+  def wire_read(socket, acc) do
+    case :gen_tcp.recv(socket, 0, 7000) do
+      {:ok, data} -> wire_read(socket, acc <> data)
+      {:error, :closed} -> acc
+      _ -> raise "HTTP response missing"
+    end
+  end
+  def socket_tests(store, cfg) do
+    command = %{"jsonrpc" => "2.0", "id" => 21, "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "wire-whoami", "role" => "ROLE_USER", "parts" => [%{"data" => %{"op" => "whoami"}}]}}}
+    body = JSON.encode!(command)
+    {"HTTP/1.1 200 OK", _, response} = wire(store, cfg, "POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nAuthorization: \t Bearer #{cfg["agents"]["alice"]} \t \r\nContent-Length: #{byte_size(body)}\r\n\r\n" <> body)
+    decoded = JSON.decode!(response)
+    assert_equal(decoded["result"]["message"]["parts"], [%{"data" => %{"agent_id" => "alice", "project_id" => cfg["project_id"]}}])
+    for header <- ["Content-Length: 0\r\nContent-Length: 0", "Transfer-Encoding: chunked", "Content-Length: -1"] do
+      {"HTTP/1.1 400 Bad Request", _, _} = wire(store, cfg, "POST /a2a HTTP/1.1\r\nHost: localhost\r\n" <> header <> "\r\n\r\n")
+    end
+    {"HTTP/1.1 413 Content Too Large", _, _} = wire(store, cfg, "POST /a2a HTTP/1.1\r\nContent-Length: 1048577\r\n\r\n")
+    {"HTTP/1.1 431 Request Header Fields Too Large", _, _} = wire(store, cfg, "GET /health HTTP/1.1\r\nX-Large: " <> String.duplicate("a", 17000) <> "\r\n\r\n")
+    {"HTTP/1.1 200 OK", _, "{\"status\":\"ready\"}"} = wire(store, cfg, "GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+  end
+  def http_tests(store, cfg) do
+    wrong = %{"authorization" => "Bearer " <> cfg["agents"]["alice"], "content-type" => "application/json"}
+    {401, _, _, _} = Hub.HTTP.route("POST", "/admin/api", wrong, "not-json", store, cfg)
+    admin = %{"authorization" => "Bearer " <> cfg["admin_token"], "content-type" => "application/json"}
+    {401, _, _, _} = Hub.HTTP.route("POST", "/a2a", admin, "{}", store, cfg)
+    {403, _, _, _} = Hub.HTTP.route("POST", "/admin/api", Map.put(admin, "origin", "http://foreign.invalid"), "{}", store, cfg)
+    {404, _, _, _} = Hub.HTTP.route("POST", "/admin/api", admin, "{}", store, Map.delete(cfg, "admin_token"))
+    {200, _, body, _} = Hub.HTTP.route("POST", "/a2a", wrong, "{", store, cfg)
+    assert_equal(JSON.decode!(body)["error"]["code"], -32700)
+    {200, _, body, _} = Hub.HTTP.route("GET", "/health", %{}, "", store, cfg)
+    assert_equal(JSON.decode!(body), %{"status" => "ready"})
+    card = Hub.HTTP.card(cfg)
+    assert_equal(card["name"], "ADHD")
+    assert_equal(card["description"], "Agentic Distributed Harness Depot (ADHD): a private A2A information hub for agent coordination.")
+    assert_equal(String.contains?(Hub.Assets.html(), "<title>ADHD | Agentic Distributed Harness Depot</title>"), true)
+    assert_equal(Hub.HTTP.equal?(cfg["admin_token"], cfg["agents"]["alice"]), false)
+  end
+  def run do
+    cases = Enum.map(vectors(), fn {id, args, expected} -> assert_equal(Hub.CLI.run(args), expected); %{"case_id" => id, "outcome" => "passed"} end)
+    path = Path.join(System.tmp_dir!(), "adhd-native-" <> Base.encode16(:crypto.strong_rand_bytes(12), case: :lower))
+    config = cfg(path)
+    {:ok, _} = Application.ensure_all_started(:inets)
+    {:ok, _} = Application.ensure_all_started(:ssl)
+    validations()
+    {s, c, p} = transitions(config)
+    {s, create, admin_result} = admin_tests(s, config)
+    {legacy, schema2} = legacy_tests(s, config, c, p)
+    durable_tests(path, s, config, c, p, create, admin_result, legacy, schema2)
+    matcher_tests(config)
+    {:ok, store} = Hub.Store.start(config)
+    http_tests(store, config)
+    socket_tests(store, config)
+    :ok = GenServer.stop(store)
+    File.rm!(path)
+    %{"schema" => "literate-ai/generated-test-results@1", "cases" => cases}
+  end
+end

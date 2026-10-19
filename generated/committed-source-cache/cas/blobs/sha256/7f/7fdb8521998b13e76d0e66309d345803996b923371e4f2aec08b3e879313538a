@@ -1,0 +1,7 @@
+unless Code.ensure_loaded?(ADHD.CLI) do
+  for path <- ["domain.exs", "store.exs", "matcher.exs", "protocol.exs", "http.exs", "cli.exs", "tests/litai_test.exs"] do
+    Code.require_file(path, __DIR__)
+  end
+end
+
+ADHD.CLI.main(System.argv())

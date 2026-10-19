@@ -1,0 +1,44 @@
+defmodule Hub.CLI do
+  @operations ~w(ack get list_subscriptions poll publish search send subscribe unsubscribe whoami)
+  def run(["describe"]), do: %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => @operations}
+  def run(["validate", cmd]) do
+    Hub.Validate.command(cmd)
+    %{"valid" => true, "op" => cmd["op"]}
+  end
+  def run(["validate-admin", cmd]) do
+    Hub.Validate.admin(cmd)
+    %{"valid" => true, "op" => cmd["op"]}
+  end
+  def run(["serve", path]) when is_binary(path) do
+    c = Hub.Config.read(path)
+    Hub.Matcher.setup()
+    {:ok, store} = Hub.Store.start(c)
+    {:ok, listener} = Hub.HTTP.listen(c)
+    Hub.Matcher.start(store, c)
+    IO.puts(JSON.encode!(%{"status" => "ready", "url" => c["public_url"]}))
+    ref = Process.monitor(store)
+    acceptor = spawn_link(fn -> Hub.HTTP.accept(listener, store, c) end)
+    receive do
+      {:DOWN, ^ref, :process, _, _} -> Process.exit(acceptor, :kill); :gen_tcp.close(listener); raise Hub.Invalid
+    end
+  end
+  def run(_), do: raise(Hub.Invalid)
+  def main(args) do
+    try do
+      result = case args do
+        ["--litai-test"] -> Hub.NativeTests.run()
+        ["--litai-smoke"] -> Hub.NativeTests.smoke()
+        [arg] ->
+          argv = JSON.decode!(arg)
+          Hub.Validate.check(is_list(argv))
+          run(argv)
+        _ -> raise Hub.Invalid
+      end
+      IO.puts(JSON.encode!(result))
+    rescue
+      _ -> IO.puts(:stderr, "Request failed: invalid input or unavailable service"); System.halt(1)
+    catch
+      _, _ -> IO.puts(:stderr, "Request failed: unavailable service"); System.halt(1)
+    end
+  end
+end

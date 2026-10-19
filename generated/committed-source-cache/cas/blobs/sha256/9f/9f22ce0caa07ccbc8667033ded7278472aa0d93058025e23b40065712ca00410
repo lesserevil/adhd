@@ -1,0 +1,235 @@
+defmodule Hub.NativeTests do
+  def equal(a, b) do
+    if a != b, do: raise("native behavior assertion failed")
+    :ok
+  end
+  def truth(v), do: equal(v, true)
+  def invalid(f) do
+    result = try do f.(); :accepted rescue _ in Hub.Invalid -> :rejected end
+    equal(result, :rejected)
+  end
+  def smoke, do: Hub.CLI.call(["describe"])
+  def run do
+    tests = [
+      {"describe", fn ->
+        equal(Hub.CLI.call(["describe"]), %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => ~w(ack get list_subscriptions poll publish search send subscribe unsubscribe whoami)})
+        domain_suite()
+      end},
+      {"poll-upper-bound", fn -> equal(Hub.CLI.call(["validate", %{"op" => "poll", "limit" => 100}]), %{"valid" => true, "op" => "poll"}) end},
+      {"null-publication", fn -> equal(Hub.CLI.call(["validate", %{"op" => "publish", "data" => nil}]), %{"valid" => true, "op" => "publish"}) end},
+      {"source-filter", fn -> equal(Hub.CLI.call(["validate", %{"op" => "search", "source_kind" => "email", "source_id" => "mailbox-A"}]), %{"valid" => true, "op" => "search"}) end},
+      {"ack-batch", fn -> equal(Hub.CLI.call(["validate", %{"op" => "ack", "delivery_ids" => ["delivery-a", "delivery-b"]}]), %{"valid" => true, "op" => "ack"}) end},
+      {"plain-subscription", fn -> equal(Hub.CLI.call(["validate", %{"op" => "subscribe", "description" => "Notify me about release readiness."}]), %{"valid" => true, "op" => "subscribe"}) end},
+      {"external-event", fn -> equal(Hub.CLI.call(["validate", %{"op" => "publish", "data" => [1, true, "event"], "information_type" => "status", "source" => %{"kind" => "teams", "id" => "channel-A", "item_id" => "event-42", "uri" => "https://example.org/events/42"}, "occurred_at" => "2025-06-12T11:00:00+02:00"}]), %{"valid" => true, "op" => "publish"}) end},
+      {"private-message", fn -> equal(Hub.CLI.call(["validate", %{"op" => "send", "recipient_id" => "worker-b", "data" => %{"task" => "review"}}]), %{"valid" => true, "op" => "send"}) end}
+    ]
+    cases = Enum.map(tests, fn {id, test} ->
+      test.()
+      %{"case_id" => id, "outcome" => "passed"}
+    end)
+    %{"schema" => "literate-ai/generated-test-results@1", "cases" => cases}
+  end
+  defp config(path) do
+    Hub.Validate.config(%{"project_id" => "native-project", "store_path" => path, "agents" => %{"alice" => String.duplicate("a", 24), "bob" => String.duplicate("b", 24)}, "matcher" => %{"url" => "http://127.0.0.1:1/v1/systemone", "model" => "test-model", "timeout_ms" => 100, "retry_ms" => 100}})
+  end
+  defp command(store, actor, key, c) do
+    case Hub.Store.execute(store, actor, key, c) do
+      {:ok, result} -> result
+      _ -> raise "unexpected command failure"
+    end
+  end
+  defp domain_suite do
+    dir = Path.join(System.tmp_dir!(), "adhd-native-" <> Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false))
+    File.mkdir_p!(dir)
+    try do
+      validations()
+      persistence_suite(config(Path.join(dir, "state.dets")))
+      legacy_suite(config(Path.join(dir, "legacy.dets")))
+      corrupt_suite(config(Path.join(dir, "corrupt.dets")))
+    after
+      File.rm_rf!(dir)
+    end
+  end
+  defp validations do
+    for c <- [
+      %{"op" => "whoami", "agent_id" => "bob"},
+      %{"op" => "poll", "limit" => 0},
+      %{"op" => "poll", "limit" => 1.0},
+      %{"op" => "ack", "delivery_ids" => ["x", "x"]},
+      %{"op" => "publish"},
+      %{"op" => "publish", "text" => " "},
+      %{"op" => "send", "recipient_id" => "bob", "data" => []},
+      %{"op" => "search", "query" => " "},
+      %{"op" => "publish", "data" => nil, "occurred_at" => "2025-01-01T00:00:00"},
+      %{"op" => "publish", "data" => nil, "source" => %{"kind" => "email", "id" => "box", "extra" => 1}}
+    ], do: invalid(fn -> Hub.CLI.call(["validate", c]) end)
+    equal(Hub.Validate.datetime("2025-06-12T11:00:00+02:00"), "2025-06-12T09:00:00Z")
+    equal(Hub.HTTP.authenticate("Bearer " <> String.duplicate("a", 24), %{"alice" => String.duplicate("a", 24)}), "alice")
+    equal(Hub.HTTP.authenticate("Bearer invalid", %{"alice" => String.duplicate("a", 24)}), nil)
+    p = %{"id" => "p1", "source" => %{"kind" => "email", "id" => "box"}, "information_type" => "status"}
+    req = Hub.Matcher.request(p, "Preserve every word: API releases.", "test-model")
+    equal(req["state"]["publication"], p)
+    equal(req["questions"]["relevance"]["type"], "noul")
+    truth(String.contains?(req["questions"]["relevance"]["instructions"], "Preserve every word: API releases."))
+    for v <- [true, nil, "0.9", -0.1, 1.1] do
+      equal(Hub.Matcher.probability(%{"model" => "test-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => v}}}, "test-model"), :error)
+    end
+    equal(Hub.Matcher.probability(%{"model" => "test-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => 0.9000004}}}, "test-model"), {:ok, 900000})
+    equal(Hub.Matcher.probability(%{"probability" => 1}, "test-model"), :error)
+    equal(Hub.RPC.dispatch("{", "1.0", "alice", nil, "native-project")["error"]["code"], -32700)
+    equal(Hub.RPC.dispatch(~s({"jsonrpc":"2.0","id":1,"method":"missing"}), "1.0", "alice", nil, "native-project")["error"]["code"], -32601)
+  end
+  defp persistence_suite(cfg) do
+    {:ok, store} = Hub.Store.start(cfg)
+    try do
+      equal(command(store, "alice", "identity", %{"op" => "whoami"}), %{"agent_id" => "alice", "project_id" => "native-project"})
+      equal(Hub.Store.execute(store, "alice", "bad-project", %{"op" => "whoami", "project_id" => "other"}), {:error, "PROJECT_MISMATCH"})
+      equal(Hub.Store.execute(store, "mallory", "identity", %{"op" => "whoami"}), {:error, "FORBIDDEN"})
+      sub = command(store, "bob", "sub1", %{"op" => "subscribe", "description" => "API release changes"})["subscription"]
+      sub2 = command(store, "bob", "sub2", %{"op" => "subscribe", "description" => "API release changes"})["subscription"]
+      equal(command(store, "bob", "sub1", %{"description" => "API release changes", "op" => "subscribe"}), %{"subscription" => sub})
+      equal(Hub.Store.execute(store, "bob", "sub1", %{"op" => "subscribe", "description" => "different"}), {:error, "IDEMPOTENCY_CONFLICT"})
+      equal(Hub.Store.execute(store, "alice", "foreign-sub", %{"op" => "unsubscribe", "subscription_id" => sub["id"]}), {:error, "FORBIDDEN"})
+      equal(command(store, "alice", "list", %{"op" => "list_subscriptions"}), %{"subscriptions" => []})
+      c = %{"op" => "publish", "data" => [nil, true, 17], "text" => "Release change", "information_type" => "status", "source" => %{"kind" => "email", "id" => "updates", "item_id" => "item-1"}, "occurred_at" => "2025-06-12T11:00:00+02:00"}
+      result = command(store, "alice", "pub1", c)
+      pub = result["publication"]
+      equal(pub["occurred_at"], "2025-06-12T09:00:00Z")
+      equal(command(store, "alice", "pub-retry", c), result)
+      equal(Hub.Store.execute(store, "alice", "conflict", Map.put(c, "text", "changed")), {:error, "SOURCE_CONFLICT"})
+      equal(Hub.Store.execute(store, "alice", "spoof", %{"op" => "publish", "data" => nil, "source" => %{"kind" => "agent", "id" => "bob"}}), {:error, "FORBIDDEN"})
+      {j1, context} = Hub.Store.job(store)
+      equal(context, pub)
+      Hub.Store.finish(store, j1.id, :error)
+      equal(Hub.Store.snapshot(store).jobs[j1.id].status, :pending)
+      direct = command(store, "alice", "direct", %{"op" => "send", "recipient_id" => "bob", "text" => "private secret"})["delivery"]
+      equal(command(store, "alice", "search", %{"op" => "search", "query" => "secret"}), %{"publications" => []})
+      equal(Hub.Store.execute(store, "alice", "get-private", %{"op" => "get", "publication_id" => direct["id"]}), {:error, "NOT_FOUND"})
+      equal(Hub.Store.execute(store, "alice", "foreign-ack", %{"op" => "ack", "delivery_ids" => [direct["id"]]}), {:error, "FORBIDDEN"})
+      equal(Hub.Store.execute(store, "bob", "atomic", %{"op" => "ack", "delivery_ids" => [direct["id"], "absent"]}), {:error, "NOT_FOUND"})
+      equal(command(store, "bob", "poll1", %{"op" => "poll"}), %{"deliveries" => [direct]})
+      Hub.Store.finish(store, j1.id, {:ok, 900000})
+      [_, publication_delivery] = command(store, "bob", "poll2", %{"op" => "poll"})["deliveries"]
+      equal(Map.take(publication_delivery, ~w(information_type source occurred_at)), Map.take(pub, ~w(information_type source occurred_at)))
+      ids = [direct["id"], publication_delivery["id"]]
+      equal(command(store, "bob", "ack1", %{"op" => "ack", "delivery_ids" => ids}), %{"acknowledged" => ids})
+      {j2, _} = Hub.Store.job(store)
+      equal(j2.subscription_id, sub2["id"])
+      Hub.Store.finish(store, j2.id, {:ok, 990000})
+      equal(command(store, "bob", "poll3", %{"op" => "poll"}), %{"deliveries" => []})
+      equal(map_size(Hub.Store.snapshot(store).deliveries), 2)
+      equal(length(Hub.Store.snapshot(store).deliveries[publication_delivery["id"]].value["matches"]), 2)
+      equal(command(store, "alice", "filter", %{"op" => "search", "source_kind" => "email", "information_type" => "status"}), %{"publications" => [pub]})
+      equal(command(store, "alice", "get", %{"op" => "get", "publication_id" => pub["id"]}), %{"publication" => pub})
+      command(store, "bob", "remove1", %{"op" => "unsubscribe", "subscription_id" => sub["id"]})
+      command(store, "bob", "remove2", %{"op" => "unsubscribe", "subscription_id" => sub2["id"]})
+      command(store, "alice", "no-history", %{"op" => "publish", "data" => nil})
+      command(store, "bob", "sub3", %{"op" => "subscribe", "description" => "future"})
+      equal(Hub.Store.job(store), nil)
+      command(store, "alice", "pending", %{"op" => "publish", "data" => "future match"})
+      {stale, _} = Hub.Store.job(store)
+      command(store, "bob", "remove3", %{"op" => "unsubscribe", "subscription_id" => stale.subscription_id})
+      Hub.Store.finish(store, stale.id, {:ok, 1000000})
+      equal(command(store, "bob", "poll4", %{"op" => "poll"}), %{"deliveries" => []})
+      command(store, "bob", "sub4", %{"op" => "subscribe", "description" => "durable pending"})
+      command(store, "alice", "pending2", %{"op" => "publish", "data" => 42})
+      queued = command(store, "alice", "unacked", %{"op" => "send", "recipient_id" => "bob", "data" => %{"retained" => true}})["delivery"]
+      snapshot = Hub.Store.snapshot(store)
+      ref = Process.monitor(store)
+      Process.exit(store, :kill)
+      receive do {:DOWN, ^ref, :process, ^store, _} -> :ok after 2000 -> raise "store did not terminate" end
+      await_closed(100)
+      {:ok, reopened} = Hub.Store.start(cfg)
+      try do
+        equal(Hub.Store.snapshot(reopened), snapshot)
+        equal(command(reopened, "alice", "pub1", c), result)
+        equal(command(reopened, "alice", "source-after-reopen", c), result)
+        equal(command(reopened, "bob", "poll5", %{"op" => "poll"}), %{"deliveries" => [queued]})
+        truth(not is_nil(Hub.Store.job(reopened)))
+        equal(command(reopened, "bob", "ack1", %{"op" => "ack", "delivery_ids" => ids}), %{"acknowledged" => ids})
+        http_suite(reopened, cfg)
+      after
+        Hub.Store.stop(reopened)
+      end
+    after
+      if Process.alive?(store), do: Hub.Store.stop(store)
+    end
+  end
+  defp legacy_suite(cfg) do
+    time = "2024-02-01T00:00:00Z"
+    pub = %{"id" => "old-p", "project_id" => cfg["project_id"], "author_id" => "alice", "text" => "legacy", "data" => %{}, "created_at" => time}
+    sub = %{"id" => "old-s", "project_id" => cfg["project_id"], "agent_id" => "bob", "description" => "legacy subscription", "created_at" => time}
+    delivery = %{"id" => "old-d", "project_id" => cfg["project_id"], "sender_id" => "alice", "recipient_id" => "bob", "kind" => "publication", "text" => "legacy", "data" => %{}, "created_at" => time, "publication_id" => "old-p", "matches" => []}
+    cmd = %{"op" => "publish", "text" => "legacy"}
+    original = %{"publication" => pub, "matching" => "pending"}
+    job = %{id: "old-j", seq: 4, publication_id: "old-p", subscription_id: "old-s", recipient_id: "bob", description: "legacy subscription", status: :pending, retry_at: 0}
+    state = %{schema: 1, project: cfg["project_id"], seq: 4, subscriptions: %{"old-s" => %{seq: 1, value: sub}}, publications: %{"old-p" => %{seq: 2, value: pub}}, deliveries: %{"old-d" => %{seq: 3, value: delivery, ack: true}}, jobs: %{"old-j" => job}, idempotency: %{{"alice", "old-request"} => %{command: cmd, result: original}}}
+    {:ok, t} = :dets.open_file(:hub_fixture, file: String.to_charlist(cfg["store_path"]), type: :set)
+    :ok = :dets.insert(t, {:state, state})
+    :ok = :dets.sync(t)
+    :ok = :dets.close(t)
+    {:ok, store} = Hub.Store.start(cfg)
+    try do
+      p = command(store, "alice", "get-old", %{"op" => "get", "publication_id" => "old-p"})["publication"]
+      equal(p, Map.merge(pub, %{"information_type" => "message", "source" => %{"kind" => "agent", "id" => "alice"}, "occurred_at" => time}))
+      equal(command(store, "alice", "old-request", cmd), original)
+      equal(command(store, "bob", "old-poll", %{"op" => "poll"}), %{"deliveries" => []})
+      equal(Hub.Store.snapshot(store).seq, 4)
+      equal(Hub.Store.snapshot(store).schema, 2)
+      truth(not is_nil(Hub.Store.job(store)))
+    after
+      Hub.Store.stop(store)
+    end
+    {:ok, again} = Hub.Store.start(cfg)
+    equal(command(again, "alice", "old-request", cmd), original)
+    Hub.Store.stop(again)
+  end
+  defp await_closed(0), do: raise("store did not release DETS")
+  defp await_closed(attempts) do
+    if :dets.info(:hub_state) == :undefined do
+      :ok
+    else
+      receive do after 10 -> :ok end
+      await_closed(attempts - 1)
+    end
+  end
+  defp corrupt_suite(cfg) do
+    File.write!(cfg["store_path"], "invalid DETS store")
+    before_bytes = File.read!(cfg["store_path"])
+    truth(match?({:error, _}, Hub.Store.start(cfg)))
+    equal(File.read!(cfg["store_path"]), before_bytes)
+  end
+  defp http_suite(store, cfg) do
+    # Select a free local port without exposing an additional configuration form.
+    {:ok, probe} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}])
+    {:ok, {_, port}} = :inet.sockname(probe)
+    :gen_tcp.close(probe)
+    c = Map.put(cfg, "port", port)
+    {listener, _} = Hub.HTTP.serve(c, store)
+    try do
+      body = JSON.encode!(%{"jsonrpc" => "2.0", "id" => 31, "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "http-identity", "role" => "ROLE_USER", "parts" => [%{"data" => %{"op" => "whoami"}}]}}})
+      reply = raw(port, "POST /a2a HTTP/1.1\r\nHost: localhost\r\nAuthorization: \t Bearer " <> String.duplicate("a", 24) <> " \t\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(body)}\r\n\r\n" <> body)
+      [head, json] = String.split(reply, "\r\n\r\n", parts: 2)
+      truth(String.starts_with?(head, "HTTP/1.1 200"))
+      equal(JSON.decode!(json)["result"]["message"]["parts"], [%{"data" => %{"agent_id" => "alice", "project_id" => cfg["project_id"]}}])
+      truth(String.starts_with?(raw(port, "POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n"), "HTTP/1.1 401"))
+      truth(String.starts_with?(raw(port, "POST /a2a HTTP/1.1\r\nContent-Length: 0\r\nContent-Length: 0\r\n\r\n"), "HTTP/1.1 400"))
+      truth(String.starts_with?(raw(port, "POST /a2a HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"), "HTTP/1.1 400"))
+      truth(String.starts_with?(raw(port, "GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n"), "HTTP/1.1 200"))
+    after
+      :gen_tcp.close(listener)
+    end
+  end
+  defp raw(port, request) do
+    {:ok, s} = :gen_tcp.connect({127, 0, 0, 1}, port, [:binary, active: false], 2000)
+    :ok = :gen_tcp.send(s, request)
+    try do receive_all(s, "") after :gen_tcp.close(s) end
+  end
+  defp receive_all(s, bytes) do
+    case :gen_tcp.recv(s, 0, 6000) do
+      {:ok, more} -> receive_all(s, bytes <> more)
+      {:error, :closed} -> bytes
+      _ -> raise "native HTTP test failed"
+    end
+  end
+end

@@ -1,0 +1,211 @@
+defmodule ADHD.NativeTests do
+  import ExUnit.Assertions
+  def cases do
+    [
+      {"subscription-example", ["validate", %{"op" => "subscribe", "description" => "Changes to the build protocol"}], %{"valid" => true, "op" => "subscribe"}},
+      {"poll-minimum", ["validate", %{"op" => "poll", "limit" => 1}], %{"valid" => true, "op" => "poll"}},
+      {"ack-distinct", ["validate", %{"op" => "ack", "delivery_ids" => ["delivery-one", "delivery-two"]}], %{"valid" => true, "op" => "ack"}},
+      {"structured-content", ["validate", %{"op" => "publish", "data" => %{}}], %{"valid" => true, "op" => "publish"}},
+      {"addressed-content", ["validate", %{"op" => "send", "recipient_id" => "reviewer", "text" => "Please review the transport update."}], %{"valid" => true, "op" => "send"}},
+      {"search-maximum", ["validate", %{"op" => "search", "query" => "Transport", "limit" => 100}], %{"valid" => true, "op" => "search"}},
+      {"unsubscribe-id", ["validate", %{"op" => "unsubscribe", "subscription_id" => "subscription-one"}], %{"valid" => true, "op" => "unsubscribe"}},
+      {"project-context", ["validate", %{"op" => "whoami", "project_id" => "validation.project"}], %{"valid" => true, "op" => "whoami"}},
+      {"private-list", ["validate", %{"op" => "list_subscriptions", "project_id" => "validation.project"}], %{"valid" => true, "op" => "list_subscriptions"}},
+      {"unicode-content", ["validate", %{"op" => "publish", "text" => "Résultat prêt", "data" => %{"count" => 7, "ready" => true}}], %{"valid" => true, "op" => "publish"}}
+    ]
+  end
+  def smoke do
+    {_, args, _} = hd(cases())
+    ADHD.CLI.run(args)
+  end
+  def run do
+    results = Enum.map(cases(), fn {id, args, expected} ->
+      assert ADHD.CLI.run(args) == expected
+      extra(id)
+      %{"case_id" => id, "outcome" => "passed"}
+    end)
+    %{"schema" => "literate-ai/generated-test-results@1", "cases" => results}
+  end
+  defp extra("subscription-example"), do: durable_and_authorized()
+  defp extra("poll-minimum"), do: invalid_commands()
+  defp extra("ack-distinct"), do: acknowledgements()
+  defp extra("structured-content"), do: matching_transitions()
+  defp extra("addressed-content"), do: protocol_boundaries()
+  defp extra("search-maximum"), do: matcher_failures()
+  defp extra(_), do: :ok
+  def config(path) do
+    ADHD.Domain.config!(%{"project_id" => "native-tests", "store_path" => path, "agents" => %{"writer" => String.duplicate("w", 24), "reader" => String.duplicate("r", 24)}, "matcher" => %{"url" => "http://127.0.0.1:1/inference", "model" => "native-model", "retry_ms" => 100, "timeout_ms" => 100}})
+  end
+  defp with_store(fun) do
+    dir = Path.join(System.tmp_dir!(), "adhd-native-" <> Base.encode16(:crypto.strong_rand_bytes(12), case: :lower))
+    File.mkdir_p!(dir)
+    c = config(Path.join(dir, "state.dets"))
+    {:ok, pid} = ADHD.Store.start_link(c)
+    try do
+      fun.(pid, c)
+    after
+      if Process.alive?(pid), do: ADHD.Store.stop(pid)
+      File.rm_rf!(dir)
+    end
+  end
+  defp cmd(pid, actor, key, command), do: ADHD.Store.command(pid, actor, key, command)
+  defp durable_and_authorized do
+    with_store(fn pid, c ->
+      sub_cmd = %{"op" => "subscribe", "description" => "Runtime API changes"}
+      {:ok, sub} = cmd(pid, "reader", "sub", sub_cmd)
+      assert cmd(pid, "reader", "sub", sub_cmd) == {:ok, sub}
+      assert cmd(pid, "reader", "sub", %{"op" => "subscribe", "description" => "Different"}) == {:error, "IDEMPOTENCY_CONFLICT"}
+      id = sub["subscription"]["id"]
+      assert cmd(pid, "writer", "foreign", %{"op" => "unsubscribe", "subscription_id" => id}) == {:error, "FORBIDDEN"}
+      assert cmd(pid, "writer", "list", %{"op" => "list_subscriptions"}) == {:ok, %{"subscriptions" => []}}
+      assert cmd(pid, "reader", "wrong", %{"op" => "whoami", "project_id" => "another"}) == {:error, "PROJECT_MISMATCH"}
+      {:ok, delivery} = cmd(pid, "writer", "send", %{"op" => "send", "recipient_id" => "reader", "text" => "private"})
+      assert cmd(pid, "reader", "search", %{"op" => "search", "query" => "private"}) == {:ok, %{"publications" => []}}
+      ADHD.Store.stop(pid)
+      {:ok, reopened} = ADHD.Store.start_link(c)
+      try do
+        assert cmd(reopened, "reader", "sub", sub_cmd) == {:ok, sub}
+        assert cmd(reopened, "reader", "poll", %{"op" => "poll"}) == {:ok, %{"deliveries" => [delivery["delivery"]]}}
+      after
+        ADHD.Store.stop(reopened)
+      end
+    end)
+  end
+  defp invalid_commands do
+    for c <- [%{"op" => "whoami", "actor_id" => "writer"}, %{"op" => "poll", "limit" => 0}, %{"op" => "poll", "limit" => 1.0}, %{"op" => "ack", "delivery_ids" => ["a", "a"]}, %{"op" => "subscribe", "description" => "  "}, %{"op" => "publish"}, %{"op" => "publish", "data" => []}, %{"op" => "search", "query" => String.duplicate("x", 257)}, %{"op" => "publish", "text" => String.duplicate("x", 65536)}] do
+      assert_raise ADHD.Invalid, fn -> ADHD.Domain.validate(c) end
+    end
+  end
+  defp acknowledgements do
+    with_store(fn pid, c ->
+      {:ok, one} = cmd(pid, "writer", "one", %{"op" => "send", "recipient_id" => "reader", "text" => "one"})
+      {:ok, two} = cmd(pid, "reader", "two", %{"op" => "send", "recipient_id" => "writer", "text" => "two"})
+      a = one["delivery"]["id"]
+      b = two["delivery"]["id"]
+      assert cmd(pid, "reader", "bad", %{"op" => "ack", "delivery_ids" => [a, b]}) == {:error, "FORBIDDEN"}
+      assert cmd(pid, "reader", "unknown", %{"op" => "ack", "delivery_ids" => [a, "missing"]}) == {:error, "NOT_FOUND"}
+      assert cmd(pid, "reader", "poll", %{"op" => "poll"}) == {:ok, %{"deliveries" => [one["delivery"]]}}
+      assert cmd(pid, "reader", "ack", %{"op" => "ack", "delivery_ids" => [a]}) == {:ok, %{"acknowledged" => [a]}}
+      assert cmd(pid, "reader", "again", %{"op" => "ack", "delivery_ids" => [a]}) == {:ok, %{"acknowledged" => [a]}}
+      ADHD.Store.stop(pid)
+      {:ok, reopened} = ADHD.Store.start_link(c)
+      try do
+        assert cmd(reopened, "reader", "poll", %{"op" => "poll"}) == {:ok, %{"deliveries" => []}}
+      after
+        ADHD.Store.stop(reopened)
+      end
+    end)
+  end
+  defp matching_transitions do
+    with_store(fn pid, c ->
+      {:ok, _} = cmd(pid, "writer", "early", %{"op" => "publish", "text" => "no replay"})
+      assert ADHD.Store.job(pid) == nil
+      {:ok, sub1} = cmd(pid, "reader", "s1", %{"op" => "subscribe", "description" => "API"})
+      {:ok, _} = cmd(pid, "reader", "s2", %{"op" => "subscribe", "description" => "API and tools"})
+      {:ok, publication} = cmd(pid, "writer", "p", %{"op" => "publish", "text" => "API NEWS"})
+      {key, _, _} = ADHD.Store.job(pid)
+      :ok = ADHD.Store.complete(pid, key, :failed)
+      assert cmd(pid, "reader", "during-failure", %{"op" => "poll"}) == {:ok, %{"deliveries" => []}}
+      :ok = ADHD.Store.complete(pid, key, 950000)
+      {:ok, %{"deliveries" => [delivery]}} = cmd(pid, "reader", "poll", %{"op" => "poll"})
+      assert delivery["publication_id"] == publication["publication"]["id"]
+      {:ok, _} = cmd(pid, "reader", "ack", %{"op" => "ack", "delivery_ids" => [delivery["id"]]})
+      {key2, _, _} = ADHD.Store.job(pid)
+      :ok = ADHD.Store.complete(pid, key2, 999999)
+      :ok = ADHD.Store.complete(pid, key2, 999999)
+      assert cmd(pid, "reader", "after", %{"op" => "poll"}) == {:ok, %{"deliveries" => []}}
+      {:ok, _} = cmd(pid, "writer", "pending", %{"op" => "publish", "text" => "Pending change"})
+      {stale_key, _, _} = ADHD.Store.job(pid)
+      sub_id = elem(stale_key, 1)
+      {:ok, _} = cmd(pid, "reader", "remove", %{"op" => "unsubscribe", "subscription_id" => sub_id})
+      :ok = ADHD.Store.complete(pid, stale_key, 1000000)
+      assert cmd(pid, "reader", "stale", %{"op" => "poll"}) == {:ok, %{"deliveries" => []}}
+      assert sub1["subscription"]["agent_id"] == "reader"
+      ADHD.Store.stop(pid)
+      {:ok, reopened} = ADHD.Store.start_link(c)
+      try do
+        assert ADHD.Store.job(reopened) != nil
+        assert cmd(reopened, "writer", "p", %{"op" => "publish", "text" => "API NEWS"}) == {:ok, publication}
+        assert cmd(reopened, "reader", "still-acked", %{"op" => "poll"}) == {:ok, %{"deliveries" => []}}
+      after
+        ADHD.Store.stop(reopened)
+      end
+    end)
+  end
+  defp protocol_boundaries do
+    with_store(fn pid, c ->
+      assert ADHD.Protocol.authenticate(%{}, c) == nil
+      assert ADHD.Protocol.authenticate(%{"authorization" => "Bearer " <> c["agents"]["writer"]}, c) == "writer"
+      assert ADHD.Protocol.rpc("{", nil, "writer", c, pid)["error"]["code"] == -32700
+      e = %{"jsonrpc" => "2.0", "id" => "rpc", "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "hello", "role" => "ROLE_USER", "parts" => [%{"data" => %{"op" => "whoami"}}]}}}
+      response = ADHD.Protocol.rpc(JSON.encode!(e), "1.0", "writer", c, pid)
+      assert response["result"]["message"]["parts"] == [%{"data" => %{"agent_id" => "writer", "project_id" => "native-tests"}}]
+      assert ADHD.Protocol.rpc(JSON.encode!(e), "0.3", "writer", c, pid)["error"]["code"] == -32602
+      assert ADHD.HTTP.route("GET", "/health", %{}, "", c, pid) == {200, %{"status" => "ready"}, []}
+      assert elem(ADHD.HTTP.route("POST", "/a2a", %{}, "", c, pid), 0) == 401
+      assert elem(ADHD.HTTP.route("POST", "/a2a", %{"authorization" => "Bearer " <> c["agents"]["writer"], "content-type" => "text/plain"}, "", c, pid), 0) == 415
+    end)
+  end
+  defp matcher_failures do
+    question = ADHD.Matcher.question("native relevance")
+    assert ADHD.Matcher.decode(JSON.encode!(%{"noul" => question, "probability" => 0.9000005}), question) == 900001
+    for p <- [true, false, nil, "0.95", -1, 2] do
+      assert ADHD.Matcher.decode(JSON.encode!(%{"noul" => question, "probability" => p}), question) == :failed
+    end
+    assert ADHD.Matcher.decode("{}", question) == :failed
+    assert ADHD.Matcher.decode("{", question) == :failed
+    assert ADHD.Matcher.decode(JSON.encode!(%{"noul" => "wrong", "probability" => 1}), question) == :failed
+    network_matcher()
+  end
+  defp network_matcher do
+    {:ok, _} = Application.ensure_all_started(:inets)
+    {:ok, _} = Application.ensure_all_started(:ssl)
+    {:ok, listener} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}, reuseaddr: true])
+    {:ok, {_, port}} = :inet.sockname(listener)
+    fixture = spawn_link(fn ->
+      for response <- [:unavailable, :malformed, :valid] do
+        {:ok, socket} = :gen_tcp.accept(listener, 3000)
+        request = fixture_request(socket, "")
+        question = JSON.decode!(request)["noul"]
+        {status, body} = case response do
+          :unavailable -> {503, "{}"}
+          :malformed -> {200, JSON.encode!(%{"noul" => question, "probability" => true})}
+          :valid -> {200, JSON.encode!(%{"noul" => question, "probability" => 0.95})}
+        end
+        :ok = :gen_tcp.send(socket, ["HTTP/1.1 ", Integer.to_string(status), " Response\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: ", Integer.to_string(byte_size(body)), "\r\n\r\n", body])
+        :gen_tcp.close(socket)
+      end
+    end)
+    try do
+      matcher = %{"url" => "http://127.0.0.1:#{port}/v1/systemone", "timeout_ms" => 1000}
+      job = %{model: "test-fixture", subscription: %{"description" => "API changes"}}
+      publication = %{"text" => "API change", "data" => %{}, "author_id" => "writer"}
+      assert ADHD.Matcher.infer(matcher, job, publication) == :failed
+      assert ADHD.Matcher.infer(matcher, job, publication) == :failed
+      assert ADHD.Matcher.infer(matcher, job, publication) == 950000
+    after
+      Process.unlink(fixture)
+      if Process.alive?(fixture), do: Process.exit(fixture, :kill)
+      :gen_tcp.close(listener)
+    end
+  end
+  defp fixture_request(socket, buffer) do
+    case :binary.match(buffer, "\r\n\r\n") do
+      {offset, 4} ->
+        head = binary_part(buffer, 0, offset)
+        [_, length] = Regex.run(~r/\r\ncontent-length: *([0-9]+)/i, head)
+        length = String.to_integer(length)
+        body = binary_part(buffer, offset + 4, byte_size(buffer) - offset - 4)
+        if byte_size(body) >= length do
+          binary_part(body, 0, length)
+        else
+          {:ok, rest} = :gen_tcp.recv(socket, length - byte_size(body), 2000)
+          body <> rest
+        end
+      :nomatch ->
+        assert byte_size(buffer) < 16384
+        {:ok, chunk} = :gen_tcp.recv(socket, 0, 2000)
+        fixture_request(socket, buffer <> chunk)
+    end
+  end
+end

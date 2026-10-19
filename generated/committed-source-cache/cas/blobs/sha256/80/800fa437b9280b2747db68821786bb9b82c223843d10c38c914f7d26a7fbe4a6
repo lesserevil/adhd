@@ -1,0 +1,167 @@
+defmodule Hub.Invalid do
+  defexception message: "invalid parameters"
+end
+
+defmodule Hub.DomainError do
+  defexception [:code, message: "request rejected"]
+end
+
+defmodule Hub.Validate do
+  def check(true), do: :ok
+  def check(_), do: raise(Hub.Invalid)
+  def object(v), do: check(is_map(v) and not is_struct(v))
+  def fields(v, allowed, required \\ []) do
+    object(v)
+    check(Enum.all?(Map.keys(v), &(&1 in allowed)))
+    check(Enum.all?(required, &Map.has_key?(v, &1)))
+  end
+  def string(v, max, blank \\ false) do
+    check(is_binary(v))
+    check(String.valid?(v) and byte_size(v) in 1..max)
+    if not blank, do: check(String.trim(v) != "")
+  end
+  def id(v), do: string(v, 128, true)
+  def identifier(v) do
+    string(v, 128)
+    check(Regex.match?(~r/\A[A-Za-z0-9_.-]+\z/, v))
+  end
+  def unbounded_string(v) do
+    check(is_binary(v))
+    check(String.valid?(v) and String.trim(v) != "")
+  end
+  def integer(v, lo, hi), do: check(is_integer(v) and v >= lo and v <= hi)
+  def url(v, max \\ 2048) do
+    string(v, max)
+    u = URI.parse(v)
+    check(u.scheme in ["http", "https"] and is_binary(u.host) and u.host != "" and is_nil(u.userinfo))
+    v
+  end
+  def date(v) do
+    string(v, 64)
+    case DateTime.from_iso8601(v) do
+      {:ok, d, _} -> DateTime.to_iso8601(d)
+      _ -> raise Hub.Invalid
+    end
+  end
+  def optional(m, k, f), do: if(Map.has_key?(m, k), do: f.(m[k]), else: :ok)
+  def content(c, publication) do
+    check(Map.has_key?(c, "text") or Map.has_key?(c, "data"))
+    optional(c, "text", &string(&1, 65536))
+    if not publication, do: optional(c, "data", &object/1)
+    bytes = (if Map.has_key?(c, "text"), do: byte_size(c["text"]), else: 0) +
+      (if Map.has_key?(c, "data"), do: byte_size(JSON.encode!(c["data"])), else: 0)
+    check(bytes <= 65536)
+  end
+  def filters(c) do
+    optional(c, "query", &string(&1, 256))
+    optional(c, "information_type", &identifier/1)
+    optional(c, "source_kind", &identifier/1)
+    optional(c, "source_id", &string(&1, 256))
+    optional(c, "limit", &integer(&1, 1, 100))
+  end
+  def source(s) do
+    fields(s, ["kind", "id", "item_id", "uri"], ["kind", "id"])
+    identifier(s["kind"])
+    string(s["id"], 256)
+    optional(s, "item_id", &string(&1, 512))
+    optional(s, "uri", &url/1)
+  end
+  def command(c) do
+    object(c)
+    {allowed, required} = case c["op"] do
+      op when op in ["whoami", "list_subscriptions"] -> {[], []}
+      "subscribe" -> {["description"], ["description"]}
+      "unsubscribe" -> {["subscription_id"], ["subscription_id"]}
+      "publish" -> {["text", "data", "information_type", "source", "occurred_at"], []}
+      "send" -> {["recipient_id", "text", "data"], ["recipient_id"]}
+      "poll" -> {["limit"], []}
+      "ack" -> {["delivery_ids"], ["delivery_ids"]}
+      "get" -> {["publication_id"], ["publication_id"]}
+      "search" -> {["query", "information_type", "source_kind", "source_id", "limit"], []}
+      _ -> raise Hub.Invalid
+    end
+    fields(c, ["op", "project_id" | allowed], required)
+    optional(c, "project_id", &identifier/1)
+    for k <- ["subscription_id", "publication_id"], do: optional(c, k, &id/1)
+    optional(c, "recipient_id", &identifier/1)
+    optional(c, "description", &string(&1, 4096))
+    case c["op"] do
+      "publish" ->
+        content(c, true)
+        optional(c, "information_type", &identifier/1)
+        optional(c, "source", &source/1)
+        optional(c, "occurred_at", &date/1)
+      "send" -> content(c, false)
+      "poll" -> optional(c, "limit", &integer(&1, 1, 100))
+      "ack" ->
+        ids = c["delivery_ids"]
+        check(is_list(ids) and length(ids) in 1..100)
+        Enum.each(ids, &id/1)
+        check(length(Enum.uniq(ids)) == length(ids))
+      "search" ->
+        filters(c)
+        check(Enum.any?(["query", "information_type", "source_kind", "source_id"], &Map.has_key?(c, &1)))
+      _ -> :ok
+    end
+    c
+  end
+  def admin(c) do
+    object(c)
+    {allowed, required} = case c["op"] do
+      "overview" -> {[], []}
+      "publications" -> {["query", "information_type", "source_kind", "source_id", "limit"], []}
+      "publication" -> {["publication_id"], ["publication_id"]}
+      op when op in ["subscriptions", "deliveries"] -> {["agent_id", "limit"], []}
+      "jobs" -> {["status", "limit"], []}
+      "create_subscription" -> {["agent_id", "description", "message_id"], ["agent_id", "description", "message_id"]}
+      "remove_subscription" -> {["subscription_id", "confirm", "message_id"], ["subscription_id", "confirm", "message_id"]}
+      "retry_jobs" -> {["confirm", "message_id"], ["confirm", "message_id"]}
+      _ -> raise Hub.Invalid
+    end
+    fields(c, ["op" | allowed], required)
+    filters(c)
+    optional(c, "agent_id", &identifier/1)
+    optional(c, "description", &string(&1, 4096))
+    optional(c, "message_id", &string(&1, 128))
+    for k <- ["subscription_id", "publication_id"], do: optional(c, k, &id/1)
+    optional(c, "status", &check(&1 in ["pending", "done", "cancelled"]))
+    optional(c, "confirm", &check(&1 === true))
+    c
+  end
+end
+
+defmodule Hub.Config do
+  alias Hub.Validate, as: V
+  def read(path), do: path |> File.read!() |> JSON.decode!() |> validate()
+  def validate(c) do
+    V.fields(c, ["project_id", "store_path", "agents", "host", "port", "public_url", "matcher", "threshold_ppm", "admin_token"], ["project_id", "store_path", "agents", "matcher"])
+    V.identifier(c["project_id"])
+    V.unbounded_string(c["store_path"])
+    V.object(c["agents"])
+    Enum.each(c["agents"], fn {a, t} -> V.identifier(a); V.unbounded_string(t); V.check(String.length(t) >= 24) end)
+    tokens = Map.values(c["agents"])
+    V.check(length(tokens) == length(Enum.uniq(tokens)))
+    c = Map.merge(%{"host" => "127.0.0.1", "port" => 8766, "threshold_ppm" => 900000}, c)
+    V.check(c["host"] == "127.0.0.1")
+    V.integer(c["port"], 1, 65535)
+    V.integer(c["threshold_ppm"], 1, 1000000)
+    c = Map.put_new(c, "public_url", "http://127.0.0.1:#{c["port"]}")
+    V.unbounded_string(c["public_url"])
+    V.url(c["public_url"], byte_size(c["public_url"]))
+    V.optional(c, "admin_token", fn t -> V.string(t, 65536); V.check(byte_size(t) >= 32 and t not in tokens) end)
+    m = c["matcher"]
+    V.fields(m, ["url", "model", "timeout_ms", "retry_ms"], ["url", "model"])
+    V.unbounded_string(m["url"])
+    V.url(m["url"], byte_size(m["url"]))
+    V.unbounded_string(m["model"])
+    m = Map.merge(%{"timeout_ms" => 3000, "retry_ms" => 1000}, m)
+    V.integer(m["timeout_ms"], 100, 30000)
+    V.integer(m["retry_ms"], 100, 30000)
+    Map.put(c, "matcher", m)
+  end
+  def equal(a, b) when is_binary(a) and is_binary(b) do
+    :crypto.hash(:sha256, a) |> :crypto.hash_equals(:crypto.hash(:sha256, b))
+  end
+  def equal(_, _), do: false
+  def actor(c, token), do: Enum.find_value(c["agents"], fn {a, t} -> if equal(t, token), do: a end)
+end

@@ -1,0 +1,27 @@
+defmodule ADHD.Assemble do
+  def main([mode, export, objects, out]) do
+    root = Path.expand("..", __DIR__)
+    paths = [export, objects, out] |> Enum.map(&Path.expand/1)
+    Enum.each(paths, fn path ->
+      if path == root or String.starts_with?(path, root <> "/") or String.starts_with?(root, path <> "/"), do: raise("output overlaps source")
+    end)
+    case mode do
+      "assemble" ->
+        files = Path.wildcard(Path.join(root, "**/*.{ex,exs}")) |> Enum.sort()
+        Enum.each(files, fn path -> Code.string_to_quoted!(File.read!(path), file: path) end)
+        content = Enum.map_join(["hub.ex", "http.ex", "tests/litai_test.exs"], "\n", &File.read!(Path.join(root, &1))) <> "\nADHD.CLI.main(System.argv())\n"
+        Code.string_to_quoted!(content)
+        File.mkdir_p!(Path.dirname(export))
+        File.mkdir_p!(objects)
+        File.mkdir_p!(out)
+        File.write!(export, content)
+        if not File.regular?(export), do: raise("export missing")
+      "clean" ->
+        # Only explicitly declared derived output roots may be removed.
+        Enum.each([objects, out], &File.rm_rf!/1)
+        case File.rm(export) do :ok -> :ok; {:error, :enoent} -> :ok; {:error, why} -> raise(File.Error, reason: why, action: "remove", path: export) end
+      _ -> raise "invalid build action"
+    end
+  end
+end
+ADHD.Assemble.main(System.argv())

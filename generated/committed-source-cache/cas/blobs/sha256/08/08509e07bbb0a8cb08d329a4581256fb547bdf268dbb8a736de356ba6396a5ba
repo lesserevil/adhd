@@ -1,0 +1,31 @@
+defmodule Hub.Assemble do
+  def main([mode, object_root, out, export]) do
+    root = Path.expand("..", __DIR__)
+    Enum.each([object_root, out, export], &safe_output!(&1, root))
+    case mode do
+      "all" ->
+        files = ~w(validation.exs state.exs matcher.exs ui.exs http.exs cli.exs tests/litai_test.exs)
+        content = Enum.map_join(files, "\n", fn file -> File.read!(Path.join(root, file)) end) <> "\nHub.CLI.main(System.argv())\n"
+        File.mkdir_p!(object_root)
+        File.mkdir_p!(out)
+        File.mkdir_p!(Path.dirname(export))
+        File.write!(export, content)
+        if not File.regular?(export), do: raise("export missing")
+      "clean" ->
+        for dir <- Enum.uniq([object_root, out]) do
+          expanded = Path.expand(dir)
+          File.rm_rf!(expanded)
+        end
+        if File.regular?(export), do: File.rm!(export)
+      _ -> raise "unknown build operation"
+    end
+  end
+  def safe_output!(path, root) do
+    p = Path.expand(path)
+    cache = Path.join(root, "_build")
+    ancestor = p == root or p == "/" or String.starts_with?(root, p <> "/")
+    source = String.starts_with?(p, root <> "/") and not (p == cache or String.starts_with?(p, cache <> "/"))
+    if ancestor or source, do: raise("unsafe output path")
+  end
+end
+Hub.Assemble.main(System.argv())

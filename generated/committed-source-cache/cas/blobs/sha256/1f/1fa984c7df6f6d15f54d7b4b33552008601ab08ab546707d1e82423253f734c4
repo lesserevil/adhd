@@ -1,0 +1,99 @@
+defmodule Hub.Assets do
+  def html, do: ~S"""
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADHD · Project operations</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231c486c'/%3E%3Cpath d='M8 22V10h4v5h8v-5h4v12h-4v-4h-8v4z' fill='white'/%3E%3C/svg%3E"><link rel="stylesheet" href="/admin/assets/app.css"><script defer src="/admin/assets/app.js"></script></head>
+<body><div id="login"><main class="login"><p class="eyebrow">ADHD / OPERATIONS</p><h1>Project workspace</h1><p>Sign in to observe and manage your private coordination hub.</p><form id="login-form"><label for="token">Administrator token</label><input id="token" type="password" autocomplete="off" required><button type="submit">Sign in</button></form><p>Use the separately provisioned administrator credential through your private tunnel. Reloading requires a new sign-in.</p></main></div>
+<div id="workspace" hidden><aside><p class="brand">ADHD <span>Operations</span></p><nav aria-label="Main navigation"><button data-view="Overview">Overview</button><button data-view="Information">Information</button><button data-view="Subscriptions">Subscriptions</button><button data-view="Activity">Activity</button></nav><button id="logout" class="secondary">Log out</button></aside><main><header><div><p id="project" class="eyebrow"></p><h1 id="heading">Overview</h1></div><button id="refresh" class="secondary">Refresh</button></header><p id="checked" class="muted"></p><div id="content"></div></main></div><p id="status" role="status" aria-live="polite"></p><p id="error" role="alert"></p><dialog id="confirm"><form method="dialog"><h2>Confirm action</h2><p id="confirm-text"></p><button value="cancel" class="secondary">Cancel</button><button value="confirm">Confirm</button></form></dialog></body></html>
+"""
+  def css, do: ~S"""
+:root{font-family:Avenir,"Segoe UI",sans-serif;color:#162b44;background:#f3f6f9;font-size:16px;line-height:1.5}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{border:1px solid #205b96;background:#205b96;color:white;border-radius:5px;padding:.55rem .9rem;cursor:pointer}button.secondary{background:white;color:#1b4875;border-color:#bdcbd8}button:disabled{opacity:.55;cursor:wait}button:hover{filter:brightness(.93)}:focus-visible{outline:3px solid #a25d05;outline-offset:3px}input,select{min-width:0;width:100%;border:1px solid #9dabbc;border-radius:4px;padding:.6rem;background:white;color:#162b44}label{display:block;font-size:.9rem;font-weight:600;margin-bottom:.3rem}form{display:flex;gap:.8rem;align-items:end;flex-wrap:wrap}form>div{flex:1 1 160px}form button{flex-shrink:0}h1{font-size:1.85rem;line-height:1.2;margin:.3rem 0}h2{font-size:1.12rem;margin:1.5rem 0 .75rem}p{overflow-wrap:anywhere}.eyebrow{font-size:.75rem;letter-spacing:.12em;font-weight:700;color:#46617b}.muted{color:#52677a;font-size:.875rem}.login{max-width:480px;margin:12vh auto;padding:2rem}.login form{display:block}.login input{margin:.3rem 0 1rem}.login form button{width:100%}.login>p:last-child{font-size:.85rem;color:#52677a}#workspace{display:grid;grid-template-columns:205px minmax(0,1fr);min-height:100vh}#workspace[hidden], [hidden]{display:none!important}aside{padding:1.8rem 1rem;background:#e8eef4;border-right:1px solid #d2dce6}.brand{font-weight:800;padding:0 .6rem;margin-top:0}.brand span{display:block;font-size:.75rem;color:#52677a;font-weight:500}nav{display:flex;flex-direction:column;gap:.3rem;margin:2rem 0}nav button{text-align:left;color:#385571;background:transparent;border-color:transparent}nav button[aria-current=page]{background:#d4e6f7;color:#124d86;border-color:#bfd6ec}main{padding:2rem 3rem;min-width:0;max-width:1400px}header{display:flex;justify-content:space-between;align-items:center;gap:1rem}header p{margin:0}.counts{display:flex;flex-wrap:wrap;border-top:1px solid #ccd6e0;border-bottom:1px solid #ccd6e0;padding:.8rem 0;gap:1rem 2rem}.count{min-width:130px}.count strong{display:block;font-size:1.8rem;font-variant-numeric:tabular-nums}.count span{font-size:.8rem;color:#4a6177}.rows{margin-top:1rem}.row{padding:1rem 0;border-bottom:1px solid #d0dbe5;display:flex;gap:1rem;align-items:start;justify-content:space-between}.row>div{min-width:0;flex:1}.row p{margin:.25rem 0;white-space:pre-wrap;overflow-wrap:anywhere}.row small{color:#52677a}.healthy{color:#087768}.pending{color:#885700}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font: .85rem/1.6 ui-monospace,monospace;background:#e9eff5;padding:1rem;border-radius:4px;max-width:100%}.detail{border-top:2px solid #7592ad;margin-top:1rem}.detail h2{display:flex;justify-content:space-between}#status,#error{margin:0;padding:0 2rem}#status:not(:empty),#error:not(:empty){padding:1rem 2rem}#error{color:#9b2424;background:#fbecec}dialog{border:1px solid #8098ae;border-radius:7px;max-width:min(500px,90vw);color:#162b44}dialog::backdrop{background:#162b4466}dialog form{display:block}dialog button{margin-right:.5rem}#content>form{padding:1rem 0;border-bottom:1px solid #ccd6e0}.scroll{max-width:100%;overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.875rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #ced8e2;padding:.7rem;font-variant-numeric:tabular-nums}td{overflow-wrap:anywhere;max-width:300px}th{white-space:nowrap}.guidance{font-size:.85rem;max-width:85ch;color:#52677a}.empty{padding:2rem 0;color:#52677a}@media(max-width:700px){#workspace{display:block}aside{padding:.8rem;border-right:0;border-bottom:1px solid #d2dce6}.brand{display:none}nav{margin:0 0 .6rem;flex-direction:row;overflow:auto;gap:.2rem}nav button{font-size:.8rem;padding:.5rem;white-space:nowrap}main{padding:1.25rem}.login{margin:5vh auto;padding:1.5rem}h1{font-size:1.5rem}.row{flex-wrap:wrap}form{align-items:stretch}form>div{flex-basis:100%}header{align-items:start}.counts{gap:.75rem}.count{min-width:110px;flex:1}.count strong{font-size:1.6rem}#status,#error{padding-left:1.25rem}}
+"""
+  def js, do: ~S"""
+'use strict';
+(() => {
+  const $ = id => document.getElementById(id);
+  let token = '', view = 'Overview', generation = 0, agents = [], busy = false;
+  const pending = new Map();
+  const element = (tag, text, cls) => { const n = document.createElement(tag); if(text !== undefined) n.textContent = text; if(cls) n.className = cls; return n; };
+  const status = text => { $('status').textContent = text; };
+  const error = text => { $('error').textContent = text; };
+  function logout() {
+    token = ''; generation++; agents = []; pending.clear(); busy = false;
+    $('content').replaceChildren(); $('project').textContent = ''; $('checked').textContent = '';
+    $('token').value = ''; $('workspace').hidden = true; $('login').hidden = false;
+    $('confirm').close(); status(''); error(''); $('token').focus();
+  }
+  async function api(command) {
+    const credential = token;
+    let response;
+    try { response = await fetch('/admin/api', {method:'POST',cache:'no-store',headers:{'Content-Type':'application/json',Authorization:'Bearer '+credential},body:JSON.stringify(command)}); }
+    catch (_) { throw new Error('Connection unavailable. Check the private tunnel and try again.'); }
+    if(credential !== token) throw new Error('Session changed.');
+    if(response.status === 401) { logout(); throw new Error('Administrator credential was not accepted.'); }
+    const result = await response.json();
+    if(!response.ok) throw new Error(response.status === 404 ? 'Resource unavailable or administration disabled.' : response.status === 409 ? 'This request conflicts with an earlier action.' : 'Request could not be completed. Check the fields and retry.');
+    return result;
+  }
+  function button(text, action, cls) { const b=element('button',text,cls);b.type='button';b.addEventListener('click',action);return b; }
+  function field(form, label, name, options) {
+    const box=element('div'), l=element('label',label), input=element(options?'select':'input');input.name=name;input.id='field-'+name;l.htmlFor=input.id;
+    if(options) for(const [value,text] of options) { const o=element('option',text);o.value=value;input.append(o); }
+    box.append(l,input);form.append(box);return input;
+  }
+  function list(items, render, parent=$('content')) {
+    if(!items.length){parent.append(element('p','No matching records.','empty'));return;}
+    const rows=element('div',undefined,'rows');for(const item of items)rows.append(render(item));parent.append(rows);
+  }
+  function truncated(result){if(result.truncated)$('content').append(element('p','More records are available. Narrow your filters to see them.','muted'));}
+  function row(title, subtitle) {const r=element('div',undefined,'row'),d=element('div');d.append(element('strong',title),element('p',subtitle));r.append(d);return r;}
+  async function confirmAction(text) {
+    $('confirm-text').textContent=text;$('confirm').returnValue='cancel';$('confirm').showModal();
+    return new Promise(resolve=>$('confirm').addEventListener('close',()=>resolve($('confirm').returnValue==='confirm'),{once:true}));
+  }
+  async function mutate(command, control, confirmation) {
+    if(busy)return;
+    if(confirmation && !await confirmAction(confirmation))return;
+    const key=JSON.stringify(command);
+    if(!pending.has(key))pending.set(key,crypto.randomUUID());
+    const request={...command,message_id:pending.get(key)};
+    busy=true;control.disabled=true;error('');status('Saving…');
+    try{await api(request);pending.delete(key);status('Action saved.');await load();}
+    catch(e){error(e.message+' Retry the same action to safely reuse its request identifier.');status('');}
+    finally{busy=false;control.disabled=false;}
+  }
+  async function overview(g) {
+    const data=await api({op:'overview'});if(g!==generation)return;
+    $('project').textContent=data.project_id;agents=data.agents.map(a=>a.agent_id);
+    const content=$('content');content.replaceChildren();
+    content.append(element('p','Service reachable · Matcher '+data.matcher.status+' · '+data.matcher.model+' · observed '+data.matcher.checked_at,data.matcher.status==='ready'?'healthy':'pending'));
+    const counts=element('div',undefined,'counts');for(const [key,value] of Object.entries(data.counts)){const n=element('div',undefined,'count');n.append(element('strong',String(value)),element('span',key.replaceAll('_',' ')));counts.append(n);}content.append(counts,element('h2','Agents'));
+    list(data.agents,a=>row(a.agent_id,a.subscriptions+' subscriptions · '+a.queued_deliveries+' queued deliveries'));
+    content.append(element('h2','Operating this workspace'),element('p','Provision and rotate the separate admin_token in the operator configuration, then restart the service. Agent tokens remain separate. Connect only through the private tunnel. Administration observes publication content and private delivery metadata; private addressed bodies remain recipient-only.','guidance'),element('p','Lists show up to 50 recent records (API maximum 100). Subscription removal cancels pending evaluations and keeps existing deliveries. Retry only reschedules pending jobs. An unavailable matcher leaves accepted publications and jobs durable; check the model service and Refresh. For backup or upgrade, stop the single service using this store and copy its DETS file offline. Keep the pre-upgrade backup for rollback; do not open one store with multiple processes.','guidance'));
+  }
+  async function information(g, command={op:'publications'}) {
+    const content=$('content');content.replaceChildren();const form=element('form');
+    field(form,'Search text','query').maxLength=256;field(form,'Information type','information_type').maxLength=128;field(form,'Source kind','source_kind').maxLength=128;field(form,'Source ID','source_id').maxLength=256;
+    const submit=element('button','Search');submit.type='submit';form.append(submit);content.append(form);
+    for(const key of ['query','information_type','source_kind','source_id'])form.elements[key].value=command[key]||'';
+    form.addEventListener('submit',e=>{e.preventDefault();const cmd={op:'publications'};for(const [k,v] of new FormData(form))if(v.trim())cmd[k]=v;runInformation(cmd);});
+    const result=await api(command);if(g!==generation)return;
+    list(result.items,p=>{const r=row(p.information_type+' · '+p.id,p.text||JSON.stringify(p.data));r.firstChild.append(element('small',p.source.kind+' / '+p.source.id+' · '+p.created_at));r.append(button('Details',()=>detail(p.id,g),'secondary'));return r;});truncated(result);
+  }
+  async function runInformation(command){const g=++generation;error('');status('Loading…');try{await information(g,command);if(g===generation){status('');checked();}}catch(e){if(g===generation){error(e.message);status('');}}}
+  async function detail(id,g){try{const result=await api({op:'publication',publication_id:id});if(g!==generation)return;document.querySelector('.detail')?.remove();const panel=element('section',undefined,'detail'),heading=element('h2','Publication details');heading.append(button('Close',()=>panel.remove(),'secondary'));panel.append(heading,element('pre',JSON.stringify(result.publication,null,2)));$('content').append(panel);panel.scrollIntoView({block:'nearest'});}catch(e){if(g===generation)error(e.message);}}
+  async function subscriptions(g){
+    const [result,summary]=await Promise.all([api({op:'subscriptions'}),api({op:'overview'})]);if(g!==generation)return;
+    agents=summary.agents.map(a=>a.agent_id);const content=$('content');content.replaceChildren();const form=element('form');
+    field(form,'Agent','agent_id',agents.map(id=>[id,id]));const description=field(form,'Subscription description','description');description.required=true;description.maxLength=4096;
+    const submit=element('button','Create subscription');submit.type='submit';form.append(submit);form.addEventListener('submit',e=>{e.preventDefault();mutate({op:'create_subscription',agent_id:form.elements.agent_id.value,description:description.value},submit);});content.append(form);
+    list(result.items,s=>{const r=row(s.agent_id,s.description);r.firstChild.append(element('small',s.id+' · '+s.created_at));const b=button('Remove',()=>mutate({op:'remove_subscription',subscription_id:s.id,confirm:true},b,'Remove subscription owned by '+s.agent_id+': '+s.description+'? Pending matching jobs will be cancelled; existing deliveries stay.'),'secondary');r.append(b);return r;});truncated(result);
+  }
+  function table(title,items,columns){const c=$('content');c.append(element('h2',title));if(!items.length){c.append(element('p','No records.','empty'));return;}const scroll=element('div',undefined,'scroll');scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label',title);const t=element('table'),head=element('thead'),hr=element('tr');for(const col of columns){const th=element('th',col.replaceAll('_',' '));th.scope='col';hr.append(th);}head.append(hr);const body=element('tbody');for(const item of items){const tr=element('tr');for(const col of columns)tr.append(element('td',String(item[col]??'—')));body.append(tr);}t.append(head,body);scroll.append(t);c.append(scroll);}
+  async function activity(g){const [deliveries,jobs]=await Promise.all([api({op:'deliveries'}),api({op:'jobs'})]);if(g!==generation)return;$('content').replaceChildren();const b=button('Retry pending jobs',()=>mutate({op:'retry_jobs',confirm:true},b,'Reschedule all pending matching jobs now? Completed and cancelled jobs stay unchanged.'));$('content').append(b,element('p','Private delivery payloads are never shown.','muted'));table('Delivery metadata',deliveries.items,['delivery_id','recipient_id','kind','created_at','acknowledged','publication_id']);truncated(deliveries);table('Matching jobs',jobs.items,['job_id','publication_id','subscription_id','recipient_id','status','retry_at']);truncated(jobs);}
+  function checked(){$('checked').textContent='Last checked '+new Date().toLocaleString();}
+  async function load(){if(!token)return;const g=++generation;error('');status('Loading…');$('content').replaceChildren(element('p','Loading '+view.toLowerCase()+'…','empty'));$('heading').textContent=view;document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});try{await ({Overview:overview,Information:information,Subscriptions:subscriptions,Activity:activity}[view])(g);if(g===generation){checked();status('');}}catch(e){if(g===generation){$('content').replaceChildren(element('p','Unable to load this view. Use Refresh to retry.','empty'));error(e.message);status('');}}}
+  $('login-form').addEventListener('submit',async e=>{e.preventDefault();token=$('token').value;$('token').value='';const b=e.submitter;b.disabled=true;error('');try{const data=await api({op:'overview'});$('project').textContent=data.project_id;$('workspace').hidden=false;$('login').hidden=true;view='Overview';await load();}catch(e){token='';error(e.message);}finally{b.disabled=false;}});
+  $('logout').addEventListener('click',logout);$('refresh').addEventListener('click',load);document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.view;load();}));
+})();
+"""
+end

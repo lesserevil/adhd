@@ -1,0 +1,78 @@
+defmodule Hub.Matcher do
+  def start(store, config) do
+    :inets.start()
+    :ssl.start()
+    {:ok, health} = Agent.start_link(fn -> %{"status" => "unavailable", "checked_at" => DateTime.to_iso8601(DateTime.utc_now()), "model" => config["matcher"]["model"]} end)
+    matcher = config["matcher"]
+    worker = spawn_link(fn -> loop(store, matcher) end)
+    probe = spawn_link(fn -> health_loop(health, matcher) end)
+    {worker, health, probe}
+  end
+  def http(method, url, body, timeout) do
+    options = [timeout: timeout, connect_timeout: timeout, autoredirect: false, ssl: [verify: :verify_peer, cacerts: :public_key.cacerts_get(), customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]]]
+    req = if method == :get, do: {String.to_charlist(url), []}, else: {String.to_charlist(url), [], ~c"application/json", JSON.encode!(body)}
+    case :httpc.request(method, req, options, body_format: :binary) do
+      {:ok, {{_, 200, _}, _, data}} when byte_size(data) <= 1_048_576 -> {:ok, JSON.decode!(data)}
+      _ -> :error
+    end
+  rescue
+    _ -> :error
+  catch
+    _, _ -> :error
+  end
+  def probability(response, model) do
+    case response do
+      %{"model" => ^model, "answers" => %{"relevance" => %{"type" => "noul", "noul" => p}}} when is_number(p) and p >= 0 and p <= 1 -> p
+      _ -> :failure
+    end
+  end
+  def evaluate(publication, description, matcher) do
+    question = "Does this publication satisfy the following subscription? Interpret the complete subscription as plain-text relevance criteria.\n" <> description
+    request = %{"model" => matcher["model"], "state" => %{"publication" => publication}, "questions" => %{"relevance" => %{"type" => "noul", "instructions" => question}}}
+    case http(:post, matcher["url"], request, matcher["timeout_ms"]) do
+      {:ok, result} -> probability(result, matcher["model"])
+      _ -> :failure
+    end
+  end
+  defp loop(store, matcher) do
+    case Hub.Store.pending(store) do
+      nil -> Process.sleep(80)
+      %{job: job, publication: publication} ->
+        probability = evaluate(publication, job.description, matcher)
+        Hub.Store.finish(store, job, probability)
+    end
+    loop(store, matcher)
+  end
+  defp health_loop(agent, matcher) do
+    uri = URI.parse(matcher["url"])
+    url = URI.to_string(%{uri | path: "/health", query: nil, fragment: nil})
+    status = case http(:get, url, nil, 2000) do
+      {:ok, %{"ready" => true}} -> "ready"
+      _ -> "unavailable"
+    end
+    Agent.update(agent, fn _ -> %{"status" => status, "checked_at" => DateTime.to_iso8601(DateTime.utc_now()), "model" => matcher["model"]} end)
+    Process.sleep(5000)
+    health_loop(agent, matcher)
+  end
+end
+
+defmodule Hub.Auth do
+  import Bitwise
+  def equal?(a, b) when is_binary(a) and is_binary(b) do
+    # Hashing fixes the comparison length without branching on token bytes.
+    left = :crypto.hash(:sha256, a) |> :binary.bin_to_list()
+    right = :crypto.hash(:sha256, b) |> :binary.bin_to_list()
+    Enum.zip(left, right) |> Enum.reduce(0, fn {x, y}, acc -> bor(acc, bxor(x, y)) end) == 0
+  end
+  def equal?(_, _), do: false
+  def bearer(headers) do
+    case headers["authorization"] do
+      "Bearer " <> token -> token
+      _ -> nil
+    end
+  end
+  def agent(config, headers) do
+    token = bearer(headers)
+    Enum.reduce(config["agents"], nil, fn {actor, secret}, found -> if equal?(secret, token), do: actor, else: found end)
+  end
+end

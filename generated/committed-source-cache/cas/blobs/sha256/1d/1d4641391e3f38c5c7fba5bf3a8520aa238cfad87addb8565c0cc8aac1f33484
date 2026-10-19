@@ -1,0 +1,36 @@
+defmodule ADHD.CLI do
+  def run(["describe"]), do: ADHD.Domain.describe()
+  def run(["validate", command]) do
+    command = ADHD.Domain.validate(command)
+    %{"valid" => true, "op" => command["op"]}
+  end
+  def run(["serve", path]) when is_binary(path) do
+    config = path |> File.read!() |> JSON.decode!() |> ADHD.Domain.config!()
+    {:ok, _} = Application.ensure_all_started(:inets)
+    {:ok, _} = Application.ensure_all_started(:ssl)
+    {:ok, store} = ADHD.Store.start_link(config)
+    {_listener, _acceptor} = ADHD.HTTP.listen(config, store)
+    {:ok, _worker} = ADHD.Matcher.start_link(store, config)
+    IO.puts(JSON.encode!(%{"status" => "ready", "url" => config["public_url"]}))
+    receive do
+      :stop -> ADHD.Store.stop(store)
+    end
+    :served
+  end
+  def run(_), do: raise(ADHD.Invalid, message: "expected describe, validate COMMAND, or serve CONFIG_FILE")
+  def main(argv) do
+    result = case argv do
+      ["--litai-test"] -> ADHD.NativeTests.run()
+      ["--litai-smoke"] -> ADHD.NativeTests.smoke()
+      [encoded] ->
+        args = JSON.decode!(encoded)
+        ADHD.Domain.check(is_list(args), "arguments must be a JSON array")
+        run(args)
+      _ -> raise ADHD.Invalid, message: "expected one JSON arguments array"
+    end
+    if result != :served, do: IO.puts(JSON.encode!(result))
+  rescue
+    e in ADHD.Invalid -> IO.puts(:stderr, e.message); System.halt(1)
+    _ -> IO.puts(:stderr, "hub operation failed"); System.halt(1)
+  end
+end

@@ -1,0 +1,310 @@
+defmodule Hub.State do
+  alias Hub.Validate, as: V
+  def now, do: DateTime.utc_now() |> DateTime.to_iso8601()
+  def millis, do: System.system_time(:millisecond)
+  def error(code), do: raise(Hub.DomainError, code: code)
+  def fresh(project), do: %{schema: 2, project: project, seq: 0, subscriptions: %{}, publications: %{}, deliveries: %{}, jobs: %{}, idempotency: %{}, source_dedup: %{}, admin_idempotency: %{}}
+  def upgrade(s, project) do
+    V.check(is_map(s) and s.schema in [1, 2] and s.project == project and is_integer(s.seq) and s.seq >= 0)
+    for key <- [:subscriptions, :publications, :deliveries, :jobs, :idempotency], do: V.object(Map.fetch!(s, key))
+    for key <- [:subscriptions, :publications, :deliveries], {id, row} <- Map.fetch!(s, key) do
+      V.id(id)
+      V.check(is_map(row) and is_integer(row.seq) and row.seq > 0 and row.seq <= s.seq)
+      V.object(row.value)
+      V.check(row.value["id"] == id and row.value["project_id"] == project)
+      if key == :deliveries, do: V.check(is_boolean(row.ack))
+      if key == :subscriptions do
+        V.identifier(row.value["agent_id"])
+        V.string(row.value["description"], 4096)
+      end
+      if key == :publications, do: V.identifier(row.value["author_id"])
+      if key in [:publications, :deliveries] do
+        V.check(is_binary(row.value["text"]) and String.valid?(row.value["text"]) and Map.has_key?(row.value, "data"))
+        JSON.encode!(row.value["data"])
+      end
+      if key == :deliveries do
+        V.identifier(row.value["recipient_id"])
+        V.identifier(row.value["sender_id"])
+        V.check(row.value["kind"] in ["message", "publication"])
+      end
+      V.date(row.value["created_at"])
+    end
+    Enum.each(s.jobs, fn {id, j} ->
+      V.check(j.id == id and is_integer(j.seq) and j.seq > 0 and j.seq <= s.seq and is_integer(j.retry_at) and j.status in [:pending, :done, :cancelled])
+      V.check(Map.has_key?(s.publications, j.publication_id))
+      V.id(j.subscription_id)
+      V.identifier(j.recipient_id)
+      V.string(j.description, 4096)
+    end)
+    Enum.each(s.idempotency, fn {{actor, message}, r} -> V.identifier(actor); V.id(message); V.object(r.command); V.object(r.result) end)
+    publications = Map.new(s.publications, fn {id, r} ->
+      p = r.value
+      p = p |> Map.put_new("information_type", "message") |> Map.put_new("source", %{"kind" => "agent", "id" => p["author_id"]}) |> Map.put_new("occurred_at", p["created_at"])
+      V.identifier(p["information_type"])
+      V.source(p["source"])
+      V.date(p["occurred_at"])
+      {id, %{r | value: p}}
+    end)
+    deliveries = Map.new(s.deliveries, fn {id, r} ->
+      v = if r.value["kind"] == "publication" do
+        p = Map.fetch!(publications, r.value["publication_id"]).value
+        Map.merge(r.value, Map.take(p, ["information_type", "source", "occurred_at"]))
+      else
+        r.value
+      end
+      {id, %{r | value: v}}
+    end)
+    s = s |> Map.put(:schema, 2) |> Map.put(:publications, publications) |> Map.put(:deliveries, deliveries) |> Map.put(:source_dedup, Map.merge(Map.get(s, :sources, %{}), Map.get(s, :source_dedup, %{}))) |> Map.put_new(:admin_idempotency, %{})
+    V.object(s.source_dedup)
+    V.object(s.admin_idempotency)
+    for {_, r} <- s.source_dedup, do: (V.object(r.command); V.object(r.result))
+    for {id, r} <- s.admin_idempotency, do: (V.string(id, 128); V.object(r.command); V.object(r.result))
+    s
+  end
+  def allocate(s, prefix) do
+    seq = s.seq + 1
+    s = %{s | seq: seq}
+    id = prefix <> Integer.to_string(seq)
+    if Enum.any?([s.subscriptions, s.publications, s.deliveries, s.jobs], &Map.has_key?(&1, id)), do: allocate(s, prefix), else: {s, id, seq}
+  end
+  def insert(s, key, prefix, value) do
+    {s, id, seq} = allocate(s, prefix)
+    v = value |> Map.put("id", id) |> Map.put("created_at", now()) |> Map.put("project_id", s.project)
+    row = %{seq: seq, value: v}
+    row = if key == :deliveries, do: Map.put(row, :ack, false), else: row
+    {Map.update!(s, key, &Map.put(&1, id, row)), v}
+  end
+  def owned(rows, id, actor, owner) do
+    case rows[id] do
+      nil -> error("NOT_FOUND")
+      row -> if(row.value[owner] == actor, do: row, else: error("FORBIDDEN"))
+    end
+  end
+  def ordered(rows, ascending \\ true), do: rows |> Map.values() |> Enum.sort_by(& &1.seq, if(ascending, do: :asc, else: :desc))
+  def matches(p, c) do
+    filters = (not Map.has_key?(c, "information_type") or p["information_type"] == c["information_type"]) and
+      (not Map.has_key?(c, "source_kind") or p["source"]["kind"] == c["source_kind"]) and
+      (not Map.has_key?(c, "source_id") or p["source"]["id"] == c["source_id"])
+    query = if Map.has_key?(c, "query") do
+      q = String.downcase(c["query"])
+      Enum.any?([p["text"], JSON.encode!(p["data"]), p["information_type"], JSON.encode!(p["source"])], &String.contains?(String.downcase(&1), q))
+    else
+      true
+    end
+    filters and query
+  end
+  def command(s, actor, message, c, config) do
+    V.command(c)
+    if Map.has_key?(c, "project_id") and c["project_id"] != s.project, do: error("PROJECT_MISMATCH")
+    V.check(Map.has_key?(config["agents"], actor))
+    mutation = c["op"] in ["subscribe", "unsubscribe", "publish", "send", "ack"]
+    key = {actor, message}
+    case if(mutation, do: s.idempotency[key], else: nil) do
+      %{command: ^c, result: r} -> {s, r}
+      nil ->
+        {s, result} = perform(s, actor, c, config)
+        s = if mutation, do: %{s | idempotency: Map.put(s.idempotency, key, %{command: c, result: result})}, else: s
+        {s, result}
+      _ -> error("IDEMPOTENCY_CONFLICT")
+    end
+  end
+  def perform(s, actor, %{"op" => "whoami"}, _), do: {s, %{"agent_id" => actor, "project_id" => s.project}}
+  def perform(s, actor, %{"op" => "subscribe"} = c, _) do
+    {s, v} = insert(s, :subscriptions, "s", %{"agent_id" => actor, "description" => c["description"]})
+    {s, %{"subscription" => v}}
+  end
+  def perform(s, actor, %{"op" => "list_subscriptions"}, _) do
+    {s, %{"subscriptions" => ordered(s.subscriptions) |> Enum.map(& &1.value) |> Enum.filter(&(&1["agent_id"] == actor))}}
+  end
+  def remove(s, id) do
+    if not Map.has_key?(s.subscriptions, id), do: error("NOT_FOUND")
+    jobs = Map.new(s.jobs, fn {key, j} -> {key, if(j.subscription_id == id and j.status == :pending, do: %{j | status: :cancelled}, else: j)} end)
+    %{s | subscriptions: Map.delete(s.subscriptions, id), jobs: jobs}
+  end
+  def perform(s, actor, %{"op" => "unsubscribe", "subscription_id" => id}, _) do
+    owned(s.subscriptions, id, actor, "agent_id")
+    {remove(s, id), %{"unsubscribed" => id}}
+  end
+  def perform(s, actor, %{"op" => "publish"} = c, _) do
+    src = Map.get(c, "source", %{"kind" => "agent", "id" => actor})
+    if src["kind"] == "agent" and src["id"] != actor, do: error("FORBIDDEN")
+    key = if Map.has_key?(src, "item_id"), do: {actor, src["kind"], src["id"], src["item_id"]}
+    binding = Map.drop(c, ["op", "project_id"])
+    case if(key, do: s.source_dedup[key]) do
+      %{command: ^binding, result: r} -> {s, r}
+      nil ->
+        {s, p} = insert(s, :publications, "p", %{"author_id" => actor, "text" => Map.get(c, "text", ""), "data" => Map.get(c, "data", %{}), "information_type" => Map.get(c, "information_type", "message"), "source" => src})
+        p = Map.put(p, "occurred_at", if(Map.has_key?(c, "occurred_at"), do: V.date(c["occurred_at"]), else: p["created_at"]))
+        s = put_in(s, [:publications, p["id"], :value], p)
+        s = Enum.reduce(ordered(s.subscriptions), s, fn row, acc ->
+          {acc, id, seq} = allocate(acc, "j")
+          j = %{id: id, seq: seq, publication_id: p["id"], subscription_id: row.value["id"], recipient_id: row.value["agent_id"], description: row.value["description"], status: :pending, retry_at: 0}
+          %{acc | jobs: Map.put(acc.jobs, id, j)}
+        end)
+        r = %{"publication" => p, "matching" => "pending"}
+        s = if key, do: %{s | source_dedup: Map.put(s.source_dedup, key, %{command: binding, result: r})}, else: s
+        {s, r}
+      _ -> error("SOURCE_CONFLICT")
+    end
+  end
+  def perform(s, actor, %{"op" => "send"} = c, config) do
+    if not Map.has_key?(config["agents"], c["recipient_id"]), do: error("NOT_FOUND")
+    {s, d} = insert(s, :deliveries, "d", %{"recipient_id" => c["recipient_id"], "sender_id" => actor, "kind" => "message", "text" => Map.get(c, "text", ""), "data" => Map.get(c, "data", %{})})
+    {s, %{"delivery" => d}}
+  end
+  def perform(s, actor, %{"op" => "poll"} = c, _) do
+    ds = ordered(s.deliveries) |> Enum.filter(&(not &1.ack and &1.value["recipient_id"] == actor)) |> Enum.take(Map.get(c, "limit", 50)) |> Enum.map(& &1.value)
+    {s, %{"deliveries" => ds}}
+  end
+  def perform(s, actor, %{"op" => "ack", "delivery_ids" => ids}, _) do
+    Enum.each(ids, &owned(s.deliveries, &1, actor, "recipient_id"))
+    ds = Enum.reduce(ids, s.deliveries, fn id, ds -> put_in(ds, [id, :ack], true) end)
+    {%{s | deliveries: ds}, %{"acknowledged" => ids}}
+  end
+  def perform(s, _, %{"op" => "get", "publication_id" => id}, _) do
+    case s.publications[id] do
+      nil -> error("NOT_FOUND")
+      r -> {s, %{"publication" => r.value}}
+    end
+  end
+  def perform(s, _, %{"op" => "search"} = c, _) do
+    ps = ordered(s.publications, false) |> Enum.map(& &1.value) |> Enum.filter(&matches(&1, c)) |> Enum.take(Map.get(c, "limit", 50))
+    {s, %{"publications" => ps}}
+  end
+  def finish(s, id, outcome, config) do
+    case s.jobs[id] do
+      %{status: :pending} = j ->
+        cond do
+          not Map.has_key?(s.subscriptions, j.subscription_id) -> put_in(s, [:jobs, id, :status], :cancelled)
+          outcome == :failed -> put_in(s, [:jobs, id, :retry_at], millis() + config["matcher"]["retry_ms"])
+          true ->
+            {:ok, ppm} = outcome
+            s = put_in(s, [:jobs, id, :status], :done)
+            if ppm >= config["threshold_ppm"] do
+              p = s.publications[j.publication_id].value
+              evidence = %{"subscription_id" => j.subscription_id, "probability_ppm" => ppm, "threshold_ppm" => config["threshold_ppm"], "model" => config["matcher"]["model"]}
+              existing = Enum.find(s.deliveries, fn {_, r} -> r.value["kind"] == "publication" and r.value["publication_id"] == p["id"] and r.value["recipient_id"] == j.recipient_id end)
+              case existing do
+                {did, r} -> put_in(s, [:deliveries, did, :value, "matches"], r.value["matches"] ++ [evidence])
+                nil ->
+                  {s, _} = insert(s, :deliveries, "d", Map.merge(Map.take(p, ["text", "data", "information_type", "source", "occurred_at"]), %{"kind" => "publication", "publication_id" => p["id"], "recipient_id" => j.recipient_id, "sender_id" => p["author_id"], "matches" => [evidence]}))
+                  s
+              end
+            else
+              s
+            end
+        end
+      _ -> s
+    end
+  end
+  def admin(s, c, config, health) do
+    V.admin(c)
+    if Map.has_key?(c, "agent_id") and not Map.has_key?(config["agents"], c["agent_id"]), do: error("NOT_FOUND")
+    if Map.has_key?(c, "message_id") do
+      key = c["message_id"]
+      case s.admin_idempotency[key] do
+        %{command: ^c, result: r} -> {s, r}
+        nil ->
+          {s, r} = admin_do(s, c, config, health)
+          {%{s | admin_idempotency: Map.put(s.admin_idempotency, key, %{command: c, result: r})}, r}
+        _ -> error("IDEMPOTENCY_CONFLICT")
+      end
+    else
+      admin_do(s, c, config, health)
+    end
+  end
+  def page(items, c) do
+    n = Map.get(c, "limit", 50)
+    %{"items" => Enum.take(items, n), "truncated" => length(items) > n}
+  end
+  def admin_do(s, %{"op" => "overview"}, config, health) do
+    agents = for a <- Enum.sort(Map.keys(config["agents"])) do
+      %{"agent_id" => a, "subscriptions" => Enum.count(s.subscriptions, fn {_, r} -> r.value["agent_id"] == a end), "queued_deliveries" => Enum.count(s.deliveries, fn {_, r} -> not r.ack and r.value["recipient_id"] == a end)}
+    end
+    counts = %{"agents" => length(agents), "publications" => map_size(s.publications), "subscriptions" => map_size(s.subscriptions), "queued_deliveries" => Enum.count(s.deliveries, fn {_, r} -> not r.ack end), "pending_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :pending end), "completed_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :done end), "cancelled_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :cancelled end)}
+    {s, %{"project_id" => s.project, "counts" => counts, "agents" => agents, "matcher" => health}}
+  end
+  def admin_do(s, %{"op" => "publications"} = c, _, _) do
+    {s, page(ordered(s.publications, false) |> Enum.map(& &1.value) |> Enum.filter(&matches(&1, c)), c)}
+  end
+  def admin_do(s, %{"op" => "publication", "publication_id" => id}, config, _), do: perform(s, nil, %{"op" => "get", "publication_id" => id}, config)
+  def admin_do(s, %{"op" => op} = c, _, _) when op in ["subscriptions", "deliveries"] do
+    rows = if op == "subscriptions", do: s.subscriptions, else: s.deliveries
+    items = ordered(rows, false) |> Enum.filter(fn r -> not Map.has_key?(c, "agent_id") or r.value[if(op == "subscriptions", do: "agent_id", else: "recipient_id")] == c["agent_id"] end) |> Enum.map(fn r ->
+      if op == "subscriptions", do: r.value, else: r.value |> Map.take(["recipient_id", "kind", "created_at", "publication_id"]) |> Map.put("delivery_id", r.value["id"]) |> Map.put("acknowledged", r.ack)
+    end)
+    {s, page(items, c)}
+  end
+  def admin_do(s, %{"op" => "jobs"} = c, _, _) do
+    items = ordered(s.jobs, false) |> Enum.filter(&(not Map.has_key?(c, "status") or Atom.to_string(&1.status) == c["status"])) |> Enum.map(fn j -> %{"job_id" => j.id, "publication_id" => j.publication_id, "subscription_id" => j.subscription_id, "recipient_id" => j.recipient_id, "status" => Atom.to_string(j.status), "retry_at" => j.retry_at} end)
+    {s, page(items, c)}
+  end
+  def admin_do(s, %{"op" => "create_subscription"} = c, config, _), do: perform(s, c["agent_id"], %{"op" => "subscribe", "description" => c["description"]}, config)
+  def admin_do(s, %{"op" => "remove_subscription", "subscription_id" => id}, _, _), do: {remove(s, id), %{"removed" => true, "subscription_id" => id}}
+  def admin_do(s, %{"op" => "retry_jobs"}, _, _) do
+    n = Enum.count(s.jobs, fn {_, j} -> j.status == :pending end)
+    jobs = Map.new(s.jobs, fn {id, j} -> {id, if(j.status == :pending, do: %{j | retry_at: 0}, else: j)} end)
+    {%{s | jobs: jobs}, %{"retried" => n}}
+  end
+end
+
+defmodule Hub.Store do
+  use GenServer
+  def start(config), do: GenServer.start(__MODULE__, config)
+  def request(pid, request), do: GenServer.call(pid, request, 15000)
+  def format_status(_), do: %{state: "private hub store"}
+  def init(c) do
+    path = Path.expand(c["store_path"])
+    existed = File.exists?(path)
+    with :ok <- File.mkdir_p(Path.dirname(path)),
+         {:ok, table} <- :dets.open_file(:hub_store, file: String.to_charlist(path), type: :set, repair: true) do
+      try do
+        state = case :dets.lookup(table, :state) do
+          [] -> Hub.Validate.check(not existed and :dets.info(table, :size) == 0); Hub.State.fresh(c["project_id"])
+          [{:state, s}] -> Hub.Validate.check(:dets.info(table, :size) == 1); Hub.State.upgrade(s, c["project_id"])
+          _ -> raise Hub.Invalid
+        end
+        :ok = :dets.insert(table, {:state, state})
+        :ok = :dets.sync(table)
+        {:ok, %{table: table, state: state, config: c, health: %{"status" => "unavailable", "checked_at" => Hub.State.now(), "model" => c["matcher"]["model"]}}}
+      rescue
+        _ -> :dets.close(table); {:stop, :invalid_store}
+      end
+    else
+      _ -> {:stop, :store_unavailable}
+    end
+  end
+  def handle_call(:next, _, st) do
+    j = Hub.State.ordered(st.state.jobs) |> Enum.find(&(&1.status == :pending and &1.retry_at <= Hub.State.millis()))
+    {:reply, if(j, do: {j, st.state.publications[j.publication_id].value}, else: nil), st}
+  end
+  def handle_call({:health, h}, _, st), do: {:reply, :ok, %{st | health: h}}
+  def handle_call(request, _, st) do
+    result = try do
+      case request do
+        {:command, actor, message, c} -> {:ok, Hub.State.command(st.state, actor, message, c, st.config)}
+        {:admin, c} -> {:ok, Hub.State.admin(st.state, c, st.config, st.health)}
+        {:finish, id, outcome} -> {:ok, {Hub.State.finish(st.state, id, outcome, st.config), :ok}}
+      end
+    rescue
+      e in Hub.DomainError -> {:error, {:domain, e.code}}
+      _ in Hub.Invalid -> {:error, :invalid}
+    end
+    case result do
+      {:ok, {next, response}} ->
+        if next != st.state do
+          case :dets.insert(st.table, {:state, next}) do
+            :ok -> :ok
+            _ -> exit(:store_write_failed)
+          end
+          case :dets.sync(st.table) do
+            :ok -> :ok
+            _ -> exit(:store_sync_failed)
+          end
+        end
+        {:reply, {:ok, response}, %{st | state: next}}
+      {:error, e} -> {:reply, {:error, e}, st}
+    end
+  end
+  def terminate(_, st), do: :dets.close(st.table)
+end

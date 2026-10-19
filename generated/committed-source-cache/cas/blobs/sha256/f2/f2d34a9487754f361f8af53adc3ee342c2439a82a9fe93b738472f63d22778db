@@ -1,0 +1,231 @@
+defmodule ADHD.NativeTests do
+  def cases do
+    [
+      {"describe", ["describe"], %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => ["ack", "list_subscriptions", "poll", "publish", "search", "send", "subscribe", "unsubscribe", "whoami"]}},
+      {"publish-data", ["validate", %{"op" => "publish", "data" => %{"sequence" => 7}}], %{"valid" => true, "op" => "publish"}},
+      {"poll-min", ["validate", %{"op" => "poll", "limit" => 1}], %{"valid" => true, "op" => "poll"}},
+      {"ack-order", ["validate", %{"op" => "ack", "delivery_ids" => ["second", "first"]}], %{"valid" => true, "op" => "ack"}},
+      {"subscribe-text", ["validate", %{"op" => "subscribe", "description" => "Changes to the storage format"}], %{"valid" => true, "op" => "subscribe"}},
+      {"send-text", ["validate", %{"op" => "send", "recipient_id" => "reviewer", "text" => "Please review revision two"}], %{"valid" => true, "op" => "send"}},
+      {"search-max", ["validate", %{"op" => "search", "query" => "[literal]", "limit" => 100}], %{"valid" => true, "op" => "search"}},
+      {"whoami", ["validate", %{"op" => "whoami", "project_id" => "validation-only"}], %{"valid" => true, "op" => "whoami"}},
+      {"unsubscribe", ["validate", %{"op" => "unsubscribe", "subscription_id" => "subscription-example"}], %{"valid" => true, "op" => "unsubscribe"}},
+      {"list-subscriptions", ["validate", %{"op" => "list_subscriptions"}], %{"valid" => true, "op" => "list_subscriptions"}}
+    ]
+  end
+  def smoke, do: ADHD.CLI.run(["describe"])
+  def run do
+    results = Enum.map(cases(), fn {id, arguments, expected} ->
+      equal(ADHD.CLI.run(arguments), expected)
+      case id do
+        "describe" -> validation_tests()
+        "publish-data" -> store_tests()
+        "poll-min" -> matcher_tests()
+        "whoami" -> http_tests()
+        _ -> :ok
+      end
+      %{"case_id" => id, "outcome" => "passed"}
+    end)
+    %{"schema" => "literate-ai/generated-test-results@1", "cases" => results}
+  end
+  defp equal(a, b), do: ADHD.Input.ensure(a == b, "native behavior assertion failed")
+  defp invalid(fun) do
+    raised = try do fun.(); false rescue ArgumentError -> true end
+    equal(raised, true)
+  end
+  defp validation_tests do
+    Enum.each([
+      %{"op" => "whoami", "actor_id" => "other"},
+      %{"op" => "poll", "limit" => true}, %{"op" => "poll", "limit" => 0},
+      %{"op" => "poll", "limit" => 101}, %{"op" => "publish"},
+      %{"op" => "publish", "text" => " "}, %{"op" => "publish", "data" => []},
+      %{"op" => "subscribe", "description" => String.duplicate("x", 4097)},
+      %{"op" => "ack", "delivery_ids" => ["x", "x"]},
+      %{"op" => "search", "query" => "\t"}, %{"op" => "unknown"}
+    ], fn c -> invalid(fn -> ADHD.CLI.run(["validate", c]) end) end)
+    invalid(fn -> ADHD.CLI.run(%{"op" => "whoami"}) end)
+    ADHD.Input.validate(%{"op" => "subscribe", "description" => String.duplicate("é", 2048)})
+  end
+  defp fixture(fun) do
+    nonce = Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false)
+    path = Path.join(System.tmp_dir!(), "adhd-native-#{nonce}.dets")
+    config = ADHD.Input.config(%{"project_id" => "native-project", "store_path" => path,
+      "agents" => %{"author" => "native-author-token-000000000001", "reader" => "native-reader-token-000000000002"},
+      "matcher" => %{"url" => "http://127.0.0.1:1/v1/systemone", "model" => "native-model", "retry_ms" => 100}})
+    {:ok, store} = ADHD.Store.start_link(config)
+    try do
+      fun.(store, config)
+    after
+      if Process.alive?(store), do: ADHD.Store.stop(store)
+      File.rm(path)
+    end
+  end
+  defp cmd(store, actor, key, c) do
+    {:ok, result} = ADHD.Store.command(store, actor, key, c)
+    result
+  end
+  defp store_tests do
+    fixture(fn store, config ->
+      equal(cmd(store, "reader", "r0", %{"op" => "whoami"}), %{"agent_id" => "reader", "project_id" => "native-project"})
+      equal(ADHD.Store.command(store, "reader", "r1", %{"op" => "whoami", "project_id" => "elsewhere"}), {:error, "PROJECT_MISMATCH"})
+      pubcmd = %{"op" => "publish", "text" => "Schema [literal] update", "data" => %{"revision" => 2}}
+      publication = cmd(store, "author", "p1", pubcmd)
+      equal(cmd(store, "author", "p1", Map.new(Enum.reverse(Map.to_list(pubcmd)))), publication)
+      equal(ADHD.Store.command(store, "author", "p1", %{"op" => "publish", "text" => "changed"}), {:error, "IDEMPOTENCY_CONFLICT"})
+      equal(ADHD.Store.next_job(store), nil)
+      sub1 = cmd(store, "reader", "s1", %{"op" => "subscribe", "description" => "Schema changes"})["subscription"]
+      sub2 = cmd(store, "reader", "s2", %{"op" => "subscribe", "description" => "Storage changes"})["subscription"]
+      equal(ADHD.Store.next_job(store), nil)
+      equal(cmd(store, "author", "ls", %{"op" => "list_subscriptions"}), %{"subscriptions" => []})
+      equal(ADHD.Store.command(store, "author", "u1", %{"op" => "unsubscribe", "subscription_id" => sub1["id"]}), {:error, "FORBIDDEN"})
+      matched = cmd(store, "author", "p2", %{"op" => "publish", "text" => "Second schema update"})
+      {j1, _} = ADHD.Store.next_job(store)
+      :ok = ADHD.Store.finish(store, j1, {:ok, 900000})
+      [delivery] = cmd(store, "reader", "poll", %{"op" => "poll"})["deliveries"]
+      equal(delivery["publication_id"], matched["publication"]["id"])
+      ack = %{"op" => "ack", "delivery_ids" => [delivery["id"]]}
+      equal(ADHD.Store.command(store, "author", "foreign", ack), {:error, "FORBIDDEN"})
+      equal(ADHD.Store.command(store, "reader", "batch", %{"op" => "ack", "delivery_ids" => [delivery["id"], "missing"]}), {:error, "NOT_FOUND"})
+      equal(cmd(store, "reader", "poll-again", %{"op" => "poll"})["deliveries"], [delivery])
+      cmd(store, "reader", "ack", ack)
+      {j2, _} = ADHD.Store.next_job(store)
+      :ok = ADHD.Store.finish(store, j2, {:ok, 1000000})
+      equal(cmd(store, "reader", "after-ack", %{"op" => "poll"}), %{"deliveries" => []})
+      cmd(store, "reader", "ack-again", ack)
+      message = cmd(store, "author", "dm", %{"op" => "send", "recipient_id" => "reader", "text" => "secret direct phrase"})
+      equal(cmd(store, "author", "search-secret", %{"op" => "search", "query" => "secret direct"}), %{"publications" => []})
+      equal(cmd(store, "reader", "search", %{"op" => "search", "query" => "[LITERAL]"})["publications"], [publication["publication"]])
+      equal(ADHD.Store.command(store, "author", "bad-recipient", %{"op" => "send", "recipient_id" => "missing", "data" => %{}}), {:error, "NOT_FOUND"})
+      cmd(store, "author", "pending", %{"op" => "publish", "text" => "Durable pending update"})
+      ADHD.Store.stop(store)
+      bytes = File.read!(config["store_path"])
+      Enum.each(Map.values(config["agents"]), fn token -> equal(:binary.match(bytes, token), :nomatch) end)
+      {:ok, reopened} = ADHD.Store.start_link(config)
+      try do
+        equal(cmd(reopened, "reader", "durable-poll", %{"op" => "poll"})["deliveries"], [message["delivery"]])
+        equal(cmd(reopened, "author", "p1", pubcmd), publication)
+        {pending, _} = ADHD.Store.next_job(reopened)
+        equal(pending.status, :pending)
+        equal(cmd(reopened, "reader", "ls", %{"op" => "list_subscriptions"})["subscriptions"], [sub1, sub2])
+        cmd(reopened, "reader", "remove", %{"op" => "unsubscribe", "subscription_id" => pending.subscription_id})
+        ADHD.Store.finish(reopened, pending, {:ok, 1000000})
+        equal(cmd(reopened, "reader", "stale", %{"op" => "poll"})["deliveries"], [message["delivery"]])
+      after
+        ADHD.Store.stop(reopened)
+      end
+    end)
+  end
+  defp matcher_tests do
+    model = "native-model"
+    good = fn p -> %{"model" => model, "answers" => %{"relevance" => %{"type" => "noul", "noul" => p}}} end
+    equal(ADHD.Matcher.probability(good.(0.90000049), model), {:ok, 900000})
+    equal(ADHD.Matcher.probability(good.(0.89999949), model), {:ok, 899999})
+    Enum.each([true, false, -0.1, 1.1, "0.9", nil], fn p -> equal(ADHD.Matcher.probability(good.(p), model), :failure) end)
+    equal(ADHD.Matcher.probability(%{"probability" => 1}, model), :failure)
+    equal(ADHD.Matcher.probability(%{"model" => model, "answers" => [%{"type" => "noul", "noul" => 1}]}, model), :failure)
+    matcher_http_test()
+    fixture(fn store, _ ->
+      cmd(store, "reader", "s", %{"op" => "subscribe", "description" => "Match me"})
+      cmd(store, "author", "p", %{"op" => "publish", "data" => %{}})
+      {job, _} = ADHD.Store.next_job(store)
+      ADHD.Store.finish(store, job, :failure)
+      equal(ADHD.Store.next_job(store), nil)
+      equal(cmd(store, "reader", "poll", %{"op" => "poll"}), %{"deliveries" => []})
+      Process.sleep(110)
+      {retry, _} = ADHD.Store.next_job(store)
+      equal(retry.id, job.id)
+      ADHD.Store.finish(store, retry, {:ok, 999999})
+      ADHD.Store.finish(store, retry, {:ok, 999999})
+      equal(length(cmd(store, "reader", "poll2", %{"op" => "poll"})["deliveries"]), 1)
+    end)
+  end
+  defp matcher_http_test do
+    {:ok, _} = Application.ensure_all_started(:inets)
+    {:ok, listener} = :gen_tcp.listen(0, [:binary, ip: {127, 0, 0, 1}, active: false, reuseaddr: true])
+    {:ok, {_, port}} = :inet.sockname(listener)
+    parent = self()
+    server = spawn_link(fn ->
+      Enum.each(["{\"model\":\"native-model\",\"answers\":{\"relevance\":{\"type\":\"noul\",\"noul\":0.95}}}", "{\"probability\":1}"], fn response ->
+        {:ok, socket} = :gen_tcp.accept(listener, 3000)
+        :ok = :inet.setopts(socket, packet: :http_bin)
+        request = fixture_http_body(socket, nil)
+        send(parent, {:matcher_request, JSON.decode!(request)})
+        :gen_tcp.send(socket, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(response)}\r\nConnection: close\r\n\r\n#{response}")
+        :gen_tcp.close(socket)
+      end)
+    end)
+    try do
+      matcher = %{"url" => "http://127.0.0.1:#{port}/v1/systemone", "model" => "native-model", "timeout_ms" => 2000}
+      publication = %{"text" => "Protocol revision", "data" => %{"revision" => 3}, "author_id" => "author"}
+      description = "Full subscription with Unicode: café"
+      equal(ADHD.Matcher.evaluate(matcher, publication, description), {:ok, 950000})
+      equal(ADHD.Matcher.evaluate(matcher, publication, description), :failure)
+      Enum.each(1..2, fn _ ->
+        receive do
+          {:matcher_request, request} ->
+            equal(Map.keys(request) |> Enum.sort(), ["model", "questions", "state"])
+            equal(request["model"], "native-model")
+            equal(request["state"], %{"publication" => publication})
+            equal(get_in(request, ["questions", "relevance", "type"]), "noul")
+            equal(String.contains?(get_in(request, ["questions", "relevance", "instructions"]), description), true)
+        after
+          3000 -> raise "missing matcher request"
+        end
+      end)
+    after
+      :gen_tcp.close(listener)
+      if Process.alive?(server), do: Process.exit(server, :normal)
+    end
+  end
+  defp fixture_http_body(socket, length) do
+    case :gen_tcp.recv(socket, 0, 3000) do
+      {:ok, {:http_request, _, _, _}} -> fixture_http_body(socket, length)
+      {:ok, {:http_header, _, key, _, value}} ->
+        next = if String.downcase(to_string(key)) == "content-length", do: String.to_integer(to_string(value)), else: length
+        fixture_http_body(socket, next)
+      {:ok, :http_eoh} ->
+        :ok = :inet.setopts(socket, packet: :raw)
+        {:ok, body} = :gen_tcp.recv(socket, length, 3000)
+        body
+      _ -> raise "invalid matcher HTTP request"
+    end
+  end
+  defp http_tests do
+    fixture(fn store, config ->
+      config = Map.put(config, "port", 0)
+      {:ok, listener, _} = ADHD.HTTP.start(config, store)
+      {:ok, {_, port}} = :inet.sockname(listener)
+      try do
+        body = JSON.encode!(%{"jsonrpc" => "2.0", "id" => "native-rpc", "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "native-message", "role" => "ROLE_USER", "parts" => [%{"data" => %{"op" => "whoami"}}]}}})
+        token = config["agents"]["reader"]
+        response = exchange(port, "POST /a2a HTTP/1.1\r\nHost: localhost\r\nAuthorization: \t Bearer #{token}\t \r\nContent-Type: application/json\r\nContent-Length: #{byte_size(body)}\r\n\r\n#{body}")
+        [head, json] = String.split(response, "\r\n\r\n", parts: 2)
+        equal(String.starts_with?(head, "HTTP/1.1 200"), true)
+        result = JSON.decode!(json)
+        equal(get_in(result, ["result", "message", "parts"]), [%{"data" => %{"agent_id" => "reader", "project_id" => "native-project"}}])
+        unauthorized = exchange(port, "POST /a2a HTTP/1.1\r\nContent-Length: 0\r\n\r\n")
+        equal(String.starts_with?(unauthorized, "HTTP/1.1 401"), true)
+        duplicate = exchange(port, "POST /a2a HTTP/1.1\r\nContent-Length: 0\r\nContent-Length: 0\r\n\r\n")
+        equal(String.starts_with?(duplicate, "HTTP/1.1 400"), true)
+        equal(String.starts_with?(exchange(port, "GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n"), "HTTP/1.1 200"), true)
+        equal(ADHD.RPC.process("{", "1.0", "reader", store, "native-project")["error"]["code"], -32700)
+        equal(ADHD.RPC.process("{}", "1.0", "reader", store, "native-project")["error"]["code"], -32600)
+        equal(ADHD.RPC.process(body, "2.0", "reader", store, "native-project")["error"]["code"], -32600)
+      after
+        :gen_tcp.close(listener)
+      end
+    end)
+  end
+  defp exchange(port, request) do
+    {:ok, socket} = :gen_tcp.connect({127, 0, 0, 1}, port, [:binary, active: false], 2000)
+    :ok = :gen_tcp.send(socket, request)
+    collect(socket, "")
+  end
+  defp collect(socket, acc) do
+    case :gen_tcp.recv(socket, 0, 5000) do
+      {:ok, bytes} -> collect(socket, acc <> bytes)
+      {:error, :closed} -> acc
+      _ -> raise "native HTTP fixture failed"
+    end
+  end
+end

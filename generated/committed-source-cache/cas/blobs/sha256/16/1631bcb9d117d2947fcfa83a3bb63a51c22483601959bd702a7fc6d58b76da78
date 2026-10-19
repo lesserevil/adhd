@@ -1,0 +1,79 @@
+defmodule ADHD.Protocol do
+  alias ADHD.Domain, as: D
+  def card(config) do
+    %{"name" => "ADHD", "description" => "Private single-project agent coordination", "version" => "0.1.0",
+      "supportedInterfaces" => [%{"url" => String.trim_trailing(config["public_url"], "/") <> "/a2a", "protocolBinding" => "JSONRPC", "protocolVersion" => "1.0"}],
+      "capabilities" => %{"streaming" => false, "pushNotifications" => false, "extendedAgentCard" => false},
+      "defaultInputModes" => ["application/json"], "defaultOutputModes" => ["application/json"],
+      "securitySchemes" => %{"bearerAuth" => %{"httpAuthSecurityScheme" => %{"scheme" => "bearer"}}},
+      "securityRequirements" => [%{"schemes" => %{"bearerAuth" => %{"list" => []}}}],
+      "skills" => [%{"id" => "project-coordination", "name" => "Project coordination", "description" => "Publish updates, manage subscriptions, poll and acknowledge information, send messages and search publications", "tags" => ["coordination"], "inputModes" => ["application/json"], "outputModes" => ["application/json"]}]}
+  end
+  def authenticate(headers, config) do
+    case Map.get(headers, "authorization") do
+      "Bearer " <> token -> Enum.find_value(config["agents"], fn {a, t} -> if secure_equal(t, token), do: a end)
+      _ -> nil
+    end
+  end
+  defp secure_equal(a, b) when byte_size(a) == byte_size(b) do
+    :crypto.hash_equals(a, b)
+  end
+  defp secure_equal(_, _), do: false
+  def error(id, code, message, data \\ nil) do
+    detail = %{"code" => code, "message" => message}
+    detail = if is_nil(data), do: detail, else: Map.put(detail, "data", data)
+    %{"jsonrpc" => "2.0", "id" => id, "error" => detail}
+  end
+  def rpc(body, version, actor, config, store) do
+    decoded = try do {:ok, JSON.decode!(body)} rescue _ -> :bad_json end
+    case decoded do
+      :bad_json -> error(nil, -32700, "Parse error")
+      {:ok, envelope} -> process(envelope, version, actor, config, store)
+    end
+  end
+  defp process(e, version, actor, config, store) do
+    id = if is_map(e) and (is_binary(e["id"]) or is_integer(e["id"])), do: e["id"], else: nil
+    cond do
+      not is_map(e) or e["jsonrpc"] != "2.0" or is_nil(id) or not is_binary(e["method"]) -> error(id, -32600, "Invalid Request")
+      version not in [nil, "1.0"] -> error(id, -32602, "Unsupported A2A version")
+      e["method"] != "SendMessage" -> error(id, -32601, "Method not found")
+      true -> dispatch(e, id, actor, config, store)
+    end
+  end
+  defp dispatch(e, id, actor, config, store) do
+    try do
+      params = e["params"]
+      D.keys!(params, ~w(message configuration metadata), ["message"])
+      message = params["message"]
+      D.keys!(message, ~w(messageId role parts contextId taskId metadata extensions referenceTaskIds), ~w(messageId role parts))
+      D.check(D.string?(message["messageId"], 128), "invalid messageId")
+      D.check(message["role"] == "ROLE_USER", "invalid role")
+      D.check(not Map.has_key?(message, "taskId"), "task continuations unsupported")
+      if Map.has_key?(message, "contextId"), do: D.check(D.string?(message["contextId"], 1048576), "invalid contextId")
+      D.check(is_list(message["parts"]) and length(message["parts"]) == 1, "one part required")
+      [part] = message["parts"]
+      D.keys!(part, ~w(data text mediaType))
+      if Map.has_key?(part, "mediaType"), do: D.check(D.string?(part["mediaType"], 1024), "invalid mediaType")
+      D.check(Map.has_key?(part, "data") != Map.has_key?(part, "text"), "one data or text part required")
+      cmd = if Map.has_key?(part, "data") do
+        part["data"]
+      else
+        D.check(is_binary(part["text"]), "invalid text part")
+        try do JSON.decode!(part["text"]) rescue _ -> raise ADHD.Invalid, message: "invalid command JSON" end
+      end
+      D.validate(cmd)
+      case ADHD.Store.command(store, actor, message["messageId"], cmd) do
+        {:ok, result} ->
+          server_id = "hub-" <> Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
+          %{"jsonrpc" => "2.0", "id" => id, "result" => %{"message" => %{"messageId" => server_id, "contextId" => Map.get(message, "contextId", config["project_id"]), "role" => "ROLE_AGENT", "parts" => [%{"data" => result}]}}}
+        {:invalid, _} -> error(id, -32602, "Invalid params")
+        {:error, code} -> error(id, -32000, code, [%{"@type" => "type.googleapis.com/google.rpc.ErrorInfo", "reason" => code, "domain" => "adhd.hub", "metadata" => %{"code" => code}}])
+      end
+    rescue
+      _ in ADHD.Invalid -> error(id, -32602, "Invalid params")
+      _ -> error(id, -32603, "Internal error")
+    catch
+      _, _ -> error(id, -32603, "Internal error")
+    end
+  end
+end

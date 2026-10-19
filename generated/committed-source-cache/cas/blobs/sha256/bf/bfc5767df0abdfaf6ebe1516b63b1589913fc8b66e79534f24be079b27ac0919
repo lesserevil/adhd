@@ -1,0 +1,43 @@
+defmodule Hub.App do
+  @operations ~w(ack get list_subscriptions poll publish search send subscribe unsubscribe whoami)
+  def run(["describe"]), do: %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => @operations}
+  def run(["validate", command]) do
+    Hub.Validation.command!(command)
+    %{"valid" => true, "op" => command["op"]}
+  end
+  def run(["validate-admin", command]) do
+    Hub.Validation.admin!(command)
+    %{"valid" => true, "op" => command["op"]}
+  end
+  def run(["serve", path]) when is_binary(path) do
+    config = path |> File.read!() |> JSON.decode!() |> Hub.Validation.config!()
+    {:ok, store} = Hub.Store.start_link(config)
+    {_, health, _} = Hub.Matcher.start(store, config)
+    Hub.HTTP.start(config, store, health)
+    IO.puts(JSON.encode!(%{"status" => "ready", "url" => config["public_url"]}))
+    receive do
+      :stop -> :ok
+    end
+  end
+  def run(_), do: Hub.Validation.fail()
+  def main(args) do
+    # OTP diagnostics follow the operational stderr channel as well.
+    :logger.update_handler_config(:default, :config, %{type: :standard_error})
+    try do
+      result = case args do
+        ["--litai-test"] -> Hub.NativeTests.run()
+        ["--litai-smoke"] -> Hub.NativeTests.smoke()
+        [json] ->
+          arguments = JSON.decode!(json)
+          Hub.Validation.require!(is_list(arguments))
+          run(arguments)
+        _ -> Hub.Validation.fail()
+      end
+      if result != :ok, do: IO.puts(JSON.encode!(result))
+    rescue
+      _ -> IO.puts(:stderr, "Unable to complete request"); System.halt(1)
+    catch
+      _, _ -> IO.puts(:stderr, "Unable to complete request"); System.halt(1)
+    end
+  end
+end

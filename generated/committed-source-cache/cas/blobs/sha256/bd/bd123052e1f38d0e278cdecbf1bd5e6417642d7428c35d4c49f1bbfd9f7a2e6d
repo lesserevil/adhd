@@ -1,0 +1,122 @@
+defmodule ADHD.HTTP do
+  @moduledoc false
+  @max_headers 16384
+  @max_body 1048576
+  def listen(config, store) do
+    {:ok, socket} = :gen_tcp.listen(config["port"], [:binary, active: false, packet: :raw, reuseaddr: true, ip: {127, 0, 0, 1}, backlog: 128])
+    pid = spawn_link(fn -> accept(socket, config, store) end)
+    {socket, pid}
+  end
+  defp accept(listener, config, store) do
+    case :gen_tcp.accept(listener) do
+      {:ok, socket} ->
+        pid = spawn(fn -> receive do {:socket, s} -> connection(s, config, store) end end)
+        :ok = :gen_tcp.controlling_process(socket, pid)
+        send(pid, {:socket, socket})
+        accept(listener, config, store)
+      {:error, :closed} -> :ok
+      {:error, _} -> exit(:listener_failed)
+    end
+  end
+  def connection(socket, config, store) do
+    try do
+      deadline = System.monotonic_time(:millisecond) + 5000
+      {head, tail} = headers(socket, "", deadline)
+      {method, path, fields} = parse_headers(head)
+      length = content_length(fields)
+      body = read_body(socket, tail, length, deadline)
+      {status, result, extra} = route(method, path, fields, body, config, store)
+      respond(socket, status, result, extra)
+    rescue
+      e in ADHD.Invalid ->
+        code = case e.message do "payload too large" -> 413; "headers too large" -> 431; "request timeout" -> 408; _ -> 400 end
+        respond(socket, code, %{"error" => e.message}, [])
+      _ -> respond(socket, 500, %{"error" => "Internal error"}, [])
+    catch
+      _, _ -> respond(socket, 500, %{"error" => "Internal error"}, [])
+    after
+      :gen_tcp.close(socket)
+    end
+  end
+  defp receive_chunk(socket, deadline) do
+    remaining = deadline - System.monotonic_time(:millisecond)
+    ADHD.Domain.check(remaining > 0, "request timeout")
+    case :gen_tcp.recv(socket, 0, remaining) do
+      {:ok, chunk} -> chunk
+      {:error, :timeout} -> raise ADHD.Invalid, message: "request timeout"
+      _ -> raise ADHD.Invalid, message: "incomplete request"
+    end
+  end
+  defp headers(socket, buffer, deadline) do
+    case :binary.match(buffer, "\r\n\r\n") do
+      {offset, 4} ->
+        ADHD.Domain.check(offset + 4 <= @max_headers, "headers too large")
+        {binary_part(buffer, 0, offset), binary_part(buffer, offset + 4, byte_size(buffer) - offset - 4)}
+      :nomatch ->
+        ADHD.Domain.check(byte_size(buffer) <= @max_headers, "headers too large")
+        chunk = receive_chunk(socket, deadline)
+        ADHD.Domain.check(byte_size(buffer) + byte_size(chunk) <= @max_headers + @max_body, "payload too large")
+        headers(socket, buffer <> chunk, deadline)
+    end
+  end
+  defp parse_headers(head) do
+    [request | lines] = String.split(head, "\r\n")
+    ADHD.Domain.check(String.valid?(head), "invalid headers")
+    parts = String.split(request, " ")
+    ADHD.Domain.check(length(parts) == 3, "invalid request line")
+    [method, path, version] = parts
+    ADHD.Domain.check(version in ["HTTP/1.1", "HTTP/1.0"] and String.starts_with?(path, "/"), "invalid request line")
+    fields = Enum.reduce(lines, %{}, fn line, acc ->
+      case String.split(line, ":", parts: 2) do
+        [key, value] ->
+          ADHD.Domain.check(Regex.match?(~r/\A[!#$%&'*+.^_`|~0-9A-Za-z-]+\z/, key), "invalid header")
+          key = String.downcase(key)
+          ADHD.Domain.check(not Map.has_key?(acc, key), "duplicate header")
+          value = String.trim(value)
+          ADHD.Domain.check(not Regex.match?(~r/[\x00-\x08\x0a-\x1f\x7f]/, value), "invalid header")
+          Map.put(acc, key, value)
+        _ -> raise ADHD.Invalid, message: "invalid header"
+      end
+    end)
+    ADHD.Domain.check(not Map.has_key?(fields, "transfer-encoding"), "transfer encoding unsupported")
+    ADHD.Domain.check(version != "HTTP/1.1" or Map.has_key?(fields, "host"), "host required")
+    {method, path, fields}
+  end
+  defp content_length(fields) do
+    case Map.get(fields, "content-length") do
+      nil -> 0
+      value ->
+        ADHD.Domain.check(Regex.match?(~r/\A[0-9]+\z/, value), "invalid content length")
+        n = String.to_integer(value)
+        ADHD.Domain.check(n <= @max_body, "payload too large")
+        n
+    end
+  end
+  defp read_body(_socket, buffer, length, _deadline) when byte_size(buffer) >= length, do: binary_part(buffer, 0, length)
+  defp read_body(socket, buffer, length, deadline) do
+    chunk = receive_chunk(socket, deadline)
+    ADHD.Domain.check(byte_size(buffer) + byte_size(chunk) <= @max_body, "payload too large")
+    read_body(socket, buffer <> chunk, length, deadline)
+  end
+  def route("GET", "/health", _, _, _, store) do
+    ADHD.Store.job(store)
+    {200, %{"status" => "ready"}, []}
+  end
+  def route("GET", "/.well-known/agent-card.json", _, _, config, _), do: {200, ADHD.Protocol.card(config), []}
+  def route("POST", "/a2a", headers, body, config, store) do
+    actor = ADHD.Protocol.authenticate(headers, config)
+    media = headers |> Map.get("content-type", "") |> String.split(";") |> hd() |> String.trim() |> String.downcase()
+    cond do
+      is_nil(actor) -> {401, %{"error" => "Unauthorized"}, [{"WWW-Authenticate", "Bearer"}]}
+      media != "application/json" -> {415, %{"error" => "Unsupported media type"}, []}
+      true -> {200, ADHD.Protocol.rpc(body, headers["a2a-version"], actor, config, store), []}
+    end
+  end
+  def route(_, _, _, _, _, _), do: {404, %{"error" => "Not found"}, []}
+  defp respond(socket, status, result, extra) do
+    body = JSON.encode!(result)
+    reason = Map.get(%{200 => "OK", 400 => "Bad Request", 401 => "Unauthorized", 404 => "Not Found", 408 => "Request Timeout", 413 => "Payload Too Large", 415 => "Unsupported Media Type", 431 => "Request Header Fields Too Large", 500 => "Internal Server Error"}, status)
+    headers = Enum.map(extra, fn {key, value} -> [key, ": ", value, "\r\n"] end)
+    :gen_tcp.send(socket, ["HTTP/1.1 ", Integer.to_string(status), " ", reason, "\r\nContent-Type: application/json\r\nContent-Length: ", Integer.to_string(byte_size(body)), "\r\nConnection: close\r\n", headers, "\r\n", body])
+  end
+end

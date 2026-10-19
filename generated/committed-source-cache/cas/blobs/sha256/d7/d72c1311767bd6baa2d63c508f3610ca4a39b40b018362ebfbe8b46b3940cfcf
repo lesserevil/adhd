@@ -1,0 +1,137 @@
+defmodule Hub.Invalid do
+  defexception message: "invalid request"
+end
+
+defmodule Hub.Domain do
+  defexception [:code, message: "hub command failed"]
+end
+
+defmodule Hub.Validate do
+  def check(true), do: :ok
+  def check(_), do: raise(Hub.Invalid)
+  def string(v, min, max) do
+    check(is_binary(v) and String.valid?(v) and byte_size(v) >= min and byte_size(v) <= max)
+    v
+  end
+  def nonblank(v, max) do
+    string(v, 1, max)
+    check(String.trim(v) != "")
+    v
+  end
+  def identifier(v) do
+    string(v, 1, 128)
+    check(Regex.match?(~r/\A[A-Za-z0-9._-]+\z/, v))
+    v
+  end
+  def number(v, min, max) do
+    check(is_integer(v) and v >= min and v <= max)
+    v
+  end
+  def keys(v, allowed, required \\ []) do
+    check(is_map(v))
+    check(Enum.all?(Map.keys(v), &(&1 in allowed)))
+    check(Enum.all?(required, &Map.has_key?(v, &1)))
+    v
+  end
+  def json(v) when is_map(v) do
+    Enum.each(v, fn {k, x} -> string(k, 0, 1_048_576); json(x) end)
+  end
+  def json(v) when is_list(v), do: Enum.each(v, &json/1)
+  def json(v) when is_binary(v), do: string(v, 0, 1_048_576)
+  def json(v) when is_integer(v) or is_float(v) or is_boolean(v) or is_nil(v), do: :ok
+  def json(_), do: raise(Hub.Invalid)
+  def url(v, max \\ 2048) do
+    string(v, 1, max)
+    u = URI.parse(v)
+    check(u.scheme in ["http", "https"] and is_binary(u.host) and u.host != "")
+    v
+  end
+  def datetime(v) do
+    string(v, 1, 64)
+    case DateTime.from_iso8601(v) do
+      {:ok, dt, _} -> DateTime.to_iso8601(dt)
+      _ -> raise Hub.Invalid
+    end
+  end
+  def source(v) do
+    keys(v, ~w(kind id item_id uri), ~w(kind id))
+    identifier(v["kind"])
+    nonblank(v["id"], 256)
+    if Map.has_key?(v, "item_id"), do: nonblank(v["item_id"], 512)
+    if Map.has_key?(v, "uri"), do: url(v["uri"])
+    v
+  end
+  def command(c) do
+    check(is_map(c))
+    op = c["op"]
+    fields = case op do
+      "whoami" -> []
+      "subscribe" -> ~w(description)
+      "list_subscriptions" -> []
+      "unsubscribe" -> ~w(subscription_id)
+      "publish" -> ~w(text data information_type source occurred_at)
+      "send" -> ~w(recipient_id text data)
+      "poll" -> ~w(limit)
+      "ack" -> ~w(delivery_ids)
+      "get" -> ~w(publication_id)
+      "search" -> ~w(query information_type source_kind source_id limit)
+      _ -> raise Hub.Invalid
+    end
+    keys(c, ["op", "project_id" | fields], ["op"])
+    if Map.has_key?(c, "project_id"), do: identifier(c["project_id"])
+    case op do
+      "subscribe" -> nonblank(c["description"], 4096)
+      "unsubscribe" -> string(c["subscription_id"], 1, 128)
+      "get" -> string(c["publication_id"], 1, 128)
+      "ack" ->
+        ids = c["delivery_ids"]
+        check(is_list(ids) and length(ids) in 1..100)
+        Enum.each(ids, &string(&1, 1, 128))
+        check(length(Enum.uniq(ids)) == length(ids))
+      x when x in ["publish", "send"] ->
+        check(Map.has_key?(c, "text") or Map.has_key?(c, "data"))
+        if Map.has_key?(c, "text"), do: nonblank(c["text"], 65536)
+        if Map.has_key?(c, "data"), do: json(c["data"])
+        if x == "send" do
+          identifier(c["recipient_id"])
+          if Map.has_key?(c, "data"), do: check(is_map(c["data"]))
+        end
+        size = byte_size(JSON.encode!(Map.get(c, "text", ""))) + byte_size(JSON.encode!(Map.get(c, "data", %{})))
+        check(size <= 65536)
+        if Map.has_key?(c, "information_type"), do: identifier(c["information_type"])
+        if Map.has_key?(c, "source"), do: source(c["source"])
+        if Map.has_key?(c, "occurred_at"), do: datetime(c["occurred_at"])
+      "search" ->
+        check(Enum.any?(~w(query information_type source_kind source_id), &Map.has_key?(c, &1)))
+        if Map.has_key?(c, "query"), do: nonblank(c["query"], 256)
+        for f <- ~w(information_type source_kind), Map.has_key?(c, f), do: identifier(c[f])
+        if Map.has_key?(c, "source_id"), do: nonblank(c["source_id"], 256)
+      _ -> :ok
+    end
+    if Map.has_key?(c, "limit"), do: number(c["limit"], 1, 100)
+    c
+  end
+  def config(c) do
+    keys(c, ~w(project_id store_path agents host port public_url matcher threshold_ppm), ~w(project_id store_path agents matcher))
+    identifier(c["project_id"])
+    nonblank(c["store_path"], 4096)
+    agents = c["agents"]
+    check(is_map(agents) and map_size(agents) > 0)
+    Enum.each(agents, fn {a, t} -> identifier(a); string(t, 24, 65536) end)
+    check(length(Enum.uniq(Map.values(agents))) == map_size(agents))
+    check(Map.get(c, "host", "127.0.0.1") == "127.0.0.1")
+    port = number(Map.get(c, "port", 8766), 1, 65535)
+    public = url(Map.get(c, "public_url", "http://127.0.0.1:#{port}"))
+    m = c["matcher"]
+    keys(m, ~w(url model timeout_ms retry_ms), ~w(url model))
+    url(m["url"])
+    string(m["model"], 1, 1_048_576)
+    timeout = number(Map.get(m, "timeout_ms", 3000), 100, 30000)
+    retry = number(Map.get(m, "retry_ms", 1000), 100, 30000)
+    threshold = number(Map.get(c, "threshold_ppm", 900000), 1, 1_000_000)
+    c |> Map.put("host", "127.0.0.1") |> Map.put("port", port)
+      |> Map.put("public_url", String.trim_trailing(public, "/"))
+      |> Map.put("threshold_ppm", threshold)
+      |> Map.put("matcher", Map.merge(m, %{"timeout_ms" => timeout, "retry_ms" => retry}))
+  end
+end

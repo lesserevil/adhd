@@ -1,0 +1,101 @@
+{
+  "schema": "adhd/name-acceptance@1",
+  "passed": true,
+  "full_name": "Agentic Distributed Harness Depot",
+  "acronym": "ADHD",
+  "technical_namespace": "adhd",
+  "artifact_sha256": "d51a84ce99e10046c56063f45f6b9546869e341b1ba30dd4e472d272fa4e60e1",
+  "image_id": "sha256:d665a77c58d70ba112d596473bb6abeca8b880fb81ec06210ec710807ae7e864",
+  "native_tests": {
+    "failed": 0,
+    "passed": 5,
+    "skipped": 0,
+    "total": 5
+  },
+  "independent_cli_vectors": 8,
+  "sdk_scenarios": 31,
+  "container_scenarios": 33,
+  "documentation_inventory": [
+    "PROJECT.md",
+    "README.md",
+    "docs/README.md",
+    "docs/user/getting-started.md",
+    "docs/user/using-the-hub.md",
+    "docs/user/hub-api.md",
+    "docs/user/stored-information.md",
+    "docs/user/live-testing.md",
+    "docs/admin/operations.md",
+    "docs/admin/troubleshooting.md",
+    "docs/admin/web-console.md",
+    "skills/agent/coordinate-via-hub/SKILL.md"
+  ],
+  "help_checks": [
+    "scripts/hub_agent.py --help",
+    "scripts/configure_hub.py --help",
+    "scripts/stage_container.py --help"
+  ],
+  "describe_contract_unchanged": true,
+  "agent_card_short_name_unchanged": true,
+  "agent_card_description": "Agentic Distributed Harness Depot (ADHD): a private A2A information hub for agent coordination.",
+  "existing_credentials_and_live_agent_state_preserved": true,
+  "independent_no_cache_image_ids": [
+    "sha256:d665a77c58d70ba112d596473bb6abeca8b880fb81ec06210ec710807ae7e864",
+    "sha256:d665a77c58d70ba112d596473bb6abeca8b880fb81ec06210ec710807ae7e864"
+  ],
+  "input_manifest": {
+    "schema": "adhd/container-inputs@1",
+    "files": {
+      "hub.exs": "d51a84ce99e10046c56063f45f6b9546869e341b1ba30dd4e472d272fa4e60e1",
+      "Dockerfile": "17dda989a96060f33468c651052569aaf16d54c4009e6ffbf8c8cf706db691e6",
+      "health.exs": "6cc8f729df9e217316b97024faa21ceb4d3ebd7b95f8a3d977543ef91a060ba2",
+      "component.md": "d65da411290a7cd971ae53ec2c99d05c5729a1db327b30c31cb1140109ab1a73",
+      "information-spec.md": "889c83cf4e44972eadfab43ba5f33dfdf10ca9f1c4776eb228b3fb64b3729037",
+      "management-spec.md": "0f964732c8adfcd4d3b9e30d4c133e26e5cfe9c04f0d1977c6b16939ecae644e",
+      "presentation-spec.md": "dfc5fa2ffe995a2976b90fc96b727b92a62a2a2f9e0873c87ddea06e78ce26ad"
+    }
+  },
+  "verification": {
+    "counts": {
+      "fail": 0,
+      "pass": 3,
+      "skipped": 2
+    },
+    "gates": [
+      {
+        "detail": "project authority and documentation review",
+        "gate": "authority",
+        "state": "pass"
+      },
+      {
+        "detail": "2 committed lock(s) current",
+        "gate": "locks",
+        "state": "pass"
+      },
+      {
+        "detail": "project selects provider 'none'",
+        "gate": "source-intelligence",
+        "state": "skipped"
+      },
+      {
+        "artifacts": [],
+        "detail": "no declared HTML artifacts to verify",
+        "gate": "html-observability",
+        "state": "skipped"
+      },
+      {
+        "detail": "committed test receipt is current",
+        "gate": "receipt",
+        "state": "pass"
+      }
+    ],
+    "ok": true,
+    "project": ".",
+    "schema": "literate-ai/project-verify@1"
+  },
+  "reports": [
+    "verification/name-hub-acceptance.json",
+    "verification/name-container-acceptance.json",
+    "verification/name-browser.json",
+    "verification/name-live-smoke.json"
+  ]
+}

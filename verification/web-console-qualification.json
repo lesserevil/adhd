@@ -1,0 +1,77 @@
+{
+  "schema": "adhd/web-console-qualification@1",
+  "passed": true,
+  "artifact_sha256": "c5284f4ff8291b785c55b72be8e1410fbff2041493e9ad10008dc4025fccf140",
+  "image_id": "sha256:6a9a42385c1f226c2ccef9eba1319137a52551de9eb28ca5141e6cf6499e0fec",
+  "native_tests": {
+    "failed": 0,
+    "passed": 12,
+    "skipped": 0,
+    "total": 12
+  },
+  "independent_cli_vectors": 8,
+  "sdk_scenarios": 31,
+  "container_scenarios": 33,
+  "verification": {
+    "counts": {
+      "fail": 0,
+      "pass": 3,
+      "skipped": 2
+    },
+    "gates": [
+      {
+        "detail": "project authority and documentation review",
+        "gate": "authority",
+        "state": "pass"
+      },
+      {
+        "detail": "2 committed lock(s) current",
+        "gate": "locks",
+        "state": "pass"
+      },
+      {
+        "detail": "project selects provider 'none'",
+        "gate": "source-intelligence",
+        "state": "skipped"
+      },
+      {
+        "artifacts": [],
+        "detail": "no declared HTML artifacts to verify",
+        "gate": "html-observability",
+        "state": "skipped"
+      },
+      {
+        "detail": "committed test receipt is current",
+        "gate": "receipt",
+        "state": "pass"
+      }
+    ],
+    "ok": true,
+    "project": ".",
+    "schema": "literate-ai/project-verify@1"
+  },
+  "reports": [
+    "verification/hub-acceptance.json",
+    "verification/container-acceptance.json",
+    "verification/container-reproducibility.json",
+    "verification/web-console-browser.json",
+    "verification/web-console-live-smoke.json"
+  ],
+  "source_cache": {
+    "already_present": [
+      "11523c78adc946df",
+      "42efb6ae557c032c",
+      "50e3b20ded9c9c31",
+      "51790628d9425b5b"
+    ],
+    "note": "committed entries are not authority; every hit stays acceptance-untrusted",
+    "published": [
+      "0d380a14afcffff7",
+      "16f84a3ca6b95eb2",
+      "2c55b2db33267659",
+      "83acb16b665afb6d"
+    ],
+    "schema": "literate-ai/source-cache-publish@1",
+    "target": "project-committed"
+  }
+}

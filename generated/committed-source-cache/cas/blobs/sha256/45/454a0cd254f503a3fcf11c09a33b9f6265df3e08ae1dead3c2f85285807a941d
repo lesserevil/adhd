@@ -1,0 +1,230 @@
+defmodule ADHD.RPC do
+  def error(id, code, message, reason \\ nil) do
+    e = %{"code" => code, "message" => message}
+    e = if reason, do: Map.put(e, "data", [%{"@type" => "type.googleapis.com/google.rpc.ErrorInfo", "reason" => reason, "domain" => "adhd.hub", "metadata" => %{"code" => reason}}]), else: e
+    %{"jsonrpc" => "2.0", "id" => id, "error" => e}
+  end
+  def process(body, version, actor, store, project) do
+    parsed = try do {:ok, JSON.decode!(body)} rescue _ -> :bad_json end
+    case parsed do
+      :bad_json -> error(nil, -32700, "Parse error")
+      {:ok, request} -> dispatch(request, version, actor, store, project)
+    end
+  end
+  defp dispatch(request, version, actor, store, project) do
+    id = if is_map(request), do: request["id"], else: nil
+    id = if is_binary(id) or is_integer(id), do: id, else: nil
+    try do
+      require_rpc(is_map(request) and request["jsonrpc"] == "2.0" and not is_nil(id) and is_binary(request["method"]), -32600, "Invalid request")
+      require_rpc(version == "1.0", -32600, "Unsupported A2A version")
+      require_rpc(request["method"] == "SendMessage", -32601, "Method not found")
+      params = request["params"]
+      require_rpc(is_map(params), -32602, "Invalid params")
+      message = params["message"]
+      require_rpc(is_map(message), -32602, "Invalid message")
+      require_rpc(ADHD.Input.id?(message["messageId"]) and message["role"] == "ROLE_USER", -32602, "Invalid message")
+      require_rpc(not Map.has_key?(message, "taskId") and not Map.has_key?(params, "taskId"), -32602, "Task continuations unsupported")
+      context = Map.get(message, "contextId", project)
+      require_rpc(is_binary(context) and String.valid?(context) and byte_size(context) > 0, -32602, "Invalid contextId")
+      part = case message["parts"] do
+        [p] when is_map(p) -> p
+        _ -> throw({:rpc, -32602, "Exactly one part required"})
+      end
+      require_rpc(Enum.all?(Map.keys(part), &(&1 in ["data", "text", "mediaType"])) and (not Map.has_key?(part, "mediaType") or is_binary(part["mediaType"])), -32602, "Invalid part")
+      command = case {Map.has_key?(part, "data"), Map.has_key?(part, "text")} do
+        {true, false} -> part["data"]
+        {false, true} ->
+          require_rpc(is_binary(part["text"]), -32602, "Invalid text part")
+          try do JSON.decode!(part["text"]) rescue _ -> throw({:rpc, -32602, "Invalid command JSON"}) end
+        _ -> throw({:rpc, -32602, "Conflicting or absent part"})
+      end
+      try do ADHD.Input.validate(command) rescue _ -> throw({:rpc, -32602, "Invalid command"}) end
+      case ADHD.Store.command(store, actor, message["messageId"], command) do
+        {:ok, result} ->
+          server_id = "srv-" <> Base.url_encode64(:crypto.strong_rand_bytes(18), padding: false)
+          %{"jsonrpc" => "2.0", "id" => id, "result" => %{"message" => %{"messageId" => server_id, "contextId" => context, "role" => "ROLE_AGENT", "parts" => [%{"data" => result}]}}}
+        {:error, reason} -> error(id, -32000, reason, reason)
+        {:invalid, _} -> error(id, -32602, "Invalid command")
+      end
+    rescue
+      _ -> error(id, -32603, "Internal error")
+    catch
+      {:rpc, code, message} -> error(id, code, message)
+      :exit, _ -> error(id, -32603, "Internal error")
+    end
+  end
+  defp require_rpc(true, _, _), do: :ok
+  defp require_rpc(_, code, message), do: throw({:rpc, code, message})
+end
+
+defmodule ADHD.HTTP do
+  def start(config, store) do
+    {:ok, listener} = :gen_tcp.listen(config["port"], [:binary, ip: {127, 0, 0, 1}, packet: :raw, active: false, reuseaddr: true, backlog: 128, send_timeout: 5000, send_timeout_close: true])
+    pid = spawn_link(fn -> accept(listener, config, store) end)
+    {:ok, listener, pid}
+  end
+  defp accept(listener, config, store) do
+    case :gen_tcp.accept(listener) do
+      {:ok, socket} ->
+        pid = spawn(fn -> receive do {:socket, s} -> connection(s, config, store) end end)
+        :ok = :gen_tcp.controlling_process(socket, pid)
+        send(pid, {:socket, socket})
+        accept(listener, config, store)
+      {:error, :closed} -> :ok
+      {:error, _} -> raise "listener failed"
+    end
+  end
+  defp connection(socket, config, store) do
+    try do
+      deadline = System.monotonic_time(:millisecond) + 5000
+      {method, path, headers, initial} = read_headers(socket, "", deadline)
+      lengths = Map.get(headers, "content-length", [])
+      if Map.has_key?(headers, "transfer-encoding"), do: throw({:http, 400})
+      size = case lengths do
+        [] -> 0
+        [s] ->
+          if not Regex.match?(~r/\A[0-9]+\z/, s), do: throw({:http, 400})
+          case Integer.parse(s) do
+            {n, ""} -> n
+            _ -> throw({:http, 400})
+          end
+        _ -> throw({:http, 400})
+      end
+      if size > 1_048_576, do: throw({:http, 413})
+      body = read_body(socket, initial, size, deadline)
+      {status, result, extra} = route(method, path, headers, body, config, store)
+      respond(socket, status, result, extra)
+    rescue
+      _ -> respond(socket, 400, %{"error" => "Bad request"}, [])
+    catch
+      {:http, status} -> respond(socket, status, %{"error" => "Request rejected"}, [])
+      _, _ -> respond(socket, 500, %{"error" => "Internal error"}, [])
+    after
+      :gen_tcp.close(socket)
+    end
+  end
+  defp recv(socket, n, deadline) do
+    left = deadline - System.monotonic_time(:millisecond)
+    if left <= 0, do: throw({:http, 408})
+    case :gen_tcp.recv(socket, n, left) do
+      {:ok, data} -> data
+      {:error, :timeout} -> throw({:http, 408})
+      _ -> throw({:http, 400})
+    end
+  end
+  defp read_headers(socket, data, deadline) do
+    case :binary.match(data, "\r\n\r\n") do
+      {offset, 4} ->
+        if offset + 4 > 16384, do: throw({:http, 431})
+        <<head::binary-size(offset), _::binary-size(4), rest::binary>> = data
+        [line | lines] = String.split(head, "\r\n")
+        [method, path, protocol] = String.split(line, " ")
+        if protocol != "HTTP/1.1" and protocol != "HTTP/1.0", do: throw({:http, 400})
+        headers = Enum.reduce(lines, %{}, fn line, acc ->
+          case String.split(line, ":", parts: 2) do
+            [key, value] ->
+              if not Regex.match?(~r/\A[!#$%&'*+.^_`|~0-9A-Za-z-]+\z/, key), do: throw({:http, 400})
+              value = trim_ows(value)
+              if Regex.match?(~r/[\x00-\x08\x0A-\x1F\x7F]/, value), do: throw({:http, 400})
+              Map.update(acc, String.downcase(key), [value], &(&1 ++ [value]))
+            _ -> throw({:http, 400})
+          end
+        end)
+        {method, path, headers, rest}
+      :nomatch ->
+        if byte_size(data) >= 16384, do: throw({:http, 431})
+        # One-byte header reads put a hard bound on buffering even if a peer
+        # sends no delimiter. Bodies use bounded exact-length reads below.
+        read_headers(socket, data <> recv(socket, 1, deadline), deadline)
+    end
+  end
+  defp trim_ows(s), do: s |> trim_left_tab() |> trim_right_ows()
+  defp trim_left_tab(<<c, rest::binary>>) when c in [32, 9], do: trim_left_tab(rest)
+  defp trim_left_tab(s), do: s
+  defp trim_right_ows(s), do: Regex.replace(~r/[ \t]+\z/, s, "")
+  defp read_body(_, initial, size, _) when byte_size(initial) == size, do: initial
+  defp read_body(_, initial, size, _) when byte_size(initial) > size, do: throw({:http, 400})
+  defp read_body(socket, initial, size, deadline) do
+    remaining = min(size - byte_size(initial), 65536)
+    read_body(socket, initial <> recv(socket, remaining, deadline), size, deadline)
+  end
+  defp route("GET", "/health", _, _, _, store) do
+    if Process.alive?(store), do: {200, %{"status" => "ready"}, []}, else: {503, %{"status" => "unavailable"}, []}
+  end
+  defp route("GET", "/.well-known/agent-card.json", _, _, config, _) do
+    {200, card(config["public_url"]), []}
+  end
+  defp route("POST", "/a2a", headers, body, config, store) do
+    actor = case Map.get(headers, "authorization", []) do
+      ["Bearer " <> token] -> Enum.find_value(config["agents"], fn {agent, secret} -> if token == secret, do: agent end)
+      _ -> nil
+    end
+    if actor do
+      content_type = case Map.get(headers, "content-type", []) do
+        [v] -> v |> String.split(";", parts: 2) |> hd() |> String.trim() |> String.downcase()
+        _ -> ""
+      end
+      if content_type == "application/json" do
+        version = case Map.get(headers, "a2a-version", ["1.0"]) do [v] -> v; _ -> "invalid" end
+        {200, ADHD.RPC.process(body, version, actor, store, config["project_id"]), []}
+      else
+        {415, %{"error" => "Unsupported media type"}, []}
+      end
+    else
+      {401, %{"error" => "Unauthorized"}, [{"WWW-Authenticate", "Bearer"}]}
+    end
+  end
+  defp route(_, _, _, _, _, _), do: {404, %{"error" => "Not found"}, []}
+  def card(base) do
+    %{"name" => "ADHD", "description" => "Private single-project agent coordination", "version" => "0.1.0",
+      "supportedInterfaces" => [%{"url" => base <> "/a2a", "protocolBinding" => "JSONRPC", "protocolVersion" => "1.0"}],
+      "capabilities" => %{"streaming" => false, "pushNotifications" => false, "extendedAgentCard" => false},
+      "securitySchemes" => %{"bearer" => %{"httpAuthSecurityScheme" => %{"scheme" => "bearer"}}},
+      "securityRequirements" => [%{"schemes" => %{"bearer" => %{"list" => []}}}],
+      "defaultInputModes" => ["application/json"], "defaultOutputModes" => ["application/json"],
+      "skills" => [%{"id" => "project-coordination", "name" => "Project coordination", "description" => "Publish updates, subscribe, poll, acknowledge, send and search", "tags" => ["coordination"]}]}
+  end
+  defp respond(socket, status, result, extra) do
+    body = JSON.encode!(result)
+    reason = Map.get(%{200 => "OK", 400 => "Bad Request", 401 => "Unauthorized", 404 => "Not Found", 408 => "Request Timeout", 413 => "Payload Too Large", 415 => "Unsupported Media Type", 431 => "Request Header Fields Too Large", 500 => "Internal Server Error", 503 => "Service Unavailable"}, status)
+    head = "HTTP/1.1 #{status} #{reason}\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(body)}\r\nConnection: close\r\n"
+    :gen_tcp.send(socket, [head, Enum.map(extra, fn {k, v} -> "#{k}: #{v}\r\n" end), "\r\n", body])
+  end
+end
+
+defmodule ADHD.CLI do
+  def run(["describe"]) do
+    %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => ADHD.Input.operations()}
+  end
+  def run(["validate", command]) do
+    ADHD.Input.validate(command)
+    %{"valid" => true, "op" => command["op"]}
+  end
+  def run(["serve", path]) when is_binary(path) do
+    config = path |> File.read!() |> JSON.decode!() |> ADHD.Input.config()
+    {:ok, _} = Application.ensure_all_started(:inets)
+    {:ok, _} = Application.ensure_all_started(:ssl)
+    {:ok, store} = ADHD.Store.start_link(config)
+    {:ok, _listener, _acceptor} = ADHD.HTTP.start(config, store)
+    _worker = ADHD.Matcher.start(store, config)
+    IO.puts(JSON.encode!(%{"status" => "ready", "url" => config["public_url"]}))
+    receive do :stop -> :ok end
+  end
+  def run(_), do: raise(ArgumentError, "expected describe, validate COMMAND, or serve CONFIG_FILE")
+  def main(argv) do
+    result = case argv do
+      ["--litai-test"] -> ADHD.NativeTests.run()
+      ["--litai-smoke"] -> ADHD.NativeTests.smoke()
+      [json] ->
+        arguments = JSON.decode!(json)
+        ADHD.Input.ensure(is_list(arguments), "expected JSON arguments array")
+        run(arguments)
+      _ -> raise ArgumentError, "expected one JSON arguments array"
+    end
+    IO.puts(JSON.encode!(result))
+  rescue
+    _ ->
+      IO.puts(:stderr, "ADHD: invalid request, configuration, or unavailable store/listener")
+      System.halt(1)
+  end
+end

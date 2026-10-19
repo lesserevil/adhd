@@ -1,0 +1,37 @@
+defmodule Hub.NativeTests do
+  def cases do
+    [
+      {"publish-null", ["validate", %{"op" => "publish", "data" => nil, "information_type" => "status", "source" => %{"kind" => "email", "id" => "reports@example.test", "item_id" => "event-72"}, "occurred_at" => "2025-02-03T10:15:00-06:00"}], %{"valid" => true, "op" => "publish"}},
+      {"subscription-unicode", ["validate", %{"op" => "subscribe", "description" => "Notify the build team about naïve Unicode regressions."}], %{"valid" => true, "op" => "subscribe"}},
+      {"poll-minimum", ["validate", %{"op" => "poll", "limit" => 1}], %{"valid" => true, "op" => "poll"}},
+      {"poll-maximum", ["validate", %{"op" => "poll", "limit" => 100}], %{"valid" => true, "op" => "poll"}},
+      {"search-filter-only", ["validate", %{"op" => "search", "source_kind" => "calendar", "source_id" => "engineering", "information_type" => "status", "limit" => 17}], %{"valid" => true, "op" => "search"}},
+      {"publish-scalar", ["validate", %{"op" => "publish", "data" => 42, "information_type" => "measurement"}], %{"valid" => true, "op" => "publish"}},
+      {"ack-distinct", ["validate", %{"op" => "ack", "delivery_ids" => ["delivery-local-x", "delivery-local-y"]}], %{"valid" => true, "op" => "ack"}},
+      {"admin-list", ["validate-admin", %{"op" => "deliveries", "agent_id" => "observer-7", "limit" => 29}], %{"valid" => true, "op" => "deliveries"}},
+      {"admin-minimum", ["validate-admin", %{"op" => "jobs", "status" => "cancelled", "limit" => 1}], %{"valid" => true, "op" => "jobs"}},
+      {"admin-confirm", ["validate-admin", %{"op" => "retry_jobs", "confirm" => true, "message_id" => "operator-retry-53"}], %{"valid" => true, "op" => "retry_jobs"}},
+      {"admin-create", ["validate-admin", %{"op" => "create_subscription", "agent_id" => "release-ops", "description" => "Track release blockers and readiness.", "message_id" => "operator-create-19"}], %{"valid" => true, "op" => "create_subscription"}},
+      {"admin-source-filter", ["validate-admin", %{"op" => "publications", "source_kind" => "teams", "source_id" => "design-review", "limit" => 100}], %{"valid" => true, "op" => "publications"}}
+    ]
+  end
+  def assert!(true), do: :ok
+  def assert!(_), do: raise("Native behavior assertion failed")
+  def equal!(actual, expected), do: assert!(actual == expected)
+  def error!(code, fun) do
+    actual = try do fun.(); :no_error rescue e in Hub.Error -> e.code end
+    equal!(actual, code)
+  end
+  def run do
+    Hub.RegressionTests.run()
+    results = Enum.map(cases(), fn {id, arguments, expected} ->
+      equal!(Hub.App.run(arguments), expected)
+      %{"case_id" => id, "outcome" => "passed"}
+    end)
+    %{"schema" => "literate-ai/generated-test-results@1", "cases" => results}
+  end
+  def smoke do
+    {_, arguments, _} = hd(cases())
+    Hub.App.run(arguments)
+  end
+end

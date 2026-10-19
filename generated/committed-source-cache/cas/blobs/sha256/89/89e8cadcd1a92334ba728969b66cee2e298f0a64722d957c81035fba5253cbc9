@@ -1,0 +1,6 @@
+unless Code.ensure_loaded?(Hub.App) do
+  Enum.each(~w(validation.exs store.exs matcher.exs assets.exs http.exs app.exs), fn file -> Code.require_file(file, __DIR__) end)
+end
+unless Code.ensure_loaded?(Hub.NativeTests), do: Code.require_file("tests/litai_test.exs", __DIR__)
+unless Code.ensure_loaded?(Hub.RegressionTests), do: Code.require_file("tests/regression.exs", __DIR__)
+Hub.App.main(System.argv())

@@ -1,0 +1,46 @@
+defmodule ADHD.Assemble do
+  @files ["domain.exs", "store.exs", "matcher.exs", "protocol.exs", "http.exs", "cli.exs", "tests/litai_test.exs", "main.exs"]
+  def main([mode, objects, output, export]) when mode in ["all", "clean"] do
+    root = Path.expand("..", __DIR__)
+    objects = Path.expand(objects)
+    output = Path.expand(output)
+    export = Path.expand(export)
+    sources = Path.wildcard(Path.join(root, "**/*.{ex,exs}"))
+    Enum.each([objects, output, export], fn path ->
+      if path == root or String.starts_with?(path, root <> "/"), do: raise("output must be outside admitted source")
+    end)
+    if mode == "all" do
+      Enum.each(sources, fn path -> Code.string_to_quoted!(File.read!(path), file: path) end)
+      content = Enum.map_join(@files, "\n", fn path ->
+        if path == "main.exs" do
+          "ADHD.CLI.main(System.argv())\n"
+        else
+          File.read!(Path.join(root, path))
+        end
+      end)
+      Code.string_to_quoted!(content)
+      File.mkdir_p!(objects)
+      File.mkdir_p!(output)
+      File.mkdir_p!(Path.dirname(export))
+      temp = Path.join(Path.dirname(export), ".adhd-export-" <> Integer.to_string(System.unique_integer([:positive])))
+      try do
+        File.write!(temp, content, [:exclusive])
+        File.rename!(temp, export)
+      after
+        File.rm(temp)
+      end
+      if not File.regular?(export), do: raise("export missing")
+    else
+      # Only declared output roots and the exact exported regular file are touched.
+      Enum.each([objects, output], fn path ->
+        if path == Path.dirname(path), do: raise("refusing filesystem root")
+        if Enum.any?(sources, &String.starts_with?(&1, path <> "/")), do: raise("output contains source")
+      end)
+      if File.regular?(export), do: File.rm!(export)
+      File.rm_rf!(objects)
+      File.rm_rf!(output)
+    end
+  end
+end
+
+ADHD.Assemble.main(System.argv())

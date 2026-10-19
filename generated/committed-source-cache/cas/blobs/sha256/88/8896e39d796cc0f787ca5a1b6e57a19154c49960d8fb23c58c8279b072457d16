@@ -1,0 +1,16 @@
+OBJECT_ROOT ?= _build/objects
+OUT ?= _build/artifacts
+TARGET ?= run
+EXPORT_PATH ?= $(OUT)/$(TARGET)
+LITAI_LANGUAGE_TOOL ?= elixir
+SRCS := validation.exs state.exs matcher.exs ui.exs http.exs cli.exs tests/litai_test.exs main.exs tools/assemble.exs
+
+.PHONY: all test clean
+all: $(SRCS)
+	"$(LITAI_LANGUAGE_TOOL)" tools/assemble.exs all "$(OBJECT_ROOT)" "$(OUT)" "$(EXPORT_PATH)"
+
+test: all
+	"$(LITAI_LANGUAGE_TOOL)" "$(EXPORT_PATH)" --litai-test
+
+clean: tools/assemble.exs
+	"$(LITAI_LANGUAGE_TOOL)" tools/assemble.exs clean "$(OBJECT_ROOT)" "$(OUT)" "$(EXPORT_PATH)"

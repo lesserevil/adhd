@@ -1,0 +1,294 @@
+defmodule Hub.RegressionTests do
+  import Hub.NativeTests, only: [assert!: 1, equal!: 2, error!: 2]
+  def config(path) do
+    Hub.Validation.config!(%{"project_id" => "native-project", "store_path" => path, "agents" => %{"writer" => String.duplicate("w", 32), "reader" => String.duplicate("r", 32)}, "admin_token" => String.duplicate("a", 40), "matcher" => %{"url" => "http://127.0.0.1:1/v1/systemone", "model" => "native-model", "timeout_ms" => 100, "retry_ms" => 100}})
+  end
+  def run do
+    invalid_vectors()
+    authentication()
+    matcher_failure()
+    model_protocol()
+    root = Path.join(System.tmp_dir!(), "hub-native-" <> Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false))
+    File.mkdir_p!(root)
+    try do
+      durable_transitions(config(Path.join(root, "state.dets")))
+      schema_one(config(Path.join(root, "legacy.dets")))
+      schema_two_sources(config(Path.join(root, "original.dets")))
+      corrupt_store(config(Path.join(root, "corrupt.dets")))
+    after
+      File.rm_rf!(root)
+    end
+  end
+  defp invalid_vectors do
+    for command <- [
+      %{"op" => "poll", "limit" => 0}, %{"op" => "poll", "limit" => 101},
+      %{"op" => "poll", "limit" => 1.0}, %{"op" => "whoami", "actor_id" => "writer"},
+      %{"op" => "publish"}, %{"op" => "publish", "text" => " "},
+      %{"op" => "send", "recipient_id" => "reader", "data" => []},
+      %{"op" => "search", "query" => " "}, %{"op" => "search"},
+      %{"op" => "ack", "delivery_ids" => ["x", "x"]},
+      %{"op" => "publish", "data" => false, "source" => %{"kind" => "email", "id" => "x", "extra" => 1}},
+      %{"op" => "publish", "data" => nil, "occurred_at" => "2025-01-01T12:00:00"},
+      %{"op" => "publish", "text" => String.duplicate("a", 65537)}
+    ], do: error!("INVALID_PARAMS", fn -> Hub.Validation.command!(command) end)
+    for command <- [
+      %{"op" => "retry_jobs", "message_id" => "native-missing-confirm"},
+      %{"op" => "overview", "message_id" => "forbidden-read-field"},
+      %{"op" => "jobs", "status" => "running"},
+      %{"op" => "create_subscription", "agent_id" => "writer", "description" => " "},
+      %{"op" => "deliveries", "limit" => 101}
+    ], do: error!("INVALID_PARAMS", fn -> Hub.Validation.admin!(command) end)
+    equal!(Hub.Validation.timestamp!("2025-03-04T08:00:00-06:00"), "2025-03-04T14:00:00Z")
+    assert!(Hub.Validation.command!(%{"op" => "publish", "data" => [nil, false, 7, %{"x" => "y"}]})["data"] == [nil, false, 7, %{"x" => "y"}])
+  end
+  defp authentication do
+    c = config("unused-native-path")
+    equal!(Hub.Auth.agent(c, %{"authorization" => "Bearer " <> c["agents"]["writer"]}), "writer")
+    equal!(Hub.Auth.agent(c, %{"authorization" => "Bearer " <> c["admin_token"]}), nil)
+    equal!(Hub.Auth.agent(c, %{}), nil)
+    assert!(Hub.Auth.equal?("abc", "abc"))
+    assert!(not Hub.Auth.equal?("abc", "abd"))
+    assert!(not Hub.Auth.equal?(nil, "abc"))
+    error!("INVALID_PARAMS", fn -> Hub.Validation.config!(Map.put(c, "admin_token", c["agents"]["writer"])) end)
+    error!("INVALID_PARAMS", fn -> Hub.Validation.config!(Map.put(c, "host", "0.0.0.0")) end)
+    legacy = Map.delete(c, "admin_token") |> Hub.Validation.config!()
+    assert!(not Map.has_key?(legacy, "admin_token"))
+  end
+  defp matcher_failure do
+    model = "native-model"
+    for response <- [nil, %{"probability" => 1}, %{"model" => model, "answers" => []}, %{"model" => model, "answers" => %{"relevance" => %{"type" => "noul", "noul" => true}}}, %{"model" => model, "answers" => %{"relevance" => %{"type" => "noul", "noul" => -0.1}}}, %{"model" => model, "answers" => %{"relevance" => %{"noul" => 1}}}] do
+      equal!(Hub.Matcher.probability(response, model), :failure)
+    end
+    equal!(Hub.Matcher.probability(%{"model" => model, "answers" => %{"relevance" => %{"type" => "noul", "noul" => 0.95}}}, model), 0.95)
+    equal!(Hub.Matcher.http(:get, "http://127.0.0.1:1/health", nil, 100), :error)
+  end
+  defp model_protocol do
+    :inets.start()
+    :ssl.start()
+    {:ok, listener} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}, reuseaddr: true])
+    {:ok, {_, port}} = :inet.sockname(listener)
+    parent = self()
+    spawn_link(fn ->
+      {:ok, socket} = :gen_tcp.accept(listener, 3000)
+      {headers, content} = capture_headers(socket, "")
+      length = headers |> String.split("\r\n") |> Enum.find_value(fn line ->
+        case String.split(line, ":", parts: 2) do
+          [name, value] -> if String.downcase(name) == "content-length", do: value |> String.trim() |> String.to_integer()
+          _ -> nil
+        end
+      end)
+      request = capture_body(socket, content, length) |> JSON.decode!()
+      send(parent, {:matcher_request, request})
+      result = JSON.encode!(%{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => 0.93}}, "usage" => %{}})
+      :gen_tcp.send(socket, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{byte_size(result)}\r\nConnection: close\r\n\r\n#{result}")
+      :gen_tcp.close(socket)
+    end)
+    publication = Map.merge(legacy_publication(), %{"information_type" => "status", "source" => %{"kind" => "agent", "id" => "writer"}, "occurred_at" => "2025-01-02T03:04:05Z"})
+    description = "Native protocol subscription with every word preserved."
+    matcher = %{"url" => "http://127.0.0.1:#{port}/v1/systemone", "model" => "native-model", "timeout_ms" => 2000}
+    try do
+      equal!(Hub.Matcher.evaluate(publication, description, matcher), 0.93)
+      receive do
+        {:matcher_request, request} ->
+          equal!(Enum.sort(Map.keys(request)), ~w(model questions state))
+          equal!(request["state"], %{"publication" => publication})
+          equal!(request["questions"]["relevance"]["type"], "noul")
+          assert!(String.contains?(request["questions"]["relevance"]["instructions"], description))
+      after
+        3000 -> raise("Missing matcher request")
+      end
+    after
+      :gen_tcp.close(listener)
+    end
+  end
+  defp capture_headers(socket, bytes) do
+    assert!(byte_size(bytes) <= 16384)
+    case String.split(bytes, "\r\n\r\n", parts: 2) do
+      [head, body] -> {head, body}
+      _ ->
+        {:ok, more} = :gen_tcp.recv(socket, 0, 3000)
+        capture_headers(socket, bytes <> more)
+    end
+  end
+  defp capture_body(_, bytes, size) when byte_size(bytes) >= size, do: binary_part(bytes, 0, size)
+  defp capture_body(socket, bytes, size) do
+    {:ok, more} = :gen_tcp.recv(socket, 0, 3000)
+    capture_body(socket, bytes <> more, size)
+  end
+  defp command(pid, actor, id, op), do: Hub.Store.command(pid, actor, id, op)
+  defp stop(pid), do: if(Process.alive?(pid), do: GenServer.stop(pid))
+  defp durable_transitions(c) do
+    {:ok, pid} = Hub.Store.start_link(c)
+    try do
+      subscribe = %{"op" => "subscribe", "description" => "Report compiler interface changes."}
+      sub = command(pid, "reader", "sub-a", subscribe)["subscription"]
+      equal!(command(pid, "reader", "sub-a", subscribe)["subscription"], sub)
+      error!("IDEMPOTENCY_CONFLICT", fn -> command(pid, "reader", "sub-a", Map.put(subscribe, "description", "Changed")) end)
+      command(pid, "reader", "sub-b", subscribe)
+      publication_cmd = %{"op" => "publish", "data" => ["native-event", 2], "text" => "Compiler interface change", "information_type" => "status", "source" => %{"kind" => "email", "id" => "native-mailbox", "item_id" => "native-item"}, "occurred_at" => "2025-02-04T08:00:00-06:00"}
+      published = command(pid, "writer", "pub-a", publication_cmd)
+      p = published["publication"]
+      equal!(p["occurred_at"], "2025-02-04T14:00:00Z")
+      equal!(command(pid, "writer", "pub-new-id", publication_cmd), published)
+      error!("SOURCE_CONFLICT", fn -> command(pid, "writer", "pub-conflict", Map.put(publication_cmd, "text", "Changed")) end)
+      error!("FORBIDDEN", fn -> command(pid, "writer", "forged", %{"op" => "publish", "data" => nil, "source" => %{"kind" => "agent", "id" => "reader"}}) end)
+      first = Hub.Store.pending(pid)
+      Hub.Store.finish(pid, first.job, :failure)
+      equal!(Hub.Store.admin(pid, %{"op" => "overview"})["counts"]["pending_jobs"], 2)
+      Hub.Store.admin(pid, %{"op" => "retry_jobs", "confirm" => true, "message_id" => "retry-native"})
+      first = Hub.Store.pending(pid)
+      Hub.Store.finish(pid, first.job, 0.9000004)
+      deliveries = command(pid, "reader", "read-poll", %{"op" => "poll"})["deliveries"]
+      equal!(length(deliveries), 1)
+      [d] = deliveries
+      equal!(d["source"], p["source"])
+      equal!(d["information_type"], "status")
+      equal!(d["matches"] |> hd() |> Map.get("probability_ppm"), 900000)
+      error!("FORBIDDEN", fn -> command(pid, "writer", "foreign-ack", %{"op" => "ack", "delivery_ids" => [d["id"]]}) end)
+      error!("NOT_FOUND", fn -> command(pid, "reader", "batch-ack", %{"op" => "ack", "delivery_ids" => [d["id"], "absent-native"]}) end)
+      equal!(command(pid, "reader", "still-visible", %{"op" => "poll"})["deliveries"], deliveries)
+      command(pid, "reader", "ack-a", %{"op" => "ack", "delivery_ids" => [d["id"]]})
+      second = Hub.Store.pending(pid)
+      Hub.Store.finish(pid, second.job, 1)
+      equal!(command(pid, "reader", "after-ack", %{"op" => "poll"}), %{"deliveries" => []})
+      equal!(command(pid, "writer", "search-a", %{"op" => "search", "query" => "COMPILER", "information_type" => "status"}), %{"publications" => [p]})
+      private = command(pid, "writer", "private-a", %{"op" => "send", "recipient_id" => "reader", "text" => "native-private-only"})["delivery"]
+      equal!(command(pid, "reader", "private-search", %{"op" => "search", "query" => "native-private-only"}), %{"publications" => []})
+      error!("NOT_FOUND", fn -> command(pid, "reader", "private-get", %{"op" => "get", "publication_id" => private["id"]}) end)
+      error!("FORBIDDEN", fn -> command(pid, "writer", "remove-other", %{"op" => "unsubscribe", "subscription_id" => sub["id"]}) end)
+      error!("PROJECT_MISMATCH", fn -> command(pid, "reader", "wrong-project", %{"op" => "whoami", "project_id" => "other"}) end)
+      metadata = Hub.Store.admin(pid, %{"op" => "deliveries"})["items"]
+      assert!(Enum.all?(metadata, fn row -> Enum.all?(Map.keys(row), &(&1 in ~w(delivery_id recipient_id kind created_at acknowledged publication_id))) end))
+      equal!(Hub.Store.admin(pid, %{"op" => "publication", "publication_id" => p["id"]}), %{"publication" => p})
+      later = command(pid, "writer", "pub-later", %{"op" => "publish", "data" => nil})
+      Hub.Store.admin(pid, %{"op" => "remove_subscription", "subscription_id" => sub["id"], "confirm" => true, "message_id" => "remove-admin"})
+      Hub.Store.finish(pid, %{first.job | id: "job-absent"}, 1)
+      assert!(Hub.Store.admin(pid, %{"op" => "overview"})["counts"]["cancelled_jobs"] > 0)
+      http_boundaries(c, pid)
+      GenServer.stop(pid)
+      {:ok, reopened} = Hub.Store.start_link(c)
+      try do
+        equal!(command(reopened, "writer", "pub-after-restart", publication_cmd), published)
+        equal!(command(reopened, "writer", "pub-a", publication_cmd), published)
+        equal!(command(reopened, "reader", "poll-reopen", %{"op" => "poll"})["deliveries"], [private])
+        equal!(command(reopened, "writer", "get-later", %{"op" => "get", "publication_id" => later["publication"]["id"]}), %{"publication" => later["publication"]})
+        equal!(Hub.Store.admin(reopened, %{"op" => "remove_subscription", "subscription_id" => sub["id"], "confirm" => true, "message_id" => "remove-admin"}), %{"removed" => true, "subscription_id" => sub["id"]})
+        error!("IDEMPOTENCY_CONFLICT", fn -> Hub.Store.admin(reopened, %{"op" => "retry_jobs", "confirm" => true, "message_id" => "remove-admin"}) end)
+        equal!(length(Hub.Store.admin(reopened, %{"op" => "jobs", "status" => "pending"})["items"]), 1)
+      after
+        stop(reopened)
+      end
+    after
+      stop(pid)
+    end
+  end
+  defp write_fixture(c, state) do
+    {:ok, t} = :dets.open_file(:hub_native_fixture, file: String.to_charlist(c["store_path"]), type: :set)
+    :ok = :dets.insert(t, {:state, state})
+    :ok = :dets.sync(t)
+    :ok = :dets.close(t)
+  end
+  defp legacy_publication do
+    %{"id" => "publication-old", "project_id" => "native-project", "author_id" => "writer", "text" => "Original event", "data" => %{"retained" => true}, "created_at" => "2025-01-02T03:04:05Z"}
+  end
+  defp schema_one(c) do
+    p = legacy_publication()
+    cmd = %{"op" => "publish", "text" => "Original event", "data" => %{"retained" => true}}
+    original = %{"publication" => p, "matching" => "pending"}
+    state = Hub.Store.empty(c["project_id"]) |> Map.put(:schema, 1) |> Map.delete(:sources) |> Map.delete(:admin_idempotency)
+    delivery = %{"id" => "delivery-old", "project_id" => c["project_id"], "sender_id" => "writer", "recipient_id" => "reader", "kind" => "publication", "publication_id" => p["id"], "text" => p["text"], "data" => p["data"], "created_at" => p["created_at"], "matches" => []}
+    state = %{state | seq: 3, publications: %{p["id"] => %{seq: 1, value: p}}, deliveries: %{delivery["id"] => %{seq: 2, value: delivery, ack: true}}, idempotency: %{{"writer", "old-message"} => %{command: cmd, result: original}}}
+    write_fixture(c, state)
+    {:ok, pid} = Hub.Store.start_link(c)
+    try do
+      equal!(command(pid, "writer", "old-message", cmd), original)
+      upgraded = command(pid, "reader", "read-old", %{"op" => "get", "publication_id" => p["id"]})["publication"]
+      equal!(upgraded["information_type"], "message")
+      equal!(upgraded["source"], %{"kind" => "agent", "id" => "writer"})
+      equal!(upgraded["occurred_at"], p["created_at"])
+      equal!(command(pid, "reader", "poll-old", %{"op" => "poll"}), %{"deliveries" => []})
+      sub = command(pid, "reader", "new-sub", %{"op" => "subscribe", "description" => "Future only"})["subscription"]
+      equal!(sub["id"], "subscription-4")
+      equal!(Hub.Store.pending(pid), nil)
+    after
+      stop(pid)
+    end
+  end
+  defp schema_two_sources(c) do
+    cmd = %{"op" => "publish", "text" => "Original event", "source" => %{"kind" => "teams", "id" => "channel", "item_id" => "original-item"}}
+    p = legacy_publication() |> Map.put("source", cmd["source"]) |> Map.put("information_type", "message") |> Map.put("occurred_at", "2025-01-02T03:04:05Z")
+    result = %{"publication" => p, "matching" => "pending"}
+    original = %{Hub.Store.empty(c["project_id"]) | seq: 1, publications: %{p["id"] => %{seq: 1, value: p}}, sources: %{{"writer", "teams", "channel", "original-item"} => %{command: Map.drop(cmd, ~w(op project_id)), result: result}}} |> Map.delete(:admin_idempotency)
+    upgraded = Hub.Store.upgrade!(original, c["project_id"])
+    equal!(upgraded.sources, original.sources)
+    write_fixture(c, original)
+    {:ok, pid} = Hub.Store.start_link(c)
+    try do
+      equal!(command(pid, "writer", "new-a2a-message", cmd), result)
+      error!("SOURCE_CONFLICT", fn -> command(pid, "writer", "changed-a2a-message", Map.put(cmd, "data", nil)) end)
+      equal!(Hub.Store.admin(pid, %{"op" => "overview"})["counts"]["publications"], 1)
+    after
+      stop(pid)
+    end
+  end
+  defp corrupt_store(c) do
+    File.write!(c["store_path"], "not a DETS store")
+    previous = Process.flag(:trap_exit, true)
+    try do
+      assert!(match?({:error, _}, Hub.Store.start_link(c)))
+      equal!(File.read!(c["store_path"]), "not a DETS store")
+    after
+      Process.flag(:trap_exit, previous)
+    end
+  end
+  defp http_boundaries(c, store) do
+    {:ok, health} = Agent.start_link(fn -> %{"status" => "unavailable", "checked_at" => "2025-01-01T00:00:00Z", "model" => c["matcher"]["model"]} end)
+    {listener, _} = Hub.HTTP.start(Map.put(c, "port", 0), store, health)
+    {:ok, {_, port}} = :inet.sockname(listener)
+    try do
+      health_response = request(port, "GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+      assert!(String.contains?(health_response, "200 OK"))
+      equal!(body(health_response), %{"status" => "ready"})
+      unauthorized = request(port, post("/admin/api", "{bad", ""))
+      assert!(String.contains?(unauthorized, "401 Unauthorized"))
+      assert!(String.contains?(unauthorized, "WWW-Authenticate: Bearer"))
+      agent_admin = request(port, post("/admin/api", JSON.encode!(%{"op" => "overview"}), c["agents"]["writer"]))
+      assert!(String.contains?(agent_admin, "401 Unauthorized"))
+      admin_a2a = request(port, post("/a2a", "{}", c["admin_token"]))
+      assert!(String.contains?(admin_a2a, "401 Unauthorized"))
+      wrong_origin = request(port, post("/admin/api", JSON.encode!(%{"op" => "overview"}), c["admin_token"], "Origin: https://other.invalid\r\n"))
+      assert!(String.contains?(wrong_origin, "403 Forbidden"))
+      data = %{"jsonrpc" => "2.0", "id" => 19, "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "native-http", "role" => "ROLE_USER", "parts" => [%{"data" => %{"op" => "whoami"}}]}}}
+      good = request(port, post("/a2a", JSON.encode!(data), c["agents"]["writer"])) |> body()
+      equal!(get_in(good, ["result", "message", "parts"]) |> hd() |> Map.get("data"), %{"agent_id" => "writer", "project_id" => c["project_id"]})
+      bad = request(port, post("/a2a", "{", c["agents"]["writer"])) |> body()
+      equal!(bad["error"]["code"], -32700)
+      duplicate = request(port, "POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nContent-Length: 0\r\n\r\n")
+      assert!(String.contains?(duplicate, "400 Bad Request"))
+      transfer = request(port, "POST /a2a HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n")
+      assert!(String.contains?(transfer, "400 Bad Request"))
+      assert!(request(port, "GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n") |> String.contains?("200 OK"))
+    after
+      :gen_tcp.close(listener)
+      Agent.stop(health)
+    end
+  end
+  defp post(path, content, token, extra \\ "") do
+    "POST #{path} HTTP/1.1\r\nHost: localhost\r\nAuthorization: \t Bearer #{token} \t \r\nContent-Type: application/json\r\nContent-Length: #{byte_size(content)}\r\n#{extra}\r\n#{content}"
+  end
+  defp request(port, bytes) do
+    {:ok, socket} = :gen_tcp.connect({127, 0, 0, 1}, port, [:binary, active: false], 1000)
+    :ok = :gen_tcp.send(socket, bytes)
+    response = receive_all(socket, "")
+    :gen_tcp.close(socket)
+    response
+  end
+  defp receive_all(socket, data) do
+    case :gen_tcp.recv(socket, 0, 6000) do
+      {:ok, more} -> receive_all(socket, data <> more)
+      {:error, :closed} -> data
+      other -> raise("HTTP test transport failure: #{inspect(other)}")
+    end
+  end
+  defp body(response), do: response |> String.split("\r\n\r\n", parts: 2) |> List.last() |> JSON.decode!()
+end

@@ -1,0 +1,309 @@
+defmodule Hub.NativeTests do
+  def vectors do
+    [
+      {"publish-json-values", "[\"validate\",{\"op\":\"publish\",\"data\":[null,true,17,{\"status\":\"queued\"}]}]", "{\"valid\":true,\"op\":\"publish\"}"},
+      {"poll-upper-bound", "[\"validate\",{\"op\":\"poll\",\"limit\":100}]", "{\"valid\":true,\"op\":\"poll\"}"},
+      {"ack-ordered-unique", "[\"validate\",{\"op\":\"ack\",\"delivery_ids\":[\"delivery-first\",\"delivery-second\"]}]", "{\"valid\":true,\"op\":\"ack\"}"},
+      {"external-source-envelope", "[\"validate\",{\"op\":\"publish\",\"data\":null,\"information_type\":\"build_event\",\"source\":{\"kind\":\"teams\",\"id\":\"engineering\",\"item_id\":\"notice-42\",\"uri\":\"https://example.org/events/42\"},\"occurred_at\":\"2025-04-09T08:15:00+02:00\"}]", "{\"valid\":true,\"op\":\"publish\"}"},
+      {"admin-job-filter", "[\"validate-admin\",{\"op\":\"jobs\",\"status\":\"done\",\"limit\":1}]", "{\"valid\":true,\"op\":\"jobs\"}"},
+      {"description-byte-bound", "[\"validate\",{\"op\":\"subscribe\",\"description\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}]", "{\"valid\":true,\"op\":\"subscribe\"}"},
+      {"confirmed-admin-retry", "[\"validate-admin\",{\"op\":\"retry_jobs\",\"confirm\":true,\"message_id\":\"native-retry-101\"}]", "{\"valid\":true,\"op\":\"retry_jobs\"}"}
+    ]
+  end
+  def expect(actual, expected) do
+    if actual !== expected, do: raise("native behavior assertion failed")
+    :ok
+  end
+  def invalid(fun) do
+    result = try do
+      fun.()
+      :accepted
+    rescue
+      _ in Hub.Invalid -> :rejected
+    end
+    expect(result, :rejected)
+  end
+  def domain(fun, code) do
+    result = try do
+      fun.()
+      :accepted
+    rescue
+      e in Hub.DomainError -> e.code
+    end
+    expect(result, code)
+  end
+  def config(path) do
+    Hub.Config.validate(%{
+      "project_id" => "native-project",
+      "store_path" => path,
+      "agents" => %{"writer" => "writer-native-token-000000000000", "reader" => "reader-native-token-000000000000"},
+      "admin_token" => "administrator-native-token-000000000000000000",
+      "matcher" => %{"url" => "http://127.0.0.1:18771/v1/systemone", "model" => "native-model"}
+    })
+  end
+  def mutate(s, actor, key, c, config), do: Hub.State.command(s, actor, key, c, config)
+  def boundary_tests do
+    for c <- [
+      %{"op" => "poll", "limit" => 0}, %{"op" => "poll", "limit" => 101},
+      %{"op" => "poll", "limit" => 1.0}, %{"op" => "whoami", "agent_id" => "writer"},
+      %{"op" => "publish"}, %{"op" => "publish", "text" => "  "},
+      %{"op" => "send", "recipient_id" => "reader", "data" => []},
+      %{"op" => "ack", "delivery_ids" => ["a", "a"]},
+      %{"op" => "search", "query" => ""}, %{"op" => "search"},
+      %{"op" => "subscribe", "description" => String.duplicate("x", 4097)},
+      %{"op" => "publish", "text" => String.duplicate("x", 65536), "data" => nil},
+      %{"op" => "publish", "data" => nil, "source" => %{"kind" => "slack", "id" => "x", "secret" => "invalid"}},
+      %{"op" => "publish", "data" => nil, "occurred_at" => "2025-01-01T00:00:00"}
+    ], do: invalid(fn -> Hub.Validate.command(c) end)
+    for c <- [
+      %{"op" => "overview", "message_id" => "unexpected"},
+      %{"op" => "retry_jobs", "message_id" => "x", "confirm" => false},
+      %{"op" => "remove_subscription", "subscription_id" => "s1", "message_id" => "x"},
+      %{"op" => "jobs", "status" => "failed"}, %{"op" => "deliveries", "limit" => 101}
+    ], do: invalid(fn -> Hub.Validate.admin(c) end)
+    expect(Hub.Validate.date("2025-04-09T08:15:00+02:00"), "2025-04-09T06:15:00Z")
+    expect(Hub.HTTP.trim_ows(" \tBearer abc\t "), "Bearer abc")
+    expect(Hub.Config.equal("one", "two"), false)
+  end
+  def transitions(c) do
+    s0 = Hub.State.fresh(c["project_id"])
+    sub = %{"op" => "subscribe", "description" => "public API changes"}
+    {s1, sr} = mutate(s0, "reader", "sub-one", sub, c)
+    expect(mutate(s1, "reader", "sub-one", sub, c), {s1, sr})
+    domain(fn -> mutate(s1, "reader", "sub-one", %{"op" => "subscribe", "description" => "changed"}, c) end, "IDEMPOTENCY_CONFLICT")
+    sid = sr["subscription"]["id"]
+    domain(fn -> mutate(s1, "writer", "unsub", %{"op" => "unsubscribe", "subscription_id" => sid}, c) end, "FORBIDDEN")
+    domain(fn -> mutate(s1, "reader", "bad-project", %{"op" => "whoami", "project_id" => "other"}, c) end, "PROJECT_MISMATCH")
+    domain(fn -> mutate(s1, "reader", "forged", %{"op" => "publish", "text" => "update", "source" => %{"kind" => "agent", "id" => "writer"}}, c) end, "FORBIDDEN")
+    {s2, sr2} = mutate(s1, "reader", "sub-two", sub, c)
+    pub = %{"op" => "publish", "data" => [nil, false, 9], "text" => "API schema update", "information_type" => "status", "source" => %{"kind" => "email", "id" => "project-mail", "item_id" => "event-77"}, "occurred_at" => "2025-04-09T08:15:00+02:00"}
+    {s3, pr} = mutate(s2, "writer", "pub-one", pub, c)
+    p = pr["publication"]
+    expect(p["occurred_at"], "2025-04-09T06:15:00Z")
+    expect(p["data"], [nil, false, 9])
+    expect(map_size(s3.jobs), 2)
+    {s4, again} = mutate(s3, "writer", "pub-retry-other-id", Map.put(pub, "project_id", c["project_id"]), c)
+    expect(again, pr)
+    expect(map_size(s4.publications), 1)
+    domain(fn -> mutate(s4, "writer", "conflict-source", Map.put(pub, "text", "changed"), c) end, "SOURCE_CONFLICT")
+    [j1, j2] = Hub.State.ordered(s4.jobs)
+    failed = Hub.State.finish(s4, j1.id, :failed, c)
+    expect(failed.jobs[j1.id].status, :pending)
+    expect(failed.jobs[j1.id].retry_at > 0, true)
+    s5 = Hub.State.finish(failed, j1.id, {:ok, 900000}, c)
+    {_, poll} = mutate(s5, "reader", "read1", %{"op" => "poll"}, c)
+    [d] = poll["deliveries"]
+    expect(d["source"], p["source"])
+    expect(d["information_type"], "status")
+    expect(d["occurred_at"], p["occurred_at"])
+    expect(mutate(s5, "reader", "read2", %{"op" => "poll"}, c), {s5, poll})
+    {_, writer_poll} = mutate(s5, "writer", "read3", %{"op" => "poll"}, c)
+    expect(writer_poll, %{"deliveries" => []})
+    domain(fn -> mutate(s5, "writer", "foreign-ack", %{"op" => "ack", "delivery_ids" => [d["id"]]}, c) end, "FORBIDDEN")
+    domain(fn -> mutate(s5, "reader", "atomic-ack", %{"op" => "ack", "delivery_ids" => [d["id"], "missing"]}, c) end, "NOT_FOUND")
+    expect(s5.deliveries[d["id"]].ack, false)
+    {s6, ack} = mutate(s5, "reader", "ack-one", %{"op" => "ack", "delivery_ids" => [d["id"]]}, c)
+    expect(ack, %{"acknowledged" => [d["id"]]})
+    s7 = Hub.State.finish(s6, j2.id, {:ok, 999999}, c)
+    expect(map_size(s7.deliveries), 1)
+    expect(s7.deliveries[d["id"]].ack, true)
+    expect(length(s7.deliveries[d["id"]].value["matches"]), 2)
+    expect(Hub.State.finish(s7, j2.id, {:ok, 999999}, c), s7)
+    {s8, private} = mutate(s7, "writer", "send-one", %{"op" => "send", "recipient_id" => "reader", "text" => "secret API schema update"}, c)
+    domain(fn -> mutate(s8, "writer", "get-private", %{"op" => "get", "publication_id" => private["delivery"]["id"]}, c) end, "NOT_FOUND")
+    {_, search} = mutate(s8, "writer", "search", %{"op" => "search", "query" => "API", "information_type" => "status", "source_kind" => "email", "source_id" => "project-mail"}, c)
+    expect(search, %{"publications" => [p]})
+    {_, retrieved} = mutate(s8, "writer", "get", %{"op" => "get", "publication_id" => p["id"]}, c)
+    expect(retrieved, %{"publication" => p})
+    {_, metadata} = Hub.State.admin(s8, %{"op" => "deliveries"}, c, %{})
+    Enum.each(metadata["items"], fn row -> expect(Map.has_key?(row, "text") or Map.has_key?(row, "data"), false) end)
+    admin = %{"op" => "create_subscription", "agent_id" => "writer", "description" => "Build events", "message_id" => "admin-create"}
+    {s9, ar} = Hub.State.admin(s8, admin, c, %{})
+    expect(map_size(s9.jobs), map_size(s8.jobs))
+    expect(Hub.State.admin(s9, admin, c, %{}), {s9, ar})
+    domain(fn -> Hub.State.admin(s9, Map.put(admin, "description", "changed"), c, %{}) end, "IDEMPOTENCY_CONFLICT")
+    {s10, _} = mutate(s9, "writer", "pub-two", %{"op" => "publish", "text" => "Another update"}, c)
+    {s11, _} = Hub.State.admin(s10, %{"op" => "remove_subscription", "subscription_id" => sr2["subscription"]["id"], "confirm" => true, "message_id" => "remove-admin"}, c, %{})
+    expect(Enum.any?(s11.jobs, fn {_, j} -> j.subscription_id == sr2["subscription"]["id"] and j.status == :cancelled end), true)
+    cancelled = Enum.find_value(s11.jobs, fn {id, j} -> if j.status == :cancelled, do: id end)
+    expect(Hub.State.finish(s11, cancelled, {:ok, 1000000}, c), s11)
+    {s12, retry} = Hub.State.admin(s11, %{"op" => "retry_jobs", "confirm" => true, "message_id" => "retry-admin"}, c, %{})
+    expect(retry["retried"], Enum.count(s11.jobs, fn {_, j} -> j.status == :pending end))
+    {s12, p, sr, admin, ar}
+  end
+  def matcher_tests do
+    for body <- [
+      "{}", "{invalid", ~s({"model":"native-model","answers":[]}),
+      ~s({"model":"native-model","answers":{"relevance":{"type":"noul","noul":true}}}),
+      ~s({"model":"native-model","answers":{"relevance":{"type":"noul","noul":1.1}}}),
+      ~s({"model":"native-model","answers":{"relevance":{"type":"noul","noul":-0.1}}}),
+      ~s({"model":"native-model","probability":1}),
+      ~s({"model":"native-model","answers":{"other":{"type":"noul","noul":1}}}),
+      ~s({"model":"wrong-model","answers":{"relevance":{"type":"noul","noul":1}}})
+    ], do: expect(Hub.Matcher.probability(body, "native-model"), :failed)
+    expect(Hub.Matcher.probability(~s({"model":"native-model","answers":{"relevance":{"type":"noul","noul":0.8999996}}}), "native-model"), {:ok, 900000})
+    expect(Hub.Matcher.probability(~s({"model":"native-model","answers":{"relevance":{"type":"noul","noul":0}}}), "native-model"), {:ok, 0})
+  end
+  def persisted_tests(dir) do
+    c = config(Path.join(dir, "current.dets"))
+    {s, p, _, admin, ar} = transitions(c)
+    {:ok, table} = :dets.open_file(:hub_fixture, file: String.to_charlist(c["store_path"]), type: :set)
+    :ok = :dets.insert(table, {:state, s})
+    :ok = :dets.sync(table)
+    :ok = :dets.close(table)
+    {:ok, store} = Hub.Store.start(c)
+    expect(Hub.Store.request(store, {:command, "reader", "get-reopen", %{"op" => "get", "publication_id" => p["id"]}}), {:ok, %{"publication" => p}})
+    expect(Hub.Store.request(store, {:admin, admin}), {:ok, ar})
+    {:ok, deliveries} = Hub.Store.request(store, {:command, "reader", "poll-reopen", %{"op" => "poll"}})
+    expect(Enum.any?(deliveries["deliveries"], &(&1["kind"] == "publication" and &1["publication_id"] == p["id"])), false)
+    authorization_tests(store, c)
+    transport_tests(store, c)
+    GenServer.stop(store)
+    legacy = s |> Map.take([:project, :seq, :subscriptions, :publications, :deliveries, :jobs, :idempotency]) |> Map.put(:schema, 1)
+    ps = Map.new(legacy.publications, fn {id, row} -> {id, %{row | value: Map.drop(row.value, ["information_type", "source", "occurred_at"])}} end)
+    ds = Map.new(legacy.deliveries, fn {id, row} -> {id, %{row | value: Map.drop(row.value, ["information_type", "source", "occurred_at"])}} end)
+    legacy = %{legacy | publications: ps, deliveries: ds}
+    c = config(Path.join(dir, "legacy.dets"))
+    {:ok, table} = :dets.open_file(:hub_fixture, file: String.to_charlist(c["store_path"]), type: :set)
+    :ok = :dets.insert(table, {:state, legacy})
+    :ok = :dets.sync(table)
+    :ok = :dets.close(table)
+    {:ok, store} = Hub.Store.start(c)
+    {:ok, r} = Hub.Store.request(store, {:command, "reader", "legacy-get", %{"op" => "get", "publication_id" => p["id"]}})
+    expected = ps[p["id"]].value |> Map.put("information_type", "message") |> Map.put("source", %{"kind" => "agent", "id" => p["author_id"]}) |> Map.put("occurred_at", p["created_at"])
+    expect(r, %{"publication" => expected})
+    historical = legacy.idempotency[{"writer", "pub-one"}]
+    expect(Hub.Store.request(store, {:command, "writer", "pub-one", historical.command}), {:ok, historical.result})
+    GenServer.stop(store)
+    bad = Hub.State.fresh("wrong-project")
+    invalid(fn -> Hub.State.upgrade(bad, c["project_id"]) end)
+    invalid(fn -> Hub.State.upgrade(%{schema: 99, project: c["project_id"], seq: 0}, c["project_id"]) end)
+  end
+  def receive_response(socket, acc \\ "") do
+    case :gen_tcp.recv(socket, 0, 3000) do
+      {:ok, b} -> receive_response(socket, acc <> b)
+      {:error, :closed} -> acc
+      _ -> raise "native HTTP deadline assertion failed"
+    end
+  end
+  def wire(port, request) do
+    {:ok, s} = :gen_tcp.connect({127, 0, 0, 1}, port, [:binary, active: false], 2000)
+    :ok = :gen_tcp.send(s, request)
+    response = receive_response(s)
+    :gen_tcp.close(s)
+    [header, body] = String.split(response, "\r\n\r\n", parts: 2)
+    [status | _] = String.split(header, "\r\n")
+    {status, JSON.decode!(body)}
+  end
+  def transport_tests(store, c) do
+    {:ok, listener} = Hub.HTTP.listen(Map.put(c, "port", 0))
+    {:ok, {_, port}} = :inet.sockname(listener)
+    acceptor = spawn(fn -> Hub.HTTP.accept(listener, store, c) end)
+    try do
+      for request <- [
+        "POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Length: 2\r\nContent-Length: 2\r\n\r\n{}",
+        "POST /a2a HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n",
+        "POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Length: invalid\r\n\r\n"
+      ] do
+        {status, _} = wire(port, request)
+        expect(status, "HTTP/1.1 400 Bad Request")
+      end
+      {status, _} = wire(port, "POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Length: 1048577\r\n\r\n")
+      expect(status, "HTTP/1.1 413 Payload Too Large")
+      {status, health} = wire(port, "GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
+      expect({status, health}, {"HTTP/1.1 200 OK", %{"status" => "ready"}})
+      command = %{"jsonrpc" => "2.0", "id" => 81, "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "wire-native-identity", "role" => "ROLE_USER", "parts" => [%{"text" => JSON.encode!(%{"op" => "whoami"})}]}}}
+      body = JSON.encode!(command)
+      {status, result} = wire(port, ["POST /a2a HTTP/1.1\r\nHost: localhost\r\nAuthorization: \tBearer ", c["agents"]["writer"], " \t\r\nContent-Type: application/json\r\nContent-Length: ", Integer.to_string(byte_size(body)), "\r\n\r\n", body])
+      expect(status, "HTTP/1.1 200 OK")
+      expect(result["result"]["message"]["parts"], [%{"data" => %{"agent_id" => "writer", "project_id" => c["project_id"]}}])
+    after
+      :gen_tcp.close(listener)
+      Process.exit(acceptor, :kill)
+    end
+  end
+  def matcher_transport_tests do
+    Hub.Matcher.setup()
+    {:ok, listener} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}, reuseaddr: true])
+    {:ok, {_, port}} = :inet.sockname(listener)
+    parent = self()
+    fixture = spawn(fn ->
+      for response <- [~s({"model":"native-model","answers":{"relevance":{"type":"noul","noul":true}}}), ~s({"model":"native-model","answers":{"relevance":{"type":"noul","noul":0.93}}})] do
+        {:ok, s} = :gen_tcp.accept(listener, 3000)
+        {"POST", "/v1/systemone", _, body} = Hub.HTTP.read(s)
+        send(parent, {:matcher_request, JSON.decode!(body)})
+        :ok = :gen_tcp.send(s, ["HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ", Integer.to_string(byte_size(response)), "\r\nConnection: close\r\n\r\n", response])
+        :gen_tcp.close(s)
+      end
+    end)
+    try do
+      c = config("not-opened-by-matcher")
+      c = put_in(c, ["matcher", "url"], "http://127.0.0.1:#{port}/v1/systemone")
+      j = %{description: "Status of the schema migration"}
+      p = %{"id" => "fixture-publication", "project_id" => c["project_id"], "author_id" => "writer", "text" => "Migration status", "data" => nil, "information_type" => "status", "source" => %{"kind" => "agent", "id" => "writer"}, "created_at" => "2025-04-09T06:15:00Z", "occurred_at" => "2025-04-09T06:15:00Z"}
+      expect(Hub.Matcher.evaluate(c, j, p), :failed)
+      expect(Hub.Matcher.evaluate(c, j, p), {:ok, 930000})
+      for _ <- 1..2 do
+        receive do
+          {:matcher_request, r} ->
+            expect(r["model"], "native-model")
+            expect(r["state"], %{"publication" => p})
+            expect(r["questions"]["relevance"]["type"], "noul")
+            expect(String.contains?(r["questions"]["relevance"]["instructions"], j.description), true)
+            expect(Map.has_key?(r, "noul"), false)
+        after
+          3000 -> raise "native matcher request assertion failed"
+        end
+      end
+    after
+      :gen_tcp.close(listener)
+      Process.exit(fixture, :kill)
+    end
+  end
+  def authorization_tests(store, c) do
+    writer = c["agents"]["writer"]
+    admin = c["admin_token"]
+    agent_headers = %{"authorization" => "Bearer " <> writer, "content-type" => "application/json", "host" => "127.0.0.1:8766"}
+    admin_headers = Map.put(agent_headers, "authorization", "Bearer " <> admin)
+    {status, _, _, _} = Hub.HTTP.route("POST", "/admin/api", agent_headers, "{", store, c)
+    expect(status, 401)
+    {status, _, _, _} = Hub.HTTP.route("POST", "/a2a", admin_headers, "{}", store, c)
+    expect(status, 401)
+    {status, _, _, _} = Hub.HTTP.route("POST", "/admin/api", admin_headers, "{}", store, Map.delete(c, "admin_token"))
+    expect(status, 404)
+    {status, _, _, _} = Hub.HTTP.route("POST", "/admin/api", Map.put(admin_headers, "origin", "https://foreign.example"), ~s({"op":"overview"}), store, c)
+    expect(status, 403)
+    {status, _, overview, _} = Hub.HTTP.route("POST", "/admin/api", admin_headers, ~s({"op":"overview"}), store, c)
+    expect(status, 200)
+    expect(String.contains?(overview, admin) or String.contains?(overview, writer) or String.contains?(overview, c["matcher"]["url"]), false)
+    for {body, code} <- [{"{", -32700}, {"[]", -32600}, {~s({"jsonrpc":"2.0","id":5,"method":"not-supported"}), -32601}] do
+      {200, _, result, _} = Hub.HTTP.route("POST", "/a2a", agent_headers, body, store, c)
+      expect(JSON.decode!(result)["error"]["code"], code)
+    end
+    request = %{"jsonrpc" => "2.0", "id" => "native-rpc", "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "native-whoami", "role" => "ROLE_USER", "parts" => [%{"data" => %{"op" => "whoami"}}]}}}
+    {200, _, response, _} = Hub.HTTP.route("POST", "/a2a", agent_headers, JSON.encode!(request), store, c)
+    response = JSON.decode!(response)
+    expect(response["result"]["message"]["parts"], [%{"data" => %{"agent_id" => "writer", "project_id" => c["project_id"]}}])
+  end
+  def run do
+    boundary_tests()
+    matcher_tests()
+    matcher_transport_tests()
+    dir = Path.join(System.tmp_dir!(), "hub-native-" <> Base.url_encode64(:crypto.strong_rand_bytes(9), padding: false))
+    File.mkdir_p!(dir)
+    try do
+      persisted_tests(dir)
+    after
+      File.rm_rf!(dir)
+    end
+    results = Enum.map(vectors(), fn {id, args, expected} ->
+      expect(Hub.CLI.run(JSON.decode!(args)), JSON.decode!(expected))
+      %{"case_id" => id, "outcome" => "passed"}
+    end)
+    %{"schema" => "literate-ai/generated-test-results@1", "cases" => results}
+  end
+  def smoke do
+    {_, args, _} = hd(vectors())
+    Hub.CLI.run(JSON.decode!(args))
+  end
+end

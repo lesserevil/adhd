@@ -1,0 +1,230 @@
+# Active work
+
+This file is the durable resumption queue for user-directed and discovered work. Before
+implementation, follow `skills/agent/record-user-directed-work/SKILL.md`.
+Keep detailed designs in focused roadmap documents and link them here.
+
+## Detailed-roadmap lifecycle
+
+This file is the sole resumable queue. Create a supporting file beneath `docs/roadmap/`
+only when one item cannot keep a program's rationale, ordering, and acceptance contract
+readable. Put this visible header immediately after the detailed document's title:
+
+```markdown
+- **Status:** active
+- **Owning queue item:** [AREA-NNN](active-work.md#area-nnn-heading)
+- **Completion / archival evidence:** pending while AREA-NNN remains open
+```
+
+Status is exactly `active`, `partial`, `deferred`, `completed`, or `historical`. The
+owner must resolve to a checkbox or named program heading in this file. A terminal state
+requires linked evidence. Keep a completed plan here only when doing so preserves useful
+inbound links; move substantial closed programs beneath `docs/history/roadmap/`, retain
+their owner, and mark them `historical`. Do not create a separate file for an ordinary
+queue item or let `docs/roadmap/` become a plan archive.
+
+## P0
+
+### [x] ONBOARD-001 — Establish the information hub's product requirements
+
+- **Owner:** project mission and documentation
+- **Direction:** Build an A2A information hub for indirect agent communication, information publishing, natural-language subscriptions, and agent queries/search.
+- **Conclusion:** Record the product requirements and acceptance scenarios in PROJECT.md before choosing protocol bindings, persistence, or a matching model. This item establishes intent; runtime implementation remains separate work.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Record the project mission, required behaviors, acceptance scenarios, and unresolved implementation decisions in PROJECT.md.
+  - [x] Replace product documentation placeholders with an accurate description and current implementation status.
+- **Evidence:**
+  - [x] Review requirements against the user's direction and pass project authority and lock verification: `litai verify --gate authority --gate locks` passed both gates. The matcher identity remains an explicit open decision, not a selected dependency.
+
+Check the parent only after every required subtask and evidence item passes. Add the
+release-visible outcome to `CHANGELOG.md`; Git preserves prior queue states.
+
+### [x] CONFIG-001 — Default to Elixir
+
+- **Priority:** P0
+- **Owner:** project configuration
+- **Direction:** Use Elixir as the default implementation language in this project.
+- **Conclusion:** Install the bundled lang-elixir Flavor and replace the Python default; remove the Python-only pip packaging default while retaining Make and macOS.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Install lang-elixir and update default selectors.
+  - [x] Refresh the sample Component lock for the new defaults.
+- **Evidence:**
+  - [x] Project authority and lock verification pass with Elixir selected and no Python-only packaging default: `litai verify --gate authority --gate locks` passed both gates; sample lock refreshed by `litai lock samples/hello-component`.
+
+### [x] MATCH-001 — Clarify Jev-style subscription matching
+
+- **Priority:** P0
+- **Owner:** project mission and documentation
+- **Direction:** Use the supplied Jev reference to clarify the model class intended for subscription matching.
+- **Conclusion:** Specify semantic classification with typed probabilities from publication context and subscription criteria; keep provider, model version, thresholds, and failure policy open.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Update matcher requirements and documentation using primary Jev documentation: https://docs.typesafe.ai/primitives. PROJECT.md records typed relevance probabilities, hub decision policy, and independent subscription questions.
+- **Evidence:**
+  - [x] Verify source-supported matcher semantics and pass project authority and lock checks: `litai verify --gate authority --gate locks` passed both gates. Provider, threshold, uncertainty handling, and failure policy remain open decisions.
+
+### [x] SCOPE-001 — Define the first shared-project coordination scope
+
+- **Priority:** P0
+- **Owner:** project mission and documentation
+- **Direction:** Accept the proposed first-version defaults and start with two agents coordinating work on the same project.
+- **Conclusion:** Record one private hub with durable storage, polling and acknowledgements, a replaceable Jev-style matcher, new-publication subscriptions, agent text/JSON publishing, and basic search. Define coordination examples and restart/reconnect acceptance without choosing an agent client or deployment.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Update PROJECT.md and product documentation with accepted scope and the two-agent workflow, including offline catch-up and restart/acknowledgement acceptance scenarios.
+- **Evidence:**
+  - [x] Review coverage of accepted defaults and verify project authority and locks: `litai verify --gate authority --gate locks` passed both gates. Runtime implementation remains pending.
+
+### [x] INTEGRATE-001 — Select initial A2A test peer and decision model
+
+- **Priority:** P0
+- **Owner:** project mission and integration requirements
+- **Direction:** Use a simple compliant A2A test agent and the available internal Nemotron Deciffusion 8B v2.1 decision model instead of requiring Jev access.
+- **Conclusion:** Inspect official A2A samples and model repository metadata; record the initial model choice, verified inference dependencies, and remaining serving prerequisites without downloading weights or starting compute.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Inspect model README/configuration and official A2A sample documentation; source identities and integration findings are recorded in docs/architecture/model-integration.md.
+  - [x] Update project requirements and integration guidance with selected dependencies and unresolved serving details. Initial model selected; live serving is tracked by SERVE-001.
+- **Evidence:**
+  - [x] Source-check integration claims and pass project authority and lock validation: `litai verify --gate authority --gate locks` passed both gates; the documented relevance request parses as JSON. No live inference or A2A interoperability run is claimed.
+
+### [x] SERVE-001 — Validate a reachable Nemotron inference service
+
+- **Priority:** P0
+- **Owner:** private inference deployment
+- **Direction:** Test locally when appropriate or use one of the offered private GPU hosts.
+- **Conclusion:** After the user-managed reboot, host and container GPU discovery both pass with matching driver 595.99.02. The selected RTX 4090 host has about 23 GiB free VRAM and 135 GiB free root disk. Prepare an isolated loopback-only inference service without changing existing workloads.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Check serving footprint and isolate the model runtime and checkpoint. The digest-pinned image is running with a read-only BF16 checkpoint mounted, dynamic FP8 quantization, a 60% GPU-memory budget, and loopback-only access. Transfer and on-host SHA256 checks matched the pinned internal checkpoint. The user-managed reboot resolved the driver mismatch.
+  - [x] Run a healthy service and record a real relevance request/response with the selected checkpoint. `/health` returned `ready: true`; two real publication cases returned typed Noul probabilities. Exact requests, responses, and identities are in verification/deciffusion-smoke.json.
+- **Evidence:**
+  - [x] Validate positive and negative project-update judgments and record the exact runtime/checkpoint identity: API-change relevance 0.985936 versus outage relevance 0.003173; the outage case ranked outage relevance highest (0.997199) but also scored API relevance 0.798187. This is serving/response evidence, not a production threshold or calibrated-quality claim. `litai verify --gate authority --gate locks` passed both gates.
+
+### [x] HUB-001 — Implement the first durable A2A coordination hub
+
+- **Priority:** P0
+- **Owner:** hub Component, protocol contract, and acceptance
+- **Direction:** Build the agreed first working hub with two agents sharing project updates, subscriptions, queued delivery, messages, search, and restart recovery.
+- **Conclusion:** Author the hub Component and precise A2A contract, generate an Elixir implementation through the installed lifecycle, and verify it with independent two-agent clients and the live Nemotron endpoint. Keep runtime data private and persisted; bind test services to loopback. User approval of the implementation plan includes local build and execution for acceptance.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Define the A2A operation and durable-state contract and resolve the hub generation plan: components/hub/component.md and its generated lock resolve Elixir/Make/macOS; CLI oracle bound to the exact specification identity.
+  - [x] Rebind the stale Standard installation identity using reviewed plan sha256:a7615db8b45aa3c16a0f09ce114832c787ed64372e4e85a17be2720ae65d586a. Installed version remains 1.2.0 and the policy/evidence requirements are unchanged. The first build stopped safely before generation.
+  - [x] Record local workflow limitations: `project.peer_work_git_failed` because HEAD has no commit; tracker inspect reports forge unsupported and no remote. No branch, merge, push, or remote CI action was attempted.
+  - [x] Generate and build the Elixir service and its native tests. The clarified Component generated an Elixir implementation; all 10 native cases passed. A stable-authority rebuild recorded a passing lifecycle receipt. Native and verifier-owned argument vectors were checked to remain distinct. Accepted source is published to the committed source-cache target.
+  - [x] Run independent two-agent protocol, failure, isolation, idempotency, and restart tests, including real Nemotron matching: all 16 black-box checks passed using a2a-sdk 1.1.0. Evidence: verification/hub-acceptance.json. A dropped private model tunnel caused the first live attempt to time out; reconnecting restored the healthy endpoint and the complete suite passed.
+  - [x] Document runnable setup and product usage and retain passing evidence. Setup/API guides and the SDK helper are verified, including integer-limited polling through JSON text parts. Ordinary build/run export is verified, and its artifact hash matches the 16-case independent report, including a real unrelated publication check. The starter sample catalog audit was refreshed. Strict accepted-source-only continuation reported source_cache.runtime_absent after oracle reconciliation; no gate was bypassed, and the documented ordinary build reuses and verifies the source candidate. The private prototype is running; credentials and durable data are ignored by Git.
+- **Evidence:**
+  - [x] Hub build/native tests and independent A2A SDK scenarios pass: 10 native cases and 16 SDK scenarios, persistent unacknowledged delivery after hard kill, acknowledgement retention, model failure/recovery, and live Nemotron coordination. verification/hub-acceptance.json binds the exact exported artifact SHA256. `litai verify` passed authority, both locks, and receipt; source-intelligence and HTML gates are skipped by configuration. Start/end peer surveys and the read-only GC plan cannot run without an initial Git commit; no remote forge/CI is configured, and no cleanup, push, or merge was attempted.
+
+### [x] SKILL-001 — Describe agent coordination through the hub
+
+- **Priority:** P1
+- **Owner:** project agent skill and usage documentation
+- **Direction:** Provide a reusable skill for startup subscriptions and polling, ongoing work updates, and processing and acknowledging deliveries.
+- **Conclusion:** Add a project-owned client skill using the existing A2A helper and API contract, linked from the project guide; preserve explicit polling, agent identity, and durable acknowledgement behavior.
+- **Depends on:** HUB-001
+- **Implementation:**
+  - [x] Write and link the three-step coordination skill with setup, retry, and acknowledgement guidance: skills/agent/coordinate-via-hub/SKILL.md, referenced in docs/README.md.
+- **Evidence:**
+  - [x] Validate skill structure and links and run project authority and lock checks: skill-creator quick_validate passed; all three linked files exist; command and delivery fields reviewed against the hub contract; litai verify --gate authority --gate locks passed. Start/end peer surveys remain unavailable because Git HEAD has no initial commit; no remote forge is configured.
+
+### [x] DEPLOY-001 — Run the hub service in a container
+
+- **Priority:** P1
+- **Owner:** hub deployment specification and packaging
+- **Direction:** The hub service should run containerized.
+- **Conclusion:** Provide a containerized deployment of the Elixir hub with durable storage outside the container, private runtime configuration, and connectivity to the separately served matcher. Implemented an isolated Linux Docker runtime for the accepted portable Elixir script, retaining macOS/Make/Elixir authoring defaults. Host networking preserves the loopback-only service contract; configuration and storage stay outside the image.
+- **Depends on:** HUB-001
+- **Implementation:**
+  - [x] Define the container deployment contract and required target Flavors: docs/admin/operations.md records the Linux Docker runtime, pinned Elixir/OTP realization, host networking, and persistent data boundary. The existing Elixir/Make/macOS Flavors produce portable source; packaging does not claim a native Linux cross-build.
+  - [x] Add a reproducible container image and documented startup, configuration, persistent-volume, health-check, and shutdown procedures: deploy/Dockerfile, deploy/health.exs, deploy/run.sh, scripts/stage_container.py, and scripts/configure_hub.py. A deterministic payload archive removes Docker copy-layer timestamp variance. Two independent no-cache builds produced the same image identity; verification/container-reproducibility.json records inputs and builder versions.
+- **Evidence:**
+  - [x] Run two-agent coordination against the containerized hub and verify queued deliveries and acknowledgements survive container replacement with the same persistent volume: all 20 checks passed, including real Nemotron matching, hard-kill restart, documented runner startup, container replacement, offline backup/restore, and rollback. Evidence: verification/container-acceptance.json.
+  - [x] Verify the container can reach the configured matcher without embedding credentials or model weights in the hub image: live Nemotron SDK coordination passed. The staged context contains only a Dockerfile, a hash manifest, and a deterministic archive of the accepted script, health probe, contract, and manifest. Server credentials are mounted read-only; the model and data remain external. Private config isolation, exclusive creation, artifact drift rejection, and archive identities were checked.
+
+### [x] DOCS-001 — Provide complete service documentation
+
+- **Priority:** P1
+- **Owner:** project README and service documentation
+- **Direction:** Provide a README, user documentation, admin documentation, and troubleshooting documentation.
+- **Conclusion:** Review and extend the existing project README and prototype guides into a coherent documentation set for hub users and administrators. Document actual supported behavior and incorporate container deployment instructions when DEPLOY-001 is implemented. The root README and connected user, admin, and troubleshooting guides are written. Container and recovery procedures, documentation navigation, native build, and full project verification all passed.
+- **Depends on:** HUB-001
+- **Implementation:**
+  - [x] Review existing documentation and update the README with the service purpose, capabilities, quick start, and links to user, admin, and troubleshooting guides: README.md and docs/README.md now route each audience to the appropriate guide.
+  - [x] Complete user documentation for agent setup, authentication, the coordination skill, subscriptions, publishing, messaging, polling, acknowledgements, and search: docs/user/using-the-hub.md connects client setup and the coordination loop to the existing API examples.
+  - [x] Add admin documentation for installation, containerized operation coordinated with DEPLOY-001, configuration, credentials, persistent storage, backup and restore, upgrades, monitoring, and matcher connectivity: docs/admin/operations.md.
+  - [x] Add troubleshooting documentation for startup failures, authentication errors, missing or delayed deliveries, matcher outages, connectivity problems, and storage or recovery failures: docs/admin/troubleshooting.md.
+- **Evidence:**
+  - [x] Verify documented commands and examples against the supported service and check documentation navigation and project authority: configuration, staging, build, startup, health, SDK coordination, and recovery commands were exercised; guide links resolve. Verified staging exactly reproduces the tested input manifest/archive and rejects artifact drift. The native build passed all 10 cases; litai verify passed authority, both locks, and the current receipt, with source-intelligence and HTML gates skipped by configuration. Start/end peer surveys and GC planning remain unavailable without an initial Git commit, and tracker reconciliation is skipped because no remote forge is configured; no push, merge, or shared Docker cleanup was attempted.
+  - [x] Exercise the documented administrator startup, backup and restore, and recovery procedures; verify container-specific instructions after DEPLOY-001 is implemented: the independent container suite invokes the actual runner and configuration tool, replaces containers over the same data, restores an offline backup, and rolls back to the preserved pre-restore data. All four operations checks and the original 16 SDK scenarios passed.
+
+### [x] INFO-001 — Store and retrieve information from agents and future external sources
+
+- **Priority:** P1
+- **Owner:** hub information model, ingestion, subscriptions, and search
+- **Direction:** Store client-submitted information for future searching, initially agent messages and status updates, and later messages from email, Slack, Teams, and other sources; allow subscriptions and search across this information.
+- **Conclusion:** Extend the existing durable publish/search path into a common information model with source and content metadata. Start with agent messages and status while preserving arbitrary JSON content. Keep private addressed-message visibility distinct from project-published information. Future external connectors should use the same storage, subscription-matching, and search path. Implemented information type, source provenance, occurrence time, retrieval by ID, source/type filters, and source-item deduplication while retaining DETS as approved. The original prototype store upgrades without losing accepted state. A verified container is running with private per-agent client files and a live-testing guide. Live external connectors remain subsequent work; synthetic external-origin information already uses the shared contract.
+- **Depends on:** HUB-001
+- **Implementation:**
+  - [x] Defined in components/hub/component.md and the named components/hub/information/spec.md boundary; includes arbitrary JSON values, immutable history, bounded metadata, authenticated author identity, and project/private visibility rules.
+  - [x] Generated the extended Elixir runtime through the installed lifecycle. The first candidate had an HTTP-handler syntax error; lifecycle repair produced the accepted implementation. All 8 native cases and 6 private CLI acceptance vectors passed, with distinct native/oracle arguments.
+  - [x] The matcher receives complete envelopes and deliveries retain type, source, and event time. Independent fixture checks and live Nemotron status delivery verify this path, retention after ack, and retry deduplication.
+  - [x] Added get by publication_id and exact information_type/source_kind/source_id search filters, including filter-only searches. Existing query-only and publish clients retain their shapes and behavior. Private delivery IDs cannot be retrieved through get or search.
+  - [x] Documented in docs/user/stored-information.md, API/user/admin guides, the coordination skill, and docs/user/live-testing.md. Future adapters must map upstream visibility, source/event or revision IDs, original timestamps, and retries into the same authenticated contract. No live connector integration is claimed.
+- **Evidence:**
+  - [x] 24 independent host SDK scenarios passed, including arrays/scalars/null, source/type filters, archive retention after ack, hard restart, and source-item retries. Evidence: verification/hub-acceptance.json. A real store produced by the original runtime retained history, inboxes, ack state, pending jobs, and original idempotent results after upgrade.
+  - [x] 27 container scenarios passed, including the original protocol/restart suite, all information-archive scenarios, real Nemotron matching, documented runner, replacement, backup/restore, and rollback. Evidence: verification/container-acceptance.json. Independent no-cache image builds matched; verification/container-reproducibility.json binds the tested source and both specification roots.
+  - [x] Synthetic Slack-origin publication matched, delivered, and remained searchable through the common contract. The deployed container passed the live status/archive smoke test; verification/live-mvp-smoke.json records the result. Cold backups preserve the prior local runtime/config/store and the pre-upgrade data. Private client files are under .adhd/mvp/. Full litai verify passed authority, both committed locks, and the current receipt; source-intelligence and HTML gates are skipped by configuration. The deployed container also retained history and acknowledgements across restart. Source is published to the committed cache. Start/end peer surveys and GC planning remain unavailable without an initial Git commit; no remote forge is configured, so no tracker reconciliation, push, merge, or shared cleanup was attempted.
+
+### [x] UI-001 — Add a simple web management and observation UI
+
+- **Priority:** P1
+- **Owner:** hub web interface and administrator API
+- **Direction:** Provide a simple web management and observation UI for the service.
+- **Conclusion:** Implemented the four-view console and separate administrator API, durable management retry records, credential isolation and metadata-only observation of private deliveries. Fresh normal-build generation preserves the original schema-2 source-event index; the first candidate's migration defect was caught by a real old-runtime upgrade check and corrected in the canonical contract. Verified the exported artifact in hardened containers and a real browser, then replaced the private MVP using an offline backup. The same image retained agent state across restart.
+- **Depends on:** INFO-001
+- **Implementation:**
+  - [x] Defined Overview, Information, Subscriptions and Activity in components/hub/management/spec.md; registered the named specification root.
+  - [x] Separate optional admin_token, legacy-disabled API, agent/admin token separation, memory-only browser credential, same-origin checks, strict CSP, redacted diagnostics, and delivery metadata without private bodies.
+  - [x] Implemented embedded assets and nine admin operations, including confirmed subscription removal and pending-job retry; mutation IDs persist atomically across restart. Normal build exports the tested candidate.
+  - [x] Added docs/admin/web-console.md, updated operations/troubleshooting/navigation/live-testing guides and the private configuration helper; the helper provisions a separate mode-0600 administrator token.
+- **Evidence:**
+  - [x] Two-agent fixture and live deployment checks passed; verification/web-console-browser.json covers message/status/search/details, queued deliveries and simulated outage. verification/web-console-live-smoke.json covers real matcher health and unchanged live agent state after replacement and restart.
+  - [x] 31 SDK scenarios passed (verification/hub-acceptance.json), including invalid admin configuration, auth/origin boundaries, disabled legacy configs, private visibility, durable action retries/conflicts and both earlier store formats. Browser confirmation cancellation and response-loss retry passed; deployed responses/logs contain no bearer tokens.
+  - [x] Desktop/mobile screenshots and accessibility snapshots inspected at 1440 and 390 pixels: no overflow or normal-path page/console/network errors. Fault-injected 503/401/network loss recovered as intended. 12 native tests, eight independent CLI vectors and 33 hardened-container scenarios passed; independent no-cache image builds matched (verification/container-reproducibility.json). Full litai verify passed authority, both locks and current receipt; source-intelligence and HTML gates are skipped by configuration, with the UI independently checked in Playwright. Accepted source is published to the committed cache. Peer surveys and tracker reconciliation remain unavailable without an initial commit or configured remote; no commit, push, merge or shared cleanup was attempted.
+
+### [ ] AUTH-001 — Optional OIDC authentication for administrator pages
+
+- **Priority:** P1
+- **Owner:** hub administrator authentication and web management interface
+- **Direction:** Add optional OpenID Connect (OIDC) authentication for administrator pages, retaining the current admin key as the default authentication method.
+- **Conclusion:** Plan a configurable OIDC sign-in option for the administrator console and its supporting API. Existing installations continue using the current admin key unless an operator explicitly selects OIDC; no identity provider is required for default operation. Next action: define authentication-mode configuration, provider integration and administrator authorization/session behavior before changing the runtime. This item records future work only.
+- **Depends on:** UI-001
+- **Implementation:**
+  - [ ] Define explicit authentication-mode selection with admin key as the default, optional OIDC provider configuration, and backward compatibility for existing server and client configurations.
+  - [ ] Specify OIDC sign-in/callback, identity and token validation, administrator authorization rules, protected API access, session expiry/logout and request-forgery protection. Define explicit key/OIDC coexistence policy; avoid silent fallback when an explicitly selected OIDC mode fails.
+  - [ ] Implement optional OIDC protection for administrator pages and their supporting API while preserving administrator permissions, private-message visibility boundaries and existing A2A agent authentication.
+  - [ ] Document provider setup, required configuration and secrets, redirect URLs, mode selection, session/logout behavior and troubleshooting; retain a straightforward admin-key setup path.
+- **Evidence:**
+  - [ ] Verify the unchanged default admin-key flow with OIDC unconfigured, including existing configurations and agent workflows.
+  - [ ] Exercise OIDC sign-in, allowed and denied administrator identities, invalid or expired identity tokens, callback validation, session expiry/logout, provider failures and absence of credential leakage.
+  - [ ] Verify browser and direct API access enforce the selected authentication mode and preserve management-action safety and private-data boundaries; pass applicable project, SDK, container and desktop/mobile browser checks.
+
+### [x] NAME-001 — Use Agentic Distributed Harness Depot consistently in documentation and help text
+
+- **Priority:** P2
+- **Owner:** project naming, documentation and hub user-facing text
+- **Direction:** Expand ADHD as Agentic Distributed Harness Depot, using Depot rather than Database, and update documentation, help text and related user-facing references accordingly.
+- **Conclusion:** Implemented Agentic Distributed Harness Depot (ADHD) as the full product name across documentation, helper help, component display metadata, browser title/sign-in/authenticated brand and Agent Card description. The exact CLI describe response and existing adhd/ADHD identifiers remain compatible. The tested container is deployed using the existing credentials and store, with an offline pre-update backup. Evidence: verification/name-acceptance.json.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Inventoried the named product surfaces; verification/name-acceptance.json records the current documentation set and three public helper help checks. Generic hub/database terminology and technical paths remain descriptive or stable identifiers.
+  - [x] Updated project goals, README/guide introductions, agent coordination skill, helper descriptions and component display metadata; added components/hub/presentation/spec.md to own exact public presentation. Preserved legitimate database terminology and historical evidence.
+  - [x] Generated and qualified the runtime through litai, exported its tested artifact, included the presentation specification in the container manifest and published accepted source to the committed cache. Updated CHANGELOG.md. Deployed without changing credentials, container name or data paths.
+- **Evidence:**
+  - [x] Naming inventory and three helper --help outputs passed; full litai verify passed authority/documentation review, both locks and the current receipt. Tracker and peer surveys remain unavailable without a configured remote or initial commit; no commit, push or merge was attempted.
+  - [x] Five native cases and eight independent CLI vectors passed, as did 31 SDK and 33 hardened-container scenarios, including real model matching and both earlier store upgrades. Exact describe compatibility and Agent Card naming passed. Playwright desktop/mobile screenshots and accessibility structure confirmed the full name fits with no normal-path page, console, network errors or document overflow; search/details, subscription create/cancel/remove, guide toggle and logout/reload passed. Independent no-cache image builds matched. Live agent state and existing credentials were preserved. Reports: verification/name-acceptance.json and its linked evidence. Source-intelligence and HTML gates are skipped by project configuration; browser inspection was performed independently.

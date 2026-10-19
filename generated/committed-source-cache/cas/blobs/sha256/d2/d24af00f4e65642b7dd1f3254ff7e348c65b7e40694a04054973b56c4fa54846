@@ -1,0 +1,191 @@
+defmodule ADHD.Store do
+  use GenServer
+  alias ADHD.Domain, as: D
+  @moduledoc "Durable serialized state. Version 1 supports one process and one service per store."
+  def start_link(config), do: GenServer.start_link(__MODULE__, config)
+  def command(pid, actor, message_id, command), do: GenServer.call(pid, {:command, actor, message_id, command}, :infinity)
+  def job(pid), do: GenServer.call(pid, :job)
+  def complete(pid, key, result), do: GenServer.call(pid, {:complete, key, result}, :infinity)
+  def stop(pid), do: GenServer.stop(pid)
+  def init(config) do
+    path = Path.expand(config["store_path"])
+    # A global name protects duplicate service starts inside one VM; DETS file locking
+    # protects the disk file from a second BEAM process.
+    lock = {__MODULE__, path}
+    case :global.register_name(lock, self()) do
+      :yes -> open(config, path, lock)
+      :no -> {:stop, :store_already_running}
+    end
+  end
+  defp open(config, path, lock) do
+    existed = File.exists?(path)
+    if not existed, do: File.mkdir_p!(Path.dirname(path))
+    case :dets.open_file(:adhd_hub_state, file: String.to_charlist(path), type: :set, repair: false, auto_save: :infinity) do
+      {:ok, table} ->
+        try do
+          if existed, do: D.check(:dets.info(table, :size) == 1, "invalid store inventory")
+          data = case :dets.lookup(table, :state) do
+            [{:state, state}] -> verify!(state, config)
+            [] when not existed -> fresh(config)
+            _ -> raise "corrupt store"
+          end
+          :ok = :dets.close(table)
+          if not existed, do: snapshot!(path, data)
+          {:ok, %{path: path, data: data, config: config, lock: lock}}
+        rescue
+          _ -> :dets.close(table); {:stop, :invalid_store}
+        end
+      {:error, _} -> {:stop, :unreadable_store}
+    end
+  end
+  defp fresh(c), do: %{version: 1, project: c["project_id"], seq: 0, subscriptions: %{}, publications: %{}, deliveries: %{}, jobs: %{}, idempotency: %{}}
+  defp verify!(s, c) do
+    D.check(is_map(s) and Enum.sort(Map.keys(s)) == Enum.sort(Map.keys(fresh(c))), "invalid store")
+    D.check(s.version == 1 and s.project == c["project_id"] and is_integer(s.seq) and s.seq >= 0, "invalid store")
+    D.check(Enum.all?([s.subscriptions, s.publications, s.deliveries, s.jobs, s.idempotency], &is_map/1), "invalid store")
+    Enum.each(s.subscriptions, fn {id, r} -> D.check(r.record["id"] == id and is_integer(r.seq), "invalid subscription") end)
+    Enum.each(s.publications, fn {id, r} -> D.check(r.record["id"] == id and is_integer(r.seq), "invalid publication") end)
+    Enum.each(s.deliveries, fn {id, r} -> D.check(r.record["id"] == id and is_integer(r.seq) and is_boolean(r.acked), "invalid delivery") end)
+    Enum.each(s.jobs, fn {{p, sub}, j} -> D.check(Map.has_key?(s.publications, p) and is_binary(sub) and j.status in [:pending, :done, :cancelled] and is_integer(j.retry_at), "invalid job") end)
+    s
+  end
+  def terminate(_, state) do
+    :global.unregister_name(state.lock)
+  end
+  def handle_call({:command, actor, key, cmd}, _from, state) do
+    try do
+      D.validate(cmd)
+      if not Map.has_key?(state.config["agents"], actor), do: D.error("FORBIDDEN")
+      if Map.has_key?(cmd, "project_id") and cmd["project_id"] != state.data.project, do: D.error("PROJECT_MISMATCH")
+      mutation = cmd["op"] in ~w(subscribe unsubscribe publish send ack)
+      cache = if mutation, do: Map.get(state.data.idempotency, {actor, key}), else: nil
+      case cache do
+        %{command: previous, result: result} ->
+          if previous != cmd, do: D.error("IDEMPOTENCY_CONFLICT")
+          {:reply, {:ok, result}, state}
+        nil ->
+          {result, data} = execute(state.data, state.config, actor, cmd)
+          data = if mutation, do: put_in(data.idempotency[{actor, key}], %{command: cmd, result: result}), else: data
+          state = persist(state, data)
+          {:reply, {:ok, result}, state}
+      end
+    rescue
+      e in ADHD.DomainError -> {:reply, {:error, e.message}, state}
+      e in ADHD.Invalid -> {:reply, {:invalid, e.message}, state}
+    end
+  end
+  defp persist(state, data) when data == state.data, do: state
+  defp persist(state, data) do
+    snapshot!(state.path, data)
+    %{state | data: data}
+  end
+  # Publish only a closed, synchronously flushed DETS snapshot. A hard kill while
+  # writing the next transition leaves the last accepted snapshot untouched and
+  # never requires DETS repair of the authoritative store on startup.
+  defp snapshot!(path, data) do
+    temp = path <> ".next-" <> Base.encode16(:crypto.strong_rand_bytes(12), case: :lower)
+    try do
+      {:ok, table} = :dets.open_file(:adhd_hub_state, file: String.to_charlist(temp), type: :set, repair: false, auto_save: :infinity)
+      try do
+        :ok = :dets.insert(table, {:state, data})
+        :ok = :dets.sync(table)
+      after
+        :ok = :dets.close(table)
+      end
+      File.rename!(temp, path)
+    after
+      File.rm(temp)
+    end
+  end
+  defp next(s, prefix) do
+    n = s.seq + 1
+    {prefix <> Integer.to_string(n), DateTime.utc_now() |> DateTime.to_iso8601(), %{s | seq: n}}
+  end
+  defp ordered(map), do: map |> Map.values() |> Enum.sort_by(& &1.seq)
+  defp own!(map, id, actor, field) do
+    r = Map.get(map, id) || D.error("NOT_FOUND")
+    if r.record[field] != actor, do: D.error("FORBIDDEN")
+    r
+  end
+  defp execute(s, _c, a, %{"op" => "whoami"}), do: {%{"agent_id" => a, "project_id" => s.project}, s}
+  defp execute(s, _c, a, %{"op" => "subscribe", "description" => desc}) do
+    {id, time, s} = next(s, "s")
+    record = %{"id" => id, "agent_id" => a, "project_id" => s.project, "description" => desc, "created_at" => time}
+    {%{"subscription" => record}, put_in(s.subscriptions[id], %{record: record, seq: s.seq})}
+  end
+  defp execute(s, _c, a, %{"op" => "list_subscriptions"}) do
+    records = ordered(s.subscriptions) |> Enum.filter(&(&1.record["agent_id"] == a)) |> Enum.map(& &1.record)
+    {%{"subscriptions" => records}, s}
+  end
+  defp execute(s, _c, a, %{"op" => "unsubscribe", "subscription_id" => id}) do
+    own!(s.subscriptions, id, a, "agent_id")
+    jobs = Map.new(s.jobs, fn {{_, sub} = k, j} -> {k, if(sub == id and j.status == :pending, do: %{j | status: :cancelled}, else: j)} end)
+    {%{"unsubscribed" => id}, %{s | subscriptions: Map.delete(s.subscriptions, id), jobs: jobs}}
+  end
+  defp execute(s, c, a, %{"op" => "publish"} = cmd) do
+    {id, time, s} = next(s, "p")
+    record = %{"id" => id, "project_id" => s.project, "author_id" => a, "text" => Map.get(cmd, "text", ""), "data" => Map.get(cmd, "data", %{}), "created_at" => time}
+    jobs = Enum.reduce(s.subscriptions, s.jobs, fn {sub, r}, jobs ->
+      Map.put(jobs, {id, sub}, %{status: :pending, retry_at: 0, subscription: r.record, threshold: c["threshold_ppm"], model: c["matcher"]["model"]})
+    end)
+    s = put_in(s.publications[id], %{record: record, seq: s.seq})
+    {%{"publication" => record, "matching" => "pending"}, %{s | jobs: jobs}}
+  end
+  defp execute(s, c, a, %{"op" => "send"} = cmd) do
+    if not Map.has_key?(c["agents"], cmd["recipient_id"]), do: D.error("NOT_FOUND")
+    {id, time, s} = next(s, "d")
+    record = %{"id" => id, "project_id" => s.project, "recipient_id" => cmd["recipient_id"], "sender_id" => a, "kind" => "message", "text" => Map.get(cmd, "text", ""), "data" => Map.get(cmd, "data", %{}), "created_at" => time}
+    {%{"delivery" => record}, put_in(s.deliveries[id], %{record: record, seq: s.seq, acked: false})}
+  end
+  defp execute(s, _c, a, %{"op" => "poll"} = cmd) do
+    records = ordered(s.deliveries) |> Enum.filter(&(not &1.acked and &1.record["recipient_id"] == a)) |> Enum.take(Map.get(cmd, "limit", 50)) |> Enum.map(& &1.record)
+    {%{"deliveries" => records}, s}
+  end
+  defp execute(s, _c, a, %{"op" => "ack", "delivery_ids" => ids}) do
+    Enum.each(ids, &own!(s.deliveries, &1, a, "recipient_id"))
+    s = Enum.reduce(ids, s, fn id, acc -> put_in(acc.deliveries[id].acked, true) end)
+    {%{"acknowledged" => ids}, s}
+  end
+  defp execute(s, _c, _a, %{"op" => "search"} = cmd) do
+    q = String.downcase(cmd["query"])
+    records = ordered(s.publications) |> Enum.reverse() |> Enum.filter(fn r -> String.contains?(String.downcase(r.record["text"]), q) or String.contains?(String.downcase(JSON.encode!(r.record["data"])), q) end) |> Enum.take(Map.get(cmd, "limit", 50)) |> Enum.map(& &1.record)
+    {%{"publications" => records}, s}
+  end
+  def handle_call(:job, _from, state) do
+    now = System.system_time(:millisecond)
+    job = state.data.jobs |> Enum.filter(fn {_, j} -> j.status == :pending and j.retry_at <= now end) |> Enum.sort_by(fn {{pub, sub}, _} -> {state.data.publications[pub].seq, sub} end) |> List.first()
+    result = case job do
+      nil -> nil
+      {{pub, _} = key, j} -> {key, j, state.data.publications[pub].record}
+    end
+    {:reply, result, state}
+  end
+  def handle_call({:complete, key, result}, _from, state) do
+    s = state.data
+    s = case Map.get(s.jobs, key) do
+      %{status: :pending} = job -> finish(s, state.config, key, job, result)
+      _ -> s
+    end
+    {:reply, :ok, persist(state, s)}
+  end
+  defp finish(s, c, {pub, sub} = key, job, result) do
+    cond do
+      not Map.has_key?(s.subscriptions, sub) -> put_in(s.jobs[key].status, :cancelled)
+      not is_integer(result) or result < 0 or result > 1000000 -> put_in(s.jobs[key].retry_at, System.system_time(:millisecond) + c["matcher"]["retry_ms"])
+      result < job.threshold -> put_in(s.jobs[key].status, :done)
+      true ->
+        s = put_in(s.jobs[key].status, :done)
+        recipient = job.subscription["agent_id"]
+        match = %{"subscription_id" => sub, "probability_ppm" => result, "threshold_ppm" => job.threshold, "model" => job.model}
+        existing = Enum.find(s.deliveries, fn {_, d} -> d.record["kind"] == "publication" and d.record["publication_id"] == pub and d.record["recipient_id"] == recipient end)
+        case existing do
+          {id, d} -> put_in(s.deliveries[id].record["matches"], d.record["matches"] ++ [match])
+          nil ->
+            p = s.publications[pub].record
+            {id, time, s} = next(s, "d")
+            record = %{"id" => id, "project_id" => s.project, "recipient_id" => recipient, "sender_id" => p["author_id"], "kind" => "publication", "text" => p["text"], "data" => p["data"], "created_at" => time, "publication_id" => pub, "matches" => [match]}
+            put_in(s.deliveries[id], %{record: record, seq: s.seq, acked: false})
+        end
+    end
+  end
+end

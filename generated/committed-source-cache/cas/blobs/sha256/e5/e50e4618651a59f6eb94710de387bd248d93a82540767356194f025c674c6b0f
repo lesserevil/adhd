@@ -1,0 +1,38 @@
+defmodule Hub.Assembly do
+  def run(["all", export, out, objects]) do
+    root = Path.expand("..", __DIR__)
+    protect_sources!(root, [export])
+    files = Path.wildcard(Path.join(root, "**/*.{ex,exs}"))
+    Enum.each(files, fn file -> Code.string_to_quoted!(File.read!(file), file: file) end)
+    File.mkdir_p!(objects)
+    File.mkdir_p!(out)
+    File.mkdir_p!(Path.dirname(export))
+    ordered = ~w(validation.exs store.exs matcher.exs assets.exs http.exs app.exs tests/litai_test.exs tests/regression.exs main.exs)
+    payload = Enum.map_join(ordered, "\n", fn name -> File.read!(Path.join(root, name)) end)
+    Code.string_to_quoted!(payload)
+    File.write!(export, payload)
+    if not File.regular?(export), do: raise("Missing export")
+  end
+  def run(["clean", export, out, objects]) do
+    root = Path.expand("..", __DIR__)
+    protect_sources!(root, [out, objects, export])
+    # Refuse output overrides that could erase admitted source or its ancestors.
+    Enum.each([out, objects], fn path ->
+      target = Path.expand(path)
+      if root == target or String.starts_with?(root, target <> "/") or File.exists?(Path.join(target, "main.exs")), do: raise("Unsafe cleanup path")
+      if File.dir?(target), do: File.rm_rf!(target)
+    end)
+    if File.regular?(export), do: File.rm!(export)
+  end
+  defp protect_sources!(root, outputs) do
+    admitted = ~w(Makefile main.exs validation.exs store.exs matcher.exs assets.exs http.exs app.exs tests/litai_test.exs tests/regression.exs tests/manifest.json tools/assemble.exs .literate/sbom.cdx.json)
+    Enum.each(outputs, fn output ->
+      target = Path.expand(output)
+      Enum.each(admitted, fn relative ->
+        source = Path.join(root, relative)
+        if source == target or String.starts_with?(source, target <> "/"), do: raise("Output overlaps admitted source")
+      end)
+    end)
+  end
+end
+Hub.Assembly.run(System.argv())

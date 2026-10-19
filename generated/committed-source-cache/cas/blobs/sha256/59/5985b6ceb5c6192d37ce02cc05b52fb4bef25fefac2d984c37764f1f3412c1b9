@@ -1,0 +1,156 @@
+defmodule Hub.Error do
+  defexception code: "INVALID_PARAMS", message: "Invalid parameters"
+end
+
+defmodule Hub.Validation do
+  def fail(code \\ "INVALID_PARAMS"), do: raise(Hub.Error, code: code)
+  def require!(condition), do: if(condition, do: :ok, else: fail())
+  def object!(x), do: require!(is_map(x) and not is_struct(x))
+  def keys!(x, allowed) do
+    object!(x)
+    require!(Enum.all?(Map.keys(x), &(&1 in allowed)))
+  end
+  def text!(x, max, min \\ 1) do
+    require!(is_binary(x) and String.valid?(x) and byte_size(x) >= min and byte_size(x) <= max and String.trim(x) != "")
+  end
+  def nonempty!(x), do: require!(is_binary(x) and String.valid?(x) and byte_size(x) > 0)
+  def id!(x) do
+    nonempty!(x)
+    require!(byte_size(x) <= 128)
+  end
+  def identifier!(x) do
+    id!(x)
+    require!(Regex.match?(~r/\A[A-Za-z0-9._-]+\z/, x))
+  end
+  def integer!(x, low, high), do: require!(is_integer(x) and x >= low and x <= high)
+  def optional!(m, k, f), do: if(Map.has_key?(m, k), do: f.(m[k]), else: :ok)
+  def url!(x) do
+    nonempty!(x)
+    u = URI.parse(x)
+    require!(u.scheme in ["http", "https"] and is_binary(u.host) and u.host != "" and is_nil(u.userinfo))
+  end
+  def timestamp!(x) do
+    text!(x, 64)
+    case DateTime.from_iso8601(x) do
+      {:ok, dt, _} -> DateTime.to_iso8601(dt)
+      _ -> fail()
+    end
+  end
+  def source!(x) do
+    keys!(x, ~w(kind id item_id uri))
+    identifier!(x["kind"])
+    text!(x["id"], 256)
+    optional!(x, "item_id", &text!(&1, 512))
+    optional!(x, "uri", fn uri -> text!(uri, 2048); url!(uri) end)
+  end
+  def filters!(x) do
+    optional!(x, "query", &text!(&1, 256))
+    optional!(x, "information_type", &identifier!/1)
+    optional!(x, "source_kind", &identifier!/1)
+    optional!(x, "source_id", &text!(&1, 256))
+    optional!(x, "limit", &integer!(&1, 1, 100))
+  end
+  def content!(x, object_data) do
+    require!(Map.has_key?(x, "text") or Map.has_key?(x, "data"))
+    optional!(x, "text", &text!(&1, 65536))
+    if object_data, do: optional!(x, "data", &object!/1)
+    size = Enum.reduce(~w(text data), 0, fn key, bytes ->
+      if Map.has_key?(x, key), do: bytes + byte_size(JSON.encode!(x[key])), else: bytes
+    end)
+    require!(size <= 65536)
+  end
+  def command!(x) do
+    object!(x)
+    fields = case x["op"] do
+      op when op in ~w(whoami list_subscriptions) -> []
+      "subscribe" -> ["description"]
+      "unsubscribe" -> ["subscription_id"]
+      "publish" -> ~w(text data information_type source occurred_at)
+      "send" -> ~w(recipient_id text data)
+      "poll" -> ["limit"]
+      "ack" -> ["delivery_ids"]
+      "get" -> ["publication_id"]
+      "search" -> ~w(query information_type source_kind source_id limit)
+      _ -> fail()
+    end
+    keys!(x, ["op", "project_id" | fields])
+    optional!(x, "project_id", &identifier!/1)
+    case x["op"] do
+      "subscribe" -> text!(x["description"], 4096)
+      "unsubscribe" -> id!(x["subscription_id"])
+      "publish" ->
+        content!(x, false)
+        optional!(x, "information_type", &identifier!/1)
+        optional!(x, "source", &source!/1)
+        optional!(x, "occurred_at", &timestamp!/1)
+      "send" -> identifier!(x["recipient_id"]); content!(x, true)
+      "poll" -> optional!(x, "limit", &integer!(&1, 1, 100))
+      "ack" ->
+        ids = x["delivery_ids"]
+        require!(is_list(ids) and length(ids) in 1..100 and length(Enum.uniq(ids)) == length(ids))
+        Enum.each(ids, &id!/1)
+      "get" -> id!(x["publication_id"])
+      "search" ->
+        filters!(x)
+        require!(Enum.any?(~w(query information_type source_kind source_id), &Map.has_key?(x, &1)))
+      _ -> :ok
+    end
+    x
+  end
+  def admin!(x) do
+    object!(x)
+    fields = case x["op"] do
+      "overview" -> []
+      "publications" -> ~w(query information_type source_kind source_id limit)
+      "publication" -> ["publication_id"]
+      op when op in ~w(subscriptions deliveries) -> ~w(agent_id limit)
+      "jobs" -> ~w(status limit)
+      "create_subscription" -> ~w(agent_id description message_id)
+      "remove_subscription" -> ~w(subscription_id confirm message_id)
+      "retry_jobs" -> ~w(confirm message_id)
+      _ -> fail()
+    end
+    keys!(x, ["op" | fields])
+    optional!(x, "limit", &integer!(&1, 1, 100))
+    optional!(x, "agent_id", &identifier!/1)
+    case x["op"] do
+      "publications" -> filters!(x)
+      "publication" -> id!(x["publication_id"])
+      "jobs" -> optional!(x, "status", &require!(&1 in ~w(pending done cancelled)))
+      "create_subscription" -> identifier!(x["agent_id"]); text!(x["description"], 4096)
+      "remove_subscription" -> id!(x["subscription_id"]); require!(x["confirm"] == true)
+      "retry_jobs" -> require!(x["confirm"] == true)
+      _ -> :ok
+    end
+    if x["op"] in ~w(create_subscription remove_subscription retry_jobs), do: text!(x["message_id"], 128)
+    x
+  end
+  def config!(x) do
+    keys!(x, ~w(project_id store_path agents host port public_url matcher threshold_ppm admin_token))
+    identifier!(x["project_id"])
+    nonempty!(x["store_path"])
+    object!(x["agents"])
+    require!(map_size(x["agents"]) > 0)
+    Enum.each(x["agents"], fn {id, token} ->
+      identifier!(id)
+      nonempty!(token)
+      require!(String.length(token) >= 24)
+    end)
+    tokens = Map.values(x["agents"])
+    require!(length(Enum.uniq(tokens)) == length(tokens))
+    c = Map.merge(%{"host" => "127.0.0.1", "port" => 8766, "threshold_ppm" => 900000}, x)
+    require!(c["host"] == "127.0.0.1")
+    integer!(c["port"], 1, 65535)
+    integer!(c["threshold_ppm"], 1, 1000000)
+    c = Map.put_new(c, "public_url", "http://127.0.0.1:#{c["port"]}")
+    url!(c["public_url"])
+    keys!(c["matcher"], ~w(url model timeout_ms retry_ms))
+    matcher = Map.merge(%{"timeout_ms" => 3000, "retry_ms" => 1000}, c["matcher"])
+    url!(matcher["url"])
+    nonempty!(matcher["model"])
+    integer!(matcher["timeout_ms"], 100, 30000)
+    integer!(matcher["retry_ms"], 100, 30000)
+    optional!(c, "admin_token", fn token -> text!(token, 65536, 32); require!(token not in tokens) end)
+    Map.put(c, "matcher", matcher)
+  end
+end

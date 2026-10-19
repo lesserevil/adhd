@@ -228,3 +228,101 @@ release-visible outcome to `CHANGELOG.md`; Git preserves prior queue states.
 - **Evidence:**
   - [x] Naming inventory and three helper --help outputs passed; full litai verify passed authority/documentation review, both locks and the current receipt. Tracker and peer surveys remain unavailable without a configured remote or initial commit; no commit, push or merge was attempted.
   - [x] Five native cases and eight independent CLI vectors passed, as did 31 SDK and 33 hardened-container scenarios, including real model matching and both earlier store upgrades. Exact describe compatibility and Agent Card naming passed. Playwright desktop/mobile screenshots and accessibility structure confirmed the full name fits with no normal-path page, console, network errors or document overflow; search/details, subscription create/cancel/remove, guide toggle and logout/reload passed. Independent no-cache image builds matched. Live agent state and existing credentials were preserved. Reports: verification/name-acceptance.json and its linked evidence. Source-intelligence and HTML gates are skipped by project configuration; browser inspection was performed independently.
+
+<a id="info-002-preserve-contextual-evidence-without-a-domain-taxonomy"></a>
+
+### [ ] INFO-002 — Preserve contextual evidence without a domain taxonomy
+
+- **Priority:** P1
+- **Owner:** hub information model and persistence
+- **Direction:** Retain full agent statements and their context so future questions and re-indexing do not require predicted data buckets.
+- **Conclusion:** Extend INFO-001 with contextual relationships and immutable corrections; preserve originals as authority and interpretations as derived records. Follow [adaptive retrieval design](adaptive-retrieval.md#contextual-records). Next action: specify the backward-compatible context envelope and upgrade fixtures.
+- **Depends on:** INFO-001
+- **Planning evidence:** All six adaptive retrieval requests were recorded with `litai work record`; tracker reconciliation found no open issues/reviews and start/end peer surveys found no collectable work. The current checkout's documentation changes are retained deliberately. `git diff --check` passed. `litai verify` passed authority/documentation review and both locks; source-intelligence and HTML gates were skipped by configuration. The runtime receipt is stale against the changed project authority (`project.test_receipt_stale`); no rebuild or runtime acceptance is claimed. The implementation and evidence boxes below remain open.
+- **Implementation:**
+  - [ ] Specify optional question, reply, conversation and subject references with contextual snapshots, provenance and bounded authorized link traversal; preserve arbitrary text/JSON and unknown domain concepts.
+  - [ ] Implement immutable corrections and evidence relationships, stable content identities, legacy-store compatibility, retry semantics and durable storage without replacing original statements with extracted facts.
+  - [ ] Document context submission and re-indexing semantics, including missing references, cycles, changed external sources and private-message isolation.
+- **Evidence:**
+  - [ ] Round-trip Yes with its question and subject, cardinal/red-bird reports, arbitrary JSON and a later correction across retries, acknowledgements and hard restart.
+  - [ ] Upgrade existing stores without data loss; reject unauthorized context expansion and demonstrate reconstruction of the exact evidence used by a historical query.
+
+### [ ] QUERY-001 — Evaluate natural-language questions by scanning contextual history
+
+- **Priority:** P1
+- **Owner:** hub query evaluator and A2A query jobs
+- **Direction:** Answer unforeseen questions from original evidence without requiring a purpose-built index.
+- **Conclusion:** Add bounded, resumable semantic scans over a stable authorized corpus with evidence-backed answers and explicit coverage. Follow [scan design](adaptive-retrieval.md#semantic-scans). Next action after INFO-002: specify query-job operations and evaluator adapter independently of the subscription matcher.
+- **Depends on:** INFO-002
+- **Implementation:**
+  - [ ] Define natural-language query requests, scope/snapshot identity, asynchronous job lifecycle, budgets, continuation, cancellation, idempotency and authorized result retrieval.
+  - [ ] Evaluate all records in the scope with context expansion and cross-record synthesis; retain supporting and contradicting source IDs, uncertainty, evaluator versions and examined/remaining coverage.
+  - [ ] Implement durable checkpoints and explicit partial, unavailable, conflicting and no-evidence outcomes; keep inference outside the store writer and literal search compatible.
+- **Evidence:**
+  - [ ] Answer bird presence, explicitly reported species/color and distinct-bird count without domain columns; handle corrections and evidence requiring multiple linked records.
+  - [ ] Exercise hard restart, timeout, malformed model results, cancellation, concurrent publication and budget exhaustion; never report incomplete scans as exhaustive or missing evidence as false.
+  - [ ] Validate a real configured evaluator against independently labeled fixtures; existing typed subscription relevance alone must not qualify as answer synthesis.
+
+### [ ] SEARCH-001 — Build replaceable general-purpose contextual retrieval
+
+- **Priority:** P1
+- **Owner:** hub retrieval adapters and derived index lifecycle
+- **Direction:** Retrieve unforeseen questions without requiring users to predict indexes or classify incoming publications.
+- **Conclusion:** Introduce general-purpose text/semantic candidate retrieval over contextual records; indexes accelerate access and never replace evidence. Follow [retrieval design](adaptive-retrieval.md#general-purpose-retrieval). Next action after INFO-002: specify adapter and index manifest contracts and select an evidenced initial implementation.
+- **Depends on:** INFO-002
+- **Implementation:**
+  - [ ] Define contextual indexing input and candidate response contracts, publication/context identities, index/model versions, indexed-through watermarks and explicit stale/unavailable states.
+  - [ ] Implement asynchronous idempotent indexing, incremental updates, context-change invalidation, full rebuild and atomic version switching while ingestion remains durable during index failures.
+  - [ ] Preserve literal search and support scoped candidate retrieval followed by original-record/context fetch; choose backend and embedding model from measured needs rather than a domain taxonomy.
+- **Evidence:**
+  - [ ] Find paraphrases and exact identifiers, including Yes indexed with its question; negation similarity must not be treated as support.
+  - [ ] Rebuild from originals, catch up after downtime and switch versions under concurrent ingestion without losing records or leaking private context; expose incomplete coverage.
+
+### [ ] SEARCH-002 — Fall back from search to semantic scans
+
+- **Priority:** P1
+- **Owner:** hub query planning and evidence sufficiency policy
+- **Direction:** Try inexpensive search first and scan when it fails to produce useful evidence.
+- **Conclusion:** Compose SEARCH-001 and QUERY-001 under a versioned sufficiency policy, exposing the actual execution path and coverage. Follow [fallback workflow](adaptive-retrieval.md#search-then-scan). Next action after dependencies: specify escalation reasons, query modes and bounded execution policy.
+- **Depends on:** QUERY-001, SEARCH-001
+- **Implementation:**
+  - [ ] Define search, scan and search-then-scan modes with explicit scope, budgets, completeness requirements and stable query snapshots.
+  - [ ] Escalate on insufficient or conflicting evidence, absent/stale indexes, retrieval errors and exhaustive requests; evaluate usefulness against the question rather than score or hit count alone.
+  - [ ] Add configurable sampled scan audits of apparently successful searches; expose fallback reasons, partial outcomes, evidence and audit selection probabilities without blocking normal hub traffic.
+- **Evidence:**
+  - [ ] Recover useful evidence missed by search, including later corrections; distinguish search misses from no evidence in the scanned corpus.
+  - [ ] Exercise plausible incomplete answers, negation, count/all requests, index outages and scan budget exhaustion; preserve explicit uncertainty and scope completeness.
+  - [ ] Verify scan audits can discover hidden misses in apparently successful searches and record their sampling policy.
+
+### [ ] SEARCH-003 — Record retrieval failures and replay past questions
+
+- **Priority:** P1
+- **Owner:** hub retrieval feedback and evaluation history
+- **Direction:** Re-evaluate failed searches and learn from repeated search-then-scan attempts.
+- **Conclusion:** Persist reproducible search/scan comparisons and classify retrieval gaps separately from archive gaps or evaluator failures. Follow [feedback workflow](adaptive-retrieval.md#failure-analysis-and-replay). Next action after SEARCH-002: define attempt records, comparison metrics and replay cohort rules.
+- **Depends on:** SEARCH-002
+- **Implementation:**
+  - [ ] Record question, authorized scope/snapshot, search candidates/ranks, scan evidence, answer changes, completeness, fallback reason, versions, cost and latency with access controls.
+  - [ ] Cluster recurring misses and replay saved attempts against changed retrieval configurations on the same evidence snapshot; keep later-corpus re-evaluation separately labeled.
+  - [ ] Create regression and held-out cohorts including successful searches, no-evidence cases and sampled audits; retain feedback separately from source publications to prevent self-confirming retrieval.
+- **Evidence:**
+  - [ ] Reproduce a miss with stable source/configuration identities and measure improvement without mistaking new publications for better indexing.
+  - [ ] Classify missing evidence, ranking/context defects, model errors and incomplete scans correctly; incomplete/model-generated judgments are not unquestioned ground truth.
+  - [ ] Verify feedback authorization, duplicate retry handling, restart persistence and replay isolation from subscription deliveries and ordinary evidence searches.
+
+### [ ] INDEX-001 — Generate and qualify retrieval improvements from observed misses
+
+- **Priority:** P1
+- **Owner:** hub adaptive indexing jobs and operator policy
+- **Direction:** Use repeated search-then-scan failures to identify and generate the indexes retrieval actually needs.
+- **Conclusion:** Generate bounded declarative candidates from measured failure clusters, then build, replay, qualify, promote and roll back under configured policy. A new index is one possible remedy alongside context, chunking, ranking and link traversal. Follow [index workflow](adaptive-retrieval.md#index-generation-and-promotion). Next action after SEARCH-003: define supported recipe types, budgets and measurable promotion criteria.
+- **Depends on:** SEARCH-003
+- **Implementation:**
+  - [ ] Define configurable recurrence/support thresholds and diagnose repeated misses; generate versioned declarative recipes tied to evidence rather than arbitrary generated executable code.
+  - [ ] Build isolated candidates from authoritative records with durable checkpoints and resource limits; replay training and held-out/regression cohorts and report quality, coverage, latency and storage tradeoffs.
+  - [ ] Promote only candidates passing configured criteria and corpus catch-up, atomically switch versions, retain rollback and prevent repeated ineffective rebuilds; support operator-selected automatic or review-based promotion.
+  - [ ] Document lifecycle states, failure handling, retirement and management visibility; add generated runtime behavior through owning Component specifications and the authorized Literate AI lifecycle.
+- **Evidence:**
+  - [ ] An observed recurring paraphrase/context miss produces a candidate that improves held-out retrieval; a ranking-only defect need not create a new index.
+  - [ ] Reject candidates that regress correction/negation, privacy, successful-query recall or resource limits; reject insufficient evaluation evidence.
+  - [ ] Exercise interrupted builds, concurrent publications/context updates, promotion, rollback and retirement while source records and hub delivery state remain intact.

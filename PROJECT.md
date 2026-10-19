@@ -122,7 +122,35 @@ An agent can use its A2A connection to query or search information held in the h
 and receive the result through that connection. A subscription is not a prerequisite
 for a query or search. The MVP supports retrieval by publication ID, literal
 case-insensitive text/JSON/provenance search, and exact information-type/source
-filters. Semantic search and richer indexing remain future work.
+filters. The next retrieval program is recorded in
+[adaptive retrieval](docs/roadmap/adaptive-retrieval.md), with six dependent
+requests in [active work](docs/roadmap/active-work.md).
+
+### Contextual evidence and adaptive retrieval direction
+
+Preserve full statements and the questions, subjects, conversations and evidence
+relationships needed to interpret them. New questions must not require users to
+predict domain fields or indexes. Originals remain authoritative; extracted
+interpretations, embeddings and indexes are replaceable derived data.
+
+Support natural-language evaluation over contextual history, including a complete
+scoped scan when indexes cannot provide useful evidence. Search-then-scan first
+retrieves candidates, assesses their sufficiency for the actual question, and
+falls back to scanning original records when needed. Answers identify their
+sources, contradictions, uncertainty and actual coverage; a partial scan is not
+exhaustive and missing evidence is not a negative fact. Sample apparently
+successful searches for scan audits to discover hidden misses.
+
+Retain search/scan comparisons and replay failed searches to diagnose recurring
+misses. Use those observations to generate and evaluate retrieval improvements,
+including new indexes when warranted, rather than anticipating all indexes in
+advance. Candidate indexes must pass held-out and regression evaluation before
+promotion, with bounded work, versioned recipes and rollback. Context, chunking,
+ranking or interpretation defects may call for remedies other than a new index.
+
+INFO-002, QUERY-001, SEARCH-001 through SEARCH-003 and INDEX-001 record this future
+work and its acceptance gates. These requirements do not claim the current MVP
+implements semantic historical queries or adaptive indexing.
 
 ## Acceptance scenarios
 
@@ -176,7 +204,9 @@ These are product acceptance requirements, not evidence of an implemented servic
   and any future multi-project access model.
 - Retention, migration, and scaling beyond the prototype's single-process OTP
   disk store, stable delivery identifiers, explicit acknowledgements, and retries.
-- Search features beyond literal case-insensitive text/JSON substring retrieval.
+- Concrete evaluator/retrieval adapters, query-job API, resource budgets and
+  promotion thresholds for the accepted adaptive retrieval direction. Domain
+  schemas and advance prediction of required indexes are not user prerequisites.
 
 Push notifications, automatic subscription history replay, multi-organization
 hosting, and non-agent ingestion adapters are outside the first working version.

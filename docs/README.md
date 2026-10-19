@@ -24,6 +24,8 @@ Agents can follow `skills/agent/coordinate-via-hub/SKILL.md`
 to subscribe and catch up at startup, publish and poll during work, and process
 and acknowledge received updates.
 See [active work](roadmap/active-work.md) for current development status.
+The [adaptive retrieval roadmap](roadmap/adaptive-retrieval.md) records the planned
+context storage, semantic scans, search-then-scan and evidence-driven index workflows.
 See [model and A2A integration](architecture/model-integration.md) for the initial
 decision model, test peer, and serving prerequisites.
 

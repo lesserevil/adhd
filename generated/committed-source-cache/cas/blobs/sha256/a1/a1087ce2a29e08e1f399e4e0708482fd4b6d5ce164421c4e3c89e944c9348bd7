@@ -1,0 +1,19 @@
+defmodule ADHD.GeneratedTests do
+  @cases [
+    {"describe-contract", ["describe"], %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => ~w(ack get list_subscriptions poll publish query query_attempts query_cancel query_continue query_replay query_result query_status retrieve search send subscribe unsubscribe whoami)}},
+    {"validate-minimal-publish", ["validate", %{"op" => "publish", "data" => nil}], %{"valid" => true, "op" => "publish"}},
+    {"validate-poll-boundary", ["validate", %{"op" => "poll", "limit" => 100}], %{"valid" => true, "op" => "poll"}},
+    {"validate-context-reference", ["validate", %{"op" => "publish", "text" => "correction", "context" => %{"references" => [%{"publication_id" => "pub-1", "relation" => "corrects"}]}}], %{"valid" => true, "op" => "publish"}},
+    {"validate-query-defaults", ["validate", %{"op" => "query", "question" => "What is current?"}], %{"valid" => true, "op" => "query"}},
+    {"validate-admin-overview", ["validate-admin", %{"op" => "overview"}], %{"valid" => true, "op" => "overview"}}
+  ]
+
+  def run! do
+    results = Enum.map(@cases, fn {id, arguments, expected} ->
+      actual = ADHD.Hub.invoke(arguments)
+      unless actual == expected, do: raise("#{id} failed: #{inspect(actual)}")
+      %{"case_id" => id, "outcome" => "passed"}
+    end)
+    IO.puts(JSON.encode!(%{"schema" => "literate-ai/generated-test-results@1", "cases" => results}))
+  end
+end

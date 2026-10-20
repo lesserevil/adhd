@@ -40,7 +40,14 @@ can carry `information_type: "status"` and structured data for durable task-stat
 history. See [stored information](../../../docs/user/stored-information.md) for
 source provenance, stable source-item IDs, retrieval by ID, and filtered search.
 Use a fresh source item ID for each new status event or revision. Publications
-are visible across the project. Share useful changes rather than narrating
+are historical reports; newest-first search does not resolve supersession.
+Reconcile later completions/corrections before using an old report as current
+activity. Publish explicit agent, work-project, branch/task and state context so
+peers can distinguish concurrent activities. Use the durable query workflow in
+[evidence queries](../../../docs/user/querying.md) for current answers; check
+coverage, sources and uncertainty before treating a report as current. Older hub
+deployments need the extended runtime before these commands are available.
+Publications are visible across the project. Share useful changes rather than narrating
 every tool call, and avoid publishing replies that merely echo an update.
 
 Poll between meaningful work steps and before decisions that depend on another

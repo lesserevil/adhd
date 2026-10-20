@@ -25,6 +25,10 @@ def main():
     export = json.loads(Path(args.export).read_text())
     if export.get('component') != 'components/hub':
         raise SystemExit('Expected a hub artifact export')
+    if export.get('schema') == 'adhd/artifact-export@1':
+        receipt = json.loads((root / 'verification/current.json').read_text())
+        if export.get('receipt_identity') != receipt.get('receipt_identity'):
+            raise SystemExit('Export is bound to an older lifecycle receipt; build again')
     artifact = Path(export['artifact'])
     payload = artifact.read_bytes()
     digest = hashlib.sha256(payload).hexdigest()
@@ -33,10 +37,18 @@ def main():
     files = {'hub.exs': payload,
              'Dockerfile': (root / 'deploy/Dockerfile').read_bytes(),
              'health.exs': (root / 'deploy/health.exs').read_bytes(),
-             'component.md': (root / 'components/hub/component.md').read_bytes(),
-             'information-spec.md': (root / 'components/hub/information/spec.md').read_bytes(),
-             'management-spec.md': (root / 'components/hub/management/spec.md').read_bytes(),
-             'presentation-spec.md': (root / 'components/hub/presentation/spec.md').read_bytes()}
+             'component.md': (root / 'components/hub/component.md').read_bytes()}
+    # Package every authored behavioral root, preserving its namespace.
+    frontmatter = (root / 'components/hub/component.md').read_text().split('---', 2)[1]
+    roots = frontmatter.split('specification_roots:\n', 1)[1].splitlines()
+    for line in roots:
+        if not line.startswith('  - '):
+            break
+        relative = Path(line[4:].strip())
+        if relative.is_absolute() or '..' in relative.parts:
+            raise SystemExit('Unsafe specification root')
+        files[relative.as_posix()] = (root / 'components/hub' / relative).read_bytes()
+
     manifest = {'schema': 'adhd/container-inputs@1', 'files': {
         name: hashlib.sha256(content).hexdigest() for name, content in files.items()}}
     output = Path(args.output)
@@ -49,6 +61,14 @@ def main():
         archive.addfile(directory)
         payloads = {name: content for name, content in files.items() if name != 'Dockerfile'}
         payloads['manifest.json'] = manifest_bytes
+        directories = set()
+        for name in payloads:
+            directories.update(parent.as_posix() for parent in Path(name).parents if parent.as_posix() != '.')
+        for name in sorted(directories, key=lambda value: (value.count('/'), value)):
+            info = tarfile.TarInfo('app/' + name)
+            info.type = tarfile.DIRTYPE
+            info.mode = 0o755
+            archive.addfile(info)
         for name, content in sorted(payloads.items()):
             info = tarfile.TarInfo('app/' + name)
             info.mode = 0o644

@@ -1,0 +1,23 @@
+for {path, module} <- [{"base.ex", Hub.CLI}, {"extension.ex", Hub.Ext}, {"index.ex", Hub.Index}, {"query.ex", Hub.Query}, {"auth.ex", Hub.Auth}, {"ui.ex", Hub.UI}, {"hub.ex", ADHD.Hub}] do
+  unless Code.ensure_loaded?(module), do: Code.require_file(path, __DIR__)
+end
+case System.argv() do
+  ["--litai-test"] ->
+    unless Code.ensure_loaded?(ADHD.GeneratedTests), do: Code.require_file("tests/litai_test.exs", __DIR__)
+    unless Code.ensure_loaded?(Hub.DomainTests), do: Code.require_file("tests/domain_test.exs", __DIR__)
+    Hub.DomainTests.run!()
+    ADHD.GeneratedTests.run!()
+  ["--litai-smoke"] -> IO.puts(JSON.encode!(ADHD.Hub.invoke(["describe"])))
+  [argument] ->
+    try do
+      arguments = JSON.decode!(argument)
+      unless is_list(arguments), do: Hub.Validate.fail()
+      result = ADHD.Hub.invoke(arguments)
+      IO.puts(JSON.encode!(result))
+    rescue
+      _ -> IO.puts(:stderr, "Request or service failed"); System.halt(1)
+    catch
+      _, _ -> IO.puts(:stderr, "Request or service failed"); System.halt(1)
+    end
+  _ -> IO.puts(:stderr, "Expected one JSON array argument"); System.halt(1)
+end

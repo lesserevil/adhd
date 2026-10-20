@@ -1,0 +1,194 @@
+defmodule Hub.Auth do
+  alias Hub.Validate, as: V
+  def mode(cfg), do: Map.get(cfg, "admin_auth", "key")
+  def enabled?(cfg), do: mode(cfg) == "oidc" or is_binary(cfg["admin_token"])
+  def config(c) do
+    V.check(Map.get(c, "admin_auth", "key") in ~w(key oidc))
+    if mode(c) == "oidc" or Map.has_key?(c, "oidc") do
+      o = c["oidc"]
+      V.keys(o, ~w(issuer client_id allowed_subjects client_secret_env session_seconds idle_seconds allow_insecure_loopback), ~w(issuer client_id allowed_subjects))
+      V.url(o["issuer"]); V.string(o["client_id"], 256)
+      V.check(is_list(o["allowed_subjects"]) and length(o["allowed_subjects"]) in 1..100 and length(Enum.uniq(o["allowed_subjects"])) == length(o["allowed_subjects"]))
+      Enum.each(o["allowed_subjects"], &V.string(&1, 256))
+      V.optional(o, "allow_insecure_loopback", &V.check(is_boolean(&1)))
+      V.optional(o, "session_seconds", &V.integer(&1, 60, 86_400)); V.optional(o, "idle_seconds", &V.integer(&1, 30, 86_400))
+      V.check(Map.get(o, "idle_seconds", 900) <= Map.get(o, "session_seconds", 3600))
+      V.optional(o, "client_secret_env", &Hub.Ext.env!/1)
+      issuer = URI.parse(o["issuer"]); V.check(is_nil(issuer.query) and is_nil(issuer.fragment) and is_nil(issuer.userinfo))
+      public = Map.get(c, "public_url", "http://127.0.0.1:#{Map.get(c, "port", 8766)}")
+      if mode(c) == "oidc", do: V.check(safe_url?(o["issuer"], o) and safe_url?(public, o))
+    end
+    c
+  end
+  def safe_url?(url, oidc) do
+    u = URI.parse(url)
+    is_binary(u.host) and is_nil(u.userinfo) and is_nil(u.fragment) and (u.scheme == "https" or (oidc["allow_insecure_loopback"] == true and u.scheme == "http" and u.host in ["localhost", "127.0.0.1", "::1"]))
+  end
+  def start(_) do
+    {:ok, _} = Agent.start_link(fn -> %{transactions: %{}, sessions: %{}, cache: nil} end, name: __MODULE__)
+  end
+  def token, do: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+  defp secure?(cfg), do: URI.parse(cfg["public_url"]).scheme == "https"
+  defp cookie(name, value, age, cfg), do: {"Set-Cookie", "#{name}=#{value}; Path=/admin; HttpOnly; SameSite=Lax; Max-Age=#{age}" <> if(secure?(cfg), do: "; Secure", else: "")}
+  def cookies(headers) do
+    pairs = String.split(Map.get(headers, "cookie", ""), ";", trim: true) |> Enum.map(&String.split(String.trim(&1), "=", parts: 2))
+    if Enum.any?(pairs, &(length(&1) != 2)) or length(Enum.uniq_by(pairs, &hd/1)) != length(pairs), do: %{}, else: Map.new(pairs, fn [k, v] -> {k, v} end)
+  end
+  def session(headers, cfg, touch \\ false) do
+    id = cookies(headers)["adhd_admin_session"]
+    now = System.system_time(:second)
+    Agent.get_and_update(__MODULE__, fn state ->
+      value = state.sessions[id]
+      cond do
+        !value -> {nil, state}
+        value.expires <= now or value.last_seen + Map.get(cfg["oidc"], "idle_seconds", 900) <= now -> {nil, %{state | sessions: Map.delete(state.sessions, id)}}
+        touch -> {value, put_in(state.sessions[id].last_seen, now)}
+        true -> {value, state}
+      end
+    end)
+  end
+  def authorized?(headers, cfg) do
+    if mode(cfg) == "oidc", do: session(headers, cfg) != nil, else: Hub.HTTP.equal?(Hub.HTTP.bearer(headers), cfg["admin_token"])
+  end
+  def forgery_ok?(headers, cfg) do
+    if mode(cfg) == "oidc" do
+      s = session(headers, cfg)
+      ok = s != nil and headers["origin"] == Hub.HTTP.origin(cfg["public_url"]) and Hub.HTTP.equal?(headers["x-csrf-token"], s.csrf)
+      if ok, do: session(headers, cfg, true)
+      ok
+    else
+      Hub.HTTP.origin?(headers, cfg)
+    end
+  end
+  def route("GET", "/admin/auth", _, _, _, cfg), do: Hub.HTTP.secure(Hub.HTTP.json(200, %{"mode" => mode(cfg)}))
+  def route(method, target, h, _, _, cfg) do
+    path = URI.parse(target).path
+    if mode(cfg) == "oidc" do
+      case {method, path} do
+        {"GET", "/admin/login"} ->
+          try do login(cfg) rescue _ -> Hub.HTTP.secure(Hub.HTTP.error(503, "PROVIDER_UNAVAILABLE")) catch _, _ -> Hub.HTTP.secure(Hub.HTTP.error(503, "PROVIDER_UNAVAILABLE")) end
+        {"GET", "/admin/callback"} ->
+          try do callback(target, h, cfg) rescue _ -> Hub.HTTP.secure(Hub.HTTP.error(401, "SIGN_IN_REJECTED")) catch {:provider_unavailable} -> Hub.HTTP.secure(Hub.HTTP.error(503, "PROVIDER_UNAVAILABLE")); _, _ -> Hub.HTTP.secure(Hub.HTTP.error(401, "SIGN_IN_REJECTED")) end
+        {"GET", "/admin/session"} ->
+          case session(h, cfg, true) do
+            nil -> Hub.HTTP.secure(Hub.HTTP.unauthorized())
+            s -> Hub.HTTP.secure(Hub.HTTP.json(200, %{"authenticated" => true, "csrf" => s.csrf}))
+          end
+        {"POST", "/admin/logout"} ->
+          cond do
+            !authorized?(h, cfg) -> Hub.HTTP.secure(Hub.HTTP.unauthorized())
+            !forgery_ok?(h, cfg) -> Hub.HTTP.secure(Hub.HTTP.error(403, "FORBIDDEN"))
+            true ->
+              id = cookies(h)["adhd_admin_session"]
+              Agent.update(__MODULE__, &%{&1 | sessions: Map.delete(&1.sessions, id)})
+              Hub.HTTP.secure(Hub.HTTP.json(200, %{"logged_out" => true}, [cookie("adhd_admin_session", "", 0, cfg)]))
+          end
+        _ -> :pass
+      end
+    else
+      :pass
+    end
+  end
+  def discovery(cfg, force \\ false) do
+    now = System.system_time(:second)
+    cached = Agent.get(__MODULE__, & &1.cache)
+    if cached && cached.expires > now && !force do
+      cached
+    else
+      o = cfg["oidc"]
+      {:ok, d} = Hub.Query.http(:get, String.trim_trailing(o["issuer"], "/") <> "/.well-known/openid-configuration")
+      V.check(is_map(d) and d["issuer"] == o["issuer"] and "code" in Map.get(d, "response_types_supported", []) and "RS256" in Map.get(d, "id_token_signing_alg_values_supported", []))
+      for k <- ~w(authorization_endpoint token_endpoint jwks_uri), do: V.check(is_binary(d[k]) and safe_url?(d[k], o))
+      {:ok, jwks} = Hub.Query.http(:get, d["jwks_uri"])
+      V.check(is_list(jwks["keys"]) and length(jwks["keys"]) <= 100)
+      value = %{discovery: d, keys: jwks["keys"], expires: now + 300}
+      Agent.update(__MODULE__, &Map.put(&1, :cache, value))
+      value
+    end
+  end
+  def login(cfg) do
+    cache = discovery(cfg)
+    o = cfg["oidc"]; now = System.system_time(:second)
+    state = token(); nonce = token(); verifier = token(); binding = token()
+    created = Agent.get_and_update(__MODULE__, fn data ->
+      txs = Map.reject(data.transactions, fn {_, t} -> t.expires <= now end)
+      if map_size(txs) < 1000 do
+        {:ok, %{data | transactions: Map.put(txs, state, %{state: state, nonce: nonce, verifier: verifier, binding: binding, expires: now + 300})}}
+      else
+        {:full, %{data | transactions: txs}}
+      end
+    end)
+    V.check(created == :ok)
+    parameters = %{"response_type" => "code", "scope" => "openid", "client_id" => o["client_id"], "redirect_uri" => cfg["public_url"] <> "/admin/callback", "state" => state, "nonce" => nonce, "code_challenge_method" => "S256", "code_challenge" => :crypto.hash(:sha256, verifier) |> Base.url_encode64(padding: false)}
+    endpoint = cache.discovery["authorization_endpoint"]
+    location = endpoint <> if(URI.parse(endpoint).query, do: "&", else: "?") <> URI.encode_query(parameters)
+    Hub.HTTP.secure({302, "text/plain", "", [{"Location", location}, cookie("adhd_oidc_state", binding, 300, cfg)]})
+  end
+  def callback(target, headers, cfg) do
+    raw = URI.parse(target).query || ""
+    V.check(byte_size(raw) <= 16_384)
+    pairs = URI.query_decoder(raw) |> Enum.to_list()
+    V.check(length(Enum.uniq_by(pairs, &elem(&1, 0))) == length(pairs))
+    params = Map.new(pairs); V.string(params["state"], 128); V.string(params["code"], 8192)
+    V.check(!Map.has_key?(params, "error"))
+    state = params["state"]
+    tx = Agent.get_and_update(__MODULE__, fn data -> {value, rest} = Map.pop(data.transactions, state); {value, %{data | transactions: rest}} end)
+    V.check(tx != nil and Hub.HTTP.equal?(tx.state, state) and tx.expires > System.system_time(:second) and Hub.HTTP.equal?(tx.binding, cookies(headers)["adhd_oidc_state"]))
+    cache = try do discovery(cfg) rescue _ -> throw({:provider_unavailable}) end
+    o = cfg["oidc"]
+    parameters = %{"grant_type" => "authorization_code", "code" => params["code"], "redirect_uri" => cfg["public_url"] <> "/admin/callback", "client_id" => o["client_id"], "code_verifier" => tx.verifier}
+    parameters = if o["client_secret_env"], do: Map.put(parameters, "client_secret", Hub.Ext.env!(o["client_secret_env"])), else: parameters
+    response = case Hub.Query.http(:post, cache.discovery["token_endpoint"], URI.encode_query(parameters), [], 5000, "application/x-www-form-urlencoded") do
+      {:ok, result} -> result
+      _ -> throw({:provider_unavailable})
+    end
+    claims = verify(response["id_token"], tx.nonce, cfg)
+    now = System.system_time(:second)
+    expires = min(claims["exp"], now + Map.get(o, "session_seconds", 3600))
+    id = token(); csrf = token()
+    created = Agent.get_and_update(__MODULE__, fn data ->
+      sessions = Map.reject(data.sessions, fn {_, s} -> s.expires <= now or s.last_seen + Map.get(o, "idle_seconds", 900) <= now end)
+      if map_size(sessions) < 1000 do
+        {:ok, %{data | sessions: Map.put(sessions, id, %{expires: expires, last_seen: now, csrf: csrf, subject: claims["sub"]})}}
+      else
+        {:full, %{data | sessions: sessions}}
+      end
+    end)
+    V.check(created == :ok)
+    Hub.HTTP.secure({302, "text/plain", "", [{"Location", "/admin/"}, cookie("adhd_oidc_state", "", 0, cfg), cookie("adhd_admin_session", id, max(0, expires - now), cfg)]})
+  end
+  def strict_json(binary) do
+    push = fn key, value, acc -> V.check(!List.keymember?(acc, key, 0)); [{key, value} | acc] end
+    {value, :ok, rest} = :json.decode(binary, :ok, %{object_push: push})
+    V.check(String.trim(rest) == "")
+    value
+  end
+  defp decode64(value) do
+    V.check(is_binary(value) and Regex.match?(~r/^[A-Za-z0-9_-]+$/, value))
+    Base.url_decode64!(value, padding: false)
+  end
+  def verify(jwt, nonce, cfg) do
+    V.string(jwt, 32_768)
+    [header, payload, signature] = String.split(jwt, ".")
+    h = header |> decode64() |> strict_json()
+    V.keys(h, ~w(alg kid typ), ~w(alg kid)); V.check(h["alg"] == "RS256"); V.string(h["kid"], 256)
+    cache = discovery(cfg)
+    key = Enum.find(cache.keys, &(&1["kid"] == h["kid"]))
+    key = key || Enum.find(discovery(cfg, true).keys, &(&1["kid"] == h["kid"]))
+    V.check(is_map(key) and key["kty"] == "RSA" and key["alg"] in [nil, "RS256"] and key["use"] in [nil, "sig"] and (is_nil(key["key_ops"]) or "verify" in key["key_ops"]))
+    nbytes = decode64(key["n"]); V.check(byte_size(nbytes) in 256..1024)
+    modulus = :binary.decode_unsigned(nbytes); exponent = :binary.decode_unsigned(decode64(key["e"]))
+    V.check(modulus >= Bitwise.bsl(1, 2047) and exponent >= 3 and rem(exponent, 2) == 1)
+    V.check(:public_key.verify(header <> "." <> payload, :sha256, decode64(signature), {:RSAPublicKey, modulus, exponent}))
+    c = payload |> decode64() |> strict_json(); now = System.system_time(:second); o = cfg["oidc"]
+    V.check(is_map(c) and c["iss"] == o["issuer"] and c["sub"] in o["allowed_subjects"])
+    V.string(c["sub"], 256)
+    audiences = if is_binary(c["aud"]), do: [c["aud"]], else: c["aud"]
+    V.check(is_list(audiences) and Enum.all?(audiences, &is_binary/1) and o["client_id"] in audiences)
+    V.check((length(audiences) <= 1 or c["azp"] == o["client_id"]) and (is_nil(c["azp"]) or c["azp"] == o["client_id"]))
+    V.check(is_integer(c["exp"]) and c["exp"] > now and is_integer(c["iat"]) and c["iat"] >= 0 and c["iat"] <= now + 60 and c["exp"] > c["iat"])
+    V.check(is_nil(c["nbf"]) or (is_integer(c["nbf"]) and c["nbf"] <= now + 60))
+    V.check(Hub.HTTP.equal?(c["nonce"], nonce))
+    c
+  end
+end

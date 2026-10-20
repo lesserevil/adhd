@@ -116,14 +116,32 @@ The primary [TypeSafe question documentation](https://docs.typesafe.ai/primitive
 describes typed questions, independent evaluation, and the Noul primitive, which
 returns the probability of a yes answer without a separate confidence field.
 
+### Current facts and retained history
+
+Keep historical reports while answering current-state questions from the latest
+applicable facts. When an agent reports working on a branch and later reports
+completion, current answers about that agent or workers on that branch must
+reflect completion. Retain both reports and their provenance for historical
+queries. Resolve independent activities separately, account for late older
+reports, and expose unknown, pending or conflicting evidence rather than
+presenting stale or unsupported claims as fact.
+
+Natural-language reports must not require clients to supply special fact keys.
+The intended contract and acceptance cases are in
+`components/hub/information/current-facts.md`, tracked by INFO-003. Durable
+queries reconcile these reports at query time using the configured generative
+evaluator, original evidence and explicit coverage. Model judgments remain
+fallible; missing evidence does not establish a negative fact.
+
 ### Queries and search
 
 An agent can use its A2A connection to query or search information held in the hub
 and receive the result through that connection. A subscription is not a prerequisite
 for a query or search. The MVP supports retrieval by publication ID, literal
 case-insensitive text/JSON/provenance search, and exact information-type/source
-filters. The next retrieval program is recorded in
-[adaptive retrieval](docs/roadmap/adaptive-retrieval.md), with six dependent
+filters. Contextual retrieval and durable semantic queries are documented in
+[Evidence queries](docs/user/querying.md). The retrieval design is recorded in
+[adaptive retrieval](docs/roadmap/adaptive-retrieval.md), with its dependent
 requests in [active work](docs/roadmap/active-work.md).
 
 ### Contextual evidence and adaptive retrieval direction
@@ -148,9 +166,10 @@ advance. Candidate indexes must pass held-out and regression evaluation before
 promotion, with bounded work, versioned recipes and rollback. Context, chunking,
 ranking or interpretation defects may call for remedies other than a new index.
 
-INFO-002, QUERY-001, SEARCH-001 through SEARCH-003 and INDEX-001 record this future
-work and its acceptance gates. These requirements do not claim the current MVP
-implements semantic historical queries or adaptive indexing.
+INFO-002, QUERY-001, SEARCH-001 through SEARCH-003 and INDEX-001 record the
+implementation and acceptance gates. Adaptation is disabled by default; bounded
+declarative recipe changes require disjoint held-out and regression evaluation.
+See [retrieval administration](docs/admin/retrieval.md).
 
 ## Acceptance scenarios
 
@@ -228,35 +247,26 @@ hosting, and non-agent ingestion adapters are outside the first working version.
 
 ## Current status
 
-The Elixir MVP supports durable message/status history, source provenance, event
-and ingestion timestamps, arbitrary JSON publication content, retrieval by ID,
-source/type-filtered search, semantic subscriptions, and durable source-event
-retry deduplication. DETS remains the approved prototype backend. A startup
-upgrade preserves the original prototype's stored history and delivery state.
+The portable Elixir/OTP service supports Linux and macOS. This development cycle
+adds contextual publications, owner-private durable semantic queries, current-state
+reconciliation, search/scan fallbacks and audits, replayable comparisons, and qualified
+declarative index adaptation. OIDC administrator authentication is optional; the
+separate administrator key remains the default. Agent authentication and private
+message visibility remain unchanged. Schema 3 preserves legacy source-event
+idempotency and commits a checksummed recovery journal alongside DETS.
 
-The current runtime passed 5 native cases, 31 independent host SDK scenarios
-(including real schema-1 and schema-2 store upgrades), and 33 container scenarios. The
-container suite covers real Nemotron matching, hard restarts, replacement,
-offline backup/restore, and rollback. Two clean image builds produced the same
-identity. A deployed container also passed a live two-agent status/archive smoke
-test; private per-agent files and access instructions support live MVP testing.
+Run and query the service using [setup](docs/user/getting-started.md),
+[API](docs/user/hub-api.md) and [evidence queries](docs/user/querying.md).
+Operations, backup bundles, optional OIDC and retrieval administration are documented
+in [operations](docs/admin/operations.md), [OIDC](docs/admin/oidc.md) and
+[retrieval](docs/admin/retrieval.md). The console exposes index/job observation and
+confirmed lifecycle controls without exposing private query text or addressed bodies.
 
-The hub's contract is `components/hub/component.md`. Setup and usage are documented
-in `docs/user/getting-started.md` and `docs/user/hub-api.md`. Independent HTTP/model
-evidence is retained in `verification/hub-acceptance.json`; lifecycle evidence is
-recorded separately by Literate AI. No standalone package, public deployment, or
-production matching-quality guarantee is claimed.
-
-Container packaging and service operations are documented in
-`docs/admin/operations.md`; client onboarding is in `docs/user/using-the-hub.md`.
-Container and recovery evidence is in `verification/container-acceptance.json`,
-reproducibility evidence in `verification/container-reproducibility.json`, and
-live-deployment checks in `verification/live-mvp-smoke.json`.
-
-The administrator console is specified in components/hub/management/spec.md and
-operated using docs/admin/web-console.md. Its optional separate credential grants
-project-public observation, subscription management and pending-job retries; private
-addressed payloads remain hidden. UI-001 is implemented; verification/web-console-browser.json and
-verification/web-console-live-smoke.json record desktop/mobile interaction and live
-deployment evidence. The private MVP retains its prior agent state after replacement
-and restart, and exposes the console at its existing private HTTP URL.
+Fresh development evidence is recorded separately in `verification/roadmap-*.json`,
+`verification/oidc-acceptance.json` and `verification/adaptation-acceptance.json`,
+with lifecycle evidence in `verification/current.json`. Older hub/container/live
+reports describe earlier artifacts and deployments. The running private MVP has
+not been replaced by this development work. Linux execution is checked locally;
+macOS remains supported but fresh macOS acceptance requires a matching worker.
+There is no production matching-quality guarantee or live enterprise OIDC-provider
+qualification implied by deterministic provider fixtures.

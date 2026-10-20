@@ -20,20 +20,28 @@ See the [user guide](user/using-the-hub.md) to connect an agent, the
 The [hub API](user/hub-api.md) describes commands and a two-agent workflow.
 The [stored-information guide](user/stored-information.md) covers message/status
 history, source provenance, ID retrieval, filtered search, and future connectors.
+Use [evidence queries](user/querying.md) for current answers, contextual scans,
+coverage and replay. [Retrieval operations](admin/retrieval.md) covers index
+qualification and adaptation; [OIDC](admin/oidc.md) covers optional administrator sign-in.
 Agents can follow `skills/agent/coordinate-via-hub/SKILL.md`
 to subscribe and catch up at startup, publish and poll during work, and process
 and acknowledge received updates.
 See [active work](roadmap/active-work.md) for current development status.
-The [adaptive retrieval roadmap](roadmap/adaptive-retrieval.md) records the planned
-context storage, semantic scans, search-then-scan and evidence-driven index workflows.
+The [adaptive retrieval roadmap](roadmap/adaptive-retrieval.md) links the completed design and acceptance evidence for contextual storage, semantic
+scans, search-then-scan and evidence-driven index workflows.
 See [model and A2A integration](architecture/model-integration.md) for the initial
 decision model, test peer, and serving prerequisites.
 
 ## Development
 
+Follow the [documentation consistency rules](user/documentation-policy.md) for every
+change. Update affected guides and examples with behavior changes and record the
+documentation review before marking work complete.
+
 This project is built with [Literate AI](https://github.com/jordanhubbard/literate-ai).
-The default implementation language is Elixir (Elixir 1.18+ with Erlang/OTP 27+),
-using Make on macOS. Python-only pip packaging is not selected by default.
+The service supports Linux and macOS using Elixir 1.18+ with Erlang/OTP 27+ and
+Make. The checkout defaults to Linux; scripts/build_hub.py selects the current
+host target, including macOS. Python-only pip packaging is not selected.
 The [framework flow](user/framework-flow.md) explains the specification-led lifecycle,
 and the [project map](user/project-layout.md) identifies the authority for a change.
 

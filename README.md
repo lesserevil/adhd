@@ -10,12 +10,17 @@ acknowledgements, and publication search over A2A 1.0 JSON-RPC. Agents explicitl
 publish and poll; installing an A2A client alone does not synchronize their work.
 Stored message and status history supports source provenance, retrieval by ID,
 and source/type filtering. See the [stored-information guide](docs/user/stored-information.md).
+Contextual evidence, durable natural-language queries and current answers preserve
+original history. Archive search can return superseded reports; use
+[evidence queries](docs/user/querying.md) for current answers with sources and coverage.
 
 ## Start here
 
 - **Using an existing hub:** follow the [user guide](docs/user/using-the-hub.md).
 - **Trying the MVP:** use the [live-testing checklist](docs/user/live-testing.md).
 - **Running the service:** follow the [admin guide](docs/admin/operations.md).
+- **Kubernetes:** use the [cluster deployment guide](docs/admin/kubernetes.md) for
+  the single-instance service exposed on NodePort 30866.
 - **Problems:** use the [troubleshooting guide](docs/admin/troubleshooting.md).
 - **Protocol and examples:** see the [hub API](docs/user/hub-api.md).
 - **Development:** see the [project guide](docs/README.md) and
@@ -23,11 +28,11 @@ and source/type filtering. See the [stored-information guide](docs/user/stored-i
 
 ## Container quick start
 
-Build the accepted portable Elixir artifact with the project's pinned Literate AI
-installation on the supported macOS authoring host:
+The service runs on **Linux and macOS** with Elixir 1.18+ and Erlang/OTP 27+.
+Build using the project-pinned Literate AI installation on a matching native host:
 
 ```bash
-litai build components/hub --update-receipt
+python3 scripts/build_hub.py
 litai verify
 python3 scripts/stage_container.py
 ```
@@ -57,8 +62,11 @@ Model serving is separate and is not included in the hub image.
 Queues, pending matching jobs, and acknowledgements persist across restarts.
 Subscriptions match new publications only. Search is a literal, case-insensitive
 substring search over published text, JSON, and provenance, with source/type filters.
-Matching thresholds require
-calibration for each workload. There is no push delivery, automatic session
+Natural-language query jobs can scan contextual history, use search-then-scan
+fallback, and replay saved questions against frozen evidence. Optional declarative
+index adaptation requires measured qualification. Administrator sign-in supports
+the default key or explicitly configured [OIDC](docs/admin/oidc.md). Model quality
+and matching thresholds require calibration for each workload. There is no push delivery, automatic session
 instrumentation or distributed storage. The new runtime upgrades the original
 prototype store on startup; rollback requires its pre-upgrade backup.
 

@@ -37,6 +37,31 @@ also advertise a URL reachable by your client. Ask the administrator to set
 
 ## Coordinate work
 
+### Connect a coding session in this checkout
+
+Place an owner-only client configuration at the ignored
+`literate.hub.local.json` path. Include only the assigned agent's token and the
+reachable hub URL. The Kubernetes deployment provides private per-agent files
+under `.adhd/k8s/`; this checkout's coding session uses `agent-a`. Other independent
+agents need their own assigned identities to keep inboxes and acknowledgements
+separate.
+
+With the SDK environment installed as above, the local connection is:
+
+```bash
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py \
+  --agent agent-a '{"op":"whoami"}'
+```
+
+The helper defaults to `literate.hub.local.json`. `AGENTS.md` and `CLAUDE.md`
+require sessions with that file present to follow the coordination skill at
+startup and during work. This is an explicit publish/poll integration through the
+SDK helper; it does not install an MCP server, background poller, or automatic
+session instrumentation. A stopped session does not process deliveries; they
+remain queued until a connected session polls and acknowledges them.
+
+### Share and process work updates
+
 Have your agent read `skills/agent/coordinate-via-hub/SKILL.md`, or install that
 skill using your agent framework's skill mechanism. It describes this loop:
 
@@ -90,6 +115,9 @@ for message/status history, source metadata, ID retrieval, and source/type filte
 Subscription descriptions
 are at most 4 KiB. Unknown command fields are rejected. Search matches literal
 substrings, without semantic ranking; exact source/type filters can narrow results.
+Search does not resolve superseded reports into current facts. Reconcile later
+completion/correction evidence before treating an earlier work report as current;
+use [evidence queries](querying.md) for current answers and explicit coverage.
 Detailed fields, errors, and raw A2A requests
 are in the [API reference](hub-api.md); connection and delivery diagnosis are in
 [troubleshooting](../admin/troubleshooting.md).

@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Add contextual evidence, durable semantic queries, current-fact reconciliation
+  with retained history, hybrid retrieval, scan fallbacks/audits, replayable attempts
+  and qualified declarative index adaptation. Adaptation is opt-in; generative
+  query evaluation requires an explicitly configured endpoint and model.
+- Add optional OIDC administrator sign-in with PKCE, signed-token verification,
+  bounded sessions and CSRF protection; retain administrator keys by default.
+- Support native Linux and macOS targets and preserve crash recovery using a
+  checksummed atomic journal alongside DETS. Backups must preserve both files.
+
+- Agent coordination: connect configured coding sessions through the existing A2A
+  helper, with conditional startup instructions, private per-agent credentials,
+  subscription reuse, history catch-up and explicit publish/poll/acknowledgement.
+
+- Deployment: add a single-instance Kubernetes recipe with persistent storage,
+  private credentials, a loopback-preserving proxy and NodePort 30866.
+
+- Require documentation consistency review before completing project changes,
+  including evidence for capability and limitation claims, synchronized examples,
+  and explicit labels for planned or unverified behavior. Correct the operations
+  guide to describe existing administrator observation and pending-job retries.
+
 - Name the project Agentic Distributed Harness Depot (ADHD) consistently in
   documentation, helper help, web presentation and Agent Card description, while
   preserving existing technical identifiers and client contracts.

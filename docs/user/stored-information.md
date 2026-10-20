@@ -9,6 +9,13 @@ there are no subscribers. Delivery acknowledgement does not delete a publication
 Each publication has a stable ID. Status updates are separate immutable events,
 so you can inspect how a task's state changed over time.
 
+Archive search does not resolve superseded claims. Use [evidence queries](querying.md)
+for current answers with citations and explicit coverage. Original reports stay
+available: completion changes the supported current answer without deleting the
+start report. Optional context retains questions, replies, correction relationships
+and snapshots without requiring a fixed domain taxonomy. New envelopes include
+context and a SHA256 content_identity; old stores gain these during schema-3 upgrade.
+
 Use the [SDK helper setup](using-the-hub.md#connect-your-agent) and supply your
 private client file. These examples assume agent-a's file is in the current
 directory; keep it private and outside version control.

@@ -4,6 +4,10 @@
 
 ## Deployment contract
 
+For the node-bound cluster deployment and exposed NodePort, see
+[Kubernetes deployment](kubernetes.md). It reuses the accepted hub image with a
+proxy, separate credentials and a persistent volume.
+
 Run one Agentic Distributed Harness Depot (ADHD) Elixir process per DETS store
 in a Linux Docker container. Store
 data in an operator-owned bind-mounted directory; mount configuration read-only
@@ -11,7 +15,8 @@ from outside the image. Never run two containers against the same store, includi
 during upgrades, recovery, or backup. The model runs separately and needs a GPU;
 the hub container does not need GPU access or model weights.
 
-The authoring defaults remain Elixir, Make, and macOS. The exported artifact is
+Native service operation supports Linux and macOS. The checkout defaults to
+Elixir, Make and Linux; scripts/build_hub.py selects the matching host OS Flavor. The exported artifact is
 a portable Elixir source script, not a macOS executable or native BEAM closure.
 Container packaging copies that exact script and recompiles it using the pinned
 Linux runtime. No additional compiler Flavor is required for this packaging path.
@@ -40,7 +45,7 @@ On the supported authoring host, with the pinned Literate AI installation and
 Elixir/OTP toolchain:
 
 ```bash
-litai build components/hub --update-receipt
+python3 scripts/build_hub.py
 litai verify
 python3 scripts/stage_container.py
 ```
@@ -141,13 +146,23 @@ Readiness is `{"status":"ready"}` at `/health`. Docker probes every 30 seconds;
 an unhealthy status does not itself restart the container. The restart policy is
 `unless-stopped`, which handles process exits and daemon restarts but respects an
 explicit stop. Check model health separately and periodically verify a representative
-publish-to-delivery path. There is no admin metrics, queue-depth, or failed-job API
-yet. Avoid putting bearer tokens in diagnostic output.
+publish-to-delivery path. With `admin_token` configured, the
+[web console and administrator API](web-console.md) provide queued-delivery counts,
+matching-job status, matcher health observations, and confirmed retries of pending
+jobs. Failed matching attempts remain pending for retry; they are not a separate
+failed-job status. Historical metrics are not provided. Avoid putting bearer tokens
+in diagnostic output.
 
 ## Backup and restore
 
 Take an offline backup; do not copy a live DETS file. Stop every process using the
-store and save both the data directory and the matching private configuration:
+store and save the entire data directory and the matching private configuration.
+Schema 3 stores a working DETS image plus an authoritative checksummed recovery
+journal at `store_path + ".journal"`. Keep both files from the same stopped service;
+do not restore a DETS image alongside a newer journal. A valid journal recovers
+an unclean DETS image after process termination. Invalid journals fail startup
+rather than silently falling back or resetting history. These checks establish
+process-crash recovery, not a stronger filesystem or power-loss guarantee:
 
 ```bash
 docker stop --time 30 adhd-hub
@@ -177,6 +192,10 @@ cp -p "$ADHD_BACKUP_DIR/hub.json" .adhd/container/hub.json
 sh deploy/run.sh .adhd/container/hub.json .adhd/container/data adhd-hub adhd-hub:local
 curl --fail http://127.0.0.1:8766/health
 ```
+
+Restoring the whole directory also removes journals from newer runs. When restoring
+a pre-journal backup manually, archive/remove the upgraded journal with its data
+directory before opening the older DETS file; never mix generations.
 
 Use the backed-up image ID as the final argument if its format differs from the
 current image. Ensure restored files retain ownership suitable for the runtime
@@ -235,3 +254,8 @@ runtimes with `tests/hub_acceptance.py --legacy-command JSON_ARGV
 runtime and check the current service preserves history, source-event retry
 results, acknowledgements and pending matching jobs. Do not use a live store for
 these tests. The administrator API suite runs with distinct disposable credentials.
+
+Contextual queries and index jobs use schema 3; see [retrieval operations](retrieval.md)
+for migration, replay, qualification and rollback. Answer synthesis uses a separate
+optional evaluator described in [evidence queries](../user/querying.md). Optional
+[OIDC](oidc.md) replaces administrator key sign-in only when explicitly selected.

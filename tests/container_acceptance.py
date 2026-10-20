@@ -102,9 +102,9 @@ async def recovery_checks(root, matcher_url, record):
         docker('stop', container)
         backup = config_dir / 'backup'
         backup.mkdir(mode=0o700)
-        shutil.copy2(data / 'hub.dets', backup / 'hub.dets')
+        shutil.copytree(data, backup / 'data')
         shutil.copy2(config_dir / 'hub.json', backup / 'hub.json')
-        backup_hash = hashlib.sha256((backup / 'hub.dets').read_bytes()).hexdigest()
+        backup_hash = hashlib.sha256((backup / 'data' / 'hub.dets').read_bytes()).hexdigest()
         docker('rm', container)
         await start()
         assert delivered['id'] in [d['id'] for d in (await call('agent-b', {'op': 'poll'}))['deliveries']]
@@ -118,8 +118,7 @@ async def recovery_checks(root, matcher_url, record):
         docker('stop', container)
         docker('rm', container)
         data.rename(config_dir / 'data-before-restore')
-        data.mkdir(mode=0o700)
-        shutil.copy2(backup / 'hub.dets', data / 'hub.dets')
+        shutil.copytree(backup / 'data', data)
         assert hashlib.sha256((data / 'hub.dets').read_bytes()).hexdigest() == backup_hash
         await start()
         assert delivered['id'] in [d['id'] for d in (await call('agent-b', {'op': 'poll'}))['deliveries']]

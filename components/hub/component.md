@@ -38,15 +38,24 @@ source_dependencies: []
 specification_roots:
   - component.md
   - information/spec.md
+  - information/current-facts.md
+  - information/context.md
+  - information/queries.md
+  - information/retrieval.md
+  - information/adaptation.md
   - management/spec.md
+  - management/oidc.md
   - presentation/spec.md
+  - protocol/spec.md
 ---
 # Agentic Distributed Harness Depot (ADHD)
 
 Provide one private, single-project A2A service where authenticated agents publish
 work updates, maintain plain-text subscriptions, receive queued information,
 exchange addressed messages, and search published information. Use the selected
-language's standard runtime facilities only. Support one running service per store.
+language's standard runtime facilities only. Support Linux and macOS with the same
+portable Elixir/OTP service; neither platform is an exclusive runtime target.
+Support one running service per store.
 The product contract below takes precedence over generic portable CLI practice
 where the long-running serve mode requires it.
 
@@ -54,7 +63,7 @@ where the long-running serve mode requires it.
 
 The artifact accepts one JSON array argument with these positional forms:
 
-- `["describe"]` returns exactly `{"name":"ADHD","version":"0.1.0","protocol":"1.0","operations":["ack","get","list_subscriptions","poll","publish","search","send","subscribe","unsubscribe","whoami"]}`.
+- `["describe"]` returns exactly `{"name":"ADHD","version":"0.1.0","protocol":"1.0","operations":["ack","get","list_subscriptions","poll","publish","query","query_attempts","query_cancel","query_continue","query_replay","query_result","query_status","retrieve","search","send","subscribe","unsubscribe","whoami"]}`.
 - `["validate", COMMAND]` validates a hub command using the same domain validator
   as HTTP processing, without accessing storage, authentication, or the network.
   Success returns exactly `{"valid":true,"op":OP}`. Invalid commands exit nonzero
@@ -124,7 +133,7 @@ structured JSON-RPC error. Unsupported methods return -32601; malformed JSON use
 -32700, invalid envelopes -32600, and invalid params/commands -32602. Domain errors
 use -32000 and data `[{"@type":"type.googleapis.com/google.rpc.ErrorInfo",
 "reason":CODE,"domain":"adhd.hub","metadata":{"code":CODE}}]` with stable codes
-NOT_FOUND, FORBIDDEN, IDEMPOTENCY_CONFLICT, SOURCE_CONFLICT, or PROJECT_MISMATCH. Internal errors use -32603 without
+NOT_FOUND, FORBIDDEN, IDEMPOTENCY_CONFLICT, SOURCE_CONFLICT, PROJECT_MISMATCH, or NOT_READY. Internal errors use -32603 without
 sensitive detail. GET/POST routing, response Content-Type application/json, byte
 Content-Length, and Connection: close must work with the official Python A2A SDK
 1.1.0. Unsupported routes return 404; unsupported media types 415. Never crash the
@@ -141,58 +150,8 @@ containing both space and tab is incorrect.
 
 ## Hub command schema
 
-Every command is an object with `op` plus the fields listed for that operation.
-An optional `project_id` must equal configured project_id. Reject any other field,
-including actor_id/agent_id overrides. Strings must be valid UTF-8. Limits below
-are bytes unless stated otherwise. All ids are nonempty strings up to 128 bytes.
-
-- `whoami`: no extra fields. Result `{agent_id,project_id}`.
-- `subscribe`: required `description`, nonblank 1..4096 bytes. Result
-  `{subscription:{id,agent_id,project_id,description,created_at}}`.
-- `list_subscriptions`: no extra fields. Result `{subscriptions:[...]}` for caller
-  only, ordered by creation sequence.
-- `unsubscribe`: required `subscription_id`. Result `{unsubscribed:ID}`. Unknown
-  or already-removed id is NOT_FOUND; another owner's id is FORBIDDEN.
-- `publish`: at least one of `text` (nonblank string) and a present `data` field
-  (any JSON value, including arrays, scalars, or null). Combined encoded text/data
-  must be at most 65536 bytes. Optional text may be absent when data exists.
-  Optional metadata: `information_type`, `source`, and `occurred_at`, defined in information/spec.md.
-  Result `{publication:PUBLICATION,matching:"pending"}`;
-  absent text/data normalize to empty string/empty object. Record the publication
-  and snapshot the currently existing subscriptions as durable pending matching
-  work before returning success. No subscription history replay.
-- `send`: required `recipient_id` referring to a configured agent, and text and/or
-  JSON-object data (its existing content contract, up to 65536 bytes). Publication
-  metadata is not accepted here. Unknown recipient is NOT_FOUND. Result
-  `{delivery:DELIVERY}`. Queue an addressed delivery without inference and without
-  creating a searchable publication.
-- `poll`: optional integer `limit` (1..100, default 50). Result `{deliveries:[...]}`
-  containing the caller's oldest unacknowledged deliveries by creation sequence.
-  Polling does not remove or acknowledge them.
-- `ack`: required `delivery_ids`, array of 1..100 distinct nonempty ids. Validate
-  ownership/existence of every id before any change. Result `{acknowledged:[IDS]}`
-  in the requested order. Reacknowledging an owned delivery succeeds. Never partly
-  acknowledge a batch with an unknown or foreign id.
-- `get`: required `publication_id`. Result `{publication:PUBLICATION}`. Return
-  the stored project publication, independent of delivery/acknowledgement state.
-  Unknown IDs and IDs belonging only to private deliveries return NOT_FOUND.
-- `search`: optional nonblank `query` (1..256 bytes), optional exact-match filters
-  `information_type`, `source_kind`, `source_id`, and integer `limit` (1..100,
-  default 50). Require a query or at least one filter; a supplied blank query is
-  invalid. Filters use the same bounds as the corresponding metadata fields.
-  Combine all filters and the query with AND. Result `{publications:[...]}`.
-  Return newest publications first by ingestion sequence, not occurred_at.
-  A query is a case-insensitive literal substring of text, JSON-encoded data,
-  information_type, or JSON-encoded source. Omitted query applies filters alone.
-  Search is project-wide; direct messages are excluded. Existing query-only
-  clients retain their response shape and behavior.
-
-A DELIVERY has id, project_id, recipient_id, sender_id, kind (`publication` or
-`message`), text, data, created_at, and (for publication kind) publication_id and
-matches (array of `{subscription_id,probability_ppm,threshold_ppm,model}`). Model
-probability is explicitly rounded to the nearest integer part per million before
-threshold comparison. No other numeric rounding is implied. Delivered record ids
-and content remain stable between polls and across restarts.
+The named protocol/spec.md specification owns command validation, results,
+delivery shapes and extensions.
 
 ## Idempotency and persistence
 

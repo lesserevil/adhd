@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:e0b9ad1633cac79896e4f0d239581c9e2d00b4179e0c3d1959c805a333f35534 -->
+<!-- literate-ai:authority-reviewed sha256:6985451414c97730db9ebf9cd083293ba22a84059bccc35a0e56e38ca549afe5 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -17,9 +17,14 @@ acceptance scenarios remain normative. See the [project map](../user/project-lay
 The contextual evidence and adaptive retrieval direction in `PROJECT.md` maps to
 INFO-002, QUERY-001, SEARCH-001 through SEARCH-003 and INDEX-001 in the
 [active queue](../roadmap/active-work.md). The
-[shared design](../roadmap/adaptive-retrieval.md) describes their future workflows
-and acceptance boundaries. Current Component contracts still provide immutable
-publications, literal historical search and semantic matching of new publications;
-semantic scans and generated indexes are requested work, not implemented features.
+[shared design](../roadmap/adaptive-retrieval.md) records the rationale and
+acceptance boundaries. Named contracts under `components/hub/information/` own
+context, semantic queries, retrieval and qualified declarative adaptation;
+`management/oidc.md` owns optional administrator sign-in. Independent acceptance
+checks are under `tests/roadmap_acceptance.py`, `tests/adaptation_acceptance.py`,
+`tests/oidc_acceptance.py` and `tests/roadmap_browser.py`.
 Runtime changes must update the owning Component contracts and pass their recorded
 generation and independent acceptance gates before usage documentation claims them.
+
+Fresh acceptance and implementation provenance are collected in the
+[roadmap implementation review](roadmap-implementation.md).

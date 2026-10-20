@@ -1,0 +1,31 @@
+defmodule Hub.DomainTests do
+  def run! do
+    alias Hub.Domain, as: D
+    token = String.duplicate("k", 32)
+    cfg = Hub.Validate.config(%{"project_id" => "native-project", "store_path" => "native-unused.dets", "agents" => %{"native-a" => token}, "matcher" => %{"url" => "http://127.0.0.1:43210/v1/systemone", "model" => "native-model"}})
+    s = D.empty("native-project")
+    3 = s.schema
+    command = %{"op" => "publish", "text" => "An independent native observation", "context" => %{"question" => "What was observed?", "subject" => "native-subject"}, "source" => %{"kind" => "agent", "id" => "native-a", "item_id" => "native-event"}}
+    {first, s} = D.command(s, command, "native-a", "native-one", cfg)
+    {retry, s} = D.command(s, command, "native-a", "native-two", cfg)
+    true = first == retry
+    true = byte_size(first["publication"]["content_identity"]) == 64
+    true = map_size(s.publications) == 1
+    {query, s} = D.command(s, %{"op" => "query", "question" => "What is the current observation?", "mode" => "scan"}, "native-a", "native-query", cfg)
+    id = query["query"]["id"]
+    1 = query["query"]["total_records"]
+    {cancel, s} = D.command(s, %{"op" => "query_cancel", "query_id" => id}, "native-a", "native-cancel", cfg)
+    "cancelled" = cancel["query"]["status"]
+    upgraded = D.upgrade(s, "native-project")
+    true = upgraded.publications == s.publications
+    true = upgraded.sources == s.sources
+    true = upgraded.idempotency == s.idempotency
+    try do
+      Hub.Ext.recipe(%{"executable" => "untrusted"})
+      raise "recipe accepted executable content"
+    rescue
+      e in Hub.Error -> "INVALID_PARAMS" = e.code
+    end
+    :ok
+  end
+end

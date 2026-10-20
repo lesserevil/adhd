@@ -1,7 +1,7 @@
 {
   "schema": "literate-ai/component-acceptance-oracle@1",
   "component": "hub",
-  "specification_set_identity": "sha256:3c72cfff7a31f04445fabf717be05df8a6d719c23f2473f46504efa37c2a3bae",
+  "specification_set_identity": "sha256:425519822f1041667491ee5da347f2e4a2931558c254898ee10d501575411e54",
   "cases": [
     {
       "case_id": "validate-ack-vector",
@@ -137,6 +137,67 @@
       "expected_result": {
         "valid": true,
         "op": "jobs"
+      }
+    },
+    {
+      "case_id": "validate-contextual-observation",
+      "arguments": [
+        "validate",
+        {
+          "op": "publish",
+          "text": "An independently labeled observation",
+          "context": {
+            "question": "What did the independent observer report?",
+            "subject": "oracle-tree-913",
+            "references": [
+              {
+                "publication_id": "oracle-question-913",
+                "relation": "question"
+              }
+            ]
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "publish"
+      }
+    },
+    {
+      "case_id": "validate-bounded-evidence-scan",
+      "arguments": [
+        "validate",
+        {
+          "op": "query",
+          "question": "Which retained reports support the independent claim?",
+          "mode": "scan",
+          "view": "history",
+          "budget": {
+            "max_records": 37,
+            "max_calls": 11,
+            "timeout_ms": 12000
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query"
+      }
+    },
+    {
+      "case_id": "validate-candidate-qualification",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "qualify_index",
+          "index_id": "oracle-candidate-919",
+          "confirm": true,
+          "message_id": "oracle-qualify-919"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "qualify_index"
       }
     }
   ]

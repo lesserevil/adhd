@@ -1,0 +1,155 @@
+defmodule Hub.Ext do
+  alias Hub.Validate, as: V
+  @query_ops ~w(query query_attempts query_cancel query_continue query_replay query_result query_status retrieve)
+  @index_reads ~w(indexes index_jobs query_jobs)
+  @index_writes ~w(rebuild_index propose_index qualify_index promote_index rollback_index retire_index)
+  def query_ops, do: @query_ops
+  def canonical(v) when is_map(v), do: "{" <> (v |> Enum.sort_by(&elem(&1, 0)) |> Enum.map_join(",", fn {k, x} -> JSON.encode!(k) <> ":" <> canonical(x) end)) <> "}"
+  def canonical(v) when is_list(v), do: "[" <> Enum.map_join(v, ",", &canonical/1) <> "]"
+  def canonical(v), do: JSON.encode!(v)
+  def identity(v), do: :crypto.hash(:sha256, canonical(v)) |> Base.encode16(case: :lower)
+  def envelope(p) do
+    p = Map.put_new(p, "context", %{}) |> Map.delete("content_identity")
+    Map.put(p, "content_identity", identity(p))
+  end
+  def upgrade(s) do
+    s = Enum.reduce([:queries, :attempts, :indexes, :index_jobs], s, fn k, a ->
+      V.check(!Map.has_key?(a, k) or is_map(a[k]))
+      Map.put_new(a, k, %{})
+    end)
+    qs = Map.new(s.queries, fn {id, q} ->
+      V.check(is_map(q) and is_map(q.value) and q.value["id"] == id and is_list(q.ids) and is_integer(q.cursor))
+      q = if q.value["status"] == "running", do: put_in(q.value["status"], "pending"), else: q
+      {id, q}
+    end)
+    s |> Map.put(:schema, 3) |> Map.put(:queries, qs) |> Map.put_new(:active_index, nil)
+  end
+  def context(c) do
+    V.keys(c, ~w(question subject conversation_id reply_to references snapshots))
+    V.check(byte_size(JSON.encode!(c)) <= 65_536)
+    for key <- ~w(subject conversation_id), do: V.optional(c, key, &V.string(&1, 512))
+    V.optional(c, "question", &V.string(&1, 4096))
+    V.optional(c, "reply_to", &V.id/1)
+    if Map.has_key?(c, "references") do
+      refs = c["references"]
+      V.check(is_list(refs) and length(refs) <= 32 and length(Enum.uniq(refs)) == length(refs))
+      Enum.each(refs, fn r ->
+        V.keys(r, ~w(publication_id relation), ~w(publication_id relation))
+        V.id(r["publication_id"]); V.check(r["relation"] in ~w(related supports contradicts corrects question))
+      end)
+    end
+    if Map.has_key?(c, "snapshots") do
+      V.check(is_list(c["snapshots"]) and length(c["snapshots"]) <= 8)
+      Enum.each(c["snapshots"], fn r -> V.keys(r, ~w(uri text), ~w(uri text)); V.url(r["uri"]); V.string(r["text"], 16_384) end)
+    end
+    c
+  end
+  def links(p) do
+    c = p["context"] || %{}
+    Enum.uniq(List.wrap(c["reply_to"]) ++ Enum.map(Map.get(c, "references", []), & &1["publication_id"]))
+  end
+  def references!(s, c), do: Enum.each(links(%{"context" => c}), &Hub.Domain.fetch(s.publications, &1))
+  def expand(s, roots, allowed, depth \\ 2, limit \\ 64) do
+    allowed = MapSet.new(allowed)
+    incoming = Enum.reduce(s.publications, %{}, fn {id, r}, acc ->
+      if MapSet.member?(allowed, id), do: Enum.reduce(links(r.value), acc, fn target, a -> Map.update(a, target, [id], &[id | &1]) end), else: acc
+    end)
+    expand_walk(s, Enum.map(roots, &{&1, 0}), allowed, incoming, depth, limit, MapSet.new(), [], [])
+  end
+  defp expand_walk(_, [], _, _, _, _, _, records, gaps), do: {Enum.reverse(records), Enum.reverse(Enum.uniq(gaps))}
+  defp expand_walk(s, [{id, n} | rest], allowed, incoming, depth, limit, seen, records, gaps) do
+    cond do
+      MapSet.member?(seen, id) -> expand_walk(s, rest, allowed, incoming, depth, limit, seen, records, gaps)
+      !MapSet.member?(allowed, id) -> expand_walk(s, rest, allowed, incoming, depth, limit, MapSet.put(seen, id), records, [%{"publication_id" => id, "reason" => "outside_snapshot"} | gaps])
+      !Map.has_key?(s.publications, id) -> expand_walk(s, rest, allowed, incoming, depth, limit, MapSet.put(seen, id), records, [%{"publication_id" => id, "reason" => "missing"} | gaps])
+      length(records) >= limit -> expand_walk(s, rest, allowed, incoming, depth, limit, MapSet.put(seen, id), records, [%{"publication_id" => id, "reason" => "record_limit"} | gaps])
+      true ->
+        p = s.publications[id].value
+        neighbors = Enum.sort(Enum.uniq(links(p) ++ Map.get(incoming, id, [])))
+        {queue, gaps} = if n < depth, do: {rest ++ Enum.map(neighbors, &{&1, n + 1}), gaps}, else: {rest, Enum.reduce(neighbors, gaps, fn x, a -> if MapSet.member?(seen, x) or x in roots_ids(records), do: a, else: [%{"publication_id" => x, "reason" => "depth_limit"} | a] end)}
+        expand_walk(s, queue, allowed, incoming, depth, limit, MapSet.put(seen, id), [p | records], gaps)
+    end
+  end
+  defp roots_ids(records), do: Enum.map(records, & &1["id"])
+  def command_fields("query"), do: ~w(question mode view scope budget index_id)
+  def command_fields("retrieve"), do: ~w(question scope limit)
+  def command_fields("query_attempts"), do: ~w(query_id limit)
+  def command_fields("query_continue"), do: ~w(query_id budget)
+  def command_fields("query_replay"), do: ~w(query_id index_id)
+  def command_fields(_), do: ~w(query_id)
+  def validate_command(c) do
+    op = c["op"]
+    if op in ~w(query retrieve), do: V.string(c["question"], 4096)
+    if op not in ~w(query retrieve query_attempts), do: V.id(c["query_id"])
+    V.optional(c, "query_id", &V.id/1); V.optional(c, "index_id", &V.id/1)
+    V.optional(c, "limit", &V.integer(&1, 1, 100))
+    V.optional(c, "mode", &V.check(&1 in ~w(scan search search_then_scan)))
+    V.optional(c, "view", &V.check(&1 in ~w(current history)))
+    V.optional(c, "budget", &budget/1); V.optional(c, "scope", &scope/1)
+    c
+  end
+  def budget(b) do
+    V.keys(b, ~w(max_records max_calls timeout_ms))
+    V.optional(b, "max_records", &V.integer(&1, 1, 100_000)); V.optional(b, "max_calls", &V.integer(&1, 1, 10_000)); V.optional(b, "timeout_ms", &V.integer(&1, 100, 300_000))
+    Map.merge(%{"max_records" => 1000, "max_calls" => 100, "timeout_ms" => 30_000}, b)
+  end
+  def scope(c) do
+    V.keys(c, ~w(information_type source_kind source_id occurred_from occurred_to))
+    V.optional(c, "information_type", &V.identifier/1); V.optional(c, "source_kind", &V.identifier/1); V.optional(c, "source_id", &V.string(&1, 256))
+    c = Enum.reduce(~w(occurred_from occurred_to), c, fn k, a -> if a[k], do: Map.put(a, k, V.timestamp(a[k])), else: a end)
+    if c["occurred_from"] && c["occurred_to"], do: V.check(DateTime.compare(DateTime.from_iso8601(c["occurred_from"]) |> elem(1), DateTime.from_iso8601(c["occurred_to"]) |> elem(1)) != :gt)
+    c
+  end
+  def scoped?(p, scope) do
+    Hub.Domain.matches?(p, Map.take(scope, ~w(information_type source_kind source_id))) and
+      Enum.all?([{"occurred_from", :lt}, {"occurred_to", :gt}], fn {key, bad} ->
+        !scope[key] or DateTime.compare(DateTime.from_iso8601(p["occurred_at"]) |> elem(1), DateTime.from_iso8601(scope[key]) |> elem(1)) != bad
+      end)
+  end
+  def admin_fields(op) when op in @index_reads, do: {~w(limit), []}
+  def admin_fields(op) when op in ~w(rebuild_index propose_index), do: {~w(confirm message_id recipe), ~w(confirm message_id)}
+  def admin_fields(_), do: {~w(confirm message_id index_id), ~w(confirm message_id index_id)}
+  def validate_admin(c) do
+    if c["op"] in @index_writes do
+      V.check(c["confirm"] == true); V.string(c["message_id"], 128)
+      V.optional(c, "recipe", &recipe/1); V.optional(c, "index_id", &V.id/1)
+    end
+    c
+  end
+  def recipe(r) do
+    V.keys(r, ~w(context_depth chunk_bytes bigrams semantic_pool))
+    V.optional(r, "context_depth", &V.integer(&1, 0, 4)); V.optional(r, "chunk_bytes", &V.integer(&1, 256, 8192)); V.optional(r, "semantic_pool", &V.integer(&1, 1, 1000)); V.optional(r, "bigrams", &V.check(is_boolean(&1)))
+    r
+  end
+  defp opts(m, ints, bools \\ [], enums \\ %{}) do
+    V.keys(m, Map.keys(ints) ++ bools ++ Map.keys(enums))
+    result = Enum.reduce(ints, m, fn {key, {lo, hi, default}}, a -> V.optional(m, key, &V.integer(&1, lo, hi)); Map.put_new(a, key, default) end)
+    Enum.each(bools, fn k -> V.optional(m, k, &V.check(is_boolean(&1))) end)
+    Enum.each(enums, fn {k, values} -> if values != [], do: V.optional(m, k, &V.check(&1 in values)) end)
+    result
+  end
+  def env!(name) do
+    V.check(is_binary(name) and Regex.match?(~r/^[A-Za-z_][A-Za-z0-9_]{0,127}$/, name))
+    value = System.get_env(name); V.check(is_binary(value) and byte_size(value) > 0); value
+  end
+  def config(c) do
+    if c["evaluator"] do
+      e = c["evaluator"]
+      V.keys(e, ~w(url model api_key_env timeout_ms version max_output_tokens context_depth), ~w(url model))
+      V.url(e["url"]); V.string(e["model"], 256); V.optional(e, "api_key_env", &env!/1)
+      V.optional(e, "timeout_ms", &V.integer(&1, 100, 300_000)); V.optional(e, "max_output_tokens", &V.integer(&1, 256, 16_384))
+      V.optional(e, "context_depth", &V.integer(&1, 0, 4)); V.optional(e, "version", &V.identifier/1)
+    end
+    r = opts(Map.get(c, "retrieval", %{}), %{"candidate_limit" => {1, 100, 20}, "semantic_pool" => {1, 1000, 100}, "context_depth" => {0, 4, 2}, "chunk_bytes" => {256, 8192, 2048}, "audit_ppm" => {0, 1_000_000, 100_000}}, ["bigrams"], %{"policy_version" => []})
+    # policy_version is an extensible identifier rather than a fixed enum.
+    r = r |> Map.put_new("bigrams", false) |> Map.put_new("policy_version", "search-scan-v1")
+    V.identifier(r["policy_version"])
+    a = opts(Map.get(c, "adaptation", %{}), %{"recurrence" => {2, 100, 3}, "min_training" => {1, 100, 2}, "min_heldout" => {1, 100, 2}, "min_regression" => {1, 100, 2}, "min_recovery_ppm" => {1, 1_000_000, 100_000}, "max_regressions" => {0, 100, 0}, "max_size_bytes" => {1024, 1_073_741_824, 104_857_600}, "max_candidates" => {1, 10, 3}, "cooldown_ms" => {1000, 86_400_000, 60_000}, "max_build_retries" => {0, 10, 3}}, ["enabled"], %{"promotion" => ~w(review automatic)}) |> Map.put_new("enabled", false) |> Map.put_new("promotion", "review")
+    c |> Map.put("retrieval", r) |> Map.put("adaptation", a) |> Hub.Auth.config()
+  end
+  def execute(s, c, actor, cfg), do: Hub.Query.command(s, c, actor, cfg)
+  def start(store, cfg) do
+    spawn_link(fn -> Hub.Query.loop(store, cfg) end)
+    spawn_link(fn -> Hub.Index.loop(store, cfg) end)
+  end
+end

@@ -1,0 +1,851 @@
+Code.compiler_options(no_warn_undefined: :all)
+defmodule Hub.Error do
+  defexception code: "INVALID_PARAMS", message: "Invalid parameters"
+end
+
+defmodule Hub.Validate do
+  def fail(code \\ "INVALID_PARAMS"), do: raise(Hub.Error, code: code, message: "Request rejected")
+  def check(value), do: if(value, do: :ok, else: fail())
+  def keys(m, allowed, required \\ []) do
+    check(is_map(m))
+    check(Enum.all?(Map.keys(m), &(&1 in allowed)))
+    check(Enum.all?(required, &Map.has_key?(m, &1)))
+  end
+  def string(v, max, blank \\ false) do
+    check(is_binary(v) and String.valid?(v) and byte_size(v) in 1..max)
+    if !blank, do: check(String.trim(v) != "")
+    v
+  end
+  def id(v), do: string(v, 128, true)
+  def identifier(v) do
+    id(v)
+    check(Regex.match?(~r/\A[A-Za-z0-9._-]+\z/, v))
+    v
+  end
+  def integer(v, lo, hi), do: check(is_integer(v) and v >= lo and v <= hi)
+  def url(v, max \\ 2048) do
+    string(v, max)
+    u = URI.parse(v)
+    check(u.scheme in ["http", "https"] and is_binary(u.host) and u.host != "" and is_nil(u.userinfo) and is_nil(u.fragment))
+    v
+  end
+  def timestamp(v) do
+    string(v, 64)
+    case DateTime.from_iso8601(v) do
+      {:ok, dt, _} -> DateTime.to_iso8601(dt)
+      _ -> fail()
+    end
+  end
+  def source(v) do
+    keys(v, ~w(kind id item_id uri), ~w(kind id))
+    identifier(v["kind"])
+    string(v["id"], 256)
+    if Map.has_key?(v, "item_id"), do: string(v["item_id"], 512)
+    if Map.has_key?(v, "uri"), do: url(v["uri"])
+    v
+  end
+  def optional(c, k, f), do: if(Map.has_key?(c, k), do: f.(c[k]))
+  def content(c, publication) do
+    check(Map.has_key?(c, "text") or Map.has_key?(c, "data"))
+    optional(c, "text", &string(&1, 65536))
+    if !publication and Map.has_key?(c, "data"), do: check(is_map(c["data"]))
+    size = (if Map.has_key?(c, "text"), do: byte_size(c["text"]), else: 0) +
+      (if Map.has_key?(c, "data"), do: byte_size(JSON.encode!(c["data"])), else: 0)
+    check(size <= 65536)
+  end
+  def filters(c) do
+    optional(c, "query", &string(&1, 256))
+    optional(c, "information_type", &identifier/1)
+    optional(c, "source_kind", &identifier/1)
+    optional(c, "source_id", &string(&1, 256))
+    optional(c, "limit", &integer(&1, 1, 100))
+  end
+  def command(c) do
+    check(is_map(c))
+    fields = case c["op"] do
+      op when op in ~w(whoami list_subscriptions) -> []
+      "subscribe" -> ["description"]
+      "unsubscribe" -> ["subscription_id"]
+      "publish" -> ~w(text data information_type source occurred_at context)
+      "send" -> ~w(recipient_id text data)
+      "poll" -> ["limit"]
+      "ack" -> ["delivery_ids"]
+      "get" -> ["publication_id"]
+      "search" -> ~w(query information_type source_kind source_id limit)
+      op when op in ~w(query query_attempts query_cancel query_continue query_replay query_result query_status retrieve) -> Hub.Ext.command_fields(op)
+      _ -> fail()
+    end
+    keys(c, ["op", "project_id" | fields], ["op"])
+    optional(c, "project_id", &identifier/1)
+    case c["op"] do
+      "subscribe" -> string(c["description"], 4096)
+      "unsubscribe" -> id(c["subscription_id"])
+      "publish" ->
+        content(c, true)
+        optional(c, "information_type", &identifier/1)
+        optional(c, "source", &source/1)
+        optional(c, "occurred_at", &timestamp/1)
+        optional(c, "context", &Hub.Ext.context/1)
+      "send" -> identifier(c["recipient_id"]); content(c, false)
+      "poll" -> optional(c, "limit", &integer(&1, 1, 100))
+      "ack" ->
+        ids = c["delivery_ids"]
+        check(is_list(ids) and length(ids) in 1..100)
+        Enum.each(ids, &id/1)
+        check(length(Enum.uniq(ids)) == length(ids))
+      "get" -> id(c["publication_id"])
+      "search" ->
+        filters(c)
+        check(Enum.any?(~w(query information_type source_kind source_id), &Map.has_key?(c, &1)))
+      op when op in ~w(query query_attempts query_cancel query_continue query_replay query_result query_status retrieve) -> Hub.Ext.validate_command(c)
+      _ -> :ok
+    end
+    c
+  end
+  def admin(c) do
+    check(is_map(c))
+    {allowed, required} = case c["op"] do
+      "overview" -> {[], []}
+      "publications" -> {~w(query information_type source_kind source_id limit), []}
+      "publication" -> {["publication_id"], ["publication_id"]}
+      "subscriptions" -> {~w(agent_id limit), []}
+      "deliveries" -> {~w(agent_id limit), []}
+      "jobs" -> {~w(status limit), []}
+      "create_subscription" -> {~w(agent_id description message_id), ~w(agent_id description message_id)}
+      "remove_subscription" -> {~w(subscription_id confirm message_id), ~w(subscription_id confirm message_id)}
+      "retry_jobs" -> {~w(confirm message_id), ~w(confirm message_id)}
+      op when op in ~w(indexes index_jobs query_jobs rebuild_index propose_index qualify_index promote_index rollback_index retire_index) -> Hub.Ext.admin_fields(op)
+      _ -> fail()
+    end
+    keys(c, ["op" | allowed], ["op" | required])
+    filters(c)
+    optional(c, "agent_id", &identifier/1)
+    optional(c, "message_id", &string(&1, 128))
+    optional(c, "description", &string(&1, 4096))
+    optional(c, "subscription_id", &id/1)
+    optional(c, "publication_id", &id/1)
+    optional(c, "confirm", &check(&1 == true))
+    optional(c, "status", &check(&1 in ~w(pending done cancelled)))
+    Hub.Ext.validate_admin(c)
+    c
+  end
+  def config(c) do
+    keys(c, ~w(project_id store_path agents host port public_url matcher threshold_ppm admin_token evaluator retrieval adaptation admin_auth oidc), ~w(project_id store_path agents matcher))
+    identifier(c["project_id"])
+    string(c["store_path"], 65536)
+    check(is_map(c["agents"]) and map_size(c["agents"]) > 0)
+    Enum.each(c["agents"], fn {a, t} -> identifier(a); string(t, 65536); check(byte_size(t) >= 24) end)
+    tokens = Map.values(c["agents"])
+    check(length(tokens) == length(Enum.uniq(tokens)))
+    host = Map.get(c, "host", "127.0.0.1")
+    check(host == "127.0.0.1")
+    port = Map.get(c, "port", 8766)
+    integer(port, 1, 65535)
+    m = c["matcher"]
+    keys(m, ~w(url model timeout_ms retry_ms), ~w(url model))
+    url(m["url"])
+    string(m["model"], 65536)
+    timeout = Map.get(m, "timeout_ms", 3000)
+    retry = Map.get(m, "retry_ms", 1000)
+    integer(timeout, 100, 30000)
+    integer(retry, 100, 30000)
+    threshold = Map.get(c, "threshold_ppm", 900000)
+    integer(threshold, 1, 1000000)
+    public = Map.get(c, "public_url", "http://127.0.0.1:#{port}")
+    url(public)
+    if Map.has_key?(c, "admin_token") do
+      string(c["admin_token"], 65536)
+      check(byte_size(c["admin_token"]) >= 32 and c["admin_token"] not in tokens)
+    end
+    c = Hub.Ext.config(c)
+    c |> Map.merge(%{"host" => host, "port" => port, "public_url" => String.trim_trailing(public, "/"), "threshold_ppm" => threshold,
+      "matcher" => Map.merge(m, %{"timeout_ms" => timeout, "retry_ms" => retry})})
+  end
+end
+
+defmodule Hub.Domain do
+  alias Hub.Validate, as: V
+  def now, do: DateTime.utc_now() |> DateTime.to_iso8601()
+  def empty(project), do: Hub.Ext.upgrade(%{schema: 2, project: project, seq: 0, subscriptions: %{}, publications: %{}, deliveries: %{}, jobs: %{}, idempotency: %{}, sources: %{}, admin_idempotency: %{}})
+  def allocate(s, prefix) do
+    n = s.seq + 1
+    {"#{prefix}-#{n}", %{s | seq: n}, n}
+  end
+  def normalize(p), do: p |> Map.put_new("information_type", "message") |> Map.put_new("source", %{"kind" => "agent", "id" => p["author_id"]}) |> Map.put_new("occurred_at", p["created_at"]) |> Hub.Ext.envelope()
+  def upgrade(s, project) do
+    try do
+      V.check(is_map(s) and s.schema in [1, 2, 3] and s.project == project and is_integer(s.seq) and s.seq >= 0)
+      Enum.each([:subscriptions, :publications, :deliveries, :jobs, :idempotency], &V.check(is_map(Map.fetch!(s, &1))))
+      if s.schema in [2, 3], do: V.check(is_map(Map.fetch!(s, :sources)))
+      Enum.each([:sources, :admin_idempotency], fn k -> if Map.has_key?(s, k), do: V.check(is_map(s[k])) end)
+      Enum.each([:subscriptions, :publications, :deliveries], fn kind ->
+        Enum.each(s[kind], fn {id, r} ->
+          V.id(id)
+          V.check(is_integer(r.seq) and r.seq > 0 and r.seq <= s.seq and is_map(r.value) and r.value["id"] == id and r.value["project_id"] == project)
+          V.timestamp(r.value["created_at"])
+          case kind do
+            :subscriptions -> V.identifier(r.value["agent_id"]); V.string(r.value["description"], 4096)
+            :publications ->
+              V.identifier(r.value["author_id"])
+              V.check(is_binary(r.value["text"]) and Map.has_key?(r.value, "data"))
+              p = normalize(r.value)
+              V.identifier(p["information_type"]); V.source(p["source"]); V.timestamp(p["occurred_at"])
+            :deliveries ->
+              V.check(is_boolean(r.ack) and r.value["kind"] in ~w(publication message))
+              V.identifier(r.value["recipient_id"]); V.identifier(r.value["sender_id"])
+              V.check(is_binary(r.value["text"]) and Map.has_key?(r.value, "data"))
+              if r.value["kind"] == "publication", do: V.check(Map.has_key?(s.publications, r.value["publication_id"]) and is_list(r.value["matches"]))
+          end
+        end)
+      end)
+      Enum.each(s.jobs, fn {id, j} ->
+        V.check(j.id == id and is_integer(j.seq) and j.seq > 0 and j.seq <= s.seq and j.status in [:pending, :done, :cancelled] and is_integer(j.retry_at))
+        V.check(Map.has_key?(s.publications, j.publication_id))
+        V.id(j.subscription_id); V.identifier(j.recipient_id); V.string(j.description, 4096)
+      end)
+      Enum.each(s.idempotency, fn {{a, m}, b} -> V.identifier(a); V.id(m); V.command(b.command); V.check(is_map(b.result)) end)
+      Enum.each(Map.get(s, :sources, %{}), fn {{a, k, id, item}, b} ->
+        V.identifier(a); V.identifier(k); V.string(id, 256); V.string(item, 512); V.check(is_map(b.command) and is_map(b.result))
+      end)
+      pubs = Map.new(s.publications, fn {id, r} -> {id, %{r | value: normalize(r.value)}} end)
+      deliveries = Map.new(s.deliveries, fn {id, r} ->
+        v = r.value
+        v = if v["kind"] == "publication", do: Map.merge(v, Map.take(pubs[v["publication_id"]].value, ~w(information_type source occurred_at context content_identity))), else: v
+        {id, %{r | value: v}}
+      end)
+      s |> Map.merge(%{schema: 2, publications: pubs, deliveries: deliveries}) |> Map.put_new(:sources, %{}) |> Map.put_new(:admin_idempotency, %{}) |> Hub.Ext.upgrade()
+    rescue
+      error ->
+        frames = Enum.take(__STACKTRACE__, 3) |> Enum.map(fn {m, f, _, info} -> %{"module" => Atom.to_string(m), "function" => Atom.to_string(f), "line" => Keyword.get(info, :line)} end)
+        IO.puts(:stderr, JSON.encode!(%{"event" => "store_upgrade_rejected", "error_class" => Atom.to_string(error.__struct__), "frames" => frames}))
+        raise Hub.Error, code: "STORE_INVALID", message: "Store invalid"
+    end
+  end
+  def fetch(map, id) do
+    case Map.fetch(map, id) do
+      {:ok, r} -> r
+      :error -> V.fail("NOT_FOUND")
+    end
+  end
+  def owned(r, actor, key) do
+    if r.value[key] != actor, do: V.fail("FORBIDDEN")
+    r
+  end
+  def rows(map, direction \\ :asc), do: map |> Map.values() |> Enum.sort_by(& &1.seq, direction)
+  def values(map, direction \\ :asc), do: Enum.map(rows(map, direction), & &1.value)
+  def matches?(p, c) do
+    filters = [{"information_type", p["information_type"]}, {"source_kind", p["source"]["kind"]}, {"source_id", p["source"]["id"]}]
+    Enum.all?(filters, fn {k, v} -> !Map.has_key?(c, k) or c[k] == v end) and
+      (!Map.has_key?(c, "query") or Enum.any?([p["text"], JSON.encode!(p["data"]), p["information_type"], JSON.encode!(p["source"]), JSON.encode!(Map.get(p, "context", %{}))], &String.contains?(String.downcase(&1), String.downcase(c["query"]))))
+  end
+  def command(s, c, actor, message, cfg) do
+    V.command(c)
+    if Map.has_key?(c, "project_id") and c["project_id"] != s.project, do: V.fail("PROJECT_MISMATCH")
+    mutating = c["op"] in ~w(subscribe unsubscribe publish send ack query query_continue query_cancel query_replay retrieve)
+    key = {actor, message}
+    if mutating, do: V.id(message)
+    old = s.idempotency[key]
+    cond do
+      mutating and old != nil ->
+        if old.command != c, do: V.fail("IDEMPOTENCY_CONFLICT")
+        {old.result, s}
+      true ->
+        {result, next} = execute(s, c, actor, cfg)
+        next = if mutating, do: put_in(next.idempotency[key], %{command: c, result: result}), else: next
+        {result, next}
+    end
+  end
+  def subscribe(s, actor, description) do
+    {id, s, seq} = allocate(s, "sub")
+    v = %{"id" => id, "project_id" => s.project, "agent_id" => actor, "description" => description, "created_at" => now()}
+    {%{"subscription" => v}, put_in(s.subscriptions[id], %{seq: seq, value: v})}
+  end
+  def remove(s, id) do
+    _ = fetch(s.subscriptions, id)
+    jobs = Map.new(s.jobs, fn {key, j} -> {key, if(j.subscription_id == id and j.status == :pending, do: %{j | status: :cancelled}, else: j)} end)
+    %{s | subscriptions: Map.delete(s.subscriptions, id), jobs: jobs}
+  end
+  def execute(s, c, actor, cfg) do
+    case c["op"] do
+      op when op in ~w(query query_attempts query_cancel query_continue query_replay query_result query_status retrieve) -> Hub.Ext.execute(s, c, actor, cfg)
+      "whoami" -> {%{"agent_id" => actor, "project_id" => s.project}, s}
+      "subscribe" -> subscribe(s, actor, c["description"])
+      "list_subscriptions" -> {%{"subscriptions" => Enum.filter(values(s.subscriptions), &(&1["agent_id"] == actor))}, s}
+      "unsubscribe" ->
+        fetch(s.subscriptions, c["subscription_id"]) |> owned(actor, "agent_id")
+        {%{"unsubscribed" => c["subscription_id"]}, remove(s, c["subscription_id"])}
+      "publish" -> publish(s, c, actor)
+      "send" ->
+        if !Map.has_key?(cfg["agents"], c["recipient_id"]), do: V.fail("NOT_FOUND")
+        {id, s, seq} = allocate(s, "del")
+        v = %{"id" => id, "project_id" => s.project, "recipient_id" => c["recipient_id"], "sender_id" => actor, "kind" => "message", "text" => Map.get(c, "text", ""), "data" => Map.get(c, "data", %{}), "created_at" => now()}
+        {%{"delivery" => v}, put_in(s.deliveries[id], %{seq: seq, value: v, ack: false})}
+      "poll" ->
+        ds = rows(s.deliveries) |> Enum.filter(&(!&1.ack and &1.value["recipient_id"] == actor)) |> Enum.take(Map.get(c, "limit", 50)) |> Enum.map(& &1.value)
+        {%{"deliveries" => ds}, s}
+      "ack" ->
+        Enum.each(c["delivery_ids"], fn id -> fetch(s.deliveries, id) |> owned(actor, "recipient_id") end)
+        s = Enum.reduce(c["delivery_ids"], s, fn id, acc -> put_in(acc.deliveries[id].ack, true) end)
+        {%{"acknowledged" => c["delivery_ids"]}, s}
+      "get" -> {%{"publication" => fetch(s.publications, c["publication_id"]).value}, s}
+      "search" -> {%{"publications" => values(s.publications, :desc) |> Enum.filter(&matches?(&1, c)) |> Enum.take(Map.get(c, "limit", 50))}, s}
+    end
+  end
+  def publish(s, c, actor) do
+    source = Map.get(c, "source", %{"kind" => "agent", "id" => actor})
+    if source["kind"] == "agent" and source["id"] != actor, do: V.fail("FORBIDDEN")
+    canonical = Map.drop(c, ~w(op project_id))
+    source_key = if Map.has_key?(source, "item_id"), do: {actor, source["kind"], source["id"], source["item_id"]}
+    previous = if source_key, do: s.sources[source_key]
+    if previous do
+      if previous.command != canonical, do: V.fail("SOURCE_CONFLICT")
+      {previous.result, s}
+    else
+      {id, s, seq} = allocate(s, "pub")
+      created = now()
+      p = %{"id" => id, "project_id" => s.project, "author_id" => actor, "text" => Map.get(c, "text", ""), "data" => Map.get(c, "data", %{}), "created_at" => created,
+        "information_type" => Map.get(c, "information_type", "message"), "source" => source, "occurred_at" => if(Map.has_key?(c, "occurred_at"), do: V.timestamp(c["occurred_at"]), else: created)}
+      Hub.Ext.references!(s, Map.get(c, "context", %{}))
+      p = p |> Map.put("context", Map.get(c, "context", %{})) |> Hub.Ext.envelope()
+      s = put_in(s.publications[id], %{seq: seq, value: p})
+      s = Hub.Index.invalidate(s)
+      s = Enum.reduce(rows(s.subscriptions), s, fn r, acc ->
+        {jid, acc, js} = allocate(acc, "job")
+        put_in(acc.jobs[jid], %{id: jid, seq: js, publication_id: id, subscription_id: r.value["id"], recipient_id: r.value["agent_id"], description: r.value["description"], status: :pending, retry_at: 0})
+      end)
+      result = %{"publication" => p, "matching" => "pending"}
+      s = if source_key, do: put_in(s.sources[source_key], %{command: canonical, result: result}), else: s
+      {result, s}
+    end
+  end
+  def complete(s, job_id, answer, cfg) do
+    j = fetch(s.jobs, job_id)
+    cond do
+      j.status != :pending -> s
+      !Map.has_key?(s.subscriptions, j.subscription_id) -> put_in(s.jobs[job_id].status, :cancelled)
+      answer == :error -> put_in(s.jobs[job_id].retry_at, System.system_time(:millisecond) + cfg["matcher"]["retry_ms"])
+      true ->
+        ppm = round(answer * 1_000_000)
+        s = put_in(s.jobs[job_id].status, :done)
+        if ppm < cfg["threshold_ppm"] do
+          s
+        else
+          p = s.publications[j.publication_id].value
+          evidence = %{"subscription_id" => j.subscription_id, "probability_ppm" => ppm, "threshold_ppm" => cfg["threshold_ppm"], "model" => cfg["matcher"]["model"]}
+          existing = Enum.find(s.deliveries, fn {_, r} -> r.value["kind"] == "publication" and r.value["publication_id"] == j.publication_id and r.value["recipient_id"] == j.recipient_id end)
+          case existing do
+            {id, r} -> put_in(s.deliveries[id].value, Map.update!(r.value, "matches", &(&1 ++ [evidence])))
+            nil ->
+              {id, s, seq} = allocate(s, "del")
+              v = Map.take(p, ~w(project_id text data information_type source occurred_at context content_identity)) |> Map.merge(%{"id" => id, "recipient_id" => j.recipient_id, "sender_id" => p["author_id"], "kind" => "publication", "created_at" => now(), "publication_id" => p["id"], "matches" => [evidence]})
+              put_in(s.deliveries[id], %{seq: seq, value: v, ack: false})
+          end
+        end
+    end
+  end
+  def limited(items, c) do
+    n = Map.get(c, "limit", 50)
+    %{"items" => Enum.take(items, n), "truncated" => length(items) > n}
+  end
+  def admin(s, c, cfg, health) do
+    V.admin(c)
+    if c["agent_id"] && !Map.has_key?(cfg["agents"], c["agent_id"]), do: V.fail("NOT_FOUND")
+    mutation = c["op"] in ~w(create_subscription remove_subscription retry_jobs rebuild_index propose_index qualify_index promote_index rollback_index retire_index)
+    prior = s.admin_idempotency[c["message_id"]]
+    if mutation and prior do
+      if prior.command != c, do: V.fail("IDEMPOTENCY_CONFLICT")
+      {prior.result, s}
+    else
+      {result, next} = admin_execute(s, c, cfg, health)
+      next = if mutation, do: put_in(next.admin_idempotency[c["message_id"]], %{command: c, result: result}), else: next
+      {result, next}
+    end
+  end
+  def admin_execute(s, c, cfg, health) do
+    result = case c["op"] do
+      op when op in ~w(indexes index_jobs query_jobs rebuild_index propose_index qualify_index promote_index rollback_index retire_index) -> :extension
+      "overview" ->
+        queued = Enum.filter(Map.values(s.deliveries), &(!&1.ack))
+        agents = cfg["agents"] |> Map.keys() |> Enum.sort() |> Enum.map(fn a -> %{"agent_id" => a, "subscriptions" => Enum.count(Map.values(s.subscriptions), &(&1.value["agent_id"] == a)), "queued_deliveries" => Enum.count(queued, &(&1.value["recipient_id"] == a))} end)
+        counts = %{"agents" => length(agents), "publications" => map_size(s.publications), "subscriptions" => map_size(s.subscriptions), "queued_deliveries" => length(queued), "pending_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :pending end), "completed_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :done end), "cancelled_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :cancelled end)}
+        %{"project_id" => s.project, "counts" => counts, "agents" => agents, "matcher" => health}
+      "publications" -> limited(values(s.publications, :desc) |> Enum.filter(&matches?(&1, c)), c)
+      "publication" -> %{"publication" => fetch(s.publications, c["publication_id"]).value}
+      "subscriptions" -> limited(values(s.subscriptions, :desc) |> Enum.filter(fn v -> !c["agent_id"] or v["agent_id"] == c["agent_id"] end), c)
+      "deliveries" ->
+        items = rows(s.deliveries, :desc) |> Enum.filter(fn r -> !c["agent_id"] or r.value["recipient_id"] == c["agent_id"] end) |> Enum.map(fn r -> Map.take(r.value, ~w(recipient_id kind created_at publication_id)) |> Map.merge(%{"delivery_id" => r.value["id"], "acknowledged" => r.ack}) end)
+        limited(items, c)
+      "jobs" ->
+        items = s.jobs |> Map.values() |> Enum.sort_by(& &1.seq, :desc) |> Enum.filter(fn j -> !c["status"] or Atom.to_string(j.status) == c["status"] end) |> Enum.map(fn j -> %{"job_id" => j.id, "publication_id" => j.publication_id, "subscription_id" => j.subscription_id, "recipient_id" => j.recipient_id, "status" => Atom.to_string(j.status), "retry_at" => j.retry_at} end)
+        limited(items, c)
+      "create_subscription" -> :mutation
+      "remove_subscription" -> :mutation
+      "retry_jobs" -> :mutation
+    end
+    case c["op"] do
+      op when op in ~w(indexes index_jobs query_jobs rebuild_index propose_index qualify_index promote_index rollback_index retire_index) -> Hub.Index.admin(s, c, cfg)
+      "create_subscription" -> subscribe(s, c["agent_id"], c["description"])
+      "remove_subscription" -> {%{"removed" => true, "subscription_id" => c["subscription_id"]}, remove(s, c["subscription_id"])}
+      "retry_jobs" ->
+        count = Enum.count(s.jobs, fn {_, j} -> j.status == :pending end)
+        jobs = Map.new(s.jobs, fn {id, j} -> {id, if(j.status == :pending, do: %{j | retry_at: 0}, else: j)} end)
+        {%{"retried" => count}, %{s | jobs: jobs}}
+      _ -> {result, s}
+    end
+  end
+end
+
+defmodule Hub.Store do
+  use GenServer
+  def start(cfg), do: GenServer.start(__MODULE__, cfg)
+  def journal(path), do: path <> ".journal"
+  def read_journal!(path) do
+    <<"ADHDJ1\n", checksum::binary-size(32), payload::binary>> = File.read!(journal(path))
+    Hub.Validate.check(:crypto.hash_equals(checksum, :crypto.hash(:sha256, payload)))
+    :erlang.binary_to_term(payload, [:safe])
+  end
+  def commit!(state, path) do
+    payload = :erlang.term_to_binary(state, [:deterministic])
+    frame = ["ADHDJ1\n", :crypto.hash(:sha256, payload), payload]
+    temporary = journal(path) <> ".tmp-" <> Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false)
+    try do
+      {:ok, io} = :file.open(String.to_charlist(temporary), [:write, :binary, :exclusive, :raw])
+      :ok = File.chmod(temporary, 0o600)
+      try do
+        :ok = :file.write(io, frame)
+        :ok = :file.sync(io)
+      after
+        :file.close(io)
+      end
+      :ok = File.rename(temporary, journal(path))
+      :ok = :dets.insert(:adhd_state, {:state, state})
+      :ok = :dets.sync(:adhd_state)
+      :ok
+    after
+      if File.exists?(temporary), do: File.rm(temporary)
+    end
+  end
+  def init(cfg) do
+    path = Path.expand(cfg["store_path"])
+    existed = File.exists?(path)
+    File.mkdir_p!(Path.dirname(path))
+    try do
+      state = if File.exists?(journal(path)) do
+        recovered = read_journal!(path) |> Hub.Domain.upgrade(cfg["project_id"])
+        case :dets.open_file(:adhd_state, file: String.to_charlist(path), type: :set, repair: false) do
+          {:ok, :adhd_state} -> :ok
+          {:error, _} ->
+            if File.exists?(path) do
+              quarantine = path <> ".unclean-" <> Base.url_encode64(:crypto.strong_rand_bytes(9), padding: false)
+              :ok = File.rename(path, quarantine)
+              :ok = File.chmod(quarantine, 0o600)
+            end
+            {:ok, :adhd_state} = :dets.open_file(:adhd_state, file: String.to_charlist(path), type: :set, repair: false)
+        end
+        :ok = :dets.delete_all_objects(:adhd_state)
+        recovered
+      else
+        {:ok, :adhd_state} = :dets.open_file(:adhd_state, file: String.to_charlist(path), type: :set, repair: false)
+        case :dets.lookup(:adhd_state, :state) do
+          [] when not existed -> Hub.Domain.empty(cfg["project_id"])
+          [{:state, state}] ->
+            Hub.Validate.check(:dets.info(:adhd_state, :size) == 1)
+            Hub.Domain.upgrade(state, cfg["project_id"])
+          _ -> Hub.Validate.fail()
+        end
+      end
+      :ok = File.chmod(path, 0o600)
+      :ok = commit!(state, path)
+      {:ok, {state, Map.put(cfg, "store_path", path)}}
+    rescue
+      _ -> :dets.close(:adhd_state); {:stop, :invalid_store}
+    end
+  end
+  def handle_call(:snapshot, _, {s, cfg}), do: {:reply, s, {s, cfg}}
+  def handle_call({:transition, f}, _, {s, cfg}) do
+    try do
+      {result, next} = f.(s, cfg)
+      if next != s, do: commit!(next, cfg["store_path"])
+      {:reply, {:ok, result}, {next, cfg}}
+    rescue
+      e in Hub.Error -> {:reply, {:error, e.code}, {s, cfg}}
+      error ->
+        frames = Enum.take(__STACKTRACE__, 4) |> Enum.map(fn {mod, fun, args, info} -> %{"module" => Atom.to_string(mod), "function" => Atom.to_string(fun), "arity" => if(is_integer(args), do: args, else: length(args)), "line" => Keyword.get(info, :line)} end)
+        IO.puts(:stderr, JSON.encode!(%{"event" => "store_transition_failed", "error_class" => Atom.to_string(error.__struct__), "frames" => frames}))
+        {:stop, :store_failure, {:error, "INTERNAL"}, {s, cfg}}
+    end
+  end
+  def snapshot(pid), do: GenServer.call(pid, :snapshot)
+  def transition(pid, f), do: GenServer.call(pid, {:transition, f}, 10000)
+  def terminate(_, _), do: :dets.close(:adhd_state)
+  def format_status(status), do: status |> Map.put(:state, :redacted) |> Map.put(:message, :redacted)
+end
+
+defmodule Hub.Matcher do
+  def request(publication, description, model) do
+    %{"model" => model, "state" => %{"publication" => publication}, "questions" => %{"relevance" => %{"type" => "noul", "instructions" => "Does this publication satisfy the following plain-text subscription? Evaluate relevance. Subscription:\n" <> description}}}
+  end
+  def probability(response, model) do
+    case response do
+      %{"model" => ^model, "answers" => %{"relevance" => %{"type" => "noul", "noul" => p}}} when is_number(p) and p >= 0 and p <= 1 -> {:ok, p}
+      _ -> :error
+    end
+  end
+  def http(method, url, body, timeout) do
+    try do
+      u = URI.parse(url)
+      ssl = if u.scheme == "https", do: [verify: :verify_peer, cacerts: :public_key.cacerts_get(), server_name_indication: String.to_charlist(u.host), customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]], else: []
+      opts = [timeout: timeout, connect_timeout: timeout, autoredirect: false, ssl: ssl]
+      req = if method == :get, do: {String.to_charlist(url), []}, else: {String.to_charlist(url), [], ~c"application/json", JSON.encode!(body)}
+      case :httpc.request(method, req, opts, body_format: :binary) do
+        {:ok, {{_, status, _}, _, bytes}} when status in 200..299 -> {:ok, JSON.decode!(bytes)}
+        _ -> :error
+      end
+    rescue
+      _ -> :error
+    catch
+      _, _ -> :error
+    end
+  end
+  def infer(p, j, cfg) do
+    m = cfg["matcher"]
+    with {:ok, response} <- http(:post, m["url"], request(p, j.description, m["model"]), m["timeout_ms"]),
+         {:ok, probability} <- probability(response, m["model"]) do
+      probability
+    else
+      _ -> :error
+    end
+  end
+  def start(store, cfg), do: spawn(fn -> loop(store, cfg) end)
+  def loop(store, cfg) do
+    s = Hub.Store.snapshot(store)
+    job = s.jobs |> Map.values() |> Enum.filter(&(&1.status == :pending and &1.retry_at <= System.system_time(:millisecond))) |> Enum.min_by(& &1.seq, fn -> nil end)
+    if job do
+      answer = infer(s.publications[job.publication_id].value, job, cfg)
+      Hub.Store.transition(store, fn current, config -> {:ok, Hub.Domain.complete(current, job.id, answer, config)} end)
+    else
+      Process.sleep(50)
+    end
+    loop(store, cfg)
+  end
+  def health(cfg) do
+    u = URI.parse(cfg["matcher"]["url"])
+    origin = %{u | path: "/health", query: nil, fragment: nil} |> URI.to_string()
+    status = case http(:get, origin, nil, 2000) do
+      {:ok, %{"ready" => true}} -> "ready"
+      _ -> "unavailable"
+    end
+    %{"status" => status, "checked_at" => Hub.Domain.now(), "model" => cfg["matcher"]["model"]}
+  end
+end
+
+defmodule Hub.CLI do
+  @compile {:no_warn_undefined, [Hub.Tests, Hub.HTTP]}
+  def run(["describe"]), do: %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => ~w(ack get list_subscriptions poll publish query query_attempts query_cancel query_continue query_replay query_result query_status retrieve search send subscribe unsubscribe whoami)}
+  def run(["validate", command]) do
+    Hub.Validate.command(command)
+    %{"valid" => true, "op" => command["op"]}
+  end
+  def run(["validate-admin", command]) do
+    Hub.Validate.admin(command)
+    %{"valid" => true, "op" => command["op"]}
+  end
+  def run(_), do: Hub.Validate.fail()
+  def main(args) do
+    try do
+      result = case args do
+        ["--litai-test"] -> Hub.Tests.run()
+        ["--litai-smoke"] -> Hub.Tests.smoke()
+        [json] ->
+          case JSON.decode!(json) do
+            ["serve", path] when is_binary(path) -> serve(path)
+            values when is_list(values) -> run(values)
+            _ -> Hub.Validate.fail()
+          end
+        _ -> Hub.Validate.fail()
+      end
+      IO.puts(JSON.encode!(result))
+    rescue
+      _ -> IO.puts(:stderr, "Request or service failed"); System.halt(1)
+    catch
+      _, _ -> IO.puts(:stderr, "Request or service failed"); System.halt(1)
+    end
+  end
+  def serve(path) do
+    cfg = path |> File.read!() |> JSON.decode!() |> Hub.Validate.config()
+    {:ok, _} = Application.ensure_all_started(:inets)
+    {:ok, _} = Application.ensure_all_started(:ssl)
+    {:ok, store} = Hub.Store.start(cfg)
+    Process.link(store)
+    Hub.Auth.start(cfg)
+    Hub.Ext.start(store, cfg)
+    worker = Hub.Matcher.start(store, cfg)
+    Process.link(worker)
+    {:ok, listener} = Hub.HTTP.start(store, cfg)
+    Process.link(listener)
+    IO.puts(JSON.encode!(%{"status" => "ready", "url" => cfg["public_url"]}))
+    receive do
+      :stop -> :ok
+    end
+  end
+end
+
+defmodule Hub.HTTP do
+  alias Hub.Validate, as: V
+  @security [{"Cache-Control", "no-store"}, {"X-Content-Type-Options", "nosniff"}, {"Referrer-Policy", "no-referrer"}, {"Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"}]
+  def start(store, cfg) do
+    case :gen_tcp.listen(cfg["port"], [:binary, active: false, packet: :raw, ip: {127, 0, 0, 1}, reuseaddr: true, backlog: 128]) do
+      {:ok, socket} -> {:ok, spawn(fn -> accept(socket, store, cfg) end)}
+      e -> e
+    end
+  end
+  def accept(listener, store, cfg) do
+    case :gen_tcp.accept(listener) do
+      {:ok, socket} ->
+        pid = spawn(fn -> receive do {:socket, s} -> handle(s, store, cfg) end end)
+        :ok = :gen_tcp.controlling_process(socket, pid)
+        send(pid, {:socket, socket})
+        accept(listener, store, cfg)
+      _ -> :ok
+    end
+  end
+  def receive_bytes(socket, data, deadline, mode) do
+    timeout = max(1, deadline - System.monotonic_time(:millisecond))
+    if timeout <= 1, do: throw({:http, 400})
+    case mode do
+      :headers ->
+        case :binary.match(data, "\r\n\r\n") do
+          {n, 4} ->
+            if n + 4 > 16384, do: throw({:http, 431})
+            {binary_part(data, 0, n), binary_part(data, n + 4, byte_size(data) - n - 4)}
+          :nomatch ->
+            if byte_size(data) > 16384, do: throw({:http, 431})
+            {:ok, more} = :gen_tcp.recv(socket, 0, timeout)
+            receive_bytes(socket, data <> more, deadline, :headers)
+        end
+      {:body, size} ->
+        if byte_size(data) >= size do
+          binary_part(data, 0, size)
+        else
+          {:ok, more} = :gen_tcp.recv(socket, min(size - byte_size(data), 65536), timeout)
+          receive_bytes(socket, data <> more, deadline, mode)
+        end
+    end
+  end
+  def parse(socket) do
+    deadline = System.monotonic_time(:millisecond) + 5000
+    {head, initial} = receive_bytes(socket, "", deadline, :headers)
+    [line | lines] = String.split(head, "\r\n")
+    [method, path, version] = String.split(line, " ")
+    if version not in ["HTTP/1.1", "HTTP/1.0"], do: throw({:http, 400})
+    pairs = Enum.map(lines, fn line ->
+      case String.split(line, ":", parts: 2) do
+        [k, v] ->
+          if !Regex.match?(~r/\A[!#$%&'*+.^_`|~0-9A-Za-z-]+\z/, k), do: throw({:http, 400})
+          value = Regex.replace(~r/\A[ \t]+|[ \t]+\z/, v, "")
+          if String.contains?(value, ["\r", "\n", <<0>>]), do: throw({:http, 400})
+          {String.downcase(k), value}
+        _ -> throw({:http, 400})
+      end
+    end)
+    if Enum.any?(pairs, fn {k, _} -> k == "transfer-encoding" end), do: throw({:http, 400})
+    if length(Enum.filter(pairs, fn {k, _} -> k == "content-length" end)) > 1, do: throw({:http, 400})
+    if length(Enum.filter(pairs, fn {k, _} -> k in ["authorization", "host", "origin", "a2a-version", "content-type"] end)) != map_size(Map.new(Enum.filter(pairs, fn {k, _} -> k in ["authorization", "host", "origin", "a2a-version", "content-type"] end))), do: throw({:http, 400})
+    headers = Map.new(pairs)
+    size = case headers["content-length"] do
+      nil -> 0
+      value ->
+        if !Regex.match?(~r/\A[0-9]+\z/, value), do: throw({:http, 400})
+        if byte_size(value) > 12, do: throw({:http, 413})
+        String.to_integer(value)
+    end
+    if size > 1_048_576, do: throw({:http, 413})
+    {method, path, headers, receive_bytes(socket, initial, deadline, {:body, size})}
+  end
+  def handle(socket, store, cfg) do
+    response = try do
+      {method, path, headers, body} = parse(socket)
+      case Hub.Auth.route(method, path, headers, body, store, cfg) do
+        :pass -> route(method, path, headers, body, store, cfg)
+        result -> result
+      end
+    rescue
+      _ -> json(400, %{"error" => %{"code" => "INVALID_PARAMS", "message" => "Invalid request"}})
+    catch
+      {:http, status} -> json(status, %{"error" => %{"code" => "INVALID_PARAMS", "message" => "Invalid request"}})
+      _, _ -> json(500, %{"error" => %{"code" => "INTERNAL", "message" => "Request failed"}})
+    end
+    {status, type, body, headers} = response
+    reason = %{200 => "OK", 400 => "Bad Request", 401 => "Unauthorized", 403 => "Forbidden", 404 => "Not Found", 409 => "Conflict", 413 => "Content Too Large", 415 => "Unsupported Media Type", 431 => "Request Header Fields Too Large", 500 => "Internal Server Error"}[status] || "Error"
+    h = [{"Content-Type", type}, {"Content-Length", Integer.to_string(byte_size(body))}, {"Connection", "close"} | headers]
+    :gen_tcp.send(socket, ["HTTP/1.1 #{status} #{reason}\r\n", Enum.map(h, fn {k, v} -> [k, ": ", v, "\r\n"] end), "\r\n", body])
+    :gen_tcp.close(socket)
+  end
+  def json(status, obj, headers \\ []), do: {status, "application/json", JSON.encode!(obj), headers}
+  def secure({s, t, b, h}), do: {s, t, b, @security ++ h}
+  def error(status, code), do: json(status, %{"error" => %{"code" => code, "message" => "Request rejected"}})
+  def equal?(a, b) when is_binary(a) and is_binary(b) do
+    a = :crypto.hash(:sha256, a)
+    b = :crypto.hash(:sha256, b)
+    :crypto.hash_equals(a, b)
+  end
+  def equal?(_, _), do: false
+  def bearer(h) do
+    case h["authorization"] do
+      "Bearer " <> token -> token
+      _ -> nil
+    end
+  end
+  def actor(headers, cfg) do
+    token = bearer(headers)
+    Enum.reduce(cfg["agents"], nil, fn {id, candidate}, acc -> if equal?(candidate, token), do: id, else: acc end)
+  end
+  def media?(h), do: String.downcase(h["content-type"] || "") |> String.split(";") |> hd() |> String.trim() == "application/json"
+  def unauthorized, do: json(401, %{"error" => %{"code" => "UNAUTHORIZED", "message" => "Authentication required"}}, [{"WWW-Authenticate", "Bearer"}])
+  def route("GET", "/health", _, _, store, _) do
+    Hub.Store.snapshot(store)
+    json(200, %{"status" => "ready"})
+  end
+  def route("GET", "/.well-known/agent-card.json", _, _, _, cfg), do: json(200, card(cfg))
+  def route("GET", path, _, _, _, _) when path in ["/", "/admin", "/admin/"], do: secure({200, "text/html; charset=utf-8", Hub.UI.html(), []})
+  def route("GET", "/admin/assets/app.js", _, _, _, _), do: secure({200, "application/javascript; charset=utf-8", Hub.UI.js(), []})
+  def route("GET", "/admin/assets/app.css", _, _, _, _), do: secure({200, "text/css; charset=utf-8", Hub.Assets.css(), []})
+  def route("POST", "/admin/api", h, body, store, cfg) do
+    response = cond do
+      !Hub.Auth.enabled?(cfg) -> error(404, "NOT_FOUND")
+      !Hub.Auth.authorized?(h, cfg) -> unauthorized()
+      !Hub.Auth.forgery_ok?(h, cfg) -> error(403, "FORBIDDEN")
+      !media?(h) -> error(415, "INVALID_PARAMS")
+      true -> admin(body, store, cfg)
+    end
+    secure(response)
+  end
+  def route("POST", "/a2a", h, body, store, cfg) do
+    cond do
+      !media?(h) -> error(415, "INVALID_PARAMS")
+      is_nil(actor(h, cfg)) -> unauthorized()
+      true -> rpc(body, h, actor(h, cfg), store, cfg)
+    end
+  end
+  def route(_, path, _, _, _, _) do
+    r = error(404, "NOT_FOUND")
+    if String.starts_with?(path, "/admin"), do: secure(r), else: r
+  end
+  def origin?(h, cfg) do
+    is_nil(h["origin"]) or h["origin"] in ["http://#{h["host"]}", origin(cfg["public_url"])]
+  end
+  def origin(url) do
+    u = URI.parse(url)
+    %{u | path: nil, query: nil, fragment: nil} |> URI.to_string()
+  end
+  def admin(body, store, cfg) do
+    try do
+      c = JSON.decode!(body) |> V.admin()
+      health = if c["op"] == "overview", do: Hub.Matcher.health(cfg), else: nil
+      case Hub.Store.transition(store, fn s, config -> Hub.Domain.admin(s, c, config, health) end) do
+        {:ok, result} -> json(200, result)
+        {:error, code} -> error(%{"NOT_FOUND" => 404, "IDEMPOTENCY_CONFLICT" => 409, "NOT_READY" => 409}[code] || 400, code)
+      end
+    rescue
+      _ -> error(400, "INVALID_PARAMS")
+    end
+  end
+  def rpc_error(id, code, domain \\ nil) do
+    e = %{"code" => code, "message" => if(domain, do: "Command rejected", else: "Invalid request")}
+    e = if domain, do: Map.put(e, "data", [%{"@type" => "type.googleapis.com/google.rpc.ErrorInfo", "reason" => domain, "domain" => "adhd.hub", "metadata" => %{"code" => domain}}]), else: e
+    json(200, %{"jsonrpc" => "2.0", "id" => id, "error" => e})
+  end
+  def rpc(body, headers, actor, store, cfg) do
+    decoded = try do {:ok, JSON.decode!(body)} rescue _ -> :error end
+    case decoded do
+      :error -> rpc_error(nil, -32700)
+      {:ok, e} ->
+        id = if is_map(e), do: e["id"]
+        cond do
+          !is_map(e) or e["jsonrpc"] != "2.0" or !(is_binary(id) or is_integer(id)) or !is_binary(e["method"]) -> rpc_error(nil, -32600)
+          headers["a2a-version"] not in [nil, "1.0"] -> rpc_error(id, -32602)
+          e["method"] != "SendMessage" -> rpc_error(id, -32601)
+          true ->
+            try do
+              params = e["params"]
+              V.check(is_map(params))
+              message = params["message"]
+              V.check(is_map(message))
+              V.id(message["messageId"])
+              V.check(message["role"] == "ROLE_USER" and !Map.has_key?(message, "taskId") and !Map.has_key?(params, "taskId"))
+              V.optional(message, "contextId", fn v -> V.check(is_binary(v) and String.valid?(v) and byte_size(v) > 0) end)
+              V.check(is_list(message["parts"]) and length(message["parts"]) == 1)
+              [part] = message["parts"]
+              V.keys(part, ~w(data text mediaType))
+              V.check(Map.has_key?(part, "data") != Map.has_key?(part, "text"))
+              V.optional(part, "mediaType", fn v -> V.check(is_binary(v)) end)
+              c = if Map.has_key?(part, "data"), do: part["data"], else: JSON.decode!(part["text"])
+              V.command(c)
+              case Hub.Store.transition(store, fn s, config -> Hub.Domain.command(s, c, actor, message["messageId"], config) end) do
+                {:ok, result} ->
+                  server_id = "server-" <> Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
+                  json(200, %{"jsonrpc" => "2.0", "id" => id, "result" => %{"message" => %{"messageId" => server_id, "contextId" => Map.get(message, "contextId", cfg["project_id"]), "role" => "ROLE_AGENT", "parts" => [%{"data" => result}]}}})
+                {:error, code} when code in ~w(NOT_FOUND FORBIDDEN IDEMPOTENCY_CONFLICT SOURCE_CONFLICT PROJECT_MISMATCH) -> rpc_error(id, -32000, code)
+                {:error, "INVALID_PARAMS"} -> rpc_error(id, -32602)
+                _ -> rpc_error(id, -32603)
+              end
+            rescue
+              _ -> rpc_error(id, -32602)
+            end
+        end
+    end
+  end
+  def card(cfg) do
+    %{"name" => "ADHD", "description" => "Agentic Distributed Harness Depot (ADHD): a private A2A information hub for agent coordination.", "version" => "0.1.0",
+      "supportedInterfaces" => [%{"url" => cfg["public_url"] <> "/a2a", "protocolBinding" => "JSONRPC", "protocolVersion" => "1.0"}],
+      "capabilities" => %{"streaming" => false, "pushNotifications" => false, "extendedAgentCard" => false},
+      "defaultInputModes" => ["application/json"], "defaultOutputModes" => ["application/json"],
+      "securitySchemes" => %{"bearerAuth" => %{"httpAuthSecurityScheme" => %{"scheme" => "bearer"}}},
+      "securityRequirements" => [%{"schemes" => %{"bearerAuth" => %{"list" => []}}}],
+      "skills" => [%{"id" => "project-coordination", "name" => "Project coordination", "description" => "Publish project information, subscribe, poll, search and exchange addressed messages.", "tags" => ["coordination"], "inputModes" => ["application/json"], "outputModes" => ["application/json"]}]}
+  end
+end
+
+defmodule Hub.Assets do
+  def html do
+    ~S"""
+    <!doctype html>
+    <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADHD | Agentic Distributed Harness Depot</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f2840'/%3E%3Ctext x='7' y='24' fill='white' font-size='24'%3EA%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="/admin/assets/app.css"><script src="/admin/assets/app.js" defer></script></head>
+    <body><main><section id="login"><div class="eyebrow">ADHD · PRIVATE WORKSPACE</div><h1>Agentic Distributed Harness Depot</h1><p>Sign in to observe and manage your project.</p><form id="login-form"><label for="token">Administrator token</label><input id="token" type="password" autocomplete="off" required><button type="submit">Sign in</button></form><p id="login-error" role="alert"></p></section>
+    <div id="console" hidden><aside><div class="brand">ADHD</div><p class="subtitle">Agentic Distributed Harness Depot</p><nav aria-label="Workspace"><button data-view="Overview" aria-current="page">Overview</button><button data-view="Information">Information</button><button data-view="Subscriptions">Subscriptions</button><button data-view="Activity">Activity</button></nav><button id="help-toggle">Operations guide</button><button id="logout">Log out</button></aside><section class="workspace"><header><div><p id="project" class="eyebrow"></p><h1 id="view-title">Overview</h1></div><button id="refresh">Refresh</button></header><p id="state" role="status" aria-live="polite"></p><p id="error" role="alert"></p><div id="content"></div><section id="guide" hidden><h2>Operations guide</h2><p>One process owns each DETS store. Provision distinct agent bearer tokens of at least 24 characters and an optional administrator token of 32–65536 bytes in the operator configuration. Keep that file private. Rotate credentials by updating configuration and restarting the service. Use the configured private tunnel URL; the listener binds only to 127.0.0.1.</p><p>Published information is project-wide and retained after acknowledgement. Addressed messages are private to recipients: administrators see delivery metadata only. Subscriptions apply to future publications. Removing one cancels pending work and retains older deliveries. Retrying jobs resets pending work only. Matching failures leave information usable and jobs durable.</p><p>Refresh to observe actual matcher health. Check the matcher service and private tunnel on outages. Back up the DETS file offline with the service stopped. Preserve an offline pre-upgrade backup before opening legacy schema 1; schema 2 retains original source-event deduplication. An old-runtime rollback must restore that backup. Do not run two services against one store. Binary attachments, external connectors, multi-project operation and automatic refresh are outside this version.</p></section></section></div></main></body></html>
+    """
+  end
+  def css do
+    ~S"""
+    :root{font-family:Avenir,"Segoe UI",sans-serif;color:#122b42;background:#f2f5f8;font-size:15px}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer;border:1px solid #b9c8d5;background:white;color:#123e67;border-radius:5px;padding:.65rem .9rem;min-height:42px}button:hover{background:#e7eff7}button:disabled{opacity:.55;cursor:wait}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #137bb7;outline-offset:2px}input,select,textarea{width:100%;min-width:0;padding:.7rem;border:1px solid #a6b7c7;border-radius:4px;background:white;color:#122b42}label{display:block;font-weight:600;margin:.6rem 0 .35rem}h1{font-size:1.7rem;line-height:1.25;margin:.3rem 0 1rem;overflow-wrap:break-word}h2{font-size:1.15rem;margin:1.7rem 0 .7rem}p{line-height:1.6;overflow-wrap:anywhere}.eyebrow{font-size:.78rem;letter-spacing:.09em;color:#52677a}.subtitle{font-size:.84rem;max-width:180px;margin-bottom:2rem}#login{max-width:520px;margin:12vh auto;padding:2rem}#login button{margin-top:1rem;background:#174f82;color:white}#console{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}#console[hidden],[hidden]{display:none!important}aside{background:#e6edf3;border-right:1px solid #cfdbe4;padding:2rem 1.3rem}.brand{font-size:1.7rem;font-weight:800}nav{display:flex;flex-direction:column;gap:.4rem;margin-bottom:2rem}nav button{text-align:left;border-color:transparent;background:transparent}nav button[aria-current=page]{background:#d1e4f6;color:#124c80;font-weight:700}.workspace{padding:2rem 3rem;min-width:0;max-width:1400px}header{display:flex;justify-content:space-between;align-items:center;gap:1rem}#state{color:#426270;font-size:.9rem}#error,#login-error{color:#9b281f}.row{border-bottom:1px solid #d5dfe7;padding:1rem 0;display:flex;gap:1rem;justify-content:space-between;align-items:flex-start;min-width:0}.row>div{min-width:0}.row p{margin:.3rem 0;white-space:pre-wrap}.muted{color:#52677a;font-size:.88rem}.count{font-size:1.55rem;font-weight:700;font-variant-numeric:tabular-nums}.healthy{color:#086c61}.pending{color:#8b5800}.filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem 1rem;margin-bottom:1rem}.filters button{align-self:end}form{max-width:760px}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:#e8eef3;padding:1rem;line-height:1.5;font-size:.85rem}#detail{border-top:2px solid #b5c7d7;margin-top:1rem;padding-top:1rem}table{border-collapse:collapse;width:100%;font-size:.9rem}td,th{text-align:left;padding:.8rem .7rem;border-bottom:1px solid #d4dfe7;vertical-align:top;overflow-wrap:anywhere}th{font-size:.8rem;color:#52677a}.table-region{overflow-x:auto;max-width:100%}.table-region table{min-width:600px}.actions{display:flex;gap:.5rem;flex-wrap:wrap}.empty{color:#52677a;padding:1.5rem 0}#guide{border-top:1px solid #b4c7d4;margin-top:2rem}aside>button{display:block;margin-top:.6rem}#content{min-width:0}@media(max-width:700px){#login{margin:6vh auto;padding:1.3rem}#console{display:block}aside{padding:1rem;border-right:0;border-bottom:1px solid #cfdbe4}.brand{font-size:1.35rem}.subtitle{max-width:none;margin:.4rem 0 .8rem}nav{flex-direction:row;overflow-x:auto;gap:.2rem;margin:0 0 .7rem}nav button{padding:.55rem;font-size:.85rem;white-space:nowrap}aside>button{display:inline-block;margin:0 .4rem 0 0}.workspace{padding:1.2rem}h1{font-size:1.45rem}.filters{grid-template-columns:minmax(0,1fr)}.row{gap:.5rem}.row button{flex-shrink:0;padding:.6rem}.count{font-size:1.3rem}}
+    """
+  end
+  def js do
+    ~S"""
+    'use strict';
+    (()=>{
+    let token='',view='Overview',revision=0,busy=false,uncertain=null,agents=[],lastFilters={};
+    const $=id=>document.getElementById(id), content=$('content');
+    const node=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
+    const button=(text,fn)=>{const b=node('button',text);b.type='button';b.addEventListener('click',fn);return b;};
+    function logout(){token='';uncertain=null;revision++;agents=[];lastFilters={};content.replaceChildren();$('project').textContent='';$('state').textContent='';$('error').textContent='';$('login-error').textContent='';$('guide').hidden=true;$('console').hidden=true;$('login').hidden=false;$('token').value='';}
+    async function api(command){let r;try{r=await fetch('/admin/api',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(command)});}catch(e){throw new Error('Service could not be reached. Retry when the connection is available.');}if(r.status===401){logout();$('login-error').textContent='Sign in with a valid administrator token.';throw new Error('Sign in with a valid administrator token.');}if(!r.ok){throw new Error(r.status===409?'This request identifier has already been used for another action.':'Request could not be completed. Check the fields and retry.');}return await r.json();}
+    function field(form,label,name,type='text',value=''){const id='field-'+name;const l=node('label',label);l.htmlFor=id;const e=node(type==='textarea'?'textarea':'input');if(type!=='textarea')e.type=type;e.id=id;e.name=name;e.value=value;form.append(l,e);return e;}
+    function select(form,label,name,options){const l=node('label',label);l.htmlFor='field-'+name;const e=node('select');e.id=l.htmlFor;e.name=name;options.forEach(o=>{const v=node('option',o.label||o);v.value=o.value===undefined?o:o.value;e.append(v);});form.append(l,e);return e;}
+    function empty(text='No matching records.'){content.append(node('p',text,'empty'));}
+    function trunc(r){if(r.truncated)content.append(node('p','More records are available. Refine filters to narrow the list.','pending'));}
+    function table(title,heads,rows){content.append(node('h2',title));const region=node('div',undefined,'table-region');region.tabIndex=0;region.setAttribute('role','region');region.setAttribute('aria-label',title);const t=node('table'),tr=node('tr');heads.forEach(h=>{const th=node('th',h);th.scope='col';tr.append(th);});const thead=node('thead');thead.append(tr);t.append(thead);const tb=node('tbody');rows.forEach(row=>{const r=node('tr');row.forEach(v=>r.append(node('td',String(v))));tb.append(r);});t.append(tb);region.append(t);content.append(region);if(!rows.length)empty('No '+title.toLowerCase()+' yet.');}
+    function rows(items,render){if(!items.length)empty();items.forEach(render);}
+    async function mutate(command){if(busy)return;const serialized=JSON.stringify(command);if(uncertain&&uncertain.serialized!==serialized){$('error').textContent='Retry the pending action or log out before starting a different mutation.';return;}if(!uncertain)uncertain={serialized,command:{...command,message_id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+String(Math.random()).slice(2)}};busy=true;document.querySelectorAll('button[type=submit],button[data-mutation]').forEach(b=>b.disabled=true);try{await api(uncertain.command);uncertain=null;await refresh();}catch(e){$('error').textContent=e.message+' The action identifier is preserved for retry.';const retry=button('Retry pending action',()=>mutate(command));retry.dataset.mutation='true';content.append(retry);}finally{busy=false;document.querySelectorAll('button[type=submit],button[data-mutation]').forEach(b=>b.disabled=false);}}
+    function overview(r){$('project').textContent=r.project_id;content.append(node('h2','Service reachable','healthy'));content.append(node('p','Matcher '+r.matcher.status+' · '+r.matcher.model+' · observed '+r.matcher.checked_at,r.matcher.status==='ready'?'healthy':'pending'));Object.entries(r.counts).forEach(([k,v])=>{const row=node('div',undefined,'row');row.append(node('span',k.replaceAll('_',' ')),node('span',String(v),'count'));content.append(row);});table('Agents',['Agent','Subscriptions','Queued deliveries'],r.agents.map(a=>[a.agent_id,a.subscriptions,a.queued_deliveries]));}
+    function information(r,filter){const form=node('form',undefined,'filters');field(form,'Text search','query','text',filter.query||'');field(form,'Information type','information_type','text',filter.information_type||'');field(form,'Source kind','source_kind','text',filter.source_kind||'');field(form,'Source ID','source_id','text',filter.source_id||'');const submit=node('button','Search');submit.type='submit';form.append(submit);form.addEventListener('submit',e=>{e.preventDefault();lastFilters={};new FormData(form).forEach((v,k)=>{if(v!=='')lastFilters[k]=v;});refresh();});content.append(form);rows(r.items,p=>{const row=node('div',undefined,'row'),box=node('div');box.append(node('strong',p.information_type+' · '+p.source.kind+': '+p.source.id),node('p',p.text||JSON.stringify(p.data)),node('p',p.created_at+' · '+p.author_id,'muted'));row.append(box,button('Details',async()=>{const ticket=revision;try{const result=await api({op:'publication',publication_id:p.id});if(ticket!==revision)return;let d=$('detail');if(d)d.remove();d=node('section');d.id='detail';d.append(node('h2','Publication details'),node('pre',JSON.stringify(result.publication,null,2)));content.append(d);d.scrollIntoView({block:'nearest'});}catch(e){$('error').textContent=e.message;}}));content.append(row);});trunc(r);}
+    function subscriptions(r){content.append(node('h2','Create subscription'));const form=node('form');const owner=select(form,'Owner agent','agent_id',agents);const desc=field(form,'Plain-text description','description','textarea');desc.required=true;desc.maxLength=4096;const submit=node('button','Create subscription');submit.type='submit';form.append(submit);form.addEventListener('submit',e=>{e.preventDefault();mutate({op:'create_subscription',agent_id:owner.value,description:desc.value});});content.append(form,node('h2','Subscriptions'));rows(r.items,s=>{const row=node('div',undefined,'row'),box=node('div');box.append(node('strong',s.agent_id),node('p',s.description),node('p',s.created_at,'muted'));const b=button('Remove',()=>{if(window.confirm('Remove subscription owned by '+s.agent_id+'?\n\n'+s.description))mutate({op:'remove_subscription',subscription_id:s.id,confirm:true});});b.dataset.mutation='true';row.append(box,b);content.append(row);});trunc(r);}
+    function activity(ds,js){const b=button('Retry pending jobs',()=>{if(window.confirm('Retry all pending matching jobs now? Completed and cancelled jobs remain unchanged.'))mutate({op:'retry_jobs',confirm:true});});b.dataset.mutation='true';content.append(b);table('Delivery metadata',['Delivery','Recipient','Kind','Created','Acknowledged','Publication'],ds.items.map(d=>[d.delivery_id,d.recipient_id,d.kind,d.created_at,d.acknowledged,d.publication_id||'—']));trunc(ds);table('Matching jobs',['Job','Publication','Subscription','Recipient','Status','Retry at (epoch ms)'],js.items.map(j=>[j.job_id,j.publication_id,j.subscription_id,j.recipient_id,j.status,j.retry_at]));trunc(js);}
+    async function refresh(){if(!token)return;const ticket=++revision,selected=view;const filter={...lastFilters};$('state').textContent='Loading…';$('error').textContent='';$('view-title').textContent=view;document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});try{let result;if(view==='Overview')result=await api({op:'overview'});if(view==='Information')result=await api({op:'publications',...filter});if(view==='Subscriptions'){const all=await Promise.all([api({op:'subscriptions'}),api({op:'overview'})]);result=all[0];agents=all[1].agents.map(a=>a.agent_id);}if(view==='Activity')result=await Promise.all([api({op:'deliveries'}),api({op:'jobs'})]);if(ticket!==revision||selected!==view||!token)return;content.replaceChildren();if(view==='Overview')overview(result);if(view==='Information')information(result,filter);if(view==='Subscriptions')subscriptions(result);if(view==='Activity')activity(...result);$('state').textContent='Last checked '+new Date().toLocaleString();}catch(e){if(ticket===revision){$('state').textContent='Unable to load this view.';$('error').textContent=e.message;}}}
+    $('login-form').addEventListener('submit',async e=>{e.preventDefault();token=$('token').value;$('token').value='';$('login-error').textContent='';const b=e.target.querySelector('button');b.disabled=true;try{const r=await api({op:'overview'});$('login').hidden=true;$('console').hidden=false;view='Overview';$('view-title').textContent=view;content.replaceChildren();overview(r);$('state').textContent='Last checked '+new Date().toLocaleString();}catch(err){token='';$('login-error').textContent=err.message;}finally{b.disabled=false;}});
+    document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.view;refresh();}));$('refresh').addEventListener('click',refresh);$('logout').addEventListener('click',logout);$('help-toggle').addEventListener('click',()=>{$('guide').hidden=!$('guide').hidden;});
+    })();
+    """
+  end
+end
+

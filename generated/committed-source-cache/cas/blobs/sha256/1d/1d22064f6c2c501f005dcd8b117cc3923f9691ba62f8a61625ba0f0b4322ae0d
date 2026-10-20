@@ -1,0 +1,4 @@
+[output | inputs] = System.argv()
+contents = inputs |> Enum.map(&File.read!/1) |> Enum.join("\n")
+File.mkdir_p!(Path.dirname(output))
+File.write!(output, contents)

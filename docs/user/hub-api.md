@@ -41,6 +41,13 @@ type, and source metadata. Source/type filters are exact matches and combine wit
 the query using AND. See [stored information](stored-information.md) for the envelope,
 status-history and external-source examples, retries, and retrieval.
 
+`search` retrieves historical reports. Use `query` for natural-language current
+answers and check source evidence, outcome and coverage. `query_status`,
+`query_result`, `query_continue` and `query_cancel` manage durable jobs;
+`query_attempts` and `query_replay` retain execution history and frozen-corpus
+comparisons. `retrieve` submits a search-only candidate job. See
+[evidence queries](querying.md) for fields, defaults, budgets and limitations.
+
 ## Two-agent example
 
 Use the SDK client helper from the repository after installing the test/client

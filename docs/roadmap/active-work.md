@@ -23,6 +23,31 @@ inbound links; move substantial closed programs beneath `docs/history/roadmap/`,
 their owner, and mark them `historical`. Do not create a separate file for an ordinary
 queue item or let `docs/roadmap/` become a plan archive.
 
+## Roadmap implementation cycle
+
+The user authorized implementing all pending entries, grouping branches as useful,
+including the local builds and acceptance execution requested in the prior turn.
+Work is on `feat/roadmap`; existing uncommitted work and the safety stash are
+preserved. Execution order is INFO-002, QUERY-001 with INFO-003, SEARCH-001,
+SEARCH-002, SEARCH-003, INDEX-001, AUTH-001, then final DOCS-002 verification.
+Each entry retains its own acceptance gates. Context/query, adaptation and OIDC
+API suites and live generative cases pass on the qualified artifact. Crash recovery
+uses a checksummed atomic journal alongside DETS; stopped-store backup/restore
+preserves the bundle. Final artifact and reproducible container checks are recorded
+in [the implementation review](../architecture/roadmap-implementation.md).
+Support both Linux and macOS as the user clarified; retain the macOS target and
+add the Linux Flavor. The pinned container is runnable, but the lifecycle requires
+a host-readable BEAM installation, so install checksummed official prebuilt
+Elixir/OTP under ignored _build/tools for native Linux verification. No remote
+macOS worker is registered; macOS acceptance must remain explicitly unverified
+until a matching host is available. Reviewed Standard rebind plan
+sha256:7d0230166ca280be4a63d53974978f3b0e4651dd1e720255cc63e8ee3f0df34a
+updates the installed distribution/runner pins while retaining the same policy,
+required evidence kinds and minimum test count. Keep inference
+for answers separate from the existing Nemotron relevance classifier. Validate the
+configured generative endpoint before choosing its typed query adapter. No running
+service replacement or remote Git publication is included in this development cycle.
+
 ## P0
 
 ### [x] ONBOARD-001 — Establish the information hub's product requirements
@@ -197,22 +222,24 @@ release-visible outcome to `CHANGELOG.md`; Git preserves prior queue states.
   - [x] 31 SDK scenarios passed (verification/hub-acceptance.json), including invalid admin configuration, auth/origin boundaries, disabled legacy configs, private visibility, durable action retries/conflicts and both earlier store formats. Browser confirmation cancellation and response-loss retry passed; deployed responses/logs contain no bearer tokens.
   - [x] Desktop/mobile screenshots and accessibility snapshots inspected at 1440 and 390 pixels: no overflow or normal-path page/console/network errors. Fault-injected 503/401/network loss recovered as intended. 12 native tests, eight independent CLI vectors and 33 hardened-container scenarios passed; independent no-cache image builds matched (verification/container-reproducibility.json). Full litai verify passed authority, both locks and current receipt; source-intelligence and HTML gates are skipped by configuration, with the UI independently checked in Playwright. Accepted source is published to the committed cache. Peer surveys and tracker reconciliation remain unavailable without an initial commit or configured remote; no commit, push, merge or shared cleanup was attempted.
 
-### [ ] AUTH-001 — Optional OIDC authentication for administrator pages
+### [x] AUTH-001 — Optional OIDC authentication for administrator pages
 
 - **Priority:** P1
 - **Owner:** hub administrator authentication and web management interface
 - **Direction:** Add optional OpenID Connect (OIDC) authentication for administrator pages, retaining the current admin key as the default authentication method.
-- **Conclusion:** Plan a configurable OIDC sign-in option for the administrator console and its supporting API. Existing installations continue using the current admin key unless an operator explicitly selects OIDC; no identity provider is required for default operation. Next action: define authentication-mode configuration, provider integration and administrator authorization/session behavior before changing the runtime. This item records future work only.
+- **Conclusion:** Implemented explicit key/OIDC modes, authorization code with S256 PKCE, RS256 token validation, subject authorization, memory sessions, CSRF/origin checks and local logout. Default key and A2A agent authentication remain compatible. Provider and rendered-browser fixtures pass; see docs/admin/oidc.md.
 - **Depends on:** UI-001
 - **Implementation:**
-  - [ ] Define explicit authentication-mode selection with admin key as the default, optional OIDC provider configuration, and backward compatibility for existing server and client configurations.
-  - [ ] Specify OIDC sign-in/callback, identity and token validation, administrator authorization rules, protected API access, session expiry/logout and request-forgery protection. Define explicit key/OIDC coexistence policy; avoid silent fallback when an explicitly selected OIDC mode fails.
-  - [ ] Implement optional OIDC protection for administrator pages and their supporting API while preserving administrator permissions, private-message visibility boundaries and existing A2A agent authentication.
-  - [ ] Document provider setup, required configuration and secrets, redirect URLs, mode selection, session/logout behavior and troubleshooting; retain a straightforward admin-key setup path.
+  - [x] Define explicit authentication-mode selection with admin key as the default, optional OIDC provider configuration, and backward compatibility for existing server and client configurations.
+  - [x] Specify OIDC sign-in/callback, identity and token validation, administrator authorization rules, protected API access, session expiry/logout and request-forgery protection. Define explicit key/OIDC coexistence policy; avoid silent fallback when an explicitly selected OIDC mode fails.
+  - [x] Implement optional OIDC protection for administrator pages and their supporting API while preserving administrator permissions, private-message visibility boundaries and existing A2A agent authentication.
+  - [x] Document provider setup, required configuration and secrets, redirect URLs, mode selection, session/logout behavior and troubleshooting; retain a straightforward admin-key setup path.
 - **Evidence:**
-  - [ ] Verify the unchanged default admin-key flow with OIDC unconfigured, including existing configurations and agent workflows.
-  - [ ] Exercise OIDC sign-in, allowed and denied administrator identities, invalid or expired identity tokens, callback validation, session expiry/logout, provider failures and absence of credential leakage.
-  - [ ] Verify browser and direct API access enforce the selected authentication mode and preserve management-action safety and private-data boundaries; pass applicable project, SDK, container and desktop/mobile browser checks.
+  - [x] Verify the unchanged default admin-key flow with OIDC unconfigured, including existing configurations and agent workflows.
+  - [x] Exercise OIDC sign-in, allowed and denied administrator identities, invalid or expired identity tokens, callback validation, session expiry/logout, provider failures and absence of credential leakage.
+  - [x] Verify browser and direct API access enforce the selected authentication mode and preserve management-action safety and private-data boundaries; pass applicable project, SDK, container and desktop/mobile browser checks.
+
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/oidc-acceptance.json and roadmap-browser.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
 
 ### [x] NAME-001 — Use Agentic Distributed Harness Depot consistently in documentation and help text
 
@@ -231,98 +258,180 @@ release-visible outcome to `CHANGELOG.md`; Git preserves prior queue states.
 
 <a id="info-002-preserve-contextual-evidence-without-a-domain-taxonomy"></a>
 
-### [ ] INFO-002 — Preserve contextual evidence without a domain taxonomy
+### [x] INFO-002 — Preserve contextual evidence without a domain taxonomy
 
 - **Priority:** P1
 - **Owner:** hub information model and persistence
 - **Direction:** Retain full agent statements and their context so future questions and re-indexing do not require predicted data buckets.
-- **Conclusion:** Extend INFO-001 with contextual relationships and immutable corrections; preserve originals as authority and interpretations as derived records. Follow [adaptive retrieval design](adaptive-retrieval.md#contextual-records). Next action: specify the backward-compatible context envelope and upgrade fixtures.
+- **Conclusion:** Implemented immutable context envelopes, relationships/corrections, content identities and schema-3 upgrades preserving old source retries and history. A checksummed atomic journal recovers unclean DETS images without silently repairing or resetting originals. See docs/user/stored-information.md and docs/user/querying.md.
 - **Depends on:** INFO-001
-- **Planning evidence:** All six adaptive retrieval requests were recorded with `litai work record`; tracker reconciliation found no open issues/reviews and start/end peer surveys found no collectable work. The current checkout's documentation changes are retained deliberately. `git diff --check` passed. `litai verify` passed authority/documentation review and both locks; source-intelligence and HTML gates were skipped by configuration. The runtime receipt is stale against the changed project authority (`project.test_receipt_stale`); no rebuild or runtime acceptance is claimed. The implementation and evidence boxes below remain open.
 - **Implementation:**
-  - [ ] Specify optional question, reply, conversation and subject references with contextual snapshots, provenance and bounded authorized link traversal; preserve arbitrary text/JSON and unknown domain concepts.
-  - [ ] Implement immutable corrections and evidence relationships, stable content identities, legacy-store compatibility, retry semantics and durable storage without replacing original statements with extracted facts.
-  - [ ] Document context submission and re-indexing semantics, including missing references, cycles, changed external sources and private-message isolation.
+  - [x] Specify optional question, reply, conversation and subject references with contextual snapshots, provenance and bounded authorized link traversal; preserve arbitrary text/JSON and unknown domain concepts.
+  - [x] Implement immutable corrections and evidence relationships, stable content identities, legacy-store compatibility, retry semantics and durable storage without replacing original statements with extracted facts.
+  - [x] Document context submission and re-indexing semantics, including missing references, cycles, changed external sources and private-message isolation.
 - **Evidence:**
-  - [ ] Round-trip Yes with its question and subject, cardinal/red-bird reports, arbitrary JSON and a later correction across retries, acknowledgements and hard restart.
-  - [ ] Upgrade existing stores without data loss; reject unauthorized context expansion and demonstrate reconstruction of the exact evidence used by a historical query.
+  - [x] Round-trip Yes with its question and subject, cardinal/red-bird reports, arbitrary JSON and a later correction across retries, acknowledgements and hard restart.
+  - [x] Upgrade existing stores without data loss; reject unauthorized context expansion and demonstrate reconstruction of the exact evidence used by a historical query.
 
-### [ ] QUERY-001 — Evaluate natural-language questions by scanning contextual history
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/roadmap-acceptance.json and roadmap-hub-acceptance.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
+
+### [x] QUERY-001 — Evaluate natural-language questions by scanning contextual history
 
 - **Priority:** P1
 - **Owner:** hub query evaluator and A2A query jobs
 - **Direction:** Answer unforeseen questions from original evidence without requiring a purpose-built index.
-- **Conclusion:** Add bounded, resumable semantic scans over a stable authorized corpus with evidence-backed answers and explicit coverage. Follow [scan design](adaptive-retrieval.md#semantic-scans). Next action after INFO-002: specify query-job operations and evaluator adapter independently of the subscription matcher.
+- **Conclusion:** Implemented owner-private durable query jobs over frozen authorized evidence, bounded scans, continuation/cancellation, strict cited model output and explicit incomplete/unavailable outcomes. A real generative evaluator passes independently labeled branch and contextual-bird scenarios. See docs/user/querying.md.
 - **Depends on:** INFO-002
 - **Implementation:**
-  - [ ] Define natural-language query requests, scope/snapshot identity, asynchronous job lifecycle, budgets, continuation, cancellation, idempotency and authorized result retrieval.
-  - [ ] Evaluate all records in the scope with context expansion and cross-record synthesis; retain supporting and contradicting source IDs, uncertainty, evaluator versions and examined/remaining coverage.
-  - [ ] Implement durable checkpoints and explicit partial, unavailable, conflicting and no-evidence outcomes; keep inference outside the store writer and literal search compatible.
+  - [x] Define natural-language query requests, scope/snapshot identity, asynchronous job lifecycle, budgets, continuation, cancellation, idempotency and authorized result retrieval.
+  - [x] Evaluate all records in the scope with context expansion and cross-record synthesis; retain supporting and contradicting source IDs, uncertainty, evaluator versions and examined/remaining coverage.
+  - [x] Implement durable checkpoints and explicit partial, unavailable, conflicting and no-evidence outcomes; keep inference outside the store writer and literal search compatible.
 - **Evidence:**
-  - [ ] Answer bird presence, explicitly reported species/color and distinct-bird count without domain columns; handle corrections and evidence requiring multiple linked records.
-  - [ ] Exercise hard restart, timeout, malformed model results, cancellation, concurrent publication and budget exhaustion; never report incomplete scans as exhaustive or missing evidence as false.
-  - [ ] Validate a real configured evaluator against independently labeled fixtures; existing typed subscription relevance alone must not qualify as answer synthesis.
+  - [x] Answer bird presence, explicitly reported species/color and distinct-bird count without domain columns; handle corrections and evidence requiring multiple linked records.
+  - [x] Exercise hard restart, timeout, malformed model results, cancellation, concurrent publication and budget exhaustion; never report incomplete scans as exhaustive or missing evidence as false.
+  - [x] Validate a real configured evaluator against independently labeled fixtures; existing typed subscription relevance alone must not qualify as answer synthesis.
 
-### [ ] SEARCH-001 — Build replaceable general-purpose contextual retrieval
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/roadmap-acceptance.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
+
+### [x] SEARCH-001 — Build replaceable general-purpose contextual retrieval
 
 - **Priority:** P1
 - **Owner:** hub retrieval adapters and derived index lifecycle
 - **Direction:** Retrieve unforeseen questions without requiring users to predict indexes or classify incoming publications.
-- **Conclusion:** Introduce general-purpose text/semantic candidate retrieval over contextual records; indexes accelerate access and never replace evidence. Follow [retrieval design](adaptive-retrieval.md#general-purpose-retrieval). Next action after INFO-002: specify adapter and index manifest contracts and select an evidenced initial implementation.
+- **Conclusion:** Implemented replaceable contextual lexical indexes plus actual Nemotron semantic candidate scoring, asynchronous catch-up/rebuild and atomic version switches. Literal search and original evidence remain available. The real-model paraphrase check and caller limit pass. See docs/admin/retrieval.md.
 - **Depends on:** INFO-002
 - **Implementation:**
-  - [ ] Define contextual indexing input and candidate response contracts, publication/context identities, index/model versions, indexed-through watermarks and explicit stale/unavailable states.
-  - [ ] Implement asynchronous idempotent indexing, incremental updates, context-change invalidation, full rebuild and atomic version switching while ingestion remains durable during index failures.
-  - [ ] Preserve literal search and support scoped candidate retrieval followed by original-record/context fetch; choose backend and embedding model from measured needs rather than a domain taxonomy.
+  - [x] Define contextual indexing input and candidate response contracts, publication/context identities, index/model versions, indexed-through watermarks and explicit stale/unavailable states.
+  - [x] Implement asynchronous idempotent indexing, incremental updates, context-change invalidation, full rebuild and atomic version switching while ingestion remains durable during index failures.
+  - [x] Preserve literal search and support scoped candidate retrieval followed by original-record/context fetch; choose backend and embedding model from measured needs rather than a domain taxonomy.
 - **Evidence:**
-  - [ ] Find paraphrases and exact identifiers, including Yes indexed with its question; negation similarity must not be treated as support.
-  - [ ] Rebuild from originals, catch up after downtime and switch versions under concurrent ingestion without losing records or leaking private context; expose incomplete coverage.
+  - [x] Find paraphrases and exact identifiers, including Yes indexed with its question; negation similarity must not be treated as support.
+  - [x] Rebuild from originals, catch up after downtime and switch versions under concurrent ingestion without losing records or leaking private context; expose incomplete coverage.
 
-### [ ] SEARCH-002 — Fall back from search to semantic scans
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/roadmap-retrieval-model.json and adaptation-acceptance.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
+
+### [x] SEARCH-002 — Fall back from search to semantic scans
 
 - **Priority:** P1
 - **Owner:** hub query planning and evidence sufficiency policy
 - **Direction:** Try inexpensive search first and scan when it fails to produce useful evidence.
-- **Conclusion:** Compose SEARCH-001 and QUERY-001 under a versioned sufficiency policy, exposing the actual execution path and coverage. Follow [fallback workflow](adaptive-retrieval.md#search-then-scan). Next action after dependencies: specify escalation reasons, query modes and bounded execution policy.
+- **Conclusion:** Implemented semantic sufficiency planning, search/scan/search-then-scan modes, durable fallback reasons and sampled complete-snapshot audits. Current answers require superseding evidence coverage; missing or incomplete evidence cannot establish absence. See docs/user/querying.md.
 - **Depends on:** QUERY-001, SEARCH-001
 - **Implementation:**
-  - [ ] Define search, scan and search-then-scan modes with explicit scope, budgets, completeness requirements and stable query snapshots.
-  - [ ] Escalate on insufficient or conflicting evidence, absent/stale indexes, retrieval errors and exhaustive requests; evaluate usefulness against the question rather than score or hit count alone.
-  - [ ] Add configurable sampled scan audits of apparently successful searches; expose fallback reasons, partial outcomes, evidence and audit selection probabilities without blocking normal hub traffic.
+  - [x] Define search, scan and search-then-scan modes with explicit scope, budgets, completeness requirements and stable query snapshots.
+  - [x] Escalate on insufficient or conflicting evidence, absent/stale indexes, retrieval errors and exhaustive requests; evaluate usefulness against the question rather than score or hit count alone.
+  - [x] Add configurable sampled scan audits of apparently successful searches; expose fallback reasons, partial outcomes, evidence and audit selection probabilities without blocking normal hub traffic.
 - **Evidence:**
-  - [ ] Recover useful evidence missed by search, including later corrections; distinguish search misses from no evidence in the scanned corpus.
-  - [ ] Exercise plausible incomplete answers, negation, count/all requests, index outages and scan budget exhaustion; preserve explicit uncertainty and scope completeness.
-  - [ ] Verify scan audits can discover hidden misses in apparently successful searches and record their sampling policy.
+  - [x] Recover useful evidence missed by search, including later corrections; distinguish search misses from no evidence in the scanned corpus.
+  - [x] Exercise plausible incomplete answers, negation, count/all requests, index outages and scan budget exhaustion; preserve explicit uncertainty and scope completeness.
+  - [x] Verify scan audits can discover hidden misses in apparently successful searches and record their sampling policy.
 
-### [ ] SEARCH-003 — Record retrieval failures and replay past questions
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/roadmap-acceptance.json and adaptation-acceptance.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
+
+### [x] SEARCH-003 — Record retrieval failures and replay past questions
 
 - **Priority:** P1
 - **Owner:** hub retrieval feedback and evaluation history
 - **Direction:** Re-evaluate failed searches and learn from repeated search-then-scan attempts.
-- **Conclusion:** Persist reproducible search/scan comparisons and classify retrieval gaps separately from archive gaps or evaluator failures. Follow [feedback workflow](adaptive-retrieval.md#failure-analysis-and-replay). Next action after SEARCH-002: define attempt records, comparison metrics and replay cohort rules.
+- **Conclusion:** Implemented owner-private attempts, versioned coverage/evidence comparisons, gap classifications, normalized recurrence groups and same-snapshot replay. Feedback never becomes source evidence or subscription traffic. See docs/admin/retrieval.md.
 - **Depends on:** SEARCH-002
 - **Implementation:**
-  - [ ] Record question, authorized scope/snapshot, search candidates/ranks, scan evidence, answer changes, completeness, fallback reason, versions, cost and latency with access controls.
-  - [ ] Cluster recurring misses and replay saved attempts against changed retrieval configurations on the same evidence snapshot; keep later-corpus re-evaluation separately labeled.
-  - [ ] Create regression and held-out cohorts including successful searches, no-evidence cases and sampled audits; retain feedback separately from source publications to prevent self-confirming retrieval.
+  - [x] Record question, authorized scope/snapshot, search candidates/ranks, scan evidence, answer changes, completeness, fallback reason, versions, cost and latency with access controls.
+  - [x] Cluster recurring misses and replay saved attempts against changed retrieval configurations on the same evidence snapshot; keep later-corpus re-evaluation separately labeled.
+  - [x] Create regression and held-out cohorts including successful searches, no-evidence cases and sampled audits; retain feedback separately from source publications to prevent self-confirming retrieval.
 - **Evidence:**
-  - [ ] Reproduce a miss with stable source/configuration identities and measure improvement without mistaking new publications for better indexing.
-  - [ ] Classify missing evidence, ranking/context defects, model errors and incomplete scans correctly; incomplete/model-generated judgments are not unquestioned ground truth.
-  - [ ] Verify feedback authorization, duplicate retry handling, restart persistence and replay isolation from subscription deliveries and ordinary evidence searches.
+  - [x] Reproduce a miss with stable source/configuration identities and measure improvement without mistaking new publications for better indexing.
+  - [x] Classify missing evidence, ranking/context defects, model errors and incomplete scans correctly; incomplete/model-generated judgments are not unquestioned ground truth.
+  - [x] Verify feedback authorization, duplicate retry handling, restart persistence and replay isolation from subscription deliveries and ordinary evidence searches.
 
-### [ ] INDEX-001 — Generate and qualify retrieval improvements from observed misses
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/adaptation-acceptance.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
+
+### [x] INDEX-001 — Generate and qualify retrieval improvements from observed misses
 
 - **Priority:** P1
 - **Owner:** hub adaptive indexing jobs and operator policy
 - **Direction:** Use repeated search-then-scan failures to identify and generate the indexes retrieval actually needs.
-- **Conclusion:** Generate bounded declarative candidates from measured failure clusters, then build, replay, qualify, promote and roll back under configured policy. A new index is one possible remedy alongside context, chunking, ranking and link traversal. Follow [index workflow](adaptive-retrieval.md#index-generation-and-promotion). Next action after SEARCH-003: define supported recipe types, budgets and measurable promotion criteria.
+- **Conclusion:** Implemented bounded declarative recipe proposals, isolated candidate jobs, disjoint replay cohorts, quality/resource gates, catch-up, atomic promotion, rollback and retirement. Review and automatic modes pass; ineffective recipes are not repeatedly proposed. Adaptation remains opt-in. See docs/admin/retrieval.md.
 - **Depends on:** SEARCH-003
 - **Implementation:**
-  - [ ] Define configurable recurrence/support thresholds and diagnose repeated misses; generate versioned declarative recipes tied to evidence rather than arbitrary generated executable code.
-  - [ ] Build isolated candidates from authoritative records with durable checkpoints and resource limits; replay training and held-out/regression cohorts and report quality, coverage, latency and storage tradeoffs.
-  - [ ] Promote only candidates passing configured criteria and corpus catch-up, atomically switch versions, retain rollback and prevent repeated ineffective rebuilds; support operator-selected automatic or review-based promotion.
-  - [ ] Document lifecycle states, failure handling, retirement and management visibility; add generated runtime behavior through owning Component specifications and the authorized Literate AI lifecycle.
+  - [x] Define configurable recurrence/support thresholds and diagnose repeated misses; generate versioned declarative recipes tied to evidence rather than arbitrary generated executable code.
+  - [x] Build isolated candidates from authoritative records with durable checkpoints and resource limits; replay training and held-out/regression cohorts and report quality, coverage, latency and storage tradeoffs.
+  - [x] Promote only candidates passing configured criteria and corpus catch-up, atomically switch versions, retain rollback and prevent repeated ineffective rebuilds; support operator-selected automatic or review-based promotion.
+  - [x] Document lifecycle states, failure handling, retirement and management visibility; add generated runtime behavior through owning Component specifications and the authorized Literate AI lifecycle.
 - **Evidence:**
-  - [ ] An observed recurring paraphrase/context miss produces a candidate that improves held-out retrieval; a ranking-only defect need not create a new index.
-  - [ ] Reject candidates that regress correction/negation, privacy, successful-query recall or resource limits; reject insufficient evaluation evidence.
-  - [ ] Exercise interrupted builds, concurrent publications/context updates, promotion, rollback and retirement while source records and hub delivery state remain intact.
+  - [x] An observed recurring paraphrase/context miss produces a candidate that improves held-out retrieval; a ranking-only defect need not create a new index.
+  - [x] Reject candidates that regress correction/negation, privacy, successful-query recall or resource limits; reject insufficient evaluation evidence.
+  - [x] Exercise interrupted builds, concurrent publications/context updates, promotion, rollback and retirement while source records and hub delivery state remain intact.
+
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/adaptation-acceptance.json and roadmap-container.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
+
+### [x] DOCS-002 — Keep documentation aligned with supported behavior
+
+- **Priority:** P1
+- **Owner:** project contributor guidance and documentation
+- **Direction:** Add rules ensuring documentation matches the actual functions of the system.
+- **Conclusion:** Implemented project documentation consistency policy and reviewed supported-feature and limitation claims across specifications, guides, helpers and console. The authorized Linux lifecycle refreshes the stale runtime receipt. Final documentation plan/review and full verification are recorded with the implementation evidence.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Added docs/user/documentation-policy.md and required it from AGENTS.md, CLAUDE.md and docs/README.md; added the Unreleased changelog outcome. The policy requires same-change updates, evidence-backed capability and limitation claims, review of summaries/examples, explicit future-feature labels, and recorded completion evidence.
+  - [x] Corrected docs/admin/operations.md to describe queued-delivery counts, matching-job status, matcher health and confirmed pending-job retries; retained the historical-metrics limitation.
+- **Evidence:**
+  - [x] Reviewed the corrected operations claims against components/hub/management/spec.md, the current cached source/store.exs and source/matcher.exs, tests/admin_cases.py and existing verification/name-hub-acceptance.json. The existing acceptance report was inspected, not rerun. Reviewed entry-point links, project-guide navigation and policy scope; local links in all edited guidance and operations documents resolve.
+  - [x] Ran the documentation-update plan, recorded the current authority review through litai project documentation-review --record, and ran litai verify and git diff --check. Authority and both locks pass; source-intelligence and HTML gates are skipped by configuration; receipt fails with project.test_receipt_stale after the documentation authority change. The plan's config-command warning is a false positive: litai --help lists config and litai config paths --help succeeds. Start/end peer surveys and open issue/review listings succeeded with no open items or collectable branches/worktrees; no remote writes or cleanup occurred.
+  - [x] Refresh the stale runtime-test receipt through an authorized lifecycle build on the supported authoring host and pass full litai verify. The requested implementation cycle now includes authorized generated-code execution and a fresh lifecycle receipt.
+
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/current.json and roadmap-container-reproducibility.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.
+
+- **Continuation review:** Preparing the local handoff commit exposed a new-file blank-at-EOF warning missed by an unstaged-only diff. Trim the authored protocol specification and preserve immutable cache bytes with Git attributes.
+  - [x] Requalified the unchanged runtime against the normalized specification: six native cases and eleven independent CLI vectors passed; runtime SHA256 is unchanged. Source-cache metadata and documentation were refreshed, staged whitespace checks pass, and the local handoff commit is prepared. Full verification is refreshed after closing this item.
+
+### [x] DEPLOY-002 — Run ADHD in Kubernetes with an exposed service port
+
+- **Priority:** P1
+- **Owner:** hub deployment and operations documentation
+- **Direction:** Run ADHD here in the Kubernetes cluster and expose it on an open port.
+- **Conclusion:** Inspect the local cluster and accepted images, deploy one durable hub instance with private credentials and a pod-local proxy preserving the loopback-only hub contract, expose the proxy on a service port, and verify authenticated operations and matcher connectivity. Deployed the exact previously accepted hub image in namespace adhd with a loopback-preserving nginx proxy, private credentials, node-bound persistent storage, host-network matcher access and NodePort 30866. Existing Docker service and data are preserved. Runtime checks passed; the framework receipt remains stale from documentation authority edits and no fresh lifecycle build is claimed.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Added deploy/k8s/adhd.yaml with digest-pinned pre-imported images, one Recreate replica, local-path PVC, read-only Secret and ConfigMap mounts, non-root containers, resource limits, no service-account token and NodePort 30866. Private rendered configuration and credentials are under ignored .adhd/k8s/. Imported the accepted images into the selected node runtime. Corrected nginx temporary-directory paths after the initial read-only-filesystem startup failure; the final rollout is healthy.
+  - [x] Deployed and verified health, console shell, Agent Card, two authenticated agent identities, rejected unauthorized/agent-as-admin/cross-origin requests, publication idempotency, live Nemotron matching, and administrator matcher health. Two successive pod replacements preserved publications, delivery IDs, retry results and acknowledgements. Temporary subscription was removed and probe deliveries acknowledged. A temporary probe on another cluster node reached the exposed NodePort and was deleted.
+  - [x] Added docs/admin/kubernetes.md and linked it from README.md and docs/admin/operations.md; updated CHANGELOG.md. Documented credentials, private HTTP access, NodePort/proxy ports, single-writer placement, separate existing Docker state, offline backup prerequisites, restart procedures and local-path limitations. The deployment does not claim automatic failover or independently tested Kubernetes backup/restore.
+- **Evidence:**
+  - [x] Client and server dry runs passed; final server dry run reports resources unchanged. Final Deployment has both containers ready and the PVC is Bound. Eleven deployment checks pass in verification/kubernetes-acceptance.json, including cross-node NodePort health and the running artifact hash matching the accepted artifact. Configured credentials are absent from deployment logs. Exact image and artifact identities, manifest hash and live match evidence are retained in that report.
+  - [x] Documentation links and git diff --check pass. Reviewed the documentation-update plan and recorded the current documentation authority marker. litai verify passes authority and both locks, skips configured source-intelligence/HTML gates, and fails only project.test_receipt_stale; refreshing that runtime receipt remains DOCS-002 follow-up. The config-command warning remains a confirmed false positive against current CLI help. Start/end peer surveys and issue/review listings report no open work or collectable branches/worktrees. No repository publication or existing-service shutdown was performed.
+
+### [x] AGENT-001 — Connect this coding agent to the Kubernetes hub
+
+- **Priority:** P1
+- **Owner:** local agent configuration and coordination guidance
+- **Direction:** Connect this agent to ADHD.
+- **Conclusion:** Use the existing agent-a identity with an owner-only per-agent client file, install the documented SDK helper dependencies in an isolated workspace environment, subscribe and catch up through the coordination skill, publish session status, and add conditional checkout startup instructions without exposing credentials or claiming automatic background synchronization. Connected successfully as agent-a in project adhd through the existing SDK helper; the conditional startup instructions and private local configuration preserve the connection setup for subsequent coding sessions.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Created ignored mode-0600 literate.hub.local.json containing only agent-a credentials and its public URL; installed tests/requirements.txt in _build/tools/a2a/hub001. Verified identity, created and reused subscription sub-6, searched history, and published connection status pub-7. Received and acknowledged a private self-addressed inbox probe. Recognized historical pub-2 as synthetic deployment-test input and published clarification pub-10 so it cannot be mistaken for an actual API change.
+  - [x] Added conditional coordination requirements to AGENTS.md and CLAUDE.md, documented checkout setup and explicit polling in docs/user/using-the-hub.md, and added the Unreleased changelog entry. No MCP server or background poller is claimed or installed.
+- **Evidence:**
+  - [x] All SDK connection checks passed; verification/agent-connection.json retains identity, subscription/publication IDs, permissions and inbox evidence. A temporary cluster NodeNotReady event restarted both containers during final checks; the agent reconnected, verified subscription persistence, retried the pending clarification with the same message ID, and confirmed successful publication. Existing incoming queues were empty; the acknowledged self-check does not reappear.
+  - [x] Changed documentation links and git diff --check passed; pip check found no broken requirements. Documentation drift plan reviewed and authority marker refreshed. litai verify passes authority and locks, skips configured source-intelligence/HTML gates, and retains the known stale runtime receipt under DOCS-002; no fresh service build is claimed. Start/end peer surveys and issue/review listings report no open or collectable work. Future sessions follow repository guidance; processing occurs only while an agent explicitly publishes/polls.
+
+### [x] INFO-003 — Answer from current facts while preserving report history
+
+- **Coordination:** Renumbered from the uncommitted local INFO-002 after pulling the upstream contextual-evidence entry with that ID. Existing upstream IDs and dependencies are preserved.
+
+- **Priority:** P1
+- **Owner:** hub information model, current-fact resolution and query contract
+- **Direction:** Keep historical reports, but answer what an agent is doing or who is working on a branch using the latest applicable information, including later completion reports.
+- **Conclusion:** Implemented current answers by reconciling original contextual reports at query time with an explicitly configured generative evaluator. Completion and late-event scenarios retain history and independent activity, with grounded provenance and uncertainty. There is no fixed domain-specific ingestion taxonomy. See components/hub/information/current-facts.md and docs/user/querying.md.
+- **Depends on:** INFO-001
+- **Implementation:**
+  - [x] Defined intended current facts, supersession, effective order, correction requirements, conflicts, interpretation and current/history query behavior in components/hub/information/current-facts.md, registered as a named specification root; PROJECT.md records the product requirement. The following runtime work implements this contract.
+  - [x] Added an independent acceptance contract covering free-text start/completion, reverse lookup, history, late events, multiple activities, conflicts, correction, inference failure, privacy, migration, retries and restart. Fresh executed scenarios are recorded in the completion evidence below.
+  - [x] Updated README.md, docs/README.md, docs/user/stored-information.md, docs/user/hub-api.md, docs/user/using-the-hub.md and skills/agent/coordinate-via-hub/SKILL.md to explain archive-search semantics and the current-query workflow. CHANGELOG.md describes the requirements change with the implemented behavior.
+  - [x] Define exact typed model interpretation/query schemas, correction representation and A2A commands/errors; validate actual model support independently of subscription relevance. The separate generative adapter is qualified independently.
+  - [x] Generate, build and qualify the extended runtime through the authorized lifecycle; validate existing stores and current CLI/A2A compatibility before deployment.
+- **Evidence:**
+  - [x] Reviewed the documentation paths above against components/hub/component.md, information/spec.md, the new current-facts contract and existing archive acceptance scenarios in tests/information_cases.py. Existing native/SDK/container evidence was not rerun or rewritten. Documentation-update plan reviewed; its config-command warning is a false positive confirmed by litai config paths --help. Refreshed the documentation-review marker. Hub lock and both catalog audits refreshed; final litai verify passes authority and both locks, skips configured source-intelligence/HTML gates, and fails only the already-known project.test_receipt_stale. git diff --check passes. That planning-only receipt is superseded by the fresh completion evidence below.
+  - [x] Start/end peer surveys and open issue/review listings succeeded with no open or collectable work. Verified hub identity agent-a/project adhd, reused sub-6, searched prior context and polled; no deliveries required acknowledgement. Published plan pub-22 through the coordination skill. No repository publication, cleanup or service replacement occurred.
+  - [x] Pass native and independent SDK acceptance for current facts, history, uncertainty, durability, isolation and model failure; refresh lifecycle evidence before completion.
+
+- **Completion evidence:** Linux artifact `b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133`; `verification/roadmap-acceptance.json and roadmap-hub-acceptance.json`. [Implementation/documentation review](../architecture/roadmap-implementation.md) records the affected guides, source provenance, actual model checks, native/SDK/container/browser results and limitations. macOS is supported; fresh macOS execution was unavailable. Existing deployments are unchanged.

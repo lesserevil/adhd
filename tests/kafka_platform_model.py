@@ -85,11 +85,18 @@ async def main():
   pending=[d for d in resumed if d.get('publication_id')==absent['id']]
   assert len(pending)==1 and pending[0]['matches'][0]['subscription_id']==filtered['id']
   await b.call(scoped('project-red','ack',delivery_ids=[pending[0]['id']]))
+  end=time.monotonic()+5
+  while True:
+   all_events=json.loads(args.gateway_report.read_text())
+   resumed_events=[e for e in all_events[initial:] if e.get('publication_id')==absent['id']]
+   if resumed_events:break
+   assert time.monotonic()<end,'Resumed provider response was not captured by the bounded relay'
+   await asyncio.sleep(.05)
   await b.call(scoped('project-red','unsubscribe',subscription_id=filtered['id']))
   admin.call({'op':'config_update','patch':{'matcher':None}},mutation=True)
   proof={'passed':True,'scope':'diagnostic-real-model-optional-pubsub-filter','lifecycle_qualified':False,
          'model':'Nemotron-Deciffusion-8B-v2.1','synthetic_decisions':[{'case':'breaking-public-api-removal','type':'noul','noul':scores[publications[0]['id']]['noul']},{'case':'office-lunch-no-software-change','type':'noul','noul':scores[publications[1]['id']]['noul']}],
-         'actual_processing_calls':len(relevant),'raw_received_both':True,'filtered_received_only_positive':True,
+         'actual_processing_calls':len(all_events)-initial,'initial_filter_fixture_processing_calls':len(relevant),'resumed_filter_processing_calls':len(resumed_events),'raw_received_both':True,'filtered_received_only_positive':True,
          'hot_model_enable_and_disable':True,'raw_progress_after_model_disable':True,'additional_inference_calls_after_disable':after-before,
          'literal_search_preserved':(await a.call(scoped('project-red','search',query=f'fixture-1-{fixture}')))['publications']==[publications[1]]}
   proof['model_free_second_project_zero_inference']=initial_after==initial

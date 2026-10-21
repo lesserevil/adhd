@@ -372,6 +372,26 @@ async def main(args):
         await poll_until(b,'project-red',{after_restore['id']},45)
         assert admin.call(scoped('project-red','eventing_status'))['next_offset']>final
         evidence.record('actual-cold-restore-recovers-both-projects-config-credentials-acks-delivery-identities-and-broker-cursors-then-advances',red_offset=final,blue_offset=blue_offset,intentional_postbackup_sentinel_absent=True)
+        if args.model_url:
+            if not args.gateway_report or not args.gateway_report.is_file():
+                raise ValueError('Optional live model qualification requires the owned bounded gateway report')
+            child_path=root/'optional-model.json'
+            command([sys.executable,str(repo/'tests/kafka_platform_model.py'),'--rest-url',base,
+                '--credentials',str(credentials),'--model-url',args.model_url,
+                '--gateway-report',str(args.gateway_report.resolve()),'--with-backend-queries',
+                '--report',str(child_path)],timeout=240)
+            child=json.loads(child_path.read_text())
+            assert child['passed'] and child['backend_query']['positive_original_cited']
+            assert child['hot_model_enable_and_disable'] and child['model_free_second_project_zero_inference']
+            assert child['artifact_sha256'] is None  # External child has no artifact authority.
+            assert admin.call({'op':'config_get'})['config']['matcher'] is None
+            evidence.value['optional_model']={'passed':True,'report_sha256':sha(child_path),
+                'harness_sha256':sha(repo/'tests/kafka_platform_model.py'),
+                'gateway_harness_sha256':sha(repo/'tests/kafka_platform_gateway.py'),
+                'gateway_report_sha256':child['gateway_report_sha256'],
+                'artifact_sha256':expected,'image_config_digest':args.image,
+                'binding':'Parent verifies the owned deployment image and supplies its private credentials; child external artifact field is deliberately null.'}
+            evidence.record('actual-accepted-image-hot-model-enable-filter-match-nonmatch-semantic-history-citations-independent-blue-raw-and-disable')
         # Retain no raw IDs/tokens; input and output identities are digest-bound.
         evidence.value['replaced_resources']=list(before)
         completed=True
@@ -423,6 +443,8 @@ if __name__=='__main__':
     p.add_argument('--port',type=int,default=18890)
     p.add_argument('--kubectl',type=Path)
     p.add_argument('--kubeconfig',type=Path)
+    p.add_argument('--model-url',help='Optional live short-response endpoint reachable by this deployed hub')
+    p.add_argument('--gateway-report',type=Path,help='Private report from the bounded owned model relay')
     p.add_argument('--kind-node',help='Explicit owned Kind Docker node for read-only runtime config identity verification')
     p.add_argument('--cluster-image',help='Unique immutable-derived local name for the previously loaded verified hub image')
     p.add_argument('--broker-image',default='confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f')

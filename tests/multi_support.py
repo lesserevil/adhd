@@ -55,6 +55,8 @@ def arguments(description):
     parser.add_argument("--keep-work", type=Path, help="Private persistent fixture directory")
     parser.add_argument("--deadline", type=float, default=20)
     parser.add_argument("--with-model", action="store_true", help="Controlled decision fault fixture")
+    parser.add_argument("--initialize-projects", action="store_true",
+                        help="Explicitly initialize unknown projects on an isolated external profile2.1 target")
     return parser
 
 
@@ -84,8 +86,11 @@ class Evidence:
 
 
 class Fixture:
-    def __init__(self, args):
+    def __init__(self, args, *, initialize_projects=True):
         self.args = args
+        self.initialize_projects = initialize_projects
+        self.protocol_profile = None
+        self.initializations = []
         self.temp = None
         self.root = args.keep_work.resolve() if args.keep_work else None
         if self.root is None:
@@ -145,14 +150,66 @@ class Fixture:
                     raise AssertionError("Hub exited during startup; inspect private fixture logs")
                 try:
                     response = await http.get(self.base + "/health", timeout=1)
-                    if response.status_code == 200:
-                        if self.image_runtime:
-                            self.image_runtime.observe()
-                        return
                 except httpx.HTTPError:
-                    pass
+                    response = None
+                if response is not None and response.status_code == 200:
+                    if self.image_runtime:
+                        self.image_runtime.observe()
+                    await self.initialize_unknown_projects()
+                    return
                 await asyncio.sleep(.1)
         raise AssertionError("Hub readiness deadline exceeded")
+
+    async def initialize_unknown_projects(self):
+        """Explicit fixture-owned Admin admission, never a runtime fallback.
+
+        Actual profile2.0 gets no recovery calls. External installations require
+        explicit CLI consent; negative/recovery fixtures opt out in the constructor.
+        A known missing initialized store must remain unavailable for verified
+        restore rather than being silently recreated by test infrastructure.
+        """
+        if not self.initialize_projects or (self.args.rest_url and not getattr(self.args, "initialize_projects", False)):
+            return
+        async with httpx.AsyncClient(trust_env=False) as http:
+            response = await http.get(self.base + "/protocol/schema", timeout=5)
+            response.raise_for_status()
+            self.protocol_profile = response.json().get("$id")
+        if self.protocol_profile != "urn:adhd:protocol:2.1":
+            return
+        admin = self.admin()
+        projects = admin.call({"op": "list_projects"})["projects"]
+        for project in projects:
+            project_id = project["id"]
+            status = admin.call(scoped(project_id, "project_restore_status"))
+            availability = status["availability"]
+            if availability == "ready":
+                continue
+            assert availability == "uninitialized", "Fixture cannot initialize an existing unavailable project"
+            revision = admin.call({"op": "config_get"})["config_revision"]
+            receipt = admin.call(scoped(project_id, "project_restore_plan", mode="initialize",
+                expected_revision=revision, confirm=True, message_id=uuid4().hex))
+            plan_operation = await self.wait_recovery(project_id, receipt["operation_id"], {"ready"})
+            plan = plan_operation["plan"]
+            assert plan["mode"] == "initialize" and plan["project_id"] == project_id
+            apply_receipt = admin.call(scoped(project_id, "project_restore_apply", plan_id=plan["plan_id"],
+                plan_sha256=plan["plan_sha256"], expected_revision=revision, confirm=True, message_id=uuid4().hex))
+            operation = await self.wait_recovery(project_id, apply_receipt["operation_id"], {"complete"})
+            assert operation["result"]["initialized"] is True
+            assert admin.call(scoped(project_id, "project_restore_status"))["availability"] == "ready"
+            assert admin.call({"op": "config_get"})["config_revision"] == revision
+            self.initializations.append({"project_id": project_id, "plan_id": plan["plan_id"],
+                "operation_id": operation["operation_id"], "mode": "initialize", "completed": True})
+
+    async def wait_recovery(self, project_id, operation_id, desired, timeout=None):
+        deadline = time.monotonic() + (timeout or self.args.deadline)
+        while time.monotonic() < deadline:
+            operation = self.admin().call(scoped(project_id, "project_restore_status", operation_id=operation_id))["operation"]
+            state = operation["state"]
+            if state in desired:
+                return operation
+            assert state not in {"failed", "blocked", "expired", "stale"}, "Recovery operation stopped before its required state"
+            await asyncio.sleep(.05)
+        raise AssertionError("Recovery operation did not reach its required state before the fixture deadline")
 
     async def agent(self, name):
         http = httpx.AsyncClient(headers={"Authorization": "Bearer " + self.tokens[name],
@@ -198,6 +255,8 @@ class Fixture:
         self.logs = []
 
     def bind_evidence(self, evidence, key="runtime"):
+        if self.initializations:
+            evidence.value["explicit_fixture_initializations"] = self.initializations
         if self.image_runtime and self.image_runtime.verified:
             evidence.value[key] = self.image_runtime.identity()
             evidence.value[key]["fixture_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()

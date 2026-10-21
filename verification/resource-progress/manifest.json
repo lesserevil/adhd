@@ -1,0 +1,33 @@
+{
+  "schema": "adhd/resource-progress@1",
+  "status": "development",
+  "passed": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "latest_phase": "archive-drain-exception",
+  "current_pool_sha256": "5fe51c06bb0ac68b7e3956ddd037ad37f0cef576a1a546c224d632b5f21ade42",
+  "reports": [
+    {
+      "path": "verification/resource-progress/native-before-archive.json",
+      "sha256": "74d1a6df15c7a8c5fa56c0c88148028b5eeb96a6db3aaccd776fe33632e6c681"
+    },
+    {
+      "path": "verification/resource-progress/native-after-archive.json",
+      "sha256": "09950b9d856dc361f807d6ea24e26b83ea1f281baf2dce0bdc7c9f3a26891b5f"
+    },
+    {
+      "path": "verification/resource-progress/http-before-archive.json",
+      "sha256": "da85d2d066a74fb81c5d5a20843de2565915cd0db62c39eba15ab6aea514f49f"
+    },
+    {
+      "path": "verification/resource-progress/http-after-archive.json",
+      "sha256": "56914548b35c8f0b4920cc8a0b39e058bfd56fc7ea62536c08e86303bfc0bf18"
+    }
+  ],
+  "limits": [
+    "Counts and hashes are separate for pre/post archive exception; old passes do not qualify new bytes.",
+    "Native fixtures test actual scheduler module with controlled Config/Scope, not server-wide acceptance.",
+    "HTTP tests use official A2A SDK and realKafka with controlled slow/failing provider/peer endpoints, not semantic model quality.",
+    "Final artifact lifecycle, browser/deployment and full restart gates remain separate."
+  ]
+}

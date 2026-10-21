@@ -1,0 +1,55 @@
+{
+  "suite": "adhd/multi-project-resource-fairness@1",
+  "started_at": "2026-10-21T18:44:52.655999+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "model-global-cap-and-real-raw-kafka-literal-search-progress-while-held",
+      "passed": true,
+      "actual_provider_calls": 1,
+      "observed_model_concurrency": 1,
+      "model_pool_active": 1,
+      "blue_model_queued": true
+    },
+    {
+      "name": "another-project-model-turn-precedes-hot-project-backlog-drain",
+      "passed": true,
+      "provider_project_order": [
+        "project-red",
+        "project-blue"
+      ],
+      "actual_provider_calls": 2,
+      "pool_grants": 2,
+      "grants_are_not_provider_call_count": true
+    },
+    {
+      "name": "slow-failing-peer-network-cap-independent-of-kafka-and-model-free-raw",
+      "passed": true,
+      "actual_peer_http_calls": 2,
+      "observed_peer_concurrency": 1,
+      "additional_model_calls": 0
+    },
+    {
+      "name": "bounded-redacted-server-diagnostics",
+      "passed": true,
+      "maximum_waiters": 8,
+      "observed_waiters": 1,
+      "finite_ingress_tickets": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "finished_at": "2026-10-21T18:45:27.083174+00:00",
+  "status": "development",
+  "lifecycle_qualified": false,
+  "phase": "before-archive",
+  "artifact_sha256": "8862790b407b91ac900b4e5212316c94f10459eb58c515ad630cb9b31d5a9d0e",
+  "pool_sha256": "d7370030fd370b2fc58086739b58c9b6424136f650e551f31b6f3011502e135a",
+  "harness_path": "tests/multi_fairness.py",
+  "harness_sha256": "9656405e3d077421b42eab6abebe55282368cc0f198b9b2270415925316da38e",
+  "broker_rest_versions": "Confluent8.3.2; realKafka single-node",
+  "runtime": "Elixir1.20.4/OTP29Linuxamd64Docker via selected wrapper"
+}

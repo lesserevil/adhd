@@ -65,8 +65,11 @@ active or queued capacity.
 Fence queued requests against the current configuration revision and project
 lifecycle immediately before execution. A changed revision invalidates prepared
 old endpoints, credentials and membership assumptions: return `CONFIG_CHANGED`
-without making the HTTP request. An archived project returns `PROJECT_ARCHIVED`;
-a removed or unknown project returns `PROJECT_NOT_FOUND`. The caller preserves
+without making the HTTP request. An archived project returns `PROJECT_ARCHIVED` for model and ordinary network
+work; a removed or unknown project returns `PROJECT_NOT_FOUND`. The eventing lane
+may continue transporting already accepted outbox/fan-out work for an archived
+project, subject to the current revision fence. This narrow drain exception does
+not authorize new publications, subscriptions or model work in an archived project. The caller preserves
 its durable accepted work and retries or pauses using current policy. Requests
 already executing retain the existing generation, ownership and authorization
 checks before committing a result; a slot grant never grants data access.

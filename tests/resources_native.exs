@@ -112,9 +112,23 @@ defmodule ResourcesTests do
     c=root(%{"model_concurrency"=>1});c=update_in(c,["projects"],&Enum.map(&1,fn p->if p["id"]=="blue",do: Map.put(p,"status","archived"),else: p end));:persistent_term.put(:resources_test_config,c);R.refresh()
     assert_receive {:done,:b,{:domain,"PROJECT_ARCHIVED"}}
     send(a,:finish);wait_for(fn->R.stats()["ingress_tickets"]==0 end)
+    ADHD.Scope.put("blue")
+    assert catch_throw(R.run(:model,100,fn _->:forbidden end))=={:domain,"PROJECT_ARCHIVED"}
+    assert R.run(:eventing,100,fn _->:drained end)==:drained
     ADHD.Scope.put("red")
     assert_raise RuntimeError,fn->R.run(:model,100,fn _->raise "synthetic exception" end) end
     assert R.stats()["ingress_tickets"]==0
+  end
+  test "atomic ingress is bounded and reclaims owners killed before scheduling" do
+    :persistent_term.put(:resources_test_config,root(%{"model_concurrency"=>1,"max_waiters"=>1}))
+    :sys.suspend(R)
+    callers=for i<-1..200,do: job("red",{:orphan,i},:model,500)
+    Process.sleep(30)
+    assert :ets.info(:adhd_resource_ingress,:size)<=2
+    Enum.each(callers,&Process.exit(&1,:kill))
+    :sys.resume(R)
+    wait_for(fn->R.stats()["ingress_tickets"]==0 end)
+    assert R.stats()["lanes"]["model"]["ingress_rejections"]>0
   end
   test "invalid config rejected and native unstarted fallback only before startup" do
     assert catch_throw(R.normalize(%{"resources"=>%{"max_waiters"=>-1}}))=={:domain,"INVALID_PARAMS"}

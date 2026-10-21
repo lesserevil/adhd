@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/admin-session/tests/admin_session_browser.py", line 150, in <module>
+    main()
+  File "/home/horde/src/adhd/.worktrees/admin-session/tests/admin_session_browser.py", line 139, in main
+    asyncio.run(asyncio.wait_for(run(runtime, password, report), 120))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/admin-session/tests/admin_session_browser.py", line 112, in run
+    await viewport_check(pw, runtime, password, viewport, report)
+  File "/home/horde/src/adhd/.worktrees/admin-session/tests/admin_session_browser.py", line 95, in viewport_check
+    assert (await revoker.post(runtime.base + "/admin/logout", data={})).status == 200
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

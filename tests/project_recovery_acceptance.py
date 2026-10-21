@@ -52,6 +52,15 @@ class Recovery:
             self.validate("Error", result)
         else:
             self.validate("Status" if op == "project_restore_status" else "Accepted", result)
+            assert result["project_id"] == project
+            if op == "project_restore_status" and result["operation"] is not None:
+                operation = result["operation"]
+                assert operation["project_id"] == project
+                if fields.get("operation_id"):
+                    assert operation["operation_id"] == fields["operation_id"]
+                progress = operation["progress"]
+                assert progress["bytes_read"] <= progress["maximum_bytes"]
+                assert progress["records_checked"] <= progress["maximum_records"]
         return result
 
     def revision(self):
@@ -64,6 +73,7 @@ class Recovery:
         deadline = time.monotonic() + self.f.args.deadline
         while time.monotonic() < deadline:
             value = self.status(project, receipt["operation_id"])["operation"]
+            assert value["kind"] == receipt["kind"]
             if value["state"] in states:
                 return value
             assert value["state"] not in {"failed", "blocked", "stale", "expired"}, value["failure"]
@@ -77,6 +87,10 @@ class Recovery:
         assert plan["project_id"] == project and plan["mode"] == mode
         assert plan["selected"]["project_epoch"] != plan["selected"]["allocation_epoch"]
         assert plan["selected"]["route_generation"] > plan["target"]["route_generation"]
+        assert plan["aliases"] == sorted(plan["aliases"]) and project not in plan["aliases"]
+        if plan["selected"]["transport_enabled"]:
+            topic = plan["policy"]["topic_prefix"] + "." + digest(plan["server_id"].encode())[:16] + "." + digest(project.encode())[:16]
+            assert plan["selected"]["topic"] == topic + ".r" + plan["selected"]["project_epoch"] + ".events.v1"
         return plan
 
     async def initialize(self, project, mid=None):
@@ -140,6 +154,7 @@ async def admission(f, r, evidence):
     state = snapshot(str(anchor) + ".snapshot")
     assert state["schema"] == 4 and state["project_epoch"] == entry["project_epoch"]
     assert state["allocation_epoch"] == entry["allocation_epoch"]
+    assert state["route_generation"] == entry["generation"]
     assert r.status(RED)["route"]["project_epoch"] == state["project_epoch"]
     evidence.record("explicit-reviewed-admin-initialization-creates-one-verified-route-without-config-or-other-project-change")
 

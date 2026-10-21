@@ -65,7 +65,7 @@ async def basic_families(f, phase):
     archive_id = queries["query_archive"]["id"]
     deadline = asyncio.get_running_loop().time() + 20
     while True:
-        rows = (await actor.call(scoped(RED, "list_retrieval_attempts", limit=100)))["items"]
+        rows = (await actor.call(scoped(RED, "list_retrieval_attempts", limit=64)))["items"]
         attempt = next((v for v in rows if v["archive_query_id"] == archive_id), None)
         if attempt:
             break
@@ -88,8 +88,11 @@ def offline_bundle(f, r, backup_id):
     state = snapshot(source)
     # The fixture deliberately configures this explicit private root before
     # accepting any plan; it does not guess a runtime-selected filesystem route.
-    directory = Path(f.config["recovery"]["backup_root"]) / backup_id
-    directory.mkdir(mode=0o700, parents=True)
+    backup_root = Path(f.config["recovery"]["backup_root"])
+    backup_root.mkdir(mode=0o700, exist_ok=True)
+    assert backup_root.stat().st_mode & 0o077 == 0
+    directory = backup_root / backup_id
+    directory.mkdir(mode=0o700)
     for name, body in (("project.snapshot", source.read_bytes()), ("server-config.json", f.file.read_bytes())):
         path = directory / name
         path.write_bytes(body)
@@ -110,9 +113,12 @@ def offline_bundle(f, r, backup_id):
 
 
 async def checks(f, r, evidence):
+    from project_recovery_workflows import allocate, event_controls
     await r.initialize(RED)
     await r.initialize(BLUE)
     retained = await basic_families(f, "retained")
+    retained["optimizer"] = await allocate(f, f.model, "retained")
+    retained["eventing"] = await event_controls(f, "retained", retained["record"]["publication"]["id"])
     actor, blue_recipient = await f.agent("bridge"), await f.agent("blue-b")
     blue_sub = (await blue_recipient.call(scoped(BLUE, "subscribe", mode="raw")))["subscription"]
     before = (await actor.call(scoped(BLUE, "publish_record", text="Blue before target backup")))["record"]["publication"]
@@ -122,6 +128,8 @@ async def checks(f, r, evidence):
     backup, manifest_sha, retained_state = offline_bundle(f, r, "target-backup")
     await f.start()
     lost = await basic_families(f, "lost")
+    lost["optimizer"] = await allocate(f, f.model, "lost")
+    lost["eventing"] = await event_controls(f, "lost", lost["record"]["publication"]["id"])
     actor, blue_recipient = await f.agent("bridge"), await f.agent("blue-b")
     newer = (await actor.call(scoped(BLUE, "publish_record", text="Blue newer than target backup")))["record"]["publication"]
     newer_deliveries = await poll_until(blue_recipient, BLUE, {newer["id"]})
@@ -152,6 +160,12 @@ async def checks(f, r, evidence):
     accepted = r.call(RED, "project_restore_apply", **apply)
     done = await r.settle(RED, accepted, {"complete"})
     assert done["result"]["initialized"] is False and done["result"]["transport_discontinuity"] is True
+    _, restored_anchor = route(f.file, RED)
+    restored_state = snapshot(str(restored_anchor) + ".snapshot")
+    stable_families = ("publications", "subscriptions", "deliveries", "contexts", "idempotency", "sources", "admin_idempotency",
+        "history_queries", "retrieval_queries", "archive_queries", "feedback", "replay_queries")
+    for family in stable_families:
+        assert restored_state[family] == retained_state[family], "Complete backed-up accepted state changed in family " + family
     assert f.admin().call({"op": "config_get"})["config"] == current_config
     assert r.status(BLUE)["route"] == blue_status["route"]
     after_blue = f.admin().call(scoped(BLUE, "eventing_status"))
@@ -169,7 +183,13 @@ async def checks(f, r, evidence):
         assert (await actor.call(scoped(RED, get, query_id=original["id"])))["query"] == original
     assert (await actor.call(scoped(RED, "get_retrieval_attempt", attempt_id=retained["attempt"]["id"])))["attempt"] == retained["attempt"]
     assert (await actor.call(scoped(RED, "get_retrieval_replay", query_id=retained["replay"]["id"])))["query"] == retained["replay"]
+    previous_proposal = retained["optimizer"]["proposal"]
+    restored_proposal = f.admin().call(scoped(RED, "index_proposal", proposal_id=previous_proposal["id"], limit=64))["proposal"]
+    for field in ("id", "training_attempt_ids", "held_out_attempt_ids", "regression_attempt_ids", "winner_identity", "evaluation"):
+        assert restored_proposal[field] == previous_proposal[field], "Backed-up optimizer provenance was discarded or invented"
     new = await basic_families(f, "lost")
+    new["optimizer"] = await allocate(f, f.model, "recovered")
+    new["eventing"] = await event_controls(f, "recovered", new["record"]["publication"]["id"])
     before_ids = allocated(retained_state)
     # New responses legitimately cite retained objects. Compare accepted ID
     # deltas instead of incorrectly demanding that preserved references change.
@@ -180,7 +200,11 @@ async def checks(f, r, evidence):
     assert all(ALLOCATED.fullmatch(value).group(1) == allocation_epoch for value in new_ids)
     evidence.record("target-only-restore-keeps-originals-private-acks-current-security-and-other-project-newer-position",
         retained_ids=len(before_ids), lost_post_backup_ids=len(lost_ids), new_ids=len(new_ids),
-        families=["publication", "subscription", "delivery", "history", "retrieval", "archive", "feedback", "replay"],
+        families=["publication", "subscription", "delivery", "history", "retrieval", "archive", "feedback", "replay",
+            "optimizer-proposal", "optimizer-child", "optimizer-evaluation", "selection-reset", "event-replay", "repair", "audit"],
+        complete_accepted_subtrees_compared=list(stable_families),
+        optimizer_quality_results={"retained": previous_proposal["status"], "lost": lost["optimizer"]["proposal"]["status"],
+            "recovered": new["optimizer"]["proposal"]["status"]},
         transport_discontinuity=True)
     f.hard_stop()
     await f.start()
@@ -197,14 +221,16 @@ async def checks(f, r, evidence):
 
 
 async def main(args):
+    from project_recovery_workflows import configure, model_fixture
     assert not args.rest_url, "Target restore requires an owned isolated backend"
     args.with_model = False
     f = Fixture(args, initialize_projects=False)
-    model = ArchiveFixture()
+    model = model_fixture()
     f.model = model
     f.config.update(matcher={"url": model.url, "model": "controlled-recovery", "timeout_ms": 3000, "retry_ms": 100},
         archive={"audit_rate_ppm": 0}, history={"request_bytes": 65536},
         recovery={"backup_root": str(f.root / "offline-backups")})
+    configure(f)
     evidence = Evidence(args.report, "target-only-project-restore")
     if args.hub:
         evidence.value["artifact_sha256"] = digest(args.hub.read_bytes())
@@ -213,7 +239,7 @@ async def main(args):
         r = Recovery(f, args.recovery_schema)
         evidence.value["authored_recovery_schema_sha256"] = r.schema_sha256
         await checks(f, r, evidence)
-        evidence.value["scope"] = "Basic target restore and eight allocated families; optimizer/federation/repair/audit allocator and crash/browser gates remain separate"
+        evidence.value["scope"] = "Target restore and public original/query/feedback/replay/optimizer/selection and actual Kafka repair/replay/audit allocator families using controlled typed replies. Deterministic lineage hashes remain stable. Federation and crash/browser gates remain separate; no live semantic model qualification."
     except BaseException as error:
         evidence.finish(error)
         raise

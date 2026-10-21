@@ -242,3 +242,10 @@ was not retried. The proof retains the frozen seven-case manifest, exact model
 exchanges and unchanged budget. This is a correctly rejected no-miss cohort,
 not positive optimizer qualification; that capability remains unproven for the
 current artifact. The earlier capsule-R quality failure remains separately open.
+
+The [source34 native live-model regression matrix](../validation/deep-live-model-34-native.json)
+passes all 69 existing History, retrieval, Archive and paired Feedback cases in
+one run per suite. Harness hashes match the source30 matrix; gold, thresholds
+and assertions remain unchanged, including the declared 8 KiB paired-feedback
+assessment profile. These native results make no image qualification claim and
+do not change either failed optimizer experiment or the open positive optimizer gate.

@@ -288,3 +288,9 @@ all four official A2A SDK suites. The immutable image, exact reviewed manifest
 bytes and packaged hub digest were verified before execution. Controlled behavior
 and fault checks do not establish semantic model quality or positive optimizer
 qualification; the separate failed optimizer evidence remains unchanged.
+
+The [recovery-fixture compatibility check](../validation/recovery-helper-profile20.json)
+retains the nine existing multi-project checks on accepted source34 after adding
+future profile2.1 initialization support to the test fixture. The exact profile
+gate keeps profile2.0 free of recovery operations. This is a compatibility result;
+it provides no runtime qualification for the new recovery feature.

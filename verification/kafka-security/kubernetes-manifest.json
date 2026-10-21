@@ -1,0 +1,68 @@
+{
+  "schema": "adhd/kafka-kubernetes-oauth-development-evidence@1",
+  "status": "development-diagnostic",
+  "passed": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "production_entitlement_qualified": false,
+  "network_policy_enforcement_qualified": false,
+  "broker_sasl_tls_qualified": false,
+  "scope": "Real optional native REST HTTPS/OAuth profile in fresh disposable Kubernetes namespace, Secret PKCS12 password/certificate rotation, REST/broker replacement, hot native hub bearer replacement, actual group checkpoints and retained PVC; cleanup complete.",
+  "artifact": {
+    "sha256": "4b6b444dc5c10f573632335d5c7565590d6f6bcc060a11619dd92193c2fa0025",
+    "identity_and_modules_manifest": "verification/kafka-security/manifest.json",
+    "identity_manifest_sha256": "8aefe255b450014c3c1979d50019d2a2927e8454b2fd8126eeeb56ccb25b2b70"
+  },
+  "runtime": {
+    "hub": "Elixir 1.18.4 / OTP27 erts15.2.7.14 native diagnostic",
+    "confluent_platform": "8.3.2",
+    "kubernetes": "1.35.0",
+    "kind": "0.33.0"
+  },
+  "reports": [
+    {
+      "path": "verification/kafka-security/kubernetes-oauth-tls.json",
+      "sha256": "8474604fc7cb6d13f5c79db441bba5cde97a8e603f42187438a0a8717c920309"
+    },
+    {
+      "path": "verification/kafka-security/kubernetes-image-equivalence.json",
+      "sha256": "98b8aaa3c4b4a46209e3767875072452b9bc6cb50e0d6ffa346f893a8f9cbc77"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "tests/kafka_oauth_k8s.py",
+      "sha256": "45d129d5724e99fb34daef216673509398d7ac7056ef19b54795ea8e298cb44a"
+    },
+    {
+      "path": "tests/kafka_image_equivalence.py",
+      "sha256": "a53e0af42b470d108437c7e585da58dcac720f347d9adc41b0e55f2ac18ff179"
+    },
+    {
+      "path": "tests/kafka_oauth_provider.py",
+      "sha256": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb"
+    },
+    {
+      "path": "deploy/k8s/events.yaml",
+      "sha256": "83ce33a019619ddea5b03146dfac4078d0f69e7ddf6878d7b320068d627f8aac"
+    },
+    {
+      "path": "deploy/k8s/oauth.patch.yaml",
+      "sha256": "c291143a5a673a1a390b737506dcfc9f3dd581ad811c1de80ed9a162ada13d36"
+    },
+    {
+      "path": "deploy/security/kafka-rest.oauth.properties.example",
+      "sha256": "005b04820782f090b0aca23653c24d1c018057d961f7a5a11d9b8b9882edfe88"
+    }
+  ],
+  "license_scope": "Confluent Enterprise or documented permitted trial for bundled AuthenticationHandler; baseline REST Community and Kafka Apache-2.0 inventory is preserved in referenced manifest.",
+  "limits": [
+    "No final accepted-container or lifecycle qualification: this probe uses a native frozen diagnostic artifact.",
+    "Single broker, no replicated availability qualification.",
+    "Private plaintext proxy-to-broker lane; SASL_SSL example is not qualified.",
+    "Default Kind CNI does not enforce NetworkPolicy; no enforcement claim.",
+    "Retiring an issuer signing key and refreshing JWKS was tested; generic immediate per-token revocation is not implemented.",
+    "Earlier first Kubernetes attempt used a stale fixture truststore password and failed; excluded. Fresh second attempt, after fixture correction, is the only successful report.",
+    "No existing broker, app or model service was changed; no inference service used."
+  ]
+}

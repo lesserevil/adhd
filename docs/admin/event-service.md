@@ -401,3 +401,14 @@ artifact/module identities, image pins, license inventory and committed harnesse
 Its Kubernetes scope is rendering only; its full-hub result is explicitly a
 development diagnostic rather than lifecycle, package or production entitlement
 qualification.
+
+The separate [live Kubernetes security diagnostic](../../verification/kafka-security/kubernetes-manifest.json)
+qualifies the optional Secret-mounted native HTTPS/OAuth profile against actual
+pods: hot hub bearer replacement, old signing-key rejection, replacement Secret
+keystore password/certificate and REST pod, then broker pod replacement with the
+same PVC. The hub process, original and acknowledgement survived and the actual
+broker group checkpoint advanced from 1 to 2. Owned namespace/PVC/PV cleanup and
+credential-redacted logs were checked. This frozen native diagnostic does not
+qualify the final accepted container, production entitlement, SASL_SSL broker
+security, replicated availability or NetworkPolicy enforcement. See the linked
+probe instructions for a fresh disposable namespace.

@@ -50,3 +50,35 @@ principal propagation or claim that a header alone authenticates the proxy. Its
 private plaintext proxy-to-broker lane is distinct from HTTPS/JWT security at the
 REST boundary; the separate broker SASL_SSL example requires its own matching
 listeners, credentials, trust, ACLs and runtime qualification.
+
+The separate [Kubernetes diagnostic manifest](kubernetes-manifest.json) adds a
+live optional-profile run without changing the earlier rendering-only claims.
+Its five checks cover actual Secret-mounted native HTTPS/JWT authentication,
+hot hub token replacement and retired-key denial, replacement PKCS12 passwords
+and server certificate in the Kubernetes Secret followed by REST pod replacement,
+broker pod replacement against the same PVC, and continued A2A progress with the
+actual group checkpoint advancing from 1 to 2. The native hub process remained
+running; original and acknowledgement identities survived. Cleanup removed the
+owned namespace, PVC and dynamically provisioned PV. Log checks found none of the
+synthetic credentials. It does not claim uninterrupted REST availability during
+an infrastructure rollout.
+
+Run against an operator-owned disposable Kubernetes cluster with Delete-reclaim
+storage and a private host bridge reachable by its pods:
+
+```sh
+.venv/bin/python tests/kafka_oauth_k8s.py --hub "$CANDIDATE" \
+  --kubectl "$KUBECTL" --kubeconfig "$KUBECONFIG" \
+  --namespace adhd-oauth-security --issuer-bind "$PRIVATE_BRIDGE" \
+  --broker-image "$PINNED_BROKER" --proxy-image "$PINNED_PROXY" \
+  --work _build/oauth-k8s-security --report _build/oauth-k8s-security.json
+```
+
+The harness refuses an existing namespace. It applies the authored deployment
+and OAuth patch with explicitly supplied immutable image identities. Its issuer
+is bounded and synthetic. Keystores/passwords change through the real Secret
+object; a new REST pod activates them. The original proxy/broker registry
+manifests differed from the offline imported OCI manifests on this host. The
+read-only `tests/kafka_image_equivalence.py` probe verified both imported config
+identities and every uncompressed layer against the original pinned local images;
+that independent report is bound in the Kubernetes manifest.

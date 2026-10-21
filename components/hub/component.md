@@ -62,13 +62,17 @@ specification_roots:
   - optimization/spec.md
   - optimization/selection.md
   - optimization/interface.md
+  - multi/spec.md
+  - eventing/spec.md
 ---
 # Agentic Distributed Harness Depot (ADHD)
 
-Provide one private, single-project A2A service where authenticated agents publish
+Provide one private, multi-project A2A service where authenticated agents publish
 work updates, maintain plain-text subscriptions, receive queued information,
 exchange addressed messages, and search published information. Use the selected
-language's standard runtime facilities only. Support one running service per store.
+language's standard runtime facilities for hub logic and the selected Kafka REST
+Proxy service for broker access. Support one running service per server registry
+and one writer per project store.
 The product contract below takes precedence over generic portable CLI practice
 where the long-running serve mode requires it.
 
@@ -100,3 +104,9 @@ versioned closed-cycle sufficiency refinement. They do not publish derived facts
 Adaptive index proposals are bounded by optimization/spec.md; durable effective
 selection and rollback follow optimization/selection.md, with exact Admin messages
 and qualification evidence in optimization/interface.md.
+
+Multiple projects follow multi/spec.md, which replaces single-project identity,
+mutable project IDs and project-bound peer transport assumptions. Kafka eventing
+follows eventing/spec.md, which replaces mandatory model matching with raw or
+optionally filtered project streams and owns broker durability/cutover. These two
+contracts take precedence over earlier restrictions on exactly those subjects.

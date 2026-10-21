@@ -280,3 +280,11 @@ Feedback retains its declared 8 KiB assessment profile. The immutable image,
 reviewed manifest and packaged hub digest were verified before execution. Model
 ownership was handed off only between completed suites. These backend results do
 not qualify either failed optimizer experiment or close the positive optimizer gate.
+
+The [source34 accepted-image controlled matrix](../validation/deep-controlled-34-image.json)
+passes all 117 groups across 15 existing suites, once each. The unchanged native
+matrix's harness hashes match, including actual historical store producers and
+all four official A2A SDK suites. The immutable image, exact reviewed manifest
+bytes and packaged hub digest were verified before execution. Controlled behavior
+and fault checks do not establish semantic model quality or positive optimizer
+qualification; the separate failed optimizer evidence remains unchanged.

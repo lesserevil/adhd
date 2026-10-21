@@ -1,0 +1,37 @@
+{
+  "profile": "adhd-2.0.0-target-contract",
+  "valid": [
+    {"name":"raw-project-stream","command":{"op":"subscribe","project_id":"alpha","mode":"raw"}},
+    {"name":"raw-with-exact-selectors","command":{"op":"subscribe","project_id":"alpha","selectors":{"information_type":["agent.status","agent.message"],"author_id":["worker-a","worker-b"]}}},
+    {"name":"optional-plain-text-filter","command":{"op":"subscribe","project_id":"alpha","mode":"filtered","filter":"Only API compatibility changes or blocked releases."}},
+    {"name":"legacy-semantic-subscription","command":{"op":"subscribe","project_id":"alpha","description":"Changes to the API"}},
+    {"name":"revisioned-filter-update","command":{"op":"update_subscription","project_id":"alpha","subscription_id":"sub-1","expected_revision":1,"mode":"filtered","filter":"Only release blockers","paused":false}},
+    {"name":"authorized-project-discovery","command":{"op":"list_projects"}},
+    {"name":"model-free-fact-search","command":{"op":"search","project_id":"alpha","query":"release","limit":20}},
+    {"name":"independent-agent-ack","command":{"op":"ack","project_id":"alpha","delivery_ids":["delivery-2","delivery-1"]}},
+    {"name":"server-project-peer-submit","request":{"protocol_version":2,"op":"submit","origin_server_id":"server-a","origin_project_id":"alpha","destination_project_id":"bravo","query_id":"query-1","question":"Are API compatibility changes being worked on?","deadline_at":"2026-10-21T12:00:30.000Z"}},
+    {"name":"server-project-peer-status","request":{"protocol_version":2,"op":"status","origin_server_id":"server-a","origin_project_id":"alpha","destination_project_id":"bravo","query_id":"query-1"}},
+    {"name":"project-pair-catalog","request":{"protocol_version":2,"op":"catalog","origin_server_id":"server-a","origin_project_id":"alpha","destination_project_id":"bravo"}},
+    {"name":"raw-delivery-reason","record":{"subscription_id":"sub-1","subscription_revision":1,"mode":"raw"}},
+    {"name":"filtered-delivery-reason","record":{"subscription_id":"sub-2","subscription_revision":3,"mode":"filtered","probability_ppm":970000,"threshold_ppm":900000,"model":"Nemotron"}}
+  ],
+  "invalid": [
+    {"name":"raw-must-not-silently-drop-filter","command":{"op":"subscribe","project_id":"alpha","mode":"raw","filter":"release blockers"},"reason":"INVALID_PARAMS"},
+    {"name":"null-is-not-absent-criterion","command":{"op":"subscribe","project_id":"alpha","mode":"raw","filter":null},"reason":"INVALID_PARAMS"},
+    {"name":"filtered-needs-criterion","command":{"op":"subscribe","project_id":"alpha","mode":"filtered"},"reason":"INVALID_PARAMS"},
+    {"name":"blank-filter","command":{"op":"subscribe","project_id":"alpha","filter":"   "},"reason":"INVALID_PARAMS"},
+    {"name":"duplicate-filter-alias","command":{"op":"subscribe","project_id":"alpha","filter":"release","description":"release"},"reason":"INVALID_PARAMS"},
+    {"name":"selector-no-empty-set","command":{"op":"subscribe","project_id":"alpha","selectors":{"author_id":[]}},"reason":"INVALID_PARAMS"},
+    {"name":"selector-unknown-key","command":{"op":"subscribe","project_id":"alpha","selectors":{"publisher_id":["worker-a"]}},"reason":"INVALID_PARAMS"},
+    {"name":"integer-token-revision","command":{"op":"update_subscription","project_id":"alpha","subscription_id":"sub-1","expected_revision":true,"mode":"raw"},"reason":"INVALID_PARAMS"},
+    {"name":"peer-v2-missing-destination","request":{"protocol_version":2,"op":"status","origin_server_id":"server-a","origin_project_id":"alpha","query_id":"query-1"},"reason":"INVALID_PARAMS"},
+    {"name":"peer-v2-no-payload-auth-override","request":{"protocol_version":2,"op":"status","origin_server_id":"server-a","origin_project_id":"alpha","destination_project_id":"bravo","query_id":"query-1","token":"must-never-be-body-auth"},"reason":"INVALID_PARAMS"},
+    {"name":"raw-no-fabricated-model-score","record":{"subscription_id":"sub-1","subscription_revision":1,"mode":"raw","probability_ppm":1000000},"reason":"INVALID_PARAMS"}
+  ],
+  "authorization_scenarios": [
+    {"name":"ambiguous-omission","command":{"op":"poll"},"precondition":"Agent admitted to alpha and bravo with no legacy binding","reason":"PROJECT_REQUIRED"},
+    {"name":"hidden-and-unknown-project-uniform","command":{"op":"search","project_id":"hidden","query":"release"},"precondition":"Agent has no hidden admission","reason":"PROJECT_NOT_FOUND"},
+    {"name":"archived-project-refuses-new-publication","command":{"op":"publish","project_id":"alpha","text":"new event"},"precondition":"alpha is archived","reason":"PROJECT_ARCHIVED"},
+    {"name":"filtered-model-absent","command":{"op":"subscribe","project_id":"alpha","filter":"release blockers"},"precondition":"matcher is null","reason":"MODEL_UNAVAILABLE"}
+  ]
+}

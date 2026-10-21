@@ -450,3 +450,10 @@ labels/evidence. Unknown critical annotations fail closed. The accompanying sche
 OpenAPI, fixtures and independent lifecycle/model tests travel together. Human
 labels and model judgments remain fallible; scoped improvements are not a general
 answer-quality or isolated-latency guarantee.
+
+## Multi-project and Kafka target profile
+
+The [2.0 target contract](multi-eventing.md) and [independent examples](multi-eventing-examples.json)
+specify stable project boundaries, peer-v2 scopes and Kafka-backed raw/optionally
+filtered A2A subscriptions. They describe the pending implementation contract;
+older exported schema/OpenAPI and accepted artifacts do not establish compliance.

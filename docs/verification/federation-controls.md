@@ -77,3 +77,38 @@ actual official-SDK raw delivery. Reports `audit-26-full-protocol.json` and
 `audit-26-eventing-protocol.json` are in the same ignored evidence directory.
 These remain candidate evidence; subsequent filter-queue budget work and the final
 combined retained artifact require their own qualification.
+
+## Bounded filter admission candidate
+
+Frozen `hub-filter-28.exs` SHA256
+`31f33131ba3b6cf0f0ad30c2df0560e2175e8a4e78804017a236da91bb345615`
+passed five independent actual-Kafka groups in `tests/eventing_filter_budget.py`:
+ready project/subscription caps with raw progress; hot reduction retaining existing
+jobs and hard-restart recovery; frozen adapter/threshold while disabled and after
+replacement; deferred replay versus materialized handoff without acknowledgement
+resurrection; actual project budget overrides and unsubscribe cleanup while paused.
+Report `_build/roadmap/multi/filter-28b.json` SHA256
+`e414078bf8567557e3fe4d479f7232785c864f97652e99ca2fe506ae85fb5be3`.
+The first attempt used an insufficient 45-second fixture deadline for draining
+44 decisions under a one-slot cap; the final bounded recovery deadline is120 seconds.
+No generated-source change was needed between those attempts.
+
+The same artifact passed two groups in `tests/eventing_dormant_policy.py`. Holding
+an actual Kafka response prevented the event worker from ticking while Admin
+changed adapter A to B and immediately disabled it. An off-state original retained
+B across hard restart and re-enable with C and a different threshold; a second
+project retained its explicit adapter independently. Report
+`_build/roadmap/multi/filter-28-dormant.json` SHA256
+`109f96a00e546cfccfa2d9d3383e3a70047d26623397cd6c694a8ee380b70d4b`.
+
+`tests/eventing_protocol.py` passed three groups against that artifact with24 valid
+and27 invalid authored vectors, including queue bounds, zero/boolean rejection,
+critical duplicate-ID validation, exact served schema/OpenAPI and official-SDK raw
+publication/delivery/revision conformance. Report
+`_build/roadmap/multi/filter-28-protocol.json` SHA256
+`a3d58d681c4d441892dcfb67ed7d325f786099b356317a0c9dcc72c81129910a`.
+All private hubs/model fixtures stopped; the preexisting Kafka service remained.
+Controlled typed models qualify transport and frozen-policy use, not semantic
+quality. One real Kafka broker does not qualify replicated durability. These are
+candidate proofs; final retained-source admission and combined-artifact tests
+remain separate lifecycle gates.

@@ -194,3 +194,26 @@ project descriptions/catalogs/export policy inherit defaults and may override.
 The configuration-file CLI location is the sole restart setting. Immutable
 server/project IDs and read-only config_revision are classified server-wide but
 cannot be reassigned through a configuration patch.
+
+Filter-ready admission has independent project and subscription budgets:
+`max_pending_filter_jobs` (default256) and
+`max_pending_filter_jobs_per_subscription` (default64), each an integer1..100000.
+Set defaults in root `eventing`, or override either through a project's
+`settings.eventing`. Transport/security remains server-wide. Reducing a cap keeps
+already accepted jobs and prevents new ready slots until usage falls below it.
+
+A full filter-ready queue leaves the accepted event's frozen targets deferred in
+its original backend record. Kafka raw fanout continues independently. Admin
+`eventing_status` distinguishes `pending_events` (transport),
+`pending_filter_jobs` (ready decisions), and `deferred_filter_targets` (not yet
+staged decisions); `filter_queue_limits` gives both effective caps, and
+`filtering_paused` reports model-disabled or archived projects. These bounds limit
+ready work, not total backend disk use.
+
+`eventing_replay` can now report `deferred`, with its own
+`deferred_filter_targets`. `materialized` means every target was staged or cancelled;
+it does not promise all model decisions or agent processing finished. Disabling
+models pauses inference while new publications retain the last durably configured
+adapter and their acceptance-time threshold/criterion/revision. Enabling a different
+model later cannot reinterpret those retained decisions. A historical state without
+provable adapter provenance reports `FILTER_POLICY_UNAVAILABLE` and remains deferred.

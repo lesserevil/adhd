@@ -261,6 +261,24 @@
           "missing_logical_proof": true
         }
       }
+    },
+    {
+      "name": "bounded-filter-ready-policy",
+      "definition": "ProjectSettings",
+      "body": {
+        "eventing": {
+          "max_pending_filter_jobs": 3,
+          "max_pending_filter_jobs_per_subscription": 2
+        }
+      }
+    },
+    {
+      "name": "filter-job-root-upper-bounds",
+      "definition": "EventingConfig",
+      "body": {
+        "max_pending_filter_jobs": 100000,
+        "max_pending_filter_jobs_per_subscription": 1
+      }
     }
   ],
   "invalid": [
@@ -571,6 +589,31 @@
           "action": "reconcile",
           "missing_logical_proof": true
         }
+      }
+    },
+    {
+      "name": "zero-filter-ready-cap",
+      "definition": "ProjectSettings",
+      "body": {
+        "eventing": {
+          "max_pending_filter_jobs": 0
+        }
+      }
+    },
+    {
+      "name": "boolean-filter-ready-cap",
+      "definition": "ProjectSettings",
+      "body": {
+        "eventing": {
+          "max_pending_filter_jobs_per_subscription": true
+        }
+      }
+    },
+    {
+      "name": "unbounded-filter-ready-cap",
+      "definition": "EventingConfig",
+      "body": {
+        "max_pending_filter_jobs": 100001
       }
     }
   ],

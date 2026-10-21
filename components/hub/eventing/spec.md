@@ -424,3 +424,65 @@ If a fetched broker batch fails its configuration/control revision fence, close
 that consumer instance and recreate it at the durable next offset. Retaining an
 instance whose network fetch advanced while materialization was rejected would
 skip accepted work; an unchanged topic binding does not make that safe.
+
+## Bounded filter-ready queues and durable deferred intents
+
+Root eventing additionally permits max_pending_filter_jobs (default256) and
+max_pending_filter_jobs_per_subscription (default64), integer JSON tokens1..100000.
+Both are safe independently inherited project policy overrides. Both limits apply
+when admitting a new pending subscription decision job; a larger per-subscription
+limit never bypasses the project limit. Reductions retain accepted jobs above the
+new cap and prevent new slots until enough jobs finish/cancel. Models, archive and
+current recipient admission still fence attempts; capacity never grants authority.
+
+An unavailable model must not turn a publication into a nonmatch, refuse its raw
+stream because a filter-ready queue is full, or allocate unbounded ready jobs.
+Overflow remains a durable deferred intent in the accepted event's existing frozen
+target snapshot. Retain a compact staged/cancelled bitmask and cursor alongside that
+row, and an ordered sequence index referring to those original rows; do not copy
+originals, criteria or adapter policy into another unbounded queue. Retained facts
+and unresolved intents still consume backend storage; this is not an unlimited disk
+guarantee. Existing transport/disk acceptance bounds remain independent. Limit a
+staging turn to128 target positions and64 event rows, using indexed continuation
+rather than repeatedly scanning all retained originals. Ready jobs deduplicate by
+publication/subscription/revision and preserve accepted criterion/model/threshold.
+A bounded ready-job identity index enables slot accounting without rescanning all
+completed decisions. Reconstruct indexes/counters from authoritative state once
+when upgrading older state; preserve accepted work and identifiers.
+
+Once broker observation is durable, raw fanout and registration of its frozen filter
+intents count as materialized transport. Deferred registration is not a completed
+match and does not fabricate a score. Stage eligible intents incrementally as slots
+free; preserve pending work while the model is disabled, project archived or owner
+admission revoked. Unsubscribe cancels its unresolved intents through bounded cleanup;
+never evaluate them after removal. Replay targets follow the same bounds and retain
+replay provenance. Replay status adds deferred when transport is materialized but
+some selected filter intents are not yet ready jobs; materialized means its intents
+have been staged/cancelled, not that pending model decisions or agent handling finished.
+
+Eventing status adds pending_filter_jobs, deferred_filter_targets (nonnegative
+integer counts), filtering_paused (model absent or project archived), and
+filter_queue_limits containing exactly the two effective limits. The existing
+pending_events count remains transport backlog, not model backlog. A replay record
+adds deferred_filter_targets; root Admin exposes both pending and deferred costs.
+The backend transaction synchronizes intent masks, indexes/counters, ready job and
+its duplicate guard together. Killing/restarting cannot lose or stage an intent twice.
+Qualification must fill both caps under actual model failure while actual Kafka raw
+streams continue, reduce limits hot, restart, resume the model and prove every retained
+target is resolved with its original criterion/revision/policy and no duplicate delivery.
+This extends the four-key project policy subset to six keys. Persist the last
+configured effective model adapter per project, including when a filtered
+subscription is created/edited, before it may be disabled. A publication arriving
+while models are disabled freezes that dormant adapter with its current criterion,
+revision and threshold. It remains deferred/paused until models are re-enabled;
+never freeze an empty adapter or silently reinterpret it with a replacement model.
+The disabled state still prohibits outbound inference. Older state initializes this
+metadata only from its effective configured adapter (the required adapter in an
+accepted legacy profile) or an already durable last-effective snapshot. Never guess
+a binding from unrelated old decision jobs. Each successful durable configuration
+decision synchronously persists the effective project adapter before acknowledging
+the change; startup recovery repeats that binding before workers start. Thus rapid
+A-to-B-to-disabled changes retain B without relying on a worker tick. If an older or
+incomplete state has neither proof, its affected targets remain deferred and report
+FILTER_POLICY_UNAVAILABLE through eventing last_error; never infer with a replacement
+model. Their raw recipients still progress and unsubscribe can cancel the intents.

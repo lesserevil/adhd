@@ -17,6 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--command', required=True)
     parser.add_argument('--report', default='verification/config-recovery.json')
+    parser.add_argument('--protocol-version', type=int, choices=(1, 2), default=2)
     args = parser.parse_args()
     command = json.loads(args.command)
     assert shutil.which('strace'), 'Linux strace is required for syscall-boundary fault injection'
@@ -44,8 +45,10 @@ def main():
             runtime.start()
             agent = Client(runtime)
             publication = agent.rpc({'op': 'publish', 'text': 'Original survives every commit boundary.'}, token, mid='durable-original')['publication']
-            patch = {'project_id': 'after-crash', 'port': new_port,
+            patch = {'port': new_port,
                      'store_path': str(new_store), 'threshold_ppm': 777777}
+            if args.protocol_version == 1:
+                patch['project_id'] = 'after-crash'
             request = {'op': 'config_update', 'patch': patch, 'expected_revision': 1,
                        'confirm': True, 'message_id': 'crash-change'}
             def mutate():
@@ -63,8 +66,11 @@ def main():
             runtime.command = command
             runtime.start()
             config = runtime.config
-            is_new = config['project_id'] == 'after-crash'
-            assert config['project_id'] in ('before-crash', 'after-crash')
+            is_new = config['port'] == new_port
+            # Profile 2 project IDs are immutable. Display-name changes have
+            # their own project transaction tests; this transaction moves the
+            # listener and all stores without changing the default identity.
+            assert config['project_id'] == ('after-crash' if is_new and args.protocol_version == 1 else 'before-crash')
             assert config['port'] == (new_port if is_new else old_port)
             assert config['store_path'] == str(new_store if is_new else old_store)
             assert config.get('threshold_ppm', 900000) == (777777 if is_new else 900000)

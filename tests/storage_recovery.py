@@ -12,7 +12,13 @@ def main():
     def runtime(name,argv):
         r=Runtime(root/name,argv);r.file.write_text(json.dumps({'project_id':'storage-fixture','port':free_port(),'store_path':str(r.root/'hub.dets'),
             'agents':{'alice':secrets.token_urlsafe(32),'bob':secrets.token_urlsafe(32)},'admin_token':secrets.token_urlsafe(32),
-            'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':500,'retry_ms':100}}));r.file.chmod(0o600);hubs.append(r);r.start();return r
+            'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':500,'retry_ms':100}}));r.file.chmod(0o600);hubs.append(r)
+        if argv != command:
+            # Provision and migrate through the real runtime before delaying
+            # every filesystem call. These cases target subsequent publication
+            # commits; startup/migration crashes have dedicated independent suites.
+            r.command=command;r.start();r.stop();r.command=argv
+        r.start();return r
     def rpc(r,cmd,mid=None,actor='alice'):return Client(r).rpc(cmd,r.config['agents'][actor],mid=mid)
     def record(name,**extra):cases.append({'case':name,'passed':True,**extra});print('PASS',name,extra,flush=True)
     def rejected(r):

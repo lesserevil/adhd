@@ -103,7 +103,8 @@ The suite launches an isolated hub, uses synthetic fixture accounts and generate
 private certificate keys beneath its private work directory. It never replaces
 operator certificates or provider configuration.
 
-The [focused Admin evidence](../validation/admin-browser-05.json) records 18
+The [previous Admin evidence](../validation/admin-browser-04.json) remains a
+historical candidate record. The [focused Admin evidence](../validation/admin-browser-05.json) records 18
 desktop/mobile groups for another exact development artifact: rendered selector
 delivery, edits beyond 100 subscriptions, cancel/pause/resume, frozen filter
 backlog, model disable/enable with raw progress, two-tab conflicts, delayed

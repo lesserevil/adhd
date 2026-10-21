@@ -1,0 +1,3104 @@
+{
+  "schema": "adhd/project-recovery-contract-vectors@1",
+  "cases": [
+    {
+      "id": "restore-default-mode",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid"
+      },
+      "valid": true
+    },
+    {
+      "id": "restore-explicit-mode",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid",
+        "mode": "restore"
+      },
+      "valid": true
+    },
+    {
+      "id": "initialize",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "mode": "initialize",
+        "project_id": "red",
+        "expected_revision": 1,
+        "message_id": "i1",
+        "confirm": true
+      },
+      "valid": true
+    },
+    {
+      "id": "apply",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_apply",
+        "project_id": "red",
+        "plan_id": "plan1",
+        "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4",
+        "expected_revision": 1,
+        "confirm": true,
+        "message_id": "apply1"
+      },
+      "valid": true
+    },
+    {
+      "id": "status",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_status",
+        "project_id": "red"
+      },
+      "valid": true
+    },
+    {
+      "id": "empty-config",
+      "definition": "RecoveryConfig",
+      "value": {},
+      "valid": true
+    },
+    {
+      "id": "patch-delete",
+      "definition": "RecoveryMergePatch",
+      "value": {
+        "backup_root": null
+      },
+      "valid": true
+    },
+    {
+      "id": "restore-plan",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "empty",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": {
+          "sequence": 2,
+          "storage_generation": 3,
+          "records": 5,
+          "bytes": 2000,
+          "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+      },
+      "valid": true
+    },
+    {
+      "id": "initialize-plan",
+      "definition": "Plan",
+      "value": {
+        "mode": "initialize",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": null,
+        "manifest_sha256": null,
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "uninitialized",
+          "route_generation": 0,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": null
+          }
+        },
+        "backup": null,
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "2a91b8e26ab9d5632b4809460d70c47fe342477db49787609bef2d37f6bf294c"
+      },
+      "valid": true
+    },
+    {
+      "id": "ready-operation",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "ready",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "manifest",
+      "definition": "BackupManifest",
+      "value": {
+        "schema": "adhd/project-backup@1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "old-red"
+        ],
+        "captured_at": "2026-10-21T00:00:00Z",
+        "source": {
+          "route_generation": 0,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "storage_generation": 3,
+          "sequence": 2
+        },
+        "snapshot": {
+          "name": "project.snapshot",
+          "bytes": 1000,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "configuration": {
+          "name": "server-config.json",
+          "bytes": 500,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "principal_proof": {
+          "kind": "configuration-v1"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "plan-queued",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "queued",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": null,
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "plan-verifying",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "verifying",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": null,
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "plan-ready",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "ready",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "plan-failed",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "failed",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": null,
+        "result": null,
+        "failure": {
+          "code": "RESTORE_CONFLICT",
+          "reason": "io",
+          "retryable": true,
+          "conflicts": [],
+          "truncated": false
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "plan-expired",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "expired",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-queued",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "queued",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-staging",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "staging",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-decided",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "decided",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-installing",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "installing",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-activating",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "activating",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-complete",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "complete",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": {
+          "project_id": "red",
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1",
+          "initialized": false,
+          "transport_discontinuity": true,
+          "restored": {
+            "publications": 0,
+            "subscriptions": 0,
+            "deliveries": 0,
+            "acknowledged_deliveries": 0,
+            "pending_jobs": 0,
+            "retained_records": 0
+          },
+          "sequence": 2,
+          "storage_generation": 3
+        },
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-blocked",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "blocked",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": {
+          "code": "RECOVERY_REQUIRED",
+          "reason": "io",
+          "retryable": true,
+          "conflicts": [],
+          "truncated": false
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "apply-failed",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "failed",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": {
+          "code": "RESTORE_CONFLICT",
+          "reason": "io",
+          "retryable": true,
+          "conflicts": [],
+          "truncated": false
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "unknown",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid",
+        "foreign": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "revision-bool",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": true,
+        "message_id": "mid"
+      },
+      "valid": false
+    },
+    {
+      "id": "revision-decimal",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1.0,
+        "message_id": "mid"
+      },
+      "valid": false
+    },
+    {
+      "id": "revision-zero",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 0,
+        "message_id": "mid"
+      },
+      "valid": false
+    },
+    {
+      "id": "hash-uppercase",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "expected_revision": 1,
+        "message_id": "mid"
+      },
+      "valid": false
+    },
+    {
+      "id": "backup-traversal",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "../backup",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid"
+      },
+      "valid": false
+    },
+    {
+      "id": "backup-dot",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "..",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid"
+      },
+      "valid": false
+    },
+    {
+      "id": "null-consent",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid",
+        "allow_missing": null
+      },
+      "valid": false
+    },
+    {
+      "id": "bad-mode",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid",
+        "mode": "erase"
+      },
+      "valid": false
+    },
+    {
+      "id": "extra-secret",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid",
+        "password": "private"
+      },
+      "valid": false
+    },
+    {
+      "id": "apply-no-confirm",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_apply",
+        "project_id": "red",
+        "plan_id": "plan1",
+        "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4",
+        "expected_revision": 1,
+        "confirm": false,
+        "message_id": "apply1"
+      },
+      "valid": false
+    },
+    {
+      "id": "apply-unknown",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_apply",
+        "project_id": "red",
+        "plan_id": "plan1",
+        "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4",
+        "expected_revision": 1,
+        "confirm": true,
+        "message_id": "apply1",
+        "source_path": "/private"
+      },
+      "valid": false
+    },
+    {
+      "id": "apply-long-mid",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_apply",
+        "project_id": "red",
+        "plan_id": "plan1",
+        "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4",
+        "expected_revision": 1,
+        "confirm": true,
+        "message_id": "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9"
+      },
+      "valid": false
+    },
+    {
+      "id": "init-with-backup",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_plan",
+        "mode": "initialize",
+        "project_id": "red",
+        "expected_revision": 1,
+        "message_id": "i1",
+        "confirm": true,
+        "backup_id": "backup"
+      },
+      "valid": false
+    },
+    {
+      "id": "unknown-op",
+      "definition": "AdminCommand",
+      "value": {
+        "op": "project_restore_force",
+        "project_id": "red",
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected_revision": 1,
+        "message_id": "mid"
+      },
+      "valid": false
+    },
+    {
+      "id": "config-bool",
+      "definition": "RecoveryConfig",
+      "value": {
+        "max_records": true
+      },
+      "valid": false
+    },
+    {
+      "id": "config-over",
+      "definition": "RecoveryConfig",
+      "value": {
+        "max_backup_bytes": 1073741825
+      },
+      "valid": false
+    },
+    {
+      "id": "config-null",
+      "definition": "RecoveryConfig",
+      "value": {
+        "backup_root": null
+      },
+      "valid": false
+    },
+    {
+      "id": "wrong-snapshot-name",
+      "definition": "BackupManifest",
+      "value": {
+        "schema": "adhd/project-backup@1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "old-red"
+        ],
+        "captured_at": "2026-10-21T00:00:00Z",
+        "source": {
+          "route_generation": 0,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "storage_generation": 3,
+          "sequence": 2
+        },
+        "snapshot": {
+          "name": "../store",
+          "bytes": 1000,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "configuration": {
+          "name": "server-config.json",
+          "bytes": 500,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "principal_proof": {
+          "kind": "configuration-v1"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "manifest-extra",
+      "definition": "BackupManifest",
+      "value": {
+        "schema": "adhd/project-backup@1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "old-red"
+        ],
+        "captured_at": "2026-10-21T00:00:00Z",
+        "source": {
+          "route_generation": 0,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "storage_generation": 3,
+          "sequence": 2
+        },
+        "snapshot": {
+          "name": "project.snapshot",
+          "bytes": 1000,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "configuration": {
+          "name": "server-config.json",
+          "bytes": 500,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "principal_proof": {
+          "kind": "configuration-v1"
+        },
+        "path": "/private"
+      },
+      "valid": false
+    },
+    {
+      "id": "manifest-missing-hash",
+      "definition": "BackupManifest",
+      "value": {
+        "schema": "adhd/project-backup@1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "old-red"
+        ],
+        "captured_at": "2026-10-21T00:00:00Z",
+        "source": {
+          "route_generation": 0,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "storage_generation": 3,
+          "sequence": 2
+        },
+        "snapshot": {
+          "name": "project.snapshot",
+          "bytes": 1000,
+          "sha256": "bad"
+        },
+        "configuration": {
+          "name": "server-config.json",
+          "bytes": 500,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "principal_proof": {
+          "kind": "configuration-v1"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "manifest-unknown-format",
+      "definition": "BackupManifest",
+      "value": {
+        "schema": "adhd/project-backup@2",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "old-red"
+        ],
+        "captured_at": "2026-10-21T00:00:00Z",
+        "source": {
+          "route_generation": 0,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "storage_generation": 3,
+          "sequence": 2
+        },
+        "snapshot": {
+          "name": "project.snapshot",
+          "bytes": 1000,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "configuration": {
+          "name": "server-config.json",
+          "bytes": 500,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "principal_proof": {
+          "kind": "configuration-v1"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "ready-without-plan",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "ready",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": null,
+        "result": null,
+        "failure": null
+      },
+      "valid": false
+    },
+    {
+      "id": "ready-with-result",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "ready",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": {},
+        "failure": null
+      },
+      "valid": false
+    },
+    {
+      "id": "phase-wrong-kind",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "complete",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": false
+    },
+    {
+      "id": "foreign-owner",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "blue",
+        "state": "ready",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": false
+    },
+    {
+      "id": "progress-over",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "ready",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 67108865,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": false
+    },
+    {
+      "id": "init-nonnull-backup",
+      "definition": "Plan",
+      "value": {
+        "mode": "initialize",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": null,
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "uninitialized",
+          "route_generation": 0,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": null
+          }
+        },
+        "backup": null,
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "912176f954bc815a4857da42469295669b5d5e0ec1a02ced7c469b45531756b3"
+      },
+      "valid": false
+    },
+    {
+      "id": "init-populated-generation",
+      "definition": "Plan",
+      "value": {
+        "mode": "initialize",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": null,
+        "manifest_sha256": null,
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "uninitialized",
+          "route_generation": 0,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 1,
+            "storage_generation": 0,
+            "state_sha256": null
+          }
+        },
+        "backup": null,
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "0ce57f954f3861a148eb7b85a009a0c93e83151623baf73b41f7cf952db87080"
+      },
+      "valid": false
+    },
+    {
+      "id": "restore-null-backup",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "empty",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": null,
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "d9b68c622836dbf04eca1e5391e24c796e34fbb6fa4ef5f3c67f7284707d32a6"
+      },
+      "valid": false
+    },
+    {
+      "id": "digest-tamper",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "empty",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": {
+          "sequence": 2,
+          "storage_generation": 3,
+          "records": 5,
+          "bytes": 2000,
+          "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "references": {
+          "users": 1,
+          "agents": 4,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+      },
+      "valid": false
+    },
+    {
+      "id": "same-route",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "empty",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": {
+          "sequence": 2,
+          "storage_generation": 3,
+          "records": 5,
+          "bytes": 2000,
+          "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 1,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "07c26af03862fa842ab2116bd13c73fd6cd74778db843a4767994948097df16a"
+      },
+      "valid": false
+    },
+    {
+      "id": "epoch-collision",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "empty",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": {
+          "sequence": 2,
+          "storage_generation": 3,
+          "records": 5,
+          "bytes": 2000,
+          "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "ee8c2be48f50fee5b7199d676072c541ce984c4cb92058369c434ce7ec56985f"
+      },
+      "valid": false
+    },
+    {
+      "id": "duplicate-JSON-key",
+      "definition": "AdminCommand",
+      "json": "{\"op\":\"project_restore_status\",\"project_id\":\"red\",\"project_id\":\"blue\"}",
+      "valid": false
+    },
+    {
+      "id": "status-after-hot-cap-reduction",
+      "definition": "Status",
+      "value": {
+        "project_id": "red",
+        "availability": "ready",
+        "route": {
+          "generation": 1,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "topic": "adhd.test.events.v1"
+        },
+        "capacity": {
+          "operations": 4,
+          "max_operations": 2,
+          "active": 0
+        },
+        "settings": {
+          "backup_root": "/private/backups",
+          "max_backup_bytes": 67108864,
+          "max_records": 100000,
+          "scan_batch_records": 256,
+          "timeout_ms": 300000,
+          "plan_ttl_ms": 900000,
+          "max_operations": 10000
+        },
+        "operation": {
+          "operation_id": "plan1",
+          "kind": "plan",
+          "project_id": "red",
+          "state": "ready",
+          "created_at": "2026-10-21T00:00:00Z",
+          "updated_at": "2026-10-21T00:00:00Z",
+          "progress": {
+            "bytes_read": 0,
+            "records_checked": 0,
+            "maximum_bytes": 67108864,
+            "maximum_records": 100000
+          },
+          "plan": {
+            "mode": "restore",
+            "plan_id": "plan1",
+            "server_id": "server1",
+            "project_id": "red",
+            "aliases": [
+              "red-old"
+            ],
+            "backup_id": "backup1",
+            "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "config_revision": 1,
+            "created_at": "2026-10-21T00:00:00Z",
+            "expires_at": "2026-10-21T00:15:00Z",
+            "target": {
+              "availability": "empty",
+              "route_generation": 1,
+              "project_epoch": null,
+              "watermark": {
+                "sequence": 0,
+                "storage_generation": 0,
+                "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            },
+            "backup": {
+              "sequence": 2,
+              "storage_generation": 3,
+              "records": 5,
+              "bytes": 2000,
+              "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "references": {
+              "users": 1,
+              "agents": 2,
+              "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "selected": {
+              "route_generation": 2,
+              "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+              "transport_enabled": true,
+              "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+            },
+            "policy": {
+              "topic_prefix": "adhd",
+              "retention_ms": 604800000,
+              "max_pending_events": 100000,
+              "max_pending_bytes": 1073741824,
+              "max_pending_filter_jobs": 256,
+              "max_pending_filter_jobs_per_subscription": 64
+            },
+            "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+          },
+          "result": null,
+          "failure": null
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "accepted-receipt",
+      "definition": "Accepted",
+      "value": {
+        "accepted": true,
+        "operation_id": "op1",
+        "kind": "apply",
+        "project_id": "red"
+      },
+      "valid": true
+    },
+    {
+      "id": "conflict-with-revision",
+      "definition": "Error",
+      "value": {
+        "error": {
+          "code": "CONFIG_CONFLICT",
+          "message": "Configuration changed",
+          "current_revision": 3
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "required-target-state",
+      "definition": "Error",
+      "value": {
+        "error": {
+          "code": "RECOVERY_REQUIRED",
+          "message": "Project recovery is required"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "initialize-complete",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "complete",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "initialize",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": null,
+          "manifest_sha256": null,
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "uninitialized",
+            "route_generation": 0,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": null
+            }
+          },
+          "backup": null,
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "2a91b8e26ab9d5632b4809460d70c47fe342477db49787609bef2d37f6bf294c"
+        },
+        "result": {
+          "project_id": "red",
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1",
+          "initialized": true,
+          "transport_discontinuity": false,
+          "restored": {
+            "publications": 0,
+            "subscriptions": 0,
+            "deliveries": 0,
+            "acknowledged_deliveries": 0,
+            "pending_jobs": 0,
+            "retained_records": 0
+          },
+          "sequence": 0,
+          "storage_generation": 3
+        },
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "initialize-result-populated",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "complete",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "initialize",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": null,
+          "manifest_sha256": null,
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "uninitialized",
+            "route_generation": 0,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": null
+            }
+          },
+          "backup": null,
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "2a91b8e26ab9d5632b4809460d70c47fe342477db49787609bef2d37f6bf294c"
+        },
+        "result": {
+          "project_id": "red",
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1",
+          "initialized": true,
+          "transport_discontinuity": false,
+          "restored": {
+            "publications": 0,
+            "subscriptions": 0,
+            "deliveries": 1,
+            "acknowledged_deliveries": 0,
+            "pending_jobs": 0,
+            "retained_records": 0
+          },
+          "sequence": 0,
+          "storage_generation": 3
+        },
+        "failure": null
+      },
+      "valid": false
+    },
+    {
+      "id": "initialize-false-history",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "complete",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "initialize",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": null,
+          "manifest_sha256": null,
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "uninitialized",
+            "route_generation": 0,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": null
+            }
+          },
+          "backup": null,
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "2a91b8e26ab9d5632b4809460d70c47fe342477db49787609bef2d37f6bf294c"
+        },
+        "result": {
+          "project_id": "red",
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1",
+          "initialized": true,
+          "transport_discontinuity": true,
+          "restored": {
+            "publications": 0,
+            "subscriptions": 0,
+            "deliveries": 0,
+            "acknowledged_deliveries": 0,
+            "pending_jobs": 0,
+            "retained_records": 0
+          },
+          "sequence": 0,
+          "storage_generation": 3
+        },
+        "failure": null
+      },
+      "valid": false
+    },
+    {
+      "id": "blocked-cannot-be-ordinary-abort",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "apply1",
+        "kind": "apply",
+        "project_id": "red",
+        "state": "blocked",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": {
+          "code": "RESTORE_CONFLICT",
+          "reason": "io",
+          "retryable": true,
+          "conflicts": [],
+          "truncated": false
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "status-foreign-operation",
+      "definition": "Status",
+      "value": {
+        "project_id": "red",
+        "availability": "ready",
+        "route": {
+          "generation": 1,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "topic": "adhd.test.events.v1"
+        },
+        "capacity": {
+          "operations": 4,
+          "max_operations": 2,
+          "active": 0
+        },
+        "settings": {
+          "backup_root": "/private/backups",
+          "max_backup_bytes": 67108864,
+          "max_records": 100000,
+          "scan_batch_records": 256,
+          "timeout_ms": 300000,
+          "plan_ttl_ms": 900000,
+          "max_operations": 10000
+        },
+        "operation": {
+          "operation_id": "plan1",
+          "kind": "plan",
+          "project_id": "blue",
+          "state": "ready",
+          "created_at": "2026-10-21T00:00:00Z",
+          "updated_at": "2026-10-21T00:00:00Z",
+          "progress": {
+            "bytes_read": 0,
+            "records_checked": 0,
+            "maximum_bytes": 67108864,
+            "maximum_records": 100000
+          },
+          "plan": {
+            "mode": "restore",
+            "plan_id": "plan1",
+            "server_id": "server1",
+            "project_id": "red",
+            "aliases": [
+              "red-old"
+            ],
+            "backup_id": "backup1",
+            "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "config_revision": 1,
+            "created_at": "2026-10-21T00:00:00Z",
+            "expires_at": "2026-10-21T00:15:00Z",
+            "target": {
+              "availability": "empty",
+              "route_generation": 1,
+              "project_epoch": null,
+              "watermark": {
+                "sequence": 0,
+                "storage_generation": 0,
+                "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            },
+            "backup": {
+              "sequence": 2,
+              "storage_generation": 3,
+              "records": 5,
+              "bytes": 2000,
+              "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "references": {
+              "users": 1,
+              "agents": 2,
+              "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "selected": {
+              "route_generation": 2,
+              "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+              "transport_enabled": true,
+              "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+            },
+            "policy": {
+              "topic_prefix": "adhd",
+              "retention_ms": 604800000,
+              "max_pending_events": 100000,
+              "max_pending_bytes": 1073741824,
+              "max_pending_filter_jobs": 256,
+              "max_pending_filter_jobs_per_subscription": 64
+            },
+            "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+          },
+          "result": null,
+          "failure": null
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "status-missing-defaults",
+      "definition": "Status",
+      "value": {
+        "project_id": "red",
+        "availability": "ready",
+        "route": {
+          "generation": 1,
+          "project_epoch": null,
+          "allocation_epoch": null,
+          "topic": "adhd.test.events.v1"
+        },
+        "capacity": {
+          "operations": 4,
+          "max_operations": 2,
+          "active": 0
+        },
+        "operation": {
+          "operation_id": "plan1",
+          "kind": "plan",
+          "project_id": "red",
+          "state": "ready",
+          "created_at": "2026-10-21T00:00:00Z",
+          "updated_at": "2026-10-21T00:00:00Z",
+          "progress": {
+            "bytes_read": 0,
+            "records_checked": 0,
+            "maximum_bytes": 67108864,
+            "maximum_records": 100000
+          },
+          "plan": {
+            "mode": "restore",
+            "plan_id": "plan1",
+            "server_id": "server1",
+            "project_id": "red",
+            "aliases": [
+              "red-old"
+            ],
+            "backup_id": "backup1",
+            "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "config_revision": 1,
+            "created_at": "2026-10-21T00:00:00Z",
+            "expires_at": "2026-10-21T00:15:00Z",
+            "target": {
+              "availability": "empty",
+              "route_generation": 1,
+              "project_epoch": null,
+              "watermark": {
+                "sequence": 0,
+                "storage_generation": 0,
+                "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            },
+            "backup": {
+              "sequence": 2,
+              "storage_generation": 3,
+              "records": 5,
+              "bytes": 2000,
+              "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "references": {
+              "users": 1,
+              "agents": 2,
+              "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "selected": {
+              "route_generation": 2,
+              "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+              "transport_enabled": true,
+              "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+            },
+            "policy": {
+              "topic_prefix": "adhd",
+              "retention_ms": 604800000,
+              "max_pending_events": 100000,
+              "max_pending_bytes": 1073741824,
+              "max_pending_filter_jobs": 256,
+              "max_pending_filter_jobs_per_subscription": 64
+            },
+            "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+          },
+          "result": null,
+          "failure": null
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "fixed-error-message",
+      "definition": "Error",
+      "value": {
+        "error": {
+          "code": "RECOVERY_REQUIRED",
+          "message": "/private/raw-error"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "error-revision-only-conflict",
+      "definition": "Error",
+      "value": {
+        "error": {
+          "code": "RESTORE_BUSY",
+          "message": "Project recovery is busy",
+          "current_revision": 1
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "disabled-transport-topic-must-null",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "empty",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": {
+          "sequence": 2,
+          "storage_generation": 3,
+          "records": 5,
+          "bytes": 2000,
+          "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": false,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "2e06b21e8cf5304762ec4ce4980d0d0c9c379b05191f262d3b32a977a8c41f50"
+      },
+      "valid": false
+    },
+    {
+      "id": "missing-target-digest-must-null",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red-old"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "missing",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": {
+          "sequence": 2,
+          "storage_generation": 3,
+          "records": 5,
+          "bytes": 2000,
+          "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "1e919fd48429e2aee7b6b6763c556fe38bc783ed405c29d62767f571204d6c60"
+      },
+      "valid": false
+    },
+    {
+      "id": "alias-must-not-canonical",
+      "definition": "Plan",
+      "value": {
+        "mode": "restore",
+        "plan_id": "plan1",
+        "server_id": "server1",
+        "project_id": "red",
+        "aliases": [
+          "red"
+        ],
+        "backup_id": "backup1",
+        "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "config_revision": 1,
+        "created_at": "2026-10-21T00:00:00Z",
+        "expires_at": "2026-10-21T00:15:00Z",
+        "target": {
+          "availability": "empty",
+          "route_generation": 1,
+          "project_epoch": null,
+          "watermark": {
+            "sequence": 0,
+            "storage_generation": 0,
+            "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "backup": {
+          "sequence": 2,
+          "storage_generation": 3,
+          "records": 5,
+          "bytes": 2000,
+          "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "references": {
+          "users": 1,
+          "agents": 2,
+          "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected": {
+          "route_generation": 2,
+          "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+          "transport_enabled": true,
+          "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+        },
+        "policy": {
+          "topic_prefix": "adhd",
+          "retention_ms": 604800000,
+          "max_pending_events": 100000,
+          "max_pending_bytes": 1073741824,
+          "max_pending_filter_jobs": 256,
+          "max_pending_filter_jobs_per_subscription": 64
+        },
+        "plan_sha256": "4e243b2fefc786db8add58e2af9777b7103de8c83bade2bfaff96d293b6598ae"
+      },
+      "valid": false
+    },
+    {
+      "id": "plan-stale-retains-reviewed-content",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "stale",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": {
+          "mode": "restore",
+          "plan_id": "plan1",
+          "server_id": "server1",
+          "project_id": "red",
+          "aliases": [
+            "red-old"
+          ],
+          "backup_id": "backup1",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "config_revision": 1,
+          "created_at": "2026-10-21T00:00:00Z",
+          "expires_at": "2026-10-21T00:15:00Z",
+          "target": {
+            "availability": "empty",
+            "route_generation": 1,
+            "project_epoch": null,
+            "watermark": {
+              "sequence": 0,
+              "storage_generation": 0,
+              "state_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "backup": {
+            "sequence": 2,
+            "storage_generation": 3,
+            "records": 5,
+            "bytes": 2000,
+            "snapshot_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "references": {
+            "users": 1,
+            "agents": 2,
+            "proof_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selected": {
+            "route_generation": 2,
+            "project_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "allocation_epoch": "cccccccccccccccccccccccccccccccc",
+            "transport_enabled": true,
+            "topic": "adhd.test.rbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.events.v1"
+          },
+          "policy": {
+            "topic_prefix": "adhd",
+            "retention_ms": 604800000,
+            "max_pending_events": 100000,
+            "max_pending_bytes": 1073741824,
+            "max_pending_filter_jobs": 256,
+            "max_pending_filter_jobs_per_subscription": 64
+          },
+          "plan_sha256": "936094b851fed73b2c8524fce8638d6016b2834d625f75c9c553e02c392999a4"
+        },
+        "result": null,
+        "failure": null
+      },
+      "valid": true
+    },
+    {
+      "id": "stale-plan-cannot-drop-review",
+      "definition": "Operation",
+      "value": {
+        "operation_id": "plan1",
+        "kind": "plan",
+        "project_id": "red",
+        "state": "stale",
+        "created_at": "2026-10-21T00:00:00Z",
+        "updated_at": "2026-10-21T00:00:00Z",
+        "progress": {
+          "bytes_read": 0,
+          "records_checked": 0,
+          "maximum_bytes": 67108864,
+          "maximum_records": 100000
+        },
+        "plan": null,
+        "result": null,
+        "failure": null
+      },
+      "valid": false
+    }
+  ]
+}

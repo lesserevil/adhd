@@ -50,13 +50,13 @@ max_operations,active (0/1). With operation_id, return that target's operation o
 retained operation, or null. Neither form mutates the job or consumes deliveries.
 
 The Operation union has exact fields operation_id,kind,project_id,state,created_at,
-updated_at,progress,plan,result,failure. Plan states: queued,verifying,ready,failed,
-expired. Apply states: queued,staging,decided,installing,activating,complete,blocked,
-failed. Progress reports unique bundle bytes verified as bytes_read, unique retained
+updated_at,progress,plan,result,failure. Plan states: queued,verifying,ready,stale,
+failed,expired. Apply states: queued,staging,decided,installing,activating,complete,
+blocked,failed. Progress reports unique bundle bytes verified as bytes_read, unique retained
 records_checked and the frozen dataset maximums (not total repeated physical IO);
-counts may not exceed maximums. Ready/expired plans expose the same immutable Plan;
-failed plan may expose null. Apply always exposes the reviewed Plan. Plan result
-is always null; apply result is nonnull only in complete. failure is nonnull only
+Counts may not exceed maximums. A queued/verifying/failed plan exposes null
+(no reviewed Plan exists); ready/stale/expired exposes the immutable reviewed Plan.
+Apply always exposes its reviewed Plan. Plan result is always null; apply result is nonnull only in complete. failure is nonnull only
 in failed/blocked. blocked means a durable decision exists and completion needs
 recovery; failed means no decision exists and no target switch occurred. A blocked
 operation may move through installing/activating to complete; never to failed.
@@ -117,8 +117,12 @@ sorted by reason; truncated is true iff further conflict categories were
 omitted. These are never private principal identifiers, stored text, filenames, credentials or raw
 remote errors. An invalid hash/schema, missing/reassigned owner or populated target
 is not transient. IO/transport unavailability can be transient before decision;
-after decision only blocked/RECOVERY_REQUIRED is allowed. Expired ready plans
-transition expired, retain their reviewed immutable content and cannot decide.
+after decision only blocked/RECOVERY_REQUIRED is allowed. A ready plan is effectively expired when its deadline passes; otherwise it is
+stale when current config/route/identity/target proof differs. Expiry has precedence
+when both conditions hold. Status may derive this eligibility state without
+mutating storage; background reconciliation persists it, and Apply independently
+rechecks it. Stale/expired never become ready again; retain the immutable reviewed
+Plan and require a new plan. A successful duplicate receipt is still replayable.
 
 ## Offline bundle version1
 
@@ -146,7 +150,9 @@ matches; unowned legacy continuity follows spec.md's explicit stricter boundary.
 
 The selected backup must preserve every old alias; current aliases may have grown
 since backup but cannot have moved to another project. Retain the union on restore,
-without modifying current global registry bindings or erasing current aliases.
+without reassigning any existing current binding or erasing current aliases.
+An unbound verified old alias may be restored only to this same target; current
+global configuration remains unchanged.
 Plan aliases report that verified union and its digest participates in the plan.
 
 ## Console and wire example
@@ -226,3 +232,12 @@ change its Kafka topic spelling or replay history. Retain the pre-migration comp
 backup and durable decision; a kill must complete the compatible selected pair or
 halt. Empty initialization instead records explicit fresh admission before opening
 its new writer. Do not fabricate either admission from absent files.
+
+New preacceptance recovery error messages are fixed: RESTORE_STALE_PLAN =
+"Recovery plan is stale"; RESTORE_CONFLICT = "Project recovery conflict";
+RESTORE_BUSY = "Project recovery is busy"; RECOVERY_REQUIRED = "Project recovery
+is required". Existing codes retain their accepted messages.
+
+Independent contract vectors are `tests/fixtures/project-recovery.json`, checked
+by `tests/project_recovery_contract.py`; these qualify future schema shape and
+semantic bindings only, not a running implementation or authorization behavior.

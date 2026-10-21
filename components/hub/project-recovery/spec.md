@@ -14,7 +14,7 @@ profile2 artifacts already implement them. Preserve every unaffected operation.
 ## Scope and invariants
 
 An authenticated current Admin may restore one registered project from a verified
-offline backup under its original server ID, project ID and aliases, into a
+offline backup under its original server ID/project ID, preserving verified aliases, into a
 missing or logically empty target. Keep current global settings, users, roles,
 credentials, OIDC, memberships, peer grants and every unrelated project unchanged.
 Never import backup configuration, create missing principals, grant admission,
@@ -42,7 +42,7 @@ creation; initialization and recovery cannot race.
 Before opening writers, establish one owner-only server storage-route registry
 beside CONFIG_FILE, derived from its absolute location. It is server metadata,
 not operator configuration and not a project store. Version1 entries bind the
-full server/project IDs, immutable alias set, initialized flag, current route
+full server/project IDs, append-only verified alias bindings, initialized flag, current route
 generation, project epoch, allocation epoch, storage anchor and selected complete
 generation digest. Paths never derive from display names. Bind the registry to
 the configured server and configuration location; reject unknown schemas,
@@ -120,13 +120,21 @@ subscription/query/job owners, source/command receipt actors, evidence subjects
 and all nested workflow owners, not only currently queued rows. Current configured
 principals must still exist. Compare backed-up and current stable user ID and
 provider binding (local username or OIDC provider_id/issuer/subject), and each
-agent's original owner ID. A changed role, display name, email, password, token or
-grant is not imported. A missing or reassigned owner, unprovable identity or alias
+agent's original owner ID. Preserve the union of current target aliases and verified backup aliases. Existing
+current alias-to-project bindings are unchanged: an alias bound to another target
+is a conflict, never reassigned. An unbound verified historical backup alias may
+be restored only to this target, without changing current global configuration;
+never discard current aliases that appeared after the backup. A changed role,
+display name, email, password, token or grant is not imported. A missing or reassigned owner, unprovable identity or alias
 collision is a conflict. Disabled existing owners remain disabled; their data may
 be restored without authorizing work or access. For unowned legacy agents, equal
 ID/null-owner alone cannot prove continuity: require an equal original/current
 credential SHA256, unless a durable original principal-incarnation record proves
-continuity across rotation. Compare credentials privately; never return hashes.
+continuity across rotation. Bundle version1 supplies configuration proof only;
+without actual retained incarnation proof, changed unowned credentials are an
+explicit unsupported/unprovable-history conflict, not a guessed identity. Future
+proof formats require their own reviewed version. Compare credentials privately;
+never return hashes.
 Federated same-email correlation is not local ownership proof.
 
 ## Hot configuration and bounded work
@@ -253,7 +261,13 @@ Cancel target resource tickets and close old consumer through its recorded endpo
 An already sent network message cannot be unsent; mark old in-flight logical
 query work cancelled/superseded in audit and do not silently duplicate its remote
 side effects. Resume backed-up pending work only under current admission/lifecycle
-and original deadlines; expired work becomes terminal. Archived restored projects
+and original deadlines; expired work becomes terminal. Retain its accepted IDs,
+frozen filter/model/threshold/revision and ownership/dependency evidence. Model
+disable/archive pauses semantic work; removed admission cancels or denies work
+under the owning feature policy, never transfers it. A backed-up remote job uses
+its original pinned peer/query ID and status/idempotent retry contract, never a
+new identity that silently duplicates its remote side effect. Expired caches stay
+expired and canonical claims require current routing/authorization reconciliation. Archived restored projects
 stay archived and semantic work paused. Other projects' tickets/epochs/consumers
 remain unchanged.
 

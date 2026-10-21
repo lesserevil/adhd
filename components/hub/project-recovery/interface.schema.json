@@ -48,12 +48,14 @@
     "Uint": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 9007199254740991
+      "maximum": 9007199254740991,
+      "x-integerToken": true
     },
     "Positive": {
       "type": "integer",
       "minimum": 1,
-      "maximum": 9007199254740991
+      "maximum": 9007199254740991,
+      "x-integerToken": true
     },
     "Time": {
       "type": "string",
@@ -89,37 +91,43 @@
           "type": "integer",
           "minimum": 65536,
           "maximum": 1073741824,
-          "default": 67108864
+          "default": 67108864,
+          "x-integerToken": true
         },
         "max_records": {
           "type": "integer",
           "minimum": 1,
           "maximum": 1000000,
-          "default": 100000
+          "default": 100000,
+          "x-integerToken": true
         },
         "scan_batch_records": {
           "type": "integer",
           "minimum": 1,
           "maximum": 4096,
-          "default": 256
+          "default": 256,
+          "x-integerToken": true
         },
         "timeout_ms": {
           "type": "integer",
           "minimum": 1000,
           "maximum": 1800000,
-          "default": 300000
+          "default": 300000,
+          "x-integerToken": true
         },
         "plan_ttl_ms": {
           "type": "integer",
           "minimum": 1000,
           "maximum": 86400000,
-          "default": 900000
+          "default": 900000,
+          "x-integerToken": true
         },
         "max_operations": {
           "type": "integer",
           "minimum": 1,
           "maximum": 1000000,
-          "default": 10000
+          "default": 10000,
+          "x-integerToken": true
         }
       },
       "required": [],
@@ -156,7 +164,8 @@
                   "type": "integer",
                   "minimum": 65536,
                   "maximum": 1073741824,
-                  "default": 67108864
+                  "default": 67108864,
+                  "x-integerToken": true
                 }
               ]
             },
@@ -169,7 +178,8 @@
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 1000000,
-                  "default": 100000
+                  "default": 100000,
+                  "x-integerToken": true
                 }
               ]
             },
@@ -182,7 +192,8 @@
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 4096,
-                  "default": 256
+                  "default": 256,
+                  "x-integerToken": true
                 }
               ]
             },
@@ -195,7 +206,8 @@
                   "type": "integer",
                   "minimum": 1000,
                   "maximum": 1800000,
-                  "default": 300000
+                  "default": 300000,
+                  "x-integerToken": true
                 }
               ]
             },
@@ -208,7 +220,8 @@
                   "type": "integer",
                   "minimum": 1000,
                   "maximum": 86400000,
-                  "default": 900000
+                  "default": 900000,
+                  "x-integerToken": true
                 }
               ]
             },
@@ -221,7 +234,8 @@
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 1000000,
-                  "default": 10000
+                  "default": 10000,
+                  "x-integerToken": true
                 }
               ]
             }
@@ -345,7 +359,8 @@
         "bytes": {
           "type": "integer",
           "minimum": 42,
-          "maximum": 1073741824
+          "maximum": 1073741824,
+          "x-integerToken": true
         },
         "sha256": {
           "$ref": "#/$defs/Sha256"
@@ -367,7 +382,8 @@
         "bytes": {
           "type": "integer",
           "minimum": 2,
-          "maximum": 1048576
+          "maximum": 1048576,
+          "x-integerToken": true
         },
         "sha256": {
           "$ref": "#/$defs/Sha256"
@@ -570,6 +586,32 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "availability": {
+                "const": "uninitialized"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "route_generation": {
+                "const": 0
+              },
+              "watermark": {
+                "properties": {
+                  "sequence": {
+                    "const": 0
+                  },
+                  "storage_generation": {
+                    "const": 0
+                  }
+                }
+              }
+            }
+          }
         }
       ]
     },
@@ -585,12 +627,14 @@
         "records": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         },
         "bytes": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1073741824
+          "maximum": 1073741824,
+          "x-integerToken": true
         },
         "snapshot_sha256": {
           "$ref": "#/$defs/Sha256"
@@ -615,12 +659,14 @@
         "users": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         },
         "agents": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         },
         "proof_sha256": {
           "$ref": "#/$defs/Sha256"
@@ -699,27 +745,32 @@
         "retention_ms": {
           "type": "integer",
           "minimum": 3600000,
-          "maximum": 31536000000
+          "maximum": 31536000000,
+          "x-integerToken": true
         },
         "max_pending_events": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         },
         "max_pending_bytes": {
           "type": "integer",
           "minimum": 65536,
-          "maximum": 1099511627776
+          "maximum": 1099511627776,
+          "x-integerToken": true
         },
         "max_pending_filter_jobs": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 100000
+          "maximum": 100000,
+          "x-integerToken": true
         },
         "max_pending_filter_jobs_per_subscription": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 100000
+          "maximum": 100000,
+          "x-integerToken": true
         },
         "topic_prefix": {
           "type": "string",
@@ -975,22 +1026,26 @@
         "bytes_read": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1073741824
+          "maximum": 1073741824,
+          "x-integerToken": true
         },
         "records_checked": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         },
         "maximum_bytes": {
           "type": "integer",
           "minimum": 65536,
-          "maximum": 1073741824
+          "maximum": 1073741824,
+          "x-integerToken": true
         },
         "maximum_records": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         }
       },
       "required": [
@@ -1100,6 +1155,31 @@
             "properties": {
               "transport_discontinuity": {
                 "const": false
+              },
+              "sequence": {
+                "const": 0
+              },
+              "restored": {
+                "properties": {
+                  "publications": {
+                    "const": 0
+                  },
+                  "subscriptions": {
+                    "const": 0
+                  },
+                  "deliveries": {
+                    "const": 0
+                  },
+                  "acknowledged_deliveries": {
+                    "const": 0
+                  },
+                  "pending_jobs": {
+                    "const": 0
+                  },
+                  "retained_records": {
+                    "const": 0
+                  }
+                }
               }
             }
           },
@@ -1140,14 +1220,7 @@
               "$ref": "#/$defs/Progress"
             },
             "plan": {
-              "oneOf": [
-                {
-                  "type": "null"
-                },
-                {
-                  "$ref": "#/$defs/Plan"
-                }
-              ]
+              "type": "null"
             },
             "result": {
               "type": "null"
@@ -1195,14 +1268,7 @@
               "$ref": "#/$defs/Progress"
             },
             "plan": {
-              "oneOf": [
-                {
-                  "type": "null"
-                },
-                {
-                  "$ref": "#/$defs/Plan"
-                }
-              ]
+              "type": "null"
             },
             "result": {
               "type": "null"
@@ -1298,14 +1364,7 @@
               "$ref": "#/$defs/Progress"
             },
             "plan": {
-              "oneOf": [
-                {
-                  "type": "null"
-                },
-                {
-                  "$ref": "#/$defs/Plan"
-                }
-              ]
+              "type": "null"
             },
             "result": {
               "type": "null"
@@ -1695,7 +1754,18 @@
               "type": "null"
             },
             "failure": {
-              "$ref": "#/$defs/Failure"
+              "allOf": [
+                {
+                  "$ref": "#/$defs/Failure"
+                },
+                {
+                  "properties": {
+                    "code": {
+                      "const": "RECOVERY_REQUIRED"
+                    }
+                  }
+                }
+              ]
             }
           },
           "required": [
@@ -1744,6 +1814,54 @@
             },
             "failure": {
               "$ref": "#/$defs/Failure"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "plan"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "stale"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
             }
           },
           "required": [
@@ -1813,17 +1931,20 @@
         "operations": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         },
         "max_operations": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 1000000
+          "maximum": 1000000,
+          "x-integerToken": true
         },
         "active": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1
+          "maximum": 1,
+          "x-integerToken": true
         }
       },
       "required": [
@@ -1877,37 +1998,43 @@
               "type": "integer",
               "minimum": 65536,
               "maximum": 1073741824,
-              "default": 67108864
+              "default": 67108864,
+              "x-integerToken": true
             },
             "max_records": {
               "type": "integer",
               "minimum": 1,
               "maximum": 1000000,
-              "default": 100000
+              "default": 100000,
+              "x-integerToken": true
             },
             "scan_batch_records": {
               "type": "integer",
               "minimum": 1,
               "maximum": 4096,
-              "default": 256
+              "default": 256,
+              "x-integerToken": true
             },
             "timeout_ms": {
               "type": "integer",
               "minimum": 1000,
               "maximum": 1800000,
-              "default": 300000
+              "default": 300000,
+              "x-integerToken": true
             },
             "plan_ttl_ms": {
               "type": "integer",
               "minimum": 1000,
               "maximum": 86400000,
-              "default": 900000
+              "default": 900000,
+              "x-integerToken": true
             },
             "max_operations": {
               "type": "integer",
               "minimum": 1,
               "maximum": 1000000,
-              "default": 10000
+              "default": 10000,
+              "x-integerToken": true
             }
           },
           "required": [
@@ -1967,7 +2094,73 @@
                 "code",
                 "message"
               ],
-              "additionalProperties": false
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RESTORE_STALE_PLAN"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Recovery plan is stale"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RESTORE_CONFLICT"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Project recovery conflict"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RESTORE_BUSY"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Project recovery is busy"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RECOVERY_REQUIRED"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Project recovery is required"
+                      }
+                    }
+                  }
+                }
+              ]
             }
           },
           "required": [

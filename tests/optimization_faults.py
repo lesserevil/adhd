@@ -77,9 +77,9 @@ def main():
         revise('Explicit label-fence experiment');label_parent=propose(training)['id'];wait(lambda:get(label_parent)['children']);revise('Changed independent assertion while work was pending')
         invalidated=get(label_parent);assert invalidated['status']=='invalidated' and invalidated['error']['code']=='LABEL_CHANGED'
         record('changed-confirmed-label-invalidates-the-captured-experiment')
-        owner_parent=propose(training)['id'];token=h.config['agents']['alice'];admin({'op':'config_update','patch':{'agents':{'alice':None}}},True)
+        owner_parent=propose(training)['id'];token=h.config['agents']['alice'];grants=h.config['agent_projects']['alice'];admin({'op':'config_update','patch':{'agents':{'alice':None},'agent_projects':{'alice':None}}},True)
         invalidated=get(owner_parent);assert invalidated['status']=='invalidated' and invalidated['error']['code']=='OWNER_REMOVED'
-        admin({'op':'config_update','patch':{'agents':{'alice':token}}},True)
+        admin({'op':'config_update','patch':{'agents':{'alice':token},'agent_projects':{'alice':grants}}},True)
         record('removed-current-agent-owner-cancels-owned-work-with-an-explicit-cause')
         revise('Explicit model-failure and paid-retry experiment');model.mode='error';failed=propose(training)['id']
         checkpoint=wait(lambda:q if (q:=get(failed))['status']!='pending' else None)
@@ -96,7 +96,7 @@ def main():
         password='optimizer-'+secrets.token_urlsafe(24)
         human=admin({'op':'save_user','user':{'username':'optimizer-admin','name':'Optimizer Administrator','email':'optimizer@example.invalid','password':password,'role':'Admin'}},True)['user'];admin({'op':'config_update','patch':{'auth':{'mode':'local','allow_admin_token':True}}},True)
         session=Client(h);session.login('optimizer-admin',password);session.api({'op':'optimization_status'})
-        admin({'op':'save_user','user':{'id':human['id'],'name':human['name'],'email':human['email'],'role':'Viewer'}},True)
+        admin({'op':'save_user','user':{'id':human['id'],'name':human['name'],'email':human['email'],'role':'Viewer','project_ids':[cfg['project_id']]}},True)
         for command in [{'op':'optimization_status'},{'op':'index_proposals'},{'op':'index_proposal','proposal_id':id}]:session.api(command,expected=403)
         session.api({'op':'propose_index','training_attempt_ids':training},expected=403,mutation=True)
         assert admin({'op':'overview'})['counts']['publications']==original_count

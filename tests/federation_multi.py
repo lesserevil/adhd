@@ -18,6 +18,22 @@ import time
 from uuid import uuid4
 
 from federation_acceptance import Hub, Model, request
+import jsonschema
+from jsonschema.validators import extend
+
+
+def byte_bound(validator, limit, value, schema):
+    if isinstance(value, str) and len(value.encode()) > limit:
+        yield jsonschema.ValidationError("UTF-8 byte bound exceeded")
+
+
+def integer_token(validator, enabled, value, schema):
+    if enabled and (not isinstance(value, int) or isinstance(value, bool)):
+        yield jsonschema.ValidationError("Integer JSON token required")
+
+
+WireValidator = extend(jsonschema.Draft202012Validator, {"x-maxBytes": byte_bound,
+                                                        "x-integerToken": integer_token})
 
 
 PROJECTS = ('shared', 'other')
@@ -50,6 +66,8 @@ def main():
     model = Model()
     hubs = []
     cases = []
+    schema = None
+    validated = 0
     report = {'schema': 'adhd/multi-federation-acceptance@1', 'passed': False,
               'limitations': ['Controlled model fixture qualifies transport and authority, not semantic quality.',
                               'Eventing is explicitly legacy mode; this suite does not qualify Kafka or deployments.'],
@@ -61,8 +79,18 @@ def main():
         args.report.write_text(json.dumps(report, indent=2) + '\n')
         print('PASS', name, flush=True)
 
+    def validate(name, value):
+        nonlocal validated
+        if schema is not None:
+            WireValidator({'$defs': schema['$defs'], '$ref': '#/$defs/' + name}).validate(value)
+            validated += 1
+
     def call(hub, project, op, **fields):
-        return hub.call({'op': op, 'project_id': project, **fields})
+        body = {'op': op, 'project_id': project, **fields}
+        validate('agent_' + op, body)
+        result = hub.call(body)
+        validate('result_' + op, result)
+        return result
 
     def admin(hub, body):
         status, value = request(hub.base, '/admin/api', body, hub.config['admin_token'])
@@ -79,7 +107,10 @@ def main():
     def wire(origin, target, origin_project, target_project, op='catalog', **fields):
         body = {'protocol_version': 2, 'op': op, 'origin_server_id': origin.config['server_id'],
                 'origin_project_id': origin_project, 'destination_project_id': target_project, **fields}
-        return request(target.base, '/federation/v2', body, tokens[hubs.index(origin), hubs.index(target)])
+        validate('PeerV2_' + op, body)
+        status, result = request(target.base, '/federation/v2', body, tokens[hubs.index(origin), hubs.index(target)])
+        validate('PeerV2Error' if status >= 400 else 'PeerV2Result', result)
+        return status, result
 
     def finish(hub, project, op, qid):
         def observe():
@@ -123,7 +154,10 @@ def main():
         for hub in hubs:
             hub.start()
         a, b, c = hubs
+        schema = request(a.base, '/protocol/schema')[1]
+        jsonschema.Draft202012Validator.check_schema(schema)
         descriptor = request(a.base, '/protocol')[1]
+        validate('Descriptor', descriptor)
         assert descriptor['federation']['versions'] == [1, 2]
         record('three-real-servers-with-identical-project-ids-and-display-labels')
 
@@ -189,7 +223,9 @@ def main():
         revisions = set()
         for _ in range(4):
             payload = {**body, **({'cursor': cursor} if cursor else {})}
+            validate('PeerV2_server_catalog', payload)
             status, result = request(b.base, '/federation/v2', payload, tokens[0, 1])
+            validate('PeerV2Result', result)
             assert status == 200 and len(result['projects']) <= 1, (status, result)
             revisions.add(result['revision'])
             seen += [row['project_id'] for row in result['projects']]
@@ -209,6 +245,26 @@ def main():
         denied = a.call({'op': 'source_query', 'project_id': 'shared', 'project_ids': ['other'],
                          'sources': [SCOPE], 'question': 'Must not cross admission'}, agent='bob', error='PROJECT_NOT_FOUND')
         record('same-server-canonical-routing-requires-explicit-frozen-admitted-project-scope')
+
+        remote_scope = {'provider': 'jira', 'host': 'jira.example.invalid',
+                        'tenant': 'fixture', 'resource': 'remote-canonical'}
+        remote_entry = {**canonical, 'scope': remote_scope, 'aliases': ['remote-canonical']}
+        projects = json.loads(json.dumps(b.config['projects']))
+        projects[1]['settings']['federation']['catalog']['entries'] = [remote_entry]
+        patch(b, {'projects': projects})
+        def remote_known():
+            rows = call(a, 'shared', 'federation_directory')['peers']
+            return any(row['server_id'] == b.config['server_id'] and row['project_id'] == 'other'
+                       and any(entry['scope'] == remote_scope for entry in row['catalog']) for row in rows)
+        wait(remote_known, 'Remote canonical advertisement was not observed')
+        initial = call(a, 'shared', 'source_query', sources=[remote_scope],
+                       question='Which remote source maintains image decoders?')['query']
+        remote = finish(a, 'shared', 'get_source_query', initial['id'])
+        assert remote['status'] == 'completed', remote
+        row = remote['results'][0]
+        assert row['owner_server_id'] == b.config['server_id'] and row['owner_project_id'] == 'other'
+        assert row['response']['server_id'] == b.config['server_id'] and row['response']['project_id'] == 'other'
+        record('remote-canonical-source-query-uses-server-project-pair-and-v2-source-jobs')
 
         # A duplicate claim on this same server must conflict rather than pick one.
         projects = json.loads(json.dumps(a.config['projects']))
@@ -251,6 +307,8 @@ def main():
         report['input_sha256'] = {Path(item).name: hashlib.sha256(Path(item).read_bytes()).hexdigest()
                                   for item in command if Path(item).is_file()}
         report['model_requests'] = len(model.states)
+        report['validated_messages'] = validated
+        report['harness_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     except BaseException as error:
         report['failure_type'] = type(error).__name__
         raise

@@ -234,3 +234,85 @@ and fair progress in another project. Test legacy semantic migration and partial
 cutover restart, unchanged A2A SDK interoperability, v2 federation using separate
 per-server brokers, real-model optional filters/search, Compose and Kubernetes
 model-free profiles. Bind evidence to artifact/image/broker/proxy/deployment IDs.
+
+## Audited Admin recovery and bounded replay
+
+The project-scoped Admin commands below require Admin authority, explicit
+`project_id` under the ordinary operation-scope rules, and closed request/result
+schemas. Recovery never accepts broker content as an original. `eventing_status`
+adds `replay_watermark`, the maximum retained publication ingestion sequence (0
+when empty), and `control_revision`, initially 0. The revision fences consumer
+instances and in-flight fetch/produce results independently of hot configuration.
+
+`eventing_audit` takes optional `offset` (default 0) and `limit` (1..100, default
+50), returning `{items,truncated}`. Items are durable ordered control records:
+`{id,kind,actor_id,project_id,message_id,reason,at,details}`. `kind` is `repair` or
+`replay`. Details are the exact accepted control arguments excluding op, project,
+confirm, message_id and reason. `eventing_replay` requires `replay_id` and returns
+`{replay:{id,status,event_ids,subscriptions,created_at}}`; status is `pending` until
+all selected events have durably materialized their frozen replay targets, then
+`materialized`. This means downstream work is durable; filtered decisions and
+agent acknowledgements may remain pending. Neither endpoint exports payloads or
+transport credentials. Audit records and replay plans survive restart.
+
+`repair_eventing` requires `message_id`, `confirm:true`, nonempty `reason` up to
+1024 UTF-8 bytes, `offset` (nonnegative integer), `expected_checkpoint` (nonnegative
+integer), `expected_digest` (64 lowercase hexadecimal SHA-256 characters), and
+`action` equal to `retry` or `reconcile`. The digest identifies the quarantined
+physical record, not a publication. The exact quarantine key, current durable
+checkpoint and digest must match or fail `EVENTING_CONFLICT` without mutation.
+An invalid-offset quarantine cannot be reconciled by guessing an offset. `retry`
+clears that quarantine and recreates the consumer at its unchanged durable
+checkpoint. `reconcile` is allowed only for the quarantined checkpoint itself:
+audit the physical skip, requeue every accepted unmaterialized logical event whose
+producer acknowledgement names that physical offset, then advance to offset+1.
+Unrecognized foreign content is only skipped physical evidence, never model input
+or a logical event. The audit retains `missing_logical_proof` when no accepted
+original is linked. Requeued originals retain their stable envelope, subscriptions,
+policy and identifiers. Delivery completion is never inferred from the skip.
+Repair is allowed while archived so accepted work can drain. It increments the
+control revision, invalidates old responses and recreates the consumer with
+explicit positions. The result is `{audit_id,control_revision,next_offset}`.
+
+`replay_events` requires `message_id`, `confirm:true`, reason as above,
+`from_sequence`, `to_sequence` (positive inclusive ingestion sequences),
+`expected_watermark`, and `subscriptions:[{id,revision}]` (1..64 distinct IDs).
+Validate the entire request before changing durable state. Require from<=to<=
+replay_watermark, exact expected watermark, currently existing active subscriptions
+at exactly those revisions, current recipient membership, and configured matcher
+for filtered targets. An empty retained-publication range fails `NOT_FOUND`.
+At most 1000 originals and 16 MiB of prospective additional durable event/target
+work may be selected; enforce the configured outstanding event/byte bounds as
+well. Exceeding selection bounds fails `RANGE_TOO_LARGE`; outstanding-capacity
+failure is `BACKPRESSURE`. No partial replay may be accepted. Archived projects
+reject replay. Ordinary activation sequences are never changed: historical fanout
+occurs only for explicitly selected replay targets. Preserve all existing immutable
+event envelopes; retained pre-cutover originals may obtain a first envelope using
+their original publication ID and original ingestion sequence, never a newly
+allocated publication. Republish through Kafka rather than bypassing transport.
+The result is `{replay:{id,status,event_ids,subscriptions,created_at}}`.
+
+Freeze replay target snapshots and provenance separately from the immutable event
+and original subscription snapshot. Raw and filtered match reasons may carry an
+optional `replay_id`. Recipient/publication delivery identity remains unique;
+append a distinct reason without changing its acknowledgement. Filter jobs dedupe
+by publication, subscription ID and subscription revision. Replaying an already
+evaluated identical target reuses that result rather than re-running inference.
+Replay does not silently replay other history, add current subscriptions to
+ordinary accepted events, or resurrect acknowledged deliveries.
+
+Both mutating controls use durable actor/project/message ID idempotency: return an
+identical accepted result before rechecking now-stale checkpoint/range/revision
+preconditions; conflicting reuse fails `IDEMPOTENCY_CONFLICT`. Audit and plan
+creation, outbox changes, control revision and idempotent result commit atomically.
+Neither control cancels or rewrites a pending configuration transport decision.
+
+Filtered subscription work freezes criterion, subscription revision, threshold and
+matcher adapter (model identifier, URL, timeout and retry policy) at acceptance,
+including while the Kafka broker is unavailable. Later hot configuration changes
+must not reinterpret those accepted decisions. Frozen adapters contain no
+transport tokens. The current matcher disabled state, archive status, recipient
+admission and configuration generation still fence attempts and commit; accepted
+work waits while disabled/archived. Legacy pending jobs without an authored frozen
+adapter retain their historical compatibility behavior. Match evidence reports
+the adapter and threshold that actually evaluated the job.

@@ -702,6 +702,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Evidence:**
   - [x] Compared `LICENSE` byte-for-byte with the official Apache text (`https://www.apache.org/licenses/LICENSE-2.0.txt`); SHA-256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`. Verified README/project references and unchanged bundled Prompt Master MIT notice against Git HEAD. `litai project validate` passed.
 
+<a id="multi-001-define-multiple-project-identity-boundaries-and-compatibility"></a>
 ### [x] MULTI-001 — Define multiple-project identity, boundaries and compatibility
 
 - **Priority:** P1
@@ -822,6 +823,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Demonstrate two agents coordinating in each of two projects on one server, a multi-project agent and a denied third project, plus a multi-server discovery/canonical-routing scenario.
   - [ ] Run declared lifecycle verification and independent wire/privacy/migration/browser/fairness checks with reproducible artifact-bound reports.
 
+<a id="kafka-001-specify-kafka-eventing-and-optional-subscription-filters"></a>
 ### [x] KAFKA-001 — Specify Kafka eventing and optional subscription filters
 
 - **Priority:** P1

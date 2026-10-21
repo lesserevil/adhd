@@ -432,6 +432,12 @@ async def main(args):
         assert admin.call(scoped('project-red','eventing_status'))['next_offset']>final
         evidence.record('actual-cold-restore-recovers-both-projects-config-credentials-acks-delivery-identities-and-broker-cursors-then-advances',red_offset=final,blue_offset=blue_offset,intentional_postbackup_sentinel_absent=True)
         if args.model_url:
+            if args.model_window_file:
+                (root/'waiting-model-window').touch(mode=0o600)
+                deadline=time.monotonic()+1800
+                while not args.model_window_file.is_file():
+                    assert time.monotonic()<deadline,'Exclusive live-model window not granted within30minutes'
+                    await asyncio.sleep(1)
             if not args.gateway_report or not args.gateway_report.is_file():
                 raise ValueError('Optional live model qualification requires the owned bounded gateway report')
             child_path=root/'optional-model.json'
@@ -507,6 +513,7 @@ if __name__=='__main__':
     p.add_argument('--kubectl',type=Path)
     p.add_argument('--kubeconfig',type=Path)
     p.add_argument('--model-url',help='Optional live short-response endpoint reachable by this deployed hub')
+    p.add_argument('--model-window-file',type=Path,help='Optional owned coordination file; wait at most30minutes before live model child')
     p.add_argument('--gateway-report',type=Path,help='Private report from the bounded owned model relay')
     p.add_argument('--kind-node',help='Explicit owned Kind Docker node for read-only runtime config identity verification')
     p.add_argument('--cluster-image',help='Unique immutable-derived local name for the previously loaded verified hub image')

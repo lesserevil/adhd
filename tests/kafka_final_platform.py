@@ -16,6 +16,7 @@ import re
 import secrets
 import subprocess
 import sys
+import tarfile
 import time
 
 import httpx
@@ -71,6 +72,12 @@ async def main(args):
             if len(fields)>=4 and fields[0]==topic+'.fanout' and fields[1]==topic and fields[2]=='0':
                 return int(fields[3])
         raise AssertionError('Actual broker group checkpoint unavailable')
+    def broker_end(topic):
+        argv=['kafka-get-offsets','--bootstrap-server','localhost:9092','--topic',topic,'--time','-1']
+        output=command(compose+['exec','-T','kafka']+argv,capture=True) if args.platform=='compose' else kn(['exec','kafka-0','--']+argv,capture=True)
+        rows=[line.split(':') for line in output.decode().splitlines() if line.startswith(topic+':0:')]
+        assert len(rows)==1
+        return int(rows[0][2])
     def stop_forward():
         nonlocal forward
         if forward:
@@ -95,6 +102,86 @@ async def main(args):
         stop_forward()
         forward=subprocess.Popen(kubectl+['-n',args.name,'port-forward','service/hub',str(args.port)+':8766','--address','127.0.0.1'],stdout=operations,stderr=operations)
         await ready()
+    async def offline():
+        nonlocal fixture
+        if fixture:
+            await fixture.close();fixture=None
+        stop_forward()
+        if args.platform=='compose':
+            for service in ['hub','kafka-rest','kafka']:
+                command(compose+['stop',service],timeout=120)
+            for service in ['hub','kafka-rest','kafka']:
+                cid=command(compose+['ps','-aq',service],capture=True).decode().strip()
+                assert not json.loads(command(['docker','inspect',cid],capture=True))[0]['State']['Running']
+        else:
+            for resource,label in [('deployment/hub','hub'),('deployment/kafka-rest','kafka-rest'),('statefulset/kafka','kafka')]:
+                kn(['scale',resource,'--replicas=0'])
+                kn(['wait','--for=delete','pod','-l','app='+label,'--timeout=120s'],timeout=140)
+            assert not obj(['get','pods'])['items']
+
+    async def online():
+        if args.platform=='compose':
+            command(compose+['up','-d','--wait','--wait-timeout','180'],timeout=220)
+        else:
+            for resource in ['statefulset/kafka','deployment/kafka-rest','deployment/hub']:
+                kn(['scale',resource,'--replicas=1'])
+                kn(['rollout','status',resource,'--timeout=180s'],timeout=210)
+            await start_forward()
+        await ready()
+
+    def cold_transfer(restore=False):
+        helper='cold-backup'
+        if args.platform=='compose':
+            cid=command(compose+['ps','-aq','kafka'],capture=True).decode().strip()
+            mounts=json.loads(command(['docker','inspect',cid],capture=True))[0]['Mounts']
+            kafka_volume=next(row['Name'] for row in mounts if row['Destination']=='/var/lib/kafka/data')
+            argv=['docker','run','--rm','-i','--network','none','--read-only','--user','0:0',
+                '--cap-drop','ALL','--cap-add','CHOWN','--cap-add','DAC_OVERRIDE','--cap-add','FOWNER',
+                '--security-opt','no-new-privileges:true','--memory','256m','--cpus','1','--pids-limit','64',
+                '--mount','type=bind,source='+str(config_dir)+',target=/hub/config',
+                '--mount','type=bind,source='+str(data_dir)+',target=/hub/data',
+                '--mount','type=volume,source='+kafka_volume+',target=/kafka',
+                '--entrypoint','sh',args.image,'-ec']
+        else:
+            payload={'apiVersion':'v1','kind':'Pod','metadata':{'name':helper,'namespace':args.name},
+                'spec':{'restartPolicy':'Never','automountServiceAccountToken':False,'enableServiceLinks':False,
+                    'nodeSelector':{'kubernetes.io/arch':'amd64'},
+                    'containers':[{'name':'copy','image':args.cluster_image,'imagePullPolicy':'IfNotPresent',
+                        'command':['sh','-ec','sleep 3600'],
+                        'securityContext':{'runAsUser':0,'runAsGroup':0,'allowPrivilegeEscalation':False,'readOnlyRootFilesystem':True,
+                            'capabilities':{'drop':['ALL'],'add':['CHOWN','DAC_OVERRIDE','FOWNER']}},
+                        'resources':{'requests':{'cpu':'100m','memory':'64Mi'},'limits':{'cpu':'1','memory':'256Mi'}},
+                        'volumeMounts':[{'name':'hub','mountPath':'/hub'},{'name':'kafka','mountPath':'/kafka'}]}],
+                    'volumes':[{'name':'hub','persistentVolumeClaim':{'claimName':'hub-data'}},
+                               {'name':'kafka','persistentVolumeClaim':{'claimName':'data-kafka-0'}}]}}
+            k(['apply','-f','-'],data=json.dumps(payload).encode())
+            kn(['wait','--for=condition=Ready','pod/'+helper,'--timeout=90s'],timeout=110)
+            argv=kubectl+['-n',args.name,'exec','-i',helper,'--','sh','-ec']
+        try:
+            for name,target in [('hub-state.tgz','/hub'),('kafka-state.tgz','/kafka')]:
+                path=root/name
+                if restore:
+                    # Archives are produced from this stopped fixture only;
+                    # reject links/escaping paths before extracting as root.
+                    with tarfile.open(path,'r:gz') as archive:
+                        for member in archive:
+                            assert member.isfile() or member.isdir()
+                            assert not member.issym() and not member.islnk()
+                            assert not Path(member.name).is_absolute() and '..' not in Path(member.name).parts
+                    clear_targets=['/hub/config','/hub/data'] if args.platform=='compose' and target=='/hub' else [target]
+                    clear='; '.join('rm -rf '+directory+'/* '+directory+'/.[!.]* '+directory+'/..?*' for directory in clear_targets)
+                    with path.open('rb') as stream:
+                        subprocess.run(argv+[clear+'; exec tar -xzpf - -C '+target],stdin=stream,stdout=operations,
+                            stderr=operations,env=env,timeout=240,check=True)
+                else:
+                    with path.open('xb') as stream:
+                        path.chmod(0o600)
+                        subprocess.run(argv+['exec tar -czpf - -C '+target+' .'],stdout=stream,
+                            stderr=operations,env=env,timeout=240,check=True)
+        finally:
+            if args.platform=='k8s':
+                kn(['delete','pod',helper,'--wait=true','--timeout=90s'],timeout=110)
+
     try:
         if not re.fullmatch(r'sha256:[a-f0-9]{64}',args.image):
             raise ValueError('--image must be exact local immutable image config ID')
@@ -220,6 +307,63 @@ async def main(args):
         final=admin.call(scoped('project-red','eventing_status'))['next_offset']
         assert final>offset and group_offset(status['topic'])==final
         evidence.record('hub-broker-proxy-replacements-preserve-server-original-retry-delivery-and-checkpoint-then-advance',before=offset,after=final)
+        blue_a,blue_b=await fixture.agent('blue-a'),await fixture.agent('blue-b')
+        await blue_b.call(scoped('project-blue','subscribe',mode='raw'))
+        blue=(await blue_a.call(scoped('project-blue','publish',text='Cold recovery second project fact')))['publication']
+        blue_rows=await poll_until(blue_b,'project-blue',{blue['id']},45)
+        blue_status=admin.call(scoped('project-blue','eventing_status'))
+        blue_offset=blue_status['next_offset']
+        assert blue_offset>=1 and group_offset(blue_status['topic'])==blue_offset
+        config_before_backup=admin.call({'op':'config_get'})['config']
+        red_rows=[row for row in (await b.call(scoped('project-red','poll')))['deliveries'] if row.get('publication_id')==new['id']]
+        assert len(red_rows)==1
+        assert broker_end(status['topic'])==final and broker_end(blue_status['topic'])==blue_offset
+        await offline()
+        cold_transfer()
+        archives={name:sha(root/name) for name in ['hub-state.tgz','kafka-state.tgz']}
+        recovery={'schema':'adhd/private-cold-recovery-set@1','image_config_digest':args.image,'artifact_sha256':expected,
+            'server_id':config['server_id'],'project_ids':[row['id'] for row in config['projects']],
+            'configuration_revision':config_before_backup['config_revision'],'archives_sha256':archives,
+            'project_next_offsets':{'project-red':final,'project-blue':blue_offset}}
+        recovery_file=root/'recovery-set.json';recovery_file.write_text(json.dumps(recovery,indent=2)+'\n');recovery_file.chmod(0o600)
+        evidence.record('consistent-offline-config-all-project-stores-and-kafka-recovery-set-created',archives_sha256=archives,recovery_manifest_sha256=sha(recovery_file))
+        await online()
+        fixture=Fixture(args);await fixture.start()
+        admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
+        sentinel=(await a.call(scoped('project-red','publish',text='Intentional post-backup rollback sentinel')))['publication']
+        await poll_until(b,'project-red',{sentinel['id']},45)
+        assert admin.call(scoped('project-red','eventing_status'))['next_offset']>final
+        different=512 if config_before_backup['resources']['max_waiters']!=512 else 513
+        admin.call({'op':'config_update','patch':{'resources':{'max_waiters':different}}},mutation=True)
+        await offline()
+        assert all(sha(root/name)==value for name,value in archives.items())
+        cold_transfer(restore=True)
+        await online()
+        fixture=Fixture(args);await fixture.start()
+        admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
+        blue_a,blue_b=await fixture.agent('blue-a'),await fixture.agent('blue-b')
+        restored=admin.call({'op':'config_get'})['config']
+        assert restored==config_before_backup
+        assert await a.call(publication_command,mid)==result
+        assert (await a.call(scoped('project-red','get',publication_id=original['id'])))['publication']==original
+        assert (await blue_a.call(scoped('project-blue','get',publication_id=blue['id'])))['publication']==blue
+        assert (await a.call(scoped('project-red','search',query=original['text'])))['publications']==[original]
+        red_restored=(await b.call(scoped('project-red','poll')))['deliveries']
+        assert not any(row.get('publication_id')==original['id'] for row in red_restored)
+        assert [row for row in red_restored if row.get('publication_id')==new['id']]==red_rows
+        assert (await blue_b.call(scoped('project-blue','poll')))['deliveries']==blue_rows
+        reject(await fixture.raw('red-a',scoped('project-blue','get',publication_id=blue['id'])))
+        reject(await fixture.raw('blue-a',scoped('project-red','get',publication_id=original['id'])))
+        response=await fixture.raw('red-a',scoped('project-red','get',publication_id=sentinel['id']))
+        reject(response,code='NOT_FOUND')
+        assert admin.call(scoped('project-red','eventing_status'))['next_offset']==final
+        assert admin.call(scoped('project-blue','eventing_status'))['next_offset']==blue_offset
+        assert group_offset(status['topic'])==final and group_offset(blue_status['topic'])==blue_offset
+        assert broker_end(status['topic'])==final and broker_end(blue_status['topic'])==blue_offset
+        after_restore=(await a.call(scoped('project-red','publish',text='Actual restored image advances from recovery point')))['publication']
+        await poll_until(b,'project-red',{after_restore['id']},45)
+        assert admin.call(scoped('project-red','eventing_status'))['next_offset']>final
+        evidence.record('actual-cold-restore-recovers-both-projects-config-credentials-acks-delivery-identities-and-broker-cursors-then-advances',red_offset=final,blue_offset=blue_offset,intentional_postbackup_sentinel_absent=True)
         # Retain no raw IDs/tokens; input and output identities are digest-bound.
         evidence.value['replaced_resources']=list(before)
         completed=True

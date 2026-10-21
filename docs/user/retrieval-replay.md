@@ -198,3 +198,11 @@ after normalizing only opaque identities and timestamps. This historical
 comparison confirms preserved context and prior support for the authored case;
 it cannot by itself distinguish model sensitivity to metadata from serving drift.
 No diagnostic inference calls were made.
+
+The [candidate30 inherited live-model matrix](../validation/deep-live-model-30.json)
+records one fixed native and image run of the existing History, retrieval,
+Archive and paired Feedback suites: 69 authored cases per mode. The original
+semantic, recall, negative-control and cost assertions remain intact. Paired
+Feedback declares an 8 KiB assessment bound while retaining the 0.5 confidence
+threshold. This matrix excludes positive optimizer qualification, whose failed
+correction gate and exact diagnostic remain recorded above.

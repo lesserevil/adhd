@@ -114,6 +114,18 @@ class Recovery:
         return command, receipt, apply, accepted, complete
 
 
+def unavailable_rpc(response):
+    """Valid A2A domain failures retain JSON-RPC HTTP200 (protocol/spec.md)."""
+    assert response.status_code == 200
+    body = response.json()
+    assert 'result' not in body and body['jsonrpc'] == '2.0'
+    error = body['error']
+    assert error['code'] == -32000
+    assert error['data'] == [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+        'domain': 'adhd.hub', 'metadata': {'code': 'RECOVERY_REQUIRED'}, 'reason': 'RECOVERY_REQUIRED'}]
+    assert response.headers.get('retry-after') == '1'
+
+
 async def admission(f, r, evidence):
     assert not f.args.rest_url, "Destructive recovery qualification requires owned native/container storage"
     async with httpx.AsyncClient(trust_env=False) as http:
@@ -125,7 +137,7 @@ async def admission(f, r, evidence):
         assert status["availability"] == "uninitialized" and status["operation"] is None
     actor = await f.agent("bridge")
     rejected = await f.raw("bridge", scoped(RED, "publish_record", text="Must not create an unknown target"), "unknown-publish-mid")
-    assert rejected.status_code == 503 and "RECOVERY_REQUIRED" in rejected.text
+    unavailable_rpc(rejected)
     assert r.status(RED)["operation"] is None
     assert f.admin().call({"op": "config_get"})["config"] == before
     evidence.record("handwritten-config-global-auth-does-not-admit-unknown-project-stores")
@@ -207,8 +219,7 @@ async def known_missing(f, r, evidence):
         assert registry(f.file) == before_registry
         assert not any(path.exists() for path in paths), "Missing target was recreated without a reviewed restore"
         denied = await f.raw("bridge", scoped(RED, "publish_record", text="Rejected while target missing"), "missing-publish-mid")
-        assert denied.status_code == 503 and "RECOVERY_REQUIRED" in denied.text
-        assert denied.headers.get("retry-after") == "1"
+        unavailable_rpc(denied)
         current = await f.agent("bridge")
         healthy = await current.call(scoped(BLUE, "search", query="Unaffected project before target loss"))
         assert blue["publication"]["id"] in json.dumps(healthy)

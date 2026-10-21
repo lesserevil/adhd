@@ -85,6 +85,16 @@ async def checks(f, evidence):
         assert (await f.raw(item["agent_id"], scoped(item["project"], "poll"))).status_code == 401
     evidence.record("all-retired-tokens-denied-after-atomic-credential-owner-admission-removal")
 
+    # The foreign project's retained snapshot must count even before any agent
+    # opens that project following a restart. No private store file is inspected.
+    f.hard_stop()
+    await f.start()
+    admin = f.admin()
+    login = Client(f)
+    login.login("replacement-owner", users[1][1])
+    developer = Admin(login, f, admin.client)
+    evidence.record("retirement-durable-across-hard-restart-before-any-identity-recreation")
+
     observations = []
     for item in saved:
         name, new_token = item["agent_id"], secrets.token_urlsafe(32)

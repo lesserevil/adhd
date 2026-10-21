@@ -146,7 +146,11 @@ Full restore includes registry, config, secrets and every project store. A proje
 restore must validate original server/project identity and all user/agent refs,
 reject a populated destination or identity collision, and require an Admin plan;
 it never silently merges records or invents missing owners. Broker recovery uses
-eventing/spec.md. Per-project admission, bounded queues and round-robin eligible
+eventing/spec.md. project-recovery/spec.md and its closed interfaces define the
+complete target-only restore, explicit Admin initialization for unknown targets,
+external route/receipt metadata, current ownership proof and fresh allocation/
+transport epochs. They extend this lifecycle without permitting populated rollback.
+Per-project admission, bounded queues and round-robin eligible
 worker scheduling prevent one project exhausting all shared inference/network
 slots; publish/poll/ack for another project remain responsive during saturation.
 

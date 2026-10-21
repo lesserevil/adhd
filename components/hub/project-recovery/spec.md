@@ -1,0 +1,299 @@
+---
+name: Selective project recovery
+summary: Verified target-only restore with independent durable decisions and fresh allocation and transport generations
+kind: component
+---
+# Selective project recovery
+
+This extends multi/spec.md, configuration/spec.md, storage-relocation/spec.md,
+identity/spec.md, resources/spec.md and eventing/spec.md. It owns project restore;
+whole-server rollback remains separate. The accompanying interface.md and
+interface.schema.json are normative future interfaces, not claims that accepted
+profile2 artifacts already implement them. Preserve every unaffected operation.
+
+## Scope and invariants
+
+An authenticated current Admin may restore one registered project from a verified
+offline backup under its original server ID, project ID and aliases, into a
+missing or logically empty target. Keep current global settings, users, roles,
+credentials, OIDC, memberships, peer grants and every unrelated project unchanged.
+Never import backup configuration, create missing principals, grant admission,
+restore a shared Kafka volume, merge records or roll back a populated target.
+
+Logical emptiness means no publication, private message, delivery (including
+acknowledged), subscription, source or mutation receipt, semantic/query/index job,
+evidence/context, feedback/label/cohort, replay, primitive/proposal/evaluation,
+selection or other accepted project-owned record. Administrative store headers,
+empty maps, sequence/allocation counters and metadata-only transport health are
+not accepted records. Nonempty outbox, frozen subscription intents, quarantine,
+replay/repair audit or old accepted query-peer cache also make a target populated.
+Absence of current visible search results is never an emptiness proof.
+
+A missing target requires explicit allow_missing:true and a verified initialized
+route entry. Both authoritative snapshot and checkpoint must be absent. One
+missing file invokes ordinary verified snapshot/checkpoint recovery first; an
+unreadable, corrupt, mismatched or uncertain survivor is not an empty target.
+Never delete unknown files or treat their corruption as permission to restore.
+Plans for a registered but never initialized project first complete normal empty
+creation; initialization and recovery cannot race.
+
+## Route registry and cold startup
+
+Before opening writers, establish one owner-only server storage-route registry
+beside CONFIG_FILE, derived from its absolute location. It is server metadata,
+not operator configuration and not a project store. Version1 entries bind the
+full server/project IDs, immutable alias set, initialized flag, current route
+generation, project epoch, allocation epoch, storage anchor and selected complete
+generation digest. Paths never derive from display names. Bind the registry to
+the configured server and configuration location; reject unknown schemas,
+duplicate identities/aliases, colliding routes and symlink/foreign files.
+
+Bootstrap explicitly distinguishes fresh installation, verified existing complete
+stores, and known initialized missing stores. Installing the registry for an
+existing store verifies its snapshot/header without a second live DETS opener.
+When no old registry exists, an absent required existing store with durable config
+history must not be inferred fresh. Migration needs explicit proven fresh state
+or authenticated Admin initialization below; otherwise keep that target halted.
+A handwritten new configuration with no admitted fresh intent can start its global
+authentication/Admin/control plane while the unknown target stays uninitialized.
+Its Admin recovery page must offer explicit plan/apply empty initialization, bound
+to current server/project/alias identity, config revision, no accepted records and
+absence of conflicting files. This is never available for a known initialized
+missing target: only verified restore may recover that target. Creating the
+initial built-in Admin/password file is global authentication bootstrap and does
+not authorize product-store initialization. A corrupt/lost existing registry is
+not an uninitialized target and cannot be bypassed by this initializer.
+
+After registration, startup never recreates a missing initialized target empty.
+Mark that target recovery_required and admit Admin recovery commands while serving
+healthy other projects. Other operations on the target return retryable
+RECOVERY_REQUIRED without an acceptance receipt. Registry corruption or an
+unresolvable server-wide transaction fails startup closed. Public health exposes
+no project registry; authenticated per-project status reports availability.
+
+Every writer/snapshot reader, retained-agent identity guard, hot relocation,
+archive/resume, worker and backup resolver MUST use this registry. No fallback to
+the old ID-derived path after recovery. Relocation moves the current selected
+generation, atomically updates its registry route, preserves project/allocation
+epochs, and leaves old copies offline. Recovery and relocation decisions share
+one serialized server transaction coordinator. Full backup includes configuration,
+configuration journal, route registry, external recovery journal and all selected
+project generations; historical offline copies are not current stores.
+
+## Backup bundle and verification
+
+An operator places an offline bundle in recovery.backup_root/BACKUP_ID. Admin
+commands accept a bounded identifier, never a filesystem path or URL. The console
+explains this prerequisite and validates the selected bundle through the plan API.
+Do not run an external archiver, follow symlinks, traverse parents, extract an
+archive or access arbitrary absolute paths. All bundle directories/files must be
+regular owned entries, private to the server owner, with no symlink components.
+Refuse hardlinked payloads and paths overlapping live stores or metadata.
+
+The exact manifest and size/hash rules are in interface.md. A bundle contains a
+complete synchronized authoritative project snapshot and matching backed-up global
+configuration for original identity/ownership proof. A future exporter may prepare
+the bundle; an existing complete stopped-server backup can be adapted offline
+without modifying or opening its checkpoint writable. Copy the verified snapshot
+and exact original configuration, calculate the declared hashes, then atomically
+publish the manifest. A generated manifest alone does not prove completeness:
+the planner independently validates the complete underlying state schema,
+snapshot checksum, server/project header, aliases and every internal reference.
+
+The SHA256 supplied by Admin binds exact manifest bytes (including whitespace).
+Manifest paths are fixed basenames. Verify each exact length and SHA256 before
+decoding, then verify again against the still-open regular files during apply.
+Reject duplicate JSON keys, invalid UTF8, unknown fields, trailing bytes, unsafe
+term values, unknown snapshot schemas, invalid references and decompression
+bombs. Current ADHDSTATE1 snapshots are uncompressed deterministic ETF, prefixed
+by ASCII ADHDSTATE, byte1 and 32-byte SHA256 of the ETF body. Safe bounded decoding
+rejects executable/function/PID/port/reference terms and unknown atoms; no
+untrusted dynamic atom creation. Reject compressed ETF in this bundle version.
+Retain the complete accepted state, not a search/export projection. Preserve
+workflow primitives, selections and qualification provenance; revalidate their
+owning compatibility identities against current code/config/epoch and mark only
+invalidated qualifications stale. Recovery cannot invent a new quality pass,
+model winner or optimization promotion.
+
+Referenced users/agents include active and historical authors, recipients,
+subscription/query/job owners, source/command receipt actors, evidence subjects
+and all nested workflow owners, not only currently queued rows. Current configured
+principals must still exist. Compare backed-up and current stable user ID and
+provider binding (local username or OIDC provider_id/issuer/subject), and each
+agent's original owner ID. A changed role, display name, email, password, token or
+grant is not imported. A missing or reassigned owner, unprovable identity or alias
+collision is a conflict. Disabled existing owners remain disabled; their data may
+be restored without authorizing work or access. For unowned legacy agents, equal
+ID/null-owner alone cannot prove continuity: require an equal original/current
+credential SHA256, unless a durable original principal-incarnation record proves
+continuity across rotation. Compare credentials privately; never return hashes.
+Federated same-email correlation is not local ownership proof.
+
+## Hot configuration and bounded work
+
+Root recovery is closed and optional. Omission uses these defaults; each field is
+independently hot and editable from Settings. Null deletes the optional root
+object or optional field through normal merge-patch semantics; effective defaults
+apply after merging. backup_root defaults to CONFIG_FILE + ".backups" and is a
+private absolute directory (relative supplied paths resolve beside CONFIG_FILE).
+Missing backup_root is permitted until a plan attempts to read a bundle.
+
+| Setting | Default | Inclusive range |
+| --- | --- | --- |
+| max_backup_bytes | 67108864 | 65536..1073741824 |
+| max_records | 100000 | 1..1000000 |
+| scan_batch_records | 256 | 1..4096 |
+| timeout_ms | 300000 | 1000..1800000 |
+| plan_ttl_ms | 900000 | 1000..86400000 |
+| max_operations | 10000 | 1..1000000 |
+
+backup_root is 1..4096 UTF8 bytes, no NUL. Integers reject booleans/fractions.
+max_backup_bytes includes all manifest/payload bytes; manifest <=65536 bytes,
+configuration <=1048576 bytes. Count every top-level and nested retained record,
+including receipts, against max_records. At most one recovery verification or
+staging job and one additional closed-stage DETS table are active per server.
+Other projects retain model/network/event lane capacity. Recovery disk scans yield
+between bounded batches, use one finite-memory decoder bounded by the admitted
+bytes/records and never execute inside the global configuration or live writer
+mailbox. Limits and a monotonic absolute deadline freeze at acceptance; lowering
+limits does not erase accepted operations or cancel a decided installation.
+
+Reject new work before acceptance when max_operations durable entries or the
+single active/staging slot are occupied. No unbounded pending job queue. Receipts
+and decided recovery metadata are never silently pruned to satisfy a cap. Expose
+counts; hot cap increases permit further admission. Planning/apply consume separate
+slots only while running; a ready plan is a retained operation, not an active job.
+Timeout before decision records a bounded failure and cleans owned stage; after
+decision it stops ordinary target serving and completes recovery or reports blocked.
+
+## Plan and apply transaction
+
+Plan mode restore accepts expected_revision, backup_id, manifest_sha256 and
+allow_missing. Mode initialize explicitly accepts confirm:true, has no backup
+fields, and is limited to uninitialized targets as described above. Both modes
+durably journal a redacted accepted operation before returning. Verification is
+asynchronous. A ready plan binds exact backup file identities/hashes, config
+revision, server/project/aliases, current original-owner proof digest, target
+availability and complete emptiness/watermark proof, current route/project epoch,
+new unique storage/allocation/transport epochs, effective target policy and expiry.
+Its SHA256 is over the canonical UTF8 JSON plan specified in interface.md. A ready
+plan is evidence for review, not a reservation or permission to restore later.
+
+Apply binds plan_id, plan_sha256, expected_revision, confirm:true and message_id.
+Authenticate as current Admin, then resolve durable idempotency before stale-plan,
+revision, expiry or target checks. Same actor/message/command returns its original
+redacted acceptance receipt across target replacement/restart; changed command is
+IDEMPOTENCY_CONFLICT. Agent messages use no recovery namespace. Idempotency and
+recovery jobs live outside the target store. A new message for an already decided
+plan resolves to that same recovery operation; it cannot install twice.
+
+For restore reverify all backup identities/content and current ownership/permissions;
+for initialize reverify uninitialized admission and absence of conflicting files.
+Stage a
+complete closed checkpoint/snapshot under the proposed private generation, and
+preflight the fresh Kafka topic under current service security/policy. Never mutate
+old topic retention or consume its tail. No broker success is synthesized. Before
+decision, acquire the serialized coordinator and freeze only the target writer.
+Previously accepted target transactions settle; later ones return
+CONFIG_APPLY_IN_PROGRESS with Retry-After:1. Recheck exact config revision, aliases,
+ownership, route, target epoch and all logical emptiness under that freeze. A
+concurrent other-project/config transaction may finish, but revision/route drift
+invalidates this undecided plan. Unrelated writers/epochs remain active.
+
+Durably fsync one decision binding the verified stage, old/new route and epochs,
+plan digest, complete target state digest, accepted apply receipt and post-install
+baseline. Before decision, old target remains authoritative; failure releases only
+this transaction's freeze and removes only its owned stage/new empty topic where
+safe. After decision, never resume old target serving or report an ordinary abort.
+Install without overwriting foreign files, fsync directories, remove staging hardlink
+aliases, atomically select the new route/epochs, validate the new generation, open
+one target writer, persist completion receipt and release its freeze. Old files
+remain offline. No current global configuration revision/settings change.
+
+Cold startup replays decided recovery before opening the affected writer, even
+when the current project is archived or unavailable. Already activated state may
+contain later accepted writes: require matching route/project/allocation epochs
+and generation/sequence >= baseline; at the baseline require the exact decided
+digest. Never copy the older stage over later valid writes. Missing/invalid decided
+material fails closed with blocked status; healthy unrelated projects still serve
+when the registry/decision itself is valid. A retry of apply for that decided plan
+may resume the same operation, never choose another plan or baseline. Invalid
+server-wide registry/decision integrity stops startup entirely.
+
+## Transport, late work and identifiers
+
+Each restored target gets a 128-bit CSPRNG project epoch distinct from every
+retained/live/backup epoch on this server. New topic is the normal hashed topic
+stem plus ".r" + lowercase32hex(epoch), before ".events.v1"; group is topic +
+".fanout". Record full identities and epoch for collision checks. Legacy routes
+retain exact old topic names. Transport changes use current connection, TLS,
+credentials and effective target retention/caps. Recovery is permitted with
+eventing.enabled=false; record the new epoch durably, expose transport disabled,
+and use its fresh topic on later enable. Failure of required enabled preflight
+prevents the decision. Never reuse an old topic/group, rewind broker state or
+restore the shared Kafka volume.
+
+Keep backed-up immutable event/publication/delivery IDs, source receipts, completed
+filter decisions and acknowledged status. Rebind only backend transport metadata
+to the new epoch: old broker offsets are evidence, not positions in the fresh
+topic. New durable next offset starts0. Requeue accepted backed-up outbox/frozen
+target work needed to finish recipient processing; do not turn completed historical
+publications into fresh subscription activations or resurrect acknowledged rows.
+Dedup backed-up deliveries by preserved logical identity. Quarantine referring to
+old physical offsets becomes retained offline evidence, not a blocking gap in
+the new topic. Restore explicitly reports transport_discontinuity:true; initialization reports
+false because it has no prior accepted transport history. New and replayed
+envelopes carry the preserved original identity; topic+epoch supply transport
+generation and validation fences. No old topic tail may enter restored state.
+
+Every asynchronous callback captures and rechecks project epoch immediately
+before durable commit/export: model/filter/history/index/replay/optimizer,
+peer/directory/source queries, identity exchange and Kafka fetch/produce/commit.
+Cancel target resource tickets and close old consumer through its recorded endpoint.
+An already sent network message cannot be unsent; mark old in-flight logical
+query work cancelled/superseded in audit and do not silently duplicate its remote
+side effects. Resume backed-up pending work only under current admission/lifecycle
+and original deadlines; expired work becomes terminal. Archived restored projects
+stay archived and semantic work paused. Other projects' tickets/epochs/consumers
+remain unchanged.
+
+Preserve all backed-up IDs verbatim. Before any new project-owned allocation,
+durably select a fresh CSPRNG128 allocation epoch, independent of sequence ordering
+and never reused after recovery, including failed/abandoned generations. New IDs
+are KIND + "_" + lowercase32hex(allocation_epoch) + "_" + lowercase base36(counter),
+KIND matching [a-z][a-z0-9]{0,15}, counter a positive JSON-safe integer with no leading
+zero. Allocate/increment atomically with the accepted record; reject exhaustion,
+never wrap or reset within an epoch. Apply to publications, subscriptions,
+deliveries/private messages, event IDs not derived from originals, all semantic/
+federated/source/index jobs, contexts/evidence/feedback/labels/cohorts, replay,
+primitives/proposals/evaluations/selection generations and internal IDs exported
+in receipts. Server-owned recovery operation/plan IDs use a separate persistent
+server metadata allocator, never the target allocator. User/agent/project/server
+identity and client message/source IDs are not rewritten.
+
+Existing IDs remain opaque valid IDs, not counters to parse or authorization.
+Store readers accept both legacy and new allocation formats. A new-format store
+header declares the allocator/route version; old binaries fail before writing it.
+Public object schemas keep existing opaque-ID bounds (<=128 bytes), not a new
+mandatory pattern for legacy rows. Sequence ordering remains separate and monotonic
+within the restored retained history; no claim recovers lost post-backup data.
+
+## Required independent qualification
+
+Cover default/no-default and archived targets, missing and empty admission,
+unchanged current global auth/grants and other-project newer facts/acks/jobs/
+positions, secret redaction, all original ownership refs and every record family.
+Reject populated, partial/corrupt, reassigned/missing owner, wrong identity/alias,
+bad bounds/hash/schema, symlink/hardlink/path collision, unauthorized/stale and
+expired plans without mutation. Exercise duplicate requests across restart and
+after activation, plus foreign mutation-ID reuse.
+
+Kernel-kill before/after stage, decision, install, route activation, completion
+receipt and cleanup; prove one complete chosen generation and no overwrite of
+later activated writes. Independently inspect complete snapshots/registry/journal,
+not just API counts. Delay actual model/peer/Kafka replies across epoch change;
+prove target stale work fenced and unrelated work progresses. Publish/ack/create
+all allocator families after restore and prove no lost post-backup ID collision.
+Use real Kafka to prove old tails excluded and only target topic changes. Qualify
+the exact accepted native artifact, exact immutable image and both Compose/Kind
+forms, while retaining separate full-server restore regressions.

@@ -11,6 +11,14 @@ without a legacy project_id. The root path is only an anchor in the latter case;
 there is no implicit default store. Additional project paths retain their stable
 ID-derived mapping. The change does not restart a healthy hub.
 
+After selective project recovery, project-recovery/spec.md's server route registry
+selects the current generation instead of the original ID-derived path. Relocation
+moves exactly those current selected generations and updates their routes under
+the same durable coordinator, retaining allocation/project epochs. It must not
+reopen an offline pre-restore path or replay a saved whole configuration for a
+target-only recovery decision. Full backup includes the shared route/recovery
+metadata as well as all current project stores.
+
 Validate the complete configuration, registry transition, new listener and Kafka
 transition before deciding. Refuse occupied destinations, symlink final targets,
 colliding checkpoint/snapshot paths and an absent or unwritable root parent.

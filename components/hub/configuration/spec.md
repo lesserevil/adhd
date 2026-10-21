@@ -55,6 +55,12 @@ store_path changes to every project, including installations without a default
 project, and defines the durable all-writer decision and single-owner recovery
 scope.
 
+project-recovery/spec.md adds the hot Admin-editable root recovery settings and
+external route/decision journal. Selective restore never installs a backed-up
+configuration or advances its current revision. Recovery and configuration/route
+decisions serialize; unknown or initialized-missing target availability must not
+prevent global Admin authentication/control. All routes use the current registry.
+
 ## Project identity and independent model capability
 
 The multiple-project contract preserves aliases created by earlier single-project

@@ -120,3 +120,9 @@ When the admission service has not started, native CLI/unit diagnostics may retu
 `started:false` and effective limits without lane state. Once runtime admission
 has started, unexpected scheduler loss fails subsequent admission closed; it must
 not silently switch a live service to unlimited direct HTTP execution.
+
+Selective recovery additionally follows project-recovery/spec.md: one bounded
+verification/staging job and one additional closed-stage DETS table per server.
+It yields between batches outside live writer/config mailboxes. Target epoch
+changes cancel only target tickets and fence late completion; other project
+model/network/eventing admission continues under these existing lane limits.

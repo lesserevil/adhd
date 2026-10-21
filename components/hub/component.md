@@ -66,6 +66,9 @@ specification_roots:
   - eventing/spec.md
   - resources/spec.md
   - storage-relocation/spec.md
+  - project-recovery/spec.md
+  - project-recovery/interface.md
+  - project-recovery/interface.schema.json
 ---
 # Agentic Distributed Harness Depot (ADHD)
 
@@ -112,3 +115,9 @@ mutable project IDs and project-bound peer transport assumptions. Kafka eventing
 follows eventing/spec.md, which replaces mandatory model matching with raw or
 optionally filtered project streams and owns broker durability/cutover. These two
 contracts take precedence over earlier restrictions on exactly those subjects.
+
+Selective project restore and explicit unknown-target initialization follow
+project-recovery/spec.md and its closed interface contracts. They extend the
+storage resolver, startup availability, current-owner proof, Admin async jobs and
+project allocation/transport epochs while preserving full-server rollback as a
+separate operation. No older runtime is claimed to serve these future operations.

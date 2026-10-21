@@ -42,6 +42,12 @@ broker copy, not HA. Partition-count changes are unsupported until a versioned
 ordering migration; no automatic resizing. Agents/peers have no broker credentials.
 Restrict broker/proxy network and ACLs to server and deployment administration.
 
+project-recovery/spec.md extends only restored/explicitly initialized routes with
+a fresh durable per-project topic epoch. Existing projects keep this exact legacy
+topic spelling until such a transition. Recovery uses the current effective
+service/security/policy, never restores shared Kafka storage or consumes an old
+topic tail, and fences every late producer/consumer callback by target epoch.
+
 ## Original acceptance and broker event
 
 A publish durably commits the immutable original, source/item deduplication,

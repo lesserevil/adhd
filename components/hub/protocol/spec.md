@@ -188,3 +188,15 @@ and effective selection metadata. Internal optimization replays preserve origina
 agent ownership and durable proposal exposure. Selection authority remains outside
 derived rows; exact critical optimization bindings/usage require independent
 semantic-negative and native/container qualification. Peer major1 is unchanged.
+
+## Selective recovery application profile2.1
+
+project-recovery/interface.md and interface.schema.json own additive Admin
+plan/apply/status, root hot recovery settings and RECOVERY_REQUIRED target-state
+errors. The implementing successor exports application/OpenAPI2.1.0 and combined
+schema urn:adhd:protocol:2.1. Descriptor major2/admin envelope1, A2A1.0 and peer
+versions1/2 stay unchanged; existing healthy result shapes stay unchanged. New
+status exposes target availability/defaults. Do not claim strict2.0 schemas
+validate new2.1 messages. Retain actual accepted2.0 exports until a reviewed new
+artifact implements and qualifies the extension; then publish schema, examples,
+compatibility and independent conformance together.

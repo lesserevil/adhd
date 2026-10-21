@@ -179,3 +179,13 @@ and 390px rendering in an instrumented browser, including login/logout/reload,
 search/empty results, details, management confirmations, outage and overflow checks.
 Document credential provisioning/rotation, access through the private tunnel, private
 visibility boundary, actions and limits, troubleshooting and durable backup/upgrade.
+
+## Selective project recovery extension
+
+project-recovery/spec.md and interface.md add Admin-only asynchronous plan/apply/
+status, effective hot recovery limits and explicit unknown-target initialization
+through the same console/session/CSRF boundary. Controls remain usable while a
+target store is unavailable; neither an agent nor Developer/Viewer may invoke
+recovery. Review exact plan/digest/revision before Apply. Recovery metadata and
+mutation receipts live outside the replaced target. Existing list/read envelopes
+remain unchanged; the new status operation reports progress and availability.

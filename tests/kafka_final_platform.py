@@ -70,14 +70,21 @@ async def main(args):
         if args.platform=='compose':
             return {name:command(compose+['ps','-q',name],capture=True).decode().strip() for name in ['hub','kafka','kafka-rest']}
         return {name:obj(['get','pods','-l','app='+name])['items'][0]['metadata']['uid'] for name in ['hub','kafka','kafka-rest']}
-    def group_offset(topic):
+    def group_offset(topic, expected):
+        # Delivery materialization can precede the asynchronous broker commit.
+        # Observe the actual checkpoint, bounded, instead of assuming simultaneity.
         argv=['kafka-consumer-groups','--bootstrap-server','localhost:9092','--describe','--group',topic+'.fanout']
-        output=command(compose+['exec','-T','kafka']+argv,capture=True) if args.platform=='compose' else kn(['exec','kafka-0','--']+argv,capture=True)
-        for line in output.decode().splitlines():
-            fields=line.split()
-            if len(fields)>=4 and fields[0]==topic+'.fanout' and fields[1]==topic and fields[2]=='0':
-                return int(fields[3])
-        raise AssertionError('Actual broker group checkpoint unavailable')
+        deadline=time.monotonic()+30
+        while True:
+            output=command(compose+['exec','-T','kafka']+argv,capture=True) if args.platform=='compose' else kn(['exec','kafka-0','--']+argv,capture=True)
+            for line in output.decode().splitlines():
+                fields=line.split()
+                if len(fields)>=4 and fields[0]==topic+'.fanout' and fields[1]==topic and fields[2]=='0' and fields[3].isdigit():
+                    observed=int(fields[3])
+                    if observed>=expected:
+                        return observed
+            assert time.monotonic()<deadline,'Actual broker group checkpoint deadline exceeded'
+            time.sleep(.3)
     def broker_end(topic):
         argv=['kafka-get-offsets','--bootstrap-server','localhost:9092','--topic',topic,'--time','-1']
         output=command(compose+['exec','-T','kafka']+argv,capture=True) if args.platform=='compose' else kn(['exec','kafka-0','--']+argv,capture=True)
@@ -310,7 +317,7 @@ async def main(args):
         assert (await a.call(scoped('project-red','search',query=original['text'])))['publications']==[original]
         assert admin.call({'op':'resource_status'})['lanes']['model']['grants']==0
         status=admin.call(scoped('project-red','eventing_status')); offset=status['next_offset']
-        assert offset>=1 and group_offset(status['topic'])==offset
+        assert offset>=1 and group_offset(status['topic'],offset)==offset
         before=identities()
         evidence.record('full-no-model-image-accepts-a2a-original-source-idempotency-and-durable-unacknowledged-delivery',broker_next_offset=offset)
         if args.platform=='compose':
@@ -338,7 +345,7 @@ async def main(args):
         assert [row for row in rows if row.get('publication_id')==original['id']]==delivery
         assert (await a.call(scoped('project-red','search',query=original['text'])))['publications']==[original]
         assert admin.call({'op':'resource_status'})['lanes']['model']['grants']==0
-        assert group_offset(status['topic'])==offset
+        assert group_offset(status['topic'],offset)==offset
         reject(await fixture.raw('blue-a',scoped('project-red','get',publication_id=original['id'])))
         await b.call(scoped('project-red','ack',delivery_ids=[delivery[0]['id']]))
         await b.call(scoped('project-red','ack',delivery_ids=[delivery[0]['id']]))
@@ -346,7 +353,7 @@ async def main(args):
         new=(await a.call(scoped('project-red','publish',text='Final retained deployment new progress')))['publication']
         await poll_until(b,'project-red',{new['id']},45)
         final=admin.call(scoped('project-red','eventing_status'))['next_offset']
-        assert final>offset and group_offset(status['topic'])==final
+        assert final>offset and group_offset(status['topic'],final)==final
         evidence.record('hub-broker-proxy-replacements-preserve-server-original-retry-delivery-and-checkpoint-then-advance',before=offset,after=final)
         if args.broker_patch_upgrade:
             upgrade_before=identities()
@@ -378,7 +385,7 @@ async def main(args):
             assert (await a.call(scoped('project-red','get',publication_id=original['id'])))['publication']==original
             assert admin.call({'op':'resource_status'})['lanes']['model']['grants']==0
             upgraded_offset=admin.call(scoped('project-red','eventing_status'))['next_offset']
-            assert upgraded_offset>final and group_offset(status['topic'])==upgraded_offset
+            assert upgraded_offset>final and group_offset(status['topic'],upgraded_offset)==upgraded_offset
             evidence.record('real-8.3.1-to-8.3.2-same-volume-broker-upgrade-preserves-a2a-originals-acks-unacked-identities-and-cursor-with-outage-acceptance',before=final,after=upgraded_offset,volume=volume_before,hub_and_proxy_unrestarted=True,override_sha256=sha(broker_override))
             final=upgraded_offset
         blue_a,blue_b=await fixture.agent('blue-a'),await fixture.agent('blue-b')
@@ -387,7 +394,7 @@ async def main(args):
         blue_rows=await poll_until(blue_b,'project-blue',{blue['id']},45)
         blue_status=admin.call(scoped('project-blue','eventing_status'))
         blue_offset=blue_status['next_offset']
-        assert blue_offset>=1 and group_offset(blue_status['topic'])==blue_offset
+        assert blue_offset>=1 and group_offset(blue_status['topic'],blue_offset)==blue_offset
         config_before_backup=admin.call({'op':'config_get'})['config']
         red_rows=[row for row in (await b.call(scoped('project-red','poll')))['deliveries'] if row.get('publication_id')==new['id']]
         assert len(red_rows)==1
@@ -432,7 +439,7 @@ async def main(args):
         reject(response,code='NOT_FOUND')
         assert admin.call(scoped('project-red','eventing_status'))['next_offset']==final
         assert admin.call(scoped('project-blue','eventing_status'))['next_offset']==blue_offset
-        assert group_offset(status['topic'])==final and group_offset(blue_status['topic'])==blue_offset
+        assert group_offset(status['topic'],final)==final and group_offset(blue_status['topic'],blue_offset)==blue_offset
         assert broker_end(status['topic'])==final and broker_end(blue_status['topic'])==blue_offset
         after_restore=(await a.call(scoped('project-red','publish',text='Actual restored image advances from recovery point')))['publication']
         await poll_until(b,'project-red',{after_restore['id']},45)

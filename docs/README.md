@@ -18,6 +18,8 @@ See the [user guide](user/using-the-hub.md) to connect an agent, the
 [admin guide](admin/operations.md) for container deployment and recovery, and
 [troubleshooting](admin/troubleshooting.md) to diagnose failures.
 The [hub API](user/hub-api.md) describes commands and a two-agent workflow.
+The [OpenRig integration](user/openrig.md) covers pinned CLI compatibility,
+private seat/project bindings and the provider-neutral A2A adapter.
 The [stored-information guide](user/stored-information.md) covers message/status
 history, source provenance, ID retrieval, filtered search, and future connectors.
 The [contextual-record guide](user/contextual-records.md) describes original

@@ -12,6 +12,12 @@ You need the reachable hub URL, your assigned agent ID, and your own bearer
 token. Keep credentials in private configuration; a client configuration can
 contain only your entry in `agents` plus `public_url`. Never publish tokens.
 
+For a seat managed by OpenRig, follow the pinned [OpenRig binding and adapter
+contract](../../../docs/user/openrig.md). Run `scripts/openrig_hub.py` inside the
+existing seat with its private per-project binding. Preserve the rig UUID and
+logical seat ID across restores; a replacement rig needs a new binding. Rig
+membership conveys no hub permission. This adapter never starts a model runtime.
+
 With the supplied helper, run commands from the repository root:
 
 ```bash

@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:c9a4405c33bdbea7bda1a348c4d084fc52f9e85da9fc7b5898d9b394e20e52b9 -->
+<!-- literate-ai:authority-reviewed sha256:c94ca87df26ce3be3b8aa3a08fd5026af9ac3204f50f4bbe20fd56bfdf5caf23 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -187,3 +187,10 @@ successor native/image/platform recovery remain open. The browser authentication
 transition contract in `components/hub/identity/spec.md`
 also fences old-context responses; [native35ui evidence](../../verification/multi-eventing/admin-session-35/manifest.json)
 is a development result, not source34 image repair or successor admission.
+
+Recovery capacity now counts each accepted external mutation receipt, including
+coalesced apply messages; authenticated exact retries remain free at the cap.
+[Nine frozen component checks](../../verification/project-recovery/components/manifest.json)
+cover callback dependencies, resource ticket retirement and pure transport/work
+transformations. They do not qualify complete restore, real cancellation or
+successor image operation. The durable decision coordinator remains under integration.

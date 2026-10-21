@@ -84,7 +84,7 @@ async def main(args):
  assert args.eventing_rest_url.rstrip('/')=='http://127.0.0.1:18087','Only the owned18087 service is authorized'
  relay=Relay(args.eventing_rest_url);local=copy.copy(args);local.eventing_rest_url=relay.base;local.keep_work=None
  f=Fixture(local);e=Evidence(args.report,'adhd/real-coordinator-interference@1');e.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None,harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),predeclared_limits=LIMITS,scope='Actual managed observer membership/assignment changes alongside manually assigned bridge; no bridge-managed ownership transfer or HA claim',coordinator_snapshots=[],publications=0,hub_hard_restarts=0)
- cli_calls=0;observers=[];http=httpx.AsyncClient(trust_env=False,timeout=8);expected={};receipts=[];all_pubs=[];group=None;topic=None
+ cli_calls=0;observers=[];http=httpx.AsyncClient(trust_env=False,timeout=8);expected={};receipts=[];all_pubs=[];group=None;topic=None;reader_path=None
  def persist():e.write()
  async def cli_snapshot(expected_members):
   nonlocal cli_calls
@@ -122,10 +122,11 @@ async def main(args):
    if ack:await subscriber.call(scoped(P,'ack',delivery_ids=[rows[0]['id']]))
   return pub
  async def broker_offset():
-  paths=[x['path'] for x in relay.entries if x['method']=='POST' and x['path'].endswith('/offsets') and x.get('request',{}).get('offsets',[{}])[0].get('topic')==topic]
-  assert paths
-  r=await http.request('GET',relay.url+paths[-1],headers={'Accept':V2,'Content-Type':V2},json={'partitions':[{'topic':topic,'partition':0}]})
+  assert reader_path
+  r=await http.request('GET',reader_path+'/offsets',headers={'Accept':V2,'Content-Type':V2},json={'partitions':[{'topic':topic,'partition':0}]})
+  witness={'status':r.status_code,'response':r.json()};e.value.setdefault('broker_offset_observations',[]).append(witness);persist()
   assert r.status_code==200;return r.json()['offsets'][0]['offset']
+
  try:
   async with asyncio.timeout(LIMITS['overall_seconds']):
    await f.start();publisher=await f.agent('red-a');subscribers=[await f.agent('red-b'),await f.agent('bridge')]
@@ -136,6 +137,11 @@ async def main(args):
    produced=next(x for x in relay.entries if first['id'] in x.get('publication_ids',[]));topic=produced['topic']
    assignment=next(x for x in relay.entries if x['path'].endswith('/assignments') and x.get('request',{}).get('partitions',[{}])[0].get('topic')==topic);group=assignment['path'].split('/')[2]
    e.value.update(topic=topic,group=group,broker_container=args.owned_broker_container);persist()
+   reader_name='offset-reader-'+uuid4().hex[:8]
+   r=await http.post(relay.url+'/consumers/'+group,headers={'Accept':V2,'Content-Type':V2},json={'name':reader_name,'format':'json','auto.offset.reset':'earliest','auto.commit.enable':'false'});assert r.status_code==200 and r.json()['instance_id']==reader_name
+   reader_path=relay.url+'/consumers/'+group+'/instances/'+reader_name
+   e.value['offset_probe']='One unassigned/unsubscribed diagnostic REST instance: GET offsets only, never poll, join or commit'
+   persist()
    baseline=await state(0);assert await broker_offset()<=(await status())['next_offset']
    e.record('actual-manual-bridge-has-zero-managed-members-and-independent-out-of-order-acks')
    a=Observer(http,relay.url,group,'observer-a-'+uuid4().hex[:8],topic);observers.append(a);await a.start(relay.url);await state(1)
@@ -181,6 +187,9 @@ async def main(args):
   for x in observers:
    try:await x.close()
    except BaseException:pass
+  if reader_path:
+   try:await http.delete(reader_path,headers={'Accept':V2})
+   except httpx.HTTPError:pass
   await f.close()
   f.bind_evidence(e)
   for path in relay.instances:

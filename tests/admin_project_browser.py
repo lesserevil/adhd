@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import re
 
+import httpx
+
 from playwright.async_api import async_playwright, expect
 
 from eventing_browser import mutation, until
@@ -75,6 +77,7 @@ async def subscription_flow(page, f, evidence, name):
     await expect(row(page, sid)).to_be_visible()
     cancelled = await edit(page, sid)
     await cancelled.get_by_label("Information types (one per line)", exact=True).fill("cancelled-unapplied-change")
+    await capture(page, f.root, name + "-subscription-edit-form")
     await cancelled.get_by_role("button", name="Cancel subscription edit", exact=True).click()
     assert next(s for s in (await b.call(scoped(RED, "list_subscriptions")))["subscriptions"] if s["id"] == sid)["revision"] == 1
     form = await edit(page, sid)
@@ -152,6 +155,10 @@ async def model_transition(page, f, evidence, name, a, b, bridge, fields):
     raw_rows = await poll_until(bridge, RED, {raw["id"]}, f.args.deadline)
     await acknowledge(bridge, [d["id"] for d in raw_rows])
     assert f.model.calls == baseline and not (await b.call(scoped(RED, "poll")))["deliveries"]
+    await navigate(page, "Events")
+    await expect(page.get_by_text(re.compile(r"^Filter ready queue: .*Filtering paused$"))).to_be_visible()
+    await navigate(page, "Settings")
+    await expect(page.get_by_role("button", name="Configure optional decision model", exact=True)).to_be_visible()
     await page.get_by_role("button", name="Configure optional decision model", exact=True).click()
     matcher = page.locator('fieldset:has(> legend:text-is("matcher"))')
     await matcher.get_by_label("url", exact=True).fill(f.model.url)
@@ -210,6 +217,84 @@ async def project_catalog(page, f, evidence, name, original):
     directory = await agent.call(scoped(RED, "federation_directory"))
     assert any(e["scope"]["tenant"] == "browser-" + name and e["canonical"] for e in directory["catalog"]["items"])
     evidence.record(name + "-rendered-project-canonical-source-and-approved-export-override-preserves-server-default-and-other-project")
+
+
+async def event_policy(page, f, evidence, name):
+    """Exercise actual project topic/retention changes rather than form values."""
+    initial = f.admin().call({"op": "config_get"})["config"]
+    blue_initial = f.admin().call({"op": "eventing_status", "project_id": BLUE})
+    red_initial = f.admin().call({"op": "eventing_status", "project_id": RED})
+    pid = f.process.pid
+    a, b = await f.agent("red-a"), await f.agent("red-b")
+    subscription = (await b.call(scoped(RED, "subscribe", mode="raw")))["subscription"]
+    original = await publish(a, "Acknowledged before project event policy " + name)
+    rows = await poll_until(b, RED, {original["id"]}, f.args.deadline)
+    await acknowledge(b, [d["id"] for d in rows])
+    async def open_policy():
+        await navigate(page, "Projects")
+        target = page.locator("section.row").filter(has=page.get_by_text("Project ID: " + RED, exact=True))
+        await target.get_by_role("button", name="Project settings", exact=True).click()
+        await expect(page.get_by_role("button", name="Save project settings", exact=True)).to_be_visible()
+    await open_policy()
+    await page.get_by_label("Override eventing", exact=True).check()
+    values = {"topic_prefix": ("Event topic prefix", "browser_" + name),
+              "retention_ms": ("Event retention (ms)", 3600000),
+              "max_pending_events": ("Project maximum pending events", 10000),
+              "max_pending_bytes": ("Project maximum pending bytes", 10485760),
+              "max_pending_filter_jobs": ("Project maximum pending filter jobs", 8),
+              "max_pending_filter_jobs_per_subscription": ("Project maximum pending filter jobs per subscription", 4)}
+    for _, (label, value) in values.items():
+        await expect(page.get_by_label(label, exact=True)).to_be_disabled()
+        await page.get_by_label("Override " + label, exact=True).check()
+        await page.get_by_label(label, exact=True).fill(str(value))
+    await mutation(page, page.get_by_role("button", name="Save project settings", exact=True), "config_update")
+    await expect(page.get_by_role("heading", name="Create project", exact=True)).to_be_visible()
+    current = f.admin().call({"op": "config_get"})["config"]
+    red = next(p for p in current["projects"] if p["id"] == RED)
+    assert red["settings"]["eventing"] == {key: value for key, (_, value) in values.items()}
+    assert current["eventing"] == initial["eventing"]
+    assert next(p for p in current["projects"] if p["id"] == BLUE) == next(p for p in initial["projects"] if p["id"] == BLUE)
+    after = f.admin().call({"op": "eventing_status", "project_id": RED})
+    assert after["topic"] != red_initial["topic"] and after["topic"].startswith("browser_" + name)
+    assert f.admin().call({"op": "eventing_status", "project_id": BLUE})["topic"] == blue_initial["topic"]
+    await navigate(page, "Events")
+    await expect(page.get_by_text("Filter ready queue: 0 / 8 jobs · Deferred targets: 0 · Filtering enabled", exact=True)).to_be_visible()
+    async with httpx.AsyncClient(trust_env=False) as http:
+        metadata = await http.get(f.args.eventing_rest_url.rstrip("/") + "/v3/clusters")
+        metadata.raise_for_status()
+        cluster = metadata.json()["data"][0]["cluster_id"]
+        response = await http.get(f.args.eventing_rest_url.rstrip("/") + "/v3/clusters/" + cluster
+            + "/topics/" + after["topic"] + "/configs/retention.ms")
+        response.raise_for_status()
+        assert response.json()["value"] == "3600000"
+    fresh = await publish(a, "Real topic after project event override " + name)
+    rows = await poll_until(b, RED, {fresh["id"]}, f.args.deadline)
+    assert {d["publication_id"] for d in rows} == {fresh["id"]}
+    await acknowledge(b, [d["id"] for d in rows])
+    await open_policy()
+    await capture(page, f.root, name + "-project-event-policy")
+    # Reset one field while keeping explicit topic/retention/bytes: absence must
+    # restore inheritance, not save a copy of yesterday's server default.
+    await page.get_by_label("Override Project maximum pending events", exact=True).uncheck()
+    await mutation(page, page.get_by_role("button", name="Save project settings", exact=True), "config_update")
+    await expect(page.get_by_role("heading", name="Create project", exact=True)).to_be_visible()
+    current = f.admin().call({"op": "config_get"})["config"]
+    assert "max_pending_events" not in next(p for p in current["projects"] if p["id"] == RED)["settings"]["eventing"]
+    await open_policy()
+    await page.get_by_label("Override eventing", exact=True).uncheck()
+    await mutation(page, page.get_by_role("button", name="Save project settings", exact=True), "config_update")
+    await expect(page.get_by_role("heading", name="Create project", exact=True)).to_be_visible()
+    final = f.admin().call({"op": "config_get"})["config"]
+    assert "eventing" not in next(p for p in final["projects"] if p["id"] == RED)["settings"]
+    assert final["eventing"] == initial["eventing"] and f.process.pid == pid
+    assert f.admin().call({"op": "eventing_status", "project_id": RED})["topic"] == red_initial["topic"]
+    assert not (await b.call(scoped(RED, "poll")))["deliveries"]
+    future = await publish(a, "New event after inheritance reset " + name)
+    rows = await poll_until(b, RED, {future["id"]}, f.args.deadline)
+    assert {d["publication_id"] for d in rows} == {future["id"]}
+    await acknowledge(b, [d["id"] for d in rows])
+    await b.call(scoped(RED, "unsubscribe", subscription_id=subscription["id"]))
+    evidence.record(name + "-project-event-policy-real-topic-retention-partial-inheritance-reset-and-acks-preserved-without-restart")
 
 
 async def oidc(page, browser, f, provider, evidence, name, size, errors, http_errors):
@@ -311,6 +396,7 @@ async def viewport(browser, f, provider, evidence, name, size, password):
         await concurrent_tabs(page, f, evidence, name, errors, http_errors, expected_http)
         await late_awaits(page, f, evidence, name)
         await project_catalog(page, f, evidence, name, original)
+        await event_policy(page, f, evidence, name)
         await oidc(page, browser, f, provider, evidence, name, size, errors, http_errors)
         anticipated = [e for e in errors if e.startswith("console: Failed to load resource:") and "409" in e]
         assert len(anticipated) <= len(expected_http)

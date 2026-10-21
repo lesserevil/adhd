@@ -103,12 +103,16 @@ The suite launches an isolated hub, uses synthetic fixture accounts and generate
 private certificate keys beneath its private work directory. It never replaces
 operator certificates or provider configuration.
 
-The [focused Admin evidence](../validation/admin-browser-04.json) records 16
+The [focused Admin evidence](../validation/admin-browser-05.json) records 18
 desktop/mobile groups for another exact development artifact: rendered selector
 delivery, edits beyond 100 subscriptions, cancel/pause/resume, frozen filter
 backlog, model disable/enable with raw progress, two-tab conflicts, delayed
 cross-project responses, per-project canonical exports and two real signed OIDC
-exchanges. OIDC group roles and explicit project admission are checked separately.
+exchanges. It also changes all six project event policy overrides through the
+rendered forms, checks actual Kafka topic and retention metadata, restores one
+field and then the whole policy to inheritance, and verifies delivery acknowledgments
+survive these hot changes. The Events view exposes paused filtering and the
+configured ready-queue cap. OIDC group roles and explicit project admission are checked separately.
 The controlled matcher establishes transport and policy behavior, not semantic
 classification quality. Reproduce with the same private test environment:
 

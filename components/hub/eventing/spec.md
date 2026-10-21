@@ -21,7 +21,7 @@ ADHD's Apache2 license. A dedicated Kafka/KRaft service plus REST Proxy serves
 one ADHD server; multiple projects use that service. No Schema Registry needed.
 
 Root `eventing` is exactly `{enabled,rest_url,topic_prefix,timeout_ms,retry_ms,
-bearer_token,retention_ms,max_pending_events,max_pending_bytes}` with optional
+bearer_token,tls_ca_pem,retention_ms,max_pending_events,max_pending_bytes}` with optional
 fields/defaults: enabled=true, rest_url=http://127.0.0.1:8082,
 topic_prefix="adhd", timeout_ms=3000 (100..30000), retry_ms=1000 (100..30000),
 retention_ms=604800000 (3600000..31536000000), max_pending_events=100000
@@ -347,3 +347,80 @@ its httpc_manager implementation only forces a fresh connection when that list
 has at least one element. A harmless `keepalive:false` option satisfies this
 condition; an empty list does not. Qualify removal/rotation after a successful
 connection to the same origin, rather than testing only a fresh process.
+
+The published application schema's critical `x-uniqueBy` annotation takes a
+property name and requires distinct values of that property across object-array
+items. Schema-profile consumers must implement it or reject the profile, as for
+existing critical annotations. Apply `x-uniqueBy:"id"` to replay target arrays:
+JSON Schema uniqueItems alone cannot reject an ID repeated at a different revision.
+Audit schemas also bind `kind` to its matching repair/replay details shape.
+
+## Revisioned Admin subscription editing
+
+The project-scoped Admin command `update_subscription` requires subscription_id,
+expected_revision (the subscription revision, not global configuration revision),
+mode, selectors, confirm:true and message_id. Filtered mode additionally requires
+filter or the legacy description alias, never both; raw mode forbids both.
+Optional paused defaults false. Mode/selectors/criterion replace the complete
+future subscription policy; this is not a partial patch. The response is exactly
+`{subscription:Subscription}`. Reject unknown fields, including agent_id: resolve
+the existing owner server-side, require that agent's current selected-project
+admission, then apply ordinary subscription validation and revision semantics.
+Only Admin can edit another agent's subscription. A stale subscription revision
+returns HTTP409 CONFIG_CONFLICT; actor/project/message-ID idempotency returns an
+identical accepted result before rechecking that revision. Editing, pausing or
+resuming affects future acceptance snapshots only: preserve accepted frozen
+filter jobs, raw deliveries and acknowledgements. New edits on archived projects
+fail PROJECT_ARCHIVED. Forms must expose raw/filtered mode, selectors, criterion,
+pause/resume and current subscription revision without requiring JSON editing.
+Admin `subscriptions` additionally accepts optional offset (integer JSON token,
+0..9007199254740991, default0). Apply the optional agent filter first, then the
+stable newest-first subscription ordering, then offset and limit. Preserve exact
+`{items,truncated}` response and existing default limit50/max100. An out-of-range
+offset returns empty items/truncated:false. Browser Previous/Next controls must
+permit inspection and editing beyond the first100 subscriptions, resetting the
+page on project switch/navigation/create. Paging is a live view: concurrent
+mutations may change page boundaries; callers needing stable targets use IDs and
+subscription revision checks, never page position as mutation authority.
+
+## Project event policy overrides
+
+One server still owns one Kafka service. Root eventing defines service enabled,
+rest_url, timeout_ms, retry_ms, bearer_token and tls_ca_pem; these transport and
+security settings cannot be overridden by a project. Root topic/retention/backlog
+values provide defaults. Project settings.eventing permits exactly topic_prefix,
+retention_ms, max_pending_events and max_pending_bytes, with the same types/bounds
+as root policy. Each key is independently optional. Omission or null removes that
+project override and inherits the effective root value; an absent/null/empty
+policy block inherits all four. Reject unknown/transport keys even if null.
+
+Hot candidate validation must resolve every project's effective policy. Before a
+change to enabled/binding/security/topic/retention is durably decided, preflight
+each affected project's destination using its candidate effective policy. A new
+project may use provisional immutable identity metadata to provision its topic;
+preflight must not open a new empty store or admit its project before commit.
+Record one durable transition decision for all affected stores, recover it before
+workers start, and retain the existing failure/cutover invariants. A project-only
+topic change requeues only that project's unmaterialized events with stable
+identities; another project's topic/checkpoint cannot reset. Retention changes on
+the same binding preserve offsets. Budget changes apply prospectively to new
+acceptance and replay; lowering a limit never discards accepted pending work.
+Admin project forms expose independent inheritance controls for the four keys;
+service credentials/enablement remain in server settings. Raw progress and queue
+accounting use the selected project's effective limits and policy.
+
+Existing-topic retention must not mutate during predecision validation: a later
+project or listener preflight failure cannot safely roll back records deleted by
+an early shrink. Preflight may create an unused destination topic with candidate
+policy but only reads/validates existing topic configuration. The durable config
+transaction records desired policy before any existing retention alter. Apply
+and verify that policy during recoverable per-project transition completion,
+before recording that store's transition ID complete. A postdecision failure is
+an incomplete committed transition: fail closed and replay the desired policy at
+startup, never report that the old live configuration was restored. Preflight
+connectivity checks cannot guarantee a later infrastructure write succeeds.
+
+If a fetched broker batch fails its configuration/control revision fence, close
+that consumer instance and recreate it at the durable next offset. Retaining an
+instance whose network fetch advanced while materialization was rejected would
+skip accepted work; an unchanged topic binding does not make that safe.

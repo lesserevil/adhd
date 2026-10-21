@@ -27,10 +27,12 @@ The new root field `projects` is an array of 1..256 objects. Each has exactly:
 (`active` or `archived`, default active), `description` (UTF-8, 0..4096 bytes,
 default empty) and `settings` (object, default {}). Settings permit only existing
 project-owned matcher, threshold_ppm, federation, history, retrieval, archive,
-feedback and optimization policy fields, validated using their owning contracts.
+feedback and optimization policy fields, plus the safe eventing policy subset
+defined in eventing/spec.md, validated using their owning contracts.
 An absent setting inherits the server default; removing an override restores
 inheritance. Root auth/users/agents/agent_owners/listener/public_url/store_path,
-server resources, Kafka settings and credentials cannot appear in settings.
+server resources, Kafka connection/security/enablement and credentials cannot
+appear in settings.
 Projects cannot be removed once admitted. Hard deletion/transfer is unsupported.
 Changing name or description does not change any ID, key, cursor or retry result.
 
@@ -85,9 +87,9 @@ verbatim when replaying accepted legacy mutations; new results use stable IDs.
 
 | Scope | Operations/state/configuration |
 | --- | --- |
-| Server | users, local/OIDC login, passwords, roles/groups, sessions, CSRF, bootstrap recovery; agent tokens/owners and grant registry; listener/public URL/config location/backend root; model worker capacity; Kafka connection, topic and security; peer transport credentials; minimal public health and protocol discovery. |
+| Server | users, local/OIDC login, passwords, roles/groups, sessions, CSRF, bootstrap recovery; agent tokens/owners and grant registry; listener/public URL/config location/backend root; model worker capacity; Kafka connection/security and default topic policy; peer transport credentials; minimal public health and protocol discovery. |
 | Project + actor | subscribe/list_subscriptions/unsubscribe and subscription edits; poll/ack/send/private delivery; mutation retry identities; all owned history/retrieval/archive/federated jobs, cancellation, feedback attempt reads and replay jobs. |
-| Project | publish/get/search, source deduplication, immutable originals/context/corrections/referents/citations/snapshots; sequences and cursors; materialized delivery work; canonical source claims/export IDs; history/retrieval/archive policy; index recipes/rows/rebuilds and effective optimizer selection; adjudication/cohorts/replay/proposals/rollback/retirement; catalog caches and coverage. |
+| Project | publish/get/search, source deduplication, immutable originals/context/corrections/referents/citations/snapshots; sequences and cursors; materialized delivery work; canonical source claims/export IDs; history/retrieval/archive policy; index recipes/rows/rebuilds and effective optimizer selection; adjudication/cohorts/replay/proposals/rollback/retirement; catalog caches and coverage; effective project topic/retention/backlog policy. |
 | Server-authenticated, project-pair-authorized | federation submit/status/catalog/source jobs, export checks, remote identity correlation and request/result caches. |
 
 All existing Admin project views and commands require project selection subject

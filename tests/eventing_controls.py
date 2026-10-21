@@ -20,6 +20,10 @@ class ControlledGateway:
         self.upstream = upstream.rstrip('/')
         self.blocked, self.corrupt_next = False, False
         self.produces = []
+        self.fail_topic = self.hold_topic = None
+        self.block_produces = False
+        self.holding, self.release = threading.Event(), threading.Event()
+        self.alters = []
         fixture = self
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *_):
@@ -29,9 +33,11 @@ class ControlledGateway:
             def do_DELETE(self): self.forward()
             def forward(self):
                 body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
-                if fixture.blocked:
+                if fixture.blocked or (fixture.fail_topic and fixture.fail_topic in self.path) or (fixture.block_produces and self.command=="POST" and self.path.startswith("/topics/")):
                     self.send_error(503)
                     return
+                if self.command=="POST" and self.path.endswith("/configs:alter"):
+                    fixture.alters.append(json.loads(body))
                 original = None
                 if self.command == 'POST' and self.path.startswith('/topics/'):
                     original = json.loads(body)
@@ -54,6 +60,10 @@ class ControlledGateway:
                     assert result['offsets'] and all(type(row.get('offset')) is int
                         and row.get('error_code') is None for row in result['offsets'])
                     fixture.produces.append({'body': original, 'actual': json.loads(body), 'ack': result})
+                if fixture.hold_topic and fixture.hold_topic in self.path and "/records" in self.path and response.is_success and response.json():
+                    fixture.hold_topic = None
+                    fixture.holding.set()
+                    fixture.release.wait(10)
                 self.send_response(response.status_code)
                 self.send_header('Content-Type', response.headers.get('Content-Type', 'application/json'))
                 self.send_header('Content-Length', str(len(response.content)))

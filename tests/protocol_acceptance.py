@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Independently validate published schemas and actual HTTP messages."""
 import argparse
+import fcntl
 import hashlib
 import json
 from pathlib import Path
@@ -24,6 +25,14 @@ def min_bytes(validator,bound,instance,schema):
 def integer_token(validator,bound,instance,schema):
     if bound and (not isinstance(instance,int) or isinstance(instance,bool)):
         yield jsonschema.ValidationError('Integer JSON token required')
+
+def unique_by(validator,field,instance,schema):
+    if not isinstance(instance,list):return
+    selected=[item[field] for item in instance if isinstance(item,dict) and field in item]
+    keys=[json.dumps(value,sort_keys=True,separators=(',',':')) for value in selected]
+    if len(keys)!=len(set(keys)):
+        yield jsonschema.ValidationError('Duplicate identity selected by '+field)
+
 
 def canonical_bytes(validator,bound,instance,schema):
     if isinstance(instance,dict) and len(json.dumps(instance,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode())>bound:
@@ -320,7 +329,7 @@ from optimization_validation import optimization_bindings,optimization_usage
 
 ByteValidator=jsonschema.validators.extend(jsonschema.Draft202012Validator,
     {'x-maxBytes':max_bytes,'x-minBytes':min_bytes,'x-integerToken':integer_token,'x-maxCanonicalBytes':canonical_bytes,'x-sha256Of':snapshot_hash,
-     'x-jsonOf':json_of,'x-choiceDistribution':choice_distribution,'x-choiceExchange':choice_exchange,'x-historyChoices':history_choices,'x-orderedTimes':ordered_times,
+     'x-uniqueBy':unique_by,'x-jsonOf':json_of,'x-choiceDistribution':choice_distribution,'x-choiceExchange':choice_exchange,'x-historyChoices':history_choices,'x-orderedTimes':ordered_times,
      'x-utf8Span':utf8_span,'x-noulExchange':noul_exchange,'x-fragmentProjection':fragment_projection,'x-byteLengthOf':byte_length_of,
      'x-archiveSample':archive_sample,'x-archiveUsage':archive_usage,'x-archiveOriginals':archive_originals,'x-archiveBindings':archive_bindings,'x-replayBindings':replay_bindings,'x-replayUsage':replay_usage,'x-optimizationBindings':optimization_bindings,'x-optimizationUsage':optimization_usage})
 
@@ -381,8 +390,16 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--command',required=True)
     p.add_argument('--image',help='Run HTTP and CLI checks against this immutable container image')
+    p.add_argument('--eventing-rest-url', default='http://127.0.0.1:18082', help='Actual Kafka REST service for profile 2')
+    p.add_argument('--port-lock', type=Path, default=Path('_build/roadmap/foundation-port.lock'))
+    p.add_argument('--profile-version', choices=['1.7.0','2.0.0'], default='2.0.0', help='Exact application profile expected; legacy 1.7 requires explicit selection')
+    p.add_argument('--published-schema', type=Path, default=Path('docs/protocol/schema.json'))
+    p.add_argument('--published-openapi', type=Path, default=Path('docs/protocol/openapi.json'))
     p.add_argument('--report',default='verification/protocol-acceptance.json')
     args=p.parse_args();command=json.loads(args.command)
+    args.port_lock.parent.mkdir(parents=True,exist_ok=True)
+    port_lock=args.port_lock.open('a')
+    fcntl.flock(port_lock,fcntl.LOCK_EX)
     parent=Path('_build/roadmap/tests').resolve();parent.mkdir(parents=True,exist_ok=True)
     root=Path(tempfile.mkdtemp(prefix='protocol-',dir=parent))
     runtime=Runtime(root/'hub',command,args.image);model=ModelFixture();cases=[]
@@ -394,7 +411,7 @@ def main():
         jsonschema.Draft202012Validator.check_schema(schema)
         exported=json.loads(subprocess.check_output(cli+[json.dumps(['protocol-schema'])],text=True))
         assert exported==schema
-        assert normalized_schema_required(schema)==normalized_schema_required(json.loads(Path('docs/protocol/schema.json').read_text()))
+        assert normalized_schema_required(schema)==normalized_schema_required(json.loads(args.published_schema.read_text()))
         # These literals intentionally resemble schemas. Preserve them exactly.
         probe={'type':'object','required':['b','a'],'properties':{'value':{'const':{'required':['b','a']}}},'x-literal':{'required':['b','a']}}
         import copy
@@ -424,6 +441,7 @@ def main():
             actual=ByteValidator(profile,format_checker=jsonschema.FormatChecker()).is_valid(value)
             assert actual==expected,(name,expected,value)
         valid('AgentCard',client.get('/.well-known/agent-card.json')[1])
+        valid('Descriptor',client.get('/protocol')[1])
         for op in ('list_retrieval_attempts','get_retrieval_attempt','replay_retrieval','get_retrieval_replay','continue_retrieval_replay','cancel_retrieval_replay','query_archive','get_archive_query','continue_archive_query','cancel_archive_query','retrieve','get_retrieval','continue_retrieval','cancel_retrieval','retrieval_index','publish_record','get_record','query_history','get_history_query','continue_history_query','cancel_history_query','federation_directory','identity_matches','source_query','get_source_query','cancel_source_query','whoami','subscribe','list_subscriptions','unsubscribe','publish','send','poll','ack','get','search','federated_query','get_federated_query','cancel_federated_query'):
             assert 'agent_'+op in schema['$defs'] and 'result_'+op in schema['$defs']
         vectors=[
@@ -452,7 +470,8 @@ def main():
         ]
         for name,value,expected in vectors:valid(name,value,expected)
         fixtures=json.loads(Path('docs/protocol/examples.json').read_text())
-        assert fixtures['profile_version']==json.loads(Path('docs/protocol/openapi.json').read_text())['info']['version']
+        assert json.loads(args.published_openapi.read_text())['info']['version']==args.profile_version
+        assert fixtures['profile_version'] in ({'1.7.0','2.0.0'} if args.profile_version=='2.0.0' else {'1.7.0'})
         for example in fixtures['cases']:valid(example['definition'],example['body'],example['valid'])
         record('independent-draft202012-schema-and-positive-negative-vectors')
         password=(runtime.root/'initial-admin-password.txt').read_text().split('Password: ')[1].strip()
@@ -460,13 +479,16 @@ def main():
         for operation in ('config_get','overview','users','agents'):
             valid('admin_result_'+operation,client.api({'op':operation}))
         token=secrets.token_urlsafe(32)
-        client.api({'op':'create_agent','agent_id':'protocol-agent','token':token},mutation=True)
+        grants={'project_ids':[runtime.config['project_id']]} if args.profile_version=='2.0.0' else {}
+        if args.profile_version=='2.0.0':
+            client.api({'op':'config_update','patch':{'eventing':{'enabled':True,'rest_url':args.eventing_rest_url}}},mutation=True)
+        client.api({'op':'create_agent','agent_id':'protocol-agent','token':token,**grants},mutation=True)
         for body in ({'op':'whoami'},{'op':'publish','data':[1,None,{'arbitrary':True}]},{'op':'poll'},{'op':'search','query':'unseen-needle'}):
             valid('agent_'+body['op'],body)
             result=client.rpc(body,token)
             valid('result_'+body['op'],result)
         record('actual-a2a-responses-conform-to-independent-validator')
-        client.api({'op':'config_update','patch':{'matcher':{'url':model.url}}},mutation=True)
+        client.api({'op':'config_update','patch':{'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':3000,'retry_ms':100}}},mutation=True)
         client.rpc({'op':'subscribe','description':'API response changes'},token)
         client.rpc({'op':'publish','text':'An API response now includes a status field.'},token)
         import time
@@ -541,7 +563,8 @@ def main():
             ('/admin/api',b'{"op":"overview","op":"config_get"}',400),
             ('/admin/api',b'{"op":"overview","unknown":true}',400),
             ('/admin/api',b'{"op":"jobs","limit":true}',400),
-            ('/federation/v2',b'{"protocol_version":2,"op":"status"}',426),
+            ('/federation/v3' if args.profile_version=='2.0.0' else '/federation/v2',b'{"protocol_version":3,"op":"status"}',426),
+            *([('/federation/v2',b'{"protocol_version":2,"op":"status"}',401)] if args.profile_version=='2.0.0' else []),
             ('/federation/v1',b'{"protocol_version":true,"op":"status","origin_project_id":"other","query_id":"q"}',400),
             ('/federation/v1',b'{"protocol_version":1,"protocol_version":1,"op":"status","origin_project_id":"other","query_id":"q"}',400),
         ]:
@@ -554,9 +577,9 @@ def main():
                 value=json.load(r)
                 assert r.status==expected,(path,r.status,value)
                 if expected==426:
-                    assert value['error']['code']=='UNSUPPORTED_VERSION' and value['supported']==[1]
+                    assert value['error']['code']=='UNSUPPORTED_VERSION' and value['supported']==([1,2] if args.profile_version=='2.0.0' else [1])
                     valid('UnsupportedVersion',value)
-                else:valid('PeerV1Error' if path=='/federation/v1' else 'Error',value)
+                else:valid('PeerV2Error' if path=='/federation/v2' and args.profile_version=='2.0.0' else 'PeerV1Error' if path=='/federation/v1' else 'Error',value)
         record('actual-http-rejects-duplicates-unknown-fields-bool-integers-and-versions')
         status,api,_=client.get('/protocol/openapi');assert status==200
         validate_openapi(api)
@@ -564,16 +587,22 @@ def main():
             for operation in path.values():
                 for requirement in operation.get('security',[]):
                     assert set(requirement)<=set(api['components']['securitySchemes'])
-        assert normalized_openapi_required(api)==normalized_openapi_required(json.loads(Path('docs/protocol/openapi.json').read_text()))
+        assert normalized_openapi_required(api)==normalized_openapi_required(json.loads(args.published_openapi.read_text()))
         assert api==json.loads(subprocess.check_output(cli+[json.dumps(['protocol-openapi'])],text=True))
-        assert api['openapi']=='3.1.0' and api['info']['version']=='1.7.0'
+        assert api['openapi']=='3.1.0' and api['info']['version']==args.profile_version
         for path in ('/a2a','/admin/login','/admin/session','/admin/api','/admin/logout','/admin/oidc/start','/admin/oidc/callback','/federation','/federation/v1'):
             assert path in api['paths'],path
+        if args.profile_version=='2.0.0':
+            assert '/federation/v2' in api['paths']
+            for op in ('list_projects','update_subscription'):
+                assert 'agent_'+op in schema['$defs'] and 'result_'+op in schema['$defs']
+            for op in ('list_projects','resource_status','eventing_status','repair_eventing','replay_events','eventing_replay','eventing_audit'):
+                assert 'admin_'+op in schema['$defs'] and 'admin_result_'+op in schema['$defs']
         record('http-cli-identical-openapi-and-complete-interface-inventory')
-        report={'schema':'adhd/protocol-conformance@1','passed':True,'protocol_version':1,'schema_id':schema['$id'],'api_profile_version':api['info']['version'],'schema_sha256':hashlib.sha256(json.dumps(schema,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest(),'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'input_sha256':{
+        report={'schema':'adhd/protocol-conformance@1','passed':True,'protocol_version':int(args.profile_version.split('.')[0]),'schema_id':schema['$id'],'api_profile_version':api['info']['version'],'foundation_fixture_profile':fixtures['profile_version'],'schema_sha256':hashlib.sha256(json.dumps(schema,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest(),'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'input_sha256':{
             Path(x).name:hashlib.sha256(Path(x).read_bytes()).hexdigest() for x in command if Path(x).is_file()}}
         if args.image:report['image']=args.image
         Path(args.report).write_text(json.dumps(report,indent=2)+'\n')
-    finally:runtime.stop();model.close()
+    finally:runtime.stop();model.close();port_lock.close()
 
 if __name__=='__main__':main()

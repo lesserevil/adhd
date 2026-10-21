@@ -21,6 +21,8 @@ from protocol_acceptance import ByteValidator, strict_json
 
 
 def vector_definition(vector):
+    if "definition" in vector:
+        return vector["definition"], vector["body"]
     if "command" in vector:
         return "agent_" + vector["command"]["op"], vector["command"]
     if "request" in vector:

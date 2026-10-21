@@ -50,3 +50,30 @@ retained build. HTTPS trust-isolation changes following this candidate require
 separate deployment qualification. All private server processes were stopped.
 The extra broker on port 18086 was removed; port 18085 cleanup ownership passed to
 the OpenRig qualification worker, and the preexisting port 18082 service remained.
+
+## Completion audit candidates
+
+A later bounded audit qualified Admin edit/pause/resume, exact revision/message-ID
+retries, model-pending work and acknowledgement preservation, real Developer/Viewer
+denial, live membership/archive fencing, and pagination over 106 subscriptions.
+`hub-contract-audit-27.exs` SHA256
+`423a1de693782489a8c8ef648341bf4b73a782995c744ff3a913c5320ac20c9e`
+passed four independent Admin groups; report `audit-27-admin-edit.json` SHA256
+`aafb9dcc1f2b95a3feb5ff051b3d3c177609b3557849f1966f8c4feddd5ea0d8`.
+
+The same candidate passed four real-Kafka per-project policy groups, including a
+second-project preflight failure leaving the first topic's actual retention
+unchanged, a fetched record held across hot configuration and recovered from its
+durable position, independent project retention/backlog/topic cutover, per-field
+inheritance reset, acknowledgement preservation and new-project provisioning.
+Report `audit-27-project-policy.json` SHA256
+`0e1e3f76de0b0ee04bb65bdfddf1e19ef1c5151d352fc211dbc6a076f5604423`.
+
+The preceding candidate 26 passed all eight foundation protocol groups against
+fresh exact CLI/HTTP schema/OpenAPI exports, preserving independent model/history/
+retrieval semantic negatives and version/authentication boundaries. Its separate
+eventing protocol suite passed three groups with 22 valid/24 invalid vectors and
+actual official-SDK raw delivery. Reports `audit-26-full-protocol.json` and
+`audit-26-eventing-protocol.json` are in the same ignored evidence directory.
+These remain candidate evidence; subsequent filter-queue budget work and the final
+combined retained artifact require their own qualification.

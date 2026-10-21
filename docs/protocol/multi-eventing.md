@@ -178,3 +178,19 @@ or a bearer token. TLS peer/hostname verification remains mandatory, and trust
 changes require a new handshake, preventing previously authorized connections
 from bypassing candidate trust preflight. See the normative eventing contract, `components/hub/eventing/spec.md`,
 for exact bounds, recovery semantics and closed request/result schemas.
+
+### Complete scope inventory
+
+The authored [operation/configuration inventory](scopes.json) enumerates every
+published agent/Admin operation and root configuration field, including project
+settings inheritance. Run tests/protocol_scope.py against the exported accepted
+schema; an added/removed operation or configuration field fails coverage until
+its scope is reviewed. Server identity/listing operations disclose current
+admission only; project-owner includes project admission and the owning actor,
+not a global search of an actor's other memberships. Admin project operations
+retain each operation's role/privacy rules; project scope does not grant a Viewer
+write authority. Root federation transport/credentials/pairs are server-wide;
+project descriptions/catalogs/export policy inherit defaults and may override.
+The configuration-file CLI location is the sole restart setting. Immutable
+server/project IDs and read-only config_revision are classified server-wide but
+cannot be reassigned through a configuration patch.

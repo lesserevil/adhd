@@ -232,3 +232,13 @@ both controls pass. Every input hash was frozen before calls, with no retries.
 The experiment intentionally differs from the current protocol instruction
 constant; the proof preserves that rejection and separately validates the saved
 responses offline. It supports no application change or optimizer qualification.
+
+The [single preregistered source34 positive-witness attempt](../validation/optimizer-positive-34-min-evidence.json)
+stopped at `MIN_EVIDENCE` after six provider POSTs. Both independently labeled
+training searches already supplied every required original and answered directly,
+so they did not establish the two recurring retrieval/context gaps needed for a
+proposal. No winner or final held-out sources were created, and the experiment
+was not retried. The proof retains the frozen seven-case manifest, exact model
+exchanges and unchanged budget. This is a correctly rejected no-miss cohort,
+not positive optimizer qualification; that capability remains unproven for the
+current artifact. The earlier capsule-R quality failure remains separately open.

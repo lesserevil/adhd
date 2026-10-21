@@ -730,6 +730,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Partition all data, idempotency, queues, cursors, snapshots, caches and derived state by project; validate references at persistence boundaries.
   - [ ] Implement versioned legacy config/store migration with preflight, backup, interruption recovery and explicit downgrade restrictions.
   - [ ] Coordinate backend/outbox/project key ownership and one recoverable migration sequence with KAFKA-001 and KAFKA-008.
+  - [ ] Reject hot removal of the project registry or any admitted project, including dry validation; candidate33 accepted an Admin patch deleting projects and memberships. Preserve complete configuration/revision and retained project data on rejection, including installations without a default project.
 - **Evidence:**
   - [ ] Upgrade actual earlier accepted stores and preserve publications, private deliveries, acknowledgements, queries, source IDs and selected optimizer recipes.
   - [ ] Kill/restart migration and project transactions; prove no partial admission, silent empty stores, identity reassignment or cross-project key collisions.

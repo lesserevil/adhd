@@ -79,6 +79,15 @@ the owning feature's enabled, authorization, budget and lifecycle checks. Plain
 publication, raw subscriptions, literal search, poll and acknowledgement do not
 require any of these model capabilities.
 
+A hot configuration update, dry validation or file reload MUST reject removing
+an admitted project or collapsing a multiple-project installation to legacy
+single-project mode, including deleting/nulling the project registry. Preserve the
+stable server/default-project identities. Return CONFIG_APPLY_FAILED (HTTP409)
+for these identity/registry transitions without changing configuration, revision,
+memberships or retained project state. A downgrade requires the documented offline
+restore of the matching pre-upgrade backup; deleting configuration fields is not
+a downgrade procedure.
+
 ## Live effects and failure rollback
 
 - Agent/admin token replacement or removal applies to the next request. Removing

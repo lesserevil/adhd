@@ -1,0 +1,57 @@
+{
+  "schema": "adhd/federation-v2-stale-owner-proof@1",
+  "passed": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "accepted_image_qualified": false,
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "scope": "Exact frozen34 native three-hub v2 stale canonical-owner routing proof, with physical owner stop and absolute ten-second catalogue expiry, a reachable noncanonical copy receiving no source work, then actual owner restart/fresh routing. Same-email roles remain server local and hidden projects are denied.",
+  "report": {
+    "path": "verification/federation-stale-owner/native34.json",
+    "sha256": "ada0600345426d1d2a3b77ddf34c07506c00817046711824418718f36c58b11d"
+  },
+  "harness": {
+    "path": "tests/federation_stale_owner.py",
+    "sha256": "4f6ae96fe8c25d9270bddc4327602e9e69c55ef44f5e6d77b16cd08edd941999"
+  },
+  "dependency_sha256": {
+    "eventing_target.py": "256b0ce0bd6194429a33fec573a61125a907e36c0f1bb5061d2698cfe82968bf",
+    "federation_acceptance.py": "d1e3ebe9f40016945e9f2f28c6300f1e7f56b5b9e7f38587d5d91f6be967ff0c",
+    "federation_multi.py": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104"
+  },
+  "dependency_snapshot": {
+    "tests/federation_acceptance.py": {
+      "path": "verification/federation-stale-owner/federation-helper34.py.source",
+      "sha256": "d1e3ebe9f40016945e9f2f28c6300f1e7f56b5b9e7f38587d5d91f6be967ff0c",
+      "note": "Exact currentroot60-second startup helper used; previous31 proof retains its own shorter-deadline snapshot unchanged."
+    }
+  },
+  "normative_inputs": {
+    "components/hub/multi/spec.md": "8648392dbeab5ebbe17e386471dd2f3cf014053ed057c9cfc858b37abfb22e6d",
+    "components/hub/directory/spec.md": "d2e063ca5287ee28e4681b32f0ecbab8044544af0fdb7c4940eac533a94c5252",
+    "components/hub/directory/queries.md": "1e78458ebddbda722eecc5a3f070c90ae63603b6009c79ce77efa4031c87586d"
+  },
+  "expiry_evidence": {
+    "last_catalog_generated_at": "2026-10-21T21:56:25.673Z",
+    "max_age_ms": 10000,
+    "expires_ms": 1792619795673,
+    "source_query_created_at": "2026-10-21T21:56:35.929Z",
+    "owner_process_stopped": true
+  },
+  "wire_summary": {
+    "canonical_source_requests": 5,
+    "noncanonical_source_requests": 0,
+    "all_requests_v2": true,
+    "destination_project": "other",
+    "credentials_recorded": false
+  },
+  "model_requests": 2,
+  "historical_proof": "verification/federation-stale-owner/manifest.json",
+  "limits": [
+    "Controlled model; no semantic quality or external model use.",
+    "Eventing explicitly disabled; Kafka, deployment and lifecycle admission are separate gates.",
+    "Official34 lifecycle was still running; this is exact native behavior evidence, not admitted image or release qualification.",
+    "Kafka,18770 and existing services unchanged. Only owned native hubs/forwarding observers/controlled model were created, then closed.",
+    "Current34 bytes do not relabel historical31 proof. New manifest and report are separate pending official admission."
+  ]
+}

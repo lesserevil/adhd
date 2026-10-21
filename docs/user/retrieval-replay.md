@@ -264,3 +264,11 @@ hashes from source30. It includes both historical context producers, official
 A2A SDK exchanges, real store upgrades and optimizer fault/selection checks.
 Controlled model decisions establish behavior and failure isolation; live semantic
 quality remains separately measured, and positive optimizer qualification is still open.
+
+The [source34 rendered and fairness matrix](../validation/deep-rendered-34.json)
+passes the five existing backend browser suites and three controlled fairness
+suites on both native and the accepted image, once per runtime. Desktop and
+mobile captures were inspected, and the proof retains every report and capture
+hash. Fairness uses the declared two-permit project profile with the original
+assertions; it makes no default-one-permit throughput or live optimizer quality
+claim. The image, reviewed manifest and packaged hub bytes were verified.

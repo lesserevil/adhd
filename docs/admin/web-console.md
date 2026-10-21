@@ -32,6 +32,12 @@ current policy after hot role/configuration changes.
 - **Subscriptions:** descriptions and owners. Admin can create or confirm removal
   on behalf of agents. New subscriptions affect future publications; removal
   cancels pending matching work and retains accepted deliveries.
+  Edit subscription exposes mode, filter, all four deterministic selectors and a
+  pause checkbox with an explicit subscription revision. Edits preserve accepted
+  work's frozen criterion/revision. Pausing excludes new work; resuming starts at
+  its new watermark without replaying old events or resurrecting acknowledgements.
+  Cancel discards an unsaved edit. Previous/Next subscriptions page allows editing
+  subscriptions beyond the first 100.
 - **Activity:** delivery metadata and matching jobs; Admin can retry pending
   matching work and inspect/cancel discovery, source, history and retrieval jobs.
   History/retrieval evidence exposes coverage, versions, costs, exact model inputs,
@@ -96,6 +102,21 @@ Use the repository's test environment with Playwright/Chromium already installed
 The suite launches an isolated hub, uses synthetic fixture accounts and generates
 private certificate keys beneath its private work directory. It never replaces
 operator certificates or provider configuration.
+
+The [focused Admin evidence](../validation/admin-browser-04.json) records 16
+desktop/mobile groups for another exact development artifact: rendered selector
+delivery, edits beyond 100 subscriptions, cancel/pause/resume, frozen filter
+backlog, model disable/enable with raw progress, two-tab conflicts, delayed
+cross-project responses, per-project canonical exports and two real signed OIDC
+exchanges. OIDC group roles and explicit project admission are checked separately.
+The controlled matcher establishes transport and policy behavior, not semantic
+classification quality. Reproduce with the same private test environment:
+
+```bash
+python tests/admin_project_browser.py --hub /path/to/hub.exs --with-model \
+  --eventing-rest-url http://127.0.0.1:18082 \
+  --keep-work _build/admin-browser --report _build/admin-browser.json
+```
 
 Retrieval indexes in Settings exposes model inheritance, confidence, timeouts,
 budgets, storage bounds and primitive recipes. The index panel shows active,

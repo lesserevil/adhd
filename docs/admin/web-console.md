@@ -202,7 +202,7 @@ report does not certify semantic model quality or a one-permit throughput bound.
 The [first-time OIDC correction](../../verification/multi-eventing/oidc-first-setup-31.json)
 restores testing proposed provider settings before their initial save. Corrected
 native candidate `41541b99…` passes both desktop/mobile account, profile, OIDC-link,
-group-role and settings flows. Its lifecycle and image qualification remain open.
+group-role and settings flows. Its [intermediate admission and container payload audit](../../verification/multi-eventing/intermediate-admission-31.json) pass; the later identity/registry corrections still require final artifact and image qualification. [Candidate32 browser checks](../../verification/multi-eventing/oidc-first-setup-32.json) preserve first-time OIDC behavior and [role checks](../../verification/multi-eventing/role-browser-32-native.json) pass22 groups.
 
 The [retired agent ownership validation](agent-retirement-validation.md) records
 retained-identity protection, explicit Admin recovery, cold restarts and

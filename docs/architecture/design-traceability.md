@@ -128,3 +128,16 @@ survives derived-index damage and runtime changes; the latter invalidate claims
 of current runtime qualification. Explicit operator recipe patches durably reset
 the override. Lifecycle, independent model/cohort, fault, SDK, browser, protocol and
 container evidence remain required before the active roadmap gate can close.
+
+The subsequent identity/registry corrections remain an open release gate.
+The [retired identity guard review](../../verification/multi-eventing/identity-guard-review-32.json)
+explains Config/Store serialization and the corrected legacy snapshot boundary;
+[candidate33 source identity](../../verification/multi-eventing/identity-guard-33-source.json)
+is provisional. The [native eventing refresh](../../verification/multi-eventing/native-eventing-32.json)
+retains its exact earlier artifact scope. The
+[fanout/offset boundary qualification](../../verification/multi-eventing/eventing-boundaries-31.json)
+and [criterion audit](../../verification/multi-eventing/criterion-audit-31.json)
+retain historical source31 evidence. The
+[expired canonical-owner qualification](../../verification/federation-stale-owner/manifest.json)
+proves that an unavailable canonical owner is not replaced by a noncanonical copy.
+Final artifact/image evidence must be rebound after the outstanding corrections.

@@ -568,11 +568,30 @@
   },
   "correction_candidate": {
     "artifact_sha256": "41541b995a1584bfadffa2b8a221631dec725f74617fe029522e952dc5da0496",
-    "admitted": false,
+    "admitted": true,
     "changed_source": [
       "web.exs"
     ],
     "reason": "Expose test_oidc for first-time proposed provider configuration before initial save. Existing provider discovery API and all non-Web generated source remain identical.",
-    "native_browser_report": "verification/multi-eventing/oidc-first-setup-31.json"
+    "native_browser_report": "verification/multi-eventing/oidc-first-setup-31.json",
+    "admission": "verification/multi-eventing/intermediate-admission-31.json",
+    "superseded_for_final_qualification": true
+  },
+  "identity_registry_correction": {
+    "candidate": "34",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "admitted": false,
+    "image_qualified": false,
+    "scope": [
+      "Block Developer claims on retained agent identities across all projects",
+      "Read only verified snapshots without a legacy checkpoint opener",
+      "Reject removal of admitted project registry/identities in dry validation and apply"
+    ],
+    "native_retirement_prior_candidate": "docs/validation/agent-retirement-manifest.json",
+    "native_guard_review": "verification/multi-eventing/identity-guard-review-32.json",
+    "candidate33_source": "verification/multi-eventing/identity-guard-33-source.json",
+    "native32_browser": "verification/multi-eventing/oidc-first-setup-32.json",
+    "native32_roles": "verification/multi-eventing/role-browser-32-native.json",
+    "current_regressions": "in progress"
   }
 }

@@ -20,7 +20,7 @@ services:
     depends_on:
       kafka-rest: {condition: service_healthy}
     read_only: true
-    tmpfs: [/tmp:rw,nosuid,noexec,size=64m]
+    tmpfs: ["/tmp:rw,nosuid,noexec,size=64m"]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     mem_limit: 1g

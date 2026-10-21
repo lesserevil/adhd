@@ -57,6 +57,11 @@
       "path": "verification/multi-eventing/rebalance-34/assessment.json",
       "sha256": "211b3a9f8f26dec07dd5953276a27e7902a1445097214f15c21369f6b5c357e7",
       "passed": true
+    },
+    "image_ui52": {
+      "path": "verification/image34-ui/manifest.json",
+      "sha256": "8131b608b48e5a67d502d4b673a42f6b7b8edf966c39a111d62cf0754ba480e2",
+      "passed": true
     }
   },
   "requirements": [
@@ -639,13 +644,14 @@
     {
       "id": "MULTI-007/implementation/4",
       "item": "MULTI-007",
-      "requirement": "Resolve project-level recovery scope before closure: exact-image Compose/Kind prove consistent full-server recovery only. Selective restore preserving other current projects has no implemented/tested tool; clarify whether this milestone requires that capability or an explicit current full-server boundary. Never attest selective restore from full-set backup results.",
+      "requirement": "Implement selective recovery into a missing or logically empty target under its original server/project identity, with an Admin plan, complete ownership/reference validation, target-only durable storage/Kafka generations and worker fencing. Preserve every other current project and current global configuration; reject populated logical targets. Follow [the project recovery plan](project-restore.md), beginning with exact recovery authority and wire contracts. Full-server restore does not discharge this requirement.",
       "earlier_native_assessment": "missing",
-      "earlier_native_finding": "The explicit milestone scope decision is unresolved. Existing full-server recovery cannot satisfy selective restore or itself resolve whether that capability is required.",
+      "earlier_native_finding": "No selective implementation exists. The full original capability is required; the linked recovery plan now replaces the earlier scope-clarification placeholder.",
       "current_native_evidence_keys": [],
       "additional_completed_evidence": [],
       "remaining_evidence_or_decisions": [
-        "selective_restore"
+        "selective_restore",
+        "image34"
       ],
       "current_image_runtime_qualification_complete": false
     },
@@ -1571,10 +1577,13 @@
         "n34.openrig"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "current_image_evidence": [
+        "image_ui52"
       ],
-      "current_image_runtime_qualification_complete": false
+      "completion_proven": true,
+      "parent_dependency_gate": "MULTI-008 and KAFKA-009 remain open; item-specific evidence alone does not close parent dependencies."
     },
     {
       "id": "INTEROP-001/implementation/2",
@@ -1586,10 +1595,13 @@
         "n34.openrig"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "current_image_evidence": [
+        "image_ui52"
       ],
-      "current_image_runtime_qualification_complete": false
+      "completion_proven": true,
+      "parent_dependency_gate": "MULTI-008 and KAFKA-009 remain open; item-specific evidence alone does not close parent dependencies."
     },
     {
       "id": "INTEROP-001/implementation/3",
@@ -1604,10 +1616,13 @@
         "n34.openrig"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "current_image_evidence": [
+        "image_ui52"
       ],
-      "current_image_runtime_qualification_complete": false
+      "completion_proven": true,
+      "parent_dependency_gate": "MULTI-008 and KAFKA-009 remain open; item-specific evidence alone does not close parent dependencies."
     },
     {
       "id": "INTEROP-001/implementation/4",
@@ -1619,10 +1634,13 @@
         "n34.openrig"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "current_image_evidence": [
+        "image_ui52"
       ],
-      "current_image_runtime_qualification_complete": false
+      "completion_proven": true,
+      "parent_dependency_gate": "MULTI-008 and KAFKA-009 remain open; item-specific evidence alone does not close parent dependencies."
     },
     {
       "id": "INTEROP-001/evidence/1",
@@ -1634,10 +1652,13 @@
         "n34.openrig"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "current_image_evidence": [
+        "image_ui52"
       ],
-      "current_image_runtime_qualification_complete": false
+      "completion_proven": true,
+      "parent_dependency_gate": "MULTI-008 and KAFKA-009 remain open; item-specific evidence alone does not close parent dependencies."
     },
     {
       "id": "INTEROP-001/evidence/2",
@@ -1651,10 +1672,13 @@
         "n34.openrig"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "current_image_evidence": [
+        "image_ui52"
       ],
-      "current_image_runtime_qualification_complete": false
+      "completion_proven": true,
+      "parent_dependency_gate": "MULTI-008 and KAFKA-009 remain open; item-specific evidence alone does not close parent dependencies."
     }
   ],
   "remaining": [
@@ -1671,5 +1695,6 @@
     "Selective project recovery preserving other current projects is not implemented or qualified; full-server recovery cannot be relabelled.",
     "The bridge explicitly assigns one partition. Actual managed observers can exercise coordinator interference, but do not establish managed bridge ownership transfer, multiple hub writers or HA.",
     "Native C syscall crash probes and container network/kill/replacement are distinct evidence lanes."
-  ]
+  ],
+  "required_recovery_plan": "docs/roadmap/project-restore.md"
 }

@@ -46,7 +46,11 @@ docker compose -p adhd -f deploy/app.compose.yaml up -d --wait
 server identity must survive replacement. Back up the entire config directory,
 including the first-install administrator password file that the hub creates.
 The hub can atomically update files in this directory for hot Admin settings.
-Hub HTTP is bound to host loopback; place your authenticated TLS ingress in front
+Set `--public-url` at initialization to the actual agent-facing origin, including
+any mapped port (for example `http://127.0.0.1:18766`) or HTTPS ingress origin.
+The A2A card advertises this configured URL; a port-forward or proxy does not
+rewrite it. The listener remains container port 8766. Change the public URL hot
+in Admin when moving an installation. Hub HTTP is bound to host loopback; place your authenticated TLS ingress in front
 of it for remote access. Never publish the broker/controller ports or REST Proxy.
 The qualification-only `events.test.compose.yaml` exposes REST Proxy to loopback
 and is excluded from the application package.
@@ -74,6 +78,8 @@ its current store. A default dynamic StorageClass, amd64 nodes and a CNI enforci
 NetworkPolicy are required. This is a single-node durability topology, not an HA
 Kafka cluster. The manifests request bounded CPU/memory and persistent volumes.
 
+Set the seed `public_url` to the actual HTTPS ingress origin (or explicit
+qualification port-forward origin), so SDK clients follow the correct A2A card.
 Create the namespace and private config seed, select both image references in a
 local overlay to the accepted immutable hub image, then apply:
 

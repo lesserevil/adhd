@@ -12,7 +12,7 @@ File.mkdir_p!(root)
 :gen_tcp.close(probe)
 token=Base.url_encode64(:crypto.strong_rand_bytes(32),padding: false)
 admin=Base.url_encode64(:crypto.strong_rand_bytes(32),padding: false)
-c=ADHD.Config.validate(%{"server_id"=>String.duplicate("b",32),"project_id"=>"red","projects"=>[%{"id"=>"red","name"=>"Red"},%{"id"=>"blue","name"=>"Blue"}],"host"=>"127.0.0.1","port"=>port,"agents"=>%{"agent"=>token},"agent_projects"=>%{"agent"=>["red"]},"admin_token"=>admin,"matcher"=>nil,"eventing"=>%{"enabled"=>false},"store_path"=>Path.join(root,"old.dets")},root)
+c=ADHD.Config.validate(%{"server_id"=>String.duplicate("b",32),"project_id"=>"red","projects"=>[%{"id"=>"red","name"=>"Red"},%{"id"=>"blue","name"=>"Blue"}],"host"=>"127.0.0.1","port"=>port,"agents"=>%{"agent"=>token},"agent_projects"=>%{"agent"=>["red"]},"admin_token"=>admin,"matcher"=>nil,"federation"=>%{"description"=>"Wire fixture","peers"=>[%{"project_id"=>"remote","url"=>"http://127.0.0.1:1","token"=>String.duplicate("p",36),"inbound_token"=>String.duplicate("q",36)}]},"eventing"=>%{"enabled"=>false},"store_path"=>Path.join(root,"old.dets")},root)
 :persistent_term.put({ADHD.Config,:config},c)
 {:ok,_}=ADHD.Store.start_link(c)
 ADHD.Projects.prepare(c,c)
@@ -58,6 +58,14 @@ try do
   state=ADHD.Scope.with_project("red",fn->ADHD.Store.snapshot() |> ADHD.Store.unwrap() end)
   check.(map_size(state.publications)==1 and Map.has_key?(state.idempotency,{"agent",mid}))
   passed=["rejected-mutation-consumes-no-receipt-and-identical-retry-accepts-exactly-one-original"|passed]
+  {401,headers,value}=request.("/federation/v1",token,%{"protocol_version"=>1,"op"=>"catalog"})
+  check.(headers["www-authenticate"]=="Bearer" and value["protocol_version"]==1 and value["error"]["code"]=="UNAUTHORIZED")
+  passed=["legacy-v1-authentication-errors-retain-version-and-bearer-challenge"|passed]
+  :persistent_term.put({ADHD.Config,:config},Map.delete(c,"project_id"))
+  {400,_,value}=request.("/federation/v1",String.duplicate("q",36),%{"protocol_version"=>1,"op"=>"catalog"})
+  check.(value["protocol_version"]==1 and value["error"]["code"]=="PROJECT_REQUIRED")
+  passed=["legacy-v1-no-default-project-errors-retain-wire-version"|passed]
+  :persistent_term.put({ADHD.Config,:config},c)
   IO.puts(JSON.encode!(%{"suite"=>"adhd/store-freeze-wire@1","passed"=>true,"artifact_sha256"=>Base.encode16(:crypto.hash(:sha256,File.read!(artifact)),case: :lower),"checks"=>Enum.map(Enum.reverse(passed),&%{"name"=>&1,"passed"=>true}),"limitations"=>["Controlled local freeze setup; actual HTTP response and A2A retry assertions. Real syscall/crash qualification is separate."]}))
 after
   GenServer.stop(server)

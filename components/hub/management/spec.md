@@ -151,7 +151,11 @@ and removes one only after a confirmation identifying its owner and description.
 Cancellation must perform no mutation. Activity shows delivery metadata and matching
 jobs with status and offers confirmed retry of pending jobs. Neither page nor detail
 panels reveal private addressed content. Manual Refresh updates the active view and
-shows last checked time. No automatic refresh is required. List truncation is visible.
+shows last checked time. Refresh reloads current project admission and display names
+before querying project data. If the selected project is no longer admitted, clear
+its pending actions and select another admitted project explicitly in the selector,
+or show the no-project state. A stale project response must not restore revoked
+context. No automatic refresh is required. List truncation is visible.
 At 390px mobile width no document overflow; wide tables can scroll within labeled
 regions. Desktop and mobile all primary actions remain reachable. No page, console,
 uncaught script, missing asset or unexpected network errors on normal paths.

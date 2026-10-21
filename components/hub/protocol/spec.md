@@ -84,6 +84,8 @@ message ID after bounded backoff. Writer-freeze responses include Retry-After:1.
 Event repair/replay precondition conflicts use EVENTING_CONFLICT/409; an
 overlarge replay range uses RANGE_TOO_LARGE/413. EVENTING_DISABLED is503 and
 requires enabling the capability rather than retrying indefinitely.
+PROJECT_ARCHIVED denies new work with HTTP403 on ordinary HTTP/peer interfaces;
+authorized reads and explicitly permitted recovery controls remain available.
 Existing A2A errors retain their specified JSON-RPC/domain mapping. New A2A domain
 codes use the same adhd.hub structured error shape, never pretend success.
 Versioned peer errors have {protocol_version:1,error:{code,message}} with the

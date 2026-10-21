@@ -186,6 +186,11 @@ raw/filtered subscriptions, optional matcher and diagnostics. Secrets are write-
 Expose accepted/published/materialized/search watermarks, lag, outbox/filter backlog,
 consumer/checkpoint health, quarantine/gaps and retry status without credentials.
 Server diagnostics are Admin-only; project views apply admission.
+Recovery forms expose confirmed retry/reconcile with a reason, explicit inclusive
+replay ranges and exact subscription revisions, replay status and paged audit.
+Bounded subscription lists must state truncation and offer explicit ID/revision
+target entry so all valid targets remain selectable; reject duplicates and more
+than 64 targets before submission.
 
 Changing broker URL, credentials or topic prefix fences old network attempts,
 quiesces consumption, preserves accepted pending events and requires validated

@@ -785,7 +785,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Implementation:**
   - [ ] Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.
   - [ ] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.
-  - [ ] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks.
+  - [ ] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.
 - **Evidence:**
   - [ ] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.
 
@@ -903,7 +903,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Depends on:** KAFKA-003, KAFKA-004, KAFKA-005, MULTI-006
 - **Implementation:**
   - [ ] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation.
-  - [ ] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay.
+  - [ ] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation.
   - [ ] Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.
   - [ ] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.
 - **Evidence:**

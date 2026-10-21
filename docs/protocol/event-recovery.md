@@ -113,7 +113,7 @@ changes normal activation watermarks or silently adds other historical events.
 | `BACKPRESSURE` | 503 | Accepted work is retained; retry unchanged after capacity recovers. |
 | `EVENTING_DISABLED`, `MODEL_UNAVAILABLE` | 503 | Enable the required capability; do not retry indefinitely without a configuration change. |
 | `CONFIG_APPLY_IN_PROGRESS` | 503, `Retry-After:1` | Retry the same command and mutation ID after bounded backoff. |
-| `PROJECT_ARCHIVED` | 400 | Resume the project before starting replay; repair/audit remain available. |
+| `PROJECT_ARCHIVED` | 403 | Resume the project before starting replay; repair/audit remain available. |
 
 Audit records retain actor, project, mutation ID, reason, time and exact control
 arguments, without broker payloads or credentials. Audit, replay plan, outbox and

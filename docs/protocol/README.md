@@ -1,5 +1,10 @@
 # ADHD wire protocol, version 1
 
+The [multi-project/Kafka profile 2](multi-eventing.md) describes the target
+replacement and its compatibility rules. [Event repair and replay](event-recovery.md)
+documents its Admin recovery operations. These target contracts are under
+qualification; this page retains the accepted profile-1 foundation.
+
 This profile describes independently implementable interfaces. Component
 contracts are normative and are distributed with the container artifact. Their
 repository paths are `components/hub/core/spec.md` (A2A and persistence),

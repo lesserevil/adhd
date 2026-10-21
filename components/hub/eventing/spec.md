@@ -316,3 +316,17 @@ admission and configuration generation still fence attempts and commit; accepted
 work waits while disabled/archived. Legacy pending jobs without an authored frozen
 adapter retain their historical compatibility behavior. Match evidence reports
 the adapter and threshold that actually evaluated the job.
+
+An optional hot `eventing.tls_ca_pem` string contains 1..16 PEM X.509 CA
+certificates, at most 65536 UTF-8 bytes total. Parse each certificate and require
+its basicConstraints CA flag. Reject private keys, encrypted entries, malformed
+certificates, unknown PEM entries and non-whitespace text outside certificates.
+Configured roots replace the operating-system roots; omission restores system
+roots. Always require peer verification and HTTPS hostname verification. Trust
+changes participate in transport preflight using the candidate trust, revision
+fences and consumer replacement, while retaining checkpoints on the same binding.
+Status includes `quarantines:[{offset,reason,digest,at}]`, at most the one blocking
+record; an unparseable offset is null. Retry for such a record uses the current
+checkpoint as the requested offset and its exact digest; reconcile is forbidden.
+Repair audit details additionally contain `missing_logical_proof` boolean.
+Pending byte admission accounts for immutable event plus frozen target snapshots.

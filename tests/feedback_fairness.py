@@ -9,7 +9,7 @@ from archive_support import ArchiveFixture
 def main():
     p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--command');mode.add_argument('--image');p.add_argument('--report',default='verification/feedback-mixed-fairness.json');args=p.parse_args();command=json.loads(args.command) if args.command else []
     parent=Path('_build/roadmap/feedback-fairness').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));h=Runtime(root/'hub',command,args.image);model=ArchiveFixture();latencies=[]
-    cfg={'project_id':'feedback-fairness','store_path':str(h.root/'hub.dets'),'port':free_port(),'agents':{a:secrets.token_urlsafe(32) for a in ['alice','bob']},'admin_token':secrets.token_urlsafe(32),'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':1000,'retry_ms':100},'archive':{'audit_rate_ppm':0}}
+    cfg={'project_id':'feedback-fairness','store_path':str(h.root/'hub.dets'),'port':free_port(),'agents':{a:secrets.token_urlsafe(32) for a in ['alice','bob']},'admin_token':secrets.token_urlsafe(32),'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':1000,'retry_ms':100},'resources':{'project_model_concurrency':2},'archive':{'audit_rate_ppm':0}}
     h.file.write_text(json.dumps(cfg));h.file.chmod(0o600)
     def rpc(c,actor='alice'):
         start=time.monotonic();v=Client(h).rpc(c,h.config['agents'][actor]);latencies.append(time.monotonic()-start);return v
@@ -40,7 +40,7 @@ def main():
             if matching[0]<=v['at']<=matching[-1] and (archive or replay):analysis.append(v['at']);kinds.add('archive' if archive else 'replay')
         intervals=[b-a for a,b in zip(analysis,analysis[1:])];assert len(analysis)>=3 and kinds=={'archive','replay'} and all(v>=.95 for v in intervals),(kinds,analysis,intervals)
         assert matching[-1]-matching[0]<12 and max(latencies)<1,(matching[-1]-matching[0],max(latencies));assert rpc({'op':'poll'},'bob')['deliveries']==[]
-        result={'schema':'adhd/feedback-fairness@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None,'image':args.image,'matching_calls':16,'completed_archive':6,'completed_replay':4,'analysis_kinds':sorted(kinds),'analysis_starts_while_matching_due':len(analysis),'analysis_intervals_seconds':intervals,'matching_start_span_seconds':matching[-1]-matching[0],'maximum_api_seconds':max(latencies),'workdir':str(root.relative_to(Path.cwd()))};Path(args.report).write_text(json.dumps(result,indent=2)+'\n');print('PASS mixed Archive/replay shared rate and independent matching/publish/poll/ACK',flush=True)
+        result={'schema':'adhd/feedback-fairness@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None,'image':args.image,'resource_profile':{'project_model_concurrency':2},'matching_calls':16,'completed_archive':6,'completed_replay':4,'analysis_kinds':sorted(kinds),'analysis_starts_while_matching_due':len(analysis),'analysis_intervals_seconds':intervals,'matching_start_span_seconds':matching[-1]-matching[0],'maximum_api_seconds':max(latencies),'workdir':str(root.relative_to(Path.cwd()))};Path(args.report).write_text(json.dumps(result,indent=2)+'\n');print('PASS mixed Archive/replay shared rate and independent matching/publish/poll/ACK',flush=True)
     finally:h.stop();model.close()
 
 if __name__=='__main__':main()

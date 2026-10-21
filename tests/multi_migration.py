@@ -8,7 +8,12 @@ acknowledgements through A2A; the candidate opens the same configuration/store.
 import asyncio
 import copy
 import hashlib
+import json
 from pathlib import Path
+import re
+import signal
+import subprocess
+import sys
 import time
 from uuid import uuid4
 
@@ -16,6 +21,122 @@ from multi_support import Evidence, Fixture, arguments, poll_until, scoped
 
 
 P = "project-red"
+
+
+def source_identities(artifact):
+    body = artifact.read_bytes()
+    rows = {}
+    for module in ("Migration", "Config", "Storage", "Store", "CLI"):
+        match = re.search(rb"(?m)^defmodule ADHD\." + module.encode() + rb" do\n", body)
+        assert match is not None, "Qualified artifact lacks migration authority module " + module
+        following = re.search(rb"(?m)^defmodule ", body[match.end():])
+        end = match.end() + following.start() if following else len(body)
+        rows[module] = hashlib.sha256(body[match.start():end]).hexdigest()
+    return rows
+
+
+async def interrupt_upgrade(f, args, evidence):
+    """Stop a real rename at an exact boundary, observe kernel stop, then kill."""
+    assert sys.platform == "linux", "Precise filesystem crash fixture requires Linux"
+    fixture_source = Path(__file__).with_name("multi_fault.c")
+    library = f.root / "migration-fault.so"
+    subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-shared", "-fPIC", "-O2",
+                    "-o", str(library), str(fixture_source), "-ldl"], check=True)
+    sentinel = f.root / "migration-fault.json"
+    assert not sentinel.exists(), "Crash fixture directory must be fresh"
+    seed = json.loads(f.file.read_text())
+    store = Path(seed["store_path"])
+    sources = [f.file, Path(str(f.file) + ".journal"), store, Path(str(store) + ".snapshot")]
+    originals = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in sources if path.exists()}
+    injected = copy.copy(args)
+    injected.hub = None
+    injected.command = json.dumps(["env", "LD_PRELOAD=" + str(library),
+        "ADHD_CRASH_STAGE=" + args.crash_at, "ADHD_CRASH_CONFIG=" + str(f.file),
+        "ADHD_CRASH_STORE=" + str(store), "ADHD_CRASH_SENTINEL=" + str(sentinel), "elixir", str(args.hub)])
+    f.args = injected
+    startup = asyncio.create_task(f.start())
+    try:
+        end = time.monotonic() + 55
+        while time.monotonic() < end:
+            if sentinel.exists():
+                break
+            if startup.done():
+                await startup
+                raise AssertionError("Hub became ready without reaching the requested migration crash boundary")
+            await asyncio.sleep(.02)
+        else:
+            raise AssertionError("Migration never reached the requested real filesystem boundary")
+        trace = json.loads(sentinel.read_text())
+        assert trace["stage"] == args.crash_at and trace["pid"] == f.process.pid
+        end = time.monotonic() + 2
+        while time.monotonic() < end:
+            state = Path("/proc/" + str(trace["pid"]) + "/status").read_text()
+            if re.search(r"^State:\s+T\b", state, re.M):
+                break
+            await asyncio.sleep(.01)
+        else:
+            raise AssertionError("Requested crash boundary did not stop the actual runtime process")
+        f.hard_stop()
+        assert f.process.returncode == -signal.SIGKILL
+        try:
+            await startup
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("Interrupted startup was incorrectly reported as successful")
+        marker_path = Path(str(f.file) + ".project-upgrade")
+        expected = {"before-prepared": None, "before-decided": "prepared", "before-config": "decided",
+                    "after-snapshot": "decided", "before-completed": "decided"}[args.crash_at]
+        marker = json.loads(marker_path.read_text()) if marker_path.exists() else None
+        assert (marker["phase"] if marker else None) == expected
+        for source, digest in originals.items():
+            backup = Path(str(source) + ".before-projects")
+            assert backup.is_file() and hashlib.sha256(backup.read_bytes()).hexdigest() == digest
+        current = json.loads(f.file.read_text())
+        assert isinstance(current.get("projects"), list) == (args.crash_at in ("after-snapshot", "before-completed"))
+        evidence.record("actual-runtime-killed-at-observed-durable-migration-boundary",
+                        stage=args.crash_at, marker_phase=expected, signal="SIGKILL",
+                        kernel_state_before_kill="stopped",
+                        preserved_backup_sha256={path.name: digest for path, digest in originals.items()},
+                        fault_source_sha256=hashlib.sha256(fixture_source.read_bytes()).hexdigest(),
+                        fault_library_sha256=hashlib.sha256(library.read_bytes()).hexdigest())
+    finally:
+        if not startup.done():
+            if f.process and f.process.poll() is None:
+                f.hard_stop()
+            try:
+                await startup
+            except AssertionError:
+                pass
+        f.args = args
+
+
+async def damaged_backup_refusal(f, args, evidence):
+    """Corrupt a real prepared backup and require refusal before service opens."""
+    config = json.loads(f.file.read_text())
+    base = f.file if args.damage_backup == "config" else Path(config["store_path"])
+    if args.damage_backup == "snapshot":
+        base = Path(str(base) + ".snapshot")
+    backup = Path(str(base) + ".before-projects")
+    original = backup.read_bytes()
+    damaged = b"Deliberately damaged migration backup\n"
+    backup.write_bytes(damaged)
+    refused = False
+    try:
+        try:
+            await f.start()
+        except AssertionError:
+            assert f.process is not None and f.process.poll() is not None, "A timeout is not fail-closed startup refusal"
+            refused = True
+        assert refused, "A migration with a damaged prepared backup became publicly ready"
+        evidence.record("damaged-prepared-backup-refused-before-public-readiness", backup=args.damage_backup,
+                        original_sha256=hashlib.sha256(original).hexdigest(),
+                        damaged_sha256=hashlib.sha256(damaged).hexdigest())
+    finally:
+        if f.process is not None and f.process.poll() is None:
+            f.hard_stop()
+        backup.write_bytes(original)
+        backup.chmod(0o600)
 
 
 async def main(args):
@@ -30,6 +151,8 @@ async def main(args):
     evidence = Evidence(args.report, "adhd/multi-eventing-migration@1")
     evidence.value["artifact_sha256"] = hashlib.sha256(current.read_bytes()).hexdigest()
     evidence.value["legacy_artifact_sha256"] = hashlib.sha256(args.legacy_hub.read_bytes()).hexdigest()
+    evidence.value["migration_source_sha256"] = source_identities(current)
+    evidence.value["harness_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     # The producer starts with the previous format, never a new registry seeded
     # into an old binary. All its agents belong to the migrated default project.
     f.config.pop("projects")
@@ -38,6 +161,7 @@ async def main(args):
     try:
         await f.start()
         a, b = await f.agent("red-a"), await f.agent("red-b")
+        legacy_server_id = (await a.call({"op": "federation_directory"}))["server_id"]
         source = {"kind": "slack", "id": "legacy-channel", "item_id": "legacy-original"}
         command = {"op": "publish", "text": "Immutable legacy original with provenance", "source": source}
         retry_id = uuid4().hex
@@ -62,9 +186,15 @@ async def main(args):
 
         f.hard_stop()
         f.args = args
+        if args.crash_at:
+            await interrupt_upgrade(f, args, evidence)
+        if args.damage_backup:
+            assert args.crash_at, "Backup damage test requires an actual interrupted migration"
+            await damaged_backup_refusal(f, args, evidence)
         # The candidate must migrate the persisted old configuration itself.
         # Kafka is enabled after that migration through the supported hot API.
         await f.start()
+        assert f.admin().call({"op": "config_get"})["config"]["server_id"] == legacy_server_id
         assert await a.call(command, retry_id) == original_result
         assert (await a.call(scoped(P, "get", publication_id=original["id"])))["publication"] == original
         assert (await a.call(scoped(P, "search", query="Immutable legacy original")))["publications"] == [original]
@@ -115,4 +245,6 @@ async def main(args):
 if __name__ == "__main__":
     parser = arguments(__doc__)
     parser.add_argument("--legacy-hub", type=Path, required=True)
+    parser.add_argument("--crash-at", choices=("before-prepared", "before-decided", "before-config", "after-snapshot", "before-completed"))
+    parser.add_argument("--damage-backup", choices=("config", "backend", "snapshot"))
     asyncio.run(main(parser.parse_args()))

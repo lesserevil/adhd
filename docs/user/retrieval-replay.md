@@ -257,3 +257,10 @@ History support with project isolation, and exactly one delivery of accepted
 paused filter work after re-enabling the model. The owned relay and private bridge
 are removed afterward. This feature witness does not claim lifecycle or image
 qualification and does not change the unresolved optimizer experiments.
+
+The [source34 native controlled regression matrix](../validation/deep-controlled-34-native.json)
+passes all 117 groups in 15 existing suites, once each, with unchanged harness
+hashes from source30. It includes both historical context producers, official
+A2A SDK exchanges, real store upgrades and optimizer fault/selection checks.
+Controlled model decisions establish behavior and failure isolation; live semantic
+quality remains separately measured, and positive optimizer qualification is still open.

@@ -148,3 +148,8 @@ Run the executable matrix with an isolated disposable hub configuration:
   --eventing-rest-url http://127.0.0.1:18082 \
   --keep-work _build/evidence --report _build/evidence.json
 ```
+
+The [candidate30 evidence refresh](../validation/multi-evidence-30.json) repeats
+all eleven isolation groups, including actual optimizer final evaluation and
+revocation across hard restarts. It retains the controlled-fixture scope and
+policy allowances above; actual-image qualification is separate.

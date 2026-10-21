@@ -173,3 +173,8 @@ proofs without deleting publications, labels, exposure or selected generations.
 Qualification covers the displayed cases and runtime; model interpretations and
 human labels remain fallible. Exact messages are in `optimization/interface.md`
 under `components/hub/`.
+
+The [candidate30 desktop/mobile refresh](../validation/admin-browser-30.json)
+repeats all eighteen focused groups against its exact runtime digest, including
+real Kafka policy changes and two signed OIDC exchanges. Actual-image browser
+qualification is recorded separately.

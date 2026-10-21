@@ -173,3 +173,7 @@ and acknowledged queues after outages. Two separate hubs on distinct Kafka
 clusters also preserve canonical remote provenance and local authentication
 across a remote restart. This is terminal infrastructure-seat interoperability;
 it does not certify autonomous model-agent behavior.
+
+The [candidate30 OpenRig refresh](../validation/openrig-30.json) repeats all
+eleven infrastructure-seat groups against its exact native runtime digest and
+two real Kafka clusters. Actual-image interoperability remains a separate gate.

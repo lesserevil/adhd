@@ -183,7 +183,15 @@ async def viewport(args, browser, name, width, height, evidence):
         release.set()
         await asyncio.sleep(.2)
         assert "Target " + RED not in await page.locator("#content").inner_text()
-        assert await page.get_by_role("alert").inner_text() == ""
+        alert_text = await page.get_by_role("alert").inner_text()
+        evidence.value["late_response_observation"] = {"viewport": name,
+            "selected_project": await page.get_by_label("Project", exact=True).input_value(),
+            "alert_text": alert_text, "old_target_visible": "Target " + RED in await page.locator("#content").inner_text()}
+        if alert_text:
+            captures.append(await capture(page, f.root, "late-response-failure"))
+            evidence.value["failure_captures"] = captures
+        evidence.write()
+        assert alert_text == ""
         await page.unroute("**/admin/api", delayed)
         # Real lower-role browser sessions see only their explicit healthy grant.
         for role in ("Developer", "Viewer"):

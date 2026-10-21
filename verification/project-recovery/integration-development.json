@@ -1,0 +1,58 @@
+{
+  "schema": "adhd/project-recovery-development-checkpoint@1",
+  "state": "partial",
+  "scope": "Root-owned generated integration source checkpoint; complete backend assembly, service tests and acceptance still pending",
+  "source_files_sha256": {
+    "allocator.exs": "7faaaf78da78955f5f0412407169a180849615fbdd958b2deca05e6823de6b17",
+    "history.exs": "5bbcddbe8f34545cdb625e31c65615149aaa29eb38fd749fb855b2b243356f48",
+    "retrieval_jobs.exs": "518d108dc7a89525e4492b2a8002ebed7138e6f9f7bca5282f8c60d96d20b0e4",
+    "source_queries.exs": "3c2b6dc578d0b6307160a4fed942f3f9b9bca782163b0bab7173e6a53eae5a3c",
+    "replay.exs": "86eaf42eb771dd51bd3bad50bb3416ef8c7ab1c32505a46c50b75639352ca221",
+    "optimization.exs": "978c3754cae6dc66c8b8b3d9540e5b230ead7042e646f7c6dffe00ca9db8d8e3",
+    "optimization_worker.exs": "ac7788951d90a6f9124c03e0434f9075b694416e64763f2132ae8c81f0571f2b",
+    "archive.exs": "0a5b01114287e54ae8e7269b206d09d94dce40e94221e49e63773b993ecdd37e",
+    "retrieval_index.exs": "2bcb92264f733e196c7a33f32af3fc734dc3d1674b070d040f73a89ed521c093",
+    "eventing.exs": "bdc7f29b95989f9649ec52e0a5c7ec6642a215abe8c2e3eb116557105d5b93b7",
+    "migration.exs": "b6d92f043d30624f93b1b0a1b2cf2214eccd35512e1149f6d3b84da5411f81d4",
+    "resources.exs": "32602f6937b698939977c3ca51f4fa8b44d3d7e906123a10ea5be85cbc9ffa7f",
+    "workers.exs": "2431e240b0d90522f963e0b28e7ccbba27833e5abde4c2ae229c2247763f80a6",
+    "feedback.exs": "7486dcd9b8124687b0524770dd4102ec50d3d8d78f03d8e3fb0ad64543f8183a",
+    "archive_worker.exs": "eac56b20ab1ef6a48c61072544c832757fcbed7c16848582faacec68483dde46",
+    "replay_worker.exs": "429cf8abc96a530c7e8fac15cfc73e85ba3ef03087ee6b442223e00e0730c1b0",
+    "server.exs": "b2cc2fa17f470740269c29edbb0f699d86a5f2e87cb8699014aa28547b4e293d",
+    "domain.exs": "9a67cbec3a05519c1e3865f9f68296f683c37521a1700febba59eae1ee34a2d2",
+    "web.exs": "af045e57f81a30fce998e4430b2b99b80cbdfe67769526b1fd2fa124a0b144be",
+    "main.exs": "9412238fa3b4fc8e34bd40475d92832f682056a2443c64295136283e70109979",
+    "Makefile": "7460ec55e663096b840a233dce99a7aced94a054460663b3eb71ea2e3e8cd0f7",
+    "tools/assemble.exs": "5bf582d5386736fc277db031cb453fe8cffd2e7b23d19b0351d275a9e8c48db3"
+  },
+  "checks": {
+    "root_owned_elixir_parse": true,
+    "browser_javascript_syntax": true,
+    "pure_allocator_tests": 5
+  },
+  "implemented_development_seams": [
+    "Fresh namespaced allocator separate from sequence ordering; new non-Store query, plan, proposal, index and event audit IDs",
+    "Speculative index-generation allocations retain counter at compare-and-set commit",
+    "New worker units reset epoch; old completion callbacks retain captured epoch",
+    "Resource tickets and network export/result check project epoch",
+    "Restored topic generations preserve legacy topic names on unchanged routes",
+    "Admin recovery validation/dispatch bypass unavailable target Store and reauthenticate through Config coordinator",
+    "Admin plan/apply/status and hot recovery settings UI with stale auth/project/view checks"
+  ],
+  "not_yet_proven": [
+    "Combined service assembly and native declarations",
+    "All allocator families atomic under live concurrent transactions",
+    "Exact target-only state preservation and original-owner proof",
+    "Kernel-kill recovery boundaries, Kafka old-tail exclusion and late model/peer/Kafka result fencing",
+    "Actual desktop/mobile recovery and stale-response behavior",
+    "Successor admission and immutable image/Compose/Kind qualification"
+  ],
+  "immutable_baselines_unchanged": [
+    "source34",
+    "source35ui",
+    "hub-filter-35-ui.exs"
+  ],
+  "full_recovery_qualified": false,
+  "program_qualification_complete": false
+}

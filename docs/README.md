@@ -37,6 +37,8 @@ The [Kafka pub/sub roadmap](roadmap/kafka-pubsub.md) plans per-server Kafka behi
 the A2A interface, optional plain-text filters, independent backend fact search
 and Compose/Kubernetes deployment. These changes are pending; the current runtime
 still uses model-matched subscriptions.
+The [Kafka service operations guide](admin/event-service.md) covers the new
+Compose/Kubernetes packages and their current qualification boundaries.
 The [adaptive retrieval roadmap](roadmap/adaptive-retrieval.md) records the planned
 context storage, semantic scans, search-then-scan and evidence-driven index workflows.
 See [federated project discovery](user/federation.md) for the opt-in asynchronous

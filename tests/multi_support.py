@@ -85,7 +85,7 @@ class Fixture:
     def __init__(self, args):
         self.args = args
         self.temp = None
-        self.root = args.keep_work
+        self.root = args.keep_work.resolve() if args.keep_work else None
         if self.root is None:
             self.temp = tempfile.TemporaryDirectory(prefix="adhd-multi-")
             self.root = Path(self.temp.name)

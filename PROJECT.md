@@ -117,8 +117,9 @@ acknowledgements, hot Admin configuration and canonical federation routing.
 [Kafka pub/sub plan](docs/roadmap/kafka-pubsub.md) scope contracts, Kafka handoff,
 A2A delivery, optional filters, fact search, Admin controls, deployments,
 migration and qualification. Integrate these with MULTI-001 through MULTI-008.
-This request is planning only; the accepted runtime still uses model-matched
-subscriptions and existing local queues.
+Implementation is now authorized and underway in local feature branches. The
+accepted runtime still uses model-matched subscriptions and existing local queues;
+new Kafka/multi-project candidates have separate partial qualification evidence.
 
 ### Plain-text subscriptions in the current runtime
 
@@ -205,9 +206,9 @@ other ADHD servers. This supersedes the earlier one-server-per-project product
 restriction; a single-project deployment remains supported. The current runtime
 is still single-project. The [multiple-project roadmap](docs/roadmap/multi-project.md)
 and MULTI-001 through MULTI-008 in [active work](docs/roadmap/active-work.md)
-record the pending contract, storage/migration, access, agent workflow, federation,
-hot Admin, resource isolation and qualification tasks. This is a planning request;
-implementation and acceptance are not yet complete.
+record the contract, storage/migration, access, agent workflow, federation,
+hot Admin, resource isolation and qualification tasks. Implementation is now
+authorized and underway; acceptance is not yet complete.
 
 Keep stable server and project identities distinct, preserve existing installations,
 and make project context explicit in data, credentials, jobs and protocols. Preserve

@@ -75,21 +75,23 @@ async def checks(f, evidence):
     subscribe = scoped("project-red", "subscribe", mode="raw")
     validate("agent_subscribe", subscribe)
     result = await b.call(subscribe)
-    validate("result_subscribe", result)
+    jsonschema.Draft202012Validator({"$defs": definitions, "$ref": "#/$defs/result_subscribe"}).validate(result)
+    wire_sub = (await f.raw("red-b", subscribe)).json()["result"]["message"]["parts"][0]["data"]
+    validate("result_subscribe", wire_sub)
     sub = result["subscription"]
     publication = await a.call(scoped("project-red", "publish", text="Schema-qualified live broker event"))
-    validate("result_publish", publication)
+    validate("result_publish", (await f.raw("red-a", scoped("project-red", "publish", text="Raw wire publication"))).json()["result"]["message"]["parts"][0]["data"])
     rows = await poll_until(b, "project-red", {publication["publication"]["id"]}, f.args.deadline)
-    result = await b.call(scoped("project-red", "poll"))
+    result = (await f.raw("red-b", scoped("project-red", "poll"))).json()["result"]["message"]["parts"][0]["data"]
     validate("result_poll", result)
-    for row in rows:
+    for row in result["deliveries"]:
         for match in row["matches"]:
             validate("Match", match)
             assert set(match) == {"subscription_id", "subscription_revision", "mode"}
     edit = scoped("project-red", "update_subscription", subscription_id=sub["id"],
-                  expected_revision=sub["revision"], mode="raw", paused=True)
+                  expected_revision=int(sub["revision"]), mode="raw", paused=True)
     validate("agent_update_subscription", edit)
-    result = await b.call(edit)
+    result = (await f.raw("red-b", edit)).json()["result"]["message"]["parts"][0]["data"]
     validate("result_update_subscription", result)
     reject(await f.raw("red-b", edit))
     evidence.record("live-sdk-publication-subscription-raw-reason-poll-and-revisioned-edit-conformance")

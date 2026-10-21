@@ -26,9 +26,10 @@ The subsequent [Kafka pub/sub pivot](kafka-pubsub.md) adds one Kafka service per
 server for project events, with optional model filters and A2A agent access.
 It does not select broker replication as federation transport. Integrate the two
 programs before implementation; BUILD-001's upstream publication/adoption remains separate.
-Implementation is pending; the current request authorizes roadmap/specification
-planning. No new GitHub issues or external writes are needed for this planning
-pass. Tracker inspection found no open ADHD issues or pull requests to reconcile.
+Implementation is now authorized and underway in local feature branches. Current
+partial evidence is recorded in the active queue; final acceptance remains open.
+No new GitHub issues or external writes are needed for this program. Tracker
+inspection found no open ADHD issues or pull requests to reconcile.
 
 ## Proposed target model
 

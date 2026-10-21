@@ -53,7 +53,12 @@ async def checks(f, evidence):
             assert delivery["matches"]
             for reason in delivery["matches"]:
                 assert set(reason) == {"subscription_id", "subscription_revision", "mode"}
-                assert reason["mode"] == "raw" and type(reason["subscription_revision"]) is int
+                assert reason["mode"] == "raw" and reason["subscription_revision"] >= 1
+        # Protobuf Struct represents every SDK data number as a double. Check
+        # integer wire tokens independently on raw HTTP, before SDK conversion.
+        wire = (await f.raw(next(name for name, obj in (("red-a", a), ("red-b", b), ("bridge", bridge)) if obj is subscriber), scoped(P, "poll"))).json()
+        wire_rows = wire["result"]["message"]["parts"][0]["data"]["deliveries"]
+        assert all(type(r["subscription_revision"]) is int for d in wire_rows for r in d["matches"])
         assert (await subscriber.call(scoped(P, "poll")))["deliveries"] == deliveries
         await acknowledge(subscriber, deliveries)
         assert not (await subscriber.call(scoped(P, "poll")))["deliveries"]
@@ -164,7 +169,7 @@ async def subscription_revisions(f, evidence, publisher, subscriber, raw):
     old = (await publisher.call(scoped(P, "publish", text="Accepted under old filtered revision")))["publication"]
     await poll_until(raw, P, {old["id"]}, f.args.deadline)
     edit = scoped(P, "update_subscription", subscription_id=subscription["id"],
-                  expected_revision=subscription["revision"], mode="raw")
+                  expected_revision=int(subscription["revision"]), mode="raw")
     subscription = (await subscriber.call(edit))["subscription"]
     reject(await f.raw("red-b", edit))
     new = (await publisher.call(scoped(P, "publish", text="Accepted under new raw revision")))["publication"]
@@ -186,12 +191,12 @@ async def subscription_revisions(f, evidence, publisher, subscriber, raw):
     await asyncio.sleep(.5)
     assert not (await subscriber.call(scoped(P, "poll")))["deliveries"]
     subscription = (await subscriber.call(scoped(P, "update_subscription", subscription_id=subscription["id"],
-        expected_revision=subscription["revision"], mode="raw", paused=True)))["subscription"]
+        expected_revision=int(subscription["revision"]), mode="raw", paused=True)))["subscription"]
     paused = (await publisher.call(scoped(P, "publish", text="Accepted while stream paused")))["publication"]
     await poll_until(raw, P, {paused["id"]}, f.args.deadline)
     assert not (await subscriber.call(scoped(P, "poll")))["deliveries"]
     subscription = (await subscriber.call(scoped(P, "update_subscription", subscription_id=subscription["id"],
-        expected_revision=subscription["revision"], mode="raw", paused=False)))["subscription"]
+        expected_revision=int(subscription["revision"]), mode="raw", paused=False)))["subscription"]
     resumed = (await publisher.call(scoped(P, "publish", text="Accepted after explicit stream resume")))["publication"]
     rows = await poll_until(subscriber, P, {resumed["id"]}, f.args.deadline)
     assert {d["publication_id"] for d in rows} == {resumed["id"]}

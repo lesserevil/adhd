@@ -25,21 +25,32 @@ queue item or let `docs/roadmap/` become a plan archive.
 
 ## Authorized implementation batches
 
-The new multiple-project request is a planning request. MULTI-001 through
-MULTI-008 below are pending and are not included in the earlier implementation
-authorization summarized here. Their ordered design and acceptance program is
-[multiple projects per server](multi-project.md). The next action is MULTI-001's
-single-project assumption inventory and contract design; no multi-project runtime
-implementation or qualification is claimed. Planning tracker reconciliation found
-no open ADHD GitHub issues or pull requests.
+The user has now authorized implementation of all outstanding roadmap work,
+grouped in branches with parallel agents. MULTI-001 through MULTI-008 and
+KAFKA-001 through KAFKA-009 are the current implementation program. Their
+ordered design and acceptance programs are [multiple projects per server](multi-project.md)
+and [Kafka pub/sub with optional filtering](kafka-pubsub.md). MULTI-001 contract
+authoring is in progress on `roadmap/contracts`; Kafka deployment and independent
+acceptance work proceed on `roadmap/deployment` and `roadmap/acceptance`.
+`roadmap/integration` preserves the earlier qualified work as baseline commit
+`a8f7de8` and integrates the contract, packaging and acceptance branches. A new
+disposable implementation candidate under `_build/roadmap/multi/source` now
+exercises project-specific stores/workers, admission, hot registry operations,
+real Kafka outbox/fanout, optional filters and schema profile2. Independent SDK
+acceptance passes project isolation and hard restart, raw/selector fanout,
+controlled filter failure/revision and real lost-produce-reply deduplication.
+These are development candidates, not final lifecycle qualification. The
+[partial progress record](../../verification/multi-eventing-progress.json) binds
+their exact artifact/report identities and outstanding gates. Tracker
+reconciliation and the start-of-cycle peer survey found no open
+ADHD issues/reviews or collectable existing branches.
 
-The Kafka pivot is also a planning request: KAFKA-001 through KAFKA-009 are
-pending in [Kafka pub/sub with optional filtering](kafka-pubsub.md). It replaces
+The Kafka pivot replaces
 mandatory model matching in the target architecture, retains A2A for agents and
 adds per-server Kafka plus Compose/Kubernetes packaging. Complete MULTI-001's
 identity design, then KAFKA-001's transport/subscription design before shared
 storage and workflow implementation. MULTI-008 waits for KAFKA-009's integrated
-qualification. Neither program is included in the earlier implementation batch.
+qualification. The earlier implementation evidence below remains historical.
 
 The user authorized implementation of all outstanding work in sensible groups.
 Work proceeds through authored Component contracts, generated implementation,
@@ -688,7 +699,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Priority:** P1
 - **Owner:** hub Component architecture and public contracts
 - **Direction:** Allow each ADHD server to host multiple projects while retaining federation between servers.
-- **Conclusion:** Own the multi-project program in [the detailed roadmap](multi-project.md). Separate stable server identity, stable project identity and external source scope; replace one-server-per-project only through versioned contracts. This request authorizes planning; implementation remains pending.
+- **Conclusion:** Own the multi-project program in [the detailed roadmap](multi-project.md). Separate stable server identity, stable project identity and external source scope; replace one-server-per-project only through versioned contracts. Implementation is authorized and underway; normative contracts are integrated, with independent development evidence and remaining qualification gates recorded above.
 - **Depends on:** none
 - **Implementation:**
   - [ ] Inventory single-project assumptions in every Component contract, client, deployment path and acceptance harness.
@@ -807,7 +818,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Priority:** P1
 - **Owner:** hub event, subscription and protocol contracts
 - **Direction:** Pivot project pub/sub to per-server Kafka, retain A2A for agents and make plain-text model filtering optional.
-- **Conclusion:** Own [the Kafka pub/sub program](kafka-pubsub.md). Project-wide event subscriptions receive publications from all agents without inference; optional plain-text filters narrow an authorized stream. Separate event transport, durable agent delivery and searchable originals; this is planning, not implementation.
+- **Conclusion:** Own [the Kafka pub/sub program](kafka-pubsub.md). Project-wide event subscriptions receive publications from all agents without inference; optional plain-text filters narrow an authorized stream. Separate event transport, durable agent delivery and searchable originals. Implementation is authorized and underway with integrated contracts, real service packaging and partial independent development evidence; final qualification remains open.
 - **Depends on:** MULTI-001
 - **Implementation:**
   - [ ] Define event envelopes, project/topic/partition identity, subscription selection/filter modes, activation watermarks, ordering, replay and delivery deduplication.

@@ -1,7 +1,7 @@
 {
   "schema": "adhd/project-recovery-development-checkpoint@1",
   "state": "partial",
-  "scope": "Root-owned generated integration source checkpoint; complete backend assembly, service tests and acceptance still pending",
+  "scope": "Partial generated integration development checkpoint; first boot/initialization observed by service owner, independent complete recovery and admission remain pending",
   "source_files_sha256": {
     "allocator.exs": "7faaaf78da78955f5f0412407169a180849615fbdd958b2deca05e6823de6b17",
     "history.exs": "c8a56f85679160dd84e2639dbd27b3f1f4064d5f3657106ec6c4fa0db338eb21",
@@ -19,7 +19,7 @@
     "feedback.exs": "7486dcd9b8124687b0524770dd4102ec50d3d8d78f03d8e3fb0ad64543f8183a",
     "archive_worker.exs": "eac56b20ab1ef6a48c61072544c832757fcbed7c16848582faacec68483dde46",
     "replay_worker.exs": "429cf8abc96a530c7e8fac15cfc73e85ba3ef03087ee6b442223e00e0730c1b0",
-    "server.exs": "b2cc2fa17f470740269c29edbb0f699d86a5f2e87cb8699014aa28547b4e293d",
+    "server.exs": "1d8327be0a8dffcee533da0c2c15e8e1555ab5e26303af16b7ebd7ffd12976f3",
     "domain.exs": "9a67cbec3a05519c1e3865f9f68296f683c37521a1700febba59eae1ee34a2d2",
     "web.exs": "0d9eda04858b5d7e819a632a8e3766d4788faeff31a5f1b1294a21d9d0fad971",
     "main.exs": "7f347a2dffe1e5aa8819bb30b4c0f853daace1c333de229795c83f8a0ec24dbf",
@@ -28,13 +28,14 @@
     "directory.exs": "867bada82ca7262a2164857323bfd9442765548ec753d32a77eb9714f352a1ae",
     "federation_v2.exs": "5b90e433b3ca64199e733bda965f0992ffc60c07b2b66cac1c99433294a6341f",
     "recovery_work.exs": "7c39b65e86f590b1fb38b6c0475caac01f93a62958694152cca81a98a5834030",
-    "recovery_coordinator.exs": "7496fbe9d0de459751a8394714c0b255a4cec08002dd5bda6f06a763252f7632"
+    "recovery_coordinator.exs": "ef897fb704ee4866ea2780f047be8eb008b01d1edfb72a598517b23f2857751f"
   },
   "checks": {
     "root_owned_elixir_parse": true,
     "browser_javascript_syntax": true,
     "pure_allocator_tests": 5,
-    "frozen_component_tests": 9
+    "frozen_component_tests": 9,
+    "frozen_actual_http_tests": 2
   },
   "implemented_development_seams": [
     "Fresh namespaced allocator separate from sequence ordering; new non-Store query, plan, proposal, index and event audit IDs",
@@ -48,10 +49,12 @@
     "Nested source/destination dependency fences survive same-server federation dispatch and cross-project directory snapshots",
     "Active target tickets retired alongside queued tickets; stale non-HTTP completion cannot persist or export",
     "Pure backed-up pending-work reconciliation and offline physical transport evidence retention",
-    "Durable decision/install/activation/startup coordinator authored and compiled, integration and crash tests pending"
+    "Durable decision/install/activation/startup coordinator authored and compiled, integration and crash tests pending",
+    "Activation starts readiness-gated idempotent project workers after opening the selected writer",
+    "A2A preserves HTTP200 JSON-RPC domain errors and adds mandated Retry-After headers for target recovery/freeze"
   ],
   "not_yet_proven": [
-    "Combined service assembly and native declarations",
+    "Independent complete combined-service native acceptance and declared test admission (first boot/explicit initialization only observed so far)",
     "All allocator families atomic under live concurrent transactions",
     "Exact target-only state preservation and original-owner proof",
     "Kernel-kill recovery boundaries, Kafka old-tail exclusion and late model/peer/Kafka result fencing",
@@ -66,9 +69,12 @@
   "full_recovery_qualified": false,
   "program_qualification_complete": false,
   "authority_review": {
-    "identity": "sha256:c94ca87df26ce3be3b8aa3a08fd5026af9ac3204f50f4bbe20fd56bfdf5caf23",
+    "identity": "sha256:6a88d9ea1103e2f2e216fae2fa29929b5661348455868a77cdd14d5044817913",
     "project_validate_passed": true,
     "scope": "Authority gate only; current18-case source34 admission receipt is stale against successor authority"
   },
-  "component_proof": "verification/project-recovery/components/manifest.json"
+  "component_proof": "verification/project-recovery/components/manifest.json",
+  "http_proof": "verification/project-recovery/http-epoch/manifest.json",
+  "backup_validator_proof": "verification/project-recovery/backup-validator.json",
+  "primitive_proof": "verification/project-recovery-primitives/manifest.json"
 }

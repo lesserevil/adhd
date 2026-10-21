@@ -164,3 +164,12 @@ qualification remain separate evidence gates until their reports pass. Add
 `--peer-eventing-rest-url URL --with-model` to run two separate real ADHD hubs,
 require distinct broker cluster identities, and exercise canonical routing,
 unchanged exported provenance, no role transfer and remote outage/restart.
+
+The [source28 OpenRig qualification](../validation/openrig-28.json) records eleven
+passing groups with the exact hub, adapter, harness, upstream package and runtime
+identities. Two actual rigs exchange raw and controlled-filter deliveries through
+real CLI/daemon/tmux seats, preserve numeric JSON types, and recover source IDs
+and acknowledged queues after outages. Two separate hubs on distinct Kafka
+clusters also preserve canonical remote provenance and local authentication
+across a remote restart. This is terminal infrastructure-seat interoperability;
+it does not certify autonomous model-agent behavior.

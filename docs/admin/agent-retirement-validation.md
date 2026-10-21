@@ -42,3 +42,10 @@ and [three-group snapshot-fault report](../validation/agent-retirement-33-faults
 retain their own artifact and unchanged harness identities in the manifest.
 These native witnesses do not attest the separately tested legacy bootstrap path
 or a source33 Docker image. Source31 and source32 records remain unchanged.
+
+Source34 also passes the unchanged
+[seven-group retirement suite](../validation/agent-retirement-34-native.json)
+and [three-group snapshot-fault suite](../validation/agent-retirement-34-faults-native.json).
+The manifest preserves these exact native artifact and harness bindings separately.
+These reports do not qualify hot Admin downgrade preflight, legacy bootstrap or
+a source34 image; each requires its own independent witness.

@@ -50,6 +50,35 @@ Use an atomic journal/recovery protocol for config and store changes: after hard
 kill during a mutation, startup must recover one complete old or new transaction,
 never a mixed config/store/listener identity. Never reset accepted product data.
 
+The [hot backend relocation contract](../storage-relocation/spec.md) extends
+store_path changes to every project, including installations without a default
+project, and defines the durable all-writer decision and single-owner recovery
+scope.
+
+## Project identity and independent model capability
+
+The multiple-project contract preserves aliases created by earlier single-project
+renames. A requested historical alias resolves to its current canonical project
+only when the authenticated actor is admitted to that project. Unknown and
+inaccessible aliases return PROJECT_NOT_FOUND identically. Resolve before resource
+lookup, cache lookup or dispatch; an alias grants no membership. Preserve the
+original command exactly for mutation idempotency, including its historical
+project_id, so old cached results replay verbatim. Newly accepted results use the
+canonical current project. Registry validation, configuration dry validation,
+file reload and startup reject redefining any existing project's historical alias
+as a different project, including an otherwise empty new project. A legacy rename
+within the same logical project may return to one of that project's own aliases.
+
+A subscription matcher is optional. Its absence rejects filtered subscription
+creation but must not disable separately configured backend models. History uses
+its effective history URL/model, retrieval its effective retrieval URL/model,
+and archive its effective archive URL/model (including its established history
+inheritance). Replay requires both effective retrieval and archive capabilities.
+Return MODEL_UNAVAILABLE only for an absent required effective URL/model; retain
+the owning feature's enabled, authorization, budget and lifecycle checks. Plain
+publication, raw subscriptions, literal search, poll and acknowledgement do not
+require any of these model capabilities.
+
 ## Live effects and failure rollback
 
 - Agent/admin token replacement or removal applies to the next request. Removing

@@ -1,0 +1,37 @@
+{
+  "suite": "adhd/multi-store-move-crash@1",
+  "started_at": "2026-10-21T19:03:03.568634+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "all-project-public-originals-and-acknowledgements-created-before-move",
+      "passed": true
+    },
+    {
+      "name": "actual-runtime-stopped-and-sigkilled-at-requested-filesystem-boundary",
+      "passed": true,
+      "observed_stage": "after-first-snapshot",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL"
+    },
+    {
+      "name": "startup-recovers-one-complete-generation-with-every-project-original-retry-and-ack-state",
+      "passed": true
+    },
+    {
+      "name": "recovered-project-writers-accept-new-publications-and-drain-real-kafka",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "f015fb389d7a3ff8617433e18bce804ba319bc210915cbfaa9459a5104426f56",
+  "harness_sha256": "3c19170bc34cf615c2bbf580c34c7ed6b59225ad8bdb47c306211972701ee2a6",
+  "fault_source_sha256": "318c9d43fe04df1c45c8938627d6b66a1c825ceb815f14788e78c95378c6ae6b",
+  "fault_library_sha256": "bacee74aeabc87706a193898667754bc1a598e82128cdceba478c7763f52cb48",
+  "crash_at": "after-first-snapshot",
+  "no_default": true,
+  "finished_at": "2026-10-21T19:03:51.931581+00:00"
+}

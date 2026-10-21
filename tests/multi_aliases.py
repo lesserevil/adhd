@@ -16,10 +16,11 @@ OLD, CURRENT, OTHER='historical-project','project-red','project-blue'
 
 
 async def main(args):
-    if not args.hub or not args.with_model:
-        raise ValueError('Requires owned --hub, --legacy-hub and --with-model')
+    if not (args.hub or args.image) or not args.with_model:
+        raise ValueError('Requires owned --hub/--image, --legacy-hub and --with-model')
     previous=copy.copy(args)
     previous.hub=args.legacy_hub
+    previous.image=None
     f=Fixture(previous)
     f.config['project_id']=OLD
     legacy_token=secrets.token_urlsafe(32)
@@ -27,7 +28,7 @@ async def main(args):
     for key in ('projects','agent_projects','eventing'):
         f.config.pop(key)
     evidence=Evidence(args.report,'adhd/historical-project-aliases@1')
-    evidence.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest(),
+    evidence.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None,
         legacy_artifact_sha256=hashlib.sha256(args.legacy_hub.read_bytes()).hexdigest(),
         harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     try:
@@ -42,6 +43,9 @@ async def main(args):
         f.hard_stop()
         evidence.record('previous-qualified-runtime-created-original-and-real-project-rename')
         f.args=args
+        if args.image:
+            from container_fixture import OwnedImage
+            f.image_runtime=OwnedImage(args.image,args.image_manifest,f.root)
         await f.start()
         admin=Admin(Client(f,legacy_token),f)
         config=admin.call({'op':'config_get'})['config']
@@ -97,7 +101,13 @@ async def main(args):
         evidence.finish()
     finally:
         f.args=args
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        f.bind_evidence(evidence)
+        evidence.write()
 
 
 if __name__=='__main__':

@@ -13,7 +13,7 @@ initially admitted implementation. Final qualification remains open; the executi
 order and acceptance gates below still govern completion. Historical single-project
 results do not attest the combined architecture.
 
-The [multi-project contract](../../components/hub/multi/spec.md) and
+The `components/hub/multi/spec.md` contract and
 [scope inventory](../protocol/scopes.json) own the replacement boundaries.
 Current artifact-bound results are linked from the [project/migration proof](../../verification/multi-eventing/native-project-migration-30.json)
 and [eventing/federation proof](../verification/native-eventing.json). Container,

@@ -46,7 +46,7 @@ Final program qualification remains open: the current native evidence is linked
 from [project and migration qualification](../../verification/multi-eventing/native-project-migration-30.json)
 and [eventing and federation qualification](../verification/native-eventing.json);
 [container project/protocol qualification](../../verification/multi-eventing/image-project-30.json)
-now covers 59 groups. Broader container regressions and deployment recovery gates
+now covers 68 groups. Broader container regressions and deployment recovery gates
 remain in progress in `verification/multi-eventing-progress.json`.
 
 The Kafka pub/sub direction in `PROJECT.md` maps to pending KAFKA-001 through

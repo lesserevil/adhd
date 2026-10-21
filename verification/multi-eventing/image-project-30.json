@@ -5,7 +5,7 @@
   "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
   "image_config_digest": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
   "payload_audit": "verification/multi-eventing/image-payload-30.json",
-  "groups": 59,
+  "groups": 68,
   "reports": [
     {
       "name": "foundation",
@@ -62,6 +62,14 @@
       "checks": 4,
       "harness": "tests/multi_model_capabilities.py",
       "harness_sha256": "b86bd726f0e8d7f8f85c2d0ac102d8f987f7f294333a6a2503cea12d2f2a4f35"
+    },
+    {
+      "name": "auth",
+      "path": "verification/multi-eventing/root-image-30-auth.json",
+      "sha256": "d2efdc592800a0c6a4741939af410714c6ae38c8babdd21eb1e89b313393e099",
+      "checks": 9,
+      "harness": "tests/auth_lifecycle.py",
+      "harness_sha256": "528d47cdac769e208e7255490c24e5a8da1666d7cf3dc73430a40017dac621b4"
     }
   ],
   "limits": [
@@ -69,6 +77,6 @@
     "Five project suites bind actual successful container kills/stops and absence; foundation/protocol use their existing independently image-bound runtimes.",
     "Models are controlled HTTP fixtures; semantic model quality is separately qualified.",
     "Precise native syscall migration/relocation faults remain separate from container process replacement.",
-    "Auth lifecycle and complete inherited container regressions remain open."
+    "Complete inherited native/container regressions remain open; auth lifecycle separately verifies real sixty-second session expiry and provider outage."
   ]
 }

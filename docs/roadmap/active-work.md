@@ -745,7 +745,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Add Admin-managed user project access and agent project memberships with stable ownership and explicit project selection.
   - [ ] Enforce role, admission, ownership and membership checks on every direct and indirect operation, including live revocation and queued work.
   - [ ] Preserve local admin bootstrap, OIDC provider links, groups-to-role configuration and non-transitive email correlation; do not import remote access grants.
-  - [ ] Prevent a Developer from recreating a removed agent ID that retains private deliveries, receipts, subscriptions or owned jobs in any project. A public-interface probe on candidate31 verified new-owner access to the former owner's private queue. Preserve explicit Admin recovery/reassignment and retained data; add native/container retirement/recreation regression evidence.
+  - [ ] Prevent a Developer from recreating a removed agent ID that retains private deliveries, receipts, subscriptions or owned jobs in any project. A public-interface probe on candidate31 verified new-owner access to the former owner's private queue. Preserve explicit Admin recovery/reassignment and retained data; add native/container retirement/recreation regression evidence. Candidate32 implements an all-project verified-snapshot guard; native first-install OIDC/accounts checks remain passing in `verification/multi-eventing/oidc-first-setup-32.json`. Independent retired-identity/fault qualification and official artifact/image admission remain required.
 - **Evidence:**
   - [ ] Exercise the role/owner/project matrix through API and browser, including guessed IDs, forged scopes, stale sessions, token rotation and revocation during work.
 

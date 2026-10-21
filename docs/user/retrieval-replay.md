@@ -124,7 +124,8 @@ may have the same text in another project; the project and ID together identify
 the resource. An actor with access to both projects must still select the intended
 project on every ambiguous request. Role grants do not replace project admission.
 
-The [independent two-project evidence matrix](../validation/multi-evidence-28.json)
+The [earlier evidence matrix](../validation/multi-evidence-04.json) remains a
+historical candidate record. The [independent two-project evidence matrix](../validation/multi-evidence-28.json)
 records eleven passing groups against a precisely hashed development candidate and
 real Kafka. It reuses an agent, questions, source/item IDs and message IDs across
 two projects, checks query ownership and frozen watermarks, rejects foreign label

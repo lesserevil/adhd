@@ -19,7 +19,8 @@ async def checks(f, evidence):
         assert value["project_id"] == project
     reject(await f.raw("red-a", scoped(BLUE, "whoami")))
     reject(await f.raw("bridge", scoped(HIDDEN, "whoami")))
-    reject(await f.raw("bridge", {"op": "whoami"}))
+    reject(await f.raw("bridge", {"op": "search", "query": "Ambiguous project context"}))
+    assert set((await bridge.call({"op": "whoami"}))["project_ids"]) == {RED, BLUE}
     assert (await a.call({"op": "whoami"}))["project_id"] == RED
     visible = await bridge.call({"op": "list_projects"})
     assert {p["id"] for p in visible["projects"]} == {RED, BLUE}

@@ -50,6 +50,10 @@ async def checks(f, evidence):
             publication = next(p for p in published if p["id"] == delivery["publication_id"])
             for key in ("project_id", "author_id", "source", "information_type", "text", "data"):
                 assert delivery[key] == publication[key]
+            assert delivery["matches"]
+            for reason in delivery["matches"]:
+                assert set(reason) == {"subscription_id", "subscription_revision", "mode"}
+                assert reason["mode"] == "raw" and type(reason["subscription_revision"]) is int
         assert (await subscriber.call(scoped(P, "poll")))["deliveries"] == deliveries
         await acknowledge(subscriber, deliveries)
         assert not (await subscriber.call(scoped(P, "poll")))["deliveries"]

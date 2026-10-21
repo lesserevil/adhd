@@ -130,3 +130,7 @@ The deployment pins8.3.2 image content identities; source and deployment license
 notices must distinguish ADHD from that external service. Kafka transactions do
 not atomically cover backend writes or agent receipts; see the
 [Apache Kafka delivery design](https://kafka.apache.org/41/design/design/).
+
+The REST v2 offsets commit body uses the last consumed offset: a durable next
+position N commits offset N-1, and GET offsets must report N. Consumer positions
+uses N directly. These two API meanings must not be conflated.

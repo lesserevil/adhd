@@ -92,7 +92,10 @@ Validate envelope, topic/partition, project identity, original equality and even
 sequence against the accepted backend before materialization. Persist raw
 recipient deliveries, filtered work, dedup identities and recoverable next-offset
 checkpoint atomically, then POST explicit `{offsets:[{topic,partition:0,
-offset:NEXT_OFFSET}]}` to the instance offsets endpoint. Never commit Kafka
+offset:LAST_CONSUMED_OFFSET}]}` to the instance offsets endpoint. The REST v2
+commit API adds one to the supplied consumed offset; with durable next-offset N,
+POST N-1 and independently verify GET offsets reports N. In contrast, the
+positions endpoint takes next-offset N directly. Never commit Kafka
 progress first. Restart/rebalance may replay records safely. Broker offsets are
 transport progress, unrelated to A2A acknowledgement.
 

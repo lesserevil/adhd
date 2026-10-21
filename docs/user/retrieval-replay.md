@@ -189,3 +189,12 @@ low-confidence result. The optimizer correctly rejected the winner with
 `QUALITY_REGRESSION`, despite positive recall gain and reduced total cost. This
 report preserves the exact original and replay exchanges; inspection added no
 model calls. Positive live optimizer qualification remains open.
+
+The same diagnostic also includes exchanges read through the actual previously
+accepted runtime from a private clone of the unchanged qualified store. That run used the same
+question, originals, reply chain and exact model criteria/template, selecting the
+same quote at probability 0.613987. The old and current request objects match
+after normalizing only opaque identities and timestamps. This historical
+comparison confirms preserved context and prior support for the authored case;
+it cannot by itself distinguish model sensitivity to metadata from serving drift.
+No diagnostic inference calls were made.

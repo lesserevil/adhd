@@ -1,0 +1,1664 @@
+{
+  "schema": "adhd/roadmap-completion-review@1",
+  "reviewed_at": "2026-10-21T22:33:32.794363+00:00",
+  "complete": false,
+  "scope": "All86 unchecked implementation/evidence predicates across16 current MULTI/KAFKA/INTEROP items; prior native findings retained with explicit subsequent evidence updates. This is an intermediate audit, not closure.",
+  "prior_audit_sha256": "a00cf6843c00f6994f60026b9487de4487cbf7d39ff5439bcb65c18918e1f006",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+  "completed_proof_catalog": {
+    "native_complement66": {
+      "path": "verification/multi-eventing/native34-complement/manifest.json",
+      "sha256": "e5ea6d457f2fac5fddffa72b617d81545e279bc1e7b171aca0aee7de4b0afc3a",
+      "passed": true
+    },
+    "native_backend69": {
+      "path": "docs/validation/deep-live-model-34-native.json",
+      "sha256": "143696b02900326bb6e3e3e7d375cfb0e96e9c3be3093396530b59cf5de035ba",
+      "passed": true
+    },
+    "native_live_filter6": {
+      "path": "docs/validation/live-eventing-backend-34-native.json",
+      "sha256": "196964882913fe2cd949552c3aa70084a9ff70a0c6a138991d4d3639a7f80fd6",
+      "passed": true
+    },
+    "official_admission34": {
+      "path": "verification/multi-eventing/image-admission-34.json",
+      "sha256": "36493f6667854e4da4198200a44da12574ee71c7ed37ce23bf46faa0003ed9aa",
+      "passed": true
+    },
+    "actual_image_payload34": {
+      "path": "verification/multi-eventing/image-payload-34.json",
+      "sha256": "88681685e5df0e8f740563459850b7cb91658798d23842ac0c1058456a173670",
+      "passed": true
+    },
+    "native_project_migration151": {
+      "path": "verification/multi-eventing/native-project-migration-34.json",
+      "sha256": "c8dcf6e67453ae5b4450f68994bc2798575c7c0c351368c46bde93e30ad8ede1",
+      "passed": true
+    },
+    "native_ui52": {
+      "path": "verification/native34-ui/manifest.json",
+      "sha256": "08356f50b24cdd8915974623702495f6bb163180e8a5e4a1541193ba073be987",
+      "passed": true
+    },
+    "native_wire_and_workflow12": {
+      "path": "verification/multi-eventing/wire-workflow-34-manifest.json",
+      "sha256": "464404cfbec5e317e78e499fbfe81c70cd680f7b8438bf6fda7c5b1c093712f8",
+      "passed": true
+    }
+  },
+  "requirements": [
+    {
+      "id": "MULTI-002/implementation/1",
+      "item": "MULTI-002",
+      "requirement": "Add registry, immutable IDs, mutable labels/aliases and explicit active/archive lifecycle; reserve deletion for a separately specified policy.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Stable IDs, label/lifecycle and historical aliases are exercised; hot removal is rejected. Deletion is not implemented or claimed.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.aliases",
+        "n34.registry"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-002/implementation/2",
+      "item": "MULTI-002",
+      "requirement": "Partition all data, idempotency, queues, cursors, snapshots, caches and derived state by project; validate references at persistence boundaries.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Core state/references are proven; complete derived workflow/optimizer isolation is broader than native multi9 and remains partially pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.aliases",
+        "n34.move",
+        "n34.move_no_default"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-002/implementation/3",
+      "item": "MULTI-002",
+      "requirement": "Implement versioned legacy config/store migration with preflight, backup, interruption recovery and explicit downgrade restrictions.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual accepted legacy config/store migration, selected learned workflow/recipe preservation, backup integrity and crash recovery are now qualified natively on34. Final image upgrade/recovery remains pending.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.storage",
+        "n34.workflow_upgrade"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-002/implementation/4",
+      "item": "MULTI-002",
+      "requirement": "Coordinate backend/outbox/project key ownership and one recoverable migration sequence with KAFKA-001 and KAFKA-008.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "One durable original/outbox ownership sequence exists; full current34 cutover complement remains running.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.core",
+        "n34.move"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-002/implementation/5",
+      "item": "MULTI-002",
+      "requirement": "Reject hot removal of the project registry or any admitted project, including dry validation; candidate33 accepted an Admin patch deleting projects and memberships. Preserve complete configuration/revision and retained project data on rejection, including installations without a default project.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual34 dry/apply/file rejection with default/no-default, retained red/blue originals and acknowledgements, then cold restart. Actual33 accepted downgrade is historical contradiction fixed in34.",
+      "current_native_evidence_keys": [
+        "n34.registry"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-002/evidence/1",
+      "item": "MULTI-002",
+      "requirement": "Upgrade actual earlier accepted stores and preserve publications, private deliveries, acknowledgements, queries, source IDs and selected optimizer recipes.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual34 accepted legacy producer upgrades preserve all five workflow families, labels/cohorts/learned primitive plus originals/private deliveries/acks/source IDs. Native basic151 and full-workflow4 are distinct complementary proof. Current-image counterpart pending.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.workflow_upgrade"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-002/evidence/2",
+      "item": "MULTI-002",
+      "requirement": "Kill/restart migration and project transactions; prove no partial admission, silent empty stores, identity reassignment or cross-project key collisions.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Native crashes/restarts and identity collision/recovery checks passed; native filesystem boundaries are not Docker execution claims.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.storage",
+        "n34.move",
+        "n34.move_no_default",
+        "n34.registry"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-003/implementation/1",
+      "item": "MULTI-003",
+      "requirement": "Add Admin-managed user project access and agent project memberships with stable ownership and explicit project selection.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual API plus desktop/mobile role22 and focused Admin18 verify project admissions, existing agent grants, ownership and explicit scope. Current image remains pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.foundation",
+        "n34.browser"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-003/implementation/2",
+      "item": "MULTI-003",
+      "requirement": "Enforce role, admission, ownership and membership checks on every direct and indirect operation, including live revocation and queued work.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Direct/core and retirement fences proven; every indirect optimizer/evidence path is not established by these narrow suites alone.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.foundation",
+        "n34.retirement",
+        "n34.browser",
+        "n34.evidence"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-003/implementation/3",
+      "item": "MULTI-003",
+      "requirement": "Preserve local admin bootstrap, OIDC provider links, groups-to-role configuration and non-transitive email correlation; do not import remote access grants.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual OIDC signatures/groups/link/bootstrap, independent peer roles and no transitive grants covered; full prior identity regression is retained in foundation20/auth9.",
+      "current_native_evidence_keys": [
+        "n34.foundation",
+        "n34.auth",
+        "n34.stale_owner"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-003/implementation/4",
+      "item": "MULTI-003",
+      "requirement": "Prevent a Developer from recreating a removed agent ID that retains private deliveries, receipts, subscriptions or owned jobs in any project. A public-interface probe on candidate31 verified new-owner access to the former owner's private queue. Preserve explicit Admin recovery/reassignment and retained data; add native/container retirement/recreation regression evidence. Candidate32 implements an all-project verified-snapshot guard; native first-install OIDC/accounts checks remain passing in `verification/multi-eventing/oidc-first-setup-32.json`. Independent candidate32 retirement and snapshot-fault suites pass, and role/browser checks pass22 groups. Review found a legacy missing-snapshot path could attempt the bootstrap DETS opener; candidate33 removes that fallback and uses only a verified snapshot server identity. Its legacy/fault requalification and official artifact/image admission remain required.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual34 retirement/recreation7 plus missing/corrupt3 pass. Source30 image is contradicted by source31 retired-ID exposure; never use30 as proof of this fix.33 unit trace is explicitly supplemental. The33 targeted no-opener unit is supplemental with exact guard+Domain/Storage/Directory byte equivalence to34; no full public legacy lifecycle or whole-artifact relabelling.",
+      "current_native_evidence_keys": [
+        "n34.retirement",
+        "n34.retirement_faults"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-003/evidence/1",
+      "item": "MULTI-003",
+      "requirement": "Exercise the role/owner/project matrix through API and browser, including guessed IDs, forged scopes, stale sessions, token rotation and revocation during work.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current native foundation20, multi9, role22, retirement10 and focused Admin18 cover the principal role/owner matrix, guessed scopes, CSRF/stale sessions, revocation and token rotation. Complete controlled indirect regression117/69 and current image remain pending.",
+      "current_native_evidence_keys": [
+        "n34.foundation",
+        "n34.multi",
+        "n34.browser",
+        "n34.retirement",
+        "n34.stale_owner"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-004/implementation/1",
+      "item": "MULTI-004",
+      "requirement": "Scope publish/get/search/send/subscribe/poll/ack, source deduplication, corrections and reference traversal; prevent cross-project references from granting visibility.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current core9/eventing8 plus scoped evidence11 demonstrate publication, private messaging, source/receipt IDs, reference isolation and explicit evidence contexts. Full current context regression117/69 remains pending; image evidence is historical30.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.core",
+        "n34.evidence"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-004/implementation/2",
+      "item": "MULTI-004",
+      "requirement": "Scope history/retrieval/archive jobs, feedback/cohorts/replay, optimizer training/evaluation/selection and all caches, snapshots and cancellation.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Current controlled evidence11 exercises scoped History/retrieval/Archive, feedback cohorts, paired replay, foreign-training/held-out rejection, local proposal cancellation and recipe reset. Positive current real-model optimizer winner/promotion remains unqualified; controlled117/backend69 and image pending.",
+      "current_native_evidence_keys": [
+        "n34.backend_models",
+        "n34.hot",
+        "n34.evidence"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "positive_optimizer",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-004/implementation/3",
+      "item": "MULTI-004",
+      "requirement": "Add explicit authorized local project discovery and cross-project query fan-out with per-project coverage, deadlines, incremental results and revocation handling.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Project discovery/basic admission and current canonical stale-owner behavior are retained. Controlled evidence11 proves ownership/cancel/continue/frozen contexts and late revocation. Full explicit fanout/federation complement and current image remain pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.stale_owner",
+        "n34.evidence"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-004/implementation/4",
+      "item": "MULTI-004",
+      "requirement": "Apply KAFKA-001's raw/filtered subscription boundaries; integrate the A2A Kafka bridge and independent fact-history projection through KAFKA-003 and KAFKA-005.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Core8/protocol3 and independent scoped evidence11 establish A2A/raw/filter separation and searchable originals; current full handoff/replay/retention complement and image remain pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.evidence"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-004/evidence/1",
+      "item": "MULTI-004",
+      "requirement": "Run interleaved projects with identical local IDs and content; prove delivery, deduplication, evidence, replay and optimizer isolation.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Current multi9/core8/evidence11 interleave same IDs/content through core, feedback cohorts, paired replay and controlled proposal/evaluate/cancel/reset. This is not positive learned-winner quality/promotion. Full controlled117/backend69 and image pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.core",
+        "n34.evidence"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "positive_optimizer",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-004/evidence/2",
+      "item": "MULTI-004",
+      "requirement": "Prove explicit fan-out returns only admitted project evidence with accurate partial coverage and no private addressed messages.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Scoped evidence11 plus multi9 and stale-owner4 prove ownership/frozen coverage and private-payload exclusion. Broader fanout/federation complement and current image pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.stale_owner",
+        "n34.evidence"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-005/implementation/1",
+      "item": "MULTI-005",
+      "requirement": "Version directory discovery, per-project catalogs, canonical claims, peer trust grants and identity correlation; cache by stable server/project/revision.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current v2 origin/destination and stale canonical owner checked; full three-project catalog pagination/cache revision suite remains in complement federation14.",
+      "current_native_evidence_keys": [
+        "n34.stale_owner",
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-005/implementation/2",
+      "item": "MULTI-005",
+      "requirement": "Bind durable requests, status polling, responses and idempotency to authenticated origin server plus origin and destination projects; reject scope substitution and stale authority.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Fresh/expired owner v2 and denial wire tested. Exact shared query-ID tuple/idempotency across all three servers needs current complement.",
+      "current_native_evidence_keys": [
+        "n34.stale_owner",
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-005/implementation/3",
+      "item": "MULTI-005",
+      "requirement": "Handle same-server canonical routing, conflicts, project archival, peer revocation and negotiated legacy peers without duplicate delivery or silent downgrade.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Unavailable-owner no-copy-fallback passed34. Same-server conflict/archive/revocation/actual legacy both-directions are historical30 image pending34 federation14.",
+      "current_native_evidence_keys": [
+        "n34.stale_owner"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-005/evidence/1",
+      "item": "MULTI-005",
+      "requirement": "Qualify at least three real servers with multiple projects, local/remote canonical routing, conflicting owners, stale caches, outages, retries and revocation.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Four exact34 stale-owner groups involve three real hubs, but do not replace all fourteen federation cases.",
+      "current_native_evidence_keys": [
+        "n34.stale_owner"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-005/evidence/2",
+      "item": "MULTI-005",
+      "requirement": "Validate exact new wire traffic independently and test old/new peer compatibility, bounded forwarding, privacy and unchanged server-local roles.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current independent SDK/schema vectors and v2 recorder plus local roles retained. Full current wire251/legacy forwarding qualification pending. Update: queued42197ef actual34 OpenRig11 report independently verified; current image rig execution remains pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.stale_owner",
+        "n34.openrig",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-006/implementation/1",
+      "item": "MULTI-006",
+      "requirement": "Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Current role22 plus focused Admin18 exercise hot project create/switch/rename/archive, admission and canonical export forms on desktop/mobile. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.multi",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-006/implementation/2",
+      "item": "MULTI-006",
+      "requirement": "Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Current focused Admin18 and role22 distinguish server OIDC/roles/peer secrets/resources/defaults from per-project canonical and six eventing overrides with partial/reset inheritance. Native foundation20/hot4 provide independent semantics. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.foundation",
+        "n34.hot",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-006/implementation/3",
+      "item": "MULTI-006",
+      "requirement": "Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Native browser22/Admin18/event12 cover late response fencing across project switches, admission refresh, stale tabs/revisions, CSRF, secret retention and no browser credential storage. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.foundation",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-006/implementation/4",
+      "item": "MULTI-006",
+      "requirement": "Repair first-time OIDC setup so the Admin connection test is available for proposed settings before initial save; the inherited browser regression found the button hidden until a provider was already configured. Requalify the corrected artifact and image.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Exact34 first-install proposed OIDC connection test passes desktop/mobile with four real provider exchanges.30 first-install missing-button defect makes30 unsuitable evidence for this fixed predicate.",
+      "current_native_evidence_keys": [
+        "n34.oidc",
+        "n34.admin"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-006/evidence/1",
+      "item": "MULTI-006",
+      "requirement": "Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Current desktop/mobile role22/Admin18/event12 plus first OIDC2 cover all principal forms, tabs, stale settings, external revocation, OIDC role remapping and archival hot. Current-image requalification remains pending.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.oidc",
+        "n34.foundation",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-007/implementation/1",
+      "item": "MULTI-007",
+      "requirement": "Specify fair scheduling and accounting across projects and job classes, bounded queues/caches/storage and backpressure.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Norms/resource config exist and core does not block raw on model errors; current saturation/budget/fairness scenarios in complement. Retained originals remain unbounded history; ready queues/active slots are the bounded quantities.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-007/implementation/2",
+      "item": "MULTI-007",
+      "requirement": "Fence workers against project archival, access changes and configuration revisions; preserve durable accepted work with explicit terminal/paused states.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Core archive/revoke/model-off/accepted move behavior proven; all worker families and current cap/deferred/frozen-policy cases pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.retirement",
+        "n34.core",
+        "n34.move"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-007/implementation/3",
+      "item": "MULTI-007",
+      "requirement": "Add project-aware diagnostics/audit records and documented full-server and project backup/restore semantics, collision handling and container recovery.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Diagnostics and full-set recovery have evidence. A project-selective restore preserving peers is not implemented/tested; do not treat full-set backup as selective.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.move",
+        "n34.move_no_default",
+        "n34.storage"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "selective_restore",
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-007/implementation/4",
+      "item": "MULTI-007",
+      "requirement": "Resolve project-level recovery scope before closure: exact-image Compose/Kind prove consistent full-server recovery only. Selective restore preserving other current projects has no implemented/tested tool; clarify whether this milestone requires that capability or an explicit current full-server boundary. Never attest selective restore from full-set backup results.",
+      "earlier_native_assessment": "missing",
+      "earlier_native_finding": "The explicit milestone scope decision is unresolved. Existing full-server recovery cannot satisfy selective restore or itself resolve whether that capability is required.",
+      "current_native_evidence_keys": [],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "selective_restore"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-007/evidence/1",
+      "item": "MULTI-007",
+      "requirement": "Saturate one project with slow/failing model and peer work; demonstrate bounded progress for another and truthful costs/coverage.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current core has model error isolation; actual saturation/fairness34 is running, historical30 has four controlled fairness groups.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-007/evidence/2",
+      "item": "MULTI-007",
+      "requirement": "Exercise hot lifecycle changes, worker crashes, restart, container replacement and backup/restore without leakage or duplicated committed results.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Native lifecycle and crash recovery strong; actual current image replacement/cold full-set restore unqualified and selective restoration unresolved.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.move",
+        "n34.move_no_default",
+        "n34.storage",
+        "n34.registry"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34",
+        "selective_restore"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-008/implementation/1",
+      "item": "MULTI-008",
+      "requirement": "Update normative specs/traceability, schemas/OpenAPI/examples, agent onboarding, configuration tooling, deployment and operator recovery guides.",
+      "earlier_native_assessment": "documented",
+      "earlier_native_finding": "Multi/eventing/identity/resources normative specs, published schema/OpenAPI/examples/onboarding and deployment docs exist. Final formal current authority/lifecycle and unresolved recovery/optimizer scope prevent completion claim.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.registry",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "official_admission34"
+      ],
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-008/implementation/2",
+      "item": "MULTI-008",
+      "requirement": "Run the complete multiple-project matrix plus existing regression suites against native and Docker artifacts and the existing model container.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Current native base/migration151, eventing15, UI52, wire8 and full accepted-workflow upgrade4 are retained. Complement66, controlled117/backend69, actual current-model qualification, positive optimizer and final image/platform matrix remain incomplete.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.foundation",
+        "n34.multi",
+        "n34.browser",
+        "n34.oidc",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_backend69",
+        "native_live_filter6"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "positive_optimizer",
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-008/implementation/3",
+      "item": "MULTI-008",
+      "requirement": "Record acceptance identities, upgrade/rollback limitations and unresolved gates; close dependent items and the detailed roadmap only when their evidence passes.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Artifact identities and limits retained per report, but dependent work is not complete and must stay open.",
+      "current_native_evidence_keys": [
+        "n34.registry",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "official_admission34"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34",
+        "positive_optimizer",
+        "selective_restore"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-008/evidence/1",
+      "item": "MULTI-008",
+      "requirement": "Demonstrate two agents coordinating in each of two projects on one server, a multi-project agent and a denied third project, plus a multi-server discovery/canonical-routing scenario.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current multi9/eventing8/scoped evidence11 and actual OpenRig11 demonstrate bridge and denied third project plus real canonical peers. Full federation14 complement and current image pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.core",
+        "n34.stale_owner",
+        "n34.openrig",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "MULTI-008/evidence/2",
+      "item": "MULTI-008",
+      "requirement": "Run declared lifecycle verification and independent wire/privacy/migration/browser/fairness checks with reproducible artifact-bound reports.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Repaired34 official intake is running; no final accepted artifact/image verification success is assumed.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.foundation",
+        "n34.multi",
+        "n34.registry",
+        "n34.browser",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_backend69",
+        "official_admission34"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-002/implementation/1",
+      "item": "KAFKA-002",
+      "requirement": "Provision documented internal topics/partitions and authentication/ACL boundaries; keep private addressed messages and credentials outside public event topics.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Actual34 envelope/privacy/topics exercised. Deployment private-lane and actual OAuth/TLS security are30 image evidence; broker SASL_SSL/ACLs and enforcing-CNI proof are explicitly not qualified.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-002/implementation/2",
+      "item": "KAFKA-002",
+      "requirement": "Implement durable publish acceptance, retry/deduplication, consumer checkpoints and health/backpressure under broker outages.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Exact34 acceptance and before/after fanout sync/consumer commit boundaries passed4; broker outage/lost reply/backpressure complement pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.storage"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-002/implementation/3",
+      "item": "KAFKA-002",
+      "requirement": "Fence consumers and topic lifecycle against project archive, restore, credential rotation and configuration revisions.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current core archive/control fences exist; current transport/policy/credential rotation and restore need complement/platform execution.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.core",
+        "n34.registry"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-002/evidence/1",
+      "item": "KAFKA-002",
+      "requirement": "Kill hub/broker around each publish/checkpoint boundary; prove no acknowledged event is lost and retries do not create duplicate logical publications.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Exact34 native original-storage and fanout/offset kill boundaries covered; actual private broker outage/lost-produce reply and image replacement not yet current34 retained.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.storage"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-002/evidence/2",
+      "item": "KAFKA-002",
+      "requirement": "Exercise multi-project isolation, rebalances, broker unavailability, disk/queue limits and recovery with a real Kafka service.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Consumer is explicitly assigned one partition, so supported recovery is recreation+explicit positions, not group-coordinator rebalance. Current budget/outage proof still running; no real group-rebalance or replicated availability claim.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.core",
+        "n34.storage"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-003/implementation/1",
+      "item": "KAFKA-003",
+      "requirement": "Add explicit project subscriptions with optional deterministic selectors and no required model/description; preserve legacy described subscriptions as filtered mode.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Raw/default/selector/filter schemas and actual SDK flow pass; real old subscriptions stay filtered under actual legacy migration.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.migration",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-003/implementation/2",
+      "item": "KAFKA-003",
+      "requirement": "Persist independent subscription progress and recipient deliveries; separate broker processing offsets from agent acknowledgements and handle out-of-order ack safely.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Independent broadcast, overlapping reasons and poll/ack identities covered; out-of-order ack/full offline/replay complement still pending current34.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.migration",
+        "n34.storage"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-003/implementation/3",
+      "item": "KAFKA-003",
+      "requirement": "Define overlapping-subscription deduplication, unsubscribe/pause/resume, offline consumers, bounded replay and explicit retention-gap handling without weakening existing unacknowledged-delivery durability.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Raw overlap and edit/pause tested in core. Explicit bounded replay/quarantine/physical retention gap recovery in current34 complement pending. Update: actual queued42197ef Admin18 and event-browser12 contents independently verified; their native form predicates are now retained, current image remains pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-003/evidence/1",
+      "item": "KAFKA-003",
+      "requirement": "Run official A2A SDK flows with multiple subscribers receiving every project event and no direct broker access; prove zero model calls.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Official SDK core8 proves all publishers including self and independent raw consumers, zero inference; no agent broker credentials supplied.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-003/evidence/2",
+      "item": "KAFKA-003",
+      "requirement": "Exercise disconnect/reconnect, concurrent subscribe/publish, filter changes, repeated polls/acks, overlapping subscriptions and consumer rebalances.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Core and new commit-boundary restart qualify repeated poll/revisions; full disconnect/retention/replay and instance replacement complement pending. No group-coordinator rebalance support implied.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-004/implementation/1",
+      "item": "KAFKA-004",
+      "requirement": "Define filter enable/disable/edit revisions, threshold policy, input context and durable retry/backlog state; use deterministic selectors before inference.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Selectors/revisions and malformed model retries covered; blocked-transport policy freezing and dormant last-adapter cases pending current34.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-004/implementation/2",
+      "item": "KAFKA-004",
+      "requirement": "Add isolated queues, fairness, timeouts, per-project/subscription budgets and filter-decision provenance without inventing probabilities for raw deliveries. Current integration bounds the model-ready queue and retains overflow as deferred frozen targets in original durable event state; raw fanout must continue and diagnostics must distinguish ready, deferred and paused work.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Bounded ready/deferred queue design and resource scheduler implemented. Actual current caps5/dormant2/fairness4 not retained yet; deferred intents live in original durable event rows, not an unbounded copied ready queue.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-004/implementation/3",
+      "item": "KAFKA-004",
+      "requirement": "Make the model provider optional at startup; expose unsupported/unavailable filtered subscriptions explicitly and preserve accepted pending decisions across recovery.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Model-optional startup and current unavailable semantic/filter capabilities tested; detailed dormant/ready persistence complement still pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.backend_models"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-004/evidence/1",
+      "item": "KAFKA-004",
+      "requirement": "With no model configured and with a hung/failing model, prove raw subscriptions deliver promptly with zero inference calls and other projects are not starved.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Actual core malformed/failing decisions preserve raw; current hung-model/global-saturation and other-project fairness need complement.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.backend_models"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-004/evidence/2",
+      "item": "KAFKA-004",
+      "requirement": "Validate real short-response filtered matches/nonmatches, malformed decisions, retries, hot filter edits and revocation without silent misses or duplicated deliveries.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Controlled34 models prove failure/protocol behavior only. Real30 Nemotron match/nonmatch/disable path exists; exact34 live short-response execution and image not retained.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_live_filter6"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-005/implementation/1",
+      "item": "KAFKA-005",
+      "requirement": "Define backend/index ingestion watermarks and read-after-publish/search visibility; recover projection lag without treating missing indexed facts as negative evidence.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current literal read-after-publish and independent backend models tested; complete current index lag/rebuild/frozen watermark evidence pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.backend_models"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-005/implementation/2",
+      "item": "KAFKA-005",
+      "requirement": "Preserve original history after broker retention, filter rejection, delivery acknowledgement and subscriber removal; keep private messages excluded.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Literal/private exclusion and post-ack originals currently proven; real current34 DeleteRecords/reconstruction and subscriber-removal full scenario pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.migration"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-005/implementation/3",
+      "item": "KAFKA-005",
+      "requirement": "Decouple search/model workers and readiness from raw eventing, adapting replay/cohorts/optimizer evidence to project-scoped event identities and optional models.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Backend config/readiness independence is covered; scoped cohorts/optimizer positive pipeline cannot be inferred from four backend-model config cases.",
+      "current_native_evidence_keys": [
+        "n34.backend_models",
+        "n34.hot"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "positive_optimizer",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-005/evidence/1",
+      "item": "KAFKA-005",
+      "requirement": "Publish with no model and no subscriptions; prove facts remain searchable after filtering, acknowledgements, restart and broker log expiry.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "No-model/no-subscription literal visibility and ack retention current. Physical log-prefix loss/search recovery current34 remains in complement; DeleteRecords is actual missing-offset recovery, not elapsed retention-clock expiry.",
+      "current_native_evidence_keys": [
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-005/evidence/2",
+      "item": "KAFKA-005",
+      "requirement": "Exercise lag/rebuild/restore and model-disabled semantic queries with truthful coverage and unchanged evidence/privacy guarantees.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current storage/relocation and explicit model availability useful but not the entire current projection-lag/index/rebuild/restore matrix.",
+      "current_native_evidence_keys": [
+        "n34.backend_models",
+        "n34.storage",
+        "n34.move",
+        "n34.move_no_default"
+      ],
+      "additional_completed_evidence": [
+        "native_backend69"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-006/implementation/1",
+      "item": "KAFKA-006",
+      "requirement": "Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation. Provide confirmed revisioned subscription edits, pause/resume and selector/filter changes through Admin; preserve queued deliveries and acknowledgements.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual34 Admin18 renders subscription mode, selector edit, cancel, pause/resume beyond100 with frozen backlog and ack preservation. Event12 covers recovery form scope. Current image pending; API controls complement still in progress.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.core",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-006/implementation/2",
+      "item": "KAFKA-006",
+      "requirement": "Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation. Current integration is completing partial per-project topic-prefix, retention and backlog-policy overrides with explicit inheritance; broker endpoint, security and enabled state remain server-wide. Qualify failed multi-project retention proposals against actual broker state before closing this control gate.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current Admin18 verifies six overrides, real topic/retention and inheritance plus stale tabs; event12 covers beyond100 exact replay target and CA form semantics. Failed second-project retention proposal and actual secure hot credential rotation still require current complement/platform evidence; image pending.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.core",
+        "n34.registry",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-006/implementation/3",
+      "item": "KAFKA-006",
+      "requirement": "Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current event12 proves actual foreign-record repair and audited reconciliation forms; native boundary4 is not a config-transition crash test. Current all-project durable decision/partial-project interruption and API recovery complement pending, plus image.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-006/implementation/4",
+      "item": "KAFKA-006",
+      "requirement": "Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual34 role22/Admin18/event12 exercise redacted scoped status/audit/forms; full current cap/deferred/lag status stress proof remains in complement. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.core",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-006/evidence/1",
+      "item": "KAFKA-006",
+      "requirement": "Inspect desktop/mobile role-scoped flows, stale revisions, CSRF, access revocation and model on/off transitions.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Retained current native desktop/mobile role22/Admin18/event12 and OIDC2 cover stale tabs, CSRF, live access revocation and model on/off UI. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.browser",
+        "n34.oidc",
+        "n34.foundation",
+        "n34.admin",
+        "n34.event_browser"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-006/evidence/2",
+      "item": "KAFKA-006",
+      "requirement": "Rotate broker credentials and change connection/filter settings live under load; prove no hub restart, lost accepted work or cross-project exposure.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current native UI covers hot model/filter and credential write-only forms; actual trust/bearer rotation under real secure Kafka requires current34 platform execution. Historical30 security7 is explicit prior proof, not current acceptance.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.browser"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_live_filter6"
+      ],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-007/implementation/1",
+      "item": "KAFKA-007",
+      "requirement": "Select pinned Kafka/KRaft images and client compatibility; declare dependencies, persistent volumes, private listeners, secrets, resource limits and readiness/startup/shutdown ordering. Generate and retain a distinct installation cluster ID, preserving existing volume metadata rather than assigning the tutorial cluster ID to every deployment.",
+      "earlier_native_assessment": "documented",
+      "earlier_native_finding": "Pinned8.3.2 images, private lanes/resource limits/cluster-ID bootstrap implemented; current app image execution pending. Packaging-only bootstrap evidence remains independently relevant but is not a34 app qualification.",
+      "current_native_evidence_keys": [],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-007/implementation/2",
+      "item": "KAFKA-007",
+      "requirement": "Provide Compose and Kubernetes packaging with model-free baseline and optional existing model/GPU service or configured remote model; choose and document Kubernetes manifest/chart ownership.",
+      "earlier_native_assessment": "documented",
+      "earlier_native_finding": "Owned Compose/K8s manifests/model-free/optional existing-endpoint profiles exist. Rendering is not equivalent to booting current34; no second GPU/pod was launched for optional model image profile.",
+      "current_native_evidence_keys": [],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-007/implementation/3",
+      "item": "KAFKA-007",
+      "requirement": "Document single-node versus replicated broker durability, single-writer hub replica limits, backup/restore, rolling broker upgrades and hot hub configuration propagation.",
+      "earlier_native_assessment": "documented",
+      "earlier_native_finding": "Docs distinguish single broker/single writer, patch upgrade and full-set backup. They do not establish replicated HA, generic Kafka downgrade, or selective project restore.",
+      "current_native_evidence_keys": [],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34",
+        "selective_restore"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-007/evidence/1",
+      "item": "KAFKA-007",
+      "requirement": "Boot clean Compose and disposable Kubernetes deployments with real Kafka and no model; run A2A pub/sub and backend search smoke tests.",
+      "earlier_native_assessment": "pending",
+      "earlier_native_finding": "Actual accepted30 clean Compose/Kind raw/search smoke exists; no exact34 admitted-image platform execution yet.",
+      "current_native_evidence_keys": [],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-007/evidence/2",
+      "item": "KAFKA-007",
+      "requirement": "Exercise replacement/restart, PVC or volume reuse, broker failure/upgrade, secret rotation and optional-model enablement; validate manifests and image/dependency/license inventories.",
+      "earlier_native_assessment": "pending",
+      "earlier_native_finding": "Actual30 volume reuse,8.3.1\u21928.3.2 Compose patch upgrade, TLS/OAuth, broker/proxy replacement and actual model endpoints passed. Current34 not retained; optional GPU manifests rendered only, broker SASL_SSL/enforcing CNI not claimed.",
+      "current_native_evidence_keys": [],
+      "additional_completed_evidence": [
+        "native_live_filter6"
+      ],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-008/implementation/1",
+      "item": "KAFKA-008",
+      "requirement": "Specify ordered schema/config upgrades, cutover watermarks and topic initialization for legacy and already multi-project stores.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Ordered34 basic migration and full selected-workflow upgrade4 now retained; registry/downgrade validation corrected. Full current all-project transport cutover complement and image pending.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.core",
+        "n34.registry",
+        "n34.workflow_upgrade"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-008/implementation/2",
+      "item": "KAFKA-008",
+      "requirement": "Reconcile durable outbox, Kafka offsets, pending model jobs, deliveries and backend projection state without replaying old publications as newly subscribed events.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Actual34 accepted legacy jobs/receipts/private queues plus all five query/optimizer families and selected primitive survive migration/restart. Full current physical outbox/transport cutover complement and image pending.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.core",
+        "n34.move",
+        "n34.workflow_upgrade"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-008/implementation/3",
+      "item": "KAFKA-008",
+      "requirement": "Provide preflight, backups, resumable migration markers, abort/recovery and explicit downgrade restrictions for store plus broker state.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Prepared/decided/completed backups and damaged-copy fail-closed tested native. Current image paired broker/backend backup and downgrade operator recovery pending.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.storage",
+        "n34.registry"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-008/evidence/1",
+      "item": "KAFKA-008",
+      "requirement": "Migrate actual earlier accepted stores with offline agents, pending filters, duplicate retries and acknowledged deliveries; compare identities and counts.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual accepted producer basic migration151 plus learned-workflow upgrade4 cover offline/pending filters, duplicate source/MID retries, queues/acks, query families and selected primitive. Current image counterpart remains pending.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.workflow_upgrade"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-008/evidence/2",
+      "item": "KAFKA-008",
+      "requirement": "Inject crashes at every cutover boundary and restore backups; prove no silent loss, unsolicited history replay, cross-project leakage or double delivery.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current migration and original storage interruption cases retained. Current transport transition crashes and actual final-image cold full-set restore remain pending; no selective restore claim.",
+      "current_native_evidence_keys": [
+        "n34.migration",
+        "n34.storage",
+        "n34.core"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "platform34",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-009/implementation/1",
+      "item": "KAFKA-009",
+      "requirement": "Update normative Component contracts, schemas/OpenAPI/examples, client onboarding, traceability, deployment and troubleshooting guides together.",
+      "earlier_native_assessment": "documented",
+      "earlier_native_finding": "Normative scopes/schema/examples/operator/client docs exist; final formal admission and explicit unresolved optimizer/recovery scope remain open.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.registry",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "official_admission34"
+      ],
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-009/implementation/2",
+      "item": "KAFKA-009",
+      "requirement": "Run zero-model raw-subscription/search acceptance and separate live-model filtered/semantic-query acceptance plus multi-project and federated regressions.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Current zero-model core and actual OpenRig11 canonical peers retained. Complete current federation complement, actual existing-model filtering/semantic execution and positive optimizer remain unproved; image pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.stale_owner",
+        "n34.openrig",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_live_filter6"
+      ],
+      "remaining_evidence_or_decisions": [
+        "positive_optimizer",
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-009/implementation/3",
+      "item": "KAFKA-009",
+      "requirement": "Verify durable handoffs, fanout, fairness, retention/replay gaps and fault recovery at documented limits; record exact artifact/image/broker/client identities.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Exact current boundary4 closes original/fanout/commit experiments; fairness/caps/retention atlimits and final image still pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.storage",
+        "n34.move",
+        "n34.migration",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-009/evidence/1",
+      "item": "KAFKA-009",
+      "requirement": "Demonstrate two projects with multiple publishers and independent raw/filtered subscribers, an unauthorized project and a federated peer using its own Kafka.",
+      "earlier_native_assessment": "partial",
+      "earlier_native_finding": "Current multi9/eventing8/scoped evidence11/OpenRig11 cover two projects/bridge/denial and separate canonical hubs. Full federation14 complement and actual existing-model filtering plus current image pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.core",
+        "n34.stale_owner",
+        "n34.openrig",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_live_filter6"
+      ],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "KAFKA-009/evidence/2",
+      "item": "KAFKA-009",
+      "requirement": "Pass declared verification and independent wire/privacy/fault/migration/deployment suites; document remaining limits and publication gates before closure.",
+      "earlier_native_assessment": "open",
+      "earlier_native_finding": "Program cannot close while required current executions, final lifecycle/image, positive optimizer and project restore scope remain unresolved. Update: actual queued42197ef Admin18 and event-browser12 contents independently verified; their native form predicates are now retained, current image remains pending.",
+      "current_native_evidence_keys": [
+        "n34.core",
+        "n34.multi",
+        "n34.foundation",
+        "n34.registry",
+        "n34.browser",
+        "n34.stale_owner",
+        "n34.admin",
+        "n34.event_browser",
+        "n34.wire"
+      ],
+      "additional_completed_evidence": [
+        "native_complement66",
+        "native_backend69",
+        "official_admission34"
+      ],
+      "remaining_evidence_or_decisions": [
+        "controlled117",
+        "platform34",
+        "image34",
+        "positive_optimizer",
+        "selective_restore"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "INTEROP-001/implementation/1",
+      "item": "INTEROP-001",
+      "requirement": "Inspect and pin the supported OpenRig release/API; specify stable rig/agent identity, ADHD project mapping and a minimal A2A adapter or skill where needed.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Pinned0.6.14/df1c1517, rigUUID/seat identity/project binding and minimal A2A adapter documented; actual34 OpenRig11 independently verifies two live pinned rigs. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.openrig"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "INTEROP-001/implementation/2",
+      "item": "INTEROP-001",
+      "requirement": "Provide setup for agents in separate OpenRig rigs to publish/subscribe, send/poll/acknowledge and search through one ADHD hub, then through federated hubs with canonical routing.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Actual34 two rigs publish/subscribe/search/private messages through one hub then two separate real federated hubs with canonical v2 routing. Setup docs and adapters retained; current image pending.",
+      "current_native_evidence_keys": [
+        "n34.openrig"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "INTEROP-001/implementation/3",
+      "item": "INTEROP-001",
+      "requirement": "Preserve project admission, owner/role boundaries, provenance, retries and loop/duplicate prevention; keep rig identity as provenance rather than an automatic access grant.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Current OpenRig11 proves auth/project/server binding, exact provenance, duplicate/retry/echo prevention and no transferred roles. Core/membership/retirement/stale-owner tests are complementary; current image pending.",
+      "current_native_evidence_keys": [
+        "n34.multi",
+        "n34.retirement",
+        "n34.stale_owner",
+        "n34.openrig"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "INTEROP-001/implementation/4",
+      "item": "INTEROP-001",
+      "requirement": "Document supported versions, credential provisioning, recovery and the division of responsibility; retain support for agents outside OpenRig.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Pinned supported version, private per-seat credential provisioning, offline/daemon recovery and responsibility split documented and exercised34; outside-OpenRig SDK also qualified34. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.openrig"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "INTEROP-001/evidence/1",
+      "item": "INTEROP-001",
+      "requirement": "Run two actual OpenRig rigs with independently authenticated agents: verify cross-rig raw events with zero inference, direct messages, acknowledgements and backend search; include an optional plain-text filter case.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Exact34 actual two-rig native11 directly covers independent credentials/raw zero inference, private messages/acks/search and controlled optional plain-text filter. Model semantic quality is not claimed. Current image pending.",
+      "current_native_evidence_keys": [
+        "n34.openrig"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    },
+    {
+      "id": "INTEROP-001/evidence/2",
+      "item": "INTEROP-001",
+      "requirement": "Verify offline/restart/retry recovery and denial of unauthorized projects, then exercise two rigs using separate federated ADHD servers with exact rig/agent/project/source provenance and no transferred roles.",
+      "earlier_native_assessment": "native-covered",
+      "earlier_native_finding": "Exact34 OpenRig11 directly covers real daemon and hub offline/restart/retry, denied scopes, separate real hubs/Kafka, canonical provenance and unchanged server-local roles. Current image counterpart pending.",
+      "current_native_evidence_keys": [
+        "n34.stale_owner",
+        "n34.retirement",
+        "n34.openrig"
+      ],
+      "additional_completed_evidence": [],
+      "remaining_evidence_or_decisions": [
+        "image34"
+      ],
+      "current_image_runtime_qualification_complete": false
+    }
+  ],
+  "remaining": [
+    "Exact34 runtime image, platform, browser, deep-model and protocol qualification is running; payload identity alone does not prove runtime behavior.",
+    "Native controlled117 and rendered/fairness regressions must finish and retain results.",
+    "Actual Kafka coordinator interference/recovery is running; explicit-assignment bridge ownership/HA must not be invented.",
+    "Positive adaptive-retrieval quality/promotion remains unproved. Preserve original QUALITY_REGRESSION and later MIN_EVIDENCE outcomes.",
+    "Selective same-identity empty-target project restore preserving other current projects is not implemented or tested; full-server restore is insufficient.",
+    "Final current-authority verification and requirement-by-requirement evidence-based roadmap closure remain required."
+  ],
+  "limits": [
+    "No current34 immutable image exists in reviewed retained proof; source30 image cannot attest34 privacy/OIDC/registry corrections.",
+    "Current exact native migration151 is queued on identity branch cd9e71f; file hashes and individual actual passed contents reviewed here.",
+    "Positive real-model optimizer remains failed MIN_EVIDENCE/qualification none; controlled optimizer fault/selection or model-backed history is not a positive learned-winner qualification.",
+    "Selective project recovery preserving other current projects remains open; this audit neither narrows nor decides that requirement.",
+    "One-partition explicit-assignment consumer recreation is selected; Kafka group-coordinator rebalances, replicated durability, broker SASL_SSL and enforcing-CNI policy are not silently claimed.",
+    "Native C syscall crash probes and actual container network/kill/replacement are distinct evidence lanes."
+  ]
+}

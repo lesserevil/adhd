@@ -47,6 +47,8 @@ their exact artifact/report identities and outstanding gates. Tracker
 reconciliation and the start-of-cycle peer survey found no open
 ADHD issues/reviews or collectable existing branches.
 
+Current source34 has passed [official admission and guarded image staging](../../verification/multi-eventing/image-admission-34.json). The actual image payload matches the reviewed manifest; current image runtime/platform qualification is now in progress. [The completion review](../../verification/multi-eventing/completion-review-34.json) maps all 86 unchecked predicates across 16 items and separates completed native evidence from remaining gates. Native evidence now includes the 151-group project/migration matrix, 81 Kafka/protocol/durability checks, 52 focused UI/OpenRig checks, 69 existing live-model cases and the six-call optional-filter/backend witness. Positive adaptive-retrieval qualification and selective project restore remain open; no program closure is implied.
+
 The Kafka pivot replaces
 mandatory model matching in the target architecture, retains A2A for agents and
 adds per-server Kafka plus Compose/Kubernetes packaging. Complete MULTI-001's
@@ -823,7 +825,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Update normative specs/traceability, schemas/OpenAPI/examples, agent onboarding, configuration tooling, deployment and operator recovery guides.
   - [ ] Run the complete multiple-project matrix plus existing regression suites against native and Docker artifacts and the existing model container.
   - [ ] Record acceptance identities, upgrade/rollback limitations and unresolved gates; close dependent items and the detailed roadmap only when their evidence passes.
-- **Native progress:** Candidate34 (`7cc2f584…`) passes25 suites/151 core, migration, relocation, auth and fault groups; exact artifact/report bindings are retained in `verification/multi-eventing/native-project-migration-34.json`. This does not close official admission, exact-image qualification or unresolved model/restore gates. Independent wire and actual accepted learned-workflow upgrade checks also pass; see `verification/multi-eventing/wire-workflow-34-manifest.json`.
+- **Native progress:** Candidate34 (`7cc2f584…`) passes25 suites/151 core, migration, relocation, auth and fault groups; exact artifact/report bindings are retained in `verification/multi-eventing/native-project-migration-34.json`. Official admission now passes; exact-image runtime qualification and unresolved model/restore gates remain open. Independent wire and actual accepted learned-workflow upgrade checks also pass; see `verification/multi-eventing/wire-workflow-34-manifest.json`.
 - **Evidence:**
   - [ ] Demonstrate two agents coordinating in each of two projects on one server, a multi-project agent and a denied third project, plus a multi-server discovery/canonical-routing scenario.
   - [ ] Run declared lifecycle verification and independent wire/privacy/migration/browser/fairness checks with reproducible artifact-bound reports.

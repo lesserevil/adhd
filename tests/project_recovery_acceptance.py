@@ -17,12 +17,22 @@ from uuid import uuid4
 
 import httpx
 import jsonschema
+from jsonschema import validators
 
 from foundation_acceptance import Client
 from multi_support import Evidence, Fixture, PROJECTS, arguments, scoped
 from project_recovery_state import canonical, digest, read_json, registry, route, snapshot
 
 RED, BLUE, HIDDEN = [p["id"] for p in PROJECTS]
+
+
+def byte_bound(validator, limit, value, schema):
+    if isinstance(value, str) and len(value.encode("utf-8")) > limit:
+        yield jsonschema.ValidationError("Recovery UTF8 byte bound exceeded")
+
+
+Strict = validators.extend(jsonschema.Draft202012Validator, {"x-maxBytes": byte_bound},
+    type_checker=jsonschema.Draft202012Validator.TYPE_CHECKER.redefine("integer", lambda _, value: type(value) is int))
 
 
 class Recovery:
@@ -32,7 +42,7 @@ class Recovery:
         self.schema_sha256 = digest(Path(schema).read_bytes())
 
     def validate(self, name, value):
-        jsonschema.Draft202012Validator({"$defs": self.definitions, "$ref": "#/$defs/" + name},
+        Strict({"$defs": self.definitions, "$ref": "#/$defs/" + name},
             format_checker=jsonschema.FormatChecker()).validate(value)
         return value
 

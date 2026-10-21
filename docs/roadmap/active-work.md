@@ -875,7 +875,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Depends on:** KAFKA-003
 - **Implementation:**
   - [ ] Define filter enable/disable/edit revisions, threshold policy, input context and durable retry/backlog state; use deterministic selectors before inference.
-  - [ ] Add isolated queues, fairness, timeouts, per-project/subscription budgets and filter-decision provenance without inventing probabilities for raw deliveries.
+  - [ ] Add isolated queues, fairness, timeouts, per-project/subscription budgets and filter-decision provenance without inventing probabilities for raw deliveries. Current integration bounds the model-ready queue and retains overflow as deferred frozen targets in original durable event state; raw fanout must continue and diagnostics must distinguish ready, deferred and paused work.
   - [ ] Make the model provider optional at startup; expose unsupported/unavailable filtered subscriptions explicitly and preserve accepted pending decisions across recovery.
 - **Evidence:**
   - [ ] With no model configured and with a hung/failing model, prove raw subscriptions deliver promptly with zero inference calls and other projects are not starved.
@@ -920,7 +920,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Ship both a plain-container Compose application and a Kubernetes application with hub, persistent Kafka and optional model profiles. Each server owns one logical Kafka service, which may contain several brokers; broker replication and hub replica safety must be stated rather than implied by pods.
 - **Depends on:** KAFKA-002
 - **Implementation:**
-  - [ ] Select pinned Kafka/KRaft images and client compatibility; declare dependencies, persistent volumes, private listeners, secrets, resource limits and readiness/startup/shutdown ordering.
+  - [ ] Select pinned Kafka/KRaft images and client compatibility; declare dependencies, persistent volumes, private listeners, secrets, resource limits and readiness/startup/shutdown ordering. Generate and retain a distinct installation cluster ID, preserving existing volume metadata rather than assigning the tutorial cluster ID to every deployment.
   - [ ] Provide Compose and Kubernetes packaging with model-free baseline and optional existing model/GPU service or configured remote model; choose and document Kubernetes manifest/chart ownership.
   - [ ] Document single-node versus replicated broker durability, single-writer hub replica limits, backup/restore, rolling broker upgrades and hot hub configuration propagation.
 - **Evidence:**

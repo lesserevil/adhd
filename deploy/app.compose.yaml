@@ -1,0 +1,32 @@
+include:
+  - events.compose.yaml
+services:
+  hub:
+    image: ${ADHD_HUB_IMAGE:?Set ADHD_HUB_IMAGE to the qualified hub image}
+    user: "${ADHD_UID:-10001}:${ADHD_GID:-10001}"
+    environment:
+      ADHD_CONFIG_FILE: /config/hub.json
+    volumes:
+      - type: bind
+        source: ${ADHD_CONFIG_DIR:?Run deploy/init-config.py and set ADHD_CONFIG_DIR}
+        target: /config
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${ADHD_DATA_DIR:?Set ADHD_DATA_DIR to the private durable data directory}
+        target: /data
+        bind: {create_host_path: false}
+    ports: ["127.0.0.1:${ADHD_PORT:-8766}:8766"]
+    networks: [default, events]
+    depends_on:
+      kafka-rest: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp:rw,nosuid,noexec,size=64m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1g
+    cpus: 2
+    pids_limit: 256
+    stop_grace_period: 60s
+    restart: unless-stopped
+networks:
+  default:

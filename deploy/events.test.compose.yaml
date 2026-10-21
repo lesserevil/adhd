@@ -1,0 +1,7 @@
+# Qualification-only loopback access. Never publish REST Proxy for agents/peers.
+services:
+  kafka-rest:
+    ports: ["127.0.0.1:${ADHD_KAFKA_TEST_PORT:-18082}:8082"]
+    networks: [events, test-access]
+networks:
+  test-access:

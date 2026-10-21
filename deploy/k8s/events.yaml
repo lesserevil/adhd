@@ -1,0 +1,231 @@
+# Pinned single-node Kafka/KRaft development topology. See docs/admin/event-service.md.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: adhd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: adhd
+spec:
+  selector:
+    app: kafka
+  ports:
+  - name: service
+    port: 9092
+    targetPort: 9092
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-rest
+  namespace: adhd
+spec:
+  selector:
+    app: kafka-rest
+  ports:
+  - name: service
+    port: 8082
+    targetPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub
+  namespace: adhd
+spec:
+  selector:
+    app: hub
+  ports:
+  - name: service
+    port: 8766
+    targetPort: 8766
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: adhd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f
+        env:
+        - name: CLUSTER_ID
+          value: MkU3OEVBNTcwNTJENDM2Qk
+        - name: KAFKA_NODE_ID
+          value: '1'
+        - name: KAFKA_PROCESS_ROLES
+          value: broker,controller
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: 1@kafka-0.kafka:9093
+        - name: KAFKA_LISTENERS
+          value: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: INTERNAL://kafka-0.kafka:9092
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: INTERNAL
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: CONTROLLER
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: '1'
+        - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+          value: '1'
+        - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+          value: '1'
+        - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+          value: '1'
+        - name: KAFKA_MIN_INSYNC_REPLICAS
+          value: '1'
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+          value: 'false'
+        - name: KAFKA_LOG_DIRS
+          value: /var/lib/kafka/data/logs
+        - name: KAFKA_HEAP_OPTS
+          value: -Xms256m -Xmx512m
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: '2'
+            memory: 1536Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 9092
+        startupProbe:
+          tcpSocket:
+            port: 9092
+          periodSeconds: 5
+          failureThreshold: 36
+        readinessProbe:
+          exec:
+            command:
+            - bash
+            - -ec
+            - kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null
+              2>&1
+          periodSeconds: 10
+          timeoutSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 9092
+          periodSeconds: 20
+          failureThreshold: 6
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/kafka/data
+  serviceName: kafka
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-rest
+  namespace: adhd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-rest
+  template:
+    metadata:
+      labels:
+        app: kafka-rest
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+      - name: kafka-rest
+        image: confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058
+        env:
+        - name: KAFKA_REST_HOST_NAME
+          value: kafka-rest
+        - name: KAFKA_REST_LISTENERS
+          value: http://0.0.0.0:8082
+        - name: KAFKA_REST_BOOTSTRAP_SERVERS
+          value: kafka-0.kafka:9092
+        - name: KAFKA_REST_PRODUCER_ACKS
+          value: all
+        - name: KAFKA_REST_PRODUCER_ENABLE_IDEMPOTENCE
+          value: 'true'
+        - name: KAFKA_REST_PRODUCER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION
+          value: '1'
+        - name: KAFKA_REST_CONSUMER_ENABLE_AUTO_COMMIT
+          value: 'false'
+        - name: KAFKA_REST_HEAP_OPTS
+          value: -Xms128m -Xmx384m
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: '2'
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 8082
+        startupProbe:
+          tcpSocket:
+            port: 8082
+          periodSeconds: 5
+          failureThreshold: 36
+        readinessProbe:
+          httpGet:
+            path: /brokers
+            port: 8082
+          periodSeconds: 10
+          timeoutSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 8082
+          periodSeconds: 20
+          failureThreshold: 6
+  strategy:
+    type: Recreate

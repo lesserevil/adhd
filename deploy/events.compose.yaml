@@ -1,0 +1,74 @@
+# One private Kafka service per logical ADHD server. All pins are linux/amd64.
+services:
+  kafka:
+    image: confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f
+    platform: linux/amd64
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "1"
+      KAFKA_MIN_INSYNC_REPLICAS: "1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data/logs
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    volumes: [kafka-data:/var/lib/kafka/data]
+    networks: [events]
+    mem_limit: 1536m
+    cpus: 2
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 60s
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1']
+      interval: 10s
+      timeout: 10s
+      start_period: 40s
+      retries: 12
+  kafka-rest:
+    image: confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058
+    platform: linux/amd64
+    environment:
+      KAFKA_REST_HOST_NAME: kafka-rest
+      KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+      KAFKA_REST_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_REST_PRODUCER_ACKS: all
+      KAFKA_REST_PRODUCER_ENABLE_IDEMPOTENCE: "true"
+      KAFKA_REST_PRODUCER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: "1"
+      KAFKA_REST_CONSUMER_ENABLE_AUTO_COMMIT: "false"
+      KAFKA_REST_HEAP_OPTS: -Xms128m -Xmx384m
+    depends_on:
+      kafka: {condition: service_healthy}
+    networks: [events]
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          bash -ec 'exec 3<>/dev/tcp/127.0.0.1/8082; printf "GET /brokers HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; read -r status <&3; [[ "$$status" == *" 200 "* ]]' 
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 12
+networks:
+  events:
+    internal: true
+volumes:
+  kafka-data:

@@ -1,0 +1,74 @@
+# Optional: prepopulate model-checkpoint PVC with the verified BF16 checkpoint.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: model-checkpoint, namespace: adhd}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: {storage: 40Gi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: model, namespace: adhd}
+spec:
+  selector: {app: model}
+  ports: [{name: http, port: 8770, targetPort: 8770}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: model, namespace: adhd}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: model}
+  template:
+    metadata:
+      labels: {app: model}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext: {runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001}
+      containers:
+        - name: model
+          image: ghcr.io/pst2154/nemotron-deciffusion@sha256:494aac2d7af43b7a70234792623a510bf29045a45b3aa893bc3170108ded9cea
+          args: [--enforce-eager]
+          env:
+            - {name: PORT, value: "8770"}
+            - {name: DOWNLOAD_CHECKPOINT, value: "0"}
+            - {name: MODEL_ID, value: Nemotron-Deciffusion-8B-v2.1}
+            - {name: SERVED_MODEL_NAME, value: Nemotron-Deciffusion-8B-v2.1}
+            - {name: QUANTIZATION, value: none}
+            - {name: GPU_MEMORY_UTILIZATION, value: "0.60"}
+            - {name: MAX_MODEL_LEN, value: "8192"}
+            - {name: MAX_BATCHED_TOKENS, value: "8192"}
+            - {name: MAX_NUM_SEQS, value: "4"}
+            - {name: FLASHINFER_AUTOTUNE, value: "0"}
+            - {name: COMPACT_OVER, value: "0"}
+            - {name: HOME, value: /tmp/home}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: "2", memory: 16Gi}
+            limits: {cpu: "8", memory: 32Gi, nvidia.com/gpu: "1"}
+          ports: [{containerPort: 8770}]
+          startupProbe:
+            httpGet: {path: /health, port: 8770}
+            failureThreshold: 120
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /health, port: 8770}
+            periodSeconds: 15
+          volumeMounts:
+            - {name: checkpoint, mountPath: /models/checkpoint, readOnly: true}
+            - {name: scratch, mountPath: /tmp}
+            - {name: shm, mountPath: /dev/shm}
+      volumes:
+        - name: checkpoint
+          persistentVolumeClaim: {claimName: model-checkpoint}
+        - name: scratch
+          emptyDir: {sizeLimit: 4Gi}
+        - name: shm
+          emptyDir: {medium: Memory, sizeLimit: 2Gi}

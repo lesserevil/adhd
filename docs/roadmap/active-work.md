@@ -29,9 +29,11 @@ The user has now authorized implementation of all outstanding roadmap work,
 grouped in branches with parallel agents. MULTI-001 through MULTI-008 and
 KAFKA-001 through KAFKA-009 are the current implementation program. Their
 ordered design and acceptance programs are [multiple projects per server](multi-project.md)
-and [Kafka pub/sub with optional filtering](kafka-pubsub.md). MULTI-001 contract
-authoring is in progress on `roadmap/contracts`; Kafka deployment and independent
-acceptance work proceed on `roadmap/deployment` and `roadmap/acceptance`.
+and [Kafka pub/sub with optional filtering](kafka-pubsub.md). MULTI-001
+contracts are integrated on `roadmap/contracts`; current integration adds complete
+Admin subscription edits and checks the final protocol/onboarding inventory. Kafka
+deployment and independent acceptance proceed on `roadmap/deployment` and
+`roadmap/acceptance`.
 `roadmap/integration` preserves the earlier qualified work as baseline commit
 `a8f7de8` and integrates the contract, packaging and acceptance branches. A new
 disposable implementation candidate under `_build/roadmap/multi/source` now
@@ -902,7 +904,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** All hub-managed broker connections, secret references, topic policy, subscription selectors/filters, model enablement and project settings use hot revisioned Admin changes. Distinguish broker infrastructure rollouts from hub restarts; preserve existing server roles and project admission.
 - **Depends on:** KAFKA-003, KAFKA-004, KAFKA-005, MULTI-006
 - **Implementation:**
-  - [ ] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation.
+  - [ ] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation. Provide confirmed revisioned subscription edits, pause/resume and selector/filter changes through Admin; preserve queued deliveries and acknowledgements.
   - [ ] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation.
   - [ ] Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.
   - [ ] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.

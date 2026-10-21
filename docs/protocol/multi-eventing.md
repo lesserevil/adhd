@@ -176,5 +176,5 @@ Optional hot `eventing.tls_ca_pem` configures 1..16 certificate-only X.509 CA ro
 (up to 64 KiB), replacing system trust. Admin merge-patch null removes this setting
 or a bearer token. TLS peer/hostname verification remains mandatory, and trust
 changes require a new handshake, preventing previously authorized connections
-from bypassing candidate trust preflight. See the [normative eventing contract](../../components/hub/eventing/spec.md)
+from bypassing candidate trust preflight. See the normative eventing contract, `components/hub/eventing/spec.md`,
 for exact bounds, recovery semantics and closed request/result schemas.

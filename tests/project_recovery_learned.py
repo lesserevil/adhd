@@ -103,6 +103,7 @@ async def checks(args, f, evidence):
     originals = {p.name: digest(p.read_bytes()) for p in original_root.iterdir()
         if p.is_file() and p.name.startswith(store.name)}
     assert store.name in originals and store.name + '.snapshot' in originals
+    assert all(config.get(k, {}).get('url') is None for k in ('history', 'retrieval', 'archive'))
     prefix, audit, fence_hash = fence(args, f, config)
     producer = Runtime(f.root / 'accepted-producer', prefix + command)
     old_api = lambda body, mutation=False: Client(producer, producer.config['admin_token']).api(body, mutation=mutation)
@@ -113,6 +114,7 @@ async def checks(args, f, evidence):
         config['public_url'] = 'http://127.0.0.1:' + str(config['port'])
         producer.file.write_text(json.dumps(config)); producer.file.chmod(0o600)
         producer.start()
+        assert str(f.root / 'no-provider.so') in Path('/proc/' + str(producer.process.pid) + '/maps').read_text(), 'Owned legacy VM did not load provider fence'
         before = old_api({'op': 'retrieval_index'})['index']
         assert before['selection']['rollback_available']
         rollback = old_api({'op': 'rollback_index', 'expected_selection_revision': before['selection']['revision']}, True)['proposal']

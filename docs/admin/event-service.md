@@ -135,6 +135,71 @@ resume. Copying a live DETS file or a live broker directory is not a valid backu
 Do not restore only Kafka and infer that original facts or agent acknowledgements
 have been restored.
 
+A recovery set includes the mutable configuration directory in full, including
+`hub.json`, its `.journal`, any `.transaction` decision, user/agent credentials,
+OIDC configuration and first-install password file; every current project store
+and its authoritative `.snapshot`; the complete Kafka data volume including
+KRaft metadata, topic records and consumer offsets; and any separately mounted
+proxy TLS/OAuth/broker secrets needed by those exact configurations. Additional
+project stores live under `<store_path>.projects/`; saving only the root DETS
+file loses other projects. A prior hot store relocation may leave offline source
+copies: the current configuration and its complete destination store set are
+authoritative. Resolve any in-progress configuration/storage transition through
+the supported startup recovery before taking a normal cold backup. Do not delete
+transaction decisions or substitute older source copies to make startup succeed.
+
+Label the set with a recovery ID, creation time, exact hub image config/manifest
+and artifact hash, broker/proxy image pins, server ID, project IDs, volume identities,
+configuration revision, and per-project durable handoff/materialization positions
+and actual broker group checkpoints. Hash each archive/snapshot and keep the
+manifest beside it. Encrypt and restrict recovery material: it contains passwords,
+agent tokens and private project data. Broker offsets and immutable originals,
+queued evaluations/deliveries, acknowledgements and source retry identities must
+come from the same stopped recovery point. Model weights are a separate pinned
+installation input; preserving their exact reference does not require copying
+weights into each application backup.
+
+For Compose, block external writers/ingress and stop services explicitly in this
+order, retaining containers and volumes:
+
+```sh
+docker compose -p adhd -f deploy/app.compose.yaml stop hub
+docker compose -p adhd -f deploy/app.compose.yaml stop kafka-rest
+docker compose -p adhd -f deploy/app.compose.yaml stop kafka
+```
+
+Confirm all three services have stopped. Use your storage backup tooling to copy
+both hub bind directories and the named Kafka volume while offline, preserving
+owners, modes and all files. For Kubernetes, block ingress and scale Deployment
+`hub` to zero, wait for its pod to terminate, then do the same for Deployment
+`kafka-rest`, then StatefulSet `kafka`. Confirm no writer pod remains before
+snapshotting both PVCs. An offline backup pod or storage-provider snapshot must
+mount the actual current claims; a newly created empty PVC is not a backup.
+Kubernetes VolumeSnapshot support, consistency and encryption depend on the
+storage driver and are not supplied by these plain manifests. A single-writer
+volume must never be opened by a backup helper and a live hub concurrently.
+
+Restore first in an isolated environment with ingress and federation disabled.
+Verify archive hashes and matching identities, restore all stopped volumes and
+configuration together with their ownership/modes, then start Kafka, wait for
+broker readiness, start REST Proxy and verify authenticated connectivity, then
+start the sole hub. In Compose use `start kafka`, `start kafka-rest`, `start hub`
+with the same project and Compose file, checking each before the next. In
+Kubernetes restore the existing claim identities or intentionally bind the
+restored claims before scaling each workload back to one in that order. Inspect
+startup recovery, all project original/search results, pending model work,
+deliveries/acks, authorization and broker/application checkpoints before admitting
+agents. A restore intentionally removes facts accepted after its recovery point;
+record that boundary rather than calling it lossless current-state recovery.
+Never run the restored copy concurrently with the original logical server.
+
+Do not run an older pre-migration hub against upgraded multi-project/Kafka stores:
+it must reject the newer schema. Application downgrade requires the matching
+pre-upgrade configuration, every project store and broker recovery set, plus the
+compatible old image; changing an image tag alone is not a supported downgrade.
+The separately qualified broker patch upgrade does not establish cross-version
+application rollback or general Kafka metadata downgrade compatibility.
+
 Hub broker endpoint/timeouts and model/filter settings are revisioned hot Admin
 configuration. Static Kafka listener/controller settings, broker images and
 persistent storage sizes belong to deployment tooling and may roll Kafka without

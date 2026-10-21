@@ -1,0 +1,54 @@
+"""Single bounded actual-service stale authentication response diagnostic."""
+import asyncio,fcntl,hashlib,json,tempfile
+from pathlib import Path
+from playwright.async_api import async_playwright,expect
+from multi_workflow_upgrade import UpgradeRuntime
+
+ROOT=Path('/home/horde/src/adhd');OUT=ROOT/'_build/roadmap/final/admin-stale401-34';OUT.mkdir(exist_ok=False)
+IMAGE='sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b';MANIFEST=ROOT/'_build/roadmap/final/container-context-34/manifest.json'
+plan={'scope':'One actual-image diagnostic: hold an original list_projects request from first login; logout and authenticate again; forward original captured headers only to the same owned local server and deliver its unchanged real response. No response is fabricated, no header value is logged.','image':IMAGE,'artifact_sha256':'7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9','sessions':2,'held_requests':1,'runs':1,'seconds':90,'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()};(OUT/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
+
+async def browser_probe(runtime,password,record):
+ async with async_playwright() as pw:
+  browser=await pw.chromium.launch(headless=True,args=['--no-sandbox']);ctx=await browser.new_context();page=await ctx.new_page();page.set_default_timeout(15000)
+  held=asyncio.Event();release=asyncio.Event();finished=asyncio.Event();seen=[];errors=[];state={'held':False}
+  page.on('pageerror',lambda e:errors.append(str(e)))
+  async def intercept(route):
+   request=route.request
+   try:value=request.post_data_json
+   except Exception:value=None
+   if isinstance(value,dict) and value.get('op')=='list_projects' and not state['held']:
+    state['held']=True;headers=await request.all_headers();held.set()
+    try:
+     await asyncio.wait_for(release.wait(),45)
+     response=await route.fetch(headers=headers)
+     seen.append({'op':'list_projects','status':response.status,'original_cookie_present':bool(headers.get('cookie'))})
+     await route.fulfill(response=response)
+    finally:finished.set()
+   else:await route.continue_()
+  await page.route('**/admin/api',intercept)
+  async def login():
+   await page.get_by_label('Username',exact=True).fill('admin');await page.get_by_label('Password',exact=True).fill(password);await page.get_by_role('button',name='Sign in',exact=True).click()
+  try:
+   await page.goto(runtime.base+'/admin');await login();await asyncio.wait_for(held.wait(),15)
+   await expect(page.get_by_role('button',name='Log out',exact=True)).to_be_visible()
+   await page.get_by_role('button',name='Log out',exact=True).click();await expect(page.get_by_label('Username',exact=True)).to_be_visible()
+   await login();await expect(page.get_by_role('button',name='Settings',exact=True)).to_be_visible();await expect(page.get_by_text('Service reachable',exact=True)).to_be_visible()
+   record['second_session_ready_before_release']=True
+   release.set();await asyncio.wait_for(finished.wait(),15)
+   await page.wait_for_timeout(300)
+   response=await ctx.request.get(runtime.base+'/admin/session');session=await response.json()
+   record.update({'actual_delayed_responses':seen,'server_session_authenticated':session.get('authenticated'),'login_form_visible_after_stale_response':await page.get_by_label('Username',exact=True).is_visible(),'workspace_visible_after_stale_response':await page.locator('#workspace').is_visible(),'page_errors':errors})
+   record['defect_reproduced']=bool(seen and seen[0]['status']==401 and record['server_session_authenticated'] and record['login_form_visible_after_stale_response'])
+   assert record['defect_reproduced'],record
+  finally:
+   release.set();await browser.close()
+
+lock=(ROOT/'_build/roadmap/foundation-port.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX)
+runtime=UpgradeRuntime(OUT/'hub',[],IMAGE,MANIFEST);record={'qualification':'none','artifact_sha256':plan['artifact_sha256'],'image':IMAGE,'original_foundation401_attribution':'Not established; this separately tests an explicit stale response boundary.'}
+try:
+ runtime.start();password=(runtime.root/'initial-admin-password.txt').read_text().split('Password: ')[1].strip();asyncio.run(asyncio.wait_for(browser_probe(runtime,password,record),90));print('Actual stale401 defect reproduced',record['defect_reproduced'])
+except BaseException as error:
+ record['probe_error']=type(error).__name__+': '+str(error);raise
+finally:
+ runtime.stop();record['runtime']=runtime.owned_image.identity();(OUT/'report.json').write_text(json.dumps(record,indent=2)+'\n');lock.close()

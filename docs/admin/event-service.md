@@ -164,3 +164,51 @@ The [service qualification manifest](../../verification/kafka-service-qualified.
 binds the real Compose and Kubernetes service probes, including retained records
 after broker restart/pod replacement, to their exact image and manifest inputs.
 Its scope excludes full-hub acceptance and release qualification.
+
+For diagnostic app smoke tests, use the official SDK suite against the published
+origin and a private credentials file. The two-phase recovery harness accepts an
+operator-controlled restart between its phases:
+
+```sh
+python3 tests/multi_acceptance.py --rest-url "$BASE" \
+  --credentials "$PRIVATE_CREDENTIALS" --report _build/sdk.json
+python3 tests/kafka_platform_recovery.py --rest-url "$BASE" \
+  --credentials "$PRIVATE_CREDENTIALS" --phase before \
+  --snapshot _build/recovery-private.json --report _build/before.json
+# Restart the owned hub container or replace its pod, preserving durable volumes.
+python3 tests/kafka_platform_recovery.py --rest-url "$BASE" \
+  --credentials "$PRIVATE_CREDENTIALS" --phase after \
+  --snapshot _build/recovery-private.json --report _build/after.json
+```
+
+For an existing host-local model that containers cannot address directly, the
+qualification relay binds only explicitly supplied private Docker bridge IPs.
+It forwards to the already running model, caps concurrent requests, total calls,
+request/response sizes and timeouts, and records typed responses plus request
+hashes instead of raw request state. No model/container configuration is changed:
+
+```sh
+python3 tests/kafka_platform_gateway.py --bind "$PRIVATE_BRIDGE_IP" \
+  --report _build/model-relay.json &
+relay_pid=$!
+python3 tests/kafka_platform_model.py --rest-url "$BASE" \
+  --credentials "$PRIVATE_CREDENTIALS" \
+  --model-url "http://$PRIVATE_BRIDGE_IP:18771/v1/systemone" \
+  --gateway-report _build/model-relay.json --report _build/optional-model.json
+kill -TERM "$relay_pid"
+wait "$relay_pid"
+```
+
+Run these tests only against isolated fixtures: the SDK suite changes projects,
+roles and memberships; the optional-model suite changes matcher configuration and
+subscriptions before restoring model-free operation. Keep the private credentials,
+password files and recovery snapshot out of Git. These diagnostic commands do not
+replace accepted-artifact staging or final lifecycle qualification.
+
+The [candidate platform diagnostic](../../verification/kafka-platform-diagnostic.json)
+records eight official-SDK checks per platform, durable hub replacement and four
+live Nemotron decisions across Compose and Kubernetes. Its image is explicitly a
+lifecycle-unqualified diagnostic candidate. The temporary model relay was removed
+and the existing model remained ready. Final accepted-artifact platform
+qualification, browser coverage and the documented infrastructure upgrade/security
+gates remain separate requirements.

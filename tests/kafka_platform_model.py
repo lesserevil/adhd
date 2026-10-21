@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Independent real-model filtering smoke; credentials are always supplied privately."""
-import asyncio,json,time
+import asyncio,hashlib,json,time
 from pathlib import Path
 from uuid import uuid4
 from multi_support import Fixture,arguments,scoped,poll_until,reject
 
 async def main():
- p=arguments('Diagnostic real short-response optional filtering');p.add_argument('--model-url',required=True);p.add_argument('--gateway-report',type=Path,required=True)
+ p=arguments('Diagnostic real short-response optional filtering');p.add_argument('--model-url',required=True);p.add_argument('--gateway-report',type=Path,required=True);p.add_argument('--with-backend-queries',action='store_true',help='Qualify actual semantic history and a second raw project with the same live endpoint')
  args=p.parse_args();f=Fixture(args);await f.start()
  try:
   a,b=await f.agent('red-a'),await f.agent('red-b');admin=f.admin()
@@ -14,6 +14,12 @@ async def main():
    await b.call(scoped('project-red','unsubscribe',subscription_id=s['id']))
   raw=(await a.call(scoped('project-red','subscribe',mode='raw')))['subscription']
   initial=len(json.loads(args.gateway_report.read_text())) if args.gateway_report.exists() else 0
+  blue_a,blue_b=await f.agent('blue-a'),await f.agent('blue-b')
+  await blue_b.call(scoped('project-blue','subscribe',mode='raw'))
+  warm=(await blue_a.call(scoped('project-blue','publish',text='Model-free project BLUE before optional model activation.')))['publication']
+  await poll_until(blue_b,'project-blue',{warm['id']},20)
+  initial_after=len(json.loads(args.gateway_report.read_text())) if args.gateway_report.exists() else 0
+  assert initial_after==initial
   admin.call({'op':'config_update','patch':{'matcher':{'url':args.model_url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':10000,'retry_ms':1000}}},mutation=True)
   filtered=(await b.call(scoped('project-red','subscribe',mode='filtered',filter='Only breaking API compatibility changes that remove or rename a public API endpoint.')))['subscription']
   fixture=uuid4().hex
@@ -21,7 +27,7 @@ async def main():
          'Office lunch menu for Friday: vegetable soup and sandwiches. No software changes are announced.']
   texts=[text+f' [fixture-{i}-{fixture}]' for i,text in enumerate(texts)]
   publications=[]
-  for text in texts:publications.append((await a.call(scoped('project-red','publish',text=text)))['publication'])
+  for i,text in enumerate(texts):publications.append((await a.call(scoped('project-red','publish',text=text,information_type='live-filter-proof',source={'kind':'live-proof','id':fixture,'item_id':str(i)})))['publication'])
   rawrows=await poll_until(a,'project-red',{p['id'] for p in publications},20)
   filteredrows=await poll_until(b,'project-red',{publications[0]['id']},30)
   deadline=time.monotonic()+35
@@ -39,6 +45,26 @@ async def main():
   filteredrows=(await b.call(scoped('project-red','poll')))['deliveries']
   assert any(d.get('publication_id')==publications[0]['id'] for d in filteredrows)
   assert not any(d.get('publication_id')==publications[1]['id'] for d in filteredrows)
+  backend=None
+  if args.with_backend_queries:
+   # Same server, independent project: it has no filtered subscription, and must
+   # remain raw even while RED's semantic workflows are configured and active.
+   blue=(await blue_a.call(scoped('project-blue','publish',text='Independent BLUE raw fact while RED filters are enabled.')))['publication']
+   await poll_until(blue_b,'project-blue',{blue['id']},20)
+   q=(await a.call(scoped('project-red','query_history',question='Which public API endpoint was explicitly removed?',scope={'source_kind':'live-proof','source_id':fixture})))['query']
+   deadline=time.monotonic()+60
+   while time.monotonic()<deadline:
+    q=(await a.call(scoped('project-red','get_history_query',query_id=q['id'])))['query']
+    if q['status']!='pending':break
+    await asyncio.sleep(.1)
+   assert q['status']=='completed' and q['outcome']=='direct', (q['status'],q.get('error'),q.get('outcome'))
+   assert publications[0]['id'] in q['answer']['support_ids']
+   assert blue['id'] not in json.dumps(q)
+   reject(await f.raw('bridge',scoped('project-blue','get_history_query',query_id=q['id'])),code='NOT_FOUND')
+   backend={'project_id':'project-red','status':q['status'],'outcome':q['outcome'],'positive_original_cited':True,'foreign_project_original_absent':True,'foreign_query_lookup_denied':True}
+   for agent,project in ((a,'project-red'),(b,'project-red'),(blue_b,'project-blue')):
+    rows=(await agent.call(scoped(project,'poll')))['deliveries']
+    if rows:await agent.call(scoped(project,'ack',delivery_ids=[d['id'] for d in rows]))
   # Restore model-free state and prove the same live raw subscriber still progresses.
   await b.call(scoped('project-red','unsubscribe',subscription_id=filtered['id']))
   admin.call({'op':'config_update','patch':{'matcher':None}},mutation=True)
@@ -53,6 +79,12 @@ async def main():
          'actual_processing_calls':len(relevant),'raw_received_both':True,'filtered_received_only_positive':True,
          'hot_model_enable_and_disable':True,'raw_progress_after_model_disable':True,'additional_inference_calls_after_disable':after-before,
          'literal_search_preserved':(await a.call(scoped('project-red','search',query=f'fixture-1-{fixture}')))['publications']==[publications[1]]}
-  assert proof['literal_search_preserved'];args.report.write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(proof))
+  proof['model_free_second_project_zero_inference']=initial_after==initial
+  proof['backend_query']=backend
+  proof['artifact_sha256']=hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None
+  proof['harness_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+  proof['gateway_report_sha256']=hashlib.sha256(args.gateway_report.read_bytes()).hexdigest()
+  proof['decision_latency_ms']=[e['elapsed_ms'] for e in relevant]
+  assert proof['literal_search_preserved'];args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(proof))
  finally:await f.close()
-asyncio.run(main())
+if __name__=='__main__':asyncio.run(main())

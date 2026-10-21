@@ -81,3 +81,18 @@ python3 tests/model_acceptance.py
 This writes `verification/model-service.json` with actual model probabilities.
 It is a serving smoke test, not workload-wide calibration evidence. The federation
 and existing A2A suites exercise model integration through the hub.
+
+## Combined profile-2 candidate check
+
+The [candidate live-model report](../../verification/multi-eventing/live-model-26.json)
+binds native artifact `b6c17ba3121cd1f6b8a7adaef82b44c736bfd1d4010d8938aacb4c961f2f282a`
+and its independent harness. Real Nemotron responses accepted an explicit breaking
+API removal and rejected an unrelated lunch announcement at threshold 900000; the
+observed two decision latencies were 137 ms and 88 ms. Raw Kafka subscribers
+received both originals, a second project progressed without inference, and hot
+model removal preserved raw progress and literal search. A semantic history query
+cited the positive original and denied lookup through the other project. The
+[bounded relay observations](../../verification/multi-eventing/live-model-26-gateway.json)
+retain typed replies and request hashes, without raw prompts or credentials.
+This small synthetic-input check uses the existing model container; it is not a
+general accuracy/latency guarantee or final retained-build qualification.

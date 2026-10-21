@@ -24,12 +24,18 @@ import httpx
 from multi_support import Evidence, Fixture, MEMBERSHIPS, PROJECTS, poll_until, reject, scoped
 
 
+BROKER_OLD='confluentinc/cp-kafka@sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e'
+BROKER_NEW='confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f'
+
+
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 async def main(args):
     repo=Path(__file__).resolve().parents[1]
+    if args.broker_patch_upgrade and args.platform!='compose':
+        raise ValueError('Broker patch upgrade is a Compose-only qualification')
     root=args.work.resolve()
     if root.exists() or not args.name.startswith('adhd-final-'):
         raise ValueError('Fresh work directory and owned adhd-final-* name required')
@@ -219,6 +225,22 @@ async def main(args):
             assert not existing,'Never adopt existing Compose resources'
             env.update(ADHD_HUB_IMAGE=args.image,ADHD_CONFIG_DIR=str(config_dir),ADHD_DATA_DIR=str(data_dir),
                 ADHD_UID=str(os.getuid()),ADHD_GID=str(os.getgid()),ADHD_PORT=str(args.port))
+            if args.broker_patch_upgrade:
+                # Merge inside the include, before importing its resources. A
+                # top-level override would conflict with Compose include rules.
+                broker_override=root/'broker-upgrade.json'
+                broker_override.write_text(json.dumps({'services':{'kafka':{'image':BROKER_OLD}}}))
+                wrapper=root/'app-upgrade.yaml'
+                original_compose=(repo/'deploy/app.compose.yaml').read_text()
+                assert original_compose.startswith('include:\n  - events.compose.yaml\n')
+                include='include: '+json.dumps([{'path':[str(repo/'deploy/events.compose.yaml'),str(broker_override)],'project_directory':str(repo/'deploy')}])
+                wrapper.write_text(include+'\n'+original_compose.split('  - events.compose.yaml\n',1)[1])
+                compose=['docker','compose','-p',args.name,'-f',str(wrapper)]
+                upgrade_configs={pin:json.loads(command(['docker','image','inspect',pin],capture=True))[0]['Id'] for pin in [BROKER_OLD,BROKER_NEW]}
+                assert upgrade_configs[BROKER_OLD]!=upgrade_configs[BROKER_NEW]
+                rendered=json.loads(command(compose+['config','--format','json'],capture=True))
+                assert rendered['services']['kafka']['image']==BROKER_OLD
+                evidence.value['broker_upgrade_inputs']={'from':BROKER_OLD,'to':BROKER_NEW,'image_configs':upgrade_configs,'wrapper_sha256':sha(wrapper),'initial_override_sha256':sha(broker_override)}
             owned=True
             command(compose+['up','-d','--wait','--wait-timeout','180'],timeout=220)
         else:
@@ -319,6 +341,39 @@ async def main(args):
         final=admin.call(scoped('project-red','eventing_status'))['next_offset']
         assert final>offset and group_offset(status['topic'])==final
         evidence.record('hub-broker-proxy-replacements-preserve-server-original-retry-delivery-and-checkpoint-then-advance',before=offset,after=final)
+        if args.broker_patch_upgrade:
+            upgrade_before=identities()
+            broker_before=json.loads(command(['docker','inspect',upgrade_before['kafka']],capture=True))[0]
+            volume_before=next(row['Name'] for row in broker_before['Mounts'] if row['Destination']=='/var/lib/kafka/data')
+            assert broker_before['Image']==upgrade_configs[BROKER_OLD]
+            pending_before=[row for row in (await b.call(scoped('project-red','poll')))['deliveries'] if row.get('publication_id')==new['id']]
+            assert len(pending_before)==1
+            command(compose+['stop','kafka'],timeout=120)
+            stopped=json.loads(command(['docker','inspect',upgrade_before['kafka']],capture=True))[0]
+            assert not stopped['State']['Running']
+            async with httpx.AsyncClient() as http:
+                assert (await http.get(base+'/health',timeout=3)).status_code==200
+            outage=(await a.call(scoped('project-red','publish',text='Accepted while actual broker is stopped')))['publication']
+            assert (await a.call(scoped('project-red','get',publication_id=outage['id'])))['publication']==outage
+            assert not any(row.get('publication_id')==outage['id'] for row in (await b.call(scoped('project-red','poll')))['deliveries'])
+            broker_override.write_text(json.dumps({'services':{'kafka':{'image':BROKER_NEW}}}))
+            command(compose+['up','-d','--no-deps','--wait','--wait-timeout','180','kafka'],timeout=220)
+            upgrade_after=identities()
+            broker_after=json.loads(command(['docker','inspect',upgrade_after['kafka']],capture=True))[0]
+            assert broker_after['Image']==upgrade_configs[BROKER_NEW]
+            assert next(row['Name'] for row in broker_after['Mounts'] if row['Destination']=='/var/lib/kafka/data')==volume_before
+            assert all(upgrade_before[name]==upgrade_after[name] for name in ['hub','kafka-rest'])
+            rows=await poll_until(b,'project-red',{new['id'],outage['id']},60)
+            assert [row for row in rows if row.get('publication_id')==new['id']]==pending_before
+            assert len([row for row in rows if row.get('publication_id')==outage['id']])==1
+            assert not any(row.get('publication_id')==original['id'] for row in rows)
+            assert await a.call(publication_command,mid)==result
+            assert (await a.call(scoped('project-red','get',publication_id=original['id'])))['publication']==original
+            assert admin.call({'op':'resource_status'})['lanes']['model']['grants']==0
+            upgraded_offset=admin.call(scoped('project-red','eventing_status'))['next_offset']
+            assert upgraded_offset>final and group_offset(status['topic'])==upgraded_offset
+            evidence.record('real-8.3.1-to-8.3.2-same-volume-broker-upgrade-preserves-a2a-originals-acks-unacked-identities-and-cursor-with-outage-acceptance',before=final,after=upgraded_offset,volume=volume_before,hub_and_proxy_unrestarted=True,override_sha256=sha(broker_override))
+            final=upgraded_offset
         blue_a,blue_b=await fixture.agent('blue-a'),await fixture.agent('blue-b')
         await blue_b.call(scoped('project-blue','subscribe',mode='raw'))
         blue=(await blue_a.call(scoped('project-blue','publish',text='Cold recovery second project fact')))['publication']
@@ -455,6 +510,7 @@ if __name__=='__main__':
     p.add_argument('--gateway-report',type=Path,help='Private report from the bounded owned model relay')
     p.add_argument('--kind-node',help='Explicit owned Kind Docker node for read-only runtime config identity verification')
     p.add_argument('--cluster-image',help='Unique immutable-derived local name for the previously loaded verified hub image')
+    p.add_argument('--broker-patch-upgrade',action='store_true',help='Compose: start pinned8.3.1 then qualify actual8.3.2 rollout on same volume')
     p.add_argument('--broker-image',default='confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f')
     p.add_argument('--proxy-image',default='confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058')
     asyncio.run(main(p.parse_args()))

@@ -206,3 +206,13 @@ semantic, recall, negative-control and cost assertions remain intact. Paired
 Feedback declares an 8 KiB assessment bound while retaining the 0.5 confidence
 threshold. This matrix excludes positive optimizer qualification, whose failed
 correction gate and exact diagnostic remain recorded above.
+
+The [predeclared six-frame provider diagnosis](../validation/model-frame-30-diagnostic.json)
+keeps the question, criteria, original text and reply graph fixed while varying
+opaque identities and timestamps. All six input hashes were frozen before one
+POST per frame, with no retries. The exact current frame remained below the
+confidence threshold; the exact historical frame reproduced its prior value.
+One metadata variant selected `unknown`; two fresh variants selected the quoted
+negative above the threshold. This supports metadata sensitivity on this frame.
+It is neither a model accuracy estimate nor positive optimizer qualification,
+and a confident `unknown` still fails the unchanged supported-answer gold.

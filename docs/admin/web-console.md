@@ -198,3 +198,8 @@ hot forms, evidence rendering, ownership, cancellation, responsiveness and real
 container lifecycle handling. Fairness uses an explicit two-model-permit project
 profile and preserves the original timing and request-count assertions; this
 report does not certify semantic model quality or a one-permit throughput bound.
+
+The [first-time OIDC correction](../../verification/multi-eventing/oidc-first-setup-31.json)
+restores testing proposed provider settings before their initial save. Corrected
+native candidate `41541b99…` passes both desktop/mobile account, profile, OIDC-link,
+group-role and settings flows. Its lifecycle and image qualification remain open.

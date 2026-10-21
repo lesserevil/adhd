@@ -109,7 +109,7 @@ class ImageHub(Hub):
             return
         action='already-exited'
         if running:
-            command=['docker','kill','--signal','KILL',identity] if hard else ['docker','stop','--time','10',identity]
+            command=['docker','kill','--signal','KILL',identity] if hard else ['docker','stop','--timeout','10',identity]
             result=subprocess.run(command,text=True,capture_output=True,check=True,timeout=30)
             assert result.stdout.strip()==identity,'Docker did not confirm requested signal target'
             action='hard-killed' if hard else 'stopped'

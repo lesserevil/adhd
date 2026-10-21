@@ -21,7 +21,8 @@ async def main():
   await poll_until(blue_b,'project-blue',{warm['id']},20)
   initial_after=len(json.loads(args.gateway_report.read_text())) if args.gateway_report.exists() else 0
   assert initial_after==initial
-  admin.call({'op':'config_update','patch':{'matcher':{'url':args.model_url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':10000,'retry_ms':1000}}},mutation=True)
+  adapter={'url':args.model_url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':10000,'retry_ms':1000}
+  admin.call({'op':'config_update','patch':{'matcher':adapter}},mutation=True)
   filtered=(await b.call(scoped('project-red','subscribe',mode='filtered',filter='Only breaking API compatibility changes that remove or rename a public API endpoint.')))['subscription']
   fixture=uuid4().hex
   texts=['Breaking API compatibility change: removed the public /v1/create endpoint. All API clients must migrate to /v2/create.',
@@ -67,14 +68,25 @@ async def main():
     rows=(await agent.call(scoped(project,'poll')))['deliveries']
     if rows:await agent.call(scoped(project,'ack',delivery_ids=[d['id'] for d in rows]))
   # Restore model-free state and prove the same live raw subscriber still progresses.
-  await b.call(scoped('project-red','unsubscribe',subscription_id=filtered['id']))
+  outstanding=(await b.call(scoped('project-red','poll')))['deliveries']
+  if outstanding:await b.call(scoped('project-red','ack',delivery_ids=[d['id'] for d in outstanding]))
   admin.call({'op':'config_update','patch':{'matcher':None}},mutation=True)
   before=len(json.loads(args.gateway_report.read_text()))
-  absent=(await a.call(scoped('project-red','publish',text='Raw stream continues after hot model disable.')))['publication']
+  absent=(await a.call(scoped('project-red','publish',text='Breaking API compatibility change: removed the public /v1/offline endpoint while optional model filtering was paused.')))['publication']
   await poll_until(a,'project-red',{absent['id']},20)
   await asyncio.sleep(.5)
   after=len(json.loads(args.gateway_report.read_text()))
   assert before==after,(before,after)
+  assert not any(d.get('publication_id')==absent['id'] for d in (await b.call(scoped('project-red','poll')))['deliveries'])
+  # Existing filtered subscriptions retain their policy while the model is off;
+  # accepting the original then reenabling must not strand that accepted work.
+  admin.call({'op':'config_update','patch':{'matcher':adapter}},mutation=True)
+  resumed=await poll_until(b,'project-red',{absent['id']},40)
+  pending=[d for d in resumed if d.get('publication_id')==absent['id']]
+  assert len(pending)==1 and pending[0]['matches'][0]['subscription_id']==filtered['id']
+  await b.call(scoped('project-red','ack',delivery_ids=[pending[0]['id']]))
+  await b.call(scoped('project-red','unsubscribe',subscription_id=filtered['id']))
+  admin.call({'op':'config_update','patch':{'matcher':None}},mutation=True)
   proof={'passed':True,'scope':'diagnostic-real-model-optional-pubsub-filter','lifecycle_qualified':False,
          'model':'Nemotron-Deciffusion-8B-v2.1','synthetic_decisions':[{'case':'breaking-public-api-removal','type':'noul','noul':scores[publications[0]['id']]['noul']},{'case':'office-lunch-no-software-change','type':'noul','noul':scores[publications[1]['id']]['noul']}],
          'actual_processing_calls':len(relevant),'raw_received_both':True,'filtered_received_only_positive':True,
@@ -82,6 +94,7 @@ async def main():
          'literal_search_preserved':(await a.call(scoped('project-red','search',query=f'fixture-1-{fixture}')))['publications']==[publications[1]]}
   proof['model_free_second_project_zero_inference']=initial_after==initial
   proof['backend_query']=backend
+  proof['accepted_while_model_disabled_delivered_once_after_reenable']=True
   proof['artifact_sha256']=hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None
   proof['harness_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
   proof['gateway_report_sha256']=hashlib.sha256(args.gateway_report.read_bytes()).hexdigest()

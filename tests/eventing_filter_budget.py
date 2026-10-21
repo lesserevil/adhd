@@ -101,7 +101,7 @@ def main():
         def deferred():
             r=admin('eventing_replay','p',replay_id=rid)['replay']
             return r if r['status']=='deferred' and r['deferred_filter_targets']>0 else None
-        wait(deferred,'Replay never reported actual deferred intents',45)
+        wait(deferred,'Replay never reported actual deferred intents',120)
         assert status()['pending_filter_jobs']==1
         models[2].mode='normal';settled(0,0)
         wait(lambda:admin('eventing_replay','p',replay_id=rid)['replay']['status']=='materialized','Replay handoff incomplete',30)

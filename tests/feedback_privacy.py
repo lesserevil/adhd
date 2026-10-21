@@ -37,7 +37,7 @@ def main():
         with model.lock:model_inputs=json.dumps([v['request'] for v in model.requests])
         assert all(v not in model_inputs for v in ['PRIVATE_FEEDBACK_SENTINEL','FUTURE_LABEL_SENTINEL',password,h.config['admin_token'],'Independent source assertion'])
         assert rpc({'op':'poll'})['deliveries']==[];queued=rpc({'op':'poll'},'bob')['deliveries'];assert len(queued)==1 and queued[0]['id']==private and queued[0]['text']=='PRIVATE_FEEDBACK_SENTINEL';rpc({'op':'ack','delivery_ids':[private]},'bob');record('replay-and-feedback-exclude-private-future-credentials-and-label-notes-from-model-inputs')
-        admin({'op':'save_user','user':{'id':human['id'],'name':human['name'],'email':human['email'],'role':'Viewer'}},True)
+        admin({'op':'save_user','user':{'id':human['id'],'name':human['name'],'email':human['email'],'role':'Viewer','project_ids':[cfg['project_id']]}},True)
         for op in ['feedback_status','feedback_attempts','feedback_cohorts','feedback_clusters']:session.api({'op':op},expected=403)
         session.api({'op':'save_retrieval_label','attempt_id':a['id'],'expected_label_revision':1,'label':base},expected=403,mutation=True);session.api({'op':'retire_replay','query_id':r['id']},expected=403,mutation=True)
         assert rpc({'op':'get_retrieval_attempt','attempt_id':a['id']})['attempt']['label_revision']==1 and rpc({'op':'get_retrieval_replay','query_id':r['id']})['query']['evidence_available'];record('hot-admin-demotion-immediately-revokes-feedback-read-label-and-retirement-access')

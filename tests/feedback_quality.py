@@ -9,7 +9,7 @@ from protocol_acceptance import ByteValidator
 def main():
     p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--command');mode.add_argument('--image');p.add_argument('--model-url',default='http://127.0.0.1:18770/v1/systemone');p.add_argument('--report',default='verification/feedback-quality.json');args=p.parse_args();command=json.loads(args.command) if args.command else []
     parent=Path('_build/roadmap/feedback-quality').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));h=Runtime(root/'hub',command,args.image);cases=[]
-    cfg={'project_id':'feedback-quality','store_path':str(h.root/'hub.dets'),'port':free_port(),'agents':{'alice':secrets.token_urlsafe(32)},'admin_token':secrets.token_urlsafe(32),'matcher':{'url':args.model_url,'model':'Nemotron-Deciffusion-8B-v2.1'},'archive':{'audit_rate_ppm':0}}
+    cfg={'project_id':'feedback-quality','store_path':str(h.root/'hub.dets'),'port':free_port(),'agents':{'alice':secrets.token_urlsafe(32)},'admin_token':secrets.token_urlsafe(32),'matcher':{'url':args.model_url,'model':'Nemotron-Deciffusion-8B-v2.1'},'history':{'request_bytes':8192},'archive':{'audit_rate_ppm':0}}
     h.file.write_text(json.dumps(cfg));h.file.chmod(0o600)
     def rpc(c):return Client(h).rpc(c,h.config['agents']['alice'])
     def admin(c,mutation=False):return Client(h,h.config['admin_token']).api(c,mutation=mutation)
@@ -41,9 +41,9 @@ def main():
                 assert q['comparison']['retrieval_gain_ppm']>0 and q['comparison']['calls_delta']<0 and q['comparison']['bytes_delta']<0
                 assert q['baseline']['metrics']['fallback'] and not q['candidate']['metrics']['fallback'];assert reply in [v['value'] for v in q['candidate']['answer']['excerpts']]
             else:assert q['candidate']['metrics']['false_support'] is False and q['candidate']['metrics']['full_scope']
-            assert q['policy']['history_evaluator']['policy']['min_confidence_ppm']==500000 and q['policy']['history_evaluator']['policy']['request_bytes']==6144
+            assert q['policy']['history_evaluator']['policy']['min_confidence_ppm']==500000 and q['policy']['history_evaluator']['policy']['request_bytes']==8192
             (root/(tag+'.json')).write_text(json.dumps(q,indent=2)+'\n');cases.append({'case':tag,'passed':True,'comparison':q['comparison'],'baseline':q['baseline']['metrics'],'candidate':q['candidate']['metrics'],'actual_usage':q['usage'],'evidence':str((root/(tag+'.json')).relative_to(Path.cwd()))});print('PASS live paired',tag,flush=True)
-        result={'schema':'adhd/feedback-quality@1','passed':True,'model':cfg['matcher']['model'],'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None,'image':args.image,'workdir':str(root.relative_to(Path.cwd()))};Path(args.report).write_text(json.dumps(result,indent=2)+'\n')
+        result={'schema':'adhd/feedback-quality@1','passed':True,'model':cfg['matcher']['model'],'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None,'image':args.image,'assessment_profile':{'history_request_bytes':8192,'min_confidence_ppm':500000},'workdir':str(root.relative_to(Path.cwd()))};Path(args.report).write_text(json.dumps(result,indent=2)+'\n')
     finally:h.stop()
 
 if __name__=='__main__':main()

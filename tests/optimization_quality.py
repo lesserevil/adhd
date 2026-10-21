@@ -11,7 +11,7 @@ from foundation_acceptance import Runtime,Client,free_port
 def main():
     p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--command');mode.add_argument('--image');p.add_argument('--model-url',default='http://127.0.0.1:18770/v1/systemone');p.add_argument('--automatic',action='store_true');p.add_argument('--browser',action='store_true');p.add_argument('--report',default='verification/optimization-quality.json');args=p.parse_args()
     parent=Path('_build/roadmap/optimization-quality').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));command=json.loads(args.command) if args.command else [];h=Runtime(root/'hub',command,args.image);cases=[]
-    cfg={'project_id':'optimization-quality','store_path':str(h.root/'hub.dets'),'port':free_port(),'agents':{'alice':secrets.token_urlsafe(32)},'admin_token':secrets.token_urlsafe(32),'matcher':{'url':args.model_url,'model':'Nemotron-Deciffusion-8B-v2.1'},'archive':{'audit_rate_ppm':0},'optimization':{'enabled':True}}
+    cfg={'project_id':'optimization-quality','store_path':str(h.root/'hub.dets'),'port':free_port(),'agents':{'alice':secrets.token_urlsafe(32)},'admin_token':secrets.token_urlsafe(32),'matcher':{'url':args.model_url,'model':'Nemotron-Deciffusion-8B-v2.1'},'history':{'request_bytes':8192},'archive':{'audit_rate_ppm':0},'optimization':{'enabled':True}}
     h.file.write_text(json.dumps(cfg));h.file.chmod(0o600);browser_stack=ExitStack();page=None;page_errors=[]
     assert not (args.automatic and args.browser),'Use separate automatic and browser quality witnesses'
     def rpc(c):return Client(h).rpc(c,h.config['agents']['alice'])
@@ -111,7 +111,7 @@ def main():
         q=admin({'op':'rollback_index','expected_selection_revision':caught['selection']['revision']},True)['proposal'];rollback=settled(q['id']);assert rollback['status']=='promoted',rollback['error']
         restored=rpc({'op':'retrieval_index'})['index'];assert restored['status']=='ready' and restored['selection']['effective_recipe']==old_recipe and restored['active']['source_watermark']==restored['publication_watermark']
         record('disabled-optimizer-allows-asynchronous-caught-up-atomic-rollback',selection=restored['selection'])
-        report={'schema':'adhd-optimization-quality-report@1','passed':True,'model':cfg['matcher']['model'],'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None,'image':args.image,'automatic':args.automatic,'browser':args.browser,'workdir':str(root.relative_to(Path.cwd()))};Path(args.report).parent.mkdir(parents=True,exist_ok=True);Path(args.report).write_text(json.dumps(report,indent=2)+'\n')
+        report={'schema':'adhd-optimization-quality-report@1','passed':True,'model':cfg['matcher']['model'],'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None,'image':args.image,'assessment_profile':{'history_request_bytes':8192,'min_confidence_ppm':500000},'automatic':args.automatic,'browser':args.browser,'workdir':str(root.relative_to(Path.cwd()))};Path(args.report).parent.mkdir(parents=True,exist_ok=True);Path(args.report).write_text(json.dumps(report,indent=2)+'\n')
     finally:browser_stack.close();h.stop()
 
 if __name__=='__main__':main()

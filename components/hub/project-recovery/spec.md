@@ -182,8 +182,9 @@ limits does not erase accepted operations or cancel a decided installation.
 max_operations and capacity.operations count durable accepted external mutation-receipt
 entries, not distinct operation IDs. Every newly accepted message_id consumes one
 entry, including an apply request coalesced into an already decided operation;
-plan and apply consume their own entries. Internal lifecycle transitions consume
-no additional entries. An exact authenticated replay consumes no entry and remains
+plan, apply and explicit offline rebind consume their own entries; capacity.operations
+counts both online and offline receipt maps in the shared external journal.
+Internal lifecycle transitions consume no additional entries. An exact authenticated replay consumes no entry and remains
 replayable at the cap; current authorization is checked before replay.
 Reject new work before acceptance when max_operations durable entries or the
 single active/staging slot are occupied. No unbounded pending job queue. Receipts

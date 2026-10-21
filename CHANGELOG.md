@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Protocol: specify profile 2 for stable projects, separate project admission,
+  project-qualified federation and Kafka-backed raw/filtered subscriptions. Publish
+  complete scope inventories, closed schemas/OpenAPI and compatibility rules with
+  independent admitted-artifact wire conformance. Combined runtime and deployment
+  qualification remains in progress.
+
 - Build tooling: prepare and test a local upstream fix for qualified retained-source
   export without a coding agent or original input path. Preserve current acceptance,
   immutable cache retirement and exact reviewed bindings. ADHD keeps its pinned

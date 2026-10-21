@@ -1,6 +1,6 @@
 # Kafka pub/sub with optional semantic filtering
 
-- **Status:** active
+- **Status:** partial
 - **Owning queue item:** [KAFKA-001](active-work.md#kafka-001-specify-kafka-eventing-and-optional-subscription-filters)
 - **Completion / archival evidence:** pending while KAFKA-001 through KAFKA-009 remain open
 
@@ -14,13 +14,13 @@ or narrow that stream using an optional plain-text Jev-like model filter.
 Backend facts remain searchable independently of subscriptions. Models may support
 semantic search and optional filtering; raw pub/sub must work without a model.
 
-This is an active planning program, not an implemented transport. Current
-Component contracts and accepted artifacts still implement model-matched
-subscriptions over local durable queues. Existing closed work retains its
-historical evidence. KAFKA-001 must author replacement normative contracts before
-generation, including removal of the current standard-runtime-only constraint
-where a supported Kafka client requires dependencies. No Kafka/client version,
-image, Kubernetes operator or chart is selected by this roadmap.
+The combined implementation has an [initial lifecycle admission](../../verification/multi-eventing/lifecycle-admission-30.json).
+The eventing contracts select the pinned Kafka REST Proxy adapter; the deployment
+artifacts provide Compose and Kubernetes packaging. [Native eventing and federation
+qualification](../verification/native-eventing.json) covers the current artifact.
+Final program qualification remains open for the complete container, deployment,
+recovery and regression matrix. Existing closed work retains its historical
+evidence and cannot attest this architecture.
 
 The pivot composes with [multiple projects per server](multi-project.md). Kafka
 is per server, not per project or per agent. A Kafka service can be one development

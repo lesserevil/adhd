@@ -1,6 +1,6 @@
 # Multiple projects per ADHD server
 
-- **Status:** active
+- **Status:** partial
 - **Owning queue item:** [MULTI-001](active-work.md#multi-001-define-multiple-project-identity-boundaries-and-compatibility)
 - **Completion / archival evidence:** pending while MULTI-001 through MULTI-008 remain open
 
@@ -8,28 +8,24 @@
 
 Each ADHD server must support multiple projects while continuing to federate with
 other servers. One server per project remains a valid deployment, rather than a
-product restriction. This is a specification and implementation program; this
-document records the proposed design and acceptance gates, not shipped behavior.
-The present single-project Component contracts remain the runtime authority until
-their replacement is authored and qualified through these work items.
+product restriction. This program has integrated multi-project contracts and an
+initially admitted implementation. Final qualification remains open; the execution
+order and acceptance gates below still govern completion. Historical single-project
+results do not attest the combined architecture.
 
-Current assumptions span `components/hub/component.md`, `core/spec.md`,
-`configuration/spec.md`, `identity/spec.md`, `federation/spec.md` and
-`directory/spec.md`: one configured project, project-bound peer credentials,
-project rename as configuration mutation, and project-local data/worker state.
-History, retrieval, archive, feedback and optimization depend on those boundaries.
-Changing a configuration array alone would leave those assumptions unsafe.
+The [multi-project contract](../../components/hub/multi/spec.md) and
+[scope inventory](../protocol/scopes.json) own the replacement boundaries.
+Current artifact-bound results are linked from the [project/migration proof](../../verification/multi-eventing/native-project-migration-30.json)
+and [eventing/federation proof](../verification/native-eventing.json). Container,
+deployment and remaining regression qualification are still in progress.
 
-This program belongs to ADHD's hub Component and its tests, tooling and guides.
-It does not require a framework pin upgrade, a new model or a database replacement.
-The subsequent [Kafka pub/sub pivot](kafka-pubsub.md) adds one Kafka service per
-server for project events, with optional model filters and A2A agent access.
-It does not select broker replication as federation transport. Integrate the two
-programs before implementation; BUILD-001's upstream publication/adoption remains separate.
-Implementation is now authorized and underway in local feature branches. Current
-partial evidence is recorded in the active queue; final acceptance remains open.
-No new GitHub issues or external writes are needed for this program. Tracker
-inspection found no open ADHD issues or pull requests to reconcile.
+This program belongs to ADHD's hub Component, tests, tooling and guides. It does
+not require a framework pin upgrade, a new model or a database replacement. The
+[Kafka program](kafka-pubsub.md) supplies one Kafka service per server for project
+events, optional model filters and A2A agent access; broker replication is not the
+federation transport. BUILD-001's upstream publication/adoption remains separate.
+Implementation proceeds in authorized local feature branches; external publication
+remains separately governed.
 
 ## Proposed target model
 

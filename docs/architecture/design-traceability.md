@@ -40,9 +40,14 @@ queue. The [multiple-project plan](../roadmap/multi-project.md) maps identity,
 admission, durable partitioning/migration, agent evidence workflows, peer routing,
 hot Admin configuration and resource fairness to their owning hub contracts.
 The new `components/hub/multi/spec.md` owns the target multi-project contracts;
-the previously accepted artifact remains single-project. Independent qualification
-of the combined architecture is still pending, with partial candidate evidence in
-`verification/multi-eventing-progress.json`.
+the combined architecture now has an [initial lifecycle admission](../../verification/multi-eventing/lifecycle-admission-30.json)
+and an [independently audited container payload](../../verification/multi-eventing/image-payload-30.json).
+Final program qualification remains open: the current native evidence is linked
+from [project and migration qualification](../../verification/multi-eventing/native-project-migration-30.json)
+and [eventing and federation qualification](../verification/native-eventing.json);
+[container project/protocol qualification](../../verification/multi-eventing/image-project-30.json)
+now covers 59 groups. Broader container regressions and deployment recovery gates
+remain in progress in `verification/multi-eventing-progress.json`.
 
 The Kafka pub/sub direction in `PROJECT.md` maps to pending KAFKA-001 through
 KAFKA-009 and the [eventing plan](../roadmap/kafka-pubsub.md). It replaces mandatory
@@ -51,7 +56,9 @@ delivery and optional plain-text filters. Backend originals/search remain distin
 from broker retention. Hub contracts own protocol/durability/access changes;
 deployment artifacts and dependency Flavors own Kafka/client packaging and the
 Compose/Kubernetes application. Coordinate MULTI migration and final acceptance;
-the existing model-only artifact does not qualify this target architecture.
+historical model-only evidence does not qualify this architecture. The initial
+admission above binds the combined implementation; program closure still requires
+the complete native, container and deployment evidence.
 
 `components/hub/eventing/spec.md` owns the selected REST Proxy adapter, exact
 commit-versus-position offset semantics and recoverable hot transport transitions.

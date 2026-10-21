@@ -702,19 +702,20 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Evidence:**
   - [x] Compared `LICENSE` byte-for-byte with the official Apache text (`https://www.apache.org/licenses/LICENSE-2.0.txt`); SHA-256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`. Verified README/project references and unchanged bundled Prompt Master MIT notice against Git HEAD. `litai project validate` passed.
 
-### [ ] MULTI-001 — Define multiple-project identity, boundaries and compatibility
+### [x] MULTI-001 — Define multiple-project identity, boundaries and compatibility
 
 - **Priority:** P1
 - **Owner:** hub Component architecture and public contracts
 - **Direction:** Allow each ADHD server to host multiple projects while retaining federation between servers.
-- **Conclusion:** Own the multi-project program in [the detailed roadmap](multi-project.md). Separate stable server identity, stable project identity and external source scope; replace one-server-per-project only through versioned contracts. Implementation is authorized and underway; normative contracts are integrated, with independent development evidence and remaining qualification gates recorded above.
+- **Conclusion:** Own the multi-project program in [the detailed roadmap](multi-project.md). Separate stable server identity, stable project identity and external source scope; replace one-server-per-project only through versioned contracts. Contract definition and independent scope/wire review are complete; dependent runtime qualification remains open in MULTI-002 through MULTI-008.
 - **Depends on:** none
 - **Implementation:**
-  - [ ] Inventory single-project assumptions in every Component contract, client, deployment path and acceptance harness.
-  - [ ] Specify project lifecycle, server-wide roles plus explicit project access, agent memberships, cross-project behavior and server/project configuration precedence.
-  - [ ] Specify exact agent/Admin/peer wire changes, version negotiation and the legacy single-project compatibility boundary before dependent implementation.
+  - [x] Inventory single-project assumptions in every Component contract, client, deployment path and acceptance harness.
+  - [x] Specify project lifecycle, server-wide roles plus explicit project access, agent memberships, cross-project behavior and server/project configuration precedence.
+  - [x] Specify exact agent/Admin/peer wire changes, version negotiation and the legacy single-project compatibility boundary before dependent implementation.
 - **Evidence:**
-  - [ ] Review a complete operation/state/configuration scope matrix and proposed protocol examples, including denied access and mixed-version peers.
+  - [x] Review a complete operation/state/configuration scope matrix and proposed protocol examples, including denied access and mixed-version peers.
+- **Contract completion evidence:** Contracts are complete in `components/hub/multi/spec.md` and the exact published `docs/protocol/scopes.json`, profile-2 schema/OpenAPI and examples. `tests/protocol_scope.py --schema docs/protocol/schema.json` passes exhaustive operation/configuration coverage. [Native wire conformance](../../verification/multi-eventing/final-wire-30.json) passes eight groups on artifact `698496fe…`, including positive/negative traffic and exact CLI/HTTP interface equivalence; [native federation](../verification/native-eventing.json) adds actual three-server, legacy-pair and denied-scope traffic. Runtime program qualification remains with MULTI-002 through MULTI-008.
 
 ### [ ] MULTI-002 — Partition durable state and migrate single-project installations
 
@@ -821,20 +822,21 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Demonstrate two agents coordinating in each of two projects on one server, a multi-project agent and a denied third project, plus a multi-server discovery/canonical-routing scenario.
   - [ ] Run declared lifecycle verification and independent wire/privacy/migration/browser/fairness checks with reproducible artifact-bound reports.
 
-### [ ] KAFKA-001 — Specify Kafka eventing and optional subscription filters
+### [x] KAFKA-001 — Specify Kafka eventing and optional subscription filters
 
 - **Priority:** P1
 - **Owner:** hub event, subscription and protocol contracts
 - **Direction:** Pivot project pub/sub to per-server Kafka, retain A2A for agents and make plain-text model filtering optional.
-- **Conclusion:** Own [the Kafka pub/sub program](kafka-pubsub.md). Project-wide event subscriptions receive publications from all agents without inference; optional plain-text filters narrow an authorized stream. Separate event transport, durable agent delivery and searchable originals. Implementation is authorized and underway with integrated contracts, real service packaging and partial independent development evidence; final qualification remains open.
+- **Conclusion:** Own [the Kafka pub/sub program](kafka-pubsub.md). Project-wide event subscriptions receive publications from all agents without inference; optional plain-text filters narrow an authorized stream. Separate event transport, durable agent delivery and searchable originals. The contract and independent wire review are complete. Real service packaging and implementation exist, while dependent runtime qualification remains open in KAFKA-002 through KAFKA-009.
 - **Depends on:** MULTI-001
 - **Implementation:**
-  - [ ] Review the four implementation groups and model-free/filtered end-to-end acceptance scenario in [the detailed plan](kafka-pubsub.md#work-and-acceptance-order); use this as the next contract-review action.
-  - [ ] Define event envelopes, project/topic/partition identity, subscription selection/filter modes, activation watermarks, ordering, replay and delivery deduplication.
-  - [ ] Specify exact A2A/Admin/broker schemas, compatibility, durability boundaries and filter revision/error semantics before implementation.
-  - [ ] Select and pin a maintained Kafka client and compatible broker; explicitly revise the current standard-runtime-only constraint and record license/dependency/build implications.
+  - [x] Review the four implementation groups and model-free/filtered end-to-end acceptance scenario in [the detailed plan](kafka-pubsub.md#work-and-acceptance-order); use this as the next contract-review action.
+  - [x] Define event envelopes, project/topic/partition identity, subscription selection/filter modes, activation watermarks, ordering, replay and delivery deduplication.
+  - [x] Specify exact A2A/Admin/broker schemas, compatibility, durability boundaries and filter revision/error semantics before implementation.
+  - [x] Select and pin a maintained Kafka client and compatible broker; explicitly revise the current standard-runtime-only constraint and record license/dependency/build implications.
 - **Evidence:**
-  - [ ] Review implementable positive/negative wire examples and a state/ownership matrix for Kafka, backend storage, delivery state and model work.
+  - [x] Review implementable positive/negative wire examples and a state/ownership matrix for Kafka, backend storage, delivery state and model work.
+- **Contract completion evidence:** `components/hub/eventing/spec.md` defines the outbox/backend/Kafka/delivery/model ownership matrix, closed event and subscription envelopes, offsets versus positions, filter revisions and migration compatibility; `components/hub/component.md` explicitly selects standard HTTP plus the maintained REST Proxy API. Compose/Kubernetes pin Kafka and REST Proxy 8.3.2 by digest and disclose the separate REST Proxy license. [Native eventing conformance](../verification/native-eventing.json) independently validates 24 positive and 27 negative vectors plus actual broker events; [wire conformance](../../verification/multi-eventing/final-wire-30.json) binds profile 2 to admitted artifact `698496fe…`. Transport/deployment implementation qualification remains with KAFKA-002 through KAFKA-009.
 
 ### [ ] KAFKA-002 — Integrate per-server Kafka with durable event publication
 

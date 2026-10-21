@@ -1,0 +1,74 @@
+{
+  "schema": "adhd/image-project-qualification@1",
+  "passed": true,
+  "program_complete": false,
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "image_config_digest": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+  "payload_audit": "verification/multi-eventing/image-payload-30.json",
+  "groups": 59,
+  "reports": [
+    {
+      "name": "foundation",
+      "path": "verification/multi-eventing/root-image-30-foundation.json",
+      "sha256": "05a824013425a0a63a41222d4742d8864420ae42e8e8ad565996897cccfbb4a5",
+      "checks": 20,
+      "harness": "tests/foundation_acceptance.py",
+      "harness_sha256": "ab358cbbf0e9449bee3c2d1c9406e35790ba7076f84011b8eaeb6692a646aea2"
+    },
+    {
+      "name": "wire",
+      "path": "verification/multi-eventing/root-image-30-wire.json",
+      "sha256": "74cde312041177519327d78304026f02be32d131995ffce8400e5da4c79bc44e",
+      "checks": 8,
+      "harness": "tests/protocol_acceptance.py",
+      "harness_sha256": "bc80390d7eff2203029ae49a3e38763f2b37db915cbd07d428bef7088b36c054"
+    },
+    {
+      "name": "multi",
+      "path": "verification/multi-eventing/root-image-30-multi.json",
+      "sha256": "135fc7ecf5707a3c507011540ed209d19deac62eab5088e0b264328a80871425",
+      "checks": 9,
+      "harness": "tests/multi_acceptance.py",
+      "harness_sha256": "2ee3ebe3df229b39a3680d688ada8feb1e35aa9dc2ba0c6ec9ceba5ae0267d8d"
+    },
+    {
+      "name": "store-move",
+      "path": "verification/multi-eventing/root-image-30-store-move.json",
+      "sha256": "29c48837620e354d84ba995f73cd5a46e01377018d7ee5b4ee72e653c278d93a",
+      "checks": 7,
+      "harness": "tests/multi_store_move.py",
+      "harness_sha256": "20ead2101b285cc126713eb6c831ce53a48790122cf60a11ab00db3e7c9cc4cc"
+    },
+    {
+      "name": "move-no-default",
+      "path": "verification/multi-eventing/root-image-30-move-no-default.json",
+      "sha256": "bd44db0b15c5faa348bda285da2f17665b0d99e5def689229ac5efb950ebbcdb",
+      "checks": 7,
+      "harness": "tests/multi_store_move.py",
+      "harness_sha256": "20ead2101b285cc126713eb6c831ce53a48790122cf60a11ab00db3e7c9cc4cc"
+    },
+    {
+      "name": "hot",
+      "path": "verification/multi-eventing/root-image-30-hot.json",
+      "sha256": "8f7e36cce1b5eeab7c978ffb2ef33b488b871dde965df71fa816ce78dd78d717",
+      "checks": 4,
+      "harness": "tests/multi_hot.py",
+      "harness_sha256": "bf78bb55158ed0c8a96888e192c782fbb356b5478ed6a1f53643347ff0521f82"
+    },
+    {
+      "name": "backend-models",
+      "path": "verification/multi-eventing/root-image-30-backend-models.json",
+      "sha256": "072a4f5a1cadd62e9453c012169701c3f50ac1b61fe9e3c7497475da9384bd87",
+      "checks": 4,
+      "harness": "tests/multi_model_capabilities.py",
+      "harness_sha256": "b86bd726f0e8d7f8f85c2d0ac102d8f987f7f294333a6a2503cea12d2f2a4f35"
+    }
+  ],
+  "limits": [
+    "Actual host-network Docker containers with reviewed manifest and exact artifact bytes.",
+    "Five project suites bind actual successful container kills/stops and absence; foundation/protocol use their existing independently image-bound runtimes.",
+    "Models are controlled HTTP fixtures; semantic model quality is separately qualified.",
+    "Precise native syscall migration/relocation faults remain separate from container process replacement.",
+    "Auth lifecycle and complete inherited container regressions remain open."
+  ]
+}

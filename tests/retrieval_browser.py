@@ -3,13 +3,13 @@
 import argparse,hashlib,json,re,tempfile,time
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from federation_acceptance import Hub
+from eventing_target import RuntimeTarget
 from retrieval_support import NoulFixture
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--report',default='verification/retrieval-browser.json');args=p.parse_args();command=json.loads(args.command)
-    parent=Path('_build/roadmap/retrieval-browser').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));model=NoulFixture();hub=Hub(command,root/'hub','retrieval-browser',model.url);hub.config.pop('federation');results=[]
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--image');p.add_argument('--image-manifest',type=Path);p.add_argument('--report',default='verification/retrieval-browser.json');args=p.parse_args();command=json.loads(args.command);target=RuntimeTarget(args)
+    parent=Path('_build/roadmap/retrieval-browser').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));model=NoulFixture();hub=target.hub(root/'hub','retrieval-browser',model.url);hub.config.pop('federation');results=[]
     def query():return hub.call({'op':'retrieve','question':'What original evidence is available?'})['query']
     def finish(q,state):
         end=time.monotonic()+20
@@ -78,7 +78,8 @@ def main():
                 page.screenshot(path=str(root/(name+'-settings.png')),full_page=True);(root/(name+'.txt')).write_text(page.locator('body').aria_snapshot())
                 results.append({'viewport':viewport,'passed':True,'normal_path_errors':failures,'captures':str(root.relative_to(Path.cwd()))});context.close()
             browser.close()
-        Path(args.report).write_text(json.dumps({'schema':'adhd/retrieval-browser@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'viewports':results},indent=2)+'\n');print('PASS desktop/mobile hot settings, inheritance, evidence and cancellation')
+        hub.stop()
+        Path(args.report).write_text(json.dumps({'schema':'adhd/retrieval-browser@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'image':args.image,**target.report(),'viewports':results},indent=2)+'\n');print('PASS desktop/mobile hot settings, inheritance, evidence and cancellation')
     finally:hub.stop();model.close()
 
 if __name__=='__main__':main()

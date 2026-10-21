@@ -24,7 +24,11 @@ async def run(args):
             await b.call({'op':'ack','delivery_ids':[delivery['id']]},'sdk-ack')
             private=await a.call({'op':'send','recipient_id':'agent-b','text':'PRIVATE_SDK_HISTORY_SENTINEL'})
         finally:await a.close();await b.close();h.stop()
-        h.command=command;h.start();a=await h.agent('agent-a');b=await h.agent('agent-b')
+        h.command=command
+        if args.image:
+            from container_acceptance import ContainerHub
+            ContainerHub.image=args.image;h=ContainerHub.adopt(h)
+        h.start();a=await h.agent('agent-a');b=await h.agent('agent-b')
         try:
             original=(await a.call({'op':'get','publication_id':pub['publication']['id']}))['publication'];assert all(original.get(k)==v for k,v in pub['publication'].items()),(original,pub['publication'])
             queued=(await b.call({'op':'poll'}))['deliveries'];assert len(queued)==1 and queued[0]['kind']=='message'
@@ -56,8 +60,8 @@ async def run(args):
         for i,producer in enumerate([command]+[json.loads(x) for x in args.legacy_command]):
             await flow(Hub(producer,root/('hub-'+str(i)),model.url),producer,i)
     finally:model.close()
-    Path(args.report).write_text(json.dumps({'schema':'adhd/history-sdk@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'cases':cases},indent=2)+'\n')
+    Path(args.report).write_text(json.dumps({'schema':'adhd/history-sdk@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'image':args.image,'cases':cases},indent=2)+'\n')
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--legacy-command',action='append',default=[]);p.add_argument('--report',default='verification/history-sdk.json');asyncio.run(run(p.parse_args()))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--image');p.add_argument('--legacy-command',action='append',default=[]);p.add_argument('--report',default='verification/history-sdk.json');asyncio.run(run(p.parse_args()))
 if __name__=='__main__':main()

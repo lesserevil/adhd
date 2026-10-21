@@ -3,13 +3,13 @@
 import argparse,hashlib,json,re,tempfile,time
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from federation_acceptance import Hub
+from eventing_target import RuntimeTarget
 from archive_support import ArchiveFixture
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--command',required=True);parser.add_argument('--report',default='verification/archive-browser.json');args=parser.parse_args();command=json.loads(args.command)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--command',required=True);parser.add_argument('--image');parser.add_argument('--image-manifest',type=Path);parser.add_argument('--report',default='verification/archive-browser.json');args=parser.parse_args();command=json.loads(args.command);target=RuntimeTarget(args)
     parent=Path('_build/roadmap/archive-browser').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent))
-    model=ArchiveFixture();hub=Hub(command,root/'hub','archive-browser',model.url);hub.config.pop('federation');hub.config['archive']={'audit_rate_ppm':0};results=[]
+    model=ArchiveFixture();hub=target.hub(root/'hub','archive-browser',model.url);hub.config.pop('federation');hub.config['archive']={'audit_rate_ppm':0};results=[]
     def query():return hub.call({'op':'query_archive','question':'Which sample reports the Unicode result?','mode':'search'})['query']
     def finish(q,state):
         end=time.monotonic()+25
@@ -65,7 +65,8 @@ def main():
                 page.screenshot(path=str(root/(name+'-settings.png')),full_page=True);(root/(name+'.txt')).write_text(page.locator('body').aria_snapshot())
                 results.append({'viewport':viewport,'passed':True,'normal_path_errors':failures,'captures':str(root.relative_to(Path.cwd()))});context.close()
             browser.close()
-        Path(args.report).write_text(json.dumps({'schema':'adhd/archive-browser@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'viewports':results},indent=2)+'\n');print('PASS desktop/mobile archive settings, exact evidence and cancellation')
+        hub.stop()
+        Path(args.report).write_text(json.dumps({'schema':'adhd/archive-browser@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'image':args.image,**target.report(),'viewports':results},indent=2)+'\n');print('PASS desktop/mobile archive settings, exact evidence and cancellation')
     finally:hub.stop();model.close()
 
 if __name__=='__main__':main()

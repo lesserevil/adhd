@@ -218,6 +218,7 @@ def main():
     choice=parser.add_mutually_exclusive_group(required=True)
     choice.add_argument('--command');choice.add_argument('--image')
     parser.add_argument('--report',default='verification/foundation-acceptance.json')
+    parser.add_argument('--protocol-version',type=int,choices=(1,2),default=1,help='Expected published profile; use 2 for the multi-project/Kafka candidate')
     args=parser.parse_args()
     parent=Path('_build/roadmap/tests').resolve();parent.mkdir(parents=True,exist_ok=True)
     root=Path(tempfile.mkdtemp(prefix='run-',dir=parent))
@@ -226,6 +227,8 @@ def main():
     def record(name):cases.append({'case':name,'passed':True});print('PASS',name,flush=True)
     try:
         runtime.start();pid=runtime.pid
+        multi='projects' in runtime.config
+        assert multi == (args.protocol_version==2), 'Bootstrap must match the explicitly selected product profile'
         text=(runtime.root/'initial-admin-password.txt').read_text()
         password=re.search(r'^Password: (.+)$',text,re.M)[1]
         assert len(password)>=40 and 'Username: admin' in text
@@ -254,6 +257,13 @@ def main():
                         'email':'viewer@example.invalid','role':'Viewer','password':viewpass}},mutation=True)['user']
         developer=Client(runtime);developer.login('developer',devpass)
         viewer=Client(runtime);viewer.login('viewer',viewpass)
+        grants=[p['id'] for p in runtime.config['projects']] if multi else []
+        if multi:
+            assert developer.api({'op':'list_projects'})['projects']==[]
+            assert viewer.api({'op':'list_projects'})['projects']==[]
+            viewer.api({'op':'overview'},expected=404)
+            for principal in (dev,view):
+                admin.api({'op':'save_user','user':{**{k:principal[k] for k in ('id','name','email','role')},'project_ids':grants}},mutation=True)
         viewer.api({'op':'overview'})
         for role_client in (developer,viewer):
             role_client.api({'op':'config_get'},expected=403)
@@ -265,7 +275,7 @@ def main():
         developer.api({'op':'create_agent','agent_id':'spoof-owner','token':'x'*32,'owner_user_id':user['id']},
                       expected=403,mutation=True)
         token=secrets.token_urlsafe(32)
-        agent=developer.api({'op':'create_agent','agent_id':'developer-agent','token':token},mutation=True)
+        agent=developer.api({'op':'create_agent','agent_id':'developer-agent','token':token,**({'project_ids':grants} if multi else {})},mutation=True)
         assert agent['owner_user_id']==dev['id'] and token not in json.dumps(agent)
         assert developer.rpc({'op':'whoami'},token)['agent_id']=='developer-agent'
         record('one-role-per-user-admin-only-assignment-and-self-owned-agent')
@@ -287,7 +297,7 @@ def main():
         record('agent-token-rotation-live-revokes-old-credential-without-changing-agent')
 
         previous=runtime.config['config_revision']
-        patch={'threshold_ppm':875000,'matcher':{'url':model.url,'timeout_ms':1500,'retry_ms':120}}
+        patch={'threshold_ppm':875000,'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':1500,'retry_ms':120}}
         command={'op':'config_update','patch':patch,'expected_revision':previous,'confirm':True,'message_id':'stable-config-write'}
         changed=admin.api(command)
         assert admin.api(command)==changed
@@ -437,15 +447,27 @@ def main():
         provider.subject='fixture-person'
         record('explicit-oidc-link-proof-conflict-rejection-stable-id-role-and-agent-ownership')
 
-        admin.api({'op':'config_update','patch':{'project_id':'renamed-project'}},mutation=True)
-        assert developer.rpc({'op':'whoami'},token)['project_id']=='renamed-project'
+        if multi:
+            original_project=runtime.config['project_id']
+            before=runtime.config
+            status,error,_=admin.request('/admin/api',{'op':'config_update','patch':{'project_id':'renamed-project'},'expected_revision':before['config_revision'],'confirm':True,'message_id':uuid4().hex})
+            assert status==404 and error['error']['code']=='PROJECT_NOT_FOUND'
+            assert runtime.config==before
+            registry=runtime.config['projects']
+            renamed=[{**p,'name':'Renamed project display'} if p['id']==original_project else p for p in registry]
+            admin.api({'op':'config_update','patch':{'projects':renamed}},mutation=True)
+            assert developer.rpc({'op':'whoami'},token)['project_id']==original_project
+            assert next(p for p in admin.api({'op':'list_projects'})['projects'] if p['id']==original_project)['name']=='Renamed project display'
+        else:
+            admin.api({'op':'config_update','patch':{'project_id':'renamed-project'}},mutation=True)
+            assert developer.rpc({'op':'whoami'},token)['project_id']=='renamed-project'
         assert developer.rpc({'op':'get','publication_id':publication['id']},token)['publication']['id']==publication['id']
         runtime.stop(hard=True);runtime.start()
         assert (runtime.root/'initial-admin-password.txt').read_text()==original_password_file
         again=Client(runtime);assert again.login('admin',password)['id']==user['id']
         assert developer.rpc({'op':'publish','text':'Durable original across hot store moves.'},token,mid='before-store-move')['publication']==publication
         assert not any(d['id']==delivery['id'] for d in developer.rpc({'op':'poll'},token)['deliveries'])
-        record('project-rename-and-hard-restart-preserve-identity-replay-and-acknowledgements')
+        record('stable-project-id-display-rename-and-hard-restart-preserve-replay-and-acknowledgements' if multi else 'project-rename-and-hard-restart-preserve-identity-replay-and-acknowledgements')
 
         protected=again.api({'op':'config_get'})
         raw=json.dumps(protected)
@@ -453,8 +475,8 @@ def main():
         for name in ('stdout.log','stderr.log'):
             log=(runtime.root/name).read_text()
             assert all(secret not in log for secret in (password,devpass,viewpass,token,'fixture-client-secret'))
-        status,descriptor,_=again.get('/protocol');assert status==200 and descriptor['version']==1
-        status,schema,_=again.get('/protocol/schema');assert status==200 and schema['$id']=='urn:adhd:protocol:1'
+        status,descriptor,_=again.get('/protocol');assert status==200 and descriptor['version']==args.protocol_version
+        status,schema,_=again.get('/protocol/schema');assert status==200 and schema['$id']=='urn:adhd:protocol:'+str(args.protocol_version)
         assert len(schema.get('$defs',{}))>=10
         status,openapi,_=again.get('/protocol/openapi');assert status==200 and openapi['openapi']=='3.1.0'
         assert '/admin/login' in openapi['paths'] and '/admin/api' in openapi['paths']
@@ -493,7 +515,7 @@ def main():
         assert server_limited
         record('bounded-local-login-rate-limits-per-user-and-per-server')
 
-        report={'schema':'adhd/foundation-acceptance@1','passed':True,'cases':cases}
+        report={'schema':'adhd/foundation-acceptance@1','passed':True,'protocol_version':args.protocol_version,'cases':cases}
         if args.command:
             report['artifact_sha256']=hashlib.sha256(Path(json.loads(args.command)[-1]).read_bytes()).hexdigest()
             report['input_sha256']={Path(p).name:hashlib.sha256(Path(p).read_bytes()).hexdigest()

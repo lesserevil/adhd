@@ -148,7 +148,13 @@ health with observation time. Information provides recent information, text sear
 exact type/source filters, results and a full detail panel for provenance/content.
 Subscriptions shows owners/descriptions, creates a subscription for a selected agent,
 and removes one only after a confirmation identifying its owner and description.
-Cancellation must perform no mutation. Activity shows delivery metadata and matching
+Cancellation must perform no mutation. The multi-project/Kafka subscription profile
+also provides Admin editing of mode, plain-text filter, exact selectors and paused
+state. Show the current subscription revision; submit that revision with explicit
+confirmation. Raw mode disables the filter field. A stale edit shows a conflict
+and requires refreshing the current subscription before resubmission. Pause/resume
+changes future activation without erasing queued deliveries or acknowledgements.
+Activity shows delivery metadata and matching
 jobs with status and offers confirmed retry of pending jobs. Neither page nor detail
 panels reveal private addressed content. Manual Refresh updates the active view and
 shows last checked time. Refresh reloads current project admission and display names

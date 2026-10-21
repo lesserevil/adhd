@@ -44,7 +44,7 @@ spec:
         - sh
         - -ec
         - mkdir -p /state/config /state/data; if [ ! -e /state/config/hub.json ];
-          then umask 077; cp /seed/hub.json /state/config/hub.json; fi
+          then umask 077; cp /seed/hub.json /state/config/hub.json; chmod 600 /state/config/hub.json; fi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

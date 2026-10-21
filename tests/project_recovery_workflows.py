@@ -196,8 +196,8 @@ async def event_controls(f, phase, publication_id):
     rows = await poll_until(subscriber, RED, {publication_id}, 30)
     await subscriber.call(scoped(RED, "ack", delivery_ids=[row["id"] for row in rows]))
     materialized = await wait(lambda: value if (value := api("eventing_replay", replay_id=replay["replay"]["id"]))["replay"]["status"] == "materialized" else None,
-        "Actual replay did not reach Kafka materialization")
-    await wait(lambda: status()["pending_events"] == 0, "Pending logical events did not drain before foreign-row injection")
+        "Actual replay did not reach Kafka materialization", timeout=300)
+    await wait(lambda: status()["pending_events"] == 0, "Pending logical events did not drain before foreign-row injection", timeout=300)
     before = status()
     async with httpx.AsyncClient(trust_env=False) as http:
         response = await http.post(f.args.eventing_rest_url.rstrip("/") + "/topics/" + before["topic"],

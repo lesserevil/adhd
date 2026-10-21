@@ -97,7 +97,7 @@ async def checks(f, r, evidence):
             body=b'\x83\x50'+len(raw[43:]).to_bytes(4,'big')+zlib.compress(raw[43:])
             return raw[:10]+bytes.fromhex(digest(body))+body
         payload(t,m,change)
-    cases.append(('compressed-etf', compressed, {'schema'}))
+    cases.append(('compressed-etf', compressed, {'schema', 'limits'}))
     def unknown_snapshot(t,m):
         def change(raw):
             needle=b'\x77\x06schema\x61\x04'

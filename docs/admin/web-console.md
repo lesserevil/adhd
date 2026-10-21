@@ -203,3 +203,7 @@ The [first-time OIDC correction](../../verification/multi-eventing/oidc-first-se
 restores testing proposed provider settings before their initial save. Corrected
 native candidate `41541b99…` passes both desktop/mobile account, profile, OIDC-link,
 group-role and settings flows. Its lifecycle and image qualification remain open.
+
+The [retired agent ownership validation](agent-retirement-validation.md) records
+retained-identity protection, explicit Admin recovery, cold restarts and
+unavailable snapshot evidence, including the preserved source31 negative witness.

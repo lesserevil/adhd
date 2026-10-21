@@ -8,23 +8,26 @@ from collections import Counter
 from pathlib import Path
 from uuid import uuid4
 from federation_acceptance import Hub, Model, request
+from eventing_target import RuntimeTarget, add_target_arguments
 from federation_multi import wait
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--command',required=True);p.add_argument('--work',type=Path,required=True)
+    add_target_arguments(p);p.add_argument('--work',type=Path,required=True)
     p.add_argument('--report',type=Path,required=True);p.add_argument('--eventing-rest-url',default='http://127.0.0.1:18082')
     a=p.parse_args();a.work=a.work.resolve();a.work.mkdir(parents=True,exist_ok=True)
+    target=RuntimeTarget(a)
     models=[Model() for _ in range(3)]
     for m in models:m.mode='error'
-    h=Hub(json.loads(a.command),a.work/'hub','p',models[0].url)
+    h=target.hub(a.work/'hub','p',models[0].url)
     h.config.update(server_id=uuid4().hex,projects=[{'id':'p','name':'P'},{'id':'q','name':'Q'}],
         agent_projects={x:['p','q'] for x in ('alice','bob')},threshold_ppm=5000,
         eventing={'enabled':True,'rest_url':a.eventing_rest_url,'retry_ms':100,
                   'max_pending_filter_jobs':3,'max_pending_filter_jobs_per_subscription':2})
     report={'schema':'adhd/filter-budget@1','passed':False,'checks':[],
             'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+    report.update(target.report())
     def record(name):report['checks'].append({'name':name,'passed':True});print('PASS',name,flush=True)
     def admin(op,project=None,**fields):
         code,v=request(h.base,'/admin/api',{'op':op,**({'project_id':project} if project else {}),**fields},h.config['admin_token'])

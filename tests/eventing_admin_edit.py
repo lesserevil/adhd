@@ -8,20 +8,23 @@ import time
 from uuid import uuid4
 import httpx
 from federation_acceptance import Hub, Model, request
+from eventing_target import RuntimeTarget, add_target_arguments
 from federation_multi import wait
 from protocol_acceptance import ByteValidator
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--command',required=True);p.add_argument('--work',type=Path,required=True)
+    add_target_arguments(p);p.add_argument('--work',type=Path,required=True)
     p.add_argument('--report',type=Path,required=True);p.add_argument('--eventing-rest-url',default='http://127.0.0.1:18082')
     args=p.parse_args();args.work=args.work.resolve();args.work.mkdir(parents=True,exist_ok=True)
+    target=RuntimeTarget(args)
     model=Model();model.mode='error'
-    hub=Hub(json.loads(args.command),args.work/'hub','p',model.url)
+    hub=target.hub(args.work/'hub','p',model.url)
     hub.config.update(server_id=uuid4().hex,projects=[{'id':'p','name':'P'}],agent_projects={'alice':['p'],'bob':['p']},eventing={'enabled':True,'rest_url':args.eventing_rest_url,'retry_ms':100})
     report={'schema':'adhd/admin-subscription-edit@1','passed':False,'checks':[],
             'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+    report.update(target.report())
     def record(name):report['checks'].append({'name':name,'passed':True});print('PASS',name,flush=True)
     schema=None
     def validate(name,value):ByteValidator({'$defs':schema['$defs'],'$ref':'#/$defs/'+name}).validate(value)
@@ -100,7 +103,7 @@ def main():
         admin('update_subscription',error='PROJECT_ARCHIVED',subscription_id=sub['id'],expected_revision=sub['revision'],mode='raw',selectors={},message_id=uuid4().hex,confirm=True)
         assert pending<={job['job_id'] for job in admin('jobs',status='pending')['items']}
         record('only-admin-edits-currently-admitted-owner-and-archive-fences-new-edits')
-        report['passed']=True;report['artifact_sha256']=hashlib.sha256(Path(json.loads(args.command)[-1]).read_bytes()).hexdigest()
+        report['passed']=True;report['artifact_sha256']=target.artifact
     finally:
         hub.stop();model.close();args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,indent=2)+'\n')
 

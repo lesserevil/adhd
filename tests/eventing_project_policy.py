@@ -8,22 +8,25 @@ from pathlib import Path
 from uuid import uuid4
 import httpx
 from federation_acceptance import Hub, Model, request
+from eventing_target import RuntimeTarget, add_target_arguments
 from federation_multi import wait
 from eventing_controls import ControlledGateway
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--command',required=True);p.add_argument('--work',type=Path,required=True)
+    add_target_arguments(p);p.add_argument('--work',type=Path,required=True)
     p.add_argument('--report',type=Path,required=True);p.add_argument('--eventing-rest-url',default='http://127.0.0.1:18082')
     a=p.parse_args();a.work=a.work.resolve();a.work.mkdir(parents=True,exist_ok=True)
+    target=RuntimeTarget(a)
     model=Model();gate=ControlledGateway(a.eventing_rest_url)
-    h=Hub(json.loads(a.command),a.work/'hub','p',model.url)
+    h=target.hub(a.work/'hub','p',model.url)
     h.config.update(server_id=uuid4().hex,matcher=None,projects=[{'id':x,'name':x} for x in ('p','q')],
                     agent_projects={x:['p','q'] for x in ('alice','bob')},
                     eventing={'enabled':True,'rest_url':gate.url,'retry_ms':100})
     report={'schema':'adhd/project-event-policy@1','passed':False,'checks':[],
             'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+    report.update(target.report())
     def record(name):report['checks'].append({'name':name,'passed':True});print('PASS',name,flush=True)
     def admin(op,project=None,**fields):
         code,value=request(h.base,'/admin/api',{'op':op,**({'project_id':project} if project else {}),**fields},h.config['admin_token'])
@@ -106,7 +109,7 @@ def main():
         assert retained(status('new')['topic'])==7200000
         assert model.states==[]
         record('per-field-null-reset-inherits-root-and-new-project-preflight-needs-no-live-empty-writer')
-        report['passed']=True;report['artifact_sha256']=hashlib.sha256(Path(json.loads(a.command)[-1]).read_bytes()).hexdigest()
+        report['passed']=True;report['artifact_sha256']=target.artifact
     finally:
         gate.release.set();h.stop();gate.close();model.close();a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(report,indent=2)+'\n')
 

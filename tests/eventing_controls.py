@@ -12,6 +12,7 @@ from uuid import uuid4
 import httpx
 import jsonschema
 from federation_acceptance import Hub, Model, request
+from eventing_target import RuntimeTarget, add_target_arguments
 from federation_multi import WireValidator, wait
 
 class ControlledGateway:
@@ -84,7 +85,7 @@ class ControlledGateway:
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--command', required=True)
+    add_target_arguments(p)
     p.add_argument('--eventing-rest-url', required=True)
     p.add_argument('--legacy-command', help='Optional accepted old binary to seed pre-cutover originals')
     p.add_argument('--work', type=Path, required=True)
@@ -93,9 +94,10 @@ def main():
     args.work = args.work.resolve()
     sha = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     args.work.mkdir(parents=True, exist_ok=True)
+    target=RuntimeTarget(args)
     model, replacement = Model(), Model()
     gateway = ControlledGateway(args.eventing_rest_url)
-    hub = Hub(json.loads(args.command), args.work / 'hub', 'p', model.url)
+    hub = target.hub(args.work / 'hub', 'p', model.url)
     hub.config.update(server_id=uuid4().hex, threshold_ppm=5000,
         projects=[{'id': 'p', 'name': 'Project P'}, {'id': 'q', 'name': 'Project Q'}],
         agent_projects={'alice': ['p'], 'bob': ['p']},
@@ -104,6 +106,10 @@ def main():
               'harness_sha256': sha, 'checks': [], 'limitations': [
                   'Controlled typed model proves frozen-policy use, not model semantic quality.',
                   'Single-partition actual Kafka; no claim about replicated durability.']}
+    report.update(target.report())
+    if args.legacy_command:
+        report["legacy_input_sha256"]={Path(item).name:hashlib.sha256(Path(item).read_bytes()).hexdigest()
+            for item in json.loads(args.legacy_command) if Path(item).is_file()}
     schema = None
     def check(name, **details):
         report['checks'].append({'name': name, 'passed': True, **details})
@@ -148,7 +154,8 @@ def main():
     try:
         seed = None
         if args.legacy_command:
-            config, command = hub.config, hub.command
+            config, command, image = hub.config, hub.command, hub.image
+            hub.image = None
             hub.command = json.loads(args.legacy_command)
             hub.config = {k: v for k, v in config.items()
                           if k not in {'projects', 'server_id', 'eventing', 'agent_projects'}}
@@ -156,7 +163,7 @@ def main():
             seed = hub.call({'op': 'publish', 'text': 'Retained pre-cutover original'})['publication']
             config['server_id'] = hub.call({'op': 'federation_directory'})['server_id']
             hub.stop()
-            hub.command, hub.config = command, config
+            hub.command, hub.config, hub.image = command, config, image
         hub.start()
         schema = request(hub.base, '/protocol/schema')[1]
         jsonschema.Draft202012Validator.check_schema(schema)
@@ -284,7 +291,7 @@ def main():
         check('archived-project-rejects-new-replay-and-preserves-accepted-control-idempotency')
         report['passed'] = True
         report['input_sha256'] = {Path(item).name: hashlib.sha256(Path(item).read_bytes()).hexdigest()
-                                  for item in json.loads(args.command) if Path(item).is_file()}
+                                  for item in target.command if Path(item).is_file()}
     except BaseException as exc:
         report['failure_type'] = type(exc).__name__
         raise

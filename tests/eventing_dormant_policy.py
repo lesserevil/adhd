@@ -6,17 +6,19 @@ import json
 from pathlib import Path
 from uuid import uuid4
 from federation_acceptance import Hub, Model, request
+from eventing_target import RuntimeTarget, add_target_arguments
 from federation_multi import wait
 from eventing_controls import ControlledGateway
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True)
+    p=argparse.ArgumentParser(description=__doc__);add_target_arguments(p)
     p.add_argument('--work',type=Path,required=True);p.add_argument('--report',type=Path,required=True)
     p.add_argument('--eventing-rest-url',default='http://127.0.0.1:18082');a=p.parse_args()
     a.work=a.work.resolve();a.work.mkdir(parents=True,exist_ok=True)
+    target=RuntimeTarget(a)
     models=[Model() for _ in range(3)];gate=ControlledGateway(a.eventing_rest_url)
-    h=Hub(json.loads(a.command),a.work/'hub','p',models[0].url)
+    h=target.hub(a.work/'hub','p',models[0].url)
     def adapter(i,name):return {'url':models[i].url,'model':name,'timeout_ms':1000,'retry_ms':100}
     h.config.update(server_id=uuid4().hex,threshold_ppm=5000,projects=[{'id':'p','name':'P'},
         {'id':'q','name':'Q','settings':{'matcher':adapter(0,'project-Q')}}],
@@ -35,6 +37,7 @@ def main():
     def call(op,agent='alice',project='p',**kw):return h.call({'op':op,'project_id':project,**kw},agent=agent)
     def receive(ids,agent='alice',project='p'):
         return wait(lambda:ids<={r['publication_id'] for r in call('poll',agent,project)['deliveries']},'Dormant policy delivery missing',45)
+    report.update(target.report())
     def record(name):report['checks'].append({'name':name,'passed':True});print('PASS',name,flush=True)
     try:
         h.start()

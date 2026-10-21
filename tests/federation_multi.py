@@ -18,6 +18,7 @@ import time
 from uuid import uuid4
 
 from federation_acceptance import Hub, Model, request
+from eventing_target import RuntimeTarget, add_target_arguments
 import jsonschema
 from jsonschema.validators import extend
 
@@ -52,12 +53,13 @@ def wait(fn, message, seconds=30):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--command', required=True, help='JSON argv before the serve argument')
+    add_target_arguments(p)
     p.add_argument('--legacy-command', help='JSON argv for a previously accepted single-project server')
     p.add_argument('--report', type=Path, required=True)
     p.add_argument('--work', type=Path)
     p.add_argument('--eventing-rest-urls', help='JSON array of three distinct real Kafka REST services')
     args = p.parse_args()
+    target = RuntimeTarget(args)
     root = args.work.resolve() if args.work else Path(tempfile.mkdtemp(prefix='adhd-federation-multi-'))
     root.mkdir(parents=True, exist_ok=True)
     root.chmod(0o700)
@@ -75,6 +77,7 @@ def main():
               'limitations': ['Controlled model fixture qualifies transport and authority, not semantic quality.',
                               'Eventing is explicitly legacy mode; this suite does not qualify Kafka or deployments.'],
               'checks': cases}
+    report.update(target.report())
 
     def record(name, **details):
         cases.append({'name': name, 'passed': True, **details})
@@ -122,7 +125,7 @@ def main():
         return wait(observe, 'Federated query did not become terminal')
 
     try:
-        command = json.loads(args.command)
+        command = target.command
         if broker_urls:
             clusters = [request(url.rstrip('/'), '/v3/clusters')[1]['data'][0]['cluster_id'] for url in broker_urls]
             assert len(set(clusters)) == 3, 'Each server must have a distinct Kafka cluster'
@@ -130,7 +133,7 @@ def main():
             report['limitations'] = [item for item in report['limitations'] if not item.startswith('Eventing')]
             report['limitations'].append('Kafka is exercised as independent per-server services; this suite does not qualify Kubernetes or replicated broker durability.')
         for i in range(3):
-            hub = Hub(command, root / f'server-{i}', 'shared', model.url)
+            hub = target.hub(root / f'server-{i}', 'shared', model.url)
             hub.config.update(server_id=uuid4().hex, eventing={'enabled': False},
                               projects=[{'id': name, 'name': 'Same display label', 'status': 'active',
                                          'description': 'Transport fixture', 'settings': {

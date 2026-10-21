@@ -15,6 +15,7 @@ from pathlib import Path
 from uuid import uuid4
 import httpx
 from federation_acceptance import Hub, Model, request
+from eventing_target import RuntimeTarget, add_target_arguments
 from federation_multi import wait
 
 
@@ -48,18 +49,20 @@ class Gateway:
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True)
+    p=argparse.ArgumentParser(description=__doc__);add_target_arguments(p)
     p.add_argument('--work',required=True,type=Path);p.add_argument('--report',required=True,type=Path)
     p.add_argument('--eventing-rest-url',required=True);p.add_argument('--owned-broker-container',required=True)
     a=p.parse_args();a.work=a.work.resolve();a.work.mkdir(parents=True,exist_ok=True)
-    model=Model();gate=Gateway(a.eventing_rest_url);h=Hub(json.loads(a.command),a.work/'hub','p',model.url)
+    target=RuntimeTarget(a)
+    model=Model();gate=Gateway(a.eventing_rest_url);h=target.hub(a.work/'hub','p',model.url)
     h.config.update(server_id=uuid4().hex,matcher=None,projects=[{'id':'p','name':'P'}],
         agent_projects={x:['p'] for x in ('alice','bob')},eventing={'enabled':True,'rest_url':gate.url,'retry_ms':100})
     report={'schema':'adhd/physical-retention@1','passed':False,'checks':[],
-            'artifact_sha256':hashlib.sha256(Path(json.loads(a.command)[-1]).read_bytes()).hexdigest(),
+            'artifact_sha256':target.artifact,
             'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             'limitations':['DeleteRecords advances actual Kafka log start; this does not claim a wall-clock retention expiry wait.',
                            'One real broker; no replicated durability or semantic model claim.']}
+    report.update(target.report())
     def record(name,**details):report['checks'].append({'name':name,'passed':True,**details});print('PASS',name,flush=True)
     def admin(op,**fields):
         code,r=request(h.base,'/admin/api',{'op':op,**fields},h.config['admin_token']);assert code==200,(code,r);return r

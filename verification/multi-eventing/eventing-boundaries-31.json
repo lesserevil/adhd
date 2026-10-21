@@ -1,0 +1,212 @@
+{
+  "suite": "adhd/eventing-durable-boundaries@1",
+  "started_at": "2026-10-21T21:32:29.277897+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "fanout-before-sync",
+      "passed": true,
+      "kind": "native-syscall",
+      "boundary": {
+        "stage": "fanout-before-sync",
+        "pid": 733435,
+        "fd": 21,
+        "path": "/tmp/adhd-multi-m7vo_e_4/hub.dets.snapshot.tmp-ODYRP1epEBLgGSG-uhN9EiWgp1ZL0li-",
+        "syscall": "fsync",
+        "result": -1
+      },
+      "installed": {
+        "deliveries": [],
+        "next_offset": 1,
+        "event_state": "published"
+      },
+      "prospective": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      },
+      "broker_offsets": null,
+      "expected_next_offset": 2,
+      "committed_delivery_identity_preserved": false,
+      "baseline_ack_retained": true,
+      "restored": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      }
+    },
+    {
+      "name": "fanout-after-sync",
+      "passed": true,
+      "kind": "native-syscall",
+      "boundary": {
+        "stage": "fanout-after-sync",
+        "pid": 743805,
+        "fd": 17,
+        "path": "/tmp/adhd-multi-f5x15bib/hub.dets",
+        "syscall": "fsync",
+        "result": 0
+      },
+      "installed": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      },
+      "prospective": null,
+      "broker_offsets": null,
+      "expected_next_offset": 2,
+      "committed_delivery_identity_preserved": true,
+      "baseline_ack_retained": true,
+      "restored": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      }
+    },
+    {
+      "name": "offset-before-post",
+      "passed": true,
+      "kind": "real-broker-network",
+      "boundary": {
+        "path": "/consumers/adhd.f885eba78cae26ad.73786e979410fe19.events.v1.fanout/instances/adhd-fYZMeopEwfHTW_vj5pPe5xkNKB7JN7nA/offsets",
+        "request": {
+          "offsets": [
+            {
+              "offset": 1,
+              "partition": 0,
+              "topic": "adhd.f885eba78cae26ad.73786e979410fe19.events.v1"
+            }
+          ]
+        },
+        "upstream_called": false
+      },
+      "installed": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      },
+      "prospective": null,
+      "broker_offsets": {
+        "offsets": [
+          {
+            "topic": "adhd.f885eba78cae26ad.73786e979410fe19.events.v1",
+            "partition": 0,
+            "offset": 1,
+            "metadata": ""
+          }
+        ]
+      },
+      "expected_next_offset": 2,
+      "committed_delivery_identity_preserved": true,
+      "baseline_ack_retained": true,
+      "restored": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      }
+    },
+    {
+      "name": "offset-after-post",
+      "passed": true,
+      "kind": "real-broker-network",
+      "boundary": {
+        "path": "/consumers/adhd.c7657b76e63cf301.73786e979410fe19.events.v1.fanout/instances/adhd-4z6Kvn5xxV1jM_qbPwIMb0CDhasqIcsx/offsets",
+        "request": {
+          "offsets": [
+            {
+              "offset": 1,
+              "partition": 0,
+              "topic": "adhd.c7657b76e63cf301.73786e979410fe19.events.v1"
+            }
+          ]
+        },
+        "upstream_called": true,
+        "upstream_status": 200
+      },
+      "installed": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      },
+      "prospective": null,
+      "broker_offsets": {
+        "offsets": [
+          {
+            "topic": "adhd.c7657b76e63cf301.73786e979410fe19.events.v1",
+            "partition": 0,
+            "offset": 2,
+            "metadata": ""
+          }
+        ]
+      },
+      "expected_next_offset": 2,
+      "committed_delivery_identity_preserved": true,
+      "baseline_ack_retained": true,
+      "restored": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      }
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability.",
+    "This exact source31 native experiment is not immutable-image, retained-source lifecycle or release acceptance.",
+    "The two fsync boundaries use a standalone Linux dynamic-link probe; it never changes stored state or generated application code.",
+    "SIGSTOP was observed in the actual native process before SIGKILL; Docker runs must separately execute the two network boundaries.",
+    "A prospective delivery before snapshot installation is uncommitted; only already committed delivery identities are required to survive."
+  ],
+  "harness_sha256": "a84a6010340efa0a4faaeb7132b4a56bd5a3deac93f0ea66a3c1df14e4125610",
+  "hook_sha256": "a063a38b171984688ff8fe8c5ef31acf3e222d0693119ff90670be4a369da718",
+  "artifact_sha256": "41541b995a1584bfadffa2b8a221631dec725f74617fe029522e952dc5da0496",
+  "finished_at": "2026-10-21T21:36:39.444309+00:00",
+  "raw_report_sha256": "606e1c5497f41d7acede737de4107028e38352f63e55735b369e47bb1b760d3c",
+  "raw_report": "_build/roadmap/multi/native31-boundaries-02.json",
+  "diagnostic_attempt": {
+    "path": "_build/roadmap/multi/native31-boundaries-01.json",
+    "sha256": "d7ebdef3de89ece436ca9e00ee8fe7edbfb4635c602202e2d34ecbe0de42dfda",
+    "passed": false,
+    "reason": "First two native fsync checks passed; independent GET broker-offset probe omitted required partitions body/media and was corrected. The failed full attempt is not counted as passing."
+  }
+}

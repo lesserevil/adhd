@@ -50,7 +50,9 @@ defmodule BackupValidationVectors do
     rotated=put_in(owned,["agents",agent],String.duplicate("r",32))
     disabled=Map.update!(rotated,"users",&Enum.map(&1,fn u->Map.merge(u,%{"disabled"=>true,"role"=>"Viewer","project_ids"=>[]}) end))
     oidc=owned(lc,"oidc");oidcb=%{legacy|config: oidc}
+    [{history_id,_}|_]=Map.to_list(legacy.state.history_queries)
     cases=[
+      run_case("foreign-native-query-project",put_in(legacy,[:state,:history_queries,history_id,"project_id"],"foreign"),lc,"RESTORE_INVALID_BACKUP"),
       run_case("owned-current-credential-rotation",ob,rotated,:ok),
       run_case("disabled-owner-provenance-no-grant-import",ob,disabled,:ok),
       run_case("oidc-stable-original-provider-link",oidcb,oidc,:ok),

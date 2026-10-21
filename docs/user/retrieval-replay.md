@@ -216,3 +216,10 @@ One metadata variant selected `unknown`; two fresh variants selected the quoted
 negative above the threshold. This supports metadata sensitivity on this frame.
 It is neither a model accuracy estimate nor positive optimizer qualification,
 and a confident `unknown` still fails the unchanged supported-answer gold.
+
+The [candidate30 inherited controlled regression matrix](../validation/deep-controlled-30.json)
+retains 15 suites and 117 groups per mode, native and the admitted image. These
+cover context, History, retrieval, Archive, Feedback, optimizer faults and recipe
+selection, plus official A2A SDK exchanges and actual legacy-store producers.
+The context suite explicitly upgrades both historical producers. This matrix
+does not replace the separately failed real-model optimizer quality gate.

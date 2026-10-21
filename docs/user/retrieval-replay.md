@@ -272,3 +272,11 @@ mobile captures were inspected, and the proof retains every report and capture
 hash. Fairness uses the declared two-permit project profile with the original
 assertions; it makes no default-one-permit throughput or live optimizer quality
 claim. The image, reviewed manifest and packaged hub bytes were verified.
+
+The [source34 accepted-image live-model matrix](../validation/deep-live-model-34-image.json)
+passes the same 69 existing History, retrieval, Archive and paired Feedback cases
+once each. Harnesses, gold and confidence thresholds match the native matrix;
+Feedback retains its declared 8 KiB assessment profile. The immutable image,
+reviewed manifest and packaged hub digest were verified before execution. Model
+ownership was handed off only between completed suites. These backend results do
+not qualify either failed optimizer experiment or close the positive optimizer gate.

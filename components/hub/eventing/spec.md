@@ -330,3 +330,10 @@ record; an unparseable offset is null. Retry for such a record uses the current
 checkpoint as the requested offset and its exact digest; reconcile is forbidden.
 Repair audit details additionally contain `missing_logical_proof` boolean.
 Pending byte admission accounts for immutable event plus frozen target snapshots.
+
+A hot trust change must perform a new TLS handshake with the candidate roots.
+Do not reuse a socket or resumed TLS session authenticated under previous trust.
+The HTTP client must isolate connection reuse by trust configuration or disable
+HTTPS connection/session reuse; merely supplying new per-request CA options is
+insufficient. In Erlang httpc the request-level `socket_opts` option disables
+persistent connection reuse (see the [official httpc documentation](https://www.erlang.org/doc/apps/inets/httpc.html)); also disable TLS session reuse for this profile.

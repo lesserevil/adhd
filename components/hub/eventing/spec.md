@@ -65,7 +65,8 @@ original, not an index summary or model paraphrase. Encoded event <=262144 bytes
 Keep both source provenance and ingestion time; occurred_at does not reorder it.
 
 Publish strictly in project_sequence order to partition0 using POST
-/topics/TOPIC, Content-Type and Accept application/vnd.kafka.json.v2+json,
+/topics/TOPIC, Content-Type application/vnd.kafka.json.v2+json and
+Accept application/vnd.kafka.v2+json,
 body `{records:[{key:PROJECT_ID,value:EVENT,partition:0}]}`. Success requires
 HTTP2xx and every returned offsets entry having null error_code/error and a valid
 partition0/nonnegative integer offset. A2A success alone is not Kafka success.
@@ -78,7 +79,9 @@ provides one logical event. Do not claim exactly-once network transmission.
 One durable ADHD fanout group per project topic, not one load-sharing group for
 unrelated agent subscriptions. Group name TOPIC + ".fanout". Create REST consumer
 with format=json, auto.offset.reset=earliest and auto.commit.enable=false;
-subscribe only to that topic. Poll with application/vnd.kafka.json.v2+json.
+assign partition0 of that topic. On every consumer-instance creation, POST its
+positions endpoint with the durable next-offset before fetching; a broker group
+commit does not restore a manually assigned consumer position. Poll with application/vnd.kafka.json.v2+json.
 Never trust the consumer base_uri host from a response; construct its instance
 URL under the configured REST endpoint and validate response identity. Consumers
 may be replaced after process/proxy restart using the same group and durable

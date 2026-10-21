@@ -12,6 +12,11 @@ an A2A contextId and possession of another project's record ID are never authori
 
 ## Configuration and identities
 
+For container and pod deployments, root `host` accepts `0.0.0.0` in addition
+to the legacy default `127.0.0.1`. Both values support hot listener rebinding;
+all authentication, framing and private-network deployment requirements remain.
+This explicitly replaces the earlier loopback-only restriction.
+
 The server has one stable `server_id`, generated and synchronously recorded once
 for a new install; migration preserves the existing durable server ID. It cannot
 be changed through config_update. Project and actor identifiers retain the core

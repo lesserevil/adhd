@@ -177,3 +177,9 @@ it does not certify autonomous model-agent behavior.
 The [candidate30 OpenRig refresh](../validation/openrig-30.json) repeats all
 eleven infrastructure-seat groups against its exact native runtime digest and
 two real Kafka clusters. Actual-image interoperability remains a separate gate.
+
+The [admitted-image OpenRig qualification](../validation/openrig-image-30.json)
+repeats all eleven infrastructure-seat groups with two actual containers on two
+distinct Kafka clusters. Both hubs use immutable image `b99978ef…` and the exact
+reviewed manifest; independent container kills, replacements and cleanup are
+recorded. The infrastructure-seat scope above still applies.

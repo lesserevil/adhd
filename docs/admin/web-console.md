@@ -178,3 +178,9 @@ The [candidate30 desktop/mobile refresh](../validation/admin-browser-30.json)
 repeats all eighteen focused groups against its exact runtime digest, including
 real Kafka policy changes and two signed OIDC exchanges. Actual-image browser
 qualification is recorded separately.
+
+The [admitted-image Admin browser qualification](../validation/admin-browser-image-30.json)
+repeats all eighteen groups against immutable image `b99978ef…` and artifact
+`698496fe…`. It checks the actual container manifest and payload, records its
+owned lifecycle, and exercises desktop and mobile forms with real Kafka. The
+rendered subscription views were also visually inspected at both viewport sizes.

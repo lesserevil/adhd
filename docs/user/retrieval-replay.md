@@ -165,3 +165,9 @@ hard restart. A subsequent explicit recipe reset preserves historical evidence;
 only retired global index generation availability may change. The original
 qualified store files remain byte-for-byte unchanged. This check uses previously
 recorded model evidence and makes no new semantic quality claim.
+
+The [admitted-image evidence qualification](../validation/multi-evidence-image-30.json)
+repeats all eleven isolation groups using the exact reviewed image manifest and
+payload. Three actual container kills and replacements preserve private backend
+data while checking query ownership, revocation and optimizer evaluation fences;
+the report records each container ID and verified removal.

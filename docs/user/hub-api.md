@@ -30,6 +30,22 @@ to the recipient and are excluded from publication search.
 | `ack` | `delivery_ids` | Acknowledged identifiers |
 | `get` | `publication_id` | One stored publication |
 | `search` | `query` and/or source/type filters; optional `limit` | Newest matching publications |
+| `query_history` | `question`; optional scope, complete, budget | Frozen asynchronous local archive question |
+| `get_history_query` | `query_id`; optional run, offset, limit | Owned result and evaluation pages |
+| `continue_history_query` | `query_id`; optional budget, restart | New run on the same frozen corpus |
+| `cancel_history_query` | `query_id` | Cancelled owned history job |
+| `retrieve` | `question`; optional scope, limit, budget | Frozen asynchronous candidate retrieval |
+| `get_retrieval` | `query_id`; optional run, offset, limit | Owned candidates and model evidence pages |
+| `continue_retrieval` | `query_id`; optional budget, restart | New run on the same frozen corpus |
+| `cancel_retrieval` | `query_id` | Cancelled owned retrieval job |
+| `retrieval_index` | none | Safe active/previous/building index status |
+| `query_archive` | `question`; optional mode, complete, scope, limit, stage budget | Owned search, original assessment and full-scan fallback |
+| `get_archive_query` | `query_id`; optional run, offset, limit | Frozen archive result, path, sampling and evidence |
+| `continue_archive_query` | `query_id`; optional budget, restart, mode | Resume plan or explicitly restart on the same corpus |
+| `cancel_archive_query` | `query_id` | Fence inference and cancel active children |
+| `federated_query` | `question`; optional `deadline_ms` | Durable asynchronous project-discovery job |
+| `get_federated_query` | `query_id` | Owner's current job, peer coverage and responses |
+| `cancel_federated_query` | `query_id` | Owner's cancelled or already terminal job |
 
 Every command includes `op`. `text` is a nonblank string. Published `data` can be
 any JSON value, including a nested object, array, scalar, or null; private `send`
@@ -118,6 +134,25 @@ A client can send this envelope with `Authorization: Bearer TOKEN`,
 }
 ```
 
+See [federated discovery](federation.md) for opt-in peer configuration, approved
+evidence, asynchronous results and limits. Federation does not create A2A Tasks.
+
 Hub content subscriptions use `subscribe` commands. They are distinct from A2A's
 `SubscribeToTask` operation, which monitors task execution and is not offered here.
 The exact authoring contract is `components/hub/component.md`.
+
+See [history questions](history-queries.md) for bounded semantic scans, coverage,
+continuation, original citations and explicit uncertainty.
+
+See [contextual retrieval](retrieval.md) for candidate scores, explicit bounded coverage,
+frozen context, original fetches and administrator index controls.
+
+See [archive questions](archive-queries.md) for search/scan modes, completeness,
+separate stage budgets, sampled audits and provisional comparisons.
+
+See [feedback and paired replay](retrieval-replay.md) for owner-scoped attempts,
+independent Admin labels and same-snapshot comparisons. Global retrieval-index
+status includes base/effective/previous selection and runtime qualification;
+proposal evidence and promotion/rollback operations require Admin access through
+the [console](../admin/web-console.md). These management jobs do not add A2A Tasks
+or change the agent command/peer transport separation.

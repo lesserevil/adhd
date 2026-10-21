@@ -64,7 +64,9 @@ resolve that condition before changing durable data.
 ## Web console
 
 See [Web management console](web-console.md) for setup. A 404 from /admin/api means
-admin_token is absent; add it to the private server configuration and restart. A
+the legacy admin_token and human authentication are both absent. Use an existing
+Admin credential to enable account sign-in, or atomically edit the private file
+with a valid recovery method; changes are watched without restart. A
 401 means the administrator credential is missing, wrong or rotated; agent tokens
 are intentionally rejected. Reload and sign in with the current private token.
 A 403 indicates a mismatched Origin: open the console and API through the same

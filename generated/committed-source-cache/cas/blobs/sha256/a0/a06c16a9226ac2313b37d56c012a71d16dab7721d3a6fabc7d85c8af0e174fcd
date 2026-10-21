@@ -1,0 +1,153 @@
+defmodule Hub.Federation do
+  alias Hub.Util, as: U
+  alias Hub.V
+  def peers(cfg), do: if(cfg["federation"], do: cfg["federation"]["peers"], else: [])
+  def create(s, cfg, actor, c) do
+    if is_nil(cfg["federation"]), do: U.error("FEDERATION_DISABLED")
+    s = expire(s, cfg)
+    if Enum.count(s.queries, fn {_, r} -> r.value["status"] == "pending" end) >= 64, do: U.error("RESOURCE_EXHAUSTED")
+    {id, s} = Hub.Domain.allocate(s, "q")
+    now = U.now()
+    ps = Enum.map(peers(cfg), &%{"project_id" => &1["project_id"], "status" => "pending"})
+    q = %{"id" => id, "project_id" => s.project, "owner_id" => actor, "question" => c["question"], "created_at" => U.stamp(now), "deadline_at" => U.stamp(now + Map.get(c, "deadline_ms", 30000)), "status" => if(ps == [], do: "completed", else: "pending"), "peers" => ps, "responses" => []}
+    s = Hub.Domain.insert(s, :queries, q, %{attempts: %{}})
+    {%{"query" => q}, s}
+  end
+  def expire(s, cfg) do
+    now = U.now()
+    ids = Enum.map(peers(cfg), & &1["project_id"])
+    queries = Map.new(s.queries, fn {id, r} ->
+      q = r.value
+      q = if q["status"] == "pending" do
+        ps = Enum.map(q["peers"], fn p -> if p["status"] == "pending" and (p["project_id"] not in ids or U.millis(q["deadline_at"]) <= now), do: Map.put(p, "status", "failed"), else: p end)
+        finish(Map.put(q, "peers", ps))
+      else
+        q
+      end
+      {id, %{r | value: q}}
+    end)
+    incoming = Map.new(s.incoming, fn {id, j} ->
+      j = if j.status == "pending" and (U.millis(j.command["deadline_at"]) <= now or j.peer not in ids), do: %{j | status: "expired"}, else: j
+      {id, j}
+    end)
+    %{s | queries: queries, incoming: incoming}
+  end
+  def finish(q) do
+    if Enum.any?(q["peers"], &(&1["status"] == "pending")) do
+      q
+    else
+      Map.put(q, "status", if(Enum.all?(q["peers"], &(&1["status"] == "responded")), do: "completed", else: "partial"))
+    end
+  end
+  def evidence(s, cfg) do
+    f = cfg["federation"]
+    base = %{"project_id" => s.project, "description" => f["description"], "publications" => []}
+    Enum.reduce_while(Map.get(f, "export_publication_ids", []), base, fn id, acc ->
+      if s.publications[id] do
+        next = Map.update!(acc, "publications", &(&1 ++ [s.publications[id].value]))
+        if byte_size(JSON.encode!(next)) > 65536, do: {:halt, acc}, else: {:cont, next}
+      else
+        {:cont, acc}
+      end
+    end)
+  end
+  def wire(s, cfg, peer, c) do
+    V.object(c)
+    case c["op"] do
+      "submit" -> V.keys(c, ["op", "origin_project_id", "query_id", "question", "deadline_at"], ["op", "origin_project_id", "query_id", "question", "deadline_at"])
+      "status" -> V.keys(c, ["op", "origin_project_id", "query_id"], ["op", "origin_project_id", "query_id"])
+      _ -> V.fail()
+    end
+    V.id(c["origin_project_id"]); V.rid(c["query_id"])
+    if c["origin_project_id"] != peer, do: U.error("FORBIDDEN")
+    s = expire(s, cfg)
+    key = {peer, c["query_id"]}
+    old = s.incoming[key]
+    case c["op"] do
+      "submit" ->
+        V.string(c["question"], 4096)
+        V.datetime(c["deadline_at"])
+        V.check(String.ends_with?(c["deadline_at"], "Z"))
+        if old do
+          if old.command != c, do: U.error("IDEMPOTENCY_CONFLICT")
+          {202, wire_result(old, false), s}
+        else
+          delta = U.millis(c["deadline_at"]) - U.now()
+          V.check(delta > 0 and delta <= 120000)
+          if Enum.count(s.incoming, fn {_, j} -> j.status == "pending" end) >= 64, do: U.error("RESOURCE_EXHAUSTED")
+          {_id, s} = Hub.Domain.allocate(s, "i")
+          job = %{seq: s.seq, peer: peer, command: c, evidence: evidence(s, cfg), status: "pending", retry_at: 0, response: nil}
+          {202, wire_result(job, false), put_in(s, [:incoming, key], job)}
+        end
+      "status" ->
+        if is_nil(old), do: U.error("NOT_FOUND")
+        {200, wire_result(old, true), s}
+    end
+  end
+  def wire_result(j, response) do
+    r = %{"query_id" => j.command["query_id"], "status" => j.status}
+    if response and j.status == "completed", do: Map.put(r, "response", j.response), else: r
+  end
+  def complete_incoming(s, cfg, key, ppm) do
+    s = expire(s, cfg)
+    j = s.incoming[key]
+    if is_nil(j) or j.status != "pending" do
+      s
+    else
+      if ppm == :failed do
+        put_in(s, [:incoming, key, :retry_at], U.now() + Map.get(cfg["federation"], "retry_ms", 500))
+      else
+        matched = ppm >= cfg["threshold_ppm"]
+        response = %{"project_id" => s.project, "matched" => matched, "probability_ppm" => ppm, "description" => if(matched, do: j.evidence["description"], else: ""), "publications" => if(matched, do: j.evidence["publications"], else: []), "model" => cfg["matcher"]["model"]}
+        put_in(s, [:incoming, key], %{j | status: "completed", response: response})
+      end
+    end
+  end
+  def outbound(s, cfg, excluded) do
+    for r <- U.sorted(s.queries), r.value["status"] == "pending", p <- r.value["peers"], p["status"] == "pending",
+        key = {r.value["id"], p["project_id"]}, key not in excluded,
+        Map.get(Map.get(r, :attempts, %{}), p["project_id"], 0) <= U.now(),
+        peer = Enum.find(peers(cfg), &(&1["project_id"] == p["project_id"])), not is_nil(peer) do
+      {key, r.value, peer}
+    end
+  end
+  def validate_response(r, peer, cfg) do
+    V.keys(r, ["project_id", "matched", "probability_ppm", "description", "publications", "model"], ["project_id", "matched", "probability_ppm", "description", "publications", "model"])
+    V.check(r["project_id"] == peer and is_boolean(r["matched"]) and r["model"] == cfg["matcher"]["model"])
+    V.integer(r["probability_ppm"], 0, 1000000)
+    V.check(is_binary(r["description"]) and String.valid?(r["description"]) and byte_size(r["description"]) <= 4096)
+    V.check(is_list(r["publications"]) and length(r["publications"]) <= 32)
+    if r["matched"], do: V.string(r["description"], 4096), else: V.check(r["description"] == "" and r["publications"] == [])
+    for p <- r["publications"] do
+      V.keys(p, ["id", "project_id", "author_id", "text", "data", "created_at", "occurred_at", "information_type", "source"], ["id", "project_id", "author_id", "text", "data", "created_at", "occurred_at", "information_type", "source"])
+      V.check(p["project_id"] == peer)
+      V.rid(p["id"]); V.datetime(p["created_at"])
+      Hub.Domain.validate_publication(p)
+    end
+    V.check(byte_size(JSON.encode!(%{"project_id" => peer, "description" => r["description"], "publications" => r["publications"]})) <= 65536)
+    r
+  end
+  def complete_outbound(s, cfg, {qid, peer}, answer) do
+    s = expire(s, cfg)
+    r = s.queries[qid]
+    if is_nil(r) or r.value["status"] != "pending" or not Enum.any?(r.value["peers"], &(&1["project_id"] == peer and &1["status"] == "pending")) do
+      s
+    else
+      case answer do
+        {:response, response} ->
+          validate_response(response, peer, cfg)
+          ps = Enum.map(r.value["peers"], fn p -> if p["project_id"] == peer, do: Map.put(p, "status", "responded"), else: p end)
+          answers = r.value["responses"] ++ [response]
+          ordered = for p <- ps, a <- answers, a["project_id"] == p["project_id"], do: a
+          q = r.value |> Map.put("peers", ps) |> Map.put("responses", ordered) |> finish()
+          put_in(s, [:queries, qid, :value], q)
+        :permanent ->
+          ps = Enum.map(r.value["peers"], fn p -> if p["project_id"] == peer, do: Map.put(p, "status", "failed"), else: p end)
+          put_in(s, [:queries, qid, :value], finish(Map.put(r.value, "peers", ps)))
+        _ ->
+          attempts = Map.put(Map.get(r, :attempts, %{}), peer, U.now() + Map.get(cfg["federation"], "retry_ms", 500))
+          put_in(s, [:queries, qid], Map.put(r, :attempts, attempts))
+      end
+    end
+  end
+end

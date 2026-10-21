@@ -23,6 +23,98 @@ inbound links; move substantial closed programs beneath `docs/history/roadmap/`,
 their owner, and mark them `historical`. Do not create a separate file for an ordinary
 queue item or let `docs/roadmap/` become a plan archive.
 
+## Authorized implementation batches
+
+The new multiple-project request is a planning request. MULTI-001 through
+MULTI-008 below are pending and are not included in the earlier implementation
+authorization summarized here. Their ordered design and acceptance program is
+[multiple projects per server](multi-project.md). The next action is MULTI-001's
+single-project assumption inventory and contract design; no multi-project runtime
+implementation or qualification is claimed. Planning tracker reconciliation found
+no open ADHD GitHub issues or pull requests.
+
+The Kafka pivot is also a planning request: KAFKA-001 through KAFKA-009 are
+pending in [Kafka pub/sub with optional filtering](kafka-pubsub.md). It replaces
+mandatory model matching in the target architecture, retains A2A for agents and
+adds per-server Kafka plus Compose/Kubernetes packaging. Complete MULTI-001's
+identity design, then KAFKA-001's transport/subscription design before shared
+storage and workflow implementation. MULTI-008 waits for KAFKA-009's integrated
+qualification. Neither program is included in the earlier implementation batch.
+
+The user authorized implementation of all outstanding work in sensible groups.
+Work proceeds through authored Component contracts, generated implementation,
+independent acceptance and evidence-based closure, preserving existing work.
+
+1. Protocol foundation (PROTO-001), then live configuration and user access
+   (CONFIG-002, AUTH-001, ROLE-001). Contracts and retained source passed the
+   build lifecycle. Native, browser, staging and Docker acceptance passed.
+   Identity edge cases passed with the directory batch. Initial timed-out generation was repaired
+   and admitted with explicit retained-source provenance.
+2. Federated identity and canonical catalogs/routing (FED-002, FED-003). The
+   directory contract, implementation and independent acceptance are qualified.
+   All 22 three-hub catalog/routing cases and matching Docker cases passed,
+   alongside authentication, protocol, browser and live-model regressions.
+3. Contextual evidence (INFO-002), semantic scans (QUERY-001) and contextual
+   retrieval (SEARCH-001) and fallback/audits (SEARCH-002) are qualified. Continue
+   with feedback/replay (SEARCH-003) and adaptive index qualification (INDEX-001).
+4. Upstream accepted-source export correction (BUILD-001), with local regression
+   evidence and a reviewable upstream contribution; external filing/publication
+   remains subject to the existing authorization boundary.
+
+Only evidence-qualified items may be closed. No batch completion is implied by
+this execution order or by specification changes alone.
+
+Foundation evidence so far binds executable SHA-256
+`a427322b535084eb8d1767a25905709dd444053a91d55268c02b3407a160a7c0`:
+`verification/foundation-acceptance.json` (20 cases),
+`verification/auth-lifecycle.json` (9 cases including real session expiry),
+`verification/config-recovery.json` (3 actual process kills at commit boundaries),
+`verification/protocol-acceptance.json` (5 groups with independent schema validation),
+`verification/foundation-sdk.json` (31 scenarios including real model and legacy upgrades),
+`verification/foundation-federation.json` (26 scenarios including real three-hub discovery),
+and both foundation/legacy browser reports (desktop/mobile). New Users and Settings
+captures were visually reviewed. `verification/oidc-policy.json` adds four profile,
+email-separation and group-policy scenarios. `verification/foundation-container.json`
+passes all 20 new scenarios and `verification/foundation-container-regression.json`
+passes 34 scenarios including the documented runner, hot port/health, password
+rotation, container replacement, backup/restore and live Nemotron coordination.
+`verification/foundation-staging.json` passes four integrity/determinism checks.
+Docker image: `sha256:c0f03874144d3de3a9f5e958c8493b6dbc98c06ff0eec04bdff1e7170cea4946`.
+`verification/foundation-container-federation.json` passes 25 container peer scenarios.
+This first baseline preceded the directory extensions qualified below.
+
+Directory-batch completion evidence binds executable SHA-256
+`048ca679f9275380cc6235ad655d07992d0c076b8a2c27f3d0d117978daa62a3`,
+qualified receipt `sha256:3c9ba41fb59c94caaa0cfdee68f591762546e29bdffac2fbb97e19e81196d7f6`,
+and Docker image `sha256:ef1894b80747a2f1f7e0de8f70a84f00351e29440180048a7241c530c85d36d5`.
+`verification/directory-catalog.json` and `directory-container-catalog.json`
+each pass 22 independently authored catalog, canonical-routing, identity and fault
+cases. `directory-foundation.json` and `directory-container-foundation.json`
+each pass 20 account/role/live-setting cases. Native `directory-auth.json` (9),
+`directory-recovery.json` (3 process-kill boundaries), `directory-credentials.json`
+(4) and `directory-oidc.json` (5) cover bootstrap, rotation, recovery, legacy keys,
+OIDC profiles/group policy and renamed built-in account protection.
+`directory-sdk.json` passes 31 scenarios including both real earlier-store upgrades
+and live Nemotron; `directory-federation.json` passes 26. `directory-protocol.json`
+passes five independent schema/OpenAPI/framing groups for API profile1.1.0,
+wire major1 and A2A1.0. `directory-browser.json` and `directory-console.json`
+pass desktop/mobile interaction and privacy checks with no normal-path errors;
+ready-state catalog and Admin query-control captures were visually reviewed.
+`directory-container-sdk.json` passes 34 scenarios including hot port/health,
+rotated credentials, container replacement and backup/restore;
+`directory-container-federation.json` passes 26 including live three-hub inference.
+`directory-staging.json` passes four integrity/determinism checks. All these report
+paths are under `verification/`. The build passed 13 native cases and 13 independent
+CLI vectors; all declared verify gates passed at this baseline. Subsequent context
+contracts and candidates have separate qualification and do not change this evidence.
+
+Subscription matching retains the selected short-response Nemotron decision
+model. The user clarified that new data needs a fast, decisive match/no-match
+judgment; no Qwen deployment or generative step belongs in that path. Historical
+query requirements remain separately scoped and do not justify replacing the
+subscription matcher. Current-model latency smoke results are recorded separately
+from workload-wide accuracy or capacity claims.
+
 ## P0
 
 ### [x] ONBOARD-001 — Establish the information hub's product requirements
@@ -197,22 +289,36 @@ release-visible outcome to `CHANGELOG.md`; Git preserves prior queue states.
   - [x] 31 SDK scenarios passed (verification/hub-acceptance.json), including invalid admin configuration, auth/origin boundaries, disabled legacy configs, private visibility, durable action retries/conflicts and both earlier store formats. Browser confirmation cancellation and response-loss retry passed; deployed responses/logs contain no bearer tokens.
   - [x] Desktop/mobile screenshots and accessibility snapshots inspected at 1440 and 390 pixels: no overflow or normal-path page/console/network errors. Fault-injected 503/401/network loss recovered as intended. 12 native tests, eight independent CLI vectors and 33 hardened-container scenarios passed; independent no-cache image builds matched (verification/container-reproducibility.json). Full litai verify passed authority, both locks and current receipt; source-intelligence and HTML gates are skipped by configuration, with the UI independently checked in Playwright. Accepted source is published to the committed cache. Peer surveys and tracker reconciliation remain unavailable without an initial commit or configured remote; no commit, push, merge or shared cleanup was attempted.
 
-### [ ] AUTH-001 — Optional OIDC authentication for administrator pages
+### [x] AUTH-001 — Administrator authentication with local username/password and optional OIDC
 
 - **Priority:** P1
 - **Owner:** hub administrator authentication and web management interface
-- **Direction:** Add optional OpenID Connect (OIDC) authentication for administrator pages, retaining the current admin key as the default authentication method.
-- **Conclusion:** Plan a configurable OIDC sign-in option for the administrator console and its supporting API. Existing installations continue using the current admin key unless an operator explicitly selects OIDC; no identity provider is required for default operation. Next action: define authentication-mode configuration, provider integration and administrator authorization/session behavior before changing the runtime. This item records future work only.
+- **Direction:** Add optional OpenID Connect (OIDC) authentication for administrator pages, retaining compatibility with the current admin key. Include a dummy, simple local username/password provider for use before OIDC is set up. The built-in admin account uses this provider, receives a random password at first install, and saves that initial password in a discoverable text file.
+- **Conclusion:** Plan interchangeable local username/password and OIDC sign-in providers for the administrator console and its supporting API. The local provider supports bootstrap and development before an identity provider is configured; bootstrap the built-in `admin` account with a cryptographically random per-install password rather than a universal hard-coded login. Save the initial password as `initial-admin-password.txt` beside the hub configuration file, so its location follows the selected configuration storage location. Keep authentication state hashed; the explicitly requested bootstrap text file is the exception for first-admin discovery. Preserve existing admin-key installations. Configure providers and credentials through CONFIG-002's admin Settings with hot activation and rotation. Selecting OIDC must not silently enable password/key fallback on provider failure; coexistence is explicit. ROLE-001 governs each user's server-local role and agent ownership; authenticating does not itself grant agent impersonation. Use the same authenticated user identity for Admin, Developer and Viewer, with authorization governed by ROLE-001. Provider selection, bootstrap, authorization and sessions are qualified natively and in Docker; next action is to preserve the built-in account identity through username edits and complete federation identity boundaries. OIDC setup includes assigning provider groups to the server roles in ROLE-001, with Admin-managed group lists and highest-role resolution. The first implementation batch is in qualification.
 - **Depends on:** UI-001
 - **Implementation:**
-  - [ ] Define explicit authentication-mode selection with admin key as the default, optional OIDC provider configuration, and backward compatibility for existing server and client configurations.
-  - [ ] Specify OIDC sign-in/callback, identity and token validation, administrator authorization rules, protected API access, session expiry/logout and request-forgery protection. Define explicit key/OIDC coexistence policy; avoid silent fallback when an explicitly selected OIDC mode fails.
-  - [ ] Implement optional OIDC protection for administrator pages and their supporting API while preserving administrator permissions, private-message visibility boundaries and existing A2A agent authentication.
-  - [ ] Document provider setup, required configuration and secrets, redirect URLs, mode selection, session/logout behavior and troubleshooting; retain a straightforward admin-key setup path.
+  - [x] Define explicit authentication-provider selection, local username/password bootstrap, optional OIDC configuration and backward compatibility for existing admin-key server/client configurations.
+  - [x] Populate every user's `name` and `email` profile fields and retain a link to their OIDC provider when OIDC-backed. Store the configured provider reference plus validated issuer and subject (`iss`, `sub`) as the external identity link; map name/email from validated claims. Specify collection of missing claims and bootstrap profile details through the admin page without fabricating email addresses. Local-provider accounts, including initial `admin`, can exist before OIDC setup and have no OIDC link until explicitly linked.
+  - [x] Specify a simple local username/password provider using the same administrator identity/session boundary as OIDC, password hashes in authentication state (with the explicit initial-password text-file exception below), generic failed-login responses and no credential logging or universal default password.
+  - [x] On first installation create the built-in `admin` account in the simple local provider, generate its password using a cryptographically secure random source, persist its password hash, and save the initial plaintext password in `initial-admin-password.txt` beside the configuration. Restrict the text file to the owning operator (0600 on Unix or equivalent); report its location without logging its contents. Do not expose the password through the admin page, APIs or diagnostics.
+  - [x] Preserve the built-in account's local-provider identity across username/profile edits, so renaming cannot bypass the prohibition on linking the bootstrap account to OIDC.
+  - [x] Provision bootstrap credentials only once: preserve the account/password across restarts, upgrades and container replacement, never overwrite an existing initial-password file or silently reset a changed password. Document where host operators find the file through the persistent configuration-directory mount, and that it records the initial password rather than tracking later rotations.
+  - [x] Add local-provider selection and credential setup/rotation to the admin page through CONFIG-002; apply changes without restarting and define session revocation when credentials change.
+  - [x] Specify OIDC sign-in/callback, identity and token validation, administrator authorization rules, protected API access, session expiry/logout and request-forgery protection. Define explicit key/OIDC coexistence policy; avoid silent fallback when an explicitly selected OIDC mode fails.
+  - [x] Include group-to-role mapping in OIDC setup: let Admins add and remove one or more OIDC groups for each of Admin, Developer and Viewer, and configure the provider's group-claim field. Use group membership from validated OIDC identity claims, bound to the configured provider. Resolve all matching mappings to exactly one role using Admin > Developer > Viewer; missing, malformed or unmapped claims must not elevate access.
+  - [x] Implement optional OIDC protection for administrator pages and their supporting API while preserving administrator permissions, private-message visibility boundaries and existing A2A agent authentication.
+  - [x] Document local username/password setup before OIDC, provider selection and transition, OIDC secrets/redirect URLs, session/logout behavior and troubleshooting; retain the existing admin-key setup path.
 - **Evidence:**
-  - [ ] Verify the unchanged default admin-key flow with OIDC unconfigured, including existing configurations and agent workflows.
-  - [ ] Exercise OIDC sign-in, allowed and denied administrator identities, invalid or expired identity tokens, callback validation, session expiry/logout, provider failures and absence of credential leakage.
-  - [ ] Verify browser and direct API access enforce the selected authentication mode and preserve management-action safety and private-data boundaries; pass applicable project, SDK, container and desktop/mobile browser checks.
+  - [x] Verify a clean install provisions `admin` with a working random password in the documented owner-readable text file; separate installations receive different passwords. Verify secure file permissions, no unintended plaintext copies/logging/API disclosure, no overwrite on restart/upgrade/container replacement, and preservation of a password changed through the admin page.
+  - [x] Verify local username/password sign-in works without an OIDC provider; reject incorrect credentials, enforce logout/session expiry and exercise hot credential rotation and revocation without leaking passwords.
+  - [x] Verify the unchanged default admin-key flow with OIDC unconfigured, including existing configurations and agent workflows.
+  - [x] Exercise local-to-OIDC transition and explicit coexistence from admin Settings without a restart; an OIDC outage must not silently reactivate the local provider.
+  - [x] Exercise OIDC sign-in, allowed and denied administrator identities, invalid or expired identity tokens, callback validation, session expiry/logout, provider failures and absence of credential leakage.
+  - [x] Verify local/OIDC users retain name/email profile fields and correct provider links; a changed name or email must not change the internal user identity, role or agent ownership. Verify distinct issuer/subject identities within one server are not merged automatically by matching email, missing claims have an explicit profile-completion path, and linking a local account requires authorized proof rather than an email match. Separately permit FED-002's cross-server same-email identity correlation without transferring local roles or permissions.
+  - [x] Verify Admin-only group mapping from OIDC Settings, multiple groups on a role and memberships matching multiple roles; enforce highest-role resolution, reject untrusted group claims and apply mapping removal/changes live without retaining stale elevated access.
+  - [x] Verify browser and direct API access enforce the selected authentication mode and preserve management-action safety and private-data boundaries; pass applicable project, SDK, container and desktop/mobile browser checks.
+
+Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
 
 ### [x] NAME-001 — Use Agentic Distributed Harness Depot consistently in documentation and help text
 
@@ -231,98 +337,601 @@ release-visible outcome to `CHANGELOG.md`; Git preserves prior queue states.
 
 <a id="info-002-preserve-contextual-evidence-without-a-domain-taxonomy"></a>
 
-### [ ] INFO-002 — Preserve contextual evidence without a domain taxonomy
+### [x] INFO-002 — Preserve contextual evidence without a domain taxonomy
 
 - **Priority:** P1
 - **Owner:** hub information model and persistence
 - **Direction:** Retain full agent statements and their context so future questions and re-indexing do not require predicted data buckets.
-- **Conclusion:** Extend INFO-001 with contextual relationships and immutable corrections; preserve originals as authority and interpretations as derived records. Follow [adaptive retrieval design](adaptive-retrieval.md#contextual-records). Next action: specify the backward-compatible context envelope and upgrade fixtures.
+- **Conclusion:** Implemented immutable contextual records, corrections, bounded frozen public traversal and checksummed crash-recovery snapshots. Originals remain authoritative and private deliveries remain excluded. The [qualified artifact evidence](../../verification/context-qualified.json) completes this item; semantic history questions and adaptive retrieval retain their separate unchecked gates.
 - **Depends on:** INFO-001
-- **Planning evidence:** All six adaptive retrieval requests were recorded with `litai work record`; tracker reconciliation found no open issues/reviews and start/end peer surveys found no collectable work. The current checkout's documentation changes are retained deliberately. `git diff --check` passed. `litai verify` passed authority/documentation review and both locks; source-intelligence and HTML gates were skipped by configuration. The runtime receipt is stale against the changed project authority (`project.test_receipt_stale`); no rebuild or runtime acceptance is claimed. The implementation and evidence boxes below remain open.
+- **Qualification evidence:** Retained-source artifact SHA256 `660745edc3b48aad037ec51e7a0745f30eb1973ad4fd20a7c20808666c8f2885`, receipt `37fcf7c06086c723efa95d2be13e2b451f5393df4c553d507b9e66dd45ea5592`, and Docker image `b7b03facd0d3e6b7ba1b2a68eb33d1bfc682b44ff5308e05885ce95eb2489f9e`. Twenty hash-bound reports cover eight record cases, ten actual crash/integrity cases, both earlier native store producers and native-to-container snapshot upgrade, native/container SDK and live three-hub federation, 22-case catalogs on both runtimes, profile 1.2 schema/OpenAPI conformance, authentication/configuration recovery and desktop/mobile browser checks. All required results pass; the aggregate preserves the corrected independent-test preconditions and profile assertion.
 - **Implementation:**
-  - [ ] Specify optional question, reply, conversation and subject references with contextual snapshots, provenance and bounded authorized link traversal; preserve arbitrary text/JSON and unknown domain concepts.
-  - [ ] Implement immutable corrections and evidence relationships, stable content identities, legacy-store compatibility, retry semantics and durable storage without replacing original statements with extracted facts.
-  - [ ] Document context submission and re-indexing semantics, including missing references, cycles, changed external sources and private-message isolation.
+  - [x] Specify optional question, reply, conversation and subject references with contextual snapshots, provenance and bounded authorized link traversal; preserve arbitrary text/JSON and unknown domain concepts.
+  - [x] Implement immutable corrections and evidence relationships, stable content identities, legacy-store compatibility, retry semantics and durable storage without replacing original statements with extracted facts.
+  - [x] Document context submission and re-indexing semantics, including missing references, cycles, changed external sources and private-message isolation.
+  - [x] Recover interrupted DETS writes from a checksummed synchronized state snapshot; a real hard-kill federation run exposed a `needs_repair` startup failure. Preserve acknowledged state and reject corrupt, conflicting or wrong-project recovery data.
 - **Evidence:**
-  - [ ] Round-trip Yes with its question and subject, cardinal/red-bird reports, arbitrary JSON and a later correction across retries, acknowledgements and hard restart.
-  - [ ] Upgrade existing stores without data loss; reject unauthorized context expansion and demonstrate reconstruction of the exact evidence used by a historical query.
+  - [x] Round-trip Yes with its question and subject, cardinal/red-bird reports, arbitrary JSON and a later correction across retries, acknowledgements and hard restart.
+  - [x] Upgrade existing stores without data loss; reject unauthorized context expansion and demonstrate reconstruction of the exact evidence used by a historical query.
 
-### [ ] QUERY-001 — Evaluate natural-language questions by scanning contextual history
+### [x] QUERY-001 — Evaluate natural-language questions by scanning contextual history
 
 - **Priority:** P1
 - **Owner:** hub query evaluator and A2A query jobs
 - **Direction:** Answer unforeseen questions from original evidence without requiring a purpose-built index.
-- **Conclusion:** Add bounded, resumable semantic scans over a stable authorized corpus with evidence-backed answers and explicit coverage. Follow [scan design](adaptive-retrieval.md#semantic-scans). Next action after INFO-002: specify query-job operations and evaluator adapter independently of the subscription matcher.
+- **Conclusion:** Implemented owned asynchronous snapshot history questions using the existing short-response model, original contextual evidence, durable costs/checkpoints, bounded joint assessment and explicit uncertainty. The [qualified history evidence](../../verification/history-qualified.json) completes this item. Search acceleration and adaptive indexing retain four separate open gates.
 - **Depends on:** INFO-002
 - **Implementation:**
-  - [ ] Define natural-language query requests, scope/snapshot identity, asynchronous job lifecycle, budgets, continuation, cancellation, idempotency and authorized result retrieval.
-  - [ ] Evaluate all records in the scope with context expansion and cross-record synthesis; retain supporting and contradicting source IDs, uncertainty, evaluator versions and examined/remaining coverage.
-  - [ ] Implement durable checkpoints and explicit partial, unavailable, conflicting and no-evidence outcomes; keep inference outside the store writer and literal search compatible.
+  - [x] Define natural-language query requests, scope/snapshot identity, asynchronous job lifecycle, budgets, continuation, cancellation, idempotency and authorized result retrieval.
+  - [x] Evaluate all records in the scope with context expansion and cross-record synthesis; retain supporting and contradicting source IDs, uncertainty, evaluator versions and examined/remaining coverage.
+  - [x] Implement durable checkpoints and explicit partial, unavailable, conflicting and no-evidence outcomes; keep inference outside the store writer and literal search compatible.
 - **Evidence:**
-  - [ ] Answer bird presence, explicitly reported species/color and distinct-bird count without domain columns; handle corrections and evidence requiring multiple linked records.
-  - [ ] Exercise hard restart, timeout, malformed model results, cancellation, concurrent publication and budget exhaustion; never report incomplete scans as exhaustive or missing evidence as false.
-  - [ ] Validate a real configured evaluator against independently labeled fixtures; existing typed subscription relevance alone must not qualify as answer synthesis.
+  - [x] Answer bird presence, explicitly reported species/color and distinct-bird count without domain columns; handle corrections and evidence requiring multiple linked records.
+  - [x] Exercise hard restart, timeout, malformed model results, cancellation, concurrent publication and budget exhaustion; never report incomplete scans as exhaustive or missing evidence as false.
+  - [x] Validate a real configured evaluator against independently labeled fixtures; existing typed subscription relevance alone must not qualify as answer synthesis.
+- **Qualification evidence:** Retained-source artifact SHA256 `b34659b630e8d911a43817b725857032b6ade422f49807247fb6206c553469a1`, receipt `4bdc40333a68a3a4de62eae3d50704a3e25222c8a9ac40a382e733e2b8e6a9fb`, Docker image `6d1f800d3719fd9edafe8da4b1e8978eb7a6815ddc0ea111ee6075f980f9234e`. Twenty-seven hash-bound reports cover 14 native and 14 Docker lifecycle/fault groups, 22 independently labeled real-model questions on each runtime (13 development, nine held out), four official-SDK/current-and-earlier-store producers, actual prior-template evidence preservation, ten storage interruption/integrity cases, original-context/legacy upgrades, live federation, catalogs, auth/configuration, protocol 1.3 and desktop/mobile controls. All required results pass. Bounded input/state limits and model fallibility remain explicit; fixture/development corrections are retained in the aggregate.
 
-### [ ] SEARCH-001 — Build replaceable general-purpose contextual retrieval
+### [x] SEARCH-001 — Build replaceable general-purpose contextual retrieval
 
 - **Priority:** P1
 - **Owner:** hub retrieval adapters and derived index lifecycle
 - **Direction:** Retrieve unforeseen questions without requiring users to predict indexes or classify incoming publications.
-- **Conclusion:** Introduce general-purpose text/semantic candidate retrieval over contextual records; indexes accelerate access and never replace evidence. Follow [retrieval design](adaptive-retrieval.md#general-purpose-retrieval). Next action after INFO-002: specify adapter and index manifest contracts and select an evidenced initial implementation.
+- **Conclusion:** Implemented native contextual BM25, bounded typed semantic relevance, owned frozen retrieval jobs and asynchronous versioned index rebuilds with hot Admin controls. The [qualified retrieval evidence](../../verification/retrieval-qualified.json) completes this item. Candidate scores never establish truth or exhaustiveness. SEARCH-002/003 and INDEX-001 retain separate fallback, feedback/replay and promotion gates.
 - **Depends on:** INFO-002
 - **Implementation:**
-  - [ ] Define contextual indexing input and candidate response contracts, publication/context identities, index/model versions, indexed-through watermarks and explicit stale/unavailable states.
-  - [ ] Implement asynchronous idempotent indexing, incremental updates, context-change invalidation, full rebuild and atomic version switching while ingestion remains durable during index failures.
-  - [ ] Preserve literal search and support scoped candidate retrieval followed by original-record/context fetch; choose backend and embedding model from measured needs rather than a domain taxonomy.
+  - [x] Define contextual indexing input and candidate response contracts, publication/context identities, index/model versions, indexed-through watermarks and explicit stale/unavailable states.
+  - [x] Implement asynchronous idempotent indexing, incremental updates, context-change invalidation, full rebuild and atomic version switching while ingestion remains durable during index failures.
+  - [x] Preserve literal search and support scoped candidate retrieval followed by original-record/context fetch; choose backend and embedding model from measured needs rather than a domain taxonomy.
 - **Evidence:**
-  - [ ] Find paraphrases and exact identifiers, including Yes indexed with its question; negation similarity must not be treated as support.
-  - [ ] Rebuild from originals, catch up after downtime and switch versions under concurrent ingestion without losing records or leaking private context; expose incomplete coverage.
+  - [x] Find paraphrases and exact identifiers, including Yes indexed with its question; negation similarity must not be treated as support.
+  - [x] Rebuild from originals, catch up after downtime and switch versions under concurrent ingestion without losing records or leaking private context; expose incomplete coverage.
+- **Qualification evidence:** Artifact SHA256 `96b7bda8cd17962a8c82251fbc99ae22f312fc097ea4bf35bd2a306b8188e2ac`, receipt `bf6505275419af41d0bb6efd9798cfa363a679de17209d11d96df2864dfec8a1`, image `aa01ae8984022bd3a2da33a4fb7bb4cb209dbdb5e5d09afce018383a735c24c9`. Thirty-three hash-bound reports include nine retrieval lifecycle groups and six index/resource/interrupted-build groups on both native and Docker runtimes, 21 live-model retrieval cases on each runtime (nine held-out labels plus distractor ranking and linked originals), official SDK workflows across five native and four native-to-container producers, profile 1.4/58 examples, desktop/mobile controls and prior storage/history/auth/configuration/catalog/federation regressions. All results pass. Initial development input/status defects and harness corrections remain documented; model fallibility and bounded coverage are explicit.
 
-### [ ] SEARCH-002 — Fall back from search to semantic scans
+### [x] SEARCH-002 — Fall back from search to semantic scans
 
 - **Priority:** P1
 - **Owner:** hub query planning and evidence sufficiency policy
 - **Direction:** Try inexpensive search first and scan when it fails to produce useful evidence.
-- **Conclusion:** Compose SEARCH-001 and QUERY-001 under a versioned sufficiency policy, exposing the actual execution path and coverage. Follow [fallback workflow](adaptive-retrieval.md#search-then-scan). Next action after dependencies: specify escalation reasons, query modes and bounded execution policy.
+- **Conclusion:** Implemented owned frozen search/scan composition, full-original sufficiency assessment, exact uniform256 sampled audits, separate stage budgets/costs, interruption/child fencing and hot Admin settings/evidence. The [qualified archive evidence](../../verification/archive-qualified.json) closes this gate. Model interpretations and scan comparisons remain provisional; explicit complete:true requests full applicable primary/final coverage. Feedback/replay and adaptive promotion retain separate gates.
 - **Depends on:** QUERY-001, SEARCH-001
 - **Implementation:**
-  - [ ] Define search, scan and search-then-scan modes with explicit scope, budgets, completeness requirements and stable query snapshots.
-  - [ ] Escalate on insufficient or conflicting evidence, absent/stale indexes, retrieval errors and exhaustive requests; evaluate usefulness against the question rather than score or hit count alone.
-  - [ ] Add configurable sampled scan audits of apparently successful searches; expose fallback reasons, partial outcomes, evidence and audit selection probabilities without blocking normal hub traffic.
+  - [x] Clarify the shared original-quote template so explicit negatives/contextual No can answer yes/no questions; retain existing History quality gates and fresh archive held-out cases.
+  - [x] Define search, scan and search-then-scan modes with explicit scope, budgets, completeness requirements and stable query snapshots.
+  - [x] Escalate on insufficient or conflicting evidence, absent/stale indexes, retrieval errors and exhaustive requests; evaluate usefulness against the question rather than score or hit count alone.
+  - [x] Add configurable sampled scan audits of apparently successful searches; expose fallback reasons, partial outcomes, evidence and audit selection probabilities without blocking normal hub traffic.
 - **Evidence:**
-  - [ ] Recover useful evidence missed by search, including later corrections; distinguish search misses from no evidence in the scanned corpus.
-  - [ ] Exercise plausible incomplete answers, negation, count/all requests, index outages and scan budget exhaustion; preserve explicit uncertainty and scope completeness.
-  - [ ] Verify scan audits can discover hidden misses in apparently successful searches and record their sampling policy.
+  - [x] Recover useful evidence missed by search, including later corrections; distinguish search misses from no evidence in the scanned corpus.
+  - [x] Exercise plausible incomplete answers, negation, count/all requests, index outages and scan budget exhaustion; preserve explicit uncertainty and scope completeness.
+  - [x] Verify scan audits can discover hidden misses in apparently successful searches and record their sampling policy.
 
-### [ ] SEARCH-003 — Record retrieval failures and replay past questions
+- **Qualification evidence:** Forty-four hash-bound reports cover 17 archive lifecycle groups and 23 real-model scenarios on each runtime, including four fresh held-out questions after final template freeze; all22 existing History quality cases; exact profile1.5/81 protocol examples; desktop/mobile hot controls; matching-lane fairness; actual four-producer official SDK/store upgrades; old-template migration/inflight fencing on native and Docker; and prior retrieval/index, storage, identity/configuration, catalog and three-hub federation gates. The one superseded native state-cap fixture failure and its complete14-group passing rerun remain recorded.
+
+### [x] SEARCH-003 — Record retrieval failures and replay past questions
 
 - **Priority:** P1
 - **Owner:** hub retrieval feedback and evaluation history
 - **Direction:** Re-evaluate failed searches and learn from repeated search-then-scan attempts.
-- **Conclusion:** Persist reproducible search/scan comparisons and classify retrieval gaps separately from archive gaps or evaluator failures. Follow [feedback workflow](adaptive-retrieval.md#failure-analysis-and-replay). Next action after SEARCH-002: define attempt records, comparison metrics and replay cohort rules.
+- **Conclusion:** Implemented owner-scoped asynchronous attempt capture, independent Admin labels/cohorts/recurrence clusters, fresh same-snapshot paired replay with real History fallback costs, durable policy/owner/child/lease fencing, hot controls and profile1.6. The [qualified feedback evidence](../../verification/feedback-qualified.json) closes this gate. Model interpretations and human assertions remain fallible; the three live-model development/regression cases are not fresh optimizer held-out evidence. Adaptive promotion retains INDEX-001.
 - **Depends on:** SEARCH-002
 - **Implementation:**
-  - [ ] Record question, authorized scope/snapshot, search candidates/ranks, scan evidence, answer changes, completeness, fallback reason, versions, cost and latency with access controls.
-  - [ ] Cluster recurring misses and replay saved attempts against changed retrieval configurations on the same evidence snapshot; keep later-corpus re-evaluation separately labeled.
-  - [ ] Create regression and held-out cohorts including successful searches, no-evidence cases and sampled audits; retain feedback separately from source publications to prevent self-confirming retrieval.
+  - [x] Distinguish closed-cycle diagnostics from missing public context in archive sufficiency/comparison, preserving actual gaps and bounds under a new policy identity.
+  - [x] Record question, authorized scope/snapshot, search candidates/ranks, scan evidence, answer changes, completeness, fallback reason, versions, cost and latency with access controls.
+  - [x] Cluster recurring misses and replay saved attempts against changed retrieval configurations on the same evidence snapshot; keep later-corpus re-evaluation separately labeled.
+  - [x] Create regression and held-out cohorts including successful searches, no-evidence cases and sampled audits; retain feedback separately from source publications to prevent self-confirming retrieval.
+  - [x] Preserve direct analysis failures across budget continuation, distinguish actual History context limits from independently changed children, and retain numeric metrics after derived-evidence retirement; focused frozen-build fault/lifecycle tests pass.
 - **Evidence:**
-  - [ ] Reproduce a miss with stable source/configuration identities and measure improvement without mistaking new publications for better indexing.
-  - [ ] Classify missing evidence, ranking/context defects, model errors and incomplete scans correctly; incomplete/model-generated judgments are not unquestioned ground truth.
-  - [ ] Verify feedback authorization, duplicate retry handling, restart persistence and replay isolation from subscription deliveries and ordinary evidence searches.
+  - [x] Reproduce a miss with stable source/configuration identities and measure improvement without mistaking new publications for better indexing.
+  - [x] Classify missing evidence, ranking/context defects, model errors and incomplete scans correctly; incomplete/model-generated judgments are not unquestioned ground truth.
+  - [x] Verify feedback authorization, duplicate retry handling, restart persistence and replay isolation from subscription deliveries and ordinary evidence searches.
 
-### [ ] INDEX-001 — Generate and qualify retrieval improvements from observed misses
+- **Qualification evidence:** 57 hash-bound native/container reports cover the frozen artifact and image; lifecycle/fault/privacy/bounds, both-kind matching fairness, desktop/mobile controls, five actual store-producer SDK upgrades, original History/Archive/retrieval quality regressions, and existing storage/identity/configuration/catalog/federation/deployment gates. Typed-wire examples and critical semantic/unsupported-annotation checks pass. Same-corpus live contextual Yes/No cases recover confirmed original recall with fewer actual calls/bytes while both branches answer correctly; unrelated-entity no-evidence remains unsupported.
+
+### [x] INDEX-001 — Generate and qualify retrieval improvements from observed misses
 
 - **Priority:** P1
 - **Owner:** hub adaptive indexing jobs and operator policy
 - **Direction:** Use repeated search-then-scan failures to identify and generate the indexes retrieval actually needs.
-- **Conclusion:** Generate bounded declarative candidates from measured failure clusters, then build, replay, qualify, promote and roll back under configured policy. A new index is one possible remedy alongside context, chunking, ranking and link traversal. Follow [index workflow](adaptive-retrieval.md#index-generation-and-promotion). Next action after SEARCH-003: define supported recipe types, budgets and measurable promotion criteria.
+- **Conclusion:** Implemented profile1.7 bounded native recipe trials from independent confirmed recurring misses, a frozen training winner followed by fresh held/regression evaluation, and atomic promotion/rollback of complete caught-up indexes under hot review or automatic policy. The [qualified evidence](../../verification/optimization-qualified.json) binds 75 native/container reports, the authorized lifecycle receipt, exact accepted image, independent protocol snapshots and harnesses. The six fresh evaluation groups improve mean retrieval recall by 833333ppm with zero asserted answer failures/regressions/false support and four fewer calls/24189 fewer bytes in the final comparison. This qualifies those labeled fixtures and runtimes; human labels and model decisions remain fallible. SEARCH-003 stays independently frozen and qualified.
 - **Depends on:** SEARCH-003
 - **Implementation:**
-  - [ ] Define configurable recurrence/support thresholds and diagnose repeated misses; generate versioned declarative recipes tied to evidence rather than arbitrary generated executable code.
-  - [ ] Build isolated candidates from authoritative records with durable checkpoints and resource limits; replay training and held-out/regression cohorts and report quality, coverage, latency and storage tradeoffs.
-  - [ ] Promote only candidates passing configured criteria and corpus catch-up, atomically switch versions, retain rollback and prevent repeated ineffective rebuilds; support operator-selected automatic or review-based promotion.
-  - [ ] Document lifecycle states, failure handling, retirement and management visibility; add generated runtime behavior through owning Component specifications and the authorized Literate AI lifecycle.
+  - [x] Define configurable recurrence/support thresholds and diagnose repeated misses; generate versioned declarative recipes tied to evidence rather than arbitrary generated executable code.
+  - [x] Build isolated candidates from authoritative records with durable checkpoints and resource limits; replay training and held-out/regression cohorts and report quality, coverage, latency and storage tradeoffs.
+  - [x] Promote only candidates passing configured criteria and corpus catch-up, atomically switch versions, retain rollback and prevent repeated ineffective rebuilds; support operator-selected automatic or review-based promotion.
+  - [x] Document lifecycle states, failure handling, retirement and management visibility; add generated runtime behavior through owning Component specifications and the authorized Literate AI lifecycle.
 - **Evidence:**
-  - [ ] An observed recurring paraphrase/context miss produces a candidate that improves held-out retrieval; a ranking-only defect need not create a new index.
-  - [ ] Reject candidates that regress correction/negation, privacy, successful-query recall or resource limits; reject insufficient evaluation evidence.
-  - [ ] Exercise interrupted builds, concurrent publications/context updates, promotion, rollback and retirement while source records and hub delivery state remain intact.
+  - [x] An observed recurring paraphrase/context miss produces a candidate that improves held-out retrieval; a ranking-only defect need not create a new index.
+  - [x] Reject candidates that regress correction/negation, privacy, successful-query recall or resource limits; reject insufficient evaluation evidence.
+  - [x] Exercise interrupted builds, concurrent publications/context updates, promotion, rollback and retirement while source records and hub delivery state remain intact.
+
+- **Qualified implementation:** accepted artifact SHA-256
+  `1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48`,
+  receipt `sha256:f2ccbd20232cc65afbbbc5f10b38fa6190c99c5ce560304ff03c92507bec2369`,
+  image `adhd-hub:optimization-local`
+  (`sha256:45c0befd89d04f6063b523496c492fbf2ae27481abd8a6438cdf04e41859ceb1`).
+  Independent native/Docker conformance covers 141 authored protocol examples,
+  66 private oracle cases and 18 native vectors. Desktop/mobile settings and actual
+  qualified evaluation/promotion were inspected. Real old-producer and cross-runtime
+  upgrades preserve selected recipes while marking prior-runtime qualification
+  accurately. Source/delivery isolation, shared-lane fairness, hot store moves,
+  explicit base reset, faults and restart recovery pass. Exact schema/OpenAPI
+  snapshots preserve runtime differences limited to unordered required-name lists.
+  End-of-cycle survey found no collectable work; the accepted receipt remains current.
+
+<a id="fed-001--federate-project-hubs-for-asynchronous-discovery"></a>
+
+### [x] FED-001 — Federate project hubs for asynchronous discovery
+
+- **Priority:** P1
+- **Owner:** hub federation, query jobs and project documentation
+- **Direction:** Keep one server per project, but let an agent ask its local hub whether other projects are doing X; the local server contacts other ADHD servers and gathers answers asynchronously. Consider pub/sub for requests and responses.
+- **Conclusion:** Add opt-in federation between independent single-project hubs, reusing the planned asynchronous query lifecycle and evidence-backed answers. Pub/sub is a candidate transport, not a selected broker or protocol. Federation does not imply shared storage, automatic publication replication or task assignment. The implemented contract defines direct-peer federation with durable HTTP submit/status queues, explicit project profiles and publication export allowlists, model-backed relevance and owner-scoped query jobs. This delivers project discovery independently of QUERY-001's broader historical synthesis.
+- **Depends on:** INFO-001; shares the asynchronous query conventions of QUERY-001 without requiring its full contextual-history scan engine.
+- **Planning evidence:** Tracker reconciliation found no open issues or pull requests; the start-of-cycle peer survey found no collectable work. Implementation and behavioral acceptance are complete. The installed framework lacked Elixir support, so the reviewed Standard rebind selects the exact Elixir-capable upstream revision in requirements-build.txt. Linux is now the default build target for the container host; the macOS Flavor remains selectable. Native and hardened-container federation each pass 25 scenarios; the existing SDK/store-upgrade suite passes 30 and container operations suite passes 32. Live discovery and existing coordination also pass against the included GPU model service.
+- **Implementation:**
+  - [x] Define peer identity, discovery/bootstrap, authenticated trust and operator-controlled participation; specify which project descriptions, queries, evidence and answers may cross hub boundaries. Private addressed messages and non-exportable context must remain local.
+  - [x] Specify durable query IDs, origin/responder project and hub IDs, response correlation, incremental local result retrieval, deadlines, cancellation, retry deduplication, loop prevention, hop/fan-out limits and resource budgets. Evaluate pub/sub request and response channels without requiring a global broker.
+  - [x] Implement bounded asynchronous dispatch to participating peers, remote authorized evidence evaluation and durable collection of provenance-bearing responses. Report selected, responding, failed and pending peers; distinguish no matches within responding scope from unknown or incomplete coverage.
+  - [x] Document one-server-per-project deployment, peer onboarding/removal, visibility controls, query/result workflow and failure handling; preserve standalone operation and existing local APIs when federation is disabled.
+- **Evidence:**
+  - [x] Exercise at least three independent project hubs: ask the local hub which projects are doing X, obtain relevant remote project answers asynchronously with source provenance, and retrieve progressive and final results without blocking ordinary publish/poll traffic.
+  - [x] Verify offline/slow peers, deadline expiry, partial/no-match outcomes, cancellation, duplicate or cyclic forwarding, bounded fan-out, retry and hard-restart recovery without duplicate logical responses or lost accepted jobs.
+  - [x] Reject unauthorized peers and prevent export of private messages, restricted publications, linked private context and credentials; verify disabled federation and existing single-project workflows remain compatible.
+
+- **Qualified implementation evidence:** `verification/federation-acceptance.json`
+  and `verification/federation-container.json` cover durable direct-peer jobs,
+  progressive results, outage recovery, cancellation, malformed peers, bounded jobs,
+  privacy and credential separation. `verification/federation-regression.json`
+  covers SDK behavior and real legacy-store upgrades;
+  `verification/federation-container-regression.json` covers hardened deployment
+  and backup/restore. `verification/federation-browser.json` records desktop/mobile
+  console regression with zero normal-path errors; both rendered screenshots were
+  visually reviewed. `verification/federation-staging.json` passes four
+  receipt/hash/determinism checks. Accepted artifact SHA-256:
+  `ec94917a4e079b7677dd895fc5a08f0acbf083d9f401f585abf9d74da6af2976`.
+  Qualified source is published in the committed source cache. Start/end peer
+  surveys found no collectable work or open reviews.
+
+- **Live acceptance:** `verification/federation-live.json` passes 26 scenarios,
+  including three independent hubs with the actual SystemOne service: beta matched
+  at 998,675 ppm and gamma returned a nonmatch at 380 ppm, with approved evidence
+  and project provenance. `verification/federation-live-regression.json` passes
+  29 existing SDK/information/management/live-coordination scenarios; the relevant
+  coordination update scored 998,901 ppm and unrelated content was not delivered.
+
+### [x] MODEL-001 — Run the selected decision model alongside the hub
+
+- **Priority:** P1
+- **Owner:** model deployment and operator documentation
+- **Direction:** Set up a Nemotron/SystemOne service on this host and include a model Docker container in the application.
+- **Conclusion:** Use the already selected pinned Nemotron Deciffusion image and approved checkpoint, GPU acceleration, loopback exposure and bounded model resources. Preserve typed semantic matching and validate live federation with the actual service.
+- **Depends on:** INTEGRATE-001
+- **Implementation:**
+  - [x] Add reproducible model container deployment with checkpoint verification and operator instructions.
+  - [x] Start the model on the available GPU without disturbing existing host workloads.
+- **Evidence:**
+  - [x] Verify checkpoint identity, container GPU access and healthy typed SystemOne responses.
+  - [x] Run federation discovery and existing hub acceptance against the real model service.
+
+### [x] BUILD-001 — Support qualified retained-source cache artifact exports
+
+- **GitHub issue:** [#97](https://github.com/jordanhubbard/literate-ai/issues/97)
+- **Priority:** P2
+- **Owner:** upstream Standard lifecycle accepted-source export
+- **Direction:** Record the framework provider-selection gap discovered while qualifying federation.
+- **Conclusion:** Filed issue #97 with explicit authorization and implemented a local provider-neutral upstream fix: reconstruct exact path-free retained lookup from current verified membership, preserve the retained cache namespace, reject stale/retired/ambiguous bindings and run current acceptance before export. The [local qualification](../../verification/build-retained-export-qualified.json) includes real portable export, independent-acceptance refusal preserving prior receipt/export and no-generation checks. The application's framework pin and receipt-bound rebuild staging remain unchanged. Clean full upstream release qualification and publication remain future publication gates; no upstream merge/release is claimed.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Prepare a sanitized upstream reproduction and issue draft describing the rejected retained-source provider.
+  - [x] With explicit user authorization, filed upstream issue #97; reproduction confirms lookup-only selection rejects the retained-source provider.
+  - [x] Implement and preserve a reviewable local upstream patch with exact retained review recovery and portable acceptance/export tests.
+- **Evidence:**
+  - [x] An upstream lifecycle accepts admitted retained-source cache entries and exports an artifact with current acceptance.
+
+BUILD-001 upstream report (filed as issue #97):
+“Accepted-source export rejects a qualified retained-source provider. Reproduce
+by admitting a source tree through the reviewed retained-source lifecycle,
+publishing its successful cache entry, then requesting an accepted-source build.
+The selection constructor rejects `operator-retained-source` even though the
+entry passed admission. Expected: either accept the verified provider with current
+independent acceptance, or expose an explicit supported export operation without
+rewriting provenance. Add a portable retained-source/cache/export round-trip
+fixture and preserve fail-closed rejection of unadmitted entries.” A local provider-neutral fix is now under test in the parent checkout;
+receipt-bound local staging remains independently checked and the application's
+framework pin has not changed.
+
+Upstream search found the related retained-adoption proposal
+[issue 22](https://github.com/jordanhubbard/literate-ai/issues/22), which covers
+conversion-stage admission rather than this qualified-cache export rejection.
+No existing exact export issue was found; issue #97 preserves the narrower follow-up.
+The parent checkout records RETAINED-EXPORT-001. Its local fix reconstructs a
+path-free retained lookup, scopes discovery to current verified membership and
+allows full accepted retained entries to face current lifecycle acceptance before
+export. All 15 focused retained tests pass, including actual export with the
+original input removed, current independent-acceptance refusal preserving prior
+receipt/artifact, and rejection of retired/stale memberships. A fresh focused run passes all 15 checks. All framework functional outcomes pass
+across the completed checkpointed repair (1,740 passed, 100 explicit skips); lint,
+format, layout, public export and documentation review pass. The full repair is
+explicitly not a clean release-gate attestation. The [portable patch](../../verification/upstream-retained-export.patch)
+and hash-bound local qualification remain reviewable. Issue #97 stays open; clean
+full upstream release qualification/publication and application framework adoption
+remain separate future gates.
+
+MODEL-001 deployment qualification found Docker tmpfs defaults to `noexec`; first
+inference could not load Triton's compiled extension. The Compose scratch mount
+now explicitly permits execution while retaining read-only root/checkpoint,
+capability removal and resource limits. Startup verification includes a real typed
+inference request after readiness, so a healthy engine alone cannot qualify setup.
+
+MODEL-001 current-host deployment evidence is in
+`verification/model-deployment.json` and `verification/model-service.json`:
+verified BF16 checkpoint, pinned image, A40 CDI access, loopback listener,
+read-only root/checkpoint, bounded resources and real typed startup inference.
+Independent relevance probabilities were 0.992879 for image decoding and 0.003824
+for financial reporting on the approved image-decoder profile. These smoke
+results establish serving compatibility, not calibrated workload-wide accuracy.
+The NVIDIA Toolkit base package was installed without a driver change, Docker
+restart or stopping existing host workloads.
+
+### [x] CONFIG-002 — Configure the running hub entirely from the admin console
+
+- **Priority:** P1
+- **Owner:** hub configuration lifecycle and administrator console
+- **Direction:** All hub configuration must be hot without a hub restart, except the configuration location; all configuration including OIDC setup must be available from the admin page.
+- **Conclusion:** Introduce a durable revisioned configuration service, authenticated Settings UI and atomic live reconfiguration of credentials, matcher, federation, listener, project identity and data store. Only the startup configuration location is immutable. Implement AUTH-001 local username/password and OIDC provider setup through the same settings workflow, with explicit authorization, protected sessions and recovery from failed changes.
+- **Depends on:** UI-001
+- **Implementation:**
+  - [x] Reject unusable new/rotated HTTP bearer credentials before activation, including unsafe header characters and values exceeding supported header bounds; preserve unchanged legacy credentials.
+  - [x] Define configuration persistence, conflict control, secret handling, bootstrap, atomic live changes and migration semantics for every existing setting.
+  - [x] Implement Settings forms and authenticated configuration APIs, including the built-in admin account, local username/password provisioning/rotation, provider selection, OIDC setup/verification, group lists assigned to roles and ROLE-001's Admin-only role management; use AUTH-001's first-install password file for initial access.
+  - [x] Include FED-003's information catalog visibility and canonical source ownership configuration in Admin-only Settings; hot ownership changes must update catalog revisions and invalidate affected routing caches.
+  - [x] Update workers, listeners, storage, credentials and deployment mounts to consume current configuration without hub restart.
+- **Evidence:**
+  - [x] Verify every setting takes effect with the same hub process, survives restart and preserves accepted data; reject invalid, stale and failed changes without partial activation.
+  - [x] Exercise administrator Settings and OIDC flows at desktop/mobile sizes, plus SDK, federation, storage-migration, container and live-model regression.
+
+Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
+
+### [x] ROLE-001 — Assign one server-local role to each user
+
+- **Priority:** P1
+- **Owner:** hub user identity, authorization and agent ownership
+- **Direction:** Each server has Admin (full access, including the initial admin user), Developer (can add agents on their own behalf), and Viewer (read-only). Each user has exactly one role. Only Admins assign roles. OIDC group assignments resolve to the highest permitted role. Every user also has a name, email and a link back to their OIDC provider.
+- **Conclusion:** Define one effective role per user per server with precedence Admin > Developer > Viewer. Bootstrap AUTH-001 admin with Admin. Developer inherits read-only inspection and can create agents bound to the authenticated user as owner; Viewer cannot mutate server state. Enforce permissions in server APIs as well as the UI. Role administration and OIDC group-to-role mappings are Admin-only. Include group mapping in AUTH-001's OIDC scope: each role accepts one or more provider groups, managed in the admin page with hot updates. Resolve all matched groups to one highest role rather than accumulating roles or letting users choose a role. FED-002 permits same-email users on federated servers to be treated as the same person, but each server retains its own role: no remote role, privilege or group-to-role mapping propagates directly or transitively.
+- **Depends on:** AUTH-001
+- **Implementation:**
+  - [x] Define persistent server-local user records with an immutable internal user ID, `name`, `email`, exactly one effective role, and an OIDC identity link (configured provider reference, issuer and subject) when OIDC-backed; local-only accounts have no OIDC link before setup. Bind agent `owner_user_id` and role assignment to the internal ID, not display name/email. Preserve ownership across profile changes and explicitly authorized local/OIDC linking; reject forged ownership on Developer agent creation.
+  - [x] Include Admin inspection and cancellation of Agent-owned discovery/source query jobs, without granting human sessions A2A agent impersonation. Scope product mutation retries by the current authenticated administrator identity.
+  - [x] Author the complete permission matrix: Admin full access to server resources, data and management; Developer read access and agent creation only on their own behalf; Viewer read-only with no mutation endpoints. Reconcile the requested Admin full access with earlier administrator data-visibility restrictions in the implementation contract.
+  - [x] Provide Admin-only role assignment and role-management controls in the admin page through CONFIG-002, with live enforcement of promotions/demotions and no restart; bootstrap the initial admin account with Admin.
+  - [x] Implement Admin-controlled OIDC group lists on roles as part of AUTH-001, with deterministic maximum-role resolution (Admin > Developer > Viewer), including explicit unmatched-group and manual-versus-group assignment rules without implicit privilege escalation.
+- **Evidence:**
+  - [x] Verify exactly one role per user per server, initial admin privileges, Admin-only role assignment, denied self-promotion and cross-server independence.
+  - [x] Verify Developer can create an agent only with their own authenticated ownership, cannot create for another user or assign roles, and Viewer cannot mutate through direct APIs or the UI.
+  - [x] Verify live role changes affect existing sessions and permissions consistently; exercise desktop/mobile role controls and preserve authentication and agent-workflow regressions.
+  - [x] Test OIDC group mapping alongside AUTH-001: users in multiple mapped groups receive exactly the highest role; cover multiple groups per role, Admin-only mapping edits, group removal, unmatched groups and live configuration changes without stale elevated access.
+
+Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
+
+### [x] FED-002 — Correlate federated user identities by email without sharing roles
+
+- **Priority:** P1
+- **Owner:** hub federation identity and server-local authorization
+- **Direction:** Federated ADHD servers may assume users with the same email are the same user. This must not imply any transitive role assignment.
+- **Conclusion:** Allow matching user email profiles to identify the same person across trusted federated servers, including when the local user IDs or OIDC provider links differ. Preserve distinct server-local account IDs, provider links, agent ownership and exactly one local effective role on each server. An identity correlation does not copy roles, inherit permissions, assign a role or authorize an action on another server. Each receiving server applies only its own role assignments and OIDC group-to-role mappings.
+- **Depends on:** FED-001, AUTH-001, ROLE-001; PROTO-001 contract definition/review before new identity-exchange wire behavior.
+- **Implementation:**
+  - [x] Specify minimal authenticated user-identity exchange between configured federation peers and documented email comparison/correlation behavior, keeping profile provenance and handling email updates without treating email as the immutable local account ID.
+  - [x] Represent cross-server same-email identity correlation separately from local account linking, credential/session handling, agent ownership and per-server authorization; update AUTH-001 and ROLE-001 contracts to make the boundary explicit.
+  - [x] Keep role assignments and OIDC group-to-role mappings server-local and Admin-controlled; reject remote role assertions as authority for local access and prevent role propagation through chains of federated servers.
+- **Evidence:**
+  - [x] Verify users with matching email can correlate across two federated servers even with different internal IDs or OIDC provider identities, while nonmatching emails are not assumed to identify the same user.
+  - [x] Verify the same correlated user can be Admin on one server and Viewer or Developer on another; role changes and OIDC mapping changes on one server do not change roles or permissions on another.
+  - [x] Exercise a three-server federation chain to prove no direct or transitive role propagation, and verify identity matching alone cannot bypass destination-server authorization or grant ownership of another local agent.
+
+Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
+
+### [x] PROTO-001 — Specify and verify every federated-system wire protocol rigorously
+
+- **Priority:** P1
+- **Owner:** hub public interfaces, federation protocol specifications and conformance
+- **Direction:** Ensure all over-the-wire protocols used in the federated system are exactly documented and rigorous. Agents communicate with ADHD servers using A2A; federated ADHD servers are not required to use A2A with each other.
+- **Conclusion:** Maintain normative, versioned wire contracts sufficient for an independent implementation without reading hub source. Inventory agent-to-hub A2A, server-to-server federation, browser/admin APIs, OIDC provider exchanges and model-service requests. Treat agent-facing A2A and the peer federation protocol as separate interfaces: A2A is required for agents, while server-to-server protocol selection is independent and does not require or forbid A2A. Preserve the current documented HTTP federation transport until an explicitly specified alternative is selected. Distinguish implemented protocol behavior from planned extensions. Published standards must have exact versions and explicit application profiles or deviations; custom messages require machine-readable schemas, complete semantics and independent conformance fixtures. Protocol definition and review precede new wire behavior, including FED-002 user identity exchange and FED-003 information catalogs, canonical source claims, routing and cache freshness/invalidation.
+- **Depends on:** FED-001
+- **Implementation:**
+  - [x] Document and enforce the protocol boundary: agent clients use A2A; peer federation may use a separately selected protocol. Test agent-facing A2A interoperability independently from peer protocol conformance, and require a reviewed contract for any new peer transport without imposing A2A on federation.
+  - [x] Inventory each wire interface, transport and exact upstream standard/version; assign stable protocol/schema versions and specify compatibility, version/capability discovery, unsupported-version rejection, deprecation and upgrade behavior, including compatibility with the existing unversioned federation endpoint.
+  - [x] Author normative contracts for methods/paths or channels, headers/content types, authentication and authorization, request/response/event envelopes, field meanings and required/optional/null distinctions, encoding, IDs, numeric bounds, timestamps and clock assumptions, field/size limits and malformed/unknown-field handling. Define complete status/error envelopes and HTTP mappings; include executable positive and negative message vectors and machine-readable schemas, with OpenAPI where applicable.
+  - [x] Specify asynchronous state machines, correlation/provenance, durable acceptance points, ordering and delivery guarantees, retryable versus permanent failures, backoff/rate limits, deduplication scope and lifetime, idempotency conflicts, polling, deadlines, cancellation, late/duplicate/out-of-order responses and restart recovery. Document current HTTP transport and define any future pubsub protocol separately before use.
+  - [x] Document credential roles and trust boundaries, transport protection, peer revocation/hot configuration effects, allowed disclosure and credential redaction. For FED-002 specify identity/profile fields and exact email comparison while explicitly forbidding direct or transitive role/permission inheritance. For OIDC reference its exact discovery, code/PKCE, token-validation, session and group-claim profiles rather than inventing an alternate OIDC protocol.
+  - [x] Require every wire-visible change to update the normative contract, schemas, examples, compatibility notes and conformance tests together. Link current versus planned contracts from operator/developer guides and prevent stale documentation from qualifying an implementation.
+- **Evidence:**
+  - [x] Validate all published examples against their schemas and exercise actual requests/responses against independent conformance vectors; reject unknown fields/versions, malformed encodings/types/bounds, incorrect identities, correlation mismatches and unauthorized disclosure.
+  - [x] Run multi-server interoperability and fault cases covering incompatible versions, lost acknowledgements, retries, duplicate/out-of-order messages, slow/offline peers, cancellation, deadlines, process recovery and identity-versus-role isolation. Include malformed HTTP framing, oversized payloads and authentication/origin failures at each applicable boundary.
+  - [x] Review the published contracts for independent implementability and completeness; verify a separately authored protocol client or responder can interoperate using the published contracts and fixtures, without importing hub implementation internals. Record protocol/schema versions with passing conformance evidence.
+
+Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
+
+### [x] FED-003 — Publish information catalogs and route queries to canonical source owners
+
+- **Priority:** P1
+- **Owner:** hub federation catalogs, source ownership and query routing
+- **Direction:** Each federated server publishes, and provides on request, a list of the information it contains and the source scopes for which it is canonical. Examples are GitHub project foo/baz, selected Slack channels and a Jira project. Questions about a claimed source must go to its canonical server; other servers are not canonical for that source. Peers may cache ownership data for future pub/sub and search.
+- **Conclusion:** Introduce an authenticated, versioned per-server information catalog that distinguishes contained information from canonical ownership. A resolved source scope has one authoritative server within the configured federation; a replica or matching description does not confer authority. Route source-specific questions to that owner and retain owner/source provenance in results. Ownership lookup and caching support future pub/sub and search without selecting a broker or implementing external-source ingestion. Unavailable owners and conflicting or unknown ownership must remain explicit rather than silently substituting a noncanonical server.
+- **Depends on:** FED-001, PROTO-001, CONFIG-002
+- **Implementation:**
+  - [x] Define stable, provider-scoped source/resource identities and catalog descriptors, including provider host/tenant and repository, workspace/channel or project identifiers. Document aliases, renames and scope boundaries so similarly named GitHub repositories, Slack channels or Jira projects cannot collide. Distinguish canonical, replicated/derived and merely referenced information, with availability/coverage metadata where applicable.
+  - [x] Specify and expose authenticated catalog retrieval on request from every participating server, including empty catalogs, bounded/paginated snapshots, server identity, catalog/schema revision and freshness metadata. Publish exact schemas, request/response/error semantics and examples through PROTO-001 before adding wire behavior; disclose catalog metadata under federation visibility rules without exposing credentials or private content.
+  - [x] Provide Admin-managed hot configuration of canonical source scopes and catalog visibility through CONFIG-002. Define conflict detection and explicit ownership resolution/transfer/revocation across trusted peers; a unilateral or newer cached claim must not silently replace an established owner. Specify overlapping scope handling and refuse to invent an authoritative answer while ownership is ambiguous.
+  - [x] Resolve ownership before source-specific query dispatch: send questions about a known source only to its canonical server; exclude nonowners as authoritative respondents even when they hold copies. Define source resolution for aliases and free-text questions, split multi-source questions by canonical owner, and report unknown ownership, conflict, partial coverage or an unreachable owner explicitly while preserving asynchronous job, deadline and provenance semantics.
+  - [x] Allow bounded peer caches of catalog/ownership metadata with original owner/advertiser provenance, revisions, expiry/revalidation and invalidation on transfer, removal, peer revocation or hot configuration changes. Define stale-cache behavior and loop prevention; cached metadata may guide future pub/sub routing and searching but does not make the caching server canonical or grant additional access.
+- **Evidence:**
+  - [x] Exercise at least three servers with a canonical GitHub foo/baz owner, a noncanonical copy holder, distinct Slack channel sets and a Jira project; retrieve each catalog and prove queries reach the correct owner while copy holders cannot supply canonical answers.
+  - [x] Verify provider/tenant/name collisions, aliases/renames, overlapping or conflicting claims, explicit ownership transfer/revocation, stale/expired caches, invalidation and peer removal without duplicate canonical ownership or silent routing to the wrong server.
+  - [x] Verify asynchronous multi-source routing, unknown ownership, owner outages and deadlines retain explicit incomplete/unavailable status and provenance; test empty/large catalogs, access controls, metadata privacy and independent protocol/schema conformance.
+
+Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
+
+### [x] LICENSE-001 — License ADHD under Apache 2.0
+
+- **Priority:** normal
+- **Owner:** Project licensing and documentation
+- **Direction:** Add an Apache 2.0 license to this project.
+- **Conclusion:** Add the unmodified official Apache License 2.0 at the repository root and declare the project license in its README and durable goals; retain separately licensed bundled material and its notices.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Add LICENSE and project license references without changing third-party notices.
+- **Evidence:**
+  - [x] Compared `LICENSE` byte-for-byte with the official Apache text (`https://www.apache.org/licenses/LICENSE-2.0.txt`); SHA-256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`. Verified README/project references and unchanged bundled Prompt Master MIT notice against Git HEAD. `litai project validate` passed.
+
+### [ ] MULTI-001 — Define multiple-project identity, boundaries and compatibility
+
+- **Priority:** P1
+- **Owner:** hub Component architecture and public contracts
+- **Direction:** Allow each ADHD server to host multiple projects while retaining federation between servers.
+- **Conclusion:** Own the multi-project program in [the detailed roadmap](multi-project.md). Separate stable server identity, stable project identity and external source scope; replace one-server-per-project only through versioned contracts. This request authorizes planning; implementation remains pending.
+- **Depends on:** none
+- **Implementation:**
+  - [ ] Inventory single-project assumptions in every Component contract, client, deployment path and acceptance harness.
+  - [ ] Specify project lifecycle, server-wide roles plus explicit project access, agent memberships, cross-project behavior and server/project configuration precedence.
+  - [ ] Specify exact agent/Admin/peer wire changes, version negotiation and the legacy single-project compatibility boundary before dependent implementation.
+- **Evidence:**
+  - [ ] Review a complete operation/state/configuration scope matrix and proposed protocol examples, including denied access and mixed-version peers.
+
+### [ ] MULTI-002 — Partition durable state and migrate single-project installations
+
+- **Priority:** P1
+- **Owner:** hub core, information, configuration and persistence contracts
+- **Direction:** Preserve existing installations and isolate durable state for multiple projects on one server.
+- **Conclusion:** Introduce a durable project registry and project-qualified keys, preserving stable server identity, original provenance and legacy default-project behavior. Choose the physical store layout from crash-safety and hot-lifecycle requirements rather than assuming one DETS file per project.
+- **Depends on:** MULTI-001, KAFKA-001
+- **Implementation:**
+  - [ ] Add registry, immutable IDs, mutable labels/aliases and explicit active/archive lifecycle; reserve deletion for a separately specified policy.
+  - [ ] Partition all data, idempotency, queues, cursors, snapshots, caches and derived state by project; validate references at persistence boundaries.
+  - [ ] Implement versioned legacy config/store migration with preflight, backup, interruption recovery and explicit downgrade restrictions.
+  - [ ] Coordinate backend/outbox/project key ownership and one recoverable migration sequence with KAFKA-001 and KAFKA-008.
+- **Evidence:**
+  - [ ] Upgrade actual earlier accepted stores and preserve publications, private deliveries, acknowledgements, queries, source IDs and selected optimizer recipes.
+  - [ ] Kill/restart migration and project transactions; prove no partial admission, silent empty stores, identity reassignment or cross-project key collisions.
+
+### [ ] MULTI-003 — Enforce project access and agent memberships
+
+- **Priority:** P1
+- **Owner:** hub identity and configuration contracts
+- **Direction:** Assign agents and admit users to specific projects without changing the three server-wide roles.
+- **Conclusion:** Keep exactly one server role per user and existing OIDC highest-role rules. Add project admission independently of roles; Admin has full server access, Developer manages only their own permitted agents, Viewer remains read-only. Agent membership may include several projects; credentials never gain access from a requested project ID.
+- **Depends on:** MULTI-001, MULTI-002
+- **Implementation:**
+  - [ ] Add Admin-managed user project access and agent project memberships with stable ownership and explicit project selection.
+  - [ ] Enforce role, admission, ownership and membership checks on every direct and indirect operation, including live revocation and queued work.
+  - [ ] Preserve local admin bootstrap, OIDC provider links, groups-to-role configuration and non-transitive email correlation; do not import remote access grants.
+- **Evidence:**
+  - [ ] Exercise the role/owner/project matrix through API and browser, including guessed IDs, forged scopes, stale sessions, token rotation and revocation during work.
+
+### [ ] MULTI-004 — Scope agent coordination and evidence workflows to projects
+
+- **Priority:** P1
+- **Owner:** hub core, evidence, history, retrieval, archive, feedback and optimization contracts
+- **Direction:** Make all agent operations, subscriptions and evidence workflows behave correctly with multiple projects.
+- **Conclusion:** Use explicit authorized project context throughout. Default publication, messaging and subscriptions remain project-local; multi-project agents use separate project operations. Cross-project search is an explicit bounded fan-out with per-project provenance, never an implicit merged corpus.
+- **Depends on:** MULTI-002, MULTI-003, KAFKA-001
+- **Implementation:**
+  - [ ] Scope publish/get/search/send/subscribe/poll/ack, source deduplication, corrections and reference traversal; prevent cross-project references from granting visibility.
+  - [ ] Scope history/retrieval/archive jobs, feedback/cohorts/replay, optimizer training/evaluation/selection and all caches, snapshots and cancellation.
+  - [ ] Add explicit authorized local project discovery and cross-project query fan-out with per-project coverage, deadlines, incremental results and revocation handling.
+  - [ ] Apply KAFKA-001's raw/filtered subscription boundaries; integrate the A2A Kafka bridge and independent fact-history projection through KAFKA-003 and KAFKA-005.
+- **Evidence:**
+  - [ ] Run interleaved projects with identical local IDs and content; prove delivery, deduplication, evidence, replay and optimizer isolation.
+  - [ ] Prove explicit fan-out returns only admitted project evidence with accurate partial coverage and no private addressed messages.
+
+### [ ] MULTI-005 — Federate servers hosting multiple projects
+
+- **Priority:** P1
+- **Owner:** hub federation, directory and protocol contracts
+- **Direction:** Discover and query projects across servers even when each server hosts many projects.
+- **Conclusion:** Authenticate peer servers independently from source/destination project authorization. Publish only approved project catalogs; canonical ownership routes to an exact server/project pair while remaining exclusive for each external source scope. Preserve asynchronous durable requests and explicit incomplete coverage.
+- **Depends on:** MULTI-001, MULTI-003, MULTI-004
+- **Implementation:**
+  - [ ] Version directory discovery, per-project catalogs, canonical claims, peer trust grants and identity correlation; cache by stable server/project/revision.
+  - [ ] Bind durable requests, status polling, responses and idempotency to authenticated origin server plus origin and destination projects; reject scope substitution and stale authority.
+  - [ ] Handle same-server canonical routing, conflicts, project archival, peer revocation and negotiated legacy peers without duplicate delivery or silent downgrade.
+- **Evidence:**
+  - [ ] Qualify at least three real servers with multiple projects, local/remote canonical routing, conflicting owners, stale caches, outages, retries and revocation.
+  - [ ] Validate exact new wire traffic independently and test old/new peer compatibility, bounded forwarding, privacy and unchanged server-local roles.
+
+### [ ] MULTI-006 — Manage multiple projects through the hot Admin console
+
+- **Priority:** P1
+- **Owner:** hub management, presentation and configuration contracts
+- **Direction:** Make all project and server configuration available through Admin without restarting the hub.
+- **Conclusion:** Separate server settings from selected-project settings, using explicit forms and revisioned transactions. Keep configuration-file location as the sole restart exception; project creation, archival, membership, source ownership, federation, model policy and OIDC remain hot.
+- **Depends on:** MULTI-002, MULTI-003, MULTI-004, MULTI-005
+- **Implementation:**
+  - [ ] Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.
+  - [ ] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.
+  - [ ] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks.
+- **Evidence:**
+  - [ ] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.
+
+### [ ] MULTI-007 — Bound shared resources and operate project lifecycles
+
+- **Priority:** P1
+- **Owner:** hub workers, model integration, storage and deployment contracts
+- **Direction:** Prevent one project from starving other projects sharing a server and model service.
+- **Conclusion:** Share per-server Kafka and an optional existing short-response model service while enforcing per-project admission/budgets and server-wide limits. Raw pub/sub must progress without a model. Make create/archive/resume operations hot and define their effect on accepted work, retries and evidence retention; coordinate Kafka-specific fairness and lifecycle fencing with KAFKA-002 through KAFKA-006.
+- **Depends on:** MULTI-002, MULTI-004, MULTI-005
+- **Implementation:**
+  - [ ] Specify fair scheduling and accounting across projects and job classes, bounded queues/caches/storage and backpressure.
+  - [ ] Fence workers against project archival, access changes and configuration revisions; preserve durable accepted work with explicit terminal/paused states.
+  - [ ] Add project-aware diagnostics/audit records and documented full-server and project backup/restore semantics, collision handling and container recovery.
+- **Evidence:**
+  - [ ] Saturate one project with slow/failing model and peer work; demonstrate bounded progress for another and truthful costs/coverage.
+  - [ ] Exercise hot lifecycle changes, worker crashes, restart, container replacement and backup/restore without leakage or duplicated committed results.
+
+### [ ] MULTI-008 — Qualify and document the multiple-project upgrade
+
+- **Priority:** P1
+- **Owner:** hub acceptance harnesses, protocol documentation and operator/client guides
+- **Direction:** Finish the program only with independent evidence for isolation, compatibility and operation.
+- **Conclusion:** Bind qualification to the exact accepted artifact and container, with native, SDK, browser, migration, federation, fault and live-model evidence. Existing single-project evidence remains historical and cannot attest the new architecture.
+- **Depends on:** MULTI-001, MULTI-002, MULTI-003, MULTI-004, MULTI-005, MULTI-006, MULTI-007, KAFKA-009
+- **Implementation:**
+  - [ ] Update normative specs/traceability, schemas/OpenAPI/examples, agent onboarding, configuration tooling, deployment and operator recovery guides.
+  - [ ] Run the complete multiple-project matrix plus existing regression suites against native and Docker artifacts and the existing model container.
+  - [ ] Record acceptance identities, upgrade/rollback limitations and unresolved gates; close dependent items and the detailed roadmap only when their evidence passes.
+- **Evidence:**
+  - [ ] Demonstrate two agents coordinating in each of two projects on one server, a multi-project agent and a denied third project, plus a multi-server discovery/canonical-routing scenario.
+  - [ ] Run declared lifecycle verification and independent wire/privacy/migration/browser/fairness checks with reproducible artifact-bound reports.
+
+### [ ] KAFKA-001 — Specify Kafka eventing and optional subscription filters
+
+- **Priority:** P1
+- **Owner:** hub event, subscription and protocol contracts
+- **Direction:** Pivot project pub/sub to per-server Kafka, retain A2A for agents and make plain-text model filtering optional.
+- **Conclusion:** Own [the Kafka pub/sub program](kafka-pubsub.md). Project-wide event subscriptions receive publications from all agents without inference; optional plain-text filters narrow an authorized stream. Separate event transport, durable agent delivery and searchable originals; this is planning, not implementation.
+- **Depends on:** MULTI-001
+- **Implementation:**
+  - [ ] Define event envelopes, project/topic/partition identity, subscription selection/filter modes, activation watermarks, ordering, replay and delivery deduplication.
+  - [ ] Specify exact A2A/Admin/broker schemas, compatibility, durability boundaries and filter revision/error semantics before implementation.
+  - [ ] Select and pin a maintained Kafka client and compatible broker; explicitly revise the current standard-runtime-only constraint and record license/dependency/build implications.
+- **Evidence:**
+  - [ ] Review implementable positive/negative wire examples and a state/ownership matrix for Kafka, backend storage, delivery state and model work.
+
+### [ ] KAFKA-002 — Integrate per-server Kafka with durable event publication
+
+- **Priority:** P1
+- **Owner:** hub event transport, core persistence and dependency contracts
+- **Direction:** Give each logical ADHD server its own Kafka service for isolated project event transport.
+- **Conclusion:** Implement project-isolated topics and bounded producers/consumers with an explicit durable outbox or equivalent verified handoff. Preserve stable event identity across retries and coordinate backend writes with broker publication without claiming end-to-end exactly-once delivery.
+- **Depends on:** KAFKA-001, MULTI-002
+- **Implementation:**
+  - [ ] Provision documented internal topics/partitions and authentication/ACL boundaries; keep private addressed messages and credentials outside public event topics.
+  - [ ] Implement durable publish acceptance, retry/deduplication, consumer checkpoints and health/backpressure under broker outages.
+  - [ ] Fence consumers and topic lifecycle against project archive, restore, credential rotation and configuration revisions.
+- **Evidence:**
+  - [ ] Kill hub/broker around each publish/checkpoint boundary; prove no acknowledged event is lost and retries do not create duplicate logical publications.
+  - [ ] Exercise multi-project isolation, rebalances, broker unavailability, disk/queue limits and recovery with a real Kafka service.
+
+### [ ] KAFKA-003 — Bridge Kafka subscriptions to durable A2A deliveries
+
+- **Priority:** P1
+- **Owner:** hub A2A, subscriptions, delivery and authorization contracts
+- **Direction:** Agents continue to publish, subscribe, poll and acknowledge through A2A while Kafka handles event distribution.
+- **Conclusion:** A project-wide unfiltered subscription includes all authorized project publications across agents, including the subscriber own publications. Independent subscribers each receive their stream; Kafka worker load sharing must not accidentally distribute events among agents instead of broadcasting.
+- **Depends on:** KAFKA-002, MULTI-003, MULTI-004
+- **Implementation:**
+  - [ ] Add explicit project subscriptions with optional deterministic selectors and no required model/description; preserve legacy described subscriptions as filtered mode.
+  - [ ] Persist independent subscription progress and recipient deliveries; separate broker processing offsets from agent acknowledgements and handle out-of-order ack safely.
+  - [ ] Define overlapping-subscription deduplication, unsubscribe/pause/resume, offline consumers, bounded replay and explicit retention-gap handling without weakening existing unacknowledged-delivery durability.
+- **Evidence:**
+  - [ ] Run official A2A SDK flows with multiple subscribers receiving every project event and no direct broker access; prove zero model calls.
+  - [ ] Exercise disconnect/reconnect, concurrent subscribe/publish, filter changes, repeated polls/acks, overlapping subscriptions and consumer rebalances.
+
+### [ ] KAFKA-004 — Apply optional Jev-like filters without blocking raw streams
+
+- **Priority:** P1
+- **Owner:** hub model integration, subscription worker and scheduling contracts
+- **Direction:** Allow a plain-text semantic filter to narrow a subscription, while unfiltered pub/sub needs no model.
+- **Conclusion:** Evaluate only explicitly filtered subscriptions using the existing replaceable short-response decision adapter. Failure remains pending/error rather than a negative match or silent delivery of unfiltered content; raw subscriptions and unrelated projects progress independently.
+- **Depends on:** KAFKA-003
+- **Implementation:**
+  - [ ] Define filter enable/disable/edit revisions, threshold policy, input context and durable retry/backlog state; use deterministic selectors before inference.
+  - [ ] Add isolated queues, fairness, timeouts, per-project/subscription budgets and filter-decision provenance without inventing probabilities for raw deliveries.
+  - [ ] Make the model provider optional at startup; expose unsupported/unavailable filtered subscriptions explicitly and preserve accepted pending decisions across recovery.
+- **Evidence:**
+  - [ ] With no model configured and with a hung/failing model, prove raw subscriptions deliver promptly with zero inference calls and other projects are not starved.
+  - [ ] Validate real short-response filtered matches/nonmatches, malformed decisions, retries, hot filter edits and revocation without silent misses or duplicated deliveries.
+
+### [ ] KAFKA-005 — Preserve backend fact search independently of pubsub
+
+- **Priority:** P1
+- **Owner:** hub information, evidence, history, retrieval and optimization contracts
+- **Direction:** Keep facts and their original evidence searchable regardless of subscription filters or Kafka retention.
+- **Conclusion:** Retain durable original publications and provenance in the backend; only deliveries are filtered. Literal/metadata search works without a model; semantic/history/archive workflows may use an optional model with explicit availability and coverage states.
+- **Depends on:** KAFKA-002, MULTI-004
+- **Implementation:**
+  - [ ] Define backend/index ingestion watermarks and read-after-publish/search visibility; recover projection lag without treating missing indexed facts as negative evidence.
+  - [ ] Preserve original history after broker retention, filter rejection, delivery acknowledgement and subscriber removal; keep private messages excluded.
+  - [ ] Decouple search/model workers and readiness from raw eventing, adapting replay/cohorts/optimizer evidence to project-scoped event identities and optional models.
+- **Evidence:**
+  - [ ] Publish with no model and no subscriptions; prove facts remain searchable after filtering, acknowledgements, restart and broker log expiry.
+  - [ ] Exercise lag/rebuild/restore and model-disabled semantic queries with truthful coverage and unchanged evidence/privacy guarantees.
+
+### [ ] KAFKA-006 — Expose hot Kafka and subscription controls in Admin
+
+- **Priority:** P1
+- **Owner:** hub configuration, identity and management contracts
+- **Direction:** Manage eventing, subscriptions and optional model filtering from Admin without restarting the hub.
+- **Conclusion:** All hub-managed broker connections, secret references, topic policy, subscription selectors/filters, model enablement and project settings use hot revisioned Admin changes. Distinguish broker infrastructure rollouts from hub restarts; preserve existing server roles and project admission.
+- **Depends on:** KAFKA-003, KAFKA-004, KAFKA-005, MULTI-006
+- **Implementation:**
+  - [ ] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation.
+  - [ ] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay.
+  - [ ] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.
+- **Evidence:**
+  - [ ] Inspect desktop/mobile role-scoped flows, stale revisions, CSRF, access revocation and model on/off transitions.
+  - [ ] Rotate broker credentials and change connection/filter settings live under load; prove no hub restart, lost accepted work or cross-project exposure.
+
+### [ ] KAFKA-007 — Package per-server Kafka for containers and Kubernetes
+
+- **Priority:** P1
+- **Owner:** deployment artifacts, dependency Flavors and operator guides
+- **Direction:** Deploy each ADHD server with its own Kafka service using Kubernetes pods or equivalent plain containers.
+- **Conclusion:** Ship both a plain-container Compose application and a Kubernetes application with hub, persistent Kafka and optional model profiles. Each server owns one logical Kafka service, which may contain several brokers; broker replication and hub replica safety must be stated rather than implied by pods.
+- **Depends on:** KAFKA-002
+- **Implementation:**
+  - [ ] Select pinned Kafka/KRaft images and client compatibility; declare dependencies, persistent volumes, private listeners, secrets, resource limits and readiness/startup/shutdown ordering.
+  - [ ] Provide Compose and Kubernetes packaging with model-free baseline and optional existing model/GPU service or configured remote model; choose and document Kubernetes manifest/chart ownership.
+  - [ ] Document single-node versus replicated broker durability, single-writer hub replica limits, backup/restore, rolling broker upgrades and hot hub configuration propagation.
+- **Evidence:**
+  - [ ] Boot clean Compose and disposable Kubernetes deployments with real Kafka and no model; run A2A pub/sub and backend search smoke tests.
+  - [ ] Exercise replacement/restart, PVC or volume reuse, broker failure/upgrade, secret rotation and optional-model enablement; validate manifests and image/dependency/license inventories.
+
+### [ ] KAFKA-008 — Migrate existing subscriptions and queues to Kafka safely
+
+- **Priority:** P1
+- **Owner:** hub configuration/store migration and operator recovery contracts
+- **Direction:** Upgrade current single-project/model-only installations and coordinate the multiple-project migration.
+- **Conclusion:** Preserve old descriptions as explicit semantic filters, existing delivery IDs/acks, original facts and pending decisions. New project-wide subscriptions are unfiltered. Coordinate one recoverable migration/cutover with MULTI-002 instead of independent competing upgrades.
+- **Depends on:** KAFKA-003, KAFKA-004, KAFKA-005, KAFKA-007
+- **Implementation:**
+  - [ ] Specify ordered schema/config upgrades, cutover watermarks and topic initialization for legacy and already multi-project stores.
+  - [ ] Reconcile durable outbox, Kafka offsets, pending model jobs, deliveries and backend projection state without replaying old publications as newly subscribed events.
+  - [ ] Provide preflight, backups, resumable migration markers, abort/recovery and explicit downgrade restrictions for store plus broker state.
+- **Evidence:**
+  - [ ] Migrate actual earlier accepted stores with offline agents, pending filters, duplicate retries and acknowledged deliveries; compare identities and counts.
+  - [ ] Inject crashes at every cutover boundary and restore backups; prove no silent loss, unsolicited history replay, cross-project leakage or double delivery.
+
+### [ ] KAFKA-009 — Qualify Kafka pubsub and update all operating contracts
+
+- **Priority:** P1
+- **Owner:** hub acceptance, protocol conformance and deployment documentation
+- **Direction:** Qualify the combined Kafka and multiple-project architecture before marking the pivot complete.
+- **Conclusion:** Require independent artifact-bound native, real-Kafka, A2A SDK, browser, migration, federation, container and Kubernetes evidence. Existing model-only and single-project evidence remains historical; no new release or deployment is claimed by the roadmap.
+- **Depends on:** KAFKA-001, KAFKA-002, KAFKA-003, KAFKA-004, KAFKA-005, KAFKA-006, KAFKA-007, KAFKA-008, MULTI-007
+- **Implementation:**
+  - [ ] Update normative Component contracts, schemas/OpenAPI/examples, client onboarding, traceability, deployment and troubleshooting guides together.
+  - [ ] Run zero-model raw-subscription/search acceptance and separate live-model filtered/semantic-query acceptance plus multi-project and federated regressions.
+  - [ ] Verify durable handoffs, fanout, fairness, retention/replay gaps and fault recovery at documented limits; record exact artifact/image/broker/client identities.
+- **Evidence:**
+  - [ ] Demonstrate two projects with multiple publishers and independent raw/filtered subscribers, an unauthorized project and a federated peer using its own Kafka.
+  - [ ] Pass declared verification and independent wire/privacy/fault/migration/deployment suites; document remaining limits and publication gates before closure.

@@ -1,0 +1,313 @@
+defmodule Hub.NativeTests do
+  def vectors do
+    [
+    {"generated-content-null", ~S|["validate",{"op":"publish","data":null,"information_type":"audit_event","source":{"kind":"service","id":"build-monitor"}}]|, ~S|{"valid":true,"op":"publish"}|},
+    {"generated-upper-poll", ~S|["validate",{"op":"poll","limit":100}]|, ~S|{"valid":true,"op":"poll"}|},
+    {"generated-filter-only", ~S|["validate",{"op":"search","source_kind":"telemetry","source_id":"sensor-nine","information_type":"observation"}]|, ~S|{"valid":true,"op":"search"}|},
+    {"generated-ack-order", ~S|["validate",{"op":"ack","delivery_ids":["delivery-z9","delivery-a7"]}]|, ~S|{"valid":true,"op":"ack"}|},
+    {"generated-federation-deadline", ~S|["validate",{"op":"federated_query","question":"Which project maintains the telemetry ingestion protocol?","deadline_ms":120000}]|, ~S|{"valid":true,"op":"federated_query"}|},
+    {"generated-admin-job-filter", ~S|["validate-admin",{"op":"jobs","status":"cancelled","limit":7}]|, ~S|{"valid":true,"op":"jobs"}|},
+    {"generated-admin-confirmation", ~S|["validate-admin",{"op":"remove_subscription","subscription_id":"subscription-demo-42","confirm":true,"message_id":"operator-remove-42"}]|, ~S|{"valid":true,"op":"remove_subscription"}|},
+    {"generated-structured-array", ~S|["validate",{"op":"publish","data":[1,{"stage":"verification"},false],"occurred_at":"2024-08-09T10:15:00+02:00"}]|, ~S|{"valid":true,"op":"publish"}|}
+    ]
+  end
+  def assert_equal(a, b), do: Hub.V.check(a == b)
+  def expect_error(fun, code) do
+    result = try do
+      fun.()
+      :no_error
+    rescue
+      e in Hub.Error -> e.code
+      _ in ArgumentError -> "INVALID_PARAMS"
+    end
+    assert_equal(result, code)
+  end
+  def smoke do
+    {_id, args, _expected} = hd(vectors())
+    Hub.CLI.run(JSON.decode!(args))
+  end
+  def run do
+    cases = Enum.map(vectors(), fn {id, args, expected} ->
+      assert_equal(Hub.CLI.run(JSON.decode!(args)), JSON.decode!(expected))
+      %{"case_id" => id, "outcome" => "passed"}
+    end)
+    validation()
+    transitions()
+    persistence()
+    federation()
+    matching_failures()
+    http_boundary()
+    presentation()
+    %{"schema" => "literate-ai/generated-test-results@1", "cases" => cases}
+  end
+  def cfg(path \\ "unused-native-store") do
+    Hub.V.config(%{"project_id" => "native-lab", "store_path" => path, "agents" => %{"writer" => String.duplicate("w", 30), "reader" => String.duplicate("r", 30)}, "admin_token" => String.duplicate("a", 40), "matcher" => %{"url" => "http://127.0.0.1:19819/v1/systemone", "model" => "native-model", "retry_ms" => 100}})
+  end
+  def command(s, c, actor \\ "writer", mid \\ nil) do
+    mid = mid || "native-#{s.seq}-#{c["op"]}"
+    Hub.Domain.agent(s, cfg(), actor, mid, c)
+  end
+  def validation do
+    bad = [
+      %{"op" => "whoami", "agent_id" => "reader"},
+      %{"op" => "publish", "text" => " "},
+      %{"op" => "publish"},
+      %{"op" => "send", "recipient_id" => "reader", "data" => []},
+      %{"op" => "ack", "delivery_ids" => ["a", "a"]},
+      %{"op" => "search", "query" => "\t"},
+      %{"op" => "poll", "limit" => 0},
+      %{"op" => "poll", "limit" => 1.5},
+      %{"op" => "publish", "data" => nil, "source" => %{"kind" => "agent", "id" => "x", "secret" => "x"}},
+      %{"op" => "publish", "data" => nil, "occurred_at" => "2024-01-01T00:00:00"},
+      %{"op" => "federated_query", "question" => "x", "deadline_ms" => 999}
+    ]
+    for c <- bad, do: expect_error(fn -> Hub.CLI.run(["validate", c]) end, "INVALID_PARAMS")
+    for c <- [%{"op" => "overview", "message_id" => "x"}, %{"op" => "retry_jobs", "confirm" => false, "message_id" => "x"}, %{"op" => "jobs", "limit" => 101}] do
+      expect_error(fn -> Hub.V.admin(c) end, "INVALID_PARAMS")
+    end
+    expect_error(fn -> Hub.V.config(Map.put(cfg(), "admin_token", String.duplicate("w", 30))) end, "INVALID_PARAMS")
+    assert_equal(Hub.HTTP.trim_ows(" \tBearer token\t "), "Bearer token")
+    assert_equal(Hub.HTTP.authenticate(%{"authorization" => "Bearer " <> String.duplicate("r", 30)}, cfg()["agents"]), "reader")
+    assert_equal(Hub.HTTP.authenticate(%{"authorization" => "Bearer " <> cfg()["admin_token"]}, cfg()["agents"]), nil)
+  end
+  def transitions do
+    s = Hub.Domain.empty("native-lab")
+    {early, s} = command(s, %{"op" => "publish", "text" => "Before subscription"})
+    {sub, s} = command(s, %{"op" => "subscribe", "description" => "Changes to ingestion"}, "reader")
+    assert_equal(map_size(s.jobs), 0)
+    {_, s} = command(s, %{"op" => "subscribe", "description" => "Schema updates"}, "reader")
+    c = %{"op" => "publish", "data" => [nil, 3, false], "text" => "Schema event", "information_type" => "status", "source" => %{"kind" => "telemetry", "id" => "ingest", "item_id" => "sample-19"}, "occurred_at" => "2024-08-09T10:15:00+02:00"}
+    {p, s} = command(s, c, "writer", "event-19")
+    assert_equal(p["publication"]["occurred_at"], "2024-08-09T08:15:00Z")
+    {retry, same} = command(s, c, "writer", "event-19-new")
+    assert_equal(retry, p)
+    assert_equal(map_size(same.publications), 2)
+    expect_error(fn -> command(same, Map.put(c, "text", "changed"), "writer", "event-19-newer") end, "SOURCE_CONFLICT")
+    expect_error(fn -> command(s, %{"op" => "whoami", "project_id" => "other"}) end, "PROJECT_MISMATCH")
+    expect_error(fn -> command(s, %{"op" => "publish", "text" => "wrong author", "source" => %{"kind" => "agent", "id" => "reader"}}) end, "FORBIDDEN")
+    expect_error(fn -> command(s, Map.put(c, "text", "changed"), "writer", "event-19") end, "IDEMPOTENCY_CONFLICT")
+    jobs = s.jobs |> Map.values() |> Enum.sort_by(& &1.seq)
+    [first, second] = jobs
+    failed = Hub.Domain.complete(s, cfg(), first.id, :failed)
+    assert_equal(failed.jobs[first.id].status, :pending)
+    assert_equal(map_size(failed.deliveries), 0)
+    s = Hub.Domain.complete(s, cfg(), first.id, 950000)
+    {poll, s} = command(s, %{"op" => "poll"}, "reader")
+    [delivery] = poll["deliveries"]
+    assert_equal(delivery["data"], [nil, 3, false])
+    assert_equal(delivery["source"], c["source"])
+    assert_equal(delivery["information_type"], "status")
+    expect_error(fn -> command(s, %{"op" => "ack", "delivery_ids" => [delivery["id"], "unknown"]}, "reader") end, "NOT_FOUND")
+    assert_equal(s.deliveries[delivery["id"]].ack, false)
+    expect_error(fn -> command(s, %{"op" => "ack", "delivery_ids" => [delivery["id"]]}, "writer") end, "FORBIDDEN")
+    {_, s} = command(s, %{"op" => "ack", "delivery_ids" => [delivery["id"]]}, "reader")
+    s = Hub.Domain.complete(s, cfg(), second.id, 960000)
+    {poll, _} = command(s, %{"op" => "poll"}, "reader")
+    assert_equal(poll, %{"deliveries" => []})
+    assert_equal(length(s.deliveries[delivery["id"]].value["matches"]), 2)
+    s2 = Hub.Domain.complete(s, cfg(), second.id, 960000)
+    assert_equal(s2, s)
+    {private, s} = command(s, %{"op" => "send", "recipient_id" => "reader", "text" => "Private diagnostic", "data" => %{}})
+    expect_error(fn -> command(s, %{"op" => "get", "publication_id" => private["delivery"]["id"]}) end, "NOT_FOUND")
+    {search, _} = command(s, %{"op" => "search", "query" => "private"})
+    assert_equal(search, %{"publications" => []})
+    {search, _} = command(s, %{"op" => "search", "source_kind" => "telemetry", "query" => "SCHEMA"})
+    assert_equal(search, %{"publications" => [p["publication"]]})
+    {get, _} = command(s, %{"op" => "get", "publication_id" => early["publication"]["id"]}, "reader")
+    assert_equal(get, %{"publication" => early["publication"]})
+    expect_error(fn -> command(s, %{"op" => "unsubscribe", "subscription_id" => sub["subscription"]["id"]}) end, "FORBIDDEN")
+    {admin, s} = Hub.Domain.admin(s, cfg(), %{"op" => "deliveries"}, %{})
+    for d <- admin["items"], do: assert_equal(Enum.any?(["text", "data", "sender_id", "matches"], &Map.has_key?(d, &1)), false)
+    {_, s} = command(s, %{"op" => "publish", "text" => "Later job"})
+    c = %{"op" => "remove_subscription", "subscription_id" => sub["subscription"]["id"], "confirm" => true, "message_id" => "admin-remove-9"}
+    {removed, s} = Hub.Domain.admin(s, cfg(), c, %{})
+    {again, s} = Hub.Domain.admin(s, cfg(), c, %{})
+    assert_equal(removed, again)
+    assert_equal(Enum.all?(s.jobs, fn {_, j} -> j.subscription_id != c["subscription_id"] or j.status != :pending end), true)
+    expect_error(fn -> Hub.Domain.admin(s, cfg(), Map.put(c, "subscription_id", "other"), %{}) end, "IDEMPOTENCY_CONFLICT")
+  end
+  def persistence do
+    dir = Path.join(System.tmp_dir!(), "hub-native-" <> Base.encode16(:crypto.strong_rand_bytes(8)))
+    File.mkdir_p!(dir)
+    try do
+      path = Path.join(dir, "state.dets")
+      conf = cfg(path)
+      s = Hub.Domain.empty("native-lab")
+      {_, s} = command(s, %{"op" => "subscribe", "description" => "Persist this pending work"}, "reader")
+      event = %{"op" => "publish", "text" => "Durable event", "source" => %{"kind" => "external", "id" => "native-fixture", "item_id" => "source-event"}}
+      {original, s} = command(s, event, "writer", "original-event")
+      legacy2 = Map.drop(s, [:admin_idempotency, :queries, :incoming])
+      write_fixture(path, legacy2)
+      {:ok, store} = Hub.Store.start(conf)
+      rpc = %{"jsonrpc" => "2.0", "id" => 81, "method" => "SendMessage", "params" => %{"message" => %{"messageId" => "native-wire-81", "role" => "ROLE_USER", "contextId" => "native-context", "parts" => [%{"text" => JSON.encode!(%{"op" => "whoami"})}]}}}
+      {200, "application/json", reply, []} = Hub.HTTP.a2a(JSON.encode!(rpc), %{}, store, conf, "writer")
+      assert_equal(reply["result"]["message"]["parts"], [%{"data" => %{"agent_id" => "writer", "project_id" => "native-lab"}}])
+      assert_equal(reply["result"]["message"]["contextId"], "native-context")
+      {200, _, invalid, _} = Hub.HTTP.a2a("{", %{}, store, conf, "writer")
+      assert_equal(invalid["error"]["code"], -32700)
+      {:ok, retry} = Hub.Store.call(store, {:agent, "writer", "new-event-id", event})
+      assert_equal(retry, original)
+      assert_equal(Hub.Store.call(store, {:agent, "writer", "changed-event", Map.put(event, "text", "conflict")}), {:domain, "SOURCE_CONFLICT"})
+      {:ok, before} = Hub.Store.call(store, :snapshot)
+      [j] = Map.values(before.jobs)
+      {:ok, :ok} = Hub.Store.call(store, {:complete, j.id, 999000})
+      {:ok, poll} = Hub.Store.call(store, {:agent, "reader", "poll-restart", %{"op" => "poll"}})
+      [d] = poll["deliveries"]
+      {:ok, ack} = Hub.Store.call(store, {:agent, "reader", "ack-restart", %{"op" => "ack", "delivery_ids" => [d["id"]]}})
+      admin = %{"op" => "retry_jobs", "confirm" => true, "message_id" => "durable-admin"}
+      {:ok, admin_result} = Hub.Store.call(store, {:admin, admin})
+      GenServer.stop(store)
+      {:ok, store} = Hub.Store.start(conf)
+      assert_equal(Hub.Store.call(store, {:admin, admin}), {:ok, admin_result})
+      assert_equal(Hub.Store.call(store, {:agent, "writer", "new-event-after-restart", event}), {:ok, original})
+      assert_equal(Hub.Store.call(store, {:agent, "reader", "ack-restart", %{"op" => "ack", "delivery_ids" => [d["id"]]}}), {:ok, ack})
+      assert_equal(Hub.Store.call(store, {:agent, "reader", "poll-after-restart", %{"op" => "poll"}}), {:ok, %{"deliveries" => []}})
+      {:ok, current} = Hub.Store.call(store, :snapshot)
+      GenServer.stop(store)
+      legacy = current |> Map.drop([:sources, :admin_idempotency, :queries, :incoming]) |> Map.put(:schema, 1)
+      legacy = Map.update!(legacy, :publications, fn rs -> Map.new(rs, fn {id, r} -> {id, %{r | value: Map.drop(r.value, ["information_type", "source", "occurred_at"])}} end) end)
+      legacy = Map.update!(legacy, :deliveries, fn rs -> Map.new(rs, fn {id, r} -> {id, %{r | value: Map.drop(r.value, ["information_type", "source", "occurred_at"])}} end) end)
+      historical = %{"publication" => Map.drop(original["publication"], ["information_type", "source", "occurred_at"]), "matching" => "pending"}
+      legacy = put_in(legacy, [:idempotency, {"writer", "original-event"}, :result], historical)
+      File.rm!(path)
+      write_fixture(path, legacy)
+      {:ok, store} = Hub.Store.start(conf)
+      assert_equal(Hub.Store.call(store, {:agent, "writer", "original-event", event}), {:ok, historical})
+      {:ok, loaded} = Hub.Store.call(store, :snapshot)
+      assert_equal(loaded.schema, 2)
+      assert_equal(loaded.sources, %{})
+      assert_equal(loaded.publications[original["publication"]["id"]].value["source"], %{"kind" => "agent", "id" => "writer"})
+      assert_equal(loaded.deliveries[d["id"]].ack, true)
+      GenServer.stop(store)
+      corrupt = Path.join(dir, "corrupt.dets")
+      File.write!(corrupt, "not a DETS table")
+      assert_equal(match?({:error, _}, Hub.Store.start(cfg(corrupt))), true)
+    after
+      if :dets.info(:hub_state) != :undefined, do: :dets.close(:hub_state)
+      File.rm_rf!(dir)
+    end
+  end
+  def write_fixture(path, s) do
+    {:ok, t} = :dets.open_file(:hub_fixture, file: String.to_charlist(path), type: :set)
+    :ok = :dets.insert(t, {:state, s})
+    :ok = :dets.sync(t)
+    :ok = :dets.close(t)
+  end
+  def federation do
+    cfg = Map.put(cfg(), "federation", %{"description" => "Native ingestion research", "peers" => [], "export_publication_ids" => []})
+    s = Hub.Domain.empty("native-lab")
+    c = %{"op" => "federated_query", "question" => "Who maintains data ingestion?"}
+    {result, s} = Hub.Domain.agent(s, cfg, "writer", "native-query", c)
+    assert_equal(result["query"]["status"], "completed")
+    assert_equal(result["query"]["responses"], [])
+    assert_equal(Hub.Domain.agent(s, cfg, "writer", "native-query", c) |> elem(0), result)
+    id = result["query"]["id"]
+    expect_error(fn -> Hub.Domain.agent(s, cfg, "reader", "foreign-query", %{"op" => "get_federated_query", "query_id" => id}) end, "FORBIDDEN")
+    expect_error(fn -> Hub.Domain.agent(s, Map.delete(cfg, "federation"), "writer", "disabled-query", c) end, "FEDERATION_DISABLED")
+    peer = %{"project_id" => "other-lab", "url" => "http://127.0.0.1:19919", "token" => String.duplicate("t", 28), "inbound_token" => String.duplicate("i", 28)}
+    cfg = put_in(cfg, ["federation", "peers"], [peer])
+    {q, s} = Hub.Domain.agent(s, cfg, "writer", "pending-query", c)
+    qid = q["query"]["id"]
+    assert_equal(q["query"]["status"], "pending")
+    {_, s} = Hub.Domain.agent(s, cfg, "writer", "cancel-query", %{"op" => "cancel_federated_query", "query_id" => qid})
+    assert_equal(s.queries[qid].value["status"], "cancelled")
+    s2 = Hub.Federation.complete_outbound(s, cfg, {qid, "other-lab"}, :permanent)
+    assert_equal(s2.queries[qid].value["status"], "cancelled")
+    submit = %{"op" => "submit", "origin_project_id" => "other-lab", "query_id" => "remote-native-1", "question" => "Does this project ingest data?", "deadline_at" => Hub.Util.stamp(Hub.Util.now() + 10000)}
+    {202, first, s} = Hub.Federation.wire(s, cfg, "other-lab", submit)
+    assert_equal(first["status"], "pending")
+    {202, same, _} = Hub.Federation.wire(s, cfg, "other-lab", submit)
+    assert_equal(same, first)
+    expect_error(fn -> Hub.Federation.wire(s, cfg, "other-lab", Map.put(submit, "question", "changed")) end, "IDEMPOTENCY_CONFLICT")
+    key = {"other-lab", "remote-native-1"}
+    s = Hub.Federation.complete_incoming(s, cfg, key, 100000)
+    {200, answer, _} = Hub.Federation.wire(s, cfg, "other-lab", Map.take(submit, ["origin_project_id", "query_id"]) |> Map.put("op", "status"))
+    assert_equal(answer["response"]["matched"], false)
+    assert_equal(answer["response"]["description"], "")
+    assert_equal(answer["response"]["publications"], [])
+    {q, s} = Hub.Domain.agent(s, cfg, "writer", "expiry-query", c)
+    qid = q["query"]["id"]
+    s = put_in(s, [:queries, qid, :value, "deadline_at"], Hub.Util.stamp(Hub.Util.now() - 1))
+    s = Hub.Federation.expire(s, cfg)
+    assert_equal(s.queries[qid].value["status"], "partial")
+    assert_equal(s.queries[qid].value["responses"], [])
+  end
+  def matching_failures do
+    for response <- [%{"probability" => 1}, %{"model" => "native-model", "answers" => []}, %{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => true}}}, %{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => 1.01}}}] do
+      assert_equal(Hub.Net.probability(response, "native-model"), :failed)
+    end
+    good = %{"model" => "native-model", "answers" => %{"relevance" => %{"type" => "noul", "noul" => 0.9234567}}}
+    assert_equal(Hub.Net.probability(good, "native-model"), 923457)
+    Hub.Net.start()
+    for {status, body, expected} <- [{500, %{"error" => "offline"}, :failed}, {200, %{"probability" => 1}, :failed}, {200, good, 923457}] do
+      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false, ip: {127, 0, 0, 1}, reuseaddr: true])
+      {:ok, {_, port}} = :inet.sockname(socket)
+      parent = self()
+      server = spawn(fn ->
+        {:ok, client} = :gen_tcp.accept(socket, 3000)
+        {"POST", _, _, bytes} = Hub.HTTP.read(client, System.monotonic_time(:millisecond) + 3000)
+        send(parent, {:model_request, JSON.decode!(bytes)})
+        Hub.HTTP.respond(client, status, "application/json", body, [])
+        :gen_tcp.close(client)
+      end)
+      conf = put_in(cfg(), ["matcher", "url"], "http://127.0.0.1:#{port}/systemone")
+      assert_equal(Hub.Net.infer(conf, %{"publication" => %{"text" => "fixture"}}, "The whole subscription"), expected)
+      receive do
+        {:model_request, request} ->
+          assert_equal(request["questions"]["relevance"], %{"type" => "noul", "instructions" => "The whole subscription"})
+          assert_equal(request["state"]["publication"]["text"], "fixture")
+      after
+        3000 -> raise "missing model request"
+      end
+      Process.exit(server, :normal)
+      :gen_tcp.close(socket)
+    end
+  end
+  def presentation do
+    html = Hub.Assets.html()
+    assert_equal(String.contains?(html, "<title>ADHD | Agentic Distributed Harness Depot</title>"), true)
+    assert_equal(String.contains?(html, "<h1>Agentic Distributed Harness Depot</h1>"), true)
+    card = Hub.HTTP.card(cfg())
+    assert_equal(card["name"], "ADHD")
+    assert_equal(card["description"], "Agentic Distributed Harness Depot (ADHD): a private A2A information hub for agent coordination.")
+    {401, _, _, _} = Hub.HTTP.route("POST", "/admin/api", %{}, "not json", nil, cfg())
+    {404, _, _, _} = Hub.HTTP.route("POST", "/admin/api", %{}, "not json", nil, Map.delete(cfg(), "admin_token"))
+    headers = %{"authorization" => "Bearer " <> cfg()["admin_token"], "origin" => "https://wrong.example", "host" => "127.0.0.1:8766"}
+    {403, _, _, _} = Hub.HTTP.route("POST", "/admin/api", headers, "not json", nil, cfg())
+    assert_equal(Hub.HTTP.valid_origin?(%{"origin" => "http://127.0.0.1:8766", "host" => "127.0.0.1:8766"}, cfg()), true)
+  end
+  def http_boundary do
+    conf = Map.put(cfg(), "port", 0)
+    listener = Hub.HTTP.start(nil, conf)
+    {:ok, {_, port}} = :inet.sockname(listener)
+    try do
+      good = "GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n"
+      assert_equal(String.starts_with?(http_request(port, good), "HTTP/1.1 200"), true)
+      for bad <- ["POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Length: 1\r\nContent-Length: 1\r\n\r\nx", "POST /a2a HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n", "POST /a2a HTTP/1.1\r\nHost: localhost\r\nContent-Length: -1\r\n\r\n"] do
+        assert_equal(String.starts_with?(http_request(port, bad), "HTTP/1.1 400"), true)
+      end
+      admin = "POST /admin/api HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer wrong\r\nContent-Length: 1\r\nContent-Type: application/json\r\n\r\n{"
+      assert_equal(String.starts_with?(http_request(port, admin), "HTTP/1.1 401"), true)
+      assert_equal(String.starts_with?(http_request(port, good), "HTTP/1.1 200"), true)
+    after
+      :gen_tcp.close(listener)
+    end
+  end
+  def http_request(port, bytes) do
+    {:ok, socket} = :gen_tcp.connect({127, 0, 0, 1}, port, [:binary, active: false], 3000)
+    :ok = :gen_tcp.send(socket, bytes)
+    try do
+      http_response(socket, "")
+    after
+      :gen_tcp.close(socket)
+    end
+  end
+  def http_response(socket, acc) do
+    Hub.V.check(byte_size(acc) <= 1048576)
+    case :gen_tcp.recv(socket, 0, 6000) do
+      {:ok, bytes} -> http_response(socket, acc <> bytes)
+      {:error, :closed} -> acc
+      _ -> raise "missing HTTP response"
+    end
+  end
+end

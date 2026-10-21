@@ -1,11 +1,23 @@
 # Agentic Distributed Harness Depot (ADHD)
 
+## License
+
+ADHD is licensed under the Apache License, Version 2.0 (`Apache-2.0`), as
+provided in `LICENSE`. Bundled third-party material retains its existing
+licenses and attribution notices.
+
 ## Purpose
 
 ADHD is an A2A-based information hub. It lets agents communicate through a shared
 server even when they cannot connect directly to one another. It also collects
 information from agents and other sources, distributes relevant information to
 subscribers, and lets agents query or search the hub over their A2A connection.
+
+Agent-to-hub communication uses A2A. Communication between federated ADHD
+servers is not required to use A2A; its protocol is selected independently and
+must satisfy the exact documentation and conformance requirements in PROTO-001.
+The current federation transport is the separately specified HTTP submit/status
+protocol. Future transport choices do not change the agent-facing A2A requirement.
 
 Each agent needs a way to reach the hub; peer-to-peer connectivity is unnecessary.
 Elixir is the project's default implementation language. ADHD expands to
@@ -84,7 +96,31 @@ avoid duplicate records and deliveries. Status updates form an immutable history
 Published project information remains searchable after delivery acknowledgement;
 private addressed messages remain outside project search and public-ID retrieval.
 
-### Plain-text subscriptions
+### Kafka pub/sub direction
+
+Use Kafka for project event pub/sub, with one Kafka service per logical ADHD
+server serving its local projects. Agents continue using A2A to publish,
+subscribe, poll and acknowledge; they do not connect directly to brokers.
+An agent can subscribe to all project-published events across all agents without
+any inference, and optionally add a plain-text Jev-like filter to narrow the
+stream. This supersedes mandatory model matching for every subscription.
+
+Original facts and provenance remain searchable in the backend independently
+of delivery filters or Kafka retention. Literal/metadata search works without a
+model; semantic filtering and search/answer workflows may use an optional model.
+Deploy a hub plus its own Kafka service as a Kubernetes application or equivalent
+plain containers, with both Kubernetes and Compose packaging planned and the
+model service optional. Preserve project admission, server-local roles, durable
+acknowledgements, hot Admin configuration and canonical federation routing.
+
+[KAFKA-001 through KAFKA-009](docs/roadmap/active-work.md) and the
+[Kafka pub/sub plan](docs/roadmap/kafka-pubsub.md) scope contracts, Kafka handoff,
+A2A delivery, optional filters, fact search, Admin controls, deployments,
+migration and qualification. Integrate these with MULTI-001 through MULTI-008.
+This request is planning only; the accepted runtime still uses model-matched
+subscriptions and existing local queues.
+
+### Plain-text subscriptions in the current runtime
 
 An agent subscribes by supplying a plain-text description of the information it
 wants to receive. The server uses a relevance model to determine whether newly
@@ -123,7 +159,7 @@ and receive the result through that connection. A subscription is not a prerequi
 for a query or search. The MVP supports retrieval by publication ID, literal
 case-insensitive text/JSON/provenance search, and exact information-type/source
 filters. The next retrieval program is recorded in
-[adaptive retrieval](docs/roadmap/adaptive-retrieval.md), with six dependent
+[adaptive retrieval](docs/roadmap/adaptive-retrieval.md), with contextual records, history scans, contextual retrieval and search/scan fallback implemented and two dependent adaptive
 requests in [active work](docs/roadmap/active-work.md).
 
 ### Contextual evidence and adaptive retrieval direction
@@ -148,9 +184,81 @@ advance. Candidate indexes must pass held-out and regression evaluation before
 promotion, with bounded work, versioned recipes and rollback. Context, chunking,
 ranking or interpretation defects may call for remedies other than a new index.
 
-INFO-002, QUERY-001, SEARCH-001 through SEARCH-003 and INDEX-001 record this future
-work and its acceptance gates. These requirements do not claim the current MVP
-implements semantic historical queries or adaptive indexing.
+INFO-002 now provides immutable contextual records, question/referent snapshots,
+correction links, bounded frozen public traversal and crash-recovery snapshots.
+Native and Docker acceptance, actual legacy-store upgrades and interrupted-write
+recovery are qualified in [the evidence](verification/context-qualified.json).
+QUERY-001 now provides owned, durable, frozen history questions and bounded joint
+evaluation of original contextual evidence with explicit coverage and uncertainty.
+The existing short-response model selects original quotations; subscription matching
+remains fast and independent. Native and Docker evidence is [qualified](verification/history-qualified.json).
+SEARCH-001 now provides owned contextual candidate retrieval and versioned native
+indexes with bounded relevance scoring, immutable provenance and hot Admin controls;
+native and Docker evidence is [qualified](verification/retrieval-qualified.json).
+SEARCH-003 and INDEX-001 retain two separate open gates for
+feedback/replay and generated index promotion.
+
+### Multiple projects per server direction
+
+Each server must support multiple projects while continuing to federate with
+other ADHD servers. This supersedes the earlier one-server-per-project product
+restriction; a single-project deployment remains supported. The current runtime
+is still single-project. The [multiple-project roadmap](docs/roadmap/multi-project.md)
+and MULTI-001 through MULTI-008 in [active work](docs/roadmap/active-work.md)
+record the pending contract, storage/migration, access, agent workflow, federation,
+hot Admin, resource isolation and qualification tasks. This is a planning request;
+implementation and acceptance are not yet complete.
+
+Keep stable server and project identities distinct, preserve existing installations,
+and make project context explicit in data, credentials, jobs and protocols. Preserve
+exactly one Admin/Developer/Viewer role per user per server; the plan proposes
+separate project admission and agent memberships without transitive grants from
+federated identity matches. All project configuration must remain hot and available
+through Admin, with configuration-file location the sole restart exception.
+
+### Federated project discovery direction
+
+Add opt-in communication between servers and their individually identified projects.
+An agent should be able to ask its local hub, “Are there other projects out there
+doing X?” The local hub contacts participating ADHD servers asynchronously and
+collects their answers, with project identity, supporting evidence and provenance.
+The caller can retrieve incremental results while remote work continues.
+
+Request/response pub/sub is a proposed implementation, not a selected transport
+or broker. Define peer discovery, authenticated trust, export permissions,
+correlation, durable retries, deadlines and bounded forwarding before implementation.
+Only information authorized for federation may leave a project; private addressed
+messages and restricted context remain local. Responses must distinguish no matches
+within the responding scope from incomplete coverage or unavailable peers; discovering
+participating projects does not imply knowledge of every ADHD server.
+
+[FED-001](docs/roadmap/active-work.md#fed-001--federate-project-hubs-for-asynchronous-discovery)
+records the implementation and multi-hub acceptance gates. The first federation
+contract uses durable HTTP submit/status queues and direct, explicitly configured
+peers; its approved-evidence relevance evaluation is separate from QUERY-001's
+broader contextual-history scanning and answer synthesis.
+
+Each participating server must provide an information catalog on request,
+including the source scopes for which it is canonical: for example a GitHub
+repository such as `foo/baz`, a set of Slack channels or a Jira project. Scope
+identities must distinguish provider hosts, tenants and resources. Questions
+about a known scope go to its canonical owner; another server holding copies is
+not canonical for that scope. Queries spanning multiple scopes route to their
+respective owners and retain provenance and incomplete-coverage information.
+Peers may cache ownership metadata for later pub/sub and search routing, with
+explicit freshness, revalidation and invalidation behavior. Conflicting ownership
+claims, unknown ownership and unavailable owners must be surfaced explicitly.
+[FED-003](docs/roadmap/active-work.md#fed-003--publish-information-catalogs-and-route-queries-to-canonical-source-owners)
+records catalog discovery, ownership administration, routing and cache acceptance.
+
+Every network interface used by the federated system must have an exact,
+versioned normative wire contract: messages and schemas, transport and security,
+errors, asynchronous state transitions, retry/idempotency semantics and version
+compatibility. Contracts must be sufficient for independent implementations and
+backed by executable conformance tests. Publish and review protocol changes before
+adding new wire behavior; distinguish implemented contracts from planned ones.
+[PROTO-001](docs/roadmap/active-work.md#proto-001--specify-and-verify-every-federated-system-wire-protocol-rigorously)
+records this requirement across federation, A2A, admin, OIDC and model interfaces.
 
 ## Acceptance scenarios
 
@@ -260,3 +368,29 @@ addressed payloads remain hidden. UI-001 is implemented; verification/web-consol
 verification/web-console-live-smoke.json record desktop/mobile interaction and live
 deployment evidence. The private MVP retains its prior agent state after replacement
 and restart, and exposes the console at its existing private HTTP URL.
+
+SEARCH-002 provides owned archive workflows, full-original sufficiency assessment,
+full-scope fallback and sampled audits with exact probabilities and separate stage
+budgets. Native/Docker/model/SDK/protocol/browser acceptance is
+[qualified](verification/archive-qualified.json). Interpretations remain fallible;
+feedback/replay and adaptive promotion retain independent gates.
+
+SEARCH-003 provides owner-scoped retrieval feedback and paired recipe replay with
+independent Admin adjudication, cohort/exposure controls, recurrence summaries,
+actual full-history fallback costs and hot browser controls. Native/container
+[qualification](verification/feedback-qualified.json) preserves source and delivery
+isolation. INDEX-001 independently qualifies adaptive generation and promotion.
+
+INDEX-001 now provides bounded native recipe candidates, independent training and
+fresh evaluation, hot review/automatic policy and atomic selection/rollback with
+retained operator base and explicit recovery. Its [qualification](verification/optimization-qualified.json)
+binds 75 native/container reports, live-model and inspected Admin flows, old-store
+and changed-runtime migration, exact protocol contracts, faults and scheduling.
+The labeled evaluation improves retrieval on the measured cases; interpretations
+remain fallible and earlier-runtime qualification is disclosed accurately.
+
+BUILD-001 records the [qualified local upstream retained-export fix](verification/build-retained-export-qualified.json)
+for issue #97. Fresh portable feature acceptance passes; framework functional
+regression completes as a checkpointed repair. The proposed parent patch awaits
+clean full release qualification and publication. ADHD keeps its existing framework
+distribution pin and receipt-bound artifact staging.

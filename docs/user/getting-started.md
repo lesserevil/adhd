@@ -15,21 +15,33 @@ For an agent connecting to an existing hub, start with the
 [user guide](using-the-hub.md). The instructions below cover source development
 and running directly on the authoring host.
 
-The first version runs on the selected macOS/Elixir target. It uses OTP disk-backed
+The current version runs on the selected Linux/Elixir target, with a selectable
+macOS Flavor. It uses OTP disk-backed
 storage, two or more configured agent identities, polling with acknowledgements,
 and an external Nemotron SystemOne endpoint. It is a source-built prototype;
 there is no standalone installer, service registration, or automatic startup yet.
 
 Install Elixir 1.18+ with Erlang/OTP 27+, Make, Python 3.11+, and the project-pinned
-Literate AI distribution. The recorded local validation used Elixir 1.20.4 and
-OTP 29. The accepted generated source is published in the project's committed
+Literate AI distribution. Native federation validation used Elixir 1.18.4 / OTP 27; the deployment
+container uses Elixir 1.20.4 / OTP 29. The accepted generated source is published in the project's committed
 source cache so an exact matching build can reuse it without model generation.
+
+Use the exact Elixir-capable framework revision in `requirements-build.txt` in an
+activated Python virtual environment (`python3 -m pip install -r requirements-build.txt`).
+The project pins that Standard lifecycle distribution and receipt policy. Linux is
+the default target; on macOS, select `--flavor=+flavor://literate-ai/os-macos` and
+resolve the corresponding lock before building.
 
 From the repository root, build the accepted hub and refresh its verification receipt:
 
 ```console
 litai build components/hub --update-receipt
 ```
+
+For the current retained-source cache, the pinned framework rejects accepted-source
+export; see BUILD-001 and the [qualified rebuild staging route](../admin/operations.md#build-and-transfer).
+Use `litai rebuild` to generate and qualify fresh source, or requalify the retained
+tree with its reviewed plan and exact `--authorize-retained-source` identity.
 
 When intentionally changing the Component requirements, resolve the lock and use
 `litai rebuild components/hub --allow-host-execution --update-receipt` to generate
@@ -38,37 +50,25 @@ running; the lifecycle rejects an authority change during its snapshot.
 
 ## Private configuration
 
-`literate.hub.example.json` documents the configuration shape. Create a private
-configuration once, with random tokens and an absolute durable store path:
+Create a fresh native installation with the private configuration helper:
 
-```python
-import json, os, secrets
-from pathlib import Path
-
-config_path = Path("literate.hub.local.json")
-Path(".adhd").mkdir(mode=0o700, exist_ok=True)
-if not config_path.exists():
-    config = json.loads(Path("literate.hub.example.json").read_text())
-    config["store_path"] = str(Path(".adhd/hub.dets").resolve())
-    config["agents"] = {
-        name: secrets.token_urlsafe(32) for name in ("agent-a", "agent-b")
-    }
-    fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(fd, "w") as output:
-        json.dump(config, output, indent=2)
-        output.write("\n")
+```bash
+python3 scripts/configure_hub.py --directory .adhd/native \
+  --store-path "$PWD/.adhd/native/data/hub.dets"
 ```
 
-A private configuration has already been created in the working checkout used for
-this implementation. Its credentials are not shown in documentation or reports.
-Both `literate.hub.local.json` and `.adhd/` are ignored by Git. The store is outside
-`_build/`, so ordinary build cleanup does not remove accepted product data. Run
-one hub process per store file.
+This creates two per-agent client files and the local `admin` account. Its random
+initial password is in `.adhd/native/initial-admin-password.txt` (0600). The helper
+never overwrites an existing installation. Alternatively, serving a missing config
+path bootstraps one local admin and no agents; create agents through the console.
+The entire `.adhd/` directory is private and ignored by Git. Run one hub per store.
+Existing legacy configuration files remain supported without silently replacing
+credentials or changing their enabled authentication methods.
 
 ## Connect the decision model
 
 The hub calls the configured SystemOne URL; it does not load model weights itself.
-The selected Nemotron checkpoint is running on the privately selected GPU host.
+Start the included [model container](../admin/model-service.md) on your GPU host.
 See [model integration](../architecture/model-integration.md) for the pinned
 runtime, checkpoint integrity, and model-only smoke results.
 
@@ -92,7 +92,7 @@ Pass the configuration's absolute path because the retained artifact can execute
 from a different working directory:
 
 ```console
-ADHD_SERVE_ARGS=$(python3 -c 'import json; from pathlib import Path; print(json.dumps(["serve",str(Path("literate.hub.local.json").resolve())]))')
+ADHD_SERVE_ARGS=$(python3 -c 'import json; from pathlib import Path; print(json.dumps(["serve",str(Path(".adhd/native/hub.json").resolve())]))')
 litai run components/hub -- "$ADHD_SERVE_ARGS"
 ```
 
@@ -103,6 +103,11 @@ curl --fail http://127.0.0.1:8766/health
 curl --fail http://127.0.0.1:8766/.well-known/agent-card.json
 ```
 
+Open `/admin`, sign in with the initial local password and complete name/email.
+Users, Agents and Settings provide live configuration, including OIDC and roles;
+see [Web console](../admin/web-console.md). Only the configuration-file location
+requires restart.
+
 Readiness is `{"status":"ready"}`. The Agent Card advertises A2A 1.0 JSON-RPC
 at `/a2a`. The hub binds to loopback; use a private tunnel to reach it from another
 machine and set `public_url` to the URL those clients use.
@@ -112,7 +117,7 @@ Install the optional SDK client/test tools into an isolated local environment:
 ```console
 python3 -m venv _build/tools/a2a/hub001
 _build/tools/a2a/hub001/bin/python -m pip install -r tests/requirements.txt
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-a '{"op":"whoami"}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-a.json --agent agent-a '{"op":"whoami"}'
 ```
 
 The first command returns the configured caller and project identifiers. Follow

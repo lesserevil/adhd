@@ -1,8 +1,8 @@
 # Contextual information and adaptive retrieval
 
-- **Status:** active
+- **Status:** completed
 - **Owning queue item:** [INFO-002](active-work.md#info-002-preserve-contextual-evidence-without-a-domain-taxonomy)
-- **Completion / archival evidence:** pending while INFO-002 and the dependent QUERY-001, SEARCH-001, SEARCH-002, SEARCH-003 and INDEX-001 requests remain open
+- **Completion / archival evidence:** All six delivery gates are qualified: [contextual records](../../verification/context-qualified.json), [history queries](../../verification/history-qualified.json), [retrieval](../../verification/retrieval-qualified.json), [archive](../../verification/archive-qualified.json), [feedback/replay](../../verification/feedback-qualified.json) and [adaptive optimization](../../verification/optimization-qualified.json).
 
 ## Intent and current boundary
 
@@ -14,9 +14,14 @@ not imply anticipating every future question.
 
 INFO-001 already supplies immutable publications, arbitrary text/JSON, source
 provenance, event/ingestion times and durable ID retrieval. Current search is literal
-substring matching; subscription relevance applies to future publications. This
-document specifies requested future work, not available commands or implemented
-runtime behavior. The existing Component contract remains the current API authority.
+substring matching; subscription relevance applies to future publications. INFO-002 now adds immutable contextual records and bounded frozen reads through
+`publish_record` and `get_record`, including original statements, corrections, gaps
+and legacy-store recovery. QUERY-001 adds owned frozen semantic history jobs, original citations, durable
+costs and bounded joint assessment; see [history queries](../user/history-queries.md).
+SEARCH-001 adds owned contextual retrieval and replaceable, versioned native indexes;
+see [candidate retrieval](../user/retrieval.md). SEARCH-002 and SEARCH-003 add
+qualified Archive fallback, sampled audits, attempt history and paired replay.
+INDEX-001 adds qualified bounded recipe trials, hot policy and atomic selection/rollback. The Component contracts remain the current API authority.
 
 The program belongs to the hub Component. Its implementation must flow through
 Component specifications and Literate AI generation/acceptance. It does not require
@@ -37,10 +42,10 @@ introducing a database extension or nonstandard library.
 | SEARCH-003 | Attempt history, failure analysis and replay | SEARCH-002 |
 | INDEX-001 | Evidence-driven candidate generation and promotion | SEARCH-003 |
 
-Build the scan path first so that indexes remain optional accelerators. Each request
-has its own unchecked implementation and acceptance gates in the active queue.
-INFO-002 owns this shared design; completing that request alone does not complete
-the program. Next action: specify its context envelope and legacy-store fixtures.
+The scan path was built first so indexes remain optional accelerators. All six
+requests have independently completed implementation and acceptance gates in the
+active queue. INDEX-001 qualification includes bounded native recipe candidates,
+fresh held-out comparisons and durable atomic selection/rollback.
 
 ## Contextual records
 
@@ -199,7 +204,7 @@ ineffective optimization. Retire derived artifacts without deleting source evide
 Allow operator-configured automatic promotion when gates pass or a review-based
 mode; this choice is policy, not a mandatory approval for every future index.
 
-## Shared acceptance and outstanding implementation choices
+## Shared acceptance and selected implementation
 
 All six requests preserve authentication, private-message isolation, publication
 identity, source retry deduplication, subscription behavior and restart durability.
@@ -208,9 +213,27 @@ useful records, exact identifiers, absent evidence, hidden search misses, interr
 scans/builds, concurrent writes, index replacement and rollback. Evaluate model
 quality with labeled fixtures and actual configured services, not only stubs.
 
-Implementation must select the precise context wire shape, query-job API, evaluator
-and retrieval adapters, budgeting defaults, audit sampling and promotion thresholds
-from measured workloads. Record those choices in owning Component contracts; do
-not force users to anticipate domain indexes. Documentation, SDK, container and
-management visibility changes travel with the relevant request. No runtime
-completion, model selection or production quality guarantee is claimed here.
+The owning Component contracts select the exact context wire shape, query-job API,
+native retrieval and typed evaluator adapters, budgeting defaults, audit sampling
+and promotion thresholds. Users can work with generic originals and context links.
+Documentation, SDK, container and management visibility are qualified with each
+request. Evidence covers the displayed labeled fixtures and runtimes; model
+interpretations and human labels remain fallible.
+
+SEARCH-002 adds owned archive planning, full-original support assessment, real
+History scan fallback and exact sampled full-scope audits. Its qualification record
+binds the admitted artifact/image and native/Docker/model/SDK/protocol/browser
+evidence. SEARCH-003 supplies qualified feedback/replay; INDEX-001 independently
+qualifies adaptive recipe promotion.
+
+SEARCH-003 is [qualified](../../verification/feedback-qualified.json): owned attempts,
+independent labels/cohorts and isolated paired replay preserve frozen originals,
+actual fallback costs, interrupted-work fences and unavailable-evidence disclosures.
+The live context and negative-control fixtures are exposed development/regression
+evidence. INDEX-001 is [qualified](../../verification/optimization-qualified.json)
+with independently confirmed training, a frozen winner before subsequently authored
+held/regression groups, atomic caught-up selection/rollback, current-role/policy/
+evidence fences, exact cost accounting and retirement. Its 75 native/container
+reports also cover live Admin promotion, automatic mode, scheduling, store moves,
+real prior producers and changed-runtime recovery. Qualification remains scoped to
+the measured labeled cases; it does not certify future interpretation accuracy.

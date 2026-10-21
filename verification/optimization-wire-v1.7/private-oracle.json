@@ -1,0 +1,1187 @@
+{
+  "schema": "literate-ai/component-acceptance-oracle@1",
+  "component": "hub",
+  "specification_set_identity": "sha256:17c0b39fdfe5e769f82c89ebd4083040a7d5ed591177092cb6b705a965461999",
+  "cases": [
+    {
+      "case_id": "validate-ack-vector",
+      "arguments": [
+        "validate",
+        {
+          "op": "ack",
+          "delivery_ids": [
+            "oracle-first",
+            "oracle-second"
+          ]
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "ack"
+      }
+    },
+    {
+      "case_id": "validate-published-data",
+      "arguments": [
+        "validate",
+        {
+          "op": "publish",
+          "data": {
+            "state": "ready",
+            "sequence": 17
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "publish"
+      }
+    },
+    {
+      "case_id": "validate-independent-subscription",
+      "arguments": [
+        "validate",
+        {
+          "op": "subscribe",
+          "description": "Independent acceptance subscription for schema rollout notices."
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "subscribe"
+      }
+    },
+    {
+      "case_id": "validate-archive-status-envelope",
+      "arguments": [
+        "validate",
+        {
+          "op": "publish",
+          "information_type": "status",
+          "data": [
+            "private-oracle-vector",
+            {
+              "progress": 23
+            }
+          ],
+          "source": {
+            "kind": "agent",
+            "id": "oracle-agent",
+            "item_id": "oracle-status-23"
+          },
+          "occurred_at": "2026-10-18T12:15:00Z"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "publish"
+      }
+    },
+    {
+      "case_id": "validate-archive-retrieval",
+      "arguments": [
+        "validate",
+        {
+          "op": "get",
+          "publication_id": "oracle-publication-29"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get"
+      }
+    },
+    {
+      "case_id": "validate-filter-only-search",
+      "arguments": [
+        "validate",
+        {
+          "op": "search",
+          "source_kind": "teams",
+          "source_id": "oracle-channel",
+          "information_type": "status",
+          "limit": 13
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "search"
+      }
+    },
+    {
+      "case_id": "admin-safe-removal",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "remove_subscription",
+          "subscription_id": "oracle-subscription-73",
+          "confirm": true,
+          "message_id": "oracle-admin-mutation-73"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "remove_subscription"
+      }
+    },
+    {
+      "case_id": "admin-status-filter",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "jobs",
+          "status": "cancelled",
+          "limit": 19
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "jobs"
+      }
+    },
+    {
+      "case_id": "validate-federation-question",
+      "arguments": [
+        "validate",
+        {
+          "op": "federated_query",
+          "question": "Who maintains a streaming XML parser?",
+          "deadline_ms": 21000
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "federated_query"
+      }
+    },
+    {
+      "case_id": "validate-federation-owned-result",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_federated_query",
+          "query_id": "independent-query-83"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_federated_query"
+      }
+    },
+    {
+      "case_id": "validate-settings-read",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_get"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_get"
+      }
+    },
+    {
+      "case_id": "validate-user-list",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "users"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "users"
+      }
+    },
+    {
+      "case_id": "validate-agent-provision",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "create_agent",
+          "agent_id": "oracle-provisioned-agent",
+          "token": "independent-vector-agent-token-2026",
+          "expected_revision": 7,
+          "message_id": "oracle-agent-provision-7",
+          "confirm": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "create_agent"
+      }
+    },
+    {
+      "case_id": "validate-context-publication",
+      "arguments": [
+        "validate",
+        {
+          "op": "publish_record",
+          "text": "Yes",
+          "context": {
+            "question": "Was this observed?",
+            "subject": "oracle-subject"
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "publish_record"
+      }
+    },
+    {
+      "case_id": "validate-frozen-context",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_record",
+          "publication_id": "oracle-observation",
+          "watermark": 7,
+          "limit": 2
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_record"
+      }
+    },
+    {
+      "case_id": "validate-context-administration",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "record",
+          "publication_id": "oracle-observation",
+          "max_depth": 0
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "record"
+      }
+    },
+    {
+      "case_id": "independent-history-submit",
+      "arguments": [
+        "validate",
+        {
+          "op": "query_history",
+          "question": "Which release was explicitly approved in the archive?",
+          "scope": {
+            "occurred_from": "2026-02-12T05:00:00Z"
+          },
+          "budget": {
+            "records": 17,
+            "calls": 9
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_history"
+      }
+    },
+    {
+      "case_id": "independent-history-page",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_history_query",
+          "query_id": "oracle-history-55",
+          "offset": 3,
+          "limit": 5
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_history_query"
+      }
+    },
+    {
+      "case_id": "independent-history-continue",
+      "arguments": [
+        "validate",
+        {
+          "op": "continue_history_query",
+          "query_id": "oracle-history-56",
+          "restart": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_history_query"
+      }
+    },
+    {
+      "case_id": "independent-history-cancel",
+      "arguments": [
+        "validate",
+        {
+          "op": "cancel_history_query",
+          "query_id": "oracle-history-57"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "cancel_history_query"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-source",
+      "arguments": [
+        "validate",
+        {
+          "op": "retrieve",
+          "question": "What repaired the remote relay?",
+          "scope": {
+            "source_kind": "relay",
+            "source_id": "oracle-r901"
+          },
+          "limit": 3,
+          "budget": {
+            "records": 5,
+            "calls": 6
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "retrieve"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-page",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_retrieval",
+          "query_id": "oracle-candidate-902",
+          "run": 3,
+          "offset": 2,
+          "limit": 5
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_retrieval"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-restart",
+      "arguments": [
+        "validate",
+        {
+          "op": "continue_retrieval",
+          "query_id": "oracle-candidate-903",
+          "restart": true,
+          "budget": {
+            "time_ms": 5000
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_retrieval"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-cancel",
+      "arguments": [
+        "validate",
+        {
+          "op": "cancel_retrieval",
+          "query_id": "oracle-candidate-904"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "cancel_retrieval"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-index",
+      "arguments": [
+        "validate",
+        {
+          "op": "retrieval_index",
+          "project_id": "oracle-project"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "retrieval_index"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-rebuild",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "rebuild_index",
+          "expected_revision": 13,
+          "message_id": "oracle-rebuild-905",
+          "confirm": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "rebuild_index"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-settings",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_validate",
+          "expected_revision": 13,
+          "patch": {
+            "retrieval": {
+              "model_fragments": 7,
+              "recipe": {
+                "context_depth": 2,
+                "semantic_window": 19,
+                "chunk_bytes": 768
+              }
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_validate"
+      }
+    },
+    {
+      "case_id": "oracle-candidate-admin-page",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "query_job",
+          "query_id": "oracle-candidate-906",
+          "run": 4,
+          "offset": 3,
+          "limit": 7
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_job"
+      }
+    },
+    {
+      "case_id": "oracle-archive-owned-search",
+      "arguments": [
+        "validate",
+        {
+          "op": "query_archive",
+          "question": "What repaired the orbital transmitter?",
+          "mode": "search",
+          "scope": {
+            "source_kind": "flight",
+            "source_id": "oracle-tx-9901"
+          },
+          "limit": 5
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_archive"
+      }
+    },
+    {
+      "case_id": "oracle-archive-complete-hybrid",
+      "arguments": [
+        "validate",
+        {
+          "op": "query_archive",
+          "question": "Which telemetry was recorded?",
+          "complete": true,
+          "budget": {
+            "scan": {
+              "records": 17,
+              "calls": 19
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_archive"
+      }
+    },
+    {
+      "case_id": "oracle-archive-page",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_archive_query",
+          "query_id": "oracle-archive-9902",
+          "run": 4,
+          "offset": 2,
+          "limit": 6
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_archive_query"
+      }
+    },
+    {
+      "case_id": "oracle-archive-continue",
+      "arguments": [
+        "validate",
+        {
+          "op": "continue_archive_query",
+          "query_id": "oracle-archive-9903",
+          "budget": {
+            "assessment": {
+              "bytes": 131072
+            },
+            "audit": {
+              "time_ms": 7000
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_archive_query"
+      }
+    },
+    {
+      "case_id": "oracle-archive-restart",
+      "arguments": [
+        "validate",
+        {
+          "op": "continue_archive_query",
+          "query_id": "oracle-archive-9904",
+          "restart": true,
+          "mode": "search_then_scan"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_archive_query"
+      }
+    },
+    {
+      "case_id": "oracle-archive-cancel",
+      "arguments": [
+        "validate",
+        {
+          "op": "cancel_archive_query",
+          "query_id": "oracle-archive-9905"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "cancel_archive_query"
+      }
+    },
+    {
+      "case_id": "oracle-archive-settings",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_validate",
+          "expected_revision": 17,
+          "patch": {
+            "archive": {
+              "default_mode": "search",
+              "audit_rate_ppm": 333333,
+              "min_confidence_ppm": 600000,
+              "budget": {
+                "planner": {
+                  "calls": 3
+                },
+                "scan": {
+                  "records": 240
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_validate"
+      }
+    },
+    {
+      "case_id": "oracle-archive-admin-page",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "query_job",
+          "query_id": "oracle-archive-9906",
+          "run": 5,
+          "offset": 4,
+          "limit": 9
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_job"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-list",
+      "arguments": [
+        "validate",
+        {
+          "op": "list_retrieval_attempts",
+          "classification": "incomplete_assessment",
+          "offset": 3,
+          "limit": 9
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "list_retrieval_attempts"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-attempt",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_retrieval_attempt",
+          "attempt_id": "oracle-attempt-781"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_retrieval_attempt"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-replay",
+      "arguments": [
+        "validate",
+        {
+          "op": "replay_retrieval",
+          "attempt_id": "oracle-attempt-782",
+          "candidate_recipe": {
+            "chunk_bytes": 768,
+            "context_depth": 4,
+            "semantic_window": 23
+          },
+          "budget": {
+            "records": 433,
+            "calls": 97
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "replay_retrieval"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-current",
+      "arguments": [
+        "validate",
+        {
+          "op": "replay_retrieval",
+          "attempt_id": "oracle-attempt-783",
+          "candidate_recipe": {
+            "tokenizer": "identifiers",
+            "lexical_weight": 4
+          },
+          "baseline": "current",
+          "corpus": "current",
+          "limit": 6
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "replay_retrieval"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-page",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_retrieval_replay",
+          "query_id": "oracle-replay-784",
+          "run": 5,
+          "offset": 7,
+          "limit": 3
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_retrieval_replay"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-continue",
+      "arguments": [
+        "validate",
+        {
+          "op": "continue_retrieval_replay",
+          "query_id": "oracle-replay-785",
+          "budget": {
+            "bytes": 131072
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_retrieval_replay"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-restart",
+      "arguments": [
+        "validate",
+        {
+          "op": "continue_retrieval_replay",
+          "query_id": "oracle-replay-786",
+          "restart": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_retrieval_replay"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-cancel",
+      "arguments": [
+        "validate",
+        {
+          "op": "cancel_retrieval_replay",
+          "query_id": "oracle-replay-787"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "cancel_retrieval_replay"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-status",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "feedback_status"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "feedback_status"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-cohorts",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "feedback_cohorts",
+          "offset": 1,
+          "limit": 13
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "feedback_cohorts"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-clusters",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "feedback_clusters",
+          "offset": 2,
+          "limit": 11
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "feedback_clusters"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-label",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "save_retrieval_label",
+          "expected_revision": 17,
+          "message_id": "oracle-feedback-admin-780",
+          "confirm": true,
+          "attempt_id": "oracle-attempt-788",
+          "expected_label_revision": 3,
+          "label": {
+            "expectation": "conflicting",
+            "support_ids": [
+              "oracle-original-777",
+              "oracle-original-779"
+            ],
+            "cohort": "regression",
+            "tags": [
+              "correction"
+            ],
+            "note": "Independent verifier assertion",
+            "confirmed": true
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "save_retrieval_label"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-admin-replay",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "replay_attempt",
+          "expected_revision": 17,
+          "message_id": "oracle-feedback-admin-780",
+          "confirm": true,
+          "attempt_id": "oracle-attempt-789",
+          "candidate_recipe": {
+            "context_limit": 19,
+            "include_context": true
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "replay_attempt"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-retire",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "retire_replay",
+          "expected_revision": 17,
+          "message_id": "oracle-feedback-admin-780",
+          "confirm": true,
+          "query_id": "oracle-replay-790"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "retire_replay"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-settings",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_validate",
+          "expected_revision": 19,
+          "patch": {
+            "feedback": {
+              "max_attempts": 233,
+              "max_replays": 123,
+              "max_active_replays": 7,
+              "build_batch": 3,
+              "budget": {
+                "records": 811,
+                "calls": 143
+              }
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_validate"
+      }
+    },
+    {
+      "case_id": "oracle-feedback-jobs",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "query_jobs",
+          "kind": "replay",
+          "limit": 19
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_jobs"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-status",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "optimization_status"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "optimization_status"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-page",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "index_proposals",
+          "status": "partial",
+          "offset": 4,
+          "limit": 11
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "index_proposals"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-detail",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "index_proposal",
+          "proposal_id": "oracle-proposal-822",
+          "offset": 6,
+          "limit": 9
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "index_proposal"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-propose",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "propose_index",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "training_attempt_ids": [
+            "oracle-training-823",
+            "oracle-training-824"
+          ],
+          "budget": {
+            "records": 1237,
+            "calls": 311
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "propose_index"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-evaluate",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "evaluate_index",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "proposal_id": "oracle-proposal-825",
+          "held_out_attempt_ids": [
+            "oracle-held-826",
+            "oracle-held-827",
+            "oracle-held-828"
+          ],
+          "regression_attempt_ids": [
+            "oracle-regression-829",
+            "oracle-regression-830"
+          ]
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "evaluate_index"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-continue",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "continue_index_proposal",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "proposal_id": "oracle-proposal-831",
+          "budget": {
+            "time_ms": 240000,
+            "bytes": 3145728
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_index_proposal"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-explicit-retry",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "continue_index_proposal",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "proposal_id": "oracle-proposal-832",
+          "retry_failed": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "continue_index_proposal"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-cancel",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "cancel_index_proposal",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "proposal_id": "oracle-proposal-833"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "cancel_index_proposal"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-promote",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "promote_index",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "proposal_id": "oracle-proposal-834",
+          "expected_selection_revision": 13
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "promote_index"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-rollback",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "rollback_index",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "expected_selection_revision": 14,
+          "budget": {
+            "records": 1777
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "rollback_index"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-reset",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "reset_index_selection",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "expected_selection_revision": 15
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "reset_index_selection"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-retire",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "retire_index_proposal",
+          "expected_revision": 31,
+          "message_id": "oracle-optimizer-message-821",
+          "confirm": true,
+          "proposal_id": "oracle-proposal-835"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "retire_index_proposal"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-settings",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_validate",
+          "expected_revision": 37,
+          "patch": {
+            "optimization": {
+              "enabled": true,
+              "mode": "automatic",
+              "max_variants": 6,
+              "recurrence_groups": 5,
+              "min_held_out_groups": 4,
+              "min_positive_held_out": 2,
+              "budget": {
+                "records": 19009,
+                "calls": 499,
+                "time_ms": 180000
+              }
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_validate"
+      }
+    },
+    {
+      "case_id": "oracle-optimization-jobs",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "query_jobs",
+          "kind": "optimization",
+          "limit": 17
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_jobs"
+      }
+    }
+  ]
+}

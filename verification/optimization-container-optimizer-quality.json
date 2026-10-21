@@ -1,0 +1,232 @@
+{
+  "schema": "adhd-optimization-quality-report@1",
+  "passed": true,
+  "model": "Nemotron-Deciffusion-8B-v2.1",
+  "cases": [
+    {
+      "case": "independent-training-freezes-one-winner-before-any-held-out-source-exists",
+      "passed": true,
+      "winner": "9f1dabd1eaa685d305cfa49f1c5573220625f1eff02f0fcbf7170bc8bb614ead",
+      "training": [
+        "attempt-302254cb2ecf8fe917a4517bee687d39a593665d7e03e9c86b0e5b885405872c",
+        "attempt-cae0734506931b0e9eed08721a074f72dd26b1c9ea09cb30cf3e9fbedb9f3f76"
+      ],
+      "freeze_watermark": 9,
+      "usage": {
+        "bytes": 358211,
+        "calls": 82,
+        "cumulative_bytes": 358211,
+        "cumulative_calls": 82,
+        "cumulative_records": 88,
+        "cumulative_time_ms": 36831,
+        "cumulative_uncertain_calls": 0,
+        "records": 88,
+        "time_ms": 36831,
+        "uncertain_calls": 0
+      }
+    },
+    {
+      "case": "fresh-held-out-positives-nonempty-negative-and-negation-correction-controls-pass",
+      "passed": true,
+      "evaluation": {
+        "answer_failures": 0,
+        "answer_regressions": 0,
+        "baseline_native_bytes": 196384,
+        "candidate_native_bytes": 247485,
+        "cases": 6,
+        "correction_groups": 1,
+        "eligible": true,
+        "false_supports": 0,
+        "groups": 6,
+        "mean_recall_gain_ppm": 833333,
+        "negation_groups": 1,
+        "no_evidence_groups": 1,
+        "passed": true,
+        "positive_groups": 5,
+        "reason": null,
+        "total_bytes_delta": -24189,
+        "total_calls_delta": -4,
+        "total_time_ms_delta": -1684
+      },
+      "actual_usage": {
+        "bytes": 493178,
+        "calls": 114,
+        "cumulative_bytes": 493178,
+        "cumulative_calls": 114,
+        "cumulative_records": 161,
+        "cumulative_time_ms": 49585,
+        "cumulative_uncertain_calls": 0,
+        "records": 161,
+        "time_ms": 49585,
+        "uncertain_calls": 0
+      },
+      "held_out": [
+        "attempt-a8e99e938a1dcf2b224149d615fb822b1a16d26e70668a5b0ec030f0e919ec65",
+        "attempt-795aa0d8f4e9cbc85896de9e9bff3c4e7141042a8bdf6f772f8ba822d5ac97db",
+        "attempt-05bbb5c867b5c665d8ffcc22398d11ba498f9863867df267a3521ac262c002da",
+        "attempt-4ed9dec039350166b4ee9fba79851cb1736c4e73cdad657f01a5aee0947572cd"
+      ],
+      "regression": [
+        "attempt-ae3c8cfd8f24abd52c94128059952f1dc16953215ab8f2a5027e6f9a175c076b",
+        "attempt-b5b3f4a0d404b4391995dc8fb20876d824e801612cda8142fc935383e42e7d3e"
+      ]
+    },
+    {
+      "case": "promotion-atomically-switches-complete-index-and-override-without-changing-operator-base",
+      "passed": true,
+      "selection": {
+        "applied": true,
+        "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+        "base_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "current_runtime": "1.20.4/OTP-29/ERTS-17.1.1",
+        "effective_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 2,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "previous": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": null,
+          "qualification_identity": null,
+          "qualification_runtime": null,
+          "qualification_watermark": 0,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 1,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:46:38.635Z"
+        },
+        "qualification_current": true,
+        "revision": 1,
+        "rollback_available": true,
+        "selected": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": "index-proposal-13",
+          "qualification_identity": "1bf0509b9df77f326bd363a0b9c87bcb86c2ec6d5f72df52e880aed0792a1755",
+          "qualification_runtime": "1.20.4/OTP-29/ERTS-17.1.1",
+          "qualification_watermark": 86,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 2,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:46:38.635Z"
+        }
+      }
+    },
+    {
+      "case": "ordinary-matching-and-publication-catchup-preserve-effective-selection-and-protected-rollback",
+      "passed": true
+    },
+    {
+      "case": "disabled-optimizer-allows-asynchronous-caught-up-atomic-rollback",
+      "passed": true,
+      "selection": {
+        "applied": true,
+        "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+        "base_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "current_runtime": "1.20.4/OTP-29/ERTS-17.1.1",
+        "effective_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "previous": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": "index-proposal-13",
+          "qualification_identity": "1bf0509b9df77f326bd363a0b9c87bcb86c2ec6d5f72df52e880aed0792a1755",
+          "qualification_runtime": "1.20.4/OTP-29/ERTS-17.1.1",
+          "qualification_watermark": 86,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 2,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:46:38.635Z"
+        },
+        "qualification_current": false,
+        "revision": 2,
+        "rollback_available": true,
+        "selected": {
+          "activation_watermark": 104,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": null,
+          "qualification_identity": null,
+          "qualification_runtime": null,
+          "qualification_watermark": 0,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 1,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:46:42.161Z"
+        }
+      }
+    }
+  ],
+  "artifact_sha256": null,
+  "image": "sha256:45c0befd89d04f6063b523496c492fbf2ae27481abd8a6438cdf04e41859ceb1",
+  "automatic": false,
+  "browser": false,
+  "workdir": "_build/roadmap/optimization-quality/run-i7cgtsga"
+}

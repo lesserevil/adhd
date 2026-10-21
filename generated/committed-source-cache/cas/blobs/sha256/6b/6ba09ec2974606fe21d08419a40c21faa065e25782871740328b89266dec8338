@@ -1,0 +1,34 @@
+defmodule Hub.Assemble do
+  def main([action, export, objects, out]) do
+    root = Path.expand("..", __DIR__)
+    modules = ["validation.ex", "domain.ex", "federation.ex", "store.ex", "assets.ex", "http.ex", "cli.ex", "tests/litai_test.exs"]
+    sources = Enum.map(modules ++ ["main.exs", "tools/assemble.exs", "Makefile", "tests/manifest.json", ".literate/sbom.cdx.json"], &Path.join(root, &1))
+    case action do
+      "all" ->
+        paths = Enum.filter(sources, &(Path.extname(&1) in [".ex", ".exs"]))
+        Enum.each(paths, fn path -> Code.string_to_quoted!(File.read!(path), file: path) end)
+        content = Enum.map_join(modules, "\n", &File.read!(Path.join(root, &1))) <> "\nHub.CLI.main(System.argv())\n"
+        Code.string_to_quoted!(content, file: "run.exs")
+        File.mkdir_p!(objects)
+        File.mkdir_p!(out)
+        File.mkdir_p!(Path.dirname(Path.expand(export)))
+        File.write!(export, content)
+        unless File.regular?(export), do: raise("export missing")
+      "clean" ->
+        roots = Enum.uniq(Enum.map([objects, out], &Path.expand/1))
+        for path <- roots do
+          if path == root or path == Path.dirname(root) or Path.dirname(path) == path or String.starts_with?(root, path <> "/"), do: raise("unsafe clean path")
+          if Enum.any?(sources, fn src -> src == path or String.starts_with?(src, path <> "/") end), do: raise("source cleanup forbidden")
+        end
+        if Enum.any?(roots, &(Path.expand(export) == &1 or String.starts_with?(Path.expand(export), &1 <> "/"))) do
+          :ok
+        else
+          if Path.expand(export) in sources, do: raise("source cleanup forbidden")
+          File.rm(export)
+        end
+        Enum.each(roots, &File.rm_rf!/1)
+      _ -> raise "invalid build action"
+    end
+  end
+end
+Hub.Assemble.main(System.argv())

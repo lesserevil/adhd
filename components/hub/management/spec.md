@@ -14,6 +14,15 @@ archive, persistence, CLI and matcher contract.
 
 ## Administrator boundary
 
+configuration/spec.md and identity/spec.md explicitly extend this legacy contract
+with Settings/Users/Agents views, live settings, local/OIDC human sessions, cookies,
+CSRF and server-side per-user roles. The no-cookie rule below applies to the legacy
+bearer-token login only. Their role matrix governs human access; this document
+continues to govern unchanged metadata-only legacy list responses. The explicit
+Admin-only private_delivery operation is the exception permitting requested full
+Admin data access without adding private bodies to existing list responses.
+
+
 Configuration optionally accepts admin_token: a nonblank string 32–65536 UTF-8
 bytes, different from every agent token. Invalid values fail startup without
 printing secrets. Absent admin_token leaves existing configurations valid and

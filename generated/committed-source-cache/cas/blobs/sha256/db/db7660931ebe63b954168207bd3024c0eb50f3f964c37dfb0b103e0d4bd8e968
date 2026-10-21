@@ -1,0 +1,208 @@
+defmodule Hub.Error do
+  defexception [:code]
+  def message(_), do: "domain operation failed"
+end
+
+defmodule Hub.V do
+  def fail, do: raise(ArgumentError, "invalid parameters")
+  def check(true), do: :ok
+  def check(_), do: fail()
+  def object(x), do: check(is_map(x) and not is_struct(x))
+  def keys(x, allowed, required \\ []) do
+    object(x)
+    check(Enum.all?(Map.keys(x), &(&1 in allowed)))
+    check(Enum.all?(required, &Map.has_key?(x, &1)))
+  end
+  def string(x, max, blank \\ false) do
+    check(is_binary(x) and String.valid?(x) and byte_size(x) in 1..max)
+    if not blank, do: check(String.trim(x) != "")
+    x
+  end
+  def id(x) do
+    string(x, 128)
+    check(Regex.match?(~r/\A[A-Za-z0-9_.-]+\z/, x))
+    x
+  end
+  def rid(x), do: string(x, 128, true)
+  def integer(x, lo, hi), do: check(is_integer(x) and x >= lo and x <= hi)
+  def optional(m, k, f), do: if(Map.has_key?(m, k), do: f.(m[k]))
+  def url(x, base \\ false) do
+    string(x, 2048)
+    u = URI.parse(x)
+    check(u.scheme in ["http", "https"] and is_binary(u.host) and u.host != "")
+    if base, do: check(is_nil(u.userinfo) and u.path in [nil, "", "/"] and is_nil(u.query) and is_nil(u.fragment))
+    x
+  end
+  def datetime(x) do
+    string(x, 64)
+    case DateTime.from_iso8601(x) do
+      {:ok, d, _} -> DateTime.to_iso8601(d)
+      _ -> fail()
+    end
+  end
+  def source(x) do
+    keys(x, ["kind", "id", "item_id", "uri"], ["kind", "id"])
+    id(x["kind"])
+    string(x["id"], 256)
+    optional(x, "item_id", &string(&1, 512))
+    optional(x, "uri", &url/1)
+  end
+  def content(c, publication) do
+    check(Map.has_key?(c, "text") or Map.has_key?(c, "data"))
+    optional(c, "text", &string(&1, 65536))
+    if not publication, do: optional(c, "data", &object/1)
+    size = (if Map.has_key?(c, "text"), do: byte_size(JSON.encode!(c["text"])), else: 0) +
+      (if Map.has_key?(c, "data"), do: byte_size(JSON.encode!(c["data"])), else: 0)
+    check(size <= 65536)
+  end
+  def filters(c) do
+    optional(c, "query", &string(&1, 256))
+    optional(c, "information_type", &id/1)
+    optional(c, "source_kind", &id/1)
+    optional(c, "source_id", &string(&1, 256))
+    optional(c, "limit", &integer(&1, 1, 100))
+  end
+  def command(c) do
+    object(c)
+    fields = case c["op"] do
+      "whoami" -> {[], []}
+      "subscribe" -> {["description"], ["description"]}
+      "list_subscriptions" -> {[], []}
+      "unsubscribe" -> {["subscription_id"], ["subscription_id"]}
+      "publish" -> {["text", "data", "information_type", "source", "occurred_at"], []}
+      "send" -> {["recipient_id", "text", "data"], ["recipient_id"]}
+      "poll" -> {["limit"], []}
+      "ack" -> {["delivery_ids"], ["delivery_ids"]}
+      "get" -> {["publication_id"], ["publication_id"]}
+      "search" -> {["query", "information_type", "source_kind", "source_id", "limit"], []}
+      "federated_query" -> {["question", "deadline_ms"], ["question"]}
+      "get_federated_query" -> {["query_id"], ["query_id"]}
+      "cancel_federated_query" -> {["query_id"], ["query_id"]}
+      _ -> fail()
+    end
+    {allowed, required} = fields
+    keys(c, ["op", "project_id" | allowed], ["op" | required])
+    optional(c, "project_id", &id/1)
+    for k <- ["subscription_id", "publication_id", "query_id"], do: optional(c, k, &rid/1)
+    optional(c, "recipient_id", &id/1)
+    optional(c, "description", &string(&1, 4096))
+    optional(c, "question", &string(&1, 4096))
+    optional(c, "deadline_ms", &integer(&1, 1000, 120000))
+    optional(c, "limit", &integer(&1, 1, 100))
+    if c["op"] in ["publish", "send"], do: content(c, c["op"] == "publish")
+    if c["op"] == "publish" do
+      optional(c, "information_type", &id/1)
+      optional(c, "source", &source/1)
+      optional(c, "occurred_at", &datetime/1)
+    end
+    if c["op"] == "search" do
+      filters(c)
+      check(Enum.any?(["query", "information_type", "source_kind", "source_id"], &Map.has_key?(c, &1)))
+    end
+    if c["op"] == "ack" do
+      xs = c["delivery_ids"]
+      check(is_list(xs) and length(xs) in 1..100 and length(Enum.uniq(xs)) == length(xs))
+      Enum.each(xs, &rid/1)
+    end
+    c
+  end
+  def admin(c) do
+    object(c)
+    {allowed, required} = case c["op"] do
+      "overview" -> {[], []}
+      "publications" -> {["query", "information_type", "source_kind", "source_id", "limit"], []}
+      "publication" -> {["publication_id"], ["publication_id"]}
+      op when op in ["subscriptions", "deliveries"] -> {["agent_id", "limit"], []}
+      "jobs" -> {["status", "limit"], []}
+      "create_subscription" -> {["agent_id", "description", "message_id"], ["agent_id", "description", "message_id"]}
+      "remove_subscription" -> {["subscription_id", "confirm", "message_id"], ["subscription_id", "confirm", "message_id"]}
+      "retry_jobs" -> {["confirm", "message_id"], ["confirm", "message_id"]}
+      _ -> fail()
+    end
+    keys(c, ["op" | allowed], ["op" | required])
+    filters(c)
+    optional(c, "agent_id", &id/1)
+    optional(c, "publication_id", &rid/1)
+    optional(c, "subscription_id", &rid/1)
+    optional(c, "description", &string(&1, 4096))
+    optional(c, "message_id", &string(&1, 128))
+    optional(c, "confirm", &check(&1 == true))
+    optional(c, "status", &check(&1 in ["pending", "done", "cancelled"]))
+    c
+  end
+  def config(c) do
+    keys(c, ["project_id", "store_path", "agents", "host", "port", "public_url", "matcher", "threshold_ppm", "admin_token", "federation"], ["project_id", "store_path", "agents", "matcher"])
+    id(c["project_id"])
+    string(c["store_path"], 4096)
+    object(c["agents"])
+    check(map_size(c["agents"]) > 0)
+    Enum.each(c["agents"], fn {a, t} -> id(a); check(is_binary(t) and String.valid?(t) and String.length(t) >= 24) end)
+    tokens = Map.values(c["agents"])
+    check(Enum.uniq(tokens) == tokens)
+    check(Map.get(c, "host", "127.0.0.1") == "127.0.0.1")
+    integer(Map.get(c, "port", 8766), 1, 65535)
+    optional(c, "public_url", &url/1)
+    m = c["matcher"]
+    keys(m, ["url", "model", "timeout_ms", "retry_ms"], ["url", "model"])
+    url(m["url"])
+    string(m["model"], 4096)
+    integer(Map.get(m, "timeout_ms", 3000), 100, 30000)
+    integer(Map.get(m, "retry_ms", 1000), 100, 30000)
+    integer(Map.get(c, "threshold_ppm", 900000), 1, 1000000)
+    optional(c, "admin_token", fn t -> string(t, 65536); check(byte_size(t) >= 32 and t not in tokens) end)
+    optional(c, "federation", fn f ->
+      keys(f, ["description", "export_publication_ids", "peers", "timeout_ms", "retry_ms"], ["description", "peers"])
+      string(f["description"], 4096)
+      xs = Map.get(f, "export_publication_ids", [])
+      check(is_list(xs) and length(xs) <= 32 and Enum.uniq(xs) == xs)
+      Enum.each(xs, &rid/1)
+      ps = f["peers"]
+      check(is_list(ps) and length(ps) <= 16)
+      Enum.each(ps, fn p ->
+        keys(p, ["project_id", "url", "token", "inbound_token"], ["project_id", "url", "token", "inbound_token"])
+        id(p["project_id"])
+        check(p["project_id"] != c["project_id"])
+        url(p["url"], true)
+        for k <- ["token", "inbound_token"] do
+          string(p[k], 65536)
+          check(byte_size(p[k]) >= 24)
+        end
+        check(p["inbound_token"] not in tokens and p["inbound_token"] != c["admin_token"])
+      end)
+      for k <- ["project_id", "inbound_token"], do: check(length(Enum.uniq_by(ps, & &1[k])) == length(ps))
+      integer(Map.get(f, "timeout_ms", 1000), 100, 10000)
+      integer(Map.get(f, "retry_ms", 500), 100, 30000)
+    end)
+    c
+    |> Map.put_new("host", "127.0.0.1")
+    |> Map.put_new("port", 8766)
+    |> Map.put_new("public_url", "http://127.0.0.1:#{Map.get(c, "port", 8766)}")
+    |> Map.put_new("threshold_ppm", 900000)
+    |> Map.update!("matcher", &(&1 |> Map.put_new("timeout_ms", 3000) |> Map.put_new("retry_ms", 1000)))
+  end
+end
+
+defmodule Hub.Util do
+  def now, do: System.system_time(:millisecond)
+  def stamp(ms \\ now()), do: DateTime.from_unix!(ms, :millisecond) |> DateTime.to_iso8601()
+  def millis(s), do: s |> DateTime.from_iso8601() |> elem(1) |> DateTime.to_unix(:millisecond)
+  def error(code), do: raise(Hub.Error, code: code)
+  def constant(a, b) when is_binary(a) and is_binary(b) do
+    if byte_size(a) == byte_size(b), do: :crypto.hash_equals(a, b), else: false
+  end
+  def constant(_, _), do: false
+  def owned(records, id, actor, field) do
+    r = Map.get(records, id) || error("NOT_FOUND")
+    if r.value[field] != actor, do: error("FORBIDDEN")
+    r
+  end
+  def find(records, id), do: Map.get(records, id) || error("NOT_FOUND")
+  def sorted(records, reverse \\ false) do
+    Enum.sort_by(Map.values(records), & &1.seq, if(reverse, do: :desc, else: :asc))
+  end
+  def publication?(p, c) do
+    filters = [{"information_type", p["information_type"]}, {"source_kind", p["source"]["kind"]}, {"source_id", p["source"]["id"]}]
+    Enum.all?(filters, fn {k, v} -> not Map.has_key?(c, k) or c[k] == v end) and
+      (not Map.has_key?(c, "query") or Enum.any?([p["text"], JSON.encode!(p["data"]), p["information_type"], JSON.encode!(p["source"])], &String.contains?(String.downcase(&1), String.downcase(c["query"]))))
+  end
+end

@@ -6,23 +6,23 @@
 
 Run one Agentic Distributed Harness Depot (ADHD) Elixir process per DETS store
 in a Linux Docker container. Store
-data in an operator-owned bind-mounted directory; mount configuration read-only
-from outside the image. Never run two containers against the same store, including
+data and the writable private configuration directory in operator-owned bind mounts
+outside the image. Directory mounts support atomic hot configuration replacement. Never run two containers against the same store, including
 during upgrades, recovery, or backup. The model runs separately and needs a GPU;
 the hub container does not need GPU access or model weights.
 
-The authoring defaults remain Elixir, Make, and macOS. The exported artifact is
+The authoring defaults are Elixir, Make, and Linux. The exported artifact is
 a portable Elixir source script, not a macOS executable or native BEAM closure.
 Container packaging copies that exact script and recompiles it using the pinned
 Linux runtime. No additional compiler Flavor is required for this packaging path.
 Linux runtime compatibility is independently checked by the container acceptance
-suite. A future native Linux build would require its own platform Flavor and
-lifecycle evidence.
+suite. The Linux Flavor now owns the native authoring target and its lifecycle
+evidence.
 
 The image pins official Elixir 1.20.4 / OTP 29 Alpine by digest. The staging tool
 requires passing project verification, checks the exported artifact hash, and produces a minimal build context with a
 Dockerfile, hash manifest, and deterministic archive containing the script,
-health probe, manifest, and both the hub and stored-information contracts.
+health probe, manifest, and all hub behavioral contracts.
 It never sends the repository, configuration, stores, or checkpoint to Docker.
 This is local OCI deployment packaging, not a registry publication or tagged
 Literate AI native-package release.
@@ -34,6 +34,10 @@ address consequently refers to the Docker host. Docker documents this behavior
 in its [host networking guide](https://docs.docker.com/engine/network/drivers/host/).
 Docker Desktop host networking is not validated by this project.
 
+The application includes a [local GPU model service](model-service.md) with a
+pinned Docker Compose deployment and checkpoint verification. Start it before
+performing live matching or federation checks.
+
 ## Build and transfer
 
 On the supported authoring host, with the pinned Literate AI installation and
@@ -44,6 +48,21 @@ litai build components/hub --update-receipt
 litai verify
 python3 scripts/stage_container.py
 ```
+
+The pinned framework currently rejects `operator-retained-source` when exporting
+an admitted cache entry (`unsupported accepted-source coding CLI selection`;
+BUILD-001). For a qualified retained-source rebuild, preserve its JSON result and
+run independent acceptance, then stage with the evidence-bound route:
+
+```bash
+python3 scripts/stage_container.py --rebuild-result _build/federation/qualify.log \
+  --acceptance-report verification/federation-regression.json \
+  --output _build/container
+```
+
+This route requires a passing rebuild bound to the current receipt and checks the
+artifact bytes against independent acceptance. Refresh the rebuild result after
+authority changes. It does not manufacture a framework export or change provenance.
 
 The output directory must be new; choose `--output _build/container-next` for
 another staging run. A stale hash fails staging. A changed specification requires
@@ -71,10 +90,14 @@ curl --fail http://127.0.0.1:8766/health
 For a different port, project, or matcher URL, pass `--port`, `--project-id`, or
 `--matcher-url` to the configuration tool. An existing configuration directory is
 never overwritten. The defaults create two identities, `agent-a` and `agent-b`,
-with distinct random tokens. Files have mode 0600 and their directory is 0700.
+with distinct random tokens, plus local user `admin` with a random password saved
+in `initial-admin-password.txt`. Files have mode 0600 and their directory is 0700.
+Sign in at `/admin`, complete the name/email profile, and use Users, Agents and
+Settings for subsequent configuration.
 
-The runner requires Linux `realpath`, an available configured port, a readable
-config file, and a writable data directory owned by the invoking account. It
+The runner requires Linux `realpath`, Python 3, an available configured port, and
+writable configuration/data directories owned by the invoking account. It can
+bootstrap a missing configuration file in an existing private directory. It
 runs with that account's UID/GID, a read-only root filesystem, dropped capabilities,
 no new privileges, bounded logs, and a writable temporary filesystem. It sets
 limits of 512 MiB memory, two CPUs, and 128 processes. Adjust these limits in the
@@ -95,14 +118,19 @@ The server file is `.adhd/container/hub.json`. Its important fields are:
 | `matcher.url`, `matcher.model` | SystemOne endpoint and model identifier |
 | `matcher.timeout_ms`, `matcher.retry_ms` | Inference timeout and background retry interval |
 | `threshold_ppm` | Match policy, initially 900000; needs workload calibration |
+| `federation` | Optional trusted peers, approved project description and publication export allowlist; see [federation setup](../user/federation.md) |
+| `auth` | Local/OIDC/both mode, explicit legacy-key policy, session lifetime and OIDC provider/group mappings |
+| `users`, `agent_owners` | Stable user profiles, one role per user and agent ownership, managed in Users/Agents |
+| `config_revision` | Server-owned conflict-control revision |
 
 Give each agent only its `.adhd/container/agent-a.json` or `agent-b.json` client
 file. It contains that agent's token and the URL, without the other identities.
 Transfer it privately and keep it out of logs, chat, and version control. For
-credential rotation or configuration changes, stop the container, edit the private
-file, update affected clients, and recreate the container so a file bind mount
-cannot retain an old inode. Keep IDs and project identity stable when reusing a
-store. Removing an identity does not erase its historical publications or inbox.
+credential rotation and all hub setting changes, use the live Admin forms in
+[Web console](web-console.md). Update affected clients when credentials or URLs
+change. The runner mounts the whole private directory so atomic file replacement
+remains visible. No hub restart is needed except to change the configuration-file
+location; software upgrades still require replacing the runtime. Removing an identity does not erase its historical publications or inbox.
 
 Remote agents need a private tunnel or an operator-managed TLS proxy. For a tunnel,
 set `public_url` to the URL used on the client side and forward that client port
@@ -141,10 +169,15 @@ Readiness is `{"status":"ready"}` at `/health`. Docker probes every 30 seconds;
 an unhealthy status does not itself restart the container. The restart policy is
 `unless-stopped`, which handles process exits and daemon restarts but respects an
 explicit stop. Check model health separately and periodically verify a representative
-publish-to-delivery path. There is no admin metrics, queue-depth, or failed-job API
-yet. Avoid putting bearer tokens in diagnostic output.
+publish-to-delivery path. Use Admin Overview for counts and matcher health, and Activity for delivery,
+matching-job and federated-query status. Avoid putting bearer tokens in diagnostic output.
 
 ## Backup and restore
+
+Each store has a matching `.snapshot` recovery file. Keep the checkpoint and
+snapshot together: startup rejects conflicting generations rather than rolling
+back acknowledged data. A valid snapshot recovers an interrupted DETS write; it
+does not authorize silently resetting an unrelated corrupt store.
 
 Take an offline backup; do not copy a live DETS file. Stop every process using the
 store and save both the data directory and the matching private configuration:
@@ -154,15 +187,16 @@ docker stop --time 30 adhd-hub
 umask 077
 ADHD_BACKUP_DIR=".adhd/backups/$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$ADHD_BACKUP_DIR"
-cp -p .adhd/container/hub.json "$ADHD_BACKUP_DIR/hub.json"
-cp -pR .adhd/container/data "$ADHD_BACKUP_DIR/data"
+cp -pR .adhd/container "$ADHD_BACKUP_DIR/config"
 docker inspect adhd-hub --format '{{.Image}}' > "$ADHD_BACKUP_DIR/image-id.txt"
 docker start adhd-hub
 ```
 
 The recorded ID identifies the running image even if its tag has changed. Protect and retain backups
 according to project data requirements. Store client credentials privately as
-needed; the server backup contains all server tokens.
+needed; the server backup contains all server credentials and the initial-password
+file. Include configuration sidecars/replay journals. If Settings moved a store
+outside this directory, back up that configured location too before restarting.
 
 To restore, first verify the backup is complete and readable. Stop and remove
 the container while preserving current data for rollback:
@@ -170,10 +204,8 @@ the container while preserving current data for rollback:
 ```bash
 docker stop --time 30 adhd-hub
 docker rm adhd-hub
-mv .adhd/container/data .adhd/container/data-before-restore
-mv .adhd/container/hub.json .adhd/container/hub-before-restore.json
-cp -pR "$ADHD_BACKUP_DIR/data" .adhd/container/data
-cp -p "$ADHD_BACKUP_DIR/hub.json" .adhd/container/hub.json
+mv .adhd/container .adhd/container-before-restore
+cp -pR "$ADHD_BACKUP_DIR/config" .adhd/container
 sh deploy/run.sh .adhd/container/hub.json .adhd/container/data adhd-hub adhd-hub:local
 curl --fail http://127.0.0.1:8766/health
 ```
@@ -183,8 +215,8 @@ current image. Ensure restored files retain ownership suitable for the runtime
 UID. Verify identity, known publications, pending deliveries, and acknowledgements
 through the SDK. Restoring intentionally returns to the backup point: later
 publications and acknowledgements are absent. To undo the restore, stop/remove
-the container, retain the restored directory, put `data-before-restore` and
-`hub-before-restore.json` back in their original locations, and run the old image.
+the container, move the restored directory aside, put
+`.adhd/container-before-restore` back at `.adhd/container`, and run the old image.
 Do not overwrite an existing rollback directory on repeated recovery attempts.
 
 ## Upgrade and remove
@@ -235,3 +267,11 @@ runtimes with `tests/hub_acceptance.py --legacy-command JSON_ARGV
 runtime and check the current service preserves history, source-event retry
 results, acknowledgements and pending matching jobs. Do not use a live store for
 these tests. The administrator API suite runs with distinct disposable credentials.
+
+
+Archive questions have separate planner, retrieval, original-assessment, fallback
+scan and audit budgets. Settings exposes every field, including audit rate and
+History endpoint inheritance. Inspect actual stage costs, child runs and sampling
+population in Activity; cancellation fences direct work and active children.
+See [archive questions](../user/archive-queries.md). Keep partial/failed audits
+visible; they do not provide negative labels for future tuning.

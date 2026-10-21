@@ -2,6 +2,69 @@
 
 ## Unreleased
 
+- Build tooling: prepare and test a local upstream fix for qualified retained-source
+  export without a coding agent or original input path. Preserve current acceptance,
+  immutable cache retirement and exact reviewed bindings. ADHD keeps its pinned
+  framework and receipt-bound staging while upstream qualification/publication proceeds.
+
+- Hub: add bounded adaptive recipe trials from confirmed recurring misses, a frozen
+  training winner and fresh held/regression qualification. Expose hot review or
+  automatic promotion, complete-index atomic selection, rollback, base reset,
+  budgets and evidence in Admin. Preserve source/delivery state, fair matching
+  and runtime-specific qualification through recovery; publish protocol1.7.
+
+- Hub: add asynchronous owned retrieval attempts, independent Admin labels and
+  cohort/exposure/recurrence controls, and fresh paired recipe replay over frozen
+  originals. Account real History fallbacks and continuation costs, fence policy/
+  owner/child changes, preserve numeric metrics after evidence retirement, and
+  expose hot settings and desktop/mobile controls in protocol1.6. Archive/replay
+  share a bounded analysis lane while matching remains independent.
+
+- Hub: add owned archive questions that assess full originals after candidate
+  search, fall back to frozen full-scope scans and sample successful searches for
+  audits. Expose exact sampling, separate stage budgets/costs, durable recovery
+  and hot Admin controls in protocol1.5, with native/Docker qualification. Clarify
+  contextual replies and explicit negatives in the shared short-response template
+  while preserving confidence and request-byte defaults.
+
+- Hub: add owned contextual candidate retrieval using native BM25 and the existing
+  short-response model, exact original-fragment provenance, durable run budgets
+  and frozen replay. Build/catch up derived indexes asynchronously, retain prior
+  generations and expose hot Settings/rebuild/evidence controls. Publish profile
+  1.4 schemas and independent native/Docker qualification.
+
+- Hub: add owned asynchronous history questions with frozen contextual originals,
+  typed model choices, explicit coverage/uncertainty, durable budgets, continuation
+  and cancellation. Configure the evaluator live in Admin and inspect exact
+  evidence/prior runs in Activity. Publish profile 1.3 schemas and conformance.
+
+- Hub: preserve original statements with question, subject, conversation, correction
+  and evidence links; expose frozen contextual reads and console inspection.
+  Recover acknowledged state after interrupted writes and retain legacy stores.
+
+- Hub: apply all settings live from Admin Settings, including listener/store moves,
+  authentication, OIDC and federation; recover interrupted configuration commits.
+- Hub: add local accounts with a random first-install admin password file, OIDC
+  identity links and group mappings, and server-local Admin/Developer/Viewer roles.
+  Email correlation across trusted peers never transfers permissions or ownership.
+- Hub: publish authenticated information catalogs and route asynchronous source
+  questions only to canonical owners, with explicit conflicts, outages and coverage.
+  Admins can inspect and cancel query jobs from Activity.
+- Protocol: publish profile 1.3 schemas, OpenAPI, examples and normative contracts
+  covering A2A, administration, OIDC, model requests and peer federation; verify
+  independent clients, malformed traffic and restart/cancellation behavior.
+
+- License the project under Apache 2.0 and preserve bundled third-party notices.
+
+- Model deployment: include a pinned GPU Docker Compose service with verified
+  checkpoint startup, real typed inference readiness, loopback exposure, bounded
+  resources and operating instructions.
+
+- Hub: add opt-in federation between single-project servers, with durable
+  asynchronous discovery jobs, approved evidence export, authenticated direct
+  peers, progressive results, deadlines, cancellation and explicit partial coverage.
+  Pin an Elixir-capable build framework and select Linux for the container host.
+
 - Name the project Agentic Distributed Harness Depot (ADHD) consistently in
   documentation, helper help, web presentation and Agent Card description, while
   preserving existing technical identifiers and client contracts.

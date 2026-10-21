@@ -1,6 +1,6 @@
 # Operational probe: health deliberately does not require matcher availability.
 try do
-  config = File.read!("/config/hub.json") |> JSON.decode!()
+  config = File.read!(System.get_env("ADHD_CONFIG_FILE", "/config/hub.json")) |> JSON.decode!()
   :inets.start()
   url = ~c"http://127.0.0.1:#{Map.get(config, "port", 8766)}/health"
   case :httpc.request(:get, {url, []}, [timeout: 3000], []) do

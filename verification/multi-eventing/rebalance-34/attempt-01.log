@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 107, in cli_snapshot
+    try:members.append({'id':cols[header.index('CONSUMER-ID')],'partitions':int(cols[header.index('#PARTITIONS')]),'assignment':' '.join(cols[header.index('ASSIGNMENT'):])})
+                                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: 'ASSIGNMENT' is not in list
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 192, in <module>
+    asyncio.run(main(parser.parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 140, in main
+    a=Observer(http,relay.url,group,'observer-a-'+uuid4().hex[:8],topic);observers.append(a);await a.start(relay.url);await state(1)
+                                                                                                                      ^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 113, in state
+    async def state(n):return await until(lambda:cli_snapshot(n))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 77, in until
+    value=await fn()
+          ^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 108, in cli_snapshot
+    except (ValueError,IndexError):raise AssertionError('Unrecognized actual broker member table')
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Unrecognized actual broker member table

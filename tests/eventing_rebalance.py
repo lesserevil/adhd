@@ -95,6 +95,7 @@ async def main(args):
    if mode=='members':argv+=['--verbose']
    r=await asyncio.to_thread(subprocess.run,argv,capture_output=True,text=True,timeout=12);assert len(r.stdout.encode())<=16384 and len(r.stderr.encode())<=16384
    outputs[mode]={'returncode':r.returncode,'stdout':r.stdout,'stderr':r.stderr}
+  raw={'expected_members':expected_members,'cli':outputs};e.value.setdefault('raw_cli_snapshots',[]).append(raw);persist()
   state=None;members=[]
   for line in outputs['state']['stdout'].splitlines():
    m=re.search(r'\b(Empty|Stable|PreparingRebalance|CompletingRebalance|Assigning|Reconciling|Dead)\s+(\d+)\s*$',line)
@@ -104,7 +105,7 @@ async def main(args):
    cols=line.split()
    if 'CONSUMER-ID' in cols and '#PARTITIONS' in cols:header=cols
    elif header and cols and cols[0]==group:
-    try:members.append({'id':cols[header.index('CONSUMER-ID')],'partitions':int(cols[header.index('#PARTITIONS')]),'assignment':' '.join(cols[header.index('ASSIGNMENT'):])})
+    try:members.append({'id':cols[header.index('CONSUMER-ID')],'partitions':int(cols[header.index('#PARTITIONS')]),'assignment':' '.join(cols[header.index('ASSIGNMENT' if 'ASSIGNMENT' in header else 'CURRENT-ASSIGNMENT'):])})
     except (ValueError,IndexError):raise AssertionError('Unrecognized actual broker member table')
   snap={'expected_members':expected_members,'observed_state':state,'members':members,'cli':outputs};e.value['coordinator_snapshots'].append(snap);persist()
   if any(v['returncode']!=0 for v in outputs.values()):return None

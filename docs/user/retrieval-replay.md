@@ -115,3 +115,29 @@ The precise closed objects and semantic constraints are in
 `components/hub/feedback/replay.md` and the published
 [protocol schemas](../protocol/schema.json). Adaptive recipe promotion remains a
 separate roadmap gate.
+
+## Project isolation qualification
+
+Queries, attempts, labels, cohort exposure, paired replays, optimizer proposals
+and index selections belong to an explicit admitted project. A local workflow ID
+may have the same text in another project; the project and ID together identify
+the resource. An actor with access to both projects must still select the intended
+project on every ambiguous request. Role grants do not replace project admission.
+
+The [independent two-project evidence matrix](../validation/multi-evidence-04.json)
+records ten passing groups against a precisely hashed development candidate and
+real Kafka. It reuses an agent, questions, source/item IDs and message IDs across
+two projects, checks query ownership and frozen watermarks, rejects foreign label
+gold and optimizer training IDs, and exercises independent cohort exposure,
+paired replays, recipe changes and selection resets. It also kills and restarts
+the hub after revoking an owner while its evaluator request is in flight. The
+controlled typed evaluator proves evidence routing and failure isolation; this
+qualification does not measure semantic model quality.
+
+Run the executable matrix with an isolated disposable hub configuration:
+
+```sh
+.venv/bin/python tests/multi_evidence.py --hub /absolute/path/to/hub.exs \
+  --eventing-rest-url http://127.0.0.1:18082 \
+  --keep-work _build/evidence --report _build/evidence.json
+```

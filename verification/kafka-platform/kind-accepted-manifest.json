@@ -1,0 +1,33 @@
+{
+  "schema": "adhd/kafka-accepted-image-platform@1",
+  "passed": true,
+  "platform": "kubernetes",
+  "accepted_image_qualified": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "image_config_digest": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+  "scope": "Actual admitted image raw A2A and durable backend, real hub/proxy/broker pod replacement, paired offline config/all-project-stores/Kafka backup+restore including intentional recovery boundary, hot optional model filtering and scoped semantic query, all-owned namespace/PVC/PV cleanup.",
+  "reports": {
+    "verification/kafka-platform/kind-accepted-gateway.json": "8aa27a3c0db424a8000f4417c248205b425638534e84c65b28760d38b66d61d5",
+    "verification/kafka-platform/kind-accepted-model.json": "24911276ec62ad6255c1d06e49f4a641925ff30819ba3d7c9040851a4d4086f6",
+    "verification/kafka-platform/kind-accepted-image.json": "5bf4cc2992524a03133fcdd11e54083eca45fdf3fcbf750cf49780e62c0488ce",
+    "verification/kafka-platform/kind-accepted-backup-modes.json": "e0b8ac6e1ad243f732e615aa6ca187f3c2ebf00779440733675e9616b22db06c"
+  },
+  "tested_harness": {
+    "logical_path": "tests/kafka_final_platform.py",
+    "sha256": "40447050caeff111106c99944673c584943bf261068ae8696e7bff35477f56cc",
+    "snapshot": "verification/kafka-platform/kind-tested-harness.py.source",
+    "source_commit": "e4e5b03",
+    "reproduce": "Restore the snapshot bytes to tests/kafka_final_platform.py in a clean checkout containing the report-bound dependency files; invoke the harness there with fresh private work/name and the exact admitted context/image.",
+    "later_change": "68f58e3 adds bounded asynchronous group checkpoint observation for Compose. This Kind report is explicitly for earlier e4e5b03 bytes."
+  },
+  "deploy_bootstrap_sha256": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f",
+  "limits": [
+    "One broker and one hub; no replicated availability qualification.",
+    "Baseline private network, no OAuth/SASL qualification in this probe.",
+    "Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate.",
+    "Kind imported broker/proxy equivalence is separately retained in verification/kafka-security/kubernetes-image-equivalence.json.",
+    "Earlier preflight attempts01/02 are excluded. No existing broker/application/model service was changed."
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "suite": "adhd/hot-registry-invariants@1",
+  "started_at": "2026-10-21T21:49:55.702743+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "legacy-default-dry-and-apply-reject-downgrade-removal-and-default-rebinding",
+      "passed": true,
+      "negative_requests": 6
+    },
+    {
+      "name": "legacy-default-file-reload-rejects-downgrade-removal-server-and-default-identity-changes",
+      "passed": true,
+      "proposals": 4
+    },
+    {
+      "name": "legacy-default-cold-restart-preserves-both-project-originals-acks-registry-and-revision",
+      "passed": true
+    },
+    {
+      "name": "no-default-dry-and-apply-reject-downgrade-removal-and-default-rebinding",
+      "passed": true,
+      "negative_requests": 6
+    },
+    {
+      "name": "no-default-file-reload-rejects-downgrade-removal-server-and-default-identity-changes",
+      "passed": true,
+      "proposals": 4
+    },
+    {
+      "name": "no-default-cold-restart-preserves-both-project-originals-acks-registry-and-revision",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability.",
+    "Registry transitions use model-free legacy transport to isolate configuration semantics; this is not Kafka transport qualification.",
+    "Actual public negative cases cover default and no-default registries, Config dry/apply/file reload plus real process kill/reopen."
+  ],
+  "harness_sha256": "672e39899f42126c822e85b981fb6b4cf40faf4fff20f6b959397433d37b4e58",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "finished_at": "2026-10-21T21:51:15.726863+00:00",
+  "raw_report_sha256": "331fd5eccac14319b56a3e6ae75d41bea955604cfafe61e0c8b45ca991ff1216",
+  "raw_report": "_build/roadmap/multi/registry-guard-34.json"
+}

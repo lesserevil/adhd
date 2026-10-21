@@ -40,6 +40,12 @@
   ],
   "subsequent_correction": {
     "artifact_sha256": "338db41ef00df149779ff3b294f521349e7776e9e934212e1e6eea785af45c24",
-    "scope": "Source33 read-only diff reviewed; targeted actual-module :dets.open_file trace unit proof pending; not a public legacy lifecycle claim."
+    "scope": "Source33 targeted actual-module open_file/2 trace unit probe PASS4: actual positive control then zero guard calls on healthy-unused, retained, missing and corrupt snapshots. Not a public legacy lifecycle claim.",
+    "evidence": "verification/multi-eventing/legacy-guard-33.json"
+  },
+  "later_registry_defect": {
+    "reproduction": "verification/multi-eventing/downgrade-33.json",
+    "correction": "verification/multi-eventing/registry-guard-34.json",
+    "summary": "Separate Admin registry-null patch downgraded actual33 config to legacy mode;34 now rejects registry removal/rebinding in dry/apply/file paths, qualified6 groups with default/no-default and cold restarts."
   }
 }

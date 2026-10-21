@@ -823,7 +823,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Update normative specs/traceability, schemas/OpenAPI/examples, agent onboarding, configuration tooling, deployment and operator recovery guides.
   - [ ] Run the complete multiple-project matrix plus existing regression suites against native and Docker artifacts and the existing model container.
   - [ ] Record acceptance identities, upgrade/rollback limitations and unresolved gates; close dependent items and the detailed roadmap only when their evidence passes.
-- **Native progress:** Candidate34 (`7cc2f584…`) passes25 suites/151 core, migration, relocation, auth and fault groups; exact artifact/report bindings are retained in `verification/multi-eventing/native-project-migration-34.json`. This does not close official admission, exact-image qualification or unresolved model/restore gates.
+- **Native progress:** Candidate34 (`7cc2f584…`) passes25 suites/151 core, migration, relocation, auth and fault groups; exact artifact/report bindings are retained in `verification/multi-eventing/native-project-migration-34.json`. This does not close official admission, exact-image qualification or unresolved model/restore gates. Independent wire and actual accepted learned-workflow upgrade checks also pass; see `verification/multi-eventing/wire-workflow-34-manifest.json`.
 - **Evidence:**
   - [ ] Demonstrate two agents coordinating in each of two projects on one server, a multi-project agent and a denied third project, plus a multi-server discovery/canonical-routing scenario.
   - [ ] Run declared lifecycle verification and independent wire/privacy/migration/browser/fairness checks with reproducible artifact-bound reports.

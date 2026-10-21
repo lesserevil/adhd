@@ -266,6 +266,7 @@ async def main(args):
         evidence.value["artifact_sha256"] = hashlib.sha256(args.hub.read_bytes()).hexdigest()
     try:
         await f.start()
+        f.bind_evidence(evidence)
         password = re.search(r"^Password: (.+)$", (f.root / "initial-admin-password.txt").read_text(), re.M)[1]
         certificates = certs(f.root)
         async with async_playwright() as pw:
@@ -279,7 +280,13 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        f.bind_evidence(evidence)
+        evidence.write()
 
 
 if __name__ == "__main__":

@@ -44,6 +44,8 @@ def arguments(description):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--hub", type=Path, help="Generated standalone hub .exs")
     mode.add_argument("--command", help="JSON executable argv, before serve payload")
+    mode.add_argument("--image", help="Owned exact Docker image integration target")
+    parser.add_argument("--image-manifest", type=Path, help="Reviewed staged canonical manifest.json")
     mode.add_argument("--rest-url", help="An isolated already running hub's HTTP origin")
     parser.add_argument("--credentials", type=Path,
                         help="Private JSON {agents:{id:token}, admin:{username,password}, config_file?}")
@@ -94,6 +96,10 @@ class Fixture:
         self.file = self.root / "hub.json"
         self.config_file = self.file
         self.process = None
+        self.image_runtime = None
+        if getattr(args, "image", None):
+            from container_fixture import OwnedImage
+            self.image_runtime = OwnedImage(args.image, args.image_manifest, self.root)
         self.logs = []
         self.clients = []
         self.model = ModelFixture() if args.with_model else None
@@ -127,7 +133,8 @@ class Fixture:
             if not self.file.exists():
                 self.file.write_text(json.dumps(self.config))
                 self.file.chmod(0o600)
-            command = json.loads(self.args.command) if self.args.command else ["elixir", str(self.args.hub.resolve())]
+            command = self.image_runtime.argv(self.file) if self.image_runtime else (
+                json.loads(self.args.command) if self.args.command else ["elixir", str(self.args.hub.resolve())])
             self.logs = [(self.root / name).open("ab") for name in ("stdout.log", "stderr.log")]
             self.process = subprocess.Popen(command + [json.dumps(["serve", str(self.file)])],
                                             stdout=self.logs[0], stderr=self.logs[1], start_new_session=True)
@@ -139,6 +146,8 @@ class Fixture:
                 try:
                     response = await http.get(self.base + "/health", timeout=1)
                     if response.status_code == 200:
+                        if self.image_runtime:
+                            self.image_runtime.observe()
                         return
                 except httpx.HTTPError:
                     pass
@@ -177,18 +186,33 @@ class Fixture:
     def hard_stop(self):
         self.admin_client = None
         if not self.process:
-            raise ValueError("Process fault tests require a locally owned --hub or --command")
-        if self.process.poll() is None:
+            raise ValueError("Process fault tests require a locally owned --hub, --command or --image")
+        if self.image_runtime:
+            self.image_runtime.stop(hard=True)
+            self.process.wait(timeout=15)
+        elif self.process.poll() is None:
             os.killpg(self.process.pid, signal.SIGKILL)
             self.process.wait(timeout=10)
         for log in self.logs:
             log.close()
         self.logs = []
 
+    def bind_evidence(self, evidence, key="runtime"):
+        if self.image_runtime and self.image_runtime.verified:
+            evidence.value[key] = self.image_runtime.identity()
+            evidence.value[key]["fixture_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+            if key == "runtime":
+                evidence.value["image_id"] = evidence.value[key]["image_config_identity"]
+                evidence.value["artifact_sha256"] = evidence.value[key]["artifact_sha256"]
+
     async def close(self):
         for client in self.clients:
             await client.close()
-        if self.process and self.process.poll() is None:
+        if self.image_runtime:
+            self.image_runtime.stop()
+            if self.process:
+                self.process.wait(timeout=15)
+        elif self.process and self.process.poll() is None:
             os.killpg(self.process.pid, signal.SIGTERM)
             try:
                 self.process.wait(timeout=8)
@@ -249,6 +273,7 @@ async def execute(args, suite, checks):
     evidence.value["transport"] = "official-a2a-sdk-1.1.0-jsonrpc"
     try:
         await fixture.start()
+        fixture.bind_evidence(evidence)
         await checks(fixture, evidence)
     except BaseException as exc:
         evidence.finish(exc)
@@ -256,4 +281,10 @@ async def execute(args, suite, checks):
     else:
         evidence.finish()
     finally:
-        await fixture.close()
+        try:
+            await fixture.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        fixture.bind_evidence(evidence)
+        evidence.write()

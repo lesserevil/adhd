@@ -413,10 +413,12 @@ async def main(args):
     f = Fixture(args)
     evidence = Evidence(args.report, "adhd/admin-project-browser@1")
     evidence.value["harness_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-    evidence.value["artifact_sha256"] = hashlib.sha256(args.hub.read_bytes()).hexdigest()
+    if args.hub:
+        evidence.value["artifact_sha256"] = hashlib.sha256(args.hub.read_bytes()).hexdigest()
     provider = None
     try:
         await f.start()
+        f.bind_evidence(evidence)
         provider = Provider(f.root)
         password = re.search(r"^Password: (.+)$", (f.root / "initial-admin-password.txt").read_text(), re.M)[1]
         async with async_playwright() as pw:
@@ -432,7 +434,13 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        f.bind_evidence(evidence)
+        evidence.write()
         if provider:
             provider.close()
 

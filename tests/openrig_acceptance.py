@@ -267,6 +267,7 @@ async def federated(f, evidence, rigs, bindings, invoke):
                 clusters.append(response.json()["data"][0]["cluster_id"])
             assert len(set(clusters)) == 2, "Federated hubs require distinct real Kafka clusters"
         await peer.start()
+        peer.bind_evidence(evidence, "peer_runtime")
         pa = await peer.agent("red-b")
         sa = json.loads(bindings[0].read_text())["server_id"]
         sb = (await pa.call(scoped(RED, "federation_directory")))["server_id"]
@@ -337,6 +338,7 @@ async def federated(f, evidence, rigs, bindings, invoke):
         peer.hard_stop()
         await invoke(1, {"op": "whoami"}, success=False)
         await peer.start()
+        peer.bind_evidence(evidence, "peer_runtime")
         assert (await invoke(1, {"op": "get", "publication_id": fact["id"]}))["publication"] == fact
         assert (await invoke(1, {"op": "publish", "text": "Rig beta canonical build knowledge",
             "source": {"item_id": "beta-canonical-build-v1"}, "data": {"state": "passed"}},

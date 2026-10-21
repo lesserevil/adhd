@@ -496,6 +496,7 @@ async def main(args):
         evidence.value["artifact_sha256"] = hashlib.sha256(args.hub.read_bytes()).hexdigest()
     try:
         await f.start()
+        f.bind_evidence(evidence)
         bridge = await f.agent("bridge")
         await bridge.call(scoped(RED, "publish", text="RED-ONLY-FACT"))
         await bridge.call(scoped(BLUE, "publish", text="BLUE-ONLY-FACT"))
@@ -512,7 +513,13 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        f.bind_evidence(evidence)
+        evidence.write()
         for observer in f.peer_observers:
             observer.close()
 

@@ -60,8 +60,9 @@ def main():
         assert not view['related'] and [x['reason'] for x in view['gaps']]==['unresolved','unresolved','missing_snapshot']
         assert all(link['target_identity'] is None for link in unres['links']) and 'PRIVATE CONTEXT' not in json.dumps(view)
         reject({'op':'get_record','publication_id':private},'NOT_FOUND');reject({'op':'get_record','publication_id':'missing-record'},'NOT_FOUND')
-        # Predictable local IDs cannot make a future record part of an old context.
-        current=rpc({'op':'get_record','publication_id':oid})['snapshot']['watermark'];future='publication-'+str(current+3)
+        # Predictable local IDs cannot bind future context. Observe the returned
+        # project namespace rather than fabricate the old single-project prefix.
+        current=rpc({'op':'get_record','publication_id':oid})['snapshot']['watermark'];future=oid.rsplit('-',1)[0]+'-'+str(current+3)
         waiting=publish('Unresolved when accepted',{'links':[{'relation':'reply','publication_id':future}]})
         publish('Filler');later=publish('This arrived later');assert later['publication']['id']==future
         frozen=rpc({'op':'get_record','publication_id':waiting['publication']['id']});assert frozen['record']['links'][0]['target_identity'] is None and not frozen['related']

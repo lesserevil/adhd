@@ -63,6 +63,18 @@ its SHA-256 digest. Older flat specification filenames remain for compatibility.
 Staging rejects symlink and nonregular specification inputs; generated lock files
 are excluded from this authored-document tree.
 
+Each new broker installation generates its own cluster ID on first boot and
+persists `.adhd-cluster-id` on the Kafka volume before invoking the pinned image's
+normal startup. Existing `meta.properties` identities are adopted unchanged,
+including older installations using the former shared tutorial ID. An explicit
+`CLUSTER_ID` is an assertion: any disagreement with the seed or metadata stops
+startup before formatting. Do not delete or copy the seed to make a different
+installation match; retain the whole volume as one recovery domain. The
+[bootstrap contract](../../deploy/kafka-bootstrap.md) specifies failure checks.
+Compose mounts its Python script read-only; Kubernetes uses an exact-byte
+ConfigMap mirror. It uses Python 3 already present in the pinned Kafka image and
+adds no hub library or service. These supplied profiles remain single-broker.
+
 Broker readiness precedes proxy readiness and initial hub creation. After start,
 a broker failure appears in eventing diagnostics; the hub keeps its durable
 outbox and retries. HTTP liveness is separate from model availability. An accepted
@@ -477,3 +489,12 @@ credential-redacted logs were checked. This frozen native diagnostic does not
 qualify the final accepted container, production entitlement, SASL_SSL broker
 security, replicated availability or NetworkPolicy enforcement. See the linked
 probe instructions for a fresh disposable namespace.
+
+The [broker installation identity proof](../../verification/kafka-bootstrap/manifest.json)
+binds the bootstrap and exact ConfigMap mirror to ten independent checks. Two
+fresh installations generated distinct IDs; a third was first started through the
+old upstream/tutorial-ID configuration and then adopted without rewriting its
+identity. Actual topic records survived restart/adoption on all three volumes.
+Conflicting explicit IDs failed before formatting. The fixtures were removed.
+This checkpoint is Compose service identity proof with Kubernetes mirror checking;
+it does not substitute for final-image application or Kubernetes runtime evidence.

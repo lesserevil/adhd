@@ -3,8 +3,8 @@ services:
   kafka:
     image: confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f
     platform: linux/amd64
+    entrypoint: [/usr/bin/python3, /opt/adhd/kafka-bootstrap.py]
     environment:
-      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
       KAFKA_NODE_ID: "1"
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -21,7 +21,13 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_LOG_DIRS: /var/lib/kafka/data/logs
       KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
-    volumes: [kafka-data:/var/lib/kafka/data]
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+      - type: bind
+        source: ./kafka-bootstrap.py
+        target: /opt/adhd/kafka-bootstrap.py
+        read_only: true
+        bind: {create_host_path: false}
     networks: [events]
     mem_limit: 1536m
     cpus: 2

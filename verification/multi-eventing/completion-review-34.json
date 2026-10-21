@@ -2,7 +2,7 @@
   "schema": "adhd/roadmap-completion-review@1",
   "reviewed_at": "2026-10-21T22:33:32.794363+00:00",
   "complete": false,
-  "scope": "All86 unchecked implementation/evidence predicates across16 current MULTI/KAFKA/INTEROP items; prior native findings retained with explicit subsequent evidence updates. This is an intermediate audit, not closure.",
+  "scope": "All87 implementation/evidence predicates across16 current MULTI/KAFKA/INTEROP items, including the newly observed foundation browser failure. Earlier native findings are retained with explicit subsequent evidence updates; this is an intermediate audit, not program closure.",
   "prior_audit_sha256": "a00cf6843c00f6994f60026b9487de4487cbf7d39ff5439bcb65c18918e1f006",
   "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
   "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
@@ -61,6 +61,26 @@
     "image_ui52": {
       "path": "verification/image34-ui/manifest.json",
       "sha256": "8131b608b48e5a67d502d4b673a42f6b7b8edf966c39a111d62cf0754ba480e2",
+      "passed": true
+    },
+    "image_core94": {
+      "path": "verification/multi-eventing/image34-core/manifest.json",
+      "sha256": "1022ca0e2d221865f9f75830473f2b18a12b0e7427fe06d2b58ffa6cd1d12a29",
+      "passed": true
+    },
+    "image_role_browser22": {
+      "path": "verification/multi-eventing/role-browser-34-image.json",
+      "sha256": "195f15b3bc1b7397f871b01a8c440b140ba810822f6bfeb75a86cc26671c6dcd",
+      "passed": true
+    },
+    "native_image_rendered16": {
+      "path": "docs/validation/deep-rendered-34.json",
+      "sha256": "7d7be39cc46eda7c56708246ea237845a5a4906036f16f3a764088dafc7e7419",
+      "passed": true
+    },
+    "image_tls_oauth7": {
+      "path": "verification/kafka-platform34/oauth-manifest34.json",
+      "sha256": "79c6a93b99bfb2e2c7e909b97f559f1358283f8e88eda090f230b764d3ec89f2",
       "passed": true
     }
   },
@@ -149,10 +169,12 @@
         "n34.registry"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
-      ],
-      "current_image_runtime_qualification_complete": false
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "completion_proven": true,
+      "current_image_evidence": [
+        "image_core94"
+      ]
     },
     {
       "id": "MULTI-002/evidence/1",
@@ -256,10 +278,12 @@
         "n34.retirement_faults"
       ],
       "additional_completed_evidence": [],
-      "remaining_evidence_or_decisions": [
-        "image34"
-      ],
-      "current_image_runtime_qualification_complete": false
+      "remaining_evidence_or_decisions": [],
+      "current_image_runtime_qualification_complete": true,
+      "completion_proven": true,
+      "current_image_evidence": [
+        "image_core94"
+      ]
     },
     {
       "id": "MULTI-003/evidence/1",
@@ -1679,11 +1703,22 @@
       ],
       "completion_proven": true,
       "parent_dependency_gate": "MULTI-008 and KAFKA-009 remain open; item-specific evidence alone does not close parent dependencies."
+    },
+    {
+      "id": "MULTI-006/implementation/5",
+      "item": "MULTI-006",
+      "requirement": "Diagnose and repair the [unexpected HTTP401 in the exact-image foundation browser flow](../../verification/multi-eventing/foundation-browser-34-failure.json). Record the failing request and session/action phase before changing behavior; requalify normal desktop/mobile OIDC setup, linking and logout without ignoring unexpected errors.",
+      "completion_proven": false,
+      "current_image_runtime_qualification_complete": false,
+      "negative_evidence": "verification/multi-eventing/foundation-browser-34-failure.json",
+      "remaining_evidence_or_decisions": [
+        "foundation_browser_401_diagnosis_and_fix"
+      ]
     }
   ],
   "remaining": [
     "Exact34 runtime image, platform, browser, deep-model and protocol qualification is running; payload identity alone does not prove runtime behavior.",
-    "Native rendered/fairness regressions must finish and retain results; native controlled117 and real coordinator-interference5 now pass.",
+    "Exact-image foundation browser normal-path run observed unexpectedHTTP401. One instrumented diagnostic passed without reproducing it; the original failure is still unresolved, not erased by that pass.",
     "Positive adaptive-retrieval quality/promotion remains unproved. Preserve original QUALITY_REGRESSION and later MIN_EVIDENCE outcomes.",
     "Selective same-identity empty-target project restore preserving other current projects is not implemented or tested; full-server restore is insufficient.",
     "Final current-authority verification and requirement-by-requirement evidence-based roadmap closure remain required."

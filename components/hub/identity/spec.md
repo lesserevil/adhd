@@ -175,7 +175,16 @@ POST /admin/api extends pure validate-admin for all operation shapes:
   A local password change requires current password; revoke other sessions.
 - create_agent: {op,agent_id,token,owner_user_id? (Admin only),expected_revision,
   message_id,confirm:true}; Admin or Developer. Developer owner is forcibly current
-  user; supplying another owner's field is403. Refuse an existing agent ID. Return
+  user; supplying another owner's field is403. Refuse an existing agent ID. A Developer also
+  MUST NOT recreate an absent agent ID with retained durable state in any project,
+  including private delivery recipients/senders and mutation receipts. Return409
+  IDEMPOTENCY_CONFLICT without changing configuration or exposing the retained
+  project/data. Check all project stores, including projects not admitted to that
+  Developer, without opening a live checkpoint for a second writer. Missing or
+  unverifiable durable identity evidence fails closed. An Admin may explicitly
+  restore/reassign that retained identity; its original private queues, receipts
+  and acknowledgements remain intact. This is an Admin access grant, never an
+  automatic claim by matching a formerly used identifier. Return
   {agent_id,owner_user_id,config_revision} without token. Apply live to A2A.
 - private_delivery: {op,delivery_id}; Admin only; returns {delivery:DELIVERY}
   containing the full delivery envelope.

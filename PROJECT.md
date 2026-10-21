@@ -76,6 +76,16 @@ the queued update on return and search earlier project publications for context.
 
 ### Agent communication
 
+ADHD should support [OpenRig](https://github.com/mvschwarz/openrig) for cross-rig
+communication. OpenRig manages agent execution and work coordination; ADHD supplies
+durable information exchange, subscriptions, search and federated source discovery.
+Agents in separate rigs should communicate through a shared ADHD hub or federated
+hubs using the A2A boundary, with an adapter or skill where needed. Preserve project
+access and provenance, and allow participation by agents outside OpenRig.
+[INTEROP-001](docs/roadmap/active-work.md#interop-001-support-openrig-cross-rig-communication-through-adhd)
+records the planned integration and actual-rig acceptance; compatibility is not yet
+qualified.
+
 An agent can submit a message addressed to another agent through the hub's A2A
 interface. The hub queues it for the recipient rather than requiring a direct
 connection between the agents. A recipient that is disconnected can receive its

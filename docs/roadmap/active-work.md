@@ -954,3 +954,19 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Evidence:**
   - [ ] Demonstrate two projects with multiple publishers and independent raw/filtered subscribers, an unauthorized project and a federated peer using its own Kafka.
   - [ ] Pass declared verification and independent wire/privacy/fault/migration/deployment suites; document remaining limits and publication gates before closure.
+
+### [ ] INTEROP-001 — Support OpenRig cross-rig communication through ADHD
+
+- **Priority:** P2
+- **Owner:** hub agent integration, A2A contracts and interoperability acceptance
+- **Direction:** Make ADHD compatible with OpenRig so agents in different rigs can exchange project events, messages and knowledge through ADHD.
+- **Conclusion:** OpenRig and ADHD are complementary: retain OpenRig for agent execution and work coordination, and ADHD for durable information exchange and federation. Preserve A2A as the agent-facing boundary and support independently operated rigs without requiring every participating agent to use OpenRig. This records intended compatibility, not an existing integration or native OpenRig A2A support.
+- **Depends on:** MULTI-008, KAFKA-009, PROTO-001
+- **Implementation:**
+  - [ ] Inspect and pin the supported OpenRig release/API; specify stable rig/agent identity, ADHD project mapping and a minimal A2A adapter or skill where needed.
+  - [ ] Provide setup for agents in separate OpenRig rigs to publish/subscribe, send/poll/acknowledge and search through one ADHD hub, then through federated hubs with canonical routing.
+  - [ ] Preserve project admission, owner/role boundaries, provenance, retries and loop/duplicate prevention; keep rig identity as provenance rather than an automatic access grant.
+  - [ ] Document supported versions, credential provisioning, recovery and the division of responsibility; retain support for agents outside OpenRig.
+- **Evidence:**
+  - [ ] Run two actual OpenRig rigs with independently authenticated agents: verify cross-rig raw events with zero inference, direct messages, acknowledgements and backend search; include an optional plain-text filter case.
+  - [ ] Verify offline/restart/retry recovery and denial of unauthorized projects, then exercise two rigs using separate federated ADHD servers with exact rig/agent/project/source provenance and no transferred roles.

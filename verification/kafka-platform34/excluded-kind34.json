@@ -1,0 +1,79 @@
+{
+  "suite": "adhd/accepted-kafka-platform@1",
+  "started_at": "2026-10-21T22:35:07.192684+00:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "actual-image-payload-and-complete-specification-manifest-match-accepted-staging-inputs",
+      "passed": true
+    },
+    {
+      "name": "full-no-model-image-accepts-a2a-original-source-idempotency-and-durable-unacknowledged-delivery",
+      "passed": true,
+      "broker_next_offset": 1
+    },
+    {
+      "name": "hub-broker-proxy-replacements-preserve-server-original-retry-delivery-and-checkpoint-then-advance",
+      "passed": true,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "name": "consistent-offline-config-all-project-stores-and-kafka-recovery-set-created",
+      "passed": true,
+      "archives_sha256": {
+        "hub-state.tgz": "758be8717f9bf3c83692930ec459050c2aee32e54c42882b4ca9bc259a21178a",
+        "kafka-state.tgz": "c453b4859a79aa9d35018163f54087faa81fe168036e12b07589e18cffe40c32"
+      },
+      "recovery_manifest_sha256": "983460be5df86f2970dea078a47154f760bddb6e7e8a0c327f9fc6555c65eeb2"
+    },
+    {
+      "name": "actual-cold-restore-recovers-both-projects-config-credentials-acks-delivery-identities-and-broker-cursors-then-advances",
+      "passed": true,
+      "red_offset": 2,
+      "blue_offset": 1,
+      "intentional_postbackup_sentinel_absent": true
+    }
+  ],
+  "limitations": [
+    "One broker and one hub; no replicated availability qualification.",
+    "Baseline private network, no OAuth/SASL qualification in this probe.",
+    "Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate."
+  ],
+  "platform": "k8s",
+  "release_qualified": false,
+  "harness_dependencies_sha256": {
+    "multi_support.py": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa",
+    "foundation_acceptance.py": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+    "hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e"
+  },
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "image_config_digest": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "acceptance_sha256": "70fd6ee6cd6ae31f13dd69be929a0dc2c8047d4822161946b212798d0adb4244",
+  "staging_sha256": {
+    "manifest.json": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "payload.tar": "fd42a55e4667062d10bcf70e74764398e70624d35283c6aefd03ead35fd88a7b",
+    "Dockerfile": "cf2d7340772016de9834b19f1f3eac279095e3f6b90b67a8d82fc753f0ed293d"
+  },
+  "input_sha256": {
+    "tests/kafka_final_platform.py": "3ac70d85bb248613f62479310a762cc7d8a38aeca4296b6b2a4c1ecc758f6005",
+    "deploy/app.compose.yaml": "caae0b621b7b380fad3d509dd6c09aa50b5b68b2d6f10c32f8a0929cb487934a",
+    "deploy/events.compose.yaml": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0",
+    "deploy/k8s/hub.yaml": "20f26eca2660146d35311c83ebaf3c6c9accb9becbc3f82e8f5fa43e77605cb5",
+    "deploy/init-config.py": "6e559cb28078757c67d04908b2f45fe93f94668d6d64d6305172732dbf281d5c"
+  },
+  "offline_helper_mode_probe": {
+    "passed": true,
+    "report_sha256": "5f64e53127d9395ac17017c7bba3e3aa56aa1a71793f7f94bd2a60473a95a3a6"
+  },
+  "rendered_sha256": "ec71a18824c8f404ccd7bdc945a5bdc37072a2b22c194d3a9b973d80b36da394",
+  "runtime_image_ids": {
+    "hub": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "kafka": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+    "kafka-rest": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a"
+  },
+  "runtime_hub_image_config_digest": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "finished_at": "2026-10-21T22:42:14.287164+00:00",
+  "failure_type": "CalledProcessError"
+}

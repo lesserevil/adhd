@@ -21,7 +21,8 @@ async def checks(f, evidence):
     reject(await f.raw("bridge", scoped(HIDDEN, "whoami")))
     reject(await f.raw("bridge", {"op": "search", "query": "Ambiguous project context"}))
     assert set((await bridge.call({"op": "whoami"}))["project_ids"]) == {RED, BLUE}
-    assert (await a.call({"op": "whoami"}))["project_id"] == RED
+    assert set((await a.call({"op": "whoami"}))["project_ids"]) == {RED}
+    assert not (await a.call({"op": "search", "query": "Singleton omission is unambiguous"}))["publications"]
     visible = await bridge.call({"op": "list_projects"})
     assert {p["id"] for p in visible["projects"]} == {RED, BLUE}
     assert HIDDEN not in json.dumps(visible)

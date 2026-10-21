@@ -275,15 +275,22 @@ async def main(args):
                 pv=json.loads(k(['get','pv',row['spec']['volumeName'],'-o','json'],capture=True))
                 assert pv['spec']['persistentVolumeReclaimPolicy']=='Delete'
             command(kubectl+['-n',args.name,'cp',obj(['get','pods','-l','app=hub'])['items'][0]['metadata']['name']+':/config/initial-admin-password.txt',str(config_dir/'initial-admin-password.txt')])
-            command(kubectl+['-n',args.name,'cp','deployment/hub:/app/manifest.json',str(root/'running-manifest.json')])
+            command(kubectl+['-n',args.name,'cp',obj(['get','pods','-l','app=hub'])['items'][0]['metadata']['name']+':/app/manifest.json',str(root/'running-manifest.json')])
             assert json.loads((root/'running-manifest.json').read_text())==manifest
             evidence.value['runtime_image_ids']={name:obj(['get','pods','-l','app='+name])['items'][0]['status']['containerStatuses'][0]['imageID'] for name in ['hub','kafka','kafka-rest']}
             if not args.kind_node:
                 raise ValueError('Kind qualification requires explicit --kind-node for immutable runtime-image verification')
-            runtime_digest=evidence.value['runtime_image_ids']['hub'].rsplit('@',1)[1]
-            manifest_bytes=command(['docker','exec',args.kind_node,'ctr','-n','k8s.io','content','get',runtime_digest],capture=True)
-            assert 'sha256:'+hashlib.sha256(manifest_bytes).hexdigest()==runtime_digest
-            runtime_config=json.loads(manifest_bytes)['config']['digest']
+            runtime_id=evidence.value['runtime_image_ids']['hub']
+            if '@' in runtime_id:
+                runtime_digest=runtime_id.rsplit('@',1)[1]
+                manifest_bytes=command(['docker','exec',args.kind_node,'ctr','-n','k8s.io','content','get',runtime_digest],capture=True)
+                assert 'sha256:'+hashlib.sha256(manifest_bytes).hexdigest()==runtime_digest
+                runtime_config=json.loads(manifest_bytes)['config']['digest']
+            else:
+                # Imported Docker images may expose the config identity directly.
+                runtime_config=runtime_id
+                observed=json.loads(command(['docker','exec',args.kind_node,'crictl','inspecti',runtime_id],capture=True))
+                assert observed['status']['id']==runtime_config
             assert runtime_config==args.image
             evidence.value['runtime_hub_image_config_digest']=runtime_config
         await ready()

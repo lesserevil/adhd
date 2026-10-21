@@ -245,10 +245,14 @@ async def main(args):
             run(ns(['cp',pod('hub')['metadata']['name']+':/app/manifest.json',str(root/'running-manifest.json')]))
             assert json.loads((root/'running-manifest.json').read_text())==accepted_manifest
             image_id=pod('hub')['status']['containerStatuses'][0]['imageID']
-            actual=image_id.rsplit('@',1)[1]
-            raw=subprocess.check_output(['docker','exec',args.kind_node,'ctr','-n','k8s.io','content','get',actual])
-            assert 'sha256:'+hashlib.sha256(raw).hexdigest()==actual
-            assert json.loads(raw)['config']['digest']==args.image
+            if '@' in image_id:
+                actual=image_id.rsplit('@',1)[1]
+                raw=subprocess.check_output(['docker','exec',args.kind_node,'ctr','-n','k8s.io','content','get',actual])
+                assert 'sha256:'+hashlib.sha256(raw).hexdigest()==actual
+                assert json.loads(raw)['config']['digest']==args.image
+            else:
+                observed=json.loads(subprocess.check_output(['docker','exec',args.kind_node,'crictl','inspecti',image_id]))
+                assert image_id==observed['status']['id']==args.image
             evidence.value['runtime_image_ids']['hub']=image_id
             evidence.value['runtime_hub_image_config_digest']=args.image
             evidence.value['staging_manifest_sha256']=hashlib.sha256((args.context/'manifest.json').read_bytes()).hexdigest()

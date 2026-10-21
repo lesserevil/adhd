@@ -35,3 +35,10 @@ The fixture uses public management and official A2A SDK interfaces to create and
 inspect retained state. Snapshot fault injection neither decodes nor fabricates
 application records. Tests support a verified Docker image with actual container
 replacement, but these reports make no source32 image qualification claim.
+
+The unchanged suites also pass against source33: the
+[seven-group retirement report](../validation/agent-retirement-33-native.json)
+and [three-group snapshot-fault report](../validation/agent-retirement-33-faults-native.json)
+retain their own artifact and unchanged harness identities in the manifest.
+These native witnesses do not attest the separately tested legacy bootstrap path
+or a source33 Docker image. Source31 and source32 records remain unchanged.

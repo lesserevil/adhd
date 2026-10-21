@@ -39,6 +39,11 @@ def main():
             or target.username or target.password or target.path or target.query or target.fragment):
         parser.error('--target must be the existing local HTTP model origin')
     args.report.parent.mkdir(parents=True, exist_ok=True)
+    # The platform parent checks this audit file before sending its first call.
+    # Refuse an existing report so a new relay cannot inherit another run's data.
+    with args.report.open('x') as initial_report:
+        initial_report.write('[]\n')
+    args.report.chmod(0o600)
     events, lock, limit = [], threading.Lock(), threading.BoundedSemaphore(4)
     post_count = 0
 

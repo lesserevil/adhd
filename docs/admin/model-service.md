@@ -96,3 +96,12 @@ cited the positive original and denied lookup through the other project. The
 retain typed replies and request hashes, without raw prompts or credentials.
 This small synthetic-input check uses the existing model container; it is not a
 general accuracy/latency guarantee or final retained-build qualification.
+
+The [later candidate check](../../verification/multi-eventing/live-model-28.json)
+also kept the filtered subscription while the model was disabled, accepted a new
+breaking-change publication with zero inference during the pause, and delivered
+that publication once after re-enabling. Its original two classification calls
+took 111 ms and 90 ms. The report binds candidate `31f33131ba3b6cf0f0ad30c2df0560e2175e8a4e78804017a236da91bb345615`
+and its exact harness; [relay observations](../../verification/multi-eventing/live-model-28-gateway.json)
+include the later resumed classification and semantic query. Final retained-image
+qualification remains a separate gate.

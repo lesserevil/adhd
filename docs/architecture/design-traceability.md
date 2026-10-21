@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:d2831c71f1d5a3e18ca50ef5bad8de6605cca18fd11c24fc95a1ef19b050a7b3 -->
+<!-- literate-ai:authority-reviewed sha256:c9a4405c33bdbea7bda1a348c4d084fc52f9e85da9fc7b5898d9b394e20e52b9 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -181,7 +181,7 @@ Selective target recovery is now owned by `components/hub/project-recovery/spec.
 its `components/hub/project-recovery/interface.md`
 and MULTI-007. The future2.1 profile preserves current global authentication and
 unrelated project state; explicit initialization cannot bypass a known lost store.
-[75 independent vectors and six examples](../../verification/project-recovery/contracts.json)
+[87 independent vectors and six examples](../../verification/project-recovery/contracts.json)
 qualify contract shape only. Runtime implementation, crash boundaries and exact
 successor native/image/platform recovery remain open. The browser authentication
 transition contract in `components/hub/identity/spec.md`

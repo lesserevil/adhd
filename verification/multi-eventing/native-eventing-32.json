@@ -1,0 +1,305 @@
+{
+  "schema": "adhd/native-eventing-core@1",
+  "passed": true,
+  "artifact_sha256": "23c1bbeb067c0ca66f68cdceed4587270376492e17ea1a7fd178497b40f08e9e",
+  "scope": "Historical exact32 native execution; not33/34 or final-image acceptance",
+  "suites": [
+    {
+      "name": "eventing",
+      "raw_report": "_build/roadmap/multi/native32-eventing.json",
+      "raw_report_sha256": "96957fecf909bc612be8bfde44a7b4349c042e7a4161e27d0d9e0500e549afd2",
+      "report": {
+        "suite": "adhd/eventing-acceptance@1",
+        "started_at": "2026-10-21T21:44:45.831364+00:00",
+        "passed": true,
+        "checks": [
+          {
+            "name": "raw-and-default-subscriptions-need-no-filter-or-model-and-start-after-activation",
+            "passed": true
+          },
+          {
+            "name": "all-publishers-including-self-independent-subscribers-and-overlap-dedup",
+            "passed": true,
+            "publications": 3,
+            "subscribers": 3,
+            "controlled_model_calls": 0
+          },
+          {
+            "name": "read-after-publish-and-post-ack-literal-search-retain-originals-with-zero-inference",
+            "passed": true
+          },
+          {
+            "name": "private-addressed-messages-are-never-public-events-or-searchable-facts",
+            "passed": true
+          },
+          {
+            "name": "blank-conflicting-and-unknown-filter-selector-inputs-fail-closed",
+            "passed": true
+          },
+          {
+            "name": "deterministic-selector-fields-intersect-values-union-without-inference",
+            "passed": true,
+            "cases": 6
+          },
+          {
+            "name": "optional-filter-error-and-invalid-result-preserve-raw-progress-and-search-retry-once",
+            "passed": true
+          },
+          {
+            "name": "revision-conflicts-frozen-filter-work-hot-raw-switch-and-pause-resume-watermarks",
+            "passed": true
+          }
+        ],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability.",
+          "Actual broker process faults require --broker-container; this run covers healthy real broker handoff."
+        ],
+        "artifact_sha256": "23c1bbeb067c0ca66f68cdceed4587270376492e17ea1a7fd178497b40f08e9e",
+        "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+        "finished_at": "2026-10-21T21:45:31.027021+00:00"
+      }
+    },
+    {
+      "name": "protocol",
+      "raw_report": "_build/roadmap/multi/native32-protocol.json",
+      "raw_report_sha256": "8b639d01e314ca88160a44ddf9f41f1954b0f9c3be98cb44861573efbcb35950",
+      "report": {
+        "suite": "adhd/multi-eventing-protocol@1",
+        "started_at": "2026-10-21T21:44:45.940524+00:00",
+        "passed": true,
+        "checks": [
+          {
+            "name": "authored-valid-invalid-agent-peer-v2-and-reason-vectors-independently-validated",
+            "passed": true,
+            "valid": 24,
+            "invalid": 27,
+            "vectors_sha256": "dda0ddc201c0df5d398724899dc7727c1674763930100b694edf5c30eb251d6a",
+            "served_schema_sha256": "9ff14ec8ca68018ed0daf5b401f7221986e3931b7327b122021154c2495bed56"
+          },
+          {
+            "name": "invalid-agent-vectors-also-rejected-at-actual-a2a-runtime-boundary",
+            "passed": true
+          },
+          {
+            "name": "live-sdk-publication-subscription-raw-reason-poll-and-revisioned-edit-conformance",
+            "passed": true
+          }
+        ],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "artifact_sha256": "23c1bbeb067c0ca66f68cdceed4587270376492e17ea1a7fd178497b40f08e9e",
+        "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+        "finished_at": "2026-10-21T21:45:10.568790+00:00"
+      }
+    },
+    {
+      "name": "boundaries",
+      "raw_report": "_build/roadmap/multi/native32-boundaries.json",
+      "raw_report_sha256": "be0fc527d76532e7b85c8efb53e074b97901274fe99ac8756a3dfea6d27505c6",
+      "report": {
+        "suite": "adhd/eventing-durable-boundaries@1",
+        "started_at": "2026-10-21T21:44:45.774983+00:00",
+        "passed": true,
+        "checks": [
+          {
+            "name": "fanout-before-sync",
+            "passed": true,
+            "kind": "native-syscall",
+            "boundary": {
+              "stage": "fanout-before-sync",
+              "pid": 848099,
+              "fd": 21,
+              "path": "/tmp/adhd-multi-84xbazdb/hub.dets.snapshot.tmp-z5T2raDZj9AldOMcop7RAl4vWpK0eMZH",
+              "syscall": "fsync",
+              "result": -1
+            },
+            "installed": {
+              "deliveries": [],
+              "next_offset": 1,
+              "event_state": "published"
+            },
+            "prospective": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            },
+            "broker_offsets": null,
+            "expected_next_offset": 2,
+            "committed_delivery_identity_preserved": false,
+            "baseline_ack_retained": true,
+            "restored": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            }
+          },
+          {
+            "name": "fanout-after-sync",
+            "passed": true,
+            "kind": "native-syscall",
+            "boundary": {
+              "stage": "fanout-after-sync",
+              "pid": 857165,
+              "fd": 17,
+              "path": "/tmp/adhd-multi-zwqdms87/hub.dets",
+              "syscall": "fsync",
+              "result": 0
+            },
+            "installed": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            },
+            "prospective": null,
+            "broker_offsets": null,
+            "expected_next_offset": 2,
+            "committed_delivery_identity_preserved": true,
+            "baseline_ack_retained": true,
+            "restored": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            }
+          },
+          {
+            "name": "offset-before-post",
+            "passed": true,
+            "kind": "real-broker-network",
+            "boundary": {
+              "path": "/consumers/adhd.e6d609f131641194.73786e979410fe19.events.v1.fanout/instances/adhd-tWscd-ILLT93rk9JhYQuhyUtSb7pI3cT/offsets",
+              "request": {
+                "offsets": [
+                  {
+                    "offset": 1,
+                    "partition": 0,
+                    "topic": "adhd.e6d609f131641194.73786e979410fe19.events.v1"
+                  }
+                ]
+              },
+              "upstream_called": false
+            },
+            "installed": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            },
+            "prospective": null,
+            "broker_offsets": {
+              "offsets": [
+                {
+                  "topic": "adhd.e6d609f131641194.73786e979410fe19.events.v1",
+                  "partition": 0,
+                  "offset": 1,
+                  "metadata": ""
+                }
+              ]
+            },
+            "expected_next_offset": 2,
+            "committed_delivery_identity_preserved": true,
+            "baseline_ack_retained": true,
+            "restored": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            }
+          },
+          {
+            "name": "offset-after-post",
+            "passed": true,
+            "kind": "real-broker-network",
+            "boundary": {
+              "path": "/consumers/adhd.4b1b82dce3c54003.73786e979410fe19.events.v1.fanout/instances/adhd-xp8pnbOcD-3ePfVASkERuDXuSHECZ6MP/offsets",
+              "request": {
+                "offsets": [
+                  {
+                    "offset": 1,
+                    "partition": 0,
+                    "topic": "adhd.4b1b82dce3c54003.73786e979410fe19.events.v1"
+                  }
+                ]
+              },
+              "upstream_called": true,
+              "upstream_status": 200
+            },
+            "installed": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            },
+            "prospective": null,
+            "broker_offsets": {
+              "offsets": [
+                {
+                  "topic": "adhd.4b1b82dce3c54003.73786e979410fe19.events.v1",
+                  "partition": 0,
+                  "offset": 2,
+                  "metadata": ""
+                }
+              ]
+            },
+            "expected_next_offset": 2,
+            "committed_delivery_identity_preserved": true,
+            "baseline_ack_retained": true,
+            "restored": {
+              "deliveries": [
+                {
+                  "id": "delivery-82f2aa3f237b-5",
+                  "publication_id": "publication-82f2aa3f237b-4"
+                }
+              ],
+              "next_offset": 2,
+              "event_state": "materialized"
+            }
+          }
+        ],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "harness_sha256": "a84a6010340efa0a4faaeb7132b4a56bd5a3deac93f0ea66a3c1df14e4125610",
+        "hook_sha256": "a063a38b171984688ff8fe8c5ef31acf3e222d0693119ff90670be4a369da718",
+        "artifact_sha256": "23c1bbeb067c0ca66f68cdceed4587270376492e17ea1a7fd178497b40f08e9e",
+        "finished_at": "2026-10-21T21:48:38.577198+00:00"
+      }
+    }
+  ],
+  "checks_passed": 15
+}

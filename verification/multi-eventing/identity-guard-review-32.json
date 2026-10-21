@@ -9,7 +9,7 @@
     "store": "733564b093907051dbbd0814db54e4cb4e5d69b0b29dc265a9503873a4a62075",
     "storage": "42e7b689d65458ea466a50ebac0f5101bd35b8e7b8c0eb28041cddc897a9ce57"
   },
-  "result": "No correction required for legitimate serialized retirement/recreation; no new implementation defect found.",
+  "result": "Legitimate concurrent retirement/recreation ordering is sound. Source32 has a legacy missing-snapshot second-opener attempt; isolated source33 corrects it. No live-file tampering scope expansion needed.",
   "findings": [
     {
       "criterion": "concurrent first old-agent acceptance",
@@ -21,7 +21,7 @@
     },
     {
       "criterion": "hidden, archived, missing and corrupt snapshots",
-      "conclusion": "retained_agent? walks every registered project independent of owner admission and continues validating later projects after a match. Missing snapshots, checksum/identity mismatches, malformed maps and invalid rows fail closed through existing generic Config errors. It never opens another DETS writer or discloses retained project/data."
+      "conclusion": "All registered projects are checked independently of owner admission, including after a match. Missing/corrupt snapshots fail closed. However absent legacy c.server_id plus missing default snapshot calls Projects.server bootstrap fallback, which attempts a writable DETS opener on the checkpoint. This violates the no-second-opener guard requirement despite failure-closed behavior. Source33 replaces that bootstrap call with configured or verified-snapshot server identity and validates Directory.server_id."
     },
     {
       "criterion": "retained ownership coverage",
@@ -37,5 +37,9 @@
     "A hash-valid same-identity snapshot manually rolled back while a live writer retains newer memory is not compared to live Store generation. That requires unsupported live state-file substitution; ordinary atomic persistence, committed relocation and offline paired restore do not produce it. If that adversary becomes in scope, use a generation-bound Store barrier/read rather than another checksum.",
     "Do not remove/reorder the all-project commit drain barriers without adding an equivalent retirement/recreation fence.",
     "Source31 remains frozen; this review does not admit, integrate or release source32."
-  ]
+  ],
+  "subsequent_correction": {
+    "artifact_sha256": "338db41ef00df149779ff3b294f521349e7776e9e934212e1e6eea785af45c24",
+    "scope": "Source33 read-only diff reviewed; targeted actual-module :dets.open_file trace unit proof pending; not a public legacy lifecycle claim."
+  }
 }

@@ -1,7 +1,7 @@
 # Selective project recovery
 
 - **Status:** active
-- **Owning queue item:** [MULTI-007](active-work.md#multi-007--bound-shared-resources-and-operate-project-lifecycles)
+- **Owning queue item:** [MULTI-007](active-work.md#multi-007-bound-shared-resources-and-operate-project-lifecycles)
 - **Completion / archival evidence:** pending; design only, no implemented selective restore
 
 ## Required outcome

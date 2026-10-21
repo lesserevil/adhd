@@ -794,6 +794,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.
   - [ ] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.
   - [ ] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.
+  - [ ] Diagnose and repair the [unexpected HTTP401 in the exact-image foundation browser flow](../../verification/multi-eventing/foundation-browser-34-failure.json). Record the failing request and session/action phase before changing behavior; requalify normal desktop/mobile OIDC setup, linking and logout without ignoring unexpected errors.
   - [ ] Repair first-time OIDC setup so the Admin connection test is available for proposed settings before initial save; the inherited browser regression found the button hidden until a provider was already configured. Requalify the corrected artifact and image.
 - **Evidence:**
   - [ ] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.

@@ -223,3 +223,12 @@ cover context, History, retrieval, Archive, Feedback, optimizer faults and recip
 selection, plus official A2A SDK exchanges and actual legacy-store producers.
 The context suite explicitly upgrades both historical producers. This matrix
 does not replace the separately failed real-model optimizer quality gate.
+
+The [fixed eight-call instruction diagnosis](../validation/model-instruction-30-diagnostic.json)
+adds one generic provenance instruction to all six frozen variants and two saved
+independent negation/no-evidence controls. The current correction still fails;
+three correction variants pass, compared with four before the addition, while
+both controls pass. Every input hash was frozen before calls, with no retries.
+The experiment intentionally differs from the current protocol instruction
+constant; the proof preserves that rejection and separately validates the saved
+responses offline. It supports no application change or optimizer qualification.

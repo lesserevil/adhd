@@ -14,6 +14,32 @@ import tempfile
 import time
 
 from foundation_acceptance import Runtime, Client, free_port
+from container_fixture import OwnedImage
+
+
+class UpgradeRuntime(Runtime):
+    """Own the actual container, keeping native legacy producers independent."""
+    def __init__(self, root, command, image=None, manifest=None):
+        super().__init__(root, command)
+        self.owned_image = OwnedImage(image, manifest, self.root) if image else None
+
+    def start(self):
+        if self.owned_image:
+            self.command = self.owned_image.argv(self.file)
+        try:
+            super().start()
+            if self.owned_image:
+                self.owned_image.observe()
+        except BaseException:
+            self.stop()
+            raise
+
+    def stop(self, hard=False):
+        try:
+            if self.owned_image:
+                self.owned_image.stop(hard)
+        finally:
+            super().stop(hard)
 
 
 def digest(value):
@@ -35,6 +61,7 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--hub", type=Path)
     mode.add_argument("--image")
+    parser.add_argument("--image-manifest", type=Path)
     parser.add_argument("--producer-report", type=Path, required=True)
     parser.add_argument("--producer-root", type=Path, required=True)
     parser.add_argument("--producer-command", required=True)
@@ -56,7 +83,7 @@ def main():
     args.work_root.mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="workflow-", dir=args.work_root.resolve()))
     producer = Runtime(root / "producer", producer_command)
-    target = Runtime(root / "target", ["elixir", str(args.hub.resolve())] if args.hub else [], args.image)
+    target = UpgradeRuntime(root / "target", ["elixir", str(args.hub.resolve())] if args.hub else [], args.image, args.image_manifest)
     for name in original_files:
         shutil.copy2(original_root / name, producer.root / name)
     config.update(store_path=str(producer.root / original_store.name), port=free_port())
@@ -163,11 +190,14 @@ def main():
             "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), "legacy_store_sha256": original_files,
             "image": args.image, "artifact_sha256": hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None,
             "evidence_projection_digest": digest({"jobs": [{"kind": k, "id": i, "value": value} for (k, i), value in expected["jobs"].items()], "labels": expected["labels"]})}
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(result, indent=2) + "\n")
     finally:
         target.stop()
         producer.stop()
+    if target.owned_image:
+        result["runtime"] = target.owned_image.identity()
+        result["artifact_sha256"] = result["runtime"]["artifact_sha256"]
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.report.write_text(json.dumps(result, indent=2) + "\n")
 
 
 if __name__ == "__main__":

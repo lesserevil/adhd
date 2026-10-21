@@ -1,0 +1,77 @@
+{
+  "suite": "adhd/multi-store-relocation@1",
+  "started_at": "2026-10-21T22:34:43.918836+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "originals-source-retries-acknowledged-and-unacknowledged-deliveries-created-in-isolated-projects",
+      "passed": true
+    },
+    {
+      "name": "occupied-project-destination-rejected-without-config-or-foreign-file-change",
+      "passed": true
+    },
+    {
+      "name": "every-project-writer-moves-hot-at-one-revision-without-process-restart",
+      "passed": true,
+      "project_count": 3
+    },
+    {
+      "name": "concurrent-accepted-writes-retain-message-idempotency-and-data",
+      "passed": true,
+      "accepted_count": 16,
+      "retryable_busy_count": 18
+    },
+    {
+      "name": "all-project-originals-source-idempotency-and-delivery-identities-survive-live-switch",
+      "passed": true
+    },
+    {
+      "name": "hard-restart-opens-every-relocated-project-and-preserves-postmove-accepted-write",
+      "passed": true
+    },
+    {
+      "name": "same-durable-semantic-job-survives-switch-and-restart-then-completes-after-provider-recovery",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "harness_sha256": "20ead2101b285cc126713eb6c831ce53a48790122cf60a11ab00db3e7c9cc4cc",
+  "no_default": false,
+  "finished_at": "2026-10-21T22:35:56.697318+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "948010d53950a9e5b8ab49c418fd1754b3ab1248bd1c9a185e2e480ec07b23cc",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "948010d53950a9e5b8ab49c418fd1754b3ab1248bd1c9a185e2e480ec07b23cc",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "2dd25930e61ec95cad609b261989abcd68b67d2cfe2121026cb183d49aa21a62",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "2dd25930e61ec95cad609b261989abcd68b67d2cfe2121026cb183d49aa21a62",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "image_id": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+}

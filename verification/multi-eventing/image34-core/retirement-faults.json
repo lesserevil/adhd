@@ -1,0 +1,65 @@
+{
+  "suite": "multi-agent-retirement-snapshot-faults",
+  "started_at": "2026-10-21T22:38:23.612012+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "fresh-developer-creation-succeeds-with-complete-snapshot-evidence",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-missing-snapshot-restoration",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-corrupt-snapshot-restoration",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "File faults qualify ownership evidence unavailability, not semantic model quality or replicated Kafka durability."
+  ],
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "6d03fc3d0e4ba585941c3150b47a9254148c90a16098f4b7621f8fc9fd957808",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "6d03fc3d0e4ba585941c3150b47a9254148c90a16098f4b7621f8fc9fd957808",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "image_id": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "harness_sha256": "8e0abf369f93130553b81d3faf37f4b1ce85703f161b5cbfafe2b09ab47456fc",
+  "fault_observations": [
+    {
+      "fault": "missing",
+      "http_status": 400,
+      "error_code": "INVALID_PARAMS",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "original_snapshot_sha256": "756f05000a11768e810f4b52d1c4112f871e8e60136dff9c92b52361e47a40e0"
+    },
+    {
+      "fault": "corrupt",
+      "http_status": 503,
+      "error_code": "CONFIG_WRITE_FAILED",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "original_snapshot_sha256": "756f05000a11768e810f4b52d1c4112f871e8e60136dff9c92b52361e47a40e0"
+    }
+  ],
+  "finished_at": "2026-10-21T22:38:51.132138+00:00"
+}

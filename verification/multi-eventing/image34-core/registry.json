@@ -1,0 +1,101 @@
+{
+  "suite": "adhd/hot-registry-invariants@1",
+  "started_at": "2026-10-21T22:38:43.021137+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "legacy-default-dry-and-apply-reject-downgrade-removal-and-default-rebinding",
+      "passed": true,
+      "negative_requests": 6
+    },
+    {
+      "name": "legacy-default-file-reload-rejects-downgrade-removal-server-and-default-identity-changes",
+      "passed": true,
+      "proposals": 4
+    },
+    {
+      "name": "legacy-default-cold-restart-preserves-both-project-originals-acks-registry-and-revision",
+      "passed": true
+    },
+    {
+      "name": "no-default-dry-and-apply-reject-downgrade-removal-and-default-rebinding",
+      "passed": true,
+      "negative_requests": 6
+    },
+    {
+      "name": "no-default-file-reload-rejects-downgrade-removal-server-and-default-identity-changes",
+      "passed": true,
+      "proposals": 4
+    },
+    {
+      "name": "no-default-cold-restart-preserves-both-project-originals-acks-registry-and-revision",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "harness_sha256": "672e39899f42126c822e85b981fb6b4cf40faf4fff20f6b959397433d37b4e58",
+  "runtime_legacy-default": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "b659d81a3b63071b5a1ea9d78ac95255d03163cb31e6be0f2c4b2d9afffb8949",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "b659d81a3b63071b5a1ea9d78ac95255d03163cb31e6be0f2c4b2d9afffb8949",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "5b62a9a6e2e6fea3c70ae1cc15a6dab809fa3f36f7f043131448a752b145c953",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "5b62a9a6e2e6fea3c70ae1cc15a6dab809fa3f36f7f043131448a752b145c953",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "runtime_no-default": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "823d21e39c71bacca541447f927928cac434d583649eef6f33850c0ee3ca615b",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "823d21e39c71bacca541447f927928cac434d583649eef6f33850c0ee3ca615b",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "0ac0cd9fa269a3ba2a2605237de8118a9f1bb39a49291f73580862dd673a9fc2",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "0ac0cd9fa269a3ba2a2605237de8118a9f1bb39a49291f73580862dd673a9fc2",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "finished_at": "2026-10-21T22:40:34.099359+00:00"
+}

@@ -1,0 +1,60 @@
+{
+  "suite": "adhd/no-default-hot-projects@1",
+  "started_at": "2026-10-21T22:35:58.348767+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "explicit-project-a2a-and-kafka-work-with-no-default-project",
+      "passed": true
+    },
+    {
+      "name": "host-binding-changes-at-the-same-port-without-hub-restart",
+      "passed": true
+    },
+    {
+      "name": "operator-recipe-change-resets-selection-in-every-project-with-no-default-store",
+      "passed": true
+    },
+    {
+      "name": "no-default-project-config-and-all-project-state-survive-hard-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "finished_at": "2026-10-21T22:36:50.917588+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "d843f1b4014be0eb37b2e9d6b5469c4376e2a564ed8cbc22f6d07620b06c001b",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "d843f1b4014be0eb37b2e9d6b5469c4376e2a564ed8cbc22f6d07620b06c001b",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "99adfd3370ffad445adc9e5fa6d07d3e49f38b4d47931b0e14b776073c4e6c40",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "99adfd3370ffad445adc9e5fa6d07d3e49f38b4d47931b0e14b776073c4e6c40",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "image_id": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+}

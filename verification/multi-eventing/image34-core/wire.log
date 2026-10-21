@@ -1,0 +1,16 @@
+PASS critical-annotations-all-have-independent-handlers-and-unknown-extensions-fail-closed
+PASS independent-draft202012-schema-and-positive-negative-vectors
+PASS actual-a2a-responses-conform-to-independent-validator
+PASS actual-short-response-model-requests-and-typed-answer-contract
+PASS actual-history-choice-exchanges-originals-exact-bytes-and-independent-semantic-negatives
+PASS actual-retrieval-exact-model-pairing-utf8-and-independent-fragment-projection
+PASS actual-http-rejects-duplicates-unknown-fields-bool-integers-and-versions
+PASS http-cli-identical-openapi-and-complete-interface-inventory
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/tests/protocol_acceptance.py", line 608, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/tests/protocol_acceptance.py", line 602, in main
+    report={'schema':'adhd/protocol-conformance@1','passed':True,'protocol_version':int(args.profile_version.split('.')[0]),'schema_id':schema['$id'],'api_profile_version':api['info']['version'],'foundation_fixture_profile':fixtures['profile_version'],'schema_sha256':hashlib.sha256(json.dumps(schema,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest(),'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'input_sha256':{
+                                                                                                                                                                                                                                                                                                                                                                                                                                               ~~~~~~~^^^^
+IndexError: list index out of range

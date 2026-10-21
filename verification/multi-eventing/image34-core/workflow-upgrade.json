@@ -1,0 +1,76 @@
+{
+  "suite": "adhd/multi-workflow-upgrade@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "genuine-accepted-producer-has-all-five-workflow-families-labeled-feedback-and-selected-learned-recipe",
+      "passed": true,
+      "counts": {
+        "history": 41,
+        "retrieval": 8,
+        "archive": 8,
+        "replay": 20,
+        "optimization": 3
+      },
+      "labels": 8
+    },
+    {
+      "name": "legacy-upgrade-preserves-exact-history-retrieval-archive-replay-optimizer-evidence-labels-cohorts-deliveries-and-selection",
+      "passed": true,
+      "changed_runtime": true,
+      "retired_global_generation_ids": [
+        "index-proposal-108"
+      ]
+    },
+    {
+      "name": "hard-restart-preserves-migrated-workflows-selected-control-and-unacknowledged-deliveries",
+      "passed": true
+    },
+    {
+      "name": "operator-reset-after-migration-preserves-originals-and-historical-evidence",
+      "passed": true,
+      "unavailable_global_generation_ids": [
+        "index-proposal-107"
+      ]
+    }
+  ],
+  "producer_artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+  "producer_report_sha256": "110f34a4e449b6a6bf83336f2cdedf5fe5023aa17929cfba17b5dd27784f2ecd",
+  "harness_sha256": "def7e5e89ce4ee383ec53722c8936fe50635294f1cb5b48d3e2c6d1f110a77d9",
+  "legacy_store_sha256": {
+    "hub.dets.snapshot": "7d3219eb69524312e3ee32c5b7cf32aac75f3a25a9cc16a7cc9d3f6e88453ecf",
+    "hub.dets": "9613b280792ec7a94df57dd6a22e522272b30f83d2f330514b7689caffcb70da"
+  },
+  "image": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "evidence_projection_digest": "7a12a585869f5581dce499e2ed57046aba2d10508d479f3268b7db0ea33b088b",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "90929716a15ef1f7d1010affbc7cff5173400f667a11155a129c6e3e77f282ae",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "90929716a15ef1f7d1010affbc7cff5173400f667a11155a129c6e3e77f282ae",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "8eca0269aa51a322874d8583c84ca7d76252ba0a79757f4f7b38157eda1c7560",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "8eca0269aa51a322874d8583c84ca7d76252ba0a79757f4f7b38157eda1c7560",
+        "observed_absent": true
+      }
+    ]
+  }
+}

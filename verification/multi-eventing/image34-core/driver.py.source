@@ -1,0 +1,27 @@
+from pathlib import Path
+import argparse,concurrent.futures,hashlib,json,os,subprocess,sys
+root=Path('/home/horde/src/adhd')
+p=argparse.ArgumentParser();p.add_argument('--image',required=True);p.add_argument('--manifest',type=Path,required=True);args=p.parse_args()
+assert args.image.startswith('sha256:') and len(args.image)==71
+manifest=json.loads(args.manifest.read_text());expected='7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9';assert manifest['files']['hub.exs']==expected
+actual=json.loads(subprocess.check_output(['docker','image','inspect',args.image]))[0];assert actual['Id']==args.image
+out=root/'_build/roadmap/final/root-image34';out.mkdir(exist_ok=False)
+env=os.environ.copy();native=root/'_build/federation/native';env['PATH']=str(native/'erlang/bin')+':'+str(native/'elixir/bin')+':'+env['PATH'];env['ERL_FLAGS']='+S 2:2';env['PYTHONPATH']=str(root/'tests')
+legacy=root/'_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd';legacy_command=json.dumps([str(native/'elixir/bin/elixir'),str(legacy)])
+base=['--image',args.image,'--image-manifest',str(args.manifest),'--eventing-rest-url','http://127.0.0.1:18082','--with-model']
+jobs=[('foundation','foundation_acceptance.py',['--image',args.image,'--protocol-version','2']),('wire','protocol_acceptance.py',['--image',args.image,'--command','[]','--profile-version','2.0.0'])]
+for name,file,extra in [('multi','multi_acceptance.py',[]),('store-move','multi_store_move.py',[]),('move-no-default','multi_store_move.py',['--no-default']),('hot','multi_hot.py',[]),('backend-models','multi_model_capabilities.py',[]),('aliases','multi_aliases.py',['--legacy-hub',str(legacy)]),('retirement','multi_agent_retirement.py',[]),('retirement-faults','multi_agent_retirement_faults.py',[]),('registry','multi_registry_guard.py',[])]:
+ jobs.append((name,file,base+extra+['--keep-work',str(out/(name+'-work'))]))
+jobs.append(('auth','auth_lifecycle.py',['--image',args.image,'--image-manifest',str(args.manifest)]))
+jobs.append(('workflow-upgrade','multi_workflow_upgrade.py',['--image',args.image,'--image-manifest',str(args.manifest),'--producer-report',str(root/'verification/optimization-optimizer-quality.json'),'--producer-root',str(root),'--producer-command',legacy_command,'--work-root',str(out/'workflow-work')]))
+plan={'artifact_sha256':expected,'image_config_identity':args.image,'canonical_manifest_sha256':hashlib.sha256(args.manifest.read_bytes()).hexdigest(),'runs_per_suite':1,'parallelism':2,'jobs':[{'name':name,'script':'tests/'+file,'argv':argv,'harness_sha256':hashlib.sha256((root/'tests'/file).read_bytes()).hexdigest()} for name,file,argv in jobs]};(out/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
+def run(job):
+ name,file,argv=job;report=out/(name+'.json');cmd=[str(root/'.venv/bin/python'),str(root/'tests'/file)]+argv+['--report',str(report)]
+ print('START',name,flush=True)
+ with (out/(name+'.log')).open('w') as log:r=subprocess.run(cmd,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT)
+ print('DONE',name,r.returncode,flush=True)
+ return {'name':name,'exit_code':r.returncode,'report':str(report)}
+# The initial two harnesses both use the historical default listener: serialize them.
+results=[run(job) for job in jobs[:2]]
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:results.extend(pool.map(run,jobs[2:]))
+(out/'matrix.json').write_text(json.dumps({'passed':all(r['exit_code']==0 for r in results),'results':results},indent=2)+'\n');sys.exit(any(r['exit_code'] for r in results))

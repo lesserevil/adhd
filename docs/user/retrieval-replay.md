@@ -153,3 +153,15 @@ The [candidate30 evidence refresh](../validation/multi-evidence-30.json) repeats
 all eleven isolation groups, including actual optimizer final evaluation and
 revocation across hard restarts. It retains the controlled-fixture scope and
 policy allowances above; actual-image qualification is separate.
+
+The [accepted-store workflow upgrade check](../validation/multi-workflow-upgrade-30.json)
+uses the actual previously qualified optimizer store and its original executable,
+selects its learned recipe through the public rollback operation, then upgrades
+that closed store with the candidate30 executable. It compares complete public
+projections for 41 History, eight retrieval, eight archive, 20 paired replay and
+three optimizer workflows, plus eight labeled attempts, cohorts, deliveries and
+publication counts. The selected recipe and all evidence survive migration and a
+hard restart. A subsequent explicit recipe reset preserves historical evidence;
+only retired global index generation availability may change. The original
+qualified store files remain byte-for-byte unchanged. This check uses previously
+recorded model evidence and makes no new semantic quality claim.

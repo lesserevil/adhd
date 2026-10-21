@@ -1,0 +1,25 @@
+{
+  "schema": "adhd/coordinator-interference-predeclaration@1",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "harness_sha256": "96db6886ec88a4b6c6a3c6461752a1b5d63bae852bb25ede4f2fc1e5ce3e91fa",
+  "limits": {
+    "managed_observers": 2,
+    "publications": 12,
+    "hub_hard_restarts": 1,
+    "phase_seconds": 45,
+    "overall_seconds": 360,
+    "cli_calls": 40,
+    "http_observations": 400
+  },
+  "scope": "Actual ordinary managed observer membership and partition assignment changes in the captured manual bridge group, preserving A2A durable state; not managed bridge ownership transfer, multiple hub writers or HA.",
+  "expected": [
+    "Coordinator state Empty0\u2192Stable1\u2192Stable2\u2192Stable1\u2192Empty0 observed by actual Kafka CLI.",
+    "Single partition owner removed; prior idle observer receives partition0.",
+    "Observers auto-commit false and never send offset commit requests.",
+    "Manual bridge commits may be fenced by active managed membership; capture actual errors and broker-position lag without treating them as successful commits.",
+    "Backend durable position controls bridge recovery; accepted publications/delivery IDs/source and MID retries/independent acks survive one actual hub kill.",
+    "After all managed observers leave, a new accepted event leads to actual broker and durable next-offset convergence."
+  ],
+  "failure_policy": "Retain failed run and actual broker replies; no source/fixture weakening or rerun until the specific cause is reported.",
+  "runtime": "Exact34 native, pinned Confluent8.3.2 private18087; image qualification separately pending."
+}

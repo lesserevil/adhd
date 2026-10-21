@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:3583c566f2adb3ff7ed4bd40888e5565c901a560c74ac5a04adef37f6b4345b0 -->
+<!-- literate-ai:authority-reviewed sha256:d2831c71f1d5a3e18ca50ef5bad8de6605cca18fd11c24fc95a1ef19b050a7b3 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -176,3 +176,14 @@ Current native [117 controlled workflow/SDK groups](../validation/deep-controlle
 the [six-call filter/backend witness](../validation/live-eventing-backend-34-native.json)
 are distinct from the still-open positive optimizer qualification and selective
 project restore capability.
+
+Selective target recovery is now owned by `components/hub/project-recovery/spec.md`,
+its `components/hub/project-recovery/interface.md`
+and MULTI-007. The future2.1 profile preserves current global authentication and
+unrelated project state; explicit initialization cannot bypass a known lost store.
+[75 independent vectors and six examples](../../verification/project-recovery/contracts.json)
+qualify contract shape only. Runtime implementation, crash boundaries and exact
+successor native/image/platform recovery remain open. The browser authentication
+transition contract in `components/hub/identity/spec.md`
+also fences old-context responses; [native35ui evidence](../../verification/multi-eventing/admin-session-35/manifest.json)
+is a development result, not source34 image repair or successor admission.

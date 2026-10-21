@@ -1,0 +1,18 @@
+{
+  "schema": "adhd/project-recovery-allocator-development@1",
+  "passed": true,
+  "scope": "Five pure allocator tests on development source36 only; not artifact admission, restored-store, worker fencing or image qualification",
+  "tests": 5,
+  "failures": 0,
+  "harness_sha256": "5b256d1e3f0b29f39958b787acb7239a97652eaf3ad1dd2e0ba59d11180bf091",
+  "allocator_sha256": "7faaaf78da78955f5f0412407169a180849615fbdd958b2deca05e6823de6b17",
+  "raw_log_sha256": "52e3a771d00141e65488c26dcae0b12c641a70d779cf473774bd81ae06dd8328",
+  "source_review": {
+    "sequence_ordering_independent": true,
+    "missing_epoch_fails_closed": true,
+    "counter_exhaustion_fails_closed": true,
+    "non_store_callsite_migration": "history, retrieval, archive query/plan, replay, source query, proposal, index/rebuild and event replay/audit; integration qualification pending",
+    "speculative_index_counter": "compare-and-set at commit; optimizer prepared-generation counter retained with epoch fence; integration qualification pending"
+  },
+  "full_recovery_qualified": false
+}

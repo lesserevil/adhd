@@ -809,7 +809,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Specify fair scheduling and accounting across projects and job classes, bounded queues/caches/storage and backpressure.
   - [ ] Fence workers against project archival, access changes and configuration revisions; preserve durable accepted work with explicit terminal/paused states.
   - [ ] Add project-aware diagnostics/audit records and documented full-server and project backup/restore semantics, collision handling and container recovery.
-  - [ ] Resolve project-level recovery scope before closure: exact-image Compose/Kind prove consistent full-server recovery only. Selective restore preserving other current projects has no implemented/tested tool; clarify whether this milestone requires that capability or an explicit current full-server boundary. Never attest selective restore from full-set backup results.
+  - [ ] Implement selective recovery into a missing or logically empty target under its original server/project identity, with an Admin plan, complete ownership/reference validation, target-only durable storage/Kafka generations and worker fencing. Preserve every other current project and current global configuration; reject populated logical targets. Follow [the project recovery plan](project-restore.md), beginning with exact recovery authority and wire contracts. Full-server restore does not discharge this requirement.
 - **Evidence:**
   - [ ] Saturate one project with slow/failing model and peer work; demonstrate bounded progress for another and truthful costs/coverage.
   - [ ] Exercise hot lifecycle changes, worker crashes, restart, container replacement and backup/restore without leakage or duplicated committed results.

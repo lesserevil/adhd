@@ -77,6 +77,15 @@ can erase a project's stale/unavailable coverage. Request/status ownership binds
 origin server/project + destination server/project + query ID. A remote project
 cannot poll another project's request even if both share a credential/server.
 
+The server-wide catalog response is `{protocol_version:2,server_id,revision,
+generated_at,max_age_ms:10000,projects,next_cursor}` and deliberately has no
+singleton project_id. Each page contains at most one complete bounded project
+catalog `{project_id,revision,generated_at,expires_at,visible,entries}`. Its top
+revision covers all pair-authorized project revisions in configured order; its
+cursor binds requester server/origin project and that full snapshot. A grant,
+project or catalog change between pages rejects with SNAPSHOT_CHANGED rather
+than stitching together incompatible ownership snapshots.
+
 Canonical source owner is server/project, including same-server projects. Equal
 scope claims conflict; copies and stale caches cannot become canonical. Email
 correlation confers no role or admission. Federation brokers stay private and are

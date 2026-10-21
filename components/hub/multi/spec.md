@@ -179,6 +179,18 @@ entries}`, using existing catalog paging/completion rules per project. Catalog
 caches bind server/project/revision; partial, expired or unavailable catalogs are
 not negative ownership evidence. Remote project IDs need not match local IDs.
 
+The server-wide catalog response is exactly `{protocol_version:2,server_id,
+revision,generated_at,max_age_ms:10000,projects,next_cursor}`. One page contains
+at most one project, permitting its complete bounded catalog without exceeding
+256 KiB. Each project is exactly `{project_id,revision,generated_at,expires_at,
+visible,entries}`; archived projects are visible:false with empty entries. The
+top revision hashes the configured-order array of `{project_id,revision}` for all
+pair-authorized projects. A cursor binds authenticated server, origin project,
+local server, that complete revision and next project offset. A change anywhere
+returns SNAPSHOT_CHANGED; reject cursors from a different origin. Expiry remains
+10 seconds, never extended by caching. No project_id singleton appears at the
+top of this aggregate; ordinary destination-qualified results still require it.
+
 Canonical external scope ownership is the exact (server_id,project_id) pair.
 Duplicate current claims across local projects are conflicts like remote claims;
 never select first or newest. A local canonical target uses the same authorization,

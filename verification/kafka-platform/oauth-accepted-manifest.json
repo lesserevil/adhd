@@ -1,0 +1,45 @@
+{
+  "schema": "adhd/kafka-accepted-image-security@1",
+  "passed": true,
+  "accepted_image_qualified": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "production_entitlement_qualified": false,
+  "scope": "Actual admitted OTP29 image in fresh Kubernetes namespace with native REST TLS/OAuth, hot JWT/trust update fencing, keystore Secret/password/certificate rotation, REST and broker pod replacement, persistent original/ack/cursor and new A2A progress.",
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "image_config_digest": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+  "report": {
+    "path": "verification/kafka-platform/oauth-accepted-image.json",
+    "sha256": "352e74d136b4654e579089214ec48633844754678407258c91cd2c1b6275609d"
+  },
+  "input_sha256": {
+    "tests/kafka_oauth_k8s.py": "360181193bbfd71fe975a5651009053b76311e3a211c4964ce0c2cb50886b96d",
+    "tests/kafka_oauth_provider.py": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0",
+    "deploy/k8s/oauth.patch.yaml": "c291143a5a673a1a390b737506dcfc9f3dd581ad811c1de80ed9a162ada13d36",
+    "deploy/security/kafka-rest.oauth.properties.example": "005b04820782f090b0aca23653c24d1c018057d961f7a5a11d9b8b9882edfe88"
+  },
+  "harness_dependencies_sha256": {
+    "multi_support.py": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa",
+    "foundation_acceptance.py": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+    "hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e"
+  },
+  "imported_broker_proxy_equivalence": {
+    "path": "verification/kafka-security/kubernetes-image-equivalence.json",
+    "sha256": "98b8aaa3c4b4a46209e3767875072452b9bc6cb50e0d6ffa346f893a8f9cbc77"
+  },
+  "runtime": {
+    "hub": "Elixir1.20.4 OTP29.1.2 accepted container",
+    "kind": "0.33.0",
+    "kubernetes": "1.35.0"
+  },
+  "limits": [
+    "Actual admitted deployment image verified against staging and independent artifact acceptance; full release lifecycle remains a separate gate.",
+    "Single broker, private plaintext proxy-to-broker lane; no SASL_SSL qualification.",
+    "NetworkPolicy enforcement is not qualified by this probe.",
+    "AuthenticationHandler is Confluent Enterprise or permitted-trial scope; this does not establish production license entitlement.",
+    "Baseline private plaintext proxy-to-broker transport; no SASL_SSL, replicated availability or enforcing-CNI proof.",
+    "Earlier interim attempts01/02 failed in harness preflight and are excluded; corrected fresh03 is the successful retained report.",
+    "Existing application, broker and model services unchanged. Owned namespace, PVC/PVs, port forwards, issuer and log followers removed."
+  ]
+}

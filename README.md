@@ -4,10 +4,11 @@ Licensed under the [Apache License 2.0](LICENSE) (`Apache-2.0`).
 Bundled third-party material retains its own license and attribution notices,
 including the [Prompt Master MIT license](skills/agent/prompt-master/LICENSE.prompt-master).
 
-ADHD helps agents working on the same project stay in sync. Agents communicate
+ADHD helps agents working across isolated projects stay in sync. Agents communicate
 through an authenticated A2A hub even when they cannot connect directly to each
-other. They publish work updates, describe the information they want in plain
-text, and poll durable queues for relevant updates selected by Nemotron Deciffusion.
+other. They publish work updates, subscribe to project events and poll durable queues.
+Profile 2 uses per-server Kafka; optional plain-text filters use a separately
+configured short-response model.
 
 The Elixir service provides subscriptions, publishing, addressed messages,
 acknowledgements, and publication search over A2A 1.0 JSON-RPC. Agents explicitly
@@ -32,6 +33,12 @@ See the [stored-information guide](docs/user/stored-information.md).
 
 ## Container quick start
 
+Use a profile-2-qualified artifact for the multi-project Kafka application. The
+[model-free Compose/Kubernetes guide](docs/admin/event-service.md) owns its private
+broker, persistent volumes and optional model deployment. Earlier accepted
+profile-1 artifacts and their evidence remain a compatibility baseline; they do
+not qualify the combined architecture.
+
 Build the accepted portable Elixir artifact with the project's pinned Literate AI
 installation and Elixir/OTP toolchain on the supported Linux authoring host:
 
@@ -50,36 +57,41 @@ On a Linux Docker host, copy the staged `_build/container` directory plus
 
 ```bash
 docker build --build-arg SOURCE_DATE_EPOCH=0 --provenance=false -t adhd-hub:local _build/container
-python3 scripts/configure_hub.py
+python3 scripts/configure_hub.py --legacy-single-project
 sh deploy/run.sh .adhd/container/hub.json .adhd/container/data
 curl --fail http://127.0.0.1:8766/health
 ```
 
-Start the included GPU model container with a verified checkpoint:
+The standalone run.sh example above is explicit legacy compatibility. For
+profile 2 use the Compose application in the event-service guide. A model is
+optional: start the included GPU model container only for semantic filtering or
+semantic queries, with a verified checkpoint:
 
 ```console
 python3 scripts/model_service.py /absolute/path/to/checkpoint/bf16
 ```
 
-The defaults reach its Nemotron SystemOne service at
+Legacy defaults reach its Nemotron SystemOne service at
 `http://127.0.0.1:18770/v1/systemone` on the Docker host. Set `--matcher-url` when
 creating configuration to use another endpoint. See the admin guide for private
 tunnels, client configuration, image identities, and backups.
 
 ## Current scope
 
-This is a single-project prototype with one service process per disk store.
-The container runs on Linux with host networking and binds only to loopback;
-remote agents need a private tunnel or appropriately authenticated proxy.
+The profile-2 contract supports multiple isolated projects per server, with one
+hub process owning the registry and every project store. Linux Compose/Kubernetes
+packaging keeps Kafka private; remote agents use the authenticated hub endpoint.
+The older standalone host-networked run.sh path remains a legacy option.
 The included model service runs in a separate GPU container with a read-only
 checkpoint mount. Federation connects explicitly configured peers; it does not
 automatically discover servers or share private addressed messages.
 
 Queues, pending matching jobs, and acknowledgements persist across restarts.
-Subscriptions match new publications only. Search is a literal, case-insensitive
+Ordinary subscriptions receive new publications only; historical replay is an
+explicit bounded Admin operation. Search is a literal, case-insensitive
 substring search over published text, JSON, and provenance, with source/type filters.
-Matching thresholds require
-calibration for each workload. There is no push delivery, automatic session
+Only filtered subscriptions use model thresholds, which require workload
+calibration. Raw delivery and literal search work with matcher:null. There is no push delivery, automatic session
 instrumentation or distributed storage. The new runtime upgrades the original
 prototype store on startup; rollback requires its pre-upgrade backup.
 

@@ -1,9 +1,10 @@
 # Source ownership and federated identities
 
-Each hub remains a single-project server. Its persistent server ID identifies the
-installation independently of its project display name. Configure direct peers in
+A profile-2 server hosts multiple projects. Its persistent server ID identifies
+the installation independently of project IDs and display labels. Configure direct peers in
 Admin **Settings**; their separate inbound/outbound bearer credentials establish
-trust. Metadata never introduces another network destination or inherits a role.
+trust, and explicit project-pair grants authorize each direction. Select the
+project before editing its catalog. Metadata never introduces another network destination or inherits a role.
 
 ## Publish an information catalog
 
@@ -15,7 +16,7 @@ catalog**, select **Publish information catalog**, then **Add source**. Specify:
   a Jira key. Prefer provider-native stable IDs so display-name changes need only
   update aliases. Different hosts, tenants and providers remain distinct.
 - Whether information is contained, derived or merely referenced. Select
-  **Canonical owner** only for a contained source this server owns.
+  **Canonical owner** only for a contained source this exact server/project pair owns.
 - Explicit approved project-public publication IDs if source questions may use
   evidence beyond the description. Private addressed messages cannot be exported.
 
@@ -48,8 +49,8 @@ acknowledging. Poll `get_source_query` with its `query_id`; use
 `cancel_source_query` to stop collection. Retrying a mutation with the same A2A
 messageId and command does not create another job.
 
-A source question goes only to its canonical direct peer, or is evaluated locally
-when this hub owns it. Copies cannot answer authoritatively. Multi-source requests
+A source question goes only to its canonical server/project pair, or is evaluated
+locally when an explicitly selected admitted project on this server owns it. Copies cannot answer authoritatively. Multi-source requests
 split by source while sharing the question and deadline. Results preserve the
 requested order and include stable owner/server and source provenance. Directory
 coverage is reported separately: a known fresh owner can answer during an
@@ -64,6 +65,12 @@ replaced with a convenient copy. Resolve a conflict by removing the incorrect
 canonical claim on the server that published it. Transfer ownership by removing
 the old claim, refreshing its visible catalog, then publishing one new claim.
 Hiding an old catalog or advertising a newer competing claim is not a transfer.
+For a local cross-project source query, supply explicit project_ids (1..32
+currently admitted IDs). The default is only the selected project; an agent
+with multiple grants does not implicitly search every project. Current admission
+is rechecked for asynchronous reads, and project coverage/provenance stay separate.
+Duplicate canonical claims in two local projects conflict just like remote claims.
+
 An expired/unreachable established owner remains unavailable until authenticated
 revocation or explicit peer removal permits re-resolution.
 
@@ -88,7 +95,8 @@ through refresh/expiry; local profile changes apply immediately.
 An Admin here can be a Viewer elsewhere. A third server does not acquire the
 first server's profiles or roles through an intermediary. Each server enforces
 its own users, OIDC groups and agent ownership. Unexpected replacement of a peer's
-stable server ID, or duplicate server IDs, produces an identity conflict. To
+stable server ID, or two distinct servers claiming one server ID, produces an identity conflict.
+Several projects on the same authenticated server are valid distinct pairs. To
 accept a replacement, explicitly remove and save the peer, then add and save it
 again. Do not run two live servers from copies of the same store backup.
 

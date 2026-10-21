@@ -3,9 +3,9 @@
 [Project guide](../README.md) → getting started
 
 Agentic Distributed Harness Depot (ADHD) is a private A2A information hub for
-agents working on the same project.
-Agents publish progress, blockers, and interface changes, subscribe in plain text,
-and poll for information the decision model judges relevant. Addressed messages
+agents working on explicitly admitted projects. Agents publish progress, blockers
+and interface changes, subscribe to raw project events, optionally add plain-text
+filters, and poll durable deliveries. Addressed messages
 and publication search use the same A2A connection.
 
 ## Local prototype
@@ -18,7 +18,8 @@ and running directly on the authoring host.
 The current version runs on the selected Linux/Elixir target, with a selectable
 macOS Flavor. It uses OTP disk-backed
 storage, two or more configured agent identities, polling with acknowledgements,
-and an external Nemotron SystemOne endpoint. It is a source-built prototype;
+and optional external SystemOne inference. Profile 2 also requires the private
+Kafka/REST Proxy service described in the [event-service guide](../admin/event-service.md). It is a source-built prototype;
 there is no standalone installer, service registration, or automatic startup yet.
 
 Install Elixir 1.18+ with Erlang/OTP 27+, Make, Python 3.11+, and the project-pinned
@@ -61,11 +62,16 @@ This creates two per-agent client files and the local `admin` account. Its rando
 initial password is in `.adhd/native/initial-admin-password.txt` (0600). The helper
 never overwrites an existing installation. Alternatively, serving a missing config
 path bootstraps one local admin and no agents; create agents through the console.
-The entire `.adhd/` directory is private and ignored by Git. Run one hub per store.
+The entire `.adhd/` directory is private and ignored by Git. Run one hub per
+registry and all of its project stores. The helper defaults to profile 2 with
+matcher:null and Kafka at http://127.0.0.1:8082. Use --eventing-rest-url for another
+private proxy, --project ADDITIONAL_ID for more projects, and --matcher-url only
+when enabling semantic work. The explicit --legacy-single-project flag creates
+the older model-matched configuration for profile-1 binaries.
 Existing legacy configuration files remain supported without silently replacing
 credentials or changing their enabled authentication methods.
 
-## Connect the decision model
+## Optionally connect the decision model
 
 The hub calls the configured SystemOne URL; it does not load model weights itself.
 Start the included [model container](../admin/model-service.md) on your GPU host.

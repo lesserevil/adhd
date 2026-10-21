@@ -16,12 +16,28 @@ Published information is shared within the configured project. Deliveries and
 subscriptions are private to their owner. Addressed messages are delivered only
 to the recipient and are excluded from publication search.
 
+## Project selection and subscription modes
+
+For protocol profile 2, whoami returns effective project_ids and list_projects
+returns admitted projects. Include project_id in each project command when more
+than one is admitted. Unknown and hidden scopes both yield PROJECT_NOT_FOUND;
+ambiguous omission yields PROJECT_REQUIRED. See the
+[multi-project/eventing wire profile](../protocol/multi-eventing.md).
+
+{"op":"subscribe","project_id":"alpha","mode":"raw"} receives all new
+authorized project publications, including self-publications, with no model.
+mode:filtered requires filter text (or legacy description, never both). Exact
+selectors narrow either mode before inference. update_subscription replaces the
+mode/criterion/selectors at expected_revision and optionally pauses future work.
+
 ## Commands
 
 | Command | Required fields | Result |
 | --- | --- | --- |
 | `whoami` | none | Caller and project identifiers |
-| `subscribe` | `description` | New subscription |
+| `list_projects` | none | Admitted project IDs and labels |
+| `subscribe` | none for raw; filter/description for filtered | New subscription |
+| `update_subscription` | subscription_id, expected_revision, replacement mode/criterion | Revised subscription |
 | `list_subscriptions` | none | Caller's subscriptions |
 | `unsubscribe` | `subscription_id` | Removed subscription identifier |
 | `publish` | `text` and/or `data`; optional information metadata | Stored publication; matching runs in the background |
@@ -49,7 +65,8 @@ to the recipient and are excluded from publication search.
 
 Every command includes `op`. `text` is a nonblank string. Published `data` can be
 any JSON value, including a nested object, array, scalar, or null; private `send`
-data remains a JSON object. Optional `project_id` must match the hub's project. Unknown fields are
+data remains a JSON object. project_id selects one currently admitted project; omission is accepted only
+under the documented singleton/legacy binding rules. Unknown fields are
 rejected. Subscription descriptions can be up to 4 KiB; published content up to
 64 KiB. Poll/search limits default to 50 and can be 1..100. Search uses a
 case-insensitive literal substring over publication text, JSON data, information

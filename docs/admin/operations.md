@@ -4,12 +4,16 @@
 
 ## Deployment contract
 
-Run one Agentic Distributed Harness Depot (ADHD) Elixir process per DETS store
-in a Linux Docker container. Store
+For profile 2, run one ADHD hub process owning its registry and all isolated
+project stores, with one private Kafka service per server. Follow the
+[event-service deployment guide](event-service.md) for model-free Compose and
+Kubernetes packaging, optional models, security and recovery. The standalone
+container commands below retain the historical host-networked compatibility path
+and build lifecycle; they do not replace the Kafka application manifests. Store
 data and the writable private configuration directory in operator-owned bind mounts
 outside the image. Directory mounts support atomic hot configuration replacement. Never run two containers against the same store, including
-during upgrades, recovery, or backup. The model runs separately and needs a GPU;
-the hub container does not need GPU access or model weights.
+during upgrades, recovery, or backup. An optional local model runs separately and needs a GPU; raw pub/sub and literal
+search need no model. The hub container does not need GPU access or model weights.
 
 The authoring defaults are Elixir, Make, and Linux. The exported artifact is
 a portable Elixir source script, not a macOS executable or native BEAM closure.
@@ -27,8 +31,8 @@ It never sends the repository, configuration, stores, or checkpoint to Docker.
 This is local OCI deployment packaging, not a registry publication or tagged
 Literate AI native-package release.
 
-Use Linux Docker Engine with host networking. The listener remains bound to
-`127.0.0.1`, preserving the current application contract. There is no `-p` mapping:
+For the legacy standalone run.sh path, use Linux Docker Engine with host networking. That path binds the listener to `127.0.0.1`. The profile-2 Compose/pod listener
+may use `0.0.0.0` behind the private deployment ingress. There is no `-p` mapping:
 host networking shares the host's network namespace. The matcher URL's loopback
 address consequently refers to the Docker host. Docker documents this behavior
 in its [host networking guide](https://docs.docker.com/engine/network/drivers/host/).

@@ -29,7 +29,8 @@ The federated discovery direction in `PROJECT.md` maps to FED-001 in the active
 queue. `components/hub/federation/spec.md` owns asynchronous discovery across
 authorized direct peers, approved export evidence, provenance and explicit partial
 coverage. Durable HTTP submit/status queues provide the first transport; pub/sub
-remains an alternative. Each hub retains one project's store. QUERY-001's broader
+remains an alternative for correlated peer queries. The profile-2 multi contract
+now supersedes the original one-project server boundary. QUERY-001's broader
 contextual-history scans remain separate work. FED-001 records the native, upgrade,
 multi-hub and container acceptance needed to qualify this implementation.
 

@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 
@@ -22,12 +23,21 @@ def main():
     parser.add_argument('--project-id', default='shared-project')
     parser.add_argument('--port', type=int, default=8766)
     parser.add_argument('--public-url', help='URL reachable by the agent clients')
-    parser.add_argument('--matcher-url', default='http://127.0.0.1:18770/v1/systemone')
+    parser.add_argument('--matcher-url', help='Optional SystemOne URL; omitted means model-free in profile 2')
+    parser.add_argument('--project', action='append', default=[], help='Additional project ID; agents are explicitly admitted to all selected projects')
+    parser.add_argument('--host', choices=['127.0.0.1', '0.0.0.0'], default='127.0.0.1')
+    parser.add_argument('--eventing-rest-url', default='http://127.0.0.1:8082', help='Private Kafka REST Proxy URL as reached by the hub')
+    parser.add_argument('--legacy-single-project', action='store_true', help='Explicit profile-1 compatibility: one project, model matching, no Kafka configuration')
     parser.add_argument('--store-path', default='/data/hub.dets',
                         help='Initial store path as seen by the hub; use an absolute host path for native execution')
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error('port must be between 1 and 65535')
+    projects = [args.project_id] + args.project
+    if len(projects) > 256 or len(set(projects)) != len(projects) or any(not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}', value) for value in projects):
+        parser.error('Projects must be distinct identifiers of 1..128 ASCII letters, digits, dots, underscores or hyphens')
+    if args.legacy_single_project and (args.project or args.host != '127.0.0.1'):
+        parser.error('Legacy compatibility supports one project and a loopback listener')
     root = Path(args.directory)
     root.parent.mkdir(parents=True, exist_ok=True)
     root.mkdir(mode=0o700, exist_ok=False)
@@ -43,18 +53,25 @@ def main():
     fd = os.open(root / 'initial-admin-password.txt', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, 'w') as output:
         output.write('Username: admin\nPassword: ' + password + '\n')
-    write_private(root / 'hub.json', {
+    config = {
         'config_revision': 1,
         'auth': {'mode': 'local', 'allow_admin_token': False, 'session_ttl_ms': 3600000},
         'users': [{'id': secrets.token_hex(16), 'username': 'admin', 'name': 'admin',
                    'email': '', 'role': 'Admin', 'provider': 'local', 'disabled': False,
                    'oidc': None, 'groups': [], 'profile_complete': False, 'built_in': True,
                    'password_hash': password_hash}], 'agent_owners': {},
-        'project_id': args.project_id, 'host': '127.0.0.1', 'port': args.port,
+        'project_id': args.project_id, 'host': args.host, 'port': args.port,
         'public_url': public_url, 'store_path': args.store_path, 'agents': agents,
         'threshold_ppm': 900000, 'matcher': {
-            'url': args.matcher_url, 'model': 'Nemotron-Deciffusion-8B-v2.1',
-            'timeout_ms': 3000, 'retry_ms': 1000}})
+            'url': args.matcher_url or 'http://127.0.0.1:18770/v1/systemone', 'model': 'Nemotron-Deciffusion-8B-v2.1',
+            'timeout_ms': 3000, 'retry_ms': 1000}}
+    if not args.legacy_single_project:
+        config.update(projects=[{'id': identity, 'name': identity, 'status': 'active', 'description': '', 'settings': {}} for identity in projects],
+                      agent_projects={identity: list(projects) for identity in agents},
+                      eventing={'enabled': True, 'rest_url': args.eventing_rest_url})
+        if args.matcher_url is None:
+            config['matcher'] = None
+    write_private(root / 'hub.json', config)
     for name, token in agents.items():
         write_private(root / f'{name}.json', {'public_url': public_url, 'agents': {name: token}})
     print(f'Created private server and per-agent configurations in {root}; initial-admin-password.txt contains the initial admin password.')

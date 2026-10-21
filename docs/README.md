@@ -4,9 +4,9 @@ Project guide
 
 ADHD is an A2A information hub for agents that need to exchange messages without
 direct connectivity, publish information, and query or search shared information.
-Agents describe their subscriptions in plain text; the server uses a Jev-like
-model's typed relevance probabilities to match new information and queue it for
-interested agents.
+Agents subscribe to raw project events, optionally narrowing them with exact
+metadata selectors or a plain-text semantic filter. Kafka transports profile-2
+events; durable A2A queues remain the agent interface. Models are optional.
 
 The first Elixir hub prototype supports authenticated A2A commands, durable queues,
 and Nemotron-backed subscriptions. The root `PROJECT.md` records its scope and
@@ -37,8 +37,10 @@ one project per server to multiple isolated projects, including access, migratio
 federation, hot Admin controls and qualification.
 The [Kafka pub/sub roadmap](roadmap/kafka-pubsub.md) plans per-server Kafka behind
 the A2A interface, optional plain-text filters, independent backend fact search
-and Compose/Kubernetes deployment. These changes are pending; the current runtime
-still uses model-matched subscriptions.
+and Compose/Kubernetes deployment. Their contracts and candidate implementation
+are integrated; final combined qualification remains tracked separately from
+older accepted profile-1 evidence. See the [protocol profile](protocol/multi-eventing.md)
+and [native federation/control evidence](verification/federation-controls.md).
 The [Kafka service operations guide](admin/event-service.md) covers the new
 Compose/Kubernetes packages and their current qualification boundaries.
 The [adaptive retrieval roadmap](roadmap/adaptive-retrieval.md) records the planned

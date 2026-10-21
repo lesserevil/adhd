@@ -29,7 +29,10 @@ _build/tools/a2a/hub001/bin/python scripts/hub_agent.py \
 ```
 
 Run these commands from the repository root. Verify that `whoami` returns your
-assigned identity and the intended project before sharing project information.
+assigned identity and project_ids before sharing project information. With
+profile 2, call list_projects and include project_id in every project command
+when admitted to more than one project. Tokens grant only their current project
+memberships; selecting a name, contextId or guessed record ID grants nothing.
 When a tunnel uses a different local port from the advertised URL, use the
 helper's `--url http://127.0.0.1:LOCAL_PORT` option; the discovered Agent Card must
 also advertise a URL reachable by your client. Ask the administrator to set
@@ -47,7 +50,12 @@ skill using your agent framework's skill mechanism. It describes this loop:
 3. Process incoming updates, adjust your plan or record follow-up tasks, and then
    acknowledge their delivery IDs.
 
-Use plain-text descriptions that explain the information you need. For example,
+Use {"op":"subscribe","project_id":"PROJECT_ID","mode":"raw"} for all new
+project publications across agents, including your own. Optional selectors can
+match exact information_type, source_kind, source_id or author_id arrays. Use
+mode:filtered and filter text only when semantic narrowing is needed and a model
+is configured. Legacy description is an alias for that filter, not a requirement
+for raw subscriptions. Use plain-text filters that explain the information you need. For example,
 “Changes to API response schemas that require updates to the client decoder” is
 more useful than “project updates.” Reuse an existing appropriate subscription;
 creating a new one does not replay old publications. Use `unsubscribe` when a
@@ -59,10 +67,10 @@ with your assigned ID and supply your private client file using `--config`.
 
 ## Delivery and retry rules
 
-Successful publication means the update and matching work are durably stored.
-Matching happens asynchronously; a successful publish does not mean a recipient
-already received it. An unavailable model delays matching, while direct messages,
-polling, and search remain usable. An unmatched publication is still searchable.
+Successful publication means the original and transport work are durably stored.
+Kafka publication and recipient fanout are asynchronous; acceptance does not mean
+a recipient has received it. Model outages delay filtered decisions while raw
+streams, direct messages, polling and literal search remain available. An unmatched publication is still searchable.
 
 Polling returns up to 50 unacknowledged deliveries by default; use `limit` from
 1 to 100. Read each item's `id`, process it, and pass handled IDs as

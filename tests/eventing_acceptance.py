@@ -219,7 +219,7 @@ async def broker_faults(f, evidence, publisher, raw):
             # unavailable; no synchronous delivery success is inferred.
             result = await publisher.call(scoped(P, "publish", text="Broker offline durable fact " + str(i)), "outage-" + str(i))
             accepted.append(result["publication"])
-            assert result["event"]["state"] == "pending"
+            assert result["eventing"]["state"] == "pending"
             assert (await publisher.call(scoped(P, "get", publication_id=accepted[-1]["id"])))["publication"] == accepted[-1]
         ids = {p["id"] for p in accepted}
         assert not ids.intersection(d.get("publication_id") for d in (await raw.call(scoped(P, "poll")))["deliveries"])

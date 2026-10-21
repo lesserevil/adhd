@@ -26,14 +26,50 @@ static int has_phase(const char *path, const char *phase) {
   return strstr(body, needle) != NULL;
 }
 
+static int transition(const char *path, char *identity, size_t capacity) {
+  char body[65536];
+  const char *tag = "\"eventing_transition\":{\"id\":\"";
+  int fd = open(path, O_RDONLY | O_CLOEXEC);
+  if (fd < 0) return 0;
+  ssize_t count = read(fd, body, sizeof(body) - 1);
+  close(fd);
+  if (count <= 0) return 0;
+  body[count] = 0;
+  char *begin = strstr(body, tag);
+  if (!begin) return 0;
+  begin += strlen(tag);
+  char *end = strchr(begin, '"');
+  if (!end || end == begin || (size_t)(end - begin) >= capacity) return 0;
+  memcpy(identity, begin, (size_t)(end - begin));
+  identity[end - begin] = 0;
+  return 1;
+}
+
+static int contains_identity(const char *path, const char *identity) {
+  int fd = open(path, O_RDONLY | O_CLOEXEC);
+  if (fd < 0) return 0;
+  char *body = malloc(262144);
+  if (!body) { close(fd); return 0; }
+  ssize_t count = read(fd, body, 262144);
+  close(fd);
+  int found = count > 0 && memmem(body, (size_t)count, identity, strlen(identity)) != NULL;
+  free(body);
+  return found;
+}
+
 static int boundary(const char *source, const char *destination) {
   const char *stage = getenv("ADHD_CRASH_STAGE");
   const char *config = getenv("ADHD_CRASH_CONFIG");
   const char *store = getenv("ADHD_CRASH_STORE");
-  char marker[4096], snapshot[4096];
+  char marker[4096], snapshot[4096], transaction[4096], identity[256];
   if (!stage || !config || !store || !source || !destination) return 0;
   snprintf(marker, sizeof(marker), "%s.project-upgrade", config);
   snprintf(snapshot, sizeof(snapshot), "%s.snapshot", store);
+  snprintf(transaction, sizeof(transaction), "%s.transaction", config);
+  if (!strcmp(stage, "transition-decision") && !strcmp(destination, config)
+      && transition(transaction, identity, sizeof(identity))) return 1;
+  if (!strcmp(stage, "transition-project") && !strcmp(destination, snapshot)
+      && transition(transaction, identity, sizeof(identity)) && contains_identity(source, identity)) return 2;
   if (!strcmp(destination, marker)) {
     if (!strcmp(stage, "before-prepared") && has_phase(source, "prepared")) return 1;
     if (!strcmp(stage, "before-decided") && has_phase(source, "decided")) return 1;

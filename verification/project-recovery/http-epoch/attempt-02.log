@@ -1,0 +1,28 @@
+     warning: clauses with the same name and arity (number of arguments) should be grouped together, "def handle_call/3" was previously defined (_build/roadmap/final/http-epoch-unit36-02/config.exs:242)
+     │
+ 319 │   def handle_call({:recovery_admin,cmd,principal},_,x) do
+     │       ~
+     │
+     └─ _build/roadmap/final/http-epoch-unit36-02/config.exs:319:7
+
+Running ExUnit with seed: 253679, max_cases: 4
+
+
+
+  1) test a restored project's actual held HTTP reply cannot succeed while another project's reply completes (ProjectHTTPEpochTest)
+     _build/roadmap/final/http-epoch-unit36-02/test.exs:76
+     Assertion failed, no matching message after 2000ms
+     Showing 2 of 2 messages in the mailbox
+     code: assert_receive {:request, "red", red_request}
+     mailbox:
+       pattern: {:request, "red", red_request}
+       value:   {:result, :blue, {:rejected, "PROJECT_NOT_FOUND"}}
+
+       pattern: {:request, "red", red_request}
+       value:   {:result, :red, {:rejected, "PROJECT_NOT_FOUND"}}
+     stacktrace:
+       _build/roadmap/final/http-epoch-unit36-02/test.exs:81: (test)
+
+.
+Finished in 2.2 seconds (0.1s on load, 0.00s async, 2.1s sync)
+2 tests, 1 failure

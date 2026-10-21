@@ -194,3 +194,12 @@ coalesced apply messages; authenticated exact retries remain free at the cap.
 cover callback dependencies, resource ticket retirement and pure transport/work
 transformations. They do not qualify complete restore, real cancellation or
 successor image operation. The durable decision coordinator remains under integration.
+
+[Two frozen real HTTP checks](../../verification/project-recovery/http-epoch/manifest.json)
+hold actual loopback responses across an epoch switch: the old target request
+cannot succeed, while another project's request completes and retains its lane.
+A stale request is also rejected before opening a TCP connection. This is isolated
+Net/Resources evidence; complete restore and actual model/peer/Kafka crossover
+remain unqualified. [The offline backup validator](../../verification/project-recovery/backup-validator.json)
+passes 33 checks over retained actual snapshots, including original principal and
+project-reference proofs, without opening DETS or calling live services.

@@ -145,7 +145,10 @@ subscriptions/modes. matches entries for raw are exactly
 mode:"filtered",probability_ppm,threshold_ppm,model plus subscription_revision to
 the existing match evidence. Raw MUST NOT invent scores/model names. Existing
 acknowledged delivery remains acknowledged when late reasons append. Direct
-messages retain their separate authorized path. Poll returns oldest currently
+messages retain their separate authorized path. New event-materialized publication deliveries
+retain the original publication's author_id as well as sender_id, source and
+information_type; author_id and sender_id must agree. Legacy stored delivery
+responses remain unchanged when replayed. Poll returns oldest currently
 available durable deliveries by creation sequence; a later raw event may arrive
 before an older filtered decision, explicitly no global completion-order promise.
 Within the raw project stream ingestion order is preserved. Batch ack validates

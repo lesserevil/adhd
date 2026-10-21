@@ -20,11 +20,19 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 
 from foundation_acceptance import Client, Runtime, free_port
-from multi_support import Evidence, Fixture, arguments, scoped
+from multi_support import Admin, Evidence, Fixture, arguments, scoped
 from multi_workflow_upgrade import wait
 from project_recovery_acceptance import Recovery, BLUE
 from project_recovery_restore import offline_bundle
 from project_recovery_state import canonical, digest, exact, route, snapshot
+
+
+class LegacyFixture(Fixture):
+    """Retain the accepted installation's existing public Admin credential."""
+    def admin(self):
+        if self.admin_client is None and self.config.get('admin_token'):
+            self.admin_client = Admin(Client(self, self.config['admin_token']), self)
+        return super().admin()
 
 
 def capture(api):
@@ -233,7 +241,7 @@ async def checks(args, f, evidence):
 
 async def main(args):
     assert not args.rest_url and not args.with_model
-    f = Fixture(args, initialize_projects=False)
+    f = LegacyFixture(args, initialize_projects=False)
     evidence = Evidence(args.report, 'project-recovery-accepted-learned-selection')
     evidence.value['harness_sha256'] = digest(Path(__file__).read_bytes())
     if args.hub: evidence.value['artifact_sha256'] = digest(args.hub.read_bytes())

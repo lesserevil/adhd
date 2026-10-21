@@ -71,6 +71,7 @@ async def viewport(args, browser, name, width, height, evidence):
         await expect(page.get_by_role("button", name="Apply reviewed plan", exact=True)).to_be_visible()
         plan = r.status(RED)["operation"]["plan"]
         r.assert_plan(plan, RED, "initialize")
+        await page.get_by_role("heading", name="Recovery status", exact=True).locator("..").locator("details").last.locator("summary").click()
         assert plan["plan_sha256"] in await page.locator("#content").inner_text()
         captures.append(await capture(page, f.root, "review-initialization"))
         await page.get_by_role("button", name="Apply reviewed plan", exact=True).click()
@@ -141,6 +142,7 @@ async def viewport(args, browser, name, width, height, evidence):
         plan = r.status(RED)["operation"]["plan"]
         r.assert_plan(plan, RED, "restore")
         assert plan["manifest_sha256"] == manifest_sha
+        await page.get_by_role("heading", name="Recovery status", exact=True).locator("..").locator("details").last.locator("summary").click()
         assert plan["plan_sha256"] in await page.locator("#content").inner_text()
         captures.append(await capture(page, f.root, "review-restore"))
         await page.get_by_role("button", name="Apply reviewed plan", exact=True).click()

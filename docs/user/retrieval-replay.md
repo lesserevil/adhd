@@ -294,3 +294,5 @@ retains the nine existing multi-project checks on accepted source34 after adding
 future profile2.1 initialization support to the test fixture. The exact profile
 gate keeps profile2.0 free of recovery operations. This is a compatibility result;
 it provides no runtime qualification for the new recovery feature.
+
+Recovery development checkpoint05 is retained separately in [the admission and unfinished restore reports](../validation/recovery-development-05.json). Admission passed five groups; broader restore, legacy selection and unsafe-input tests retain their exact failures and do not establish complete selective recovery qualification.

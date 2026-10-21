@@ -53,6 +53,7 @@ def wait(fn, message, seconds=30):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--command', required=True, help='JSON argv before the serve argument')
+    p.add_argument('--legacy-command', help='JSON argv for a previously accepted single-project server')
     p.add_argument('--report', type=Path, required=True)
     p.add_argument('--work', type=Path)
     p.add_argument('--eventing-rest-urls', help='JSON array of three distinct real Kafka REST services')
@@ -63,7 +64,9 @@ def main():
     broker_urls = json.loads(args.eventing_rest_urls) if args.eventing_rest_urls else None
     if broker_urls is not None:
         assert len(broker_urls) == 3 and len(set(broker_urls)) == 3
+    harness_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     model = Model()
+    legacy = None
     hubs = []
     cases = []
     schema = None
@@ -128,7 +131,7 @@ def main():
             report['limitations'].append('Kafka is exercised as independent per-server services; this suite does not qualify Kubernetes or replicated broker durability.')
         for i in range(3):
             hub = Hub(command, root / f'server-{i}', 'shared', model.url)
-            hub.config.update(server_id=f'{i+1:032x}', eventing={'enabled': False},
+            hub.config.update(server_id=uuid4().hex, eventing={'enabled': False},
                               projects=[{'id': name, 'name': 'Same display label', 'status': 'active',
                                          'description': 'Transport fixture', 'settings': {
                                              'federation': {'description': f'Server {i} {name} builds image decoders.',
@@ -295,9 +298,50 @@ def main():
         assert status == 200 and result['status'] in ('pending', 'completed', 'expired')
         record('hard-restart-preserves-project-pair-revocation-and-accepted-query-identity')
 
-        for hub in hubs:
+        if args.legacy_command:
+            legacy_command = json.loads(args.legacy_command)
+            legacy = Hub(legacy_command, root / 'legacy-server', 'legacy', model.url)
+            outgoing, incoming = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+            legacy.config['federation']['description'] = 'Legacy project builds image decoders.'
+            legacy.config['federation']['peers'] = [{'project_id': 'shared', 'url': a.base,
+                'token': outgoing, 'inbound_token': incoming}]
+            legacy.start()
+            peers = json.loads(json.dumps(a.config['federation']['peers']))
+            peers.append({'project_id': 'legacy', 'url': legacy.base,
+                          'token': incoming, 'inbound_token': outgoing})
+            patch(a, {'federation': {'peers': peers}})
+            def legacy_ready():
+                return any(row['project_id'] == 'legacy' and row['status'] == 'ready'
+                           for row in call(a, 'shared', 'federation_directory')['peers'])
+            wait(legacy_ready, 'New server did not observe legacy peer')
+            old_query = legacy.query()
+            old_done = legacy.finish(old_query['id'])
+            assert old_done['status'] == 'completed' and old_done['responses'][0]['project_id'] == 'shared', old_done
+            new_query = call(a, 'shared', 'federated_query', question='Which projects build image decoders?')['query']
+            new_done = finish(a, 'shared', 'get_federated_query', new_query['id'])
+            assert any(row['project_id'] == 'legacy' and row['matched'] for row in new_done['responses']), new_done
+            record('accepted-legacy-binary-and-multi-project-server-query-in-both-directions')
+            projects = json.loads(json.dumps(a.config['projects']))
+            projects[0]['status'] = 'archived'
+            patch(a, {'projects': projects})
+            status, catalog = request(a.base, '/federation/v1', {'protocol_version': 1, 'op': 'catalog', 'origin_project_id': 'legacy'}, outgoing)
+            assert status == 200 and catalog['visible'] is False and catalog['items'] == [], (status, catalog)
+            before = len(model.states)
+            status, value = request(a.base, '/federation', {'op': 'submit', 'origin_project_id': 'legacy',
+                'query_id': uuid4().hex, 'question': 'Must not invoke a model', 'deadline_at': deadline}, outgoing)
+            assert status == 403 and value['error']['code'] == 'PROJECT_ARCHIVED', (status, value)
+            time.sleep(.3)
+            assert len(model.states) == before
+            record('archived-default-project-legacy-routes-export-no-catalog-and-reject-work')
+            report['legacy_input_sha256'] = {Path(item).name: hashlib.sha256(Path(item).read_bytes()).hexdigest()
+                                             for item in legacy_command if Path(item).is_file()}
+
+        for hub in hubs + ([legacy] if legacy else []):
             hub.stop()
-            product = (hub.root / 'hub.dets').read_bytes() + (hub.root / 'hub.dets.snapshot').read_bytes()
+            stores = [path for path in hub.root.rglob('*') if path.is_file()
+                      and (path.name.endswith('.dets') or path.name.endswith('.snapshot'))]
+            assert stores, 'No durable stores found for credential scan'
+            product = b''.join(path.read_bytes() for path in stores)
             private = list(hub.tokens.values()) + [hub.config['admin_token']]
             for peer in hub.config['federation']['peers']:
                 private += [peer['token'], peer['inbound_token']]
@@ -308,13 +352,15 @@ def main():
                                   for item in command if Path(item).is_file()}
         report['model_requests'] = len(model.states)
         report['validated_messages'] = validated
-        report['harness_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+        report['harness_sha256'] = harness_sha256
     except BaseException as error:
         report['failure_type'] = type(error).__name__
         raise
     finally:
         for hub in hubs:
             hub.stop()
+        if legacy:
+            legacy.stop()
         model.close()
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report, indent=2) + '\n')

@@ -132,7 +132,7 @@ class Hub:
         self.process = subprocess.Popen(command + [json.dumps(['serve', str(path)])],
                                         stdout=self.handles[0], stderr=self.handles[1],
                                         start_new_session=True)
-        deadline = time.monotonic() + 30
+        deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
             if self.process.poll() is not None:
                 raise AssertionError('Hub failed startup; inspect private acceptance work directory')

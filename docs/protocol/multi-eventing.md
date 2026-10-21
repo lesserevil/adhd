@@ -142,3 +142,39 @@ not atomically cover backend writes or agent receipts; see the
 The REST v2 offsets commit body uses the last consumed offset: a durable next
 position N commits offset N-1, and GET offsets must report N. Consumer positions
 uses N directly. These two API meanings must not be conflated.
+
+### Audited recovery and explicit replay
+
+Project-scoped Admin `eventing_status` exposes the blocking quarantine digest and
+physical offset, durable checkpoint, `control_revision`, and `replay_watermark`.
+A `repair_eventing` request supplies `offset`, `expected_checkpoint`,
+`expected_digest`, `action` (`retry` or `reconcile`), a nonempty `reason`, fresh
+`message_id` and `confirm:true`. Retry rereads the physical record; reconcile
+records an audited skip and republishes any linked accepted original. Foreign
+broker data never becomes an original or model input. Exact stale preconditions
+return HTTP409 `EVENTING_CONFLICT`.
+
+Admin `replay_events` takes inclusive `from_sequence`/`to_sequence`, exact
+`expected_watermark` from status, and explicit `subscriptions:[{id,revision}]`,
+plus reason/message ID/confirmation. Admission is atomic and bounded to 1000
+retained originals, 64 target subscriptions and 16 MiB additional durable work,
+within current outbox limits. Old originals enter the real Kafka transport with
+their original publication identity. Ordinary activation sequences and existing
+acknowledgements remain intact. `eventing_replay` takes `replay_id` to observe
+pending/materialized state; materialized means downstream work is durable,
+including pending filtered jobs. `eventing_audit` pages durable control records
+using optional offset and limit. All four commands require Admin authority.
+
+Accepted controls are idempotent by actor, project and message ID. Repeating the
+same command returns its original accepted result before stale precondition
+checks; changing a command under the same ID conflicts. Raw/filtered match reasons
+may include `replay_id`. No extra field is added to immutable Kafka envelopes.
+Filtered jobs retain their accepted criterion, revision, threshold and model
+adapter across hot configuration changes; disabling models pauses inference.
+
+Optional hot `eventing.tls_ca_pem` configures 1..16 certificate-only X.509 CA roots
+(up to 64 KiB), replacing system trust. Admin merge-patch null removes this setting
+or a bearer token. TLS peer/hostname verification remains mandatory, and trust
+changes require a new handshake, preventing previously authorized connections
+from bypassing candidate trust preflight. See the [normative eventing contract](../../components/hub/eventing/spec.md)
+for exact bounds, recovery semantics and closed request/result schemas.

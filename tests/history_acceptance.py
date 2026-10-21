@@ -145,7 +145,7 @@ def main():
         h.stop(hard=True);h.start();assert get(h,durable)==before
         record('project-rename-and-restart-preserve-frozen-query-label-snapshot-and-model-evidence')
         # A small independent runtime makes capacity limits deterministic.
-        capacity=runtime('capacity',{'max_state_bytes':1048576,'request_bytes':8192});publish(capacity,'capacity');limited=None
+        capacity=runtime('capacity',{'max_state_bytes':1048576,'request_bytes':8192});capacity_original=publish(capacity,'capacity')['publication']['id'];limited=None
         for i in range(40):
             body={'op':'query_history','question':'Question '+str(i)+' '+('q'*1800),'scope':{'information_type':'capacity'}}
             try:created=rpc(capacity,body)['query']
@@ -153,9 +153,9 @@ def main():
             result=wait(lambda:(x if (x:=get(capacity,created))['status']!='pending' else None),'Capacity job did not finish')
             if result['status']=='partial':limited=result;break
         assert limited and limited['error']['code']=='RESOURCE_LIMIT',limited
-        original=rpc(capacity,{'op':'get_record','publication_id':'publication-1'});update(capacity,{'history':{'max_state_bytes':2097152}})
+        original=rpc(capacity,{'op':'get_record','publication_id':capacity_original});update(capacity,{'history':{'max_state_bytes':2097152}})
         recovered=finish(capacity,rpc(capacity,{'op':'continue_history_query','query_id':limited['id']})['query']);assert recovered['coverage']['primary_complete']
-        assert rpc(capacity,{'op':'get_record','publication_id':'publication-1'})==original
+        assert rpc(capacity,{'op':'get_record','publication_id':capacity_original})==original
         record('bounded-derived-history-state-raising-hot-limit-and-continuing-never-deletes-originals')
         flood=runtime('active-budget');publish(flood,'active-budget');model.mode='error';active=[submit(flood,'active-budget') for _ in range(64)]
         error(flood,{'op':'query_history','question':'Exceeds the active limit'},'RESOURCE_EXHAUSTED')

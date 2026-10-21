@@ -42,4 +42,18 @@ defmodule RecoveryPrimitiveTests do
     assert catch_throw(F.json(~s({"x":1,"x":2})))=={:recovery,"RESTORE_INVALID_BACKUP","schema"}
     assert catch_throw(F.json(<<255>>))=={:recovery,"RESTORE_INVALID_BACKUP","schema"}
   end
+  test "owned generation creation rejects symlink ancestors before writing" do
+    root=Path.join(System.get_env("ADHD_PRIMITIVE_WORK"),"generation-"<>Integer.to_string(System.unique_integer([:positive])))
+    File.mkdir_p!(root);File.chmod!(root,0o700);uid=File.stat!(root).uid
+    try do
+      destination=Path.join(root,"genuine/project/generation/stage")
+      assert :ok==F.mkdir_private(destination,uid)
+      assert Bitwise.band(File.stat!(destination).mode,0o777)==0o700
+      operator=Path.join(root,"operator");File.mkdir!(operator);File.chmod!(operator,0o700)
+      File.ln_s!(operator,Path.join(root,"redirect"))
+      assert catch_throw(F.mkdir_private(Path.join(root,"redirect/new-generation"),uid))=={:recovery,"RESTORE_INVALID_BACKUP","path"}
+      assert File.ls!(operator)==[]
+    after File.rm_rf!(root) end
+  end
+
 end

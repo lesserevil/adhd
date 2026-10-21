@@ -114,17 +114,23 @@ The server file is `.adhd/container/hub.json`. Its important fields are:
 
 | Field | Purpose |
 | --- | --- |
-| `project_id` | Single project served by this store |
-| `host`, `port` | Loopback-only listener and available TCP port |
+| `server_id` | Stable server identity shared by its projects |
+| `projects` | Stable project IDs, display names, lifecycle status and optional settings overrides |
+| `project_id` | Optional legacy default selector; new multi-project clients select a project explicitly |
+| `agent_projects` | Explicit project admissions for each agent |
+| `host`, `port` | Private listener and available TCP port; use loopback for the legacy host runner |
 | `public_url` | Base URL advertised in discovery; must be reachable by clients |
-| `store_path` | `/data/hub.dets`, mapped to the host data directory |
+| `store_path` | Durable store location; additional projects use separate stores beneath the same mounted storage root |
 | `agents` | Agent ID to distinct bearer-token mappings, at least 24 characters each |
-| `matcher.url`, `matcher.model` | SystemOne endpoint and model identifier |
+| `matcher` | Optional decision model; null leaves raw subscriptions and literal fact search operational |
+| `matcher.url`, `matcher.model` | Configured SystemOne endpoint and model identifier when filtering is enabled |
 | `matcher.timeout_ms`, `matcher.retry_ms` | Inference timeout and background retry interval |
 | `threshold_ppm` | Match policy, initially 900000; needs workload calibration |
 | `federation` | Optional trusted peers, approved project description and publication export allowlist; see [federation setup](../user/federation.md) |
 | `auth` | Local/OIDC/both mode, explicit legacy-key policy, session lifetime and OIDC provider/group mappings |
 | `users`, `agent_owners` | Stable user profiles, one role per user and agent ownership, managed in Users/Agents |
+| `eventing` | Per-server Kafka REST transport, topic policy, retention, trust/credentials and backlog bounds |
+| `resources` | Shared and per-project work capacity |
 | `config_revision` | Server-owned conflict-control revision |
 
 Give each agent only its `.adhd/container/agent-a.json` or `agent-b.json` client
@@ -144,15 +150,15 @@ provision proxies, TLS certificates, or network-wide authentication.
 
 ## Model connectivity
 
-The default assumes the selected Nemotron SystemOne server is already listening
-on the Docker host at port 18770. Check it independently:
+For optional model filtering, the local Nemotron deployment listens on the Docker
+host at port 18770. Check it independently before enabling the model:
 
 ```bash
 curl --fail http://127.0.0.1:18770/health
 ```
 
 If the model runs elsewhere, configure a reachable private endpoint or keep an SSH
-tunnel open on the Docker host as described in [source setup](../user/getting-started.md#connect-the-decision-model).
+tunnel open on the Docker host as described in [source setup](../user/getting-started.md#optionally-connect-the-decision-model).
 Container health means the store and listener are available; it deliberately does
 not mean inference is available. Pending matching jobs persist and retry after an
 outage. See [model integration](../architecture/model-integration.md) for the

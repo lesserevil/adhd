@@ -14,10 +14,19 @@ defmodule BackupValidationVectors do
       # All accepted feature collections, qualifications and receipts stay intact.
       for field<-[:optimization,:retrieval_selection,:retrieval_index,:feedback,:history_queries,:retrieval_queries,:archive_queries,:replay_queries,:idempotency,:sources,:admin_idempotency],Map.has_key?(b.state,field),do: true=(r.state[field]==b.state[field])
       {:ok,r}
-    catch {:recovery,code,_}->{:error,code} end
+    catch {:recovery,code,reason}->{:error,code,reason} end
     case {expected,actual} do
       {:ok,{:ok,r}}->%{"id"=>name,"passed"=>true,"records"=>r.records,"references"=>r.references}
-      {code,{:error,code}}->%{"id"=>name,"passed"=>true,"error"=>code}
+      {code,{:error,code,reason}}->
+        true=(reason in Process.get(:recovery_reason_enum))
+        expected_reason=cond do
+          name in ~w(oidc-issuer-drift oidc-subject-drift owned-agent-reassignment)->"owner_changed"
+          name in ~w(missing-original-owner missing-current-owner missing-current-agent)->"owner_missing"
+          name=="unowned-credential-change-unprovable"->"owner_unprovable"
+          true->nil
+        end
+        if expected_reason,do: true=(reason==expected_reason)
+        %{"id"=>name,"passed"=>true,"error"=>code,"reason"=>reason}
       _->raise "#{name}: #{inspect(actual)} expected #{inspect(expected)}"
     end
   end
@@ -106,6 +115,7 @@ defmodule BackupValidationVectors do
     %{"checks"=>base++cases++extra,"forbidden_calls"=>calls,"trace_patterns"=>["dets.open_file/*","httpc.request/*","Config.root/0","Config.get/0","Store.upgrade/*"],"inputs"=>Enum.map(fixtures,fn f->Map.merge(Map.take(f,~w(id)),%{"snapshot_sha256"=>sha(File.read!(f["snapshot"])),"configuration_sha256"=>sha(File.read!(f["configuration"]))}) end)}
   end
 end
+Process.put(:recovery_reason_enum,ADHD.JSON.decode!(File.read!(Path.expand("../components/hub/project-recovery/interface.schema.json",__DIR__)))["$defs"]["Reason"]["enum"])
 fixtures=ADHD.JSON.decode!(File.read!(fixture_file))
 result=BackupValidationVectors.run(fixtures) |> Map.merge(%{"schema"=>"adhd/project-backup-validator-check@1","passed"=>true,"scope"=>"Pure offline state/reference/principal validator only; no bundle-reader/service/install/complete-recovery claim","baseline_artifact_sha256"=>BackupValidationVectors.sha(File.read!(baseline)),"validator_sha256"=>BackupValidationVectors.sha(validator_bytes)})
 File.write!(report,JSON.encode!(result)<>"\n")

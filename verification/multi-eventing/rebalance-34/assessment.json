@@ -10,8 +10,11 @@
     "KAFKA-003": "Supplies real consumer group rebalances while independent A2A subscriptions, acknowledgements and restart preserve logical deliveries."
   },
   "limitations": [
-    "Bridge uses explicit partition assignment, not coordinator-managed assignment; no managed bridge ownership transfer or multiwriter/HA qualification.",
-    "Exact34 image counterpart pending; native proof is not image evidence."
+    "Bridge uses explicit partition assignment, not coordinator-managed assignment; no managed bridge ownership transfer or multiwriter/HA qualification."
   ],
-  "retained_failure": "attempt-01.json; parser expected ASSIGNMENT instead of actual CURRENT-ASSIGNMENT; actual application behavior did not fail."
+  "retained_failure": "attempt-01.json; parser expected ASSIGNMENT instead of actual CURRENT-ASSIGNMENT; actual application behavior did not fail.",
+  "image_report": "image.json",
+  "image_report_sha256": "ea438a50603ab387e589db31c501e1079ec86be96e511cd2a64ea82e790f2335",
+  "image_checks": 5,
+  "image_failure": "image-attempt-01.json: broker offset diagnostic used a correctly deleted fenced bridge consumer. Fixed independent unassigned read-only offset reader; original failure retained."
 }

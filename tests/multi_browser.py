@@ -2,9 +2,12 @@
 """Rendered desktop/mobile project, eventing, membership and role acceptance."""
 import asyncio
 import hashlib
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
+import threading
+import time
 from uuid import uuid4
 
 from playwright.async_api import async_playwright, expect
@@ -13,6 +16,51 @@ from multi_support import Evidence, Fixture, arguments, scoped
 
 
 RED, BLUE = "project-red", "project-blue"
+
+
+class PeerAuthObserver:
+    """Observe real peer requests while reporting honest unavailability."""
+    def __init__(self):
+        self.requests = []
+        observer = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *_):
+                pass
+
+            def do_POST(self):
+                body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                observer.requests.append({"authorization": self.headers.get("Authorization"), "body": body})
+                response = b'{"error":{"code":"UNAVAILABLE"}}'
+                self.send_response(503)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(response)))
+                self.end_headers()
+                try:
+                    self.wfile.write(response)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server.daemon_threads = True
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.url = "http://127.0.0.1:" + str(self.server.server_port)
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=3)
+
+    async def observed(self, token, remote_project, after=0):
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            rows = list(self.requests[after:])
+            assert all(row["authorization"] == "Bearer " + token for row in rows), "Peer lost or replaced outgoing credential"
+            if any(row["body"].get("destination_project_id") == remote_project for row in rows):
+                return
+            await asyncio.sleep(.1)
+        raise AssertionError("Edited project grant never produced its authenticated peer request")
 
 
 async def login(page, base, username, password, view="Overview"):
@@ -35,7 +83,10 @@ async def save(page, button, op, same_view=True):
         and response.request.method == "POST" and response.request.post_data_json.get("op") == op) as event:
         await button.click()
     response = await event.value
-    assert response.status == 200, "Rendered mutation failed: " + op
+    if response.status != 200:
+        error = await response.json()
+        raise AssertionError("Rendered mutation " + op + " failed HTTP " + str(response.status)
+                             + ": " + str(error.get("error", {}).get("code")))
     await response.body()
     # Form values change immediately on fill/select; they are not evidence that
     # the request finished or that the server's new form has been installed.
@@ -171,6 +222,133 @@ async def stream_forms(page, f, suffix):
         assert any(s["mode"] == "filtered" for s in subscriptions)
 
 
+async def existing_agent_controls(page, f, suffix):
+    await navigate(page, "Agents")
+    agent_id = "browser-edit-" + suffix
+    form = page.locator("#content > form")
+    await form.get_by_label("Agent ID", exact=True).fill(agent_id)
+    await form.get_by_role("button", name="Generate token", exact=True).click()
+    token = await form.get_by_label("Agent token (save securely before submitting)", exact=True).input_value()
+    for project in (RED, BLUE):
+        await form.get_by_label(re.compile(r"^Agent project: .*\(" + project + r"\)$")).check()
+    await save(page, form.get_by_role("button", name="Create agent", exact=True), "create_agent")
+    f.tokens[agent_id] = token
+    agent = await f.agent(agent_id)
+    publication = (await agent.call(scoped(RED, "publish", text="Original retained after UI agent removal " + suffix)))["publication"]
+    row = page.locator("section.row").filter(has=page.get_by_role("heading", name=agent_id, exact=True))
+    await row.get_by_role("button", name="Edit agent", exact=True).click()
+    await row.get_by_label(re.compile(r"^Agent project: .*\(project-blue\)$")).uncheck()
+    await save(page, row.get_by_role("button", name="Save agent", exact=True), "config_update", same_view=False)
+    await expect(row.get_by_role("button", name="Save agent", exact=True)).to_have_count(0)
+    await expect(row.get_by_role("button", name="Edit agent", exact=True)).to_be_visible()
+    assert "error" in (await f.raw(agent_id, scoped(BLUE, "whoami"))).json()
+    assert "error" not in (await f.raw(agent_id, scoped(RED, "whoami"))).json()
+    await row.get_by_role("button", name="Edit agent", exact=True).click()
+    await row.get_by_label(re.compile(r"^Agent project: .*\(project-blue\)$")).check()
+    await save(page, row.get_by_role("button", name="Save agent", exact=True), "config_update", same_view=False)
+    await expect(row.get_by_role("button", name="Save agent", exact=True)).to_have_count(0)
+    await expect(row.get_by_role("button", name="Edit agent", exact=True)).to_be_visible()
+    assert "error" not in (await f.raw(agent_id, scoped(BLUE, "whoami"))).json()
+    await capture(page, f.root, suffix + "-existing-agent-grants")
+    await save(page, row.get_by_role("button", name="Remove agent", exact=True), "config_update", same_view=False)
+    await expect(page.get_by_role("heading", name=agent_id, exact=True)).to_have_count(0)
+    assert (await f.raw(agent_id, scoped(RED, "whoami"))).status_code == 401
+    config = f.admin().call({"op": "config_get"})["config"]
+    assert agent_id not in config.get("agent_projects", {})
+    assert agent_id not in config.get("agent_owners", {})
+    reader = await f.agent("red-a")
+    assert (await reader.call(scoped(RED, "get", publication_id=publication["id"])))["publication"] == publication
+
+
+async def broker_secret_controls(page, f, suffix):
+    await navigate(page, "Events")
+    secret = uuid4().hex + uuid4().hex
+    field = page.get_by_label("Broker bearer token (blank retains)", exact=True)
+    assert await field.get_attribute("type") == "password"
+    await field.fill(secret)
+    await save(page, page.get_by_role("button", name="Save event settings", exact=True), "config_update")
+    await expect(field).to_have_value("")
+    result = f.admin().call({"op": "config_get"})
+    assert result["secrets"]["/eventing/bearer_token"] is True
+    assert secret not in json.dumps(result) and secret not in await page.content()
+    await save(page, page.get_by_role("button", name="Save event settings", exact=True), "config_update")
+    await expect(field).to_have_value("")
+    assert f.admin().call({"op": "config_get"})["secrets"]["/eventing/bearer_token"] is True
+    await capture(page, f.root, suffix + "-write-only-broker-secret")
+
+
+async def peer_and_resource_controls(page, f, suffix):
+    await navigate(page, "Settings")
+    config = f.admin().call({"op": "config_get"})["config"]
+    if not config.get("federation"):
+        await page.get_by_role("button", name="Enable federation", exact=True).click()
+        await page.get_by_label("description", exact=True).fill("Browser peer grants qualification " + suffix)
+    await page.get_by_role("button", name="Add peer", exact=True).click()
+    peer = page.locator("fieldset.peer").last
+    server_id = uuid4().hex
+    observer = PeerAuthObserver()
+    f.peer_observers.append(observer)
+    await peer.get_by_label("Federation protocol", exact=True).select_option("Server and project grants (v2)")
+    await peer.get_by_label("Peer server ID", exact=True).fill(server_id)
+    await peer.get_by_label("Peer server URL", exact=True).fill(observer.url)
+    outgoing, incoming = uuid4().hex + uuid4().hex, uuid4().hex + uuid4().hex
+    await peer.get_by_label("Outgoing peer token (blank retains)", exact=True).fill(outgoing)
+    await peer.get_by_label("Incoming peer token (blank retains)", exact=True).fill(incoming)
+    first = peer.get_by_role("group", name="Grant 1", exact=True)
+    await first.get_by_label("Local project ID", exact=True).select_option(RED)
+    await first.get_by_label("Remote project ID", exact=True).fill("remote-red")
+    await peer.get_by_role("button", name="Add project grant", exact=True).click()
+    second = peer.get_by_role("group", name="Grant 2", exact=True)
+    await second.get_by_label("Local project ID", exact=True).select_option(BLUE)
+    await second.get_by_label("Remote project ID", exact=True).fill("remote-blue")
+    await save(page, page.get_by_role("button", name="Confirm and save settings", exact=True), "config_update")
+    peers = f.admin().call({"op": "config_get"})["config"]["federation"]["peers"]
+    saved = next(item for item in peers if item["server_id"] == server_id)
+    assert saved["project_pairs"] == [{"local_project_id": RED, "remote_project_id": "remote-red"},
+                                       {"local_project_id": BLUE, "remote_project_id": "remote-blue"}]
+    await observer.observed(outgoing, "remote-blue")
+    peer_body = {"protocol_version": 2, "op": "catalog", "origin_server_id": server_id,
+                 "origin_project_id": "remote-red", "destination_project_id": RED}
+    inbound = await page.request.post(f.base + "/federation/v2", data=peer_body,
+                                     headers={"Authorization": "Bearer " + incoming})
+    assert inbound.status == 200, "Configured inbound peer credential failed actual protocol authentication"
+    unauthorized = await page.request.post(f.base + "/federation/v2", data=peer_body,
+                                          headers={"Authorization": "Bearer " + uuid4().hex})
+    assert unauthorized.status == 401, "An Admin cookie must not bypass peer credential authentication"
+    peer = page.locator("fieldset.peer").last
+    for label in ("Outgoing peer token (blank retains)", "Incoming peer token (blank retains)"):
+        await expect(peer.get_by_label(label, exact=True)).to_have_value("")
+    assert outgoing not in await page.content() and incoming not in await page.content()
+    second = peer.get_by_role("group", name="Grant 2", exact=True)
+    previous = len(observer.requests)
+    await second.get_by_label("Remote project ID", exact=True).fill("remote-blue-edited")
+    await save(page, page.get_by_role("button", name="Confirm and save settings", exact=True), "config_update")
+    result = f.admin().call({"op": "config_get"})
+    saved = next(item for item in result["config"]["federation"]["peers"] if item["server_id"] == server_id)
+    assert saved["project_pairs"][1]["remote_project_id"] == "remote-blue-edited"
+    assert all(result["secrets"].get("/federation/peers/0/" + key) is True for key in ("token", "inbound_token"))
+    await observer.observed(outgoing, "remote-blue-edited", after=previous)
+    inbound = await page.request.post(f.base + "/federation/v2", data=peer_body,
+                                     headers={"Authorization": "Bearer " + incoming})
+    assert inbound.status == 200, "Blank peer credential edit broke actual inbound authentication"
+    await capture(page, f.root, suffix + "-peer-project-grants")
+    await page.locator("fieldset.peer").last.get_by_role("button", name="Remove peer", exact=True).click()
+    await save(page, page.get_by_role("button", name="Confirm and save settings", exact=True), "config_update")
+    assert not f.admin().call({"op": "config_get"})["config"]["federation"]["peers"]
+    await expect(page.get_by_role("heading", name="Shared resource capacity", exact=True)).to_be_visible()
+    async with page.expect_response(lambda response: response.url.endswith("/admin/api")
+        and response.request.method == "POST" and response.request.post_data_json.get("op") == "resource_status") as event:
+        await page.get_by_role("button", name="Refresh shared resource status", exact=True).click()
+    response = await event.value
+    assert response.status == 200 and response.request.post_data_json == {"op": "resource_status"}
+    status = await response.json()
+    assert set(status["lanes"]) == {"model", "network", "eventing"}
+    metrics = page.get_by_role("heading", name="Shared resource capacity", exact=True).locator("..")
+    for lane in status["lanes"]:
+        await expect(metrics.get_by_text(re.compile(r"^" + lane + r": \d+ active, \d+ queued$"))).to_be_visible()
+    await capture(page, f.root, suffix + "-shared-resource-status")
+
+
 async def viewport_checks(browser, f, evidence, suffix, viewport, password):
     context = await browser.new_context(viewport=viewport)
     page = await context.new_page()
@@ -220,6 +398,12 @@ async def viewport_checks(browser, f, evidence, suffix, viewport, password):
     evidence.record(suffix + "-rendered-hot-project-create-rename-archive-resume-and-eventing-settings")
     await project_overrides(page, f, suffix)
     evidence.record(suffix + "-all-project-policy-overrides-save-and-reset-inheritance-without-changing-defaults")
+    await existing_agent_controls(page, f, suffix)
+    evidence.record(suffix + "-existing-agent-membership-revoke-restore-and-remove-preserve-originals")
+    await broker_secret_controls(page, f, suffix)
+    evidence.record(suffix + "-broker-bearer-secret-is-write-only-and-blank-save-retains")
+    await peer_and_resource_controls(page, f, suffix)
+    evidence.record(suffix + "-v2-peer-local-remote-grant-edits-retain-secrets-and-global-resource-refresh")
 
     username = "browser-dev-" + suffix
     devpass = "Browser developer password " + uuid4().hex
@@ -306,6 +490,7 @@ async def viewport_checks(browser, f, evidence, suffix, viewport, password):
 
 async def main(args):
     f = Fixture(args)
+    f.peer_observers = []
     evidence = Evidence(args.report, "adhd/multi-eventing-browser@1")
     if args.hub:
         evidence.value["artifact_sha256"] = hashlib.sha256(args.hub.read_bytes()).hexdigest()
@@ -328,6 +513,8 @@ async def main(args):
         evidence.finish()
     finally:
         await f.close()
+        for observer in f.peer_observers:
+            observer.close()
 
 
 if __name__ == "__main__":

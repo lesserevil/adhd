@@ -44,6 +44,14 @@ MODEL_UNAVAILABLE; pre-acceptance queue exhaustion is BACKPRESSURE. These use th
 existing JSON-RPC -32000/google.rpc.ErrorInfo representation. CLI validate checks
 shape, not membership/model/broker availability.
 
+During a hot all-project backend move, frozen writers reject new transactions
+with retryable CONFIG_APPLY_IN_PROGRESS. Admin HTTP returns503 and Retry-After:1;
+valid A2A requests retain HTTP200 with JSON-RPC -32000 and the same domain code in
+google.rpc.ErrorInfo. Retry the unchanged command and message ID after bounded
+backoff. Rejection creates no mutation receipt. A connection lost after the
+durable move decision has an uncertain outcome and must use the same retry key.
+See `components/hub/storage-relocation/spec.md` for recovery boundaries.
+
 | Command | New fields/rules |
 | --- | --- |
 | subscribe | mode raw/filtered; filter or description alias, never both; selectors exact arrays information_type/source_kind/source_id/author_id. Raw forbids criterion, filtered requires nonblank criterion. |

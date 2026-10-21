@@ -76,6 +76,14 @@ current_revision only on CONFIG_CONFLICT. Missing/invalid authentication=401,
 insufficient role/origin/CSRF=403, invalid shape=400, missing resource=404,
 idempotency/revision/apply conflicts=409, rate limit=429 (Retry-After seconds),
 write or dependency unavailable=503, internal failure=500. No secret/input echo.
+Resource admission MODEL_BUSY, NETWORK_BUSY and EVENTING_BUSY, stale queued
+CONFIG_CHANGED and writer-freeze CONFIG_APPLY_IN_PROGRESS are retryable503
+service errors for ordinary HTTP. Valid A2A requests retain their HTTP200
+JSON-RPC -32000/ErrorInfo domain representation; retry the identical mutation
+message ID after bounded backoff. Writer-freeze responses include Retry-After:1.
+Event repair/replay precondition conflicts use EVENTING_CONFLICT/409; an
+overlarge replay range uses RANGE_TOO_LARGE/413. EVENTING_DISABLED is503 and
+requires enabling the capability rather than retrying indefinitely.
 Existing A2A errors retain their specified JSON-RPC/domain mapping. New A2A domain
 codes use the same adhd.hub structured error shape, never pretend success.
 Versioned peer errors have {protocol_version:1,error:{code,message}} with the

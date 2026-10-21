@@ -65,6 +65,7 @@ specification_roots:
   - multi/spec.md
   - eventing/spec.md
   - resources/spec.md
+  - storage-relocation/spec.md
 ---
 # Agentic Distributed Harness Depot (ADHD)
 

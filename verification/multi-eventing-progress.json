@@ -61,6 +61,11 @@
       "path": "_build/roadmap/multi/hub-resources-14.exs",
       "sha256": "d48cfd4d10728d08ba249afbb49f283637af03d8ee1efa605ac8bb4f25f731e2",
       "admitted": false
+    },
+    "busy-eighteenth": {
+      "path": "_build/roadmap/multi/hub-busy-18.exs",
+      "sha256": "f792597662591ad1153c9002b5777d8c840399859df03dec58e015f7df8166a2",
+      "admitted": false
     }
   },
   "reports": {
@@ -198,18 +203,29 @@
       "sha256": "052a9ced9f952e72595e476d8c253c13e2236be0655614ede8524671c6378d0f",
       "checks": 18,
       "artifact_sha256": "d48cfd4d10728d08ba249afbb49f283637af03d8ee1efa605ac8bb4f25f731e2"
+    },
+    "browser-peer-auth-14b": {
+      "path": "verification/multi-eventing/browser-peer-auth-14b.json",
+      "sha256": "5e8f129a401855b94a876ae1d2e9e81e56a442d6bc04e5d521a870ac84e4b903",
+      "checks": 22
+    },
+    "store-busy-wire-18": {
+      "path": "verification/multi-eventing/store-busy-wire-18.json",
+      "sha256": "bbcbe05d0ae6ef1ae91e925739d008cd833cc78262c6775a62e20f584c45f1f0",
+      "checks": 3
     }
   },
   "remaining": [
     "Final current-artifact federation compatibility, archived legacy peers and full query/search regressions",
-    "Finish new peer grants/agent membership/broker secret Admin rendered flows and final browser qualification",
-    "Complete hot all-project store relocation/restore and container migration fault qualification; native legacy crash/corruption matrix passes",
+    "Qualify new quarantine/replay and custom-CA Admin controls on final artifact; prior memberships/peer credentials/broker secret/resource controls pass22browser checks",
+    "Qualify combined store/project/Kafka migration and container fault recovery on final artifact; all-project relocation/aliases/model capabilities pass separate native gates",
     "Implement and qualify explicit operator quarantine repair and bounded replay; real transport transition interruption/restart gates pass on candidate11",
     "Qualify retention gaps, saturation/fairness, actual broker faults and model capabilities",
     "Pass full generated/native and existing application regressions",
     "Qualify current retained-source lifecycle artifact and stage matching production image",
     "Complete combined Compose/Kubernetes replacement and live-model evidence",
-    "Finish upstream clean release qualification, publication and application adoption as separately reviewed gates"
+    "Finish upstream clean release qualification, publication and application adoption as separately reviewed gates",
+    "Implement and qualify OpenRig INTEROP-001 against two actual rigs and federated hubs"
   ],
   "development_findings": [
     "Official A2A SDK uses Protobuf Struct, converting response integers to doubles; tests validate integer JSON tokens on raw HTTP before SDK conversion.",
@@ -223,7 +239,8 @@
     "Candidate13 browser16 desktop/mobile checks pass with console/request-failure instrumentation. Newly added peer-grant/agent-membership/broker-secret/resource-status controls still require dedicated interaction tests. An initial root browser run hit legitimate login rate limiting because the cached Admin fixture helper had not been integrated; helper corrected and complete fresh run passes.",
     "Candidate11 passes two real kernel-stop/SIGKILL hot transport transition faults (10 groups across3projects), completing decided transition recovery after first-project snapshot and preserving pending IDs/source retries/acknowledgements through another restart.",
     "Candidate14 passes18inheritednative checks plus separately bound native10/resourceHTTP4 checks with tracked local HTTP cancellation on owner death. No claim of remote-provider computation cancellation.",
-    "Read-only retained-source intake plan succeeds after CLI refresh/check of host Component lock and current documentation review. No authorization/apply or receipt update performed while implementation changes continue."
+    "Read-only retained-source intake plan succeeds after CLI refresh/check of host Component lock and current documentation review. No authorization/apply or receipt update performed while implementation changes continue.",
+    "All-project relocation/historical-alias/independent-backend-model source integrated from deployment6025f61. Its artifact17 reports49checks; artifact16 separately covers7real crashboundaries/28groups. Current Server HTTP/A2A freeze-error mapping is independently exercised in a later artifact18 and does not retroactively qualify17."
   ],
   "service_qualification": "verification/kafka-service-qualified.json",
   "documentation_validation": {
@@ -231,5 +248,6 @@
     "scope": "Current authored contracts/documentation authority only; hub host lock refreshed through CLI and checked current.",
     "accepted_test_receipt": "stale after intentional authority changes; source intake plan is read-only, current candidate not admitted"
   },
-  "resource_qualification": "verification/resource-progress/manifest.json"
+  "resource_qualification": "verification/resource-progress/manifest.json",
+  "store_relocation": "verification/store-relocation/manifest.json"
 }

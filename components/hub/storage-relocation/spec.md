@@ -25,6 +25,15 @@ than accepting writes against a moving backend. Freeze tickets belong only to
 this configuration transaction. A predecision failure releases all its tickets,
 keeps the old live configuration, and removes only its own staging files.
 
+For Admin/ordinary HTTP operations, CONFIG_APPLY_IN_PROGRESS is HTTP503 with
+Retry-After:1. For a valid A2A JSON-RPC request it is the existing HTTP200 JSON-RPC
+-32000 service error with google.rpc.ErrorInfo metadata.code set to
+CONFIG_APPLY_IN_PROGRESS. This code is retryable; the caller retries the identical
+command and message ID after bounded backoff. It is never an acceptance receipt
+and consumes no mutation idempotency entry. Errors after the durable decision may
+close the connection instead; the uncertain outcome follows the same message-ID
+recovery rule.
+
 Each frozen writer stages a closed complete checkpoint and digest-protected
 snapshot. Preserve server/project identities, aliases, sequences, originals,
 source retries, command idempotency/results, delivery and acknowledgement state,

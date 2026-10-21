@@ -58,8 +58,11 @@ def run(base):
     create()
     replay=fetch(3)
     assert [x['value'] for x in replay]==events, replay
-    # Commit next offset only after simulated durable application materialization.
-    request(base,'POST',path+'/offsets',{'offsets':[{'topic':topic,'partition':0,'offset':3}]})
+    # REST v2 commits the LAST consumed offset; the broker stores next offset.
+    # Commit only after simulated durable application materialization.
+    request(base,'POST',path+'/offsets',{'offsets':[{'topic':topic,'partition':0,'offset':2}]})
+    saved=request(base,'GET',path+'/offsets',{'partitions':[{'topic':topic,'partition':0}]})
+    assert saved['offsets'][0]['offset']==3, saved
     request(base,'DELETE',path)
     create()
     # REST manual assignment does not recover a committed position automatically.

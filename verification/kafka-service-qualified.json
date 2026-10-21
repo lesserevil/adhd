@@ -48,17 +48,17 @@
   "reports": [
     {
       "path": "verification/kafka-service/compose.json",
-      "sha256": "28e80c56d9de78b6016761a90d5932db66b342e7b3b830895d85d9d5985d91de",
+      "sha256": "fc8a28107e4b302e3de1892d2159c404540c229354c0f74e2dd9d42cc3681c15",
       "scope": "real-kafka-rest-service-only"
     },
     {
       "path": "verification/kafka-service/compose-retained.json",
-      "sha256": "69934437e5ec16be358dcbe2a5b84bd2bd82ce5df7946c8fcdfbf4ce61f9aaed",
+      "sha256": "879c7fc7822855368083735a860af98ef1fd978152bbc95c5ad5e6dc7a9e9415",
       "scope": "real-kafka-retained-records-after-operator-replacement"
     },
     {
       "path": "verification/kafka-service/kubernetes.json",
-      "sha256": "ee174fb92517b44ed95e9c9f90b9e7da20cbd874afc872bc677b3cfb13265f58",
+      "sha256": "03a3f59da21cdecf05755a6ec5ee9963fe8ff2be00db2e205710d4efb6c65268",
       "scope": "real-kafka-rest-service-only"
     },
     {
@@ -110,7 +110,7 @@
     },
     {
       "path": "tests/kafka_service.py",
-      "sha256": "c534b9592e33cd073760856b4b6536fbd320292feae96eb82f9672f7900ac034"
+      "sha256": "f977a34d819fde31ade8db1d5f904860dfbdbf636f3902ab3e331ca317e75e67"
     }
   ],
   "test_commands": [
@@ -122,5 +122,16 @@
     "kubectl delete pod kafka-0 -n adhd",
     "kubectl rollout status statefulset/kafka -n adhd",
     "python3 tests/kafka_service.py --url FORWARDED_K8S_URL --verify-report REPORT --output RETAINED_REPORT"
+  ],
+  "rest_commit_semantics": {
+    "post_offsets_field": "last consumed offset",
+    "get_offsets_field": "broker next offset",
+    "verified_posted_last_offset": 2,
+    "verified_broker_next_offset": 3,
+    "positions_field": "next offset to fetch"
+  },
+  "fixture_notes": [
+    "Compose service and retained-record reports share a fresh post-upgrade8.3.2 fixture.",
+    "Kubernetes corrected commit-roundtrip and retained-record reports use independent topics. The retained record fixture predates the recorded broker pod replacement."
   ]
 }

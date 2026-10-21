@@ -37,7 +37,7 @@
   },
   "service_proof": {
     "path": "verification/kafka-service-qualified.json",
-    "sha256": "af19d3e2581d488a464117feffaeac1a7850732174fc84bff47da09b4ffc758d"
+    "sha256": "353c63fc16e7a5d9b2e63237c92b9ce389d8bd0bf4c2405fa66a95b50ddc3a5b"
   },
   "broker_proxy": "Same pinned8.3.2 registry images in Compose and equivalent imported config/layers in Kubernetes; exact manifests recorded in service_proof.",
   "model": {
@@ -63,7 +63,8 @@
     "Kubernetes kind1.35 is a single-node development cluster without enforced NetworkPolicy.",
     "Optional GPU Deployment manifest is server-validated but was not scheduled; live tests used the existing model via a temporary private relay.",
     "Broker image upgrade, TLS/SASL credential rotation and multi-node availability are not qualified by these reports.",
-    "Platform API tests do not qualify full browser Admin UX."
+    "Platform API tests do not qualify full browser Admin UX.",
+    "Candidate02 predates correction of REST commit last-offset translation; raw delivery recovery used independent durable local next positions. Final transport qualification must use the corrected candidate."
   ],
   "reports": [
     {

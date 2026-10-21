@@ -212,3 +212,56 @@ lifecycle-unqualified diagnostic candidate. The temporary model relay was remove
 and the existing model remained ready. Final accepted-artifact platform
 qualification, browser coverage and the documented infrastructure upgrade/security
 gates remain separate requirements.
+
+## REST authentication and TLS boundary
+
+The supplied private baseline does not enable REST Proxy HTTP authentication or
+Kafka SASL. Sending an `Authorization: Bearer` header to that baseline does not
+make it authenticated: the receiver must be configured to validate it. The hub's
+optional hot `eventing.bearer_token` is an HTTP bearer credential, not a Kafka
+SASL password, a Jetty Basic credential or the hub's user-login OIDC configuration.
+Keep these security domains separate.
+
+CP 8.3 documents three REST client authentication choices: HTTP Basic, mTLS and
+OAuth/OIDC. The hub's bearer header maps to the OAuth/OIDC choice, provided the
+proxy actually enables a trusted issuer, JWKS verification and an expected
+audience. The documented standalone configuration uses
+`rest.servlet.initializor.classes=io.confluent.common.security.jetty.initializer.AuthenticationHandler`
+plus `oauthbearer.jwks.endpoint.url`, `oauthbearer.expected.issuer`,
+`oauthbearer.expected.audience` and the configured subject/groups claims.
+[Confluent's OAuth configuration](https://docs.confluent.io/platform/8.3/security/authentication/oauth-oidc/configure-rest-proxy.html)
+is the authority for those properties. Security extensions have their own license
+conditions; the baseline's Community License inventory is not a license claim
+for enterprise authorization or principal propagation.
+
+A reviewed secure overlay must configure both connections independently: hub to
+REST Proxy, and REST Proxy to Kafka. Proxy HTTPS uses `listeners=https://...`,
+a server keystore and its passwords; mTLS additionally requires a client truststore
+and required client authentication. Proxy-to-broker TLS/SASL uses
+`client.security.protocol=SASL_SSL`, the selected `client.sasl.mechanism`, JAAS
+credentials and trusted broker certificates. Native Kafka broker ACLs remain
+necessary when its principals need restricted topic/group access. See the
+[CP 8.3 security guide](https://docs.confluent.io/platform/8.3/kafka-rest/production-deployment/rest-proxy/security.html)
+and [connection configuration](https://docs.confluent.io/platform/8.3/kafka-rest/production-deployment/rest-proxy/config.html).
+
+These are deployment integration requirements, not qualified overlays shipped in
+the baseline. Before claiming secured rotation, prove missing/invalid/expired
+credentials fail, current credentials pass, hot replacement preserves the hub
+process and durable cursor, retired credentials fail, and logs/Admin redact all
+secrets. Kafka/SASL credentials and certificate rotation may roll broker/proxy
+pods; they must not require a hub restart. Do not enable an undocumented reverse
+proxy or principal-propagation plugin and infer that these checks passed.
+
+The [single-node patch-upgrade proof](../../verification/kafka-upgrade-qualified.json)
+qualifies the pinned broker change from CP 8.3.1 to 8.3.2 while keeping REST Proxy
+8.3.2 running. The same volume retained three original records and the actual
+broker group checkpoint; the first new publication appended at the next offset.
+`tests/kafka_upgrade.py` provides explicit before/after phases for this exercise.
+It does not qualify a cross-minor metadata upgrade or replicated availability.
+
+REST Proxy v2 offset translation is covered by a round-trip assertion: after
+processing records 0 through 2, POST `/offsets` carries the **last consumed offset
+2** and GET `/offsets` reports broker **next offset 3**. A restored manual consumer
+uses position 3. These are distinct wire positions; posting 3 to commit would
+advance the broker checkpoint to 4. The corrected service probe checks this
+against real Kafka instead of inferring commit state from an empty poll.

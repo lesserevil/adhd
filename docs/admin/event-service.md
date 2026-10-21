@@ -70,7 +70,7 @@ including older installations using the former shared tutorial ID. An explicit
 `CLUSTER_ID` is an assertion: any disagreement with the seed or metadata stops
 startup before formatting. Do not delete or copy the seed to make a different
 installation match; retain the whole volume as one recovery domain. The
-[bootstrap contract](../../deploy/kafka-bootstrap.md) specifies failure checks.
+[bootstrap contract](kafka-bootstrap.md) specifies failure checks.
 Compose mounts its Python script read-only; Kubernetes uses an exact-byte
 ConfigMap mirror. It uses Python 3 already present in the pinned Kafka image and
 adds no hub library or service. These supplied profiles remain single-broker.

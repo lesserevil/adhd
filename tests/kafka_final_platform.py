@@ -136,7 +136,7 @@ async def main(args):
             mounts=json.loads(command(['docker','inspect',cid],capture=True))[0]['Mounts']
             kafka_volume=next(row['Name'] for row in mounts if row['Destination']=='/var/lib/kafka/data')
             argv=['docker','run','--rm','-i','--network','none','--read-only','--user','0:0',
-                '--cap-drop','ALL','--cap-add','CHOWN','--cap-add','DAC_OVERRIDE','--cap-add','FOWNER',
+                '--cap-drop','ALL','--cap-add','CHOWN','--cap-add','DAC_OVERRIDE','--cap-add','FOWNER','--cap-add','FSETID',
                 '--security-opt','no-new-privileges:true','--memory','256m','--cpus','1','--pids-limit','64',
                 '--mount','type=bind,source='+str(config_dir)+',target=/hub/config',
                 '--mount','type=bind,source='+str(data_dir)+',target=/hub/data',
@@ -149,7 +149,7 @@ async def main(args):
                     'containers':[{'name':'copy','image':args.cluster_image,'imagePullPolicy':'IfNotPresent',
                         'command':['sh','-ec','sleep 3600'],
                         'securityContext':{'runAsUser':0,'runAsGroup':0,'allowPrivilegeEscalation':False,'readOnlyRootFilesystem':True,
-                            'capabilities':{'drop':['ALL'],'add':['CHOWN','DAC_OVERRIDE','FOWNER']}},
+                            'capabilities':{'drop':['ALL'],'add':['CHOWN','DAC_OVERRIDE','FOWNER','FSETID']}},
                         'resources':{'requests':{'cpu':'100m','memory':'64Mi'},'limits':{'cpu':'1','memory':'256Mi'}},
                         'volumeMounts':[{'name':'hub','mountPath':'/hub'},{'name':'kafka','mountPath':'/kafka'}]}],
                     'volumes':[{'name':'hub','persistentVolumeClaim':{'claimName':'hub-data'}},
@@ -201,6 +201,10 @@ async def main(args):
             staging_sha256={name:sha(context/name) for name in ['manifest.json','payload.tar','Dockerfile']},
             input_sha256={str(path.relative_to(repo)):sha(path) for path in [Path(__file__),repo/'deploy/app.compose.yaml',repo/'deploy/events.compose.yaml',repo/'deploy/k8s/events.yaml',repo/'deploy/k8s/hub.yaml',repo/'deploy/init-config.py']})
         evidence.record('actual-image-payload-and-complete-specification-manifest-match-accepted-staging-inputs')
+        mode_report=root/'helper-mode-probe.json'
+        command([sys.executable,str(repo/'tests/kafka_backup_modes.py'),'--image',args.image,'--work',str(root/'helper-mode-probe'),'--report',str(mode_report)],timeout=90)
+        mode_result=json.loads(mode_report.read_text());assert mode_result['passed'] and mode_result['image_config_digest']==args.image
+        evidence.value['offline_helper_mode_probe']={'passed':True,'report_sha256':sha(mode_report)}
         config_dir=root/'config';data_dir=root/'data';data_dir.mkdir(mode=0o700)
         base='http://127.0.0.1:'+str(args.port)
         command(['python3',str(repo/'deploy/init-config.py'),str(config_dir),'--project-id','project-red','--public-url',base])

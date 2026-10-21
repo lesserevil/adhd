@@ -290,6 +290,25 @@ subscriptions before restoring model-free operation. Keep the private credential
 password files and recovery snapshot out of Git. These diagnostic commands do not
 replace accepted-artifact staging or final lifecycle qualification.
 
+The accepted-image platform probes use `tests/kafka_final_platform.py` with an
+already admitted `--image`, `--context` and passing `--acceptance-report`; they do
+not build or publish an image. Supply a fresh private work directory and owned
+`adhd-final-*` resource name. `--platform compose --broker-patch-upgrade` adds the
+real pinned 8.3.1 to 8.3.2 same-volume broker rollout and acceptance during its
+outage. Both platform lanes replace real services, restore a consistent cold
+backup of configuration, every project store and Kafka, verify the intentional
+recovery boundary, and optionally exercise hot live-model filtering and semantic
+history queries. Use `--help` for explicit platform and bounded model-relay inputs.
+
+The [accepted Compose image evidence](../../verification/kafka-platform/compose-accepted-manifest.json),
+[accepted Kubernetes image evidence](../../verification/kafka-platform/kind-accepted-manifest.json)
+and [accepted-image TLS/OAuth evidence](../../verification/kafka-platform/oauth-accepted-manifest.json)
+bind the actual OTP29 image to its accepted artifact, running image identity,
+deployment inputs and successful reports. The optional native AuthenticationHandler
+lane remains Enterprise or permitted-trial scope, and neither lane establishes
+production entitlement, replicated availability, proxy-to-broker SASL_SSL or CNI
+policy enforcement. Release qualification remains a separate gate.
+
 The [candidate platform diagnostic](../../verification/kafka-platform-diagnostic.json)
 records eight official-SDK checks per platform, durable hub replacement and four
 live Nemotron decisions across Compose and Kubernetes. Its image is explicitly a

@@ -1,0 +1,42 @@
+{
+  "schema": "adhd/kafka-accepted-image-platform@1",
+  "passed": true,
+  "platform": "compose",
+  "accepted_image_qualified": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "image_config_digest": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+  "scope": "Actual admitted image raw A2A and durable backend, real broker/proxy/hub replacement and pinned8.3.1 to8.3.2 same-volume broker upgrade with acceptance during physical broker outage, paired offline config/all-project-stores/Kafka backup+restore including intentional recovery boundary, optional hot model filtering and scoped semantic query, owned-resource cleanup.",
+  "reports": {
+    "verification/kafka-platform/compose-accepted-image.json": "dae2fe69a2e5057c3aab3a20df6453eea284fa7645014a0d608a9cf98f2e7e3c",
+    "verification/kafka-platform/compose-accepted-gateway.json": "ec4a6da7608a73517dae90c70b6ef7ac589f8185a999bc62e96da044f449744f",
+    "verification/kafka-platform/compose-accepted-model.json": "bb3c48bd60db4be1da53fa874a72532ccbcbe1ea7c6e3ec7851497e125d7fe39",
+    "verification/kafka-platform/compose-accepted-backup-modes.json": "31ee8505280a3e272a86cf4317adbe1745e85b20da2bc5dbd63680c125d9dcfe"
+  },
+  "tested_harness": {
+    "logical_path": "tests/kafka_final_platform.py",
+    "sha256": "3ac70d85bb248613f62479310a762cc7d8a38aeca4296b6b2a4c1ecc758f6005",
+    "snapshot": "verification/kafka-platform/compose-tested-harness.py.source",
+    "source_commit": "68f58e3",
+    "reproduce": "Restore snapshot bytes to tests/kafka_final_platform.py in a clean checkout containing the report-bound dependency files. Invoke with fresh owned name/work, exact admitted image/context/acceptance and --platform compose --broker-patch-upgrade; optional model inputs use an isolated bounded relay."
+  },
+  "deploy_bootstrap_sha256": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f",
+  "requested_images": {
+    "broker_from": "confluentinc/cp-kafka@sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e",
+    "broker_to": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+    "proxy": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058"
+  },
+  "runtime": {
+    "hub": "Elixir1.20.4 OTP29.1.2 accepted container",
+    "docker_server": "29.8.0"
+  },
+  "limits": [
+    "One broker and one hub; no replicated availability qualification.",
+    "Baseline private network, no OAuth/SASL qualification in this probe.",
+    "Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate.",
+    "Upgrade scope is only pinned CP8.3.1 to8.3.2 broker; no cross-minor or application downgrade compatibility claim. Kafka transport remains at least once with durable event-id deduplication, not native REST exactly once.",
+    "Earlier preflight attempts01/02 are excluded. Model calls were sequential with the acceptance ladder and existing model configuration/service unchanged.",
+    "Owned Compose containers/networks/volumes were removed; private recovery archives and credentials remain ignored and are not committed."
+  ]
+}

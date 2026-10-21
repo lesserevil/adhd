@@ -86,6 +86,11 @@ tokens. Before an action, authenticated `whoami` must match agent/project and
 action. This validates the provisioned identity, not OpenRig's local process
 identity: rig/seat provenance is a caller claim, not remote attestation.
 
+The SDK validates replies, then the adapter returns their original HTTP JSON
+data. This preserves integer revisions for edit round trips and distinguishes
+arbitrary payload numbers such as `1` and `1.0`; it never coerces every float to
+an integer based on its mathematical value.
+
 For `publish` and `publish_record`, the adapter assigns `source.kind: "openrig"`.
 `source.id` is `openrig-v1-` followed by lowercase SHA-256 of UTF-8 compact JSON:
 

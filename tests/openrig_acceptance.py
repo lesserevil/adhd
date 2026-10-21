@@ -149,15 +149,22 @@ async def checks(f, evidence):
         evidence.record("two-actual-pinned-openrig-rigs-independent-a2a-credentials-and-terminal-panes")
 
         before = f.model.calls if f.model else 0
-        await invoke(1, {"op": "subscribe", "mode": "raw"}, "rig-beta-raw-v1")
-        command = {"op": "publish", "text": "Cross rig durable build status", "data": {"build": 42},
+        sub = (await invoke(1, {"op": "subscribe", "mode": "raw"}, "rig-beta-raw-v1"))["subscription"]
+        assert type(sub["revision"]) is int
+        edited = (await invoke(1, {"op": "update_subscription", "subscription_id": sub["id"],
+                                 "expected_revision": sub["revision"], "mode": "raw"}, "rig-beta-sub-edit-v1"))["subscription"]
+        assert type(edited["revision"]) is int and edited["revision"] == sub["revision"] + 1
+        command = {"op": "publish", "text": "Cross rig durable build status", "data": {"build": 42, "confidence": 1.0},
                    "source": {"item_id": "cross-rig-build-42-v1"}}
         result = await invoke(0, command, "cross-rig-build-42-v1")
         pub = result["publication"]
         assert pub["author_id"] == "red-a" and pub["project_id"] == RED
         expected = {"version": 1, "server_id": server, "project_id": RED, "rig_id": rigs.entries[0]["rigId"],
                     "seat_id": "work.seat", "agent_id": "red-a"}
-        assert pub["data"] == {"openrig": expected, "payload": {"build": 42}}
+        assert pub["data"] == {"openrig": expected, "payload": {"build": 42, "confidence": 1.0}}
+        assert type(pub["data"]["payload"]["build"]) is int
+        assert type(pub["data"]["payload"]["confidence"]) is float
+        assert type(pub["data"]["openrig"]["version"]) is int
         canonical = json.dumps(["adhd-openrig-v1", server, RED, expected["rig_id"], "work.seat", "red-a"],
                                ensure_ascii=False, separators=(",", ":"))
         assert pub["source"]["id"] == "openrig-v1-" + hashlib.sha256(canonical.encode()).hexdigest()
@@ -285,7 +292,7 @@ async def federated(f, evidence, rigs, bindings, invoke):
         fa = config(f, sb, peer.base, a_to_b, b_to_a)
         fb = config(peer, sa, f.base, b_to_a, a_to_b)
         projects = copy.deepcopy(PROJECTS)
-        projects[0]["settings"] = {"federation": {**fb, "catalog": {"visible": True, "entries": [entry]}}}
+        projects[0]["settings"] = {"federation": {"catalog": {"visible": True, "entries": [entry]}}}
         f.admin().call({"op": "config_update", "patch": {"federation": fa}}, mutation=True)
         peer.admin().call({"op": "config_update", "patch": {"federation": fb, "projects": projects}}, mutation=True)
         deadline = time.monotonic() + f.args.deadline

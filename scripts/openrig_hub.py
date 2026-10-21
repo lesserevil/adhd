@@ -62,33 +62,57 @@ def prepare(binding, command, message_id):
     return command
 
 
-async def exchange(client, command, message_id=None):
+class WireResults:
+    """Keep JSON number tokens intact after the official SDK validates a reply."""
+    def __init__(self):
+        self.values = []
+
+    async def receive(self, response):
+        await response.aread()
+        try:
+            value = json.loads(response.content)
+            parts = value["result"]["message"]["parts"]
+            if len(parts) == 1 and "data" in parts[0]:
+                self.values.append(parts[0]["data"])
+        except (ValueError, KeyError, TypeError):
+            # Discovery and errors are parsed by the SDK; neither is an action
+            # success. Never turn a transport/error response into a result.
+            pass
+
+
+async def exchange(client, wire, command, message_id=None):
     message = new_text_message(json.dumps(command, ensure_ascii=False), role=Role.ROLE_USER)
     message.message_id = message_id or str(uuid4())
     values = []
+    before = len(wire.values)
     async for event in client.send_message(SendMessageRequest(message=message)):
         value = MessageToDict(event)
         values.append(value["message"]["parts"][0]["data"])
-    if len(values) != 1:
+    if len(values) != 1 or len(wire.values) != before + 1:
         raise ValueError("Expected exactly one A2A response")
-    return values[0]
+    # Protobuf Struct changes int tokens to doubles. Return the corresponding
+    # raw HTTP JSON only after send_message has completed SDK validation; never
+    # globally coerce floats because a user payload's 1.0 must remain a float.
+    return wire.values[-1]
 
 
 async def run(args):
     binding = load_binding(args.binding)
     command = json.loads(args.command_file.read_text() if args.command_file else args.command)
     command = prepare(binding, command, args.message_id)
-    async with httpx.AsyncClient(headers={"Authorization": "Bearer " + binding["token"], "A2A-Version": "1.0"}, timeout=15) as http:
+    wire = WireResults()
+    async with httpx.AsyncClient(headers={"Authorization": "Bearer " + binding["token"], "A2A-Version": "1.0"},
+                                 event_hooks={"response": [wire.receive]}, timeout=15) as http:
         client = await create_client(agent=binding["url"], client_config=ClientConfig(
             streaming=False, httpx_client=http, supported_protocol_bindings=["JSONRPC"]))
         try:
-            identity = await exchange(client, {"op": "whoami", "project_id": binding["project_id"]})
-            directory = await exchange(client, {"op": "federation_directory", "project_id": binding["project_id"]})
+            identity = await exchange(client, wire, {"op": "whoami", "project_id": binding["project_id"]})
+            directory = await exchange(client, wire, {"op": "federation_directory", "project_id": binding["project_id"]})
             if identity.get("agent_id") != binding["agent_id"] or identity.get("project_id") != binding["project_id"]:
                 raise ValueError("Authenticated identity differs from binding")
             if directory.get("server_id") != binding["server_id"] or directory.get("project_id") != binding["project_id"]:
                 raise ValueError("Server/project identity differs from binding")
-            result = await exchange(client, command, args.message_id)
+            result = await exchange(client, wire, command, args.message_id)
             print(json.dumps(result, ensure_ascii=False))
         finally:
             await client.close()

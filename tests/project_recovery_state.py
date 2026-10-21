@@ -20,6 +20,21 @@ def digest(value):
     return hashlib.sha256(value).hexdigest()
 
 
+class Atom(str):
+    """Keep ETF atoms distinct from original UTF8 JSON string values."""
+
+
+def exact(value):
+    """Type-sensitive evidence equality, including integer/float and -0.0."""
+    if isinstance(value, dict):
+        return ("map", frozenset((exact(key), exact(item)) for key, item in value.items()))
+    if isinstance(value, (tuple, list)):
+        return (type(value).__name__, tuple(exact(item) for item in value))
+    if isinstance(value, float):
+        return ("float", struct.pack(">d", value))
+    return (type(value).__name__, value)
+
+
 def read_json(path):
     def unique(pairs):
         result = {}
@@ -59,7 +74,7 @@ class Terms:
             return struct.unpack(">d", self.take(8))[0]
         if tag in (100, 115, 118, 119):
             value = self.take(self.number(1 if tag in (115, 119) else 2)).decode("utf-8" if tag >= 118 else "latin-1")
-            return {"nil": None, "true": True, "false": False}.get(value, value)
+            return {"nil": None, "true": True, "false": False}.get(value, Atom(value))
         if tag in (104, 105):
             return tuple(self.term(depth + 1) for _ in range(self.number(1 if tag == 104 else 4)))
         if tag == 106:

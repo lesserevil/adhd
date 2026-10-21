@@ -17,7 +17,7 @@ from uuid import uuid4
 from archive_support import ArchiveFixture
 from multi_support import Evidence, Fixture, arguments, poll_until, scoped
 from project_recovery_acceptance import Recovery, RED, BLUE
-from project_recovery_state import canonical, digest, read_json, registry, route, snapshot
+from project_recovery_state import canonical, digest, exact, read_json, registry, route, snapshot
 
 ALLOCATED = re.compile(r"[a-z][a-z0-9]{0,15}_([0-9a-f]{32})_([1-9a-z][0-9a-z]*)\Z")
 
@@ -51,7 +51,8 @@ async def basic_families(f, phase):
     actor, recipient = await f.agent("bridge"), await f.agent("red-b")
     sub = (await recipient.call(scoped(RED, "subscribe", mode="raw"), "raw-" + phase))["subscription"]
     record = (await actor.call(scoped(RED, "publish_record", text="Recovery " + phase + " original evidence",
-        information_type="recovery-" + phase, source={"kind": "fixture", "id": "recovery", "item_id": phase}), "pub-" + phase))["record"]
+        information_type="recovery-" + phase, data={"integer": 1, "float": 1.0, "boolean": True, "unicode": "λ"},
+        source={"kind": "fixture", "id": "recovery", "item_id": phase}), "pub-" + phase))["record"]
     pub = record["publication"]
     deliveries = await poll_until(recipient, RED, {pub["id"]})
     public_delivery = next(d for d in deliveries if d.get("publication_id") == pub["id"])
@@ -165,7 +166,7 @@ async def checks(f, r, evidence):
     stable_families = ("publications", "subscriptions", "deliveries", "contexts", "idempotency", "sources", "admin_idempotency",
         "history_queries", "retrieval_queries", "archive_queries", "feedback", "replay_queries")
     for family in stable_families:
-        assert restored_state[family] == retained_state[family], "Complete backed-up accepted state changed in family " + family
+        assert exact(restored_state[family]) == exact(retained_state[family]), "Complete backed-up accepted state changed in family " + family
     assert f.admin().call({"op": "config_get"})["config"] == current_config
     assert r.status(BLUE)["route"] == blue_status["route"]
     after_blue = f.admin().call(scoped(BLUE, "eventing_status"))
@@ -175,6 +176,10 @@ async def checks(f, r, evidence):
     assert (await blue_recipient.call(scoped(BLUE, "poll")))["deliveries"] == []
     actor, recipient = await f.agent("bridge"), await f.agent("red-b")
     assert (await actor.call(scoped(RED, "get_record", publication_id=retained["record"]["publication"]["id"])))["record"] == retained["record"]
+    wire = await f.raw("bridge", scoped(RED, "get_record", publication_id=retained["record"]["publication"]["id"]))
+    raw_data = wire.json()["result"]["message"]["parts"][0]["data"]["record"]["publication"]["data"]
+    assert type(raw_data["integer"]) is int and type(raw_data["float"]) is float and type(raw_data["boolean"]) is bool
+    assert raw_data["unicode"] == "λ"
     restored_deliveries = (await recipient.call(scoped(RED, "poll")))["deliveries"]
     assert retained["private_delivery"]["id"] in {d["id"] for d in restored_deliveries}
     assert retained["acknowledged_delivery"]["id"] not in {d["id"] for d in restored_deliveries}

@@ -392,11 +392,12 @@ def main():
     p.add_argument('--image',help='Run HTTP and CLI checks against this immutable container image')
     p.add_argument('--eventing-rest-url', default='http://127.0.0.1:18082', help='Actual Kafka REST service for profile 2')
     p.add_argument('--port-lock', type=Path, default=Path('_build/roadmap/foundation-port.lock'))
-    p.add_argument('--profile-version', choices=['1.7.0','2.0.0'], default='2.0.0', help='Exact application profile expected; legacy 1.7 requires explicit selection')
+    p.add_argument('--profile-version', choices=['1.7.0','2.0.0','2.1.0'], default='2.0.0', help='Exact application profile expected; legacy 1.7 requires explicit selection')
     p.add_argument('--published-schema', type=Path, default=Path('docs/protocol/schema.json'))
     p.add_argument('--published-openapi', type=Path, default=Path('docs/protocol/openapi.json'))
     p.add_argument('--report',default='verification/protocol-acceptance.json')
     args=p.parse_args();command=json.loads(args.command)
+    multi_profile=args.profile_version in ('2.0.0','2.1.0')
     args.port_lock.parent.mkdir(parents=True,exist_ok=True)
     port_lock=args.port_lock.open('a')
     fcntl.flock(port_lock,fcntl.LOCK_EX)
@@ -471,7 +472,7 @@ def main():
         for name,value,expected in vectors:valid(name,value,expected)
         fixtures=json.loads(Path('docs/protocol/examples.json').read_text())
         assert json.loads(args.published_openapi.read_text())['info']['version']==args.profile_version
-        assert fixtures['profile_version'] in ({'1.7.0','2.0.0'} if args.profile_version=='2.0.0' else {'1.7.0'})
+        assert fixtures['profile_version'] in ({'1.7.0','2.0.0','2.1.0'} if args.profile_version=='2.1.0' else {'1.7.0','2.0.0'} if multi_profile else {'1.7.0'})
         for example in fixtures['cases']:valid(example['definition'],example['body'],example['valid'])
         record('independent-draft202012-schema-and-positive-negative-vectors')
         password=(runtime.root/'initial-admin-password.txt').read_text().split('Password: ')[1].strip()
@@ -479,8 +480,8 @@ def main():
         for operation in ('config_get','overview','users','agents'):
             valid('admin_result_'+operation,client.api({'op':operation}))
         token=secrets.token_urlsafe(32)
-        grants={'project_ids':[runtime.config['project_id']]} if args.profile_version=='2.0.0' else {}
-        if args.profile_version=='2.0.0':
+        grants={'project_ids':[runtime.config['project_id']]} if multi_profile else {}
+        if multi_profile:
             client.api({'op':'config_update','patch':{'eventing':{'enabled':True,'rest_url':args.eventing_rest_url}}},mutation=True)
         client.api({'op':'create_agent','agent_id':'protocol-agent','token':token,**grants},mutation=True)
         for body in ({'op':'whoami'},{'op':'publish','data':[1,None,{'arbitrary':True}]},{'op':'poll'},{'op':'search','query':'unseen-needle'}):
@@ -563,8 +564,8 @@ def main():
             ('/admin/api',b'{"op":"overview","op":"config_get"}',400),
             ('/admin/api',b'{"op":"overview","unknown":true}',400),
             ('/admin/api',b'{"op":"jobs","limit":true}',400),
-            ('/federation/v3' if args.profile_version=='2.0.0' else '/federation/v2',b'{"protocol_version":3,"op":"status"}',426),
-            *([('/federation/v2',b'{"protocol_version":2,"op":"status"}',401)] if args.profile_version=='2.0.0' else []),
+            ('/federation/v3' if multi_profile else '/federation/v2',b'{"protocol_version":3,"op":"status"}',426),
+            *([('/federation/v2',b'{"protocol_version":2,"op":"status"}',401)] if multi_profile else []),
             ('/federation/v1',b'{"protocol_version":true,"op":"status","origin_project_id":"other","query_id":"q"}',400),
             ('/federation/v1',b'{"protocol_version":1,"protocol_version":1,"op":"status","origin_project_id":"other","query_id":"q"}',400),
         ]:
@@ -577,9 +578,9 @@ def main():
                 value=json.load(r)
                 assert r.status==expected,(path,r.status,value)
                 if expected==426:
-                    assert value['error']['code']=='UNSUPPORTED_VERSION' and value['supported']==([1,2] if args.profile_version=='2.0.0' else [1])
+                    assert value['error']['code']=='UNSUPPORTED_VERSION' and value['supported']==([1,2] if multi_profile else [1])
                     valid('UnsupportedVersion',value)
-                else:valid('PeerV2Error' if path=='/federation/v2' and args.profile_version=='2.0.0' else 'PeerV1Error' if path=='/federation/v1' else 'Error',value)
+                else:valid('PeerV2Error' if path=='/federation/v2' and multi_profile else 'PeerV1Error' if path=='/federation/v1' else 'Error',value)
         record('actual-http-rejects-duplicates-unknown-fields-bool-integers-and-versions')
         status,api,_=client.get('/protocol/openapi');assert status==200
         validate_openapi(api)
@@ -592,12 +593,18 @@ def main():
         assert api['openapi']=='3.1.0' and api['info']['version']==args.profile_version
         for path in ('/a2a','/admin/login','/admin/session','/admin/api','/admin/logout','/admin/oidc/start','/admin/oidc/callback','/federation','/federation/v1'):
             assert path in api['paths'],path
-        if args.profile_version=='2.0.0':
+        if multi_profile:
             assert '/federation/v2' in api['paths']
             for op in ('list_projects','update_subscription'):
                 assert 'agent_'+op in schema['$defs'] and 'result_'+op in schema['$defs']
             for op in ('list_projects','resource_status','eventing_status','repair_eventing','replay_events','eventing_replay','eventing_audit'):
                 assert 'admin_'+op in schema['$defs'] and 'admin_result_'+op in schema['$defs']
+        if args.profile_version=='2.1.0':
+            assert schema['$id']=='urn:adhd:protocol:2.1'
+            for op in ('project_restore_plan','project_restore_apply','project_restore_status'):
+                assert 'admin_'+op in schema['$defs'] and 'admin_result_'+op in schema['$defs']
+            assert 'ProjectRecoveryRebindCLI' in schema['$defs']
+            assert not any('rebind' in x.get('$ref','').lower() for x in schema['$defs']['AdminCommand']['oneOf'])
         record('http-cli-identical-openapi-and-complete-interface-inventory')
         report={'schema':'adhd/protocol-conformance@1','passed':True,'protocol_version':int(args.profile_version.split('.')[0]),'schema_id':schema['$id'],'api_profile_version':api['info']['version'],'foundation_fixture_profile':fixtures['profile_version'],'schema_sha256':hashlib.sha256(json.dumps(schema,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest(),'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'input_sha256':{
             Path(x).name:hashlib.sha256(Path(x).read_bytes()).hexdigest() for x in command if Path(x).is_file()}}

@@ -288,7 +288,11 @@ whole metadata location/route rewrite or fail closed; startup replays that decis
 before writer activation. Preserve every server/project/alias identity, project/
 allocation epoch, allocation counter, record, acknowledgement, source/mutation
 receipt, sequence, selection provenance, topic/group and broker position. Product
-checkpoint/snapshot bytes are verified but not rewritten. Do not call Kafka or
+checkpoint/snapshot bytes are verified but not rewritten. Moved startup resolves
+every initialized store from its verified selected route, even when the unchanged
+configured store_path anchor names an inaccessible old location. Do not open or
+require that unused old anchor; a later new-project/relocation setting follows
+normal explicit current Admin configuration. Do not call Kafka or
 replay history. Update only location/route metadata and its revision/receipt;
 unexecuted old review plans become stale because their route/path proof changed.
 Keep initialized flags and loss witness intact. An unknown or partial input set

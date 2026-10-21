@@ -245,7 +245,8 @@ server-wide registry/decision integrity stops startup entirely.
 
 Each restored target gets a 128-bit CSPRNG project epoch distinct from every
 retained/live/backup epoch on this server. New topic is exactly effective
-topic_prefix + "." + first16 SHA256(UTF8(server_id)) + "." + first16
+topic_prefix + "." + first16 lowercase hexadecimal characters of
+SHA256(UTF8(server_id)) + "." + first16 lowercase hexadecimal characters of
 SHA256(UTF8(project_id)) + ".r" + lowercase32hex(epoch) + ".events.v1";
 group is topic +
 ".fanout". Record full identities and epoch for collision checks. Legacy routes

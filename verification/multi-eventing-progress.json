@@ -56,6 +56,11 @@
       "path": "_build/roadmap/multi/hub-13.exs",
       "sha256": "9f37f1addb2eb98b113639c01c4b00d996167cd22ed138e0f748ba93166a4d05",
       "admitted": false
+    },
+    "fourteenth": {
+      "path": "_build/roadmap/multi/hub-resources-14.exs",
+      "sha256": "d48cfd4d10728d08ba249afbb49f283637af03d8ee1efa605ac8bb4f25f731e2",
+      "admitted": false
     }
   },
   "reports": {
@@ -177,13 +182,29 @@
       "path": "verification/multi-eventing/browser-13.json",
       "sha256": "6142e916912c5b274bd577d6bac91c350804e5ffcd9feca259cdefee90258ada",
       "checks": 16
+    },
+    "cutover-decision-crash-11": {
+      "path": "verification/multi-eventing/cutover-decision-crash-11.json",
+      "sha256": "bbf38bae1b57d6be84ad18f60f89cbdbfbbfefea85dd0f80e2b7d4e44eb93b29",
+      "checks": 5
+    },
+    "cutover-project-crash-11": {
+      "path": "verification/multi-eventing/cutover-project-crash-11.json",
+      "sha256": "914b06cad187f4409ae5010ca9548022294628b7a14db45318a92d4aa14d8ab3",
+      "checks": 5
+    },
+    "native-with-tracking-14": {
+      "path": "verification/multi-eventing/native-with-tracking-14.json",
+      "sha256": "052a9ced9f952e72595e476d8c253c13e2236be0655614ede8524671c6378d0f",
+      "checks": 18,
+      "artifact_sha256": "d48cfd4d10728d08ba249afbb49f283637af03d8ee1efa605ac8bb4f25f731e2"
     }
   },
   "remaining": [
     "Final current-artifact federation compatibility, archived legacy peers and full query/search regressions",
     "Finish new peer grants/agent membership/broker secret Admin rendered flows and final browser qualification",
     "Complete hot all-project store relocation/restore and container migration fault qualification; native legacy crash/corruption matrix passes",
-    "Prove hot transport decision/project crash recovery and implement explicit operator quarantine repair",
+    "Implement and qualify explicit operator quarantine repair and bounded replay; real transport transition interruption/restart gates pass on candidate11",
     "Qualify retention gaps, saturation/fairness, actual broker faults and model capabilities",
     "Pass full generated/native and existing application regressions",
     "Qualify current retained-source lifecycle artifact and stage matching production image",
@@ -199,13 +220,16 @@
     "Real three-server federation candidate08 passes10 groups with8 controlled model calls; per-server independent Kafka federation acceptance remains in progress.",
     "Crash injection exposed decided migration recovery accepting a damaged backup on candidate06. Candidate11 verifies backup hashes before recovery/completion; fault requalification is in progress.",
     "Candidate11 now passes all5 native Linux migration crash/corrupt-backup cases (28 groups) plus no-default-project hot host binding/all-project recipe reset/restart (4 groups). Candidate federation09 passes12groups on3servers and3distinct real Kafka clusters with237independently schema-validated messages; exact artifact and service evidence remain separate from final lifecycle qualification.",
-    "Candidate13 browser16 desktop/mobile checks pass with console/request-failure instrumentation. Newly added peer-grant/agent-membership/broker-secret/resource-status controls still require dedicated interaction tests. An initial root browser run hit legitimate login rate limiting because the cached Admin fixture helper had not been integrated; helper corrected and complete fresh run passes."
+    "Candidate13 browser16 desktop/mobile checks pass with console/request-failure instrumentation. Newly added peer-grant/agent-membership/broker-secret/resource-status controls still require dedicated interaction tests. An initial root browser run hit legitimate login rate limiting because the cached Admin fixture helper had not been integrated; helper corrected and complete fresh run passes.",
+    "Candidate11 passes two real kernel-stop/SIGKILL hot transport transition faults (10 groups across3projects), completing decided transition recovery after first-project snapshot and preserving pending IDs/source retries/acknowledgements through another restart.",
+    "Candidate14 passes18inheritednative checks plus separately bound native10/resourceHTTP4 checks with tracked local HTTP cancellation on owner death. No claim of remote-provider computation cancellation.",
+    "Read-only retained-source intake plan succeeds after CLI refresh/check of host Component lock and current documentation review. No authorization/apply or receipt update performed while implementation changes continue."
   ],
   "service_qualification": "verification/kafka-service-qualified.json",
   "documentation_validation": {
-    "passed": false,
-    "scope": "stale authority-review marker after intentional new contracts; refresh required",
-    "accepted_test_receipt": "stale after intentional authority changes; current candidate not admitted"
+    "passed": true,
+    "scope": "Current authored contracts/documentation authority only; hub host lock refreshed through CLI and checked current.",
+    "accepted_test_receipt": "stale after intentional authority changes; source intake plan is read-only, current candidate not admitted"
   },
   "resource_qualification": "verification/resource-progress/manifest.json"
 }

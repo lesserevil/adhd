@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:6ec04b27534f094279e9e87f58ce3a040627f1fa8219389012b60dd059af9ff4 -->
+<!-- literate-ai:authority-reviewed sha256:3583c566f2adb3ff7ed4bd40888e5565c901a560c74ac5a04adef37f6b4345b0 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -40,14 +40,15 @@ queue. The [multiple-project plan](../roadmap/multi-project.md) maps identity,
 admission, durable partitioning/migration, agent evidence workflows, peer routing,
 hot Admin configuration and resource fairness to their owning hub contracts.
 The new `components/hub/multi/spec.md` owns the target multi-project contracts;
-the combined architecture now has an [initial lifecycle admission](../../verification/multi-eventing/lifecycle-admission-30.json)
-and an [independently audited container payload](../../verification/multi-eventing/image-payload-30.json).
-Final program qualification remains open: the current native evidence is linked
-from [project and migration qualification](../../verification/multi-eventing/native-project-migration-30.json)
-and [eventing and federation qualification](../verification/native-eventing.json);
-[container project/protocol qualification](../../verification/multi-eventing/image-project-30.json)
-now covers 74 groups. Broader container regressions and deployment recovery gates
-remain in progress in `verification/multi-eventing-progress.json`.
+the combined architecture now has [source34 lifecycle admission and guarded staging](../../verification/multi-eventing/image-admission-34.json)
+and an [independently audited exact image payload](../../verification/multi-eventing/image-payload-34.json).
+Final program qualification remains open. Current native evidence includes
+[151 project and migration groups](../../verification/multi-eventing/native-project-migration-34.json),
+[15 eventing/protocol/durability checks](../../verification/multi-eventing/native-eventing-34.json)
+and [66 complementary Kafka/federation checks](../../verification/multi-eventing/native34-complement/manifest.json).
+The source30 container evidence remains historical; current source34 runtime
+image/platform qualification is running. The [completion review](../../verification/multi-eventing/completion-review-34.json)
+keeps the individual remaining predicates and substantive model/restore gaps explicit.
 
 The Kafka pub/sub direction in `PROJECT.md` maps to pending KAFKA-001 through
 KAFKA-009 and the [eventing plan](../roadmap/kafka-pubsub.md). It replaces mandatory
@@ -160,6 +161,18 @@ container or deployment qualification.
 The [source34 metadata refresh](../../verification/multi-eventing/metadata-refresh-34.json)
 regenerates native-test declarations and the source BOM against the current
 official recipe and locked graph. It changes no application or native-test bytes.
-The first recipe-mismatch lifecycle attempt remains failed; current admission
-must execute afresh. These generated declarations do not replace the independent
+The first recipe-mismatch lifecycle attempt remains failed. The repaired
+[current admission](../../verification/multi-eventing/admission-34-result.json) passed,
+including all18 native declarations and the unchanged91 independently reviewed
+oracle vectors. These generated declarations do not replace the independent
 stateful guard, crash or browser qualifications.
+
+The [real coordinator qualification](../../verification/multi-eventing/rebalance-34/assessment.json)
+retains actual managed-observer membership/assignment changes beside the explicitly
+assigned bridge, genuine broker commit fencing, a hub kill and durable recovery.
+It does not claim managed bridge ownership transfer or multiple-writer availability.
+Current native [117 controlled workflow/SDK groups](../validation/deep-controlled-34-native.json),
+[69 existing live-model cases](../validation/deep-live-model-34-native.json) and
+the [six-call filter/backend witness](../validation/live-eventing-backend-34-native.json)
+are distinct from the still-open positive optimizer qualification and selective
+project restore capability.

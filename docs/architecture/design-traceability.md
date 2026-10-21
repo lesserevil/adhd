@@ -141,3 +141,12 @@ retain historical source31 evidence. The
 [expired canonical-owner qualification](../../verification/federation-stale-owner/manifest.json)
 proves that an unavailable canonical owner is not replaced by a noncanonical copy.
 Final artifact/image evidence must be rebound after the outstanding corrections.
+
+The [registry-removal diagnostic](../../verification/multi-eventing/downgrade-33.json)
+preserves the actual source33 failure. The
+[corrected registry qualification](../../verification/multi-eventing/registry-guard-34.json)
+passes dry/apply/file-reload rejection and cold restart with retained originals
+and acknowledgements, both with and without a default project. The
+[legacy guard trace](../../verification/multi-eventing/legacy-guard-33.json)
+is targeted module-unit evidence of zero checkpoint opener calls, with a real
+positive tracing control; it is not a public legacy lifecycle qualification.

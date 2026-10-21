@@ -337,3 +337,8 @@ The HTTP client must isolate connection reuse by trust configuration or disable
 HTTPS connection/session reuse; merely supplying new per-request CA options is
 insufficient. In Erlang httpc the request-level `socket_opts` option disables
 persistent connection reuse (see the [official httpc documentation](https://www.erlang.org/doc/apps/inets/httpc.html)); also disable TLS session reuse for this profile.
+For the retained OTP27 client, the request-level socket options must be nonempty:
+its httpc_manager implementation only forces a fresh connection when that list
+has at least one element. A harmless `keepalive:false` option satisfies this
+condition; an empty list does not. Qualify removal/rotation after a successful
+connection to the same origin, rather than testing only a fresh process.

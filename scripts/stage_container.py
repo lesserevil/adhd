@@ -6,8 +6,82 @@ import io
 import json
 import os
 import subprocess
+import stat
 import tarfile
 from pathlib import Path
+
+
+def read_regular(path):
+    """Read a regular, non-symlink input without opening device/FIFO payloads."""
+    path = Path(path)
+    for parent in path.parents:
+        if parent.is_symlink():
+            raise SystemExit(f'Symlink input directory is not allowed: {parent}')
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, 'rb') as stream:
+            before = os.fstat(stream.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise SystemExit(f'Expected regular staging input: {path}')
+            content = stream.read()
+            after = os.fstat(stream.fileno())
+            if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
+                    after.st_size, after.st_mtime_ns, after.st_ctime_ns):
+                raise SystemExit(f'Staging input changed during read: {path}')
+            return content
+    except OSError as error:
+        raise SystemExit(f'Cannot read regular staging input {path}: {error}') from error
+
+
+def specification_files(component):
+    """Include the complete authored Markdown tree; generated files stay outside it."""
+    component = Path(component)
+    if component.is_symlink() or not component.is_dir():
+        raise SystemExit('Expected a regular specification directory')
+    files = {}
+    def fail_walk(error):
+        raise SystemExit(f'Cannot enumerate specification inputs: {error}')
+
+    for directory, children, names in os.walk(component, followlinks=False, onerror=fail_walk):
+        for name in children:
+            if (Path(directory) / name).is_symlink():
+                raise SystemExit(f'Symlink specification directory is not allowed: {name}')
+        for name in sorted(names):
+            if name.endswith('.md'):
+                path = Path(directory) / name
+                files['specification/' + path.relative_to(component).as_posix()] = read_regular(path)
+    if 'specification/component.md' not in files:
+        raise SystemExit('Missing canonical component specification')
+    return dict(sorted(files.items()))
+
+
+def write_context(files, output):
+    manifest = {'schema': 'adhd/container-inputs@1', 'files': {
+        name: hashlib.sha256(content).hexdigest() for name, content in sorted(files.items())}}
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=False)
+    manifest_bytes = (json.dumps(manifest, indent=2) + '\n').encode()
+    with tarfile.open(output / 'payload.tar', 'w', format=tarfile.USTAR_FORMAT) as archive:
+        payloads = {name: content for name, content in files.items() if name != 'Dockerfile'}
+        payloads['manifest.json'] = manifest_bytes
+        directories = {'app'}
+        for name in payloads:
+            directories.update(str(parent) for parent in Path('app', name).parents if str(parent) != '.')
+        for name in sorted(directories, key=lambda value: (value.count('/'), value)):
+            directory = tarfile.TarInfo(name)
+            directory.type = tarfile.DIRTYPE
+            directory.mode = 0o755
+            archive.addfile(directory)
+        for name, content in sorted(payloads.items()):
+            info = tarfile.TarInfo('app/' + name)
+            info.mode = 0o644
+            info.size = len(content)
+            archive.addfile(info, io.BytesIO(content))
+    (output / 'Dockerfile').write_bytes(files['Dockerfile'])
+    (output / 'manifest.json').write_bytes(manifest_bytes)
+    for path in output.iterdir():
+        path.chmod(0o644)
+        os.utime(path, (0, 0))
 
 
 def main():
@@ -53,59 +127,40 @@ def main():
         expected_digest = export['artifact_reference']['identity']['digest']
     if not artifact.is_file() or artifact.is_symlink():
         raise SystemExit('Expected a regular hub artifact file')
-    payload = artifact.read_bytes()
+    payload = read_regular(artifact)
     digest = hashlib.sha256(payload).hexdigest()
     if digest != expected_digest:
         raise SystemExit('Artifact hash differs from its export; build again')
     files = {'hub.exs': payload,
-             'LICENSE': (root / 'LICENSE').read_bytes(),
-             'Dockerfile': (root / 'deploy/Dockerfile').read_bytes(),
-             'health.exs': (root / 'deploy/health.exs').read_bytes(),
-             'component.md': (root / 'components/hub/component.md').read_bytes(),
-             'core-spec.md': (root / 'components/hub/core/spec.md').read_bytes(),
-             'information-spec.md': (root / 'components/hub/information/spec.md').read_bytes(),
-             'management-spec.md': (root / 'components/hub/management/spec.md').read_bytes(),
-             'presentation-spec.md': (root / 'components/hub/presentation/spec.md').read_bytes(),
-             'federation-spec.md': (root / 'components/hub/federation/spec.md').read_bytes(),
-             'configuration-spec.md': (root / 'components/hub/configuration/spec.md').read_bytes(),
-             'identity-spec.md': (root / 'components/hub/identity/spec.md').read_bytes(),
-             'protocol-spec.md': (root / 'components/hub/protocol/spec.md').read_bytes(),
-             'directory-spec.md': (root / 'components/hub/directory/spec.md').read_bytes(),
-             'directory-queries.md': (root / 'components/hub/directory/queries.md').read_bytes(),
-             'history-spec.md': (root / 'components/hub/history/spec.md').read_bytes(),
-             'history-interface.md': (root / 'components/hub/history/interface.md').read_bytes(),
-             'history-evaluator.md': (root / 'components/hub/history/evaluator.md').read_bytes(),
-             'retrieval-spec.md': (root / 'components/hub/retrieval/spec.md').read_bytes(),
-             'retrieval-index.md': (root / 'components/hub/retrieval/index.md').read_bytes(),
-             'retrieval-interface.md': (root / 'components/hub/retrieval/interface.md').read_bytes(),
-             'feedback-spec.md': (root / 'components/hub/feedback/spec.md').read_bytes(),
-             'feedback-replay.md': (root / 'components/hub/feedback/replay.md').read_bytes(),
-             'feedback-interface.md': (root / 'components/hub/feedback/interface.md').read_bytes(),
-             'archive-spec.md': (root / 'components/hub/archive/spec.md').read_bytes(),
-             'archive-interface.md': (root / 'components/hub/archive/interface.md').read_bytes(),
-             'evidence-spec.md': (root / 'components/hub/evidence/spec.md').read_bytes()}
-    manifest = {'schema': 'adhd/container-inputs@1', 'files': {
-        name: hashlib.sha256(content).hexdigest() for name, content in files.items()}}
+             'LICENSE': read_regular(root / 'LICENSE'),
+             'Dockerfile': read_regular(root / 'deploy/Dockerfile'),
+             'health.exs': read_regular(root / 'deploy/health.exs'),
+             'component.md': read_regular(root / 'components/hub/component.md'),
+             'core-spec.md': read_regular(root / 'components/hub/core/spec.md'),
+             'information-spec.md': read_regular(root / 'components/hub/information/spec.md'),
+             'management-spec.md': read_regular(root / 'components/hub/management/spec.md'),
+             'presentation-spec.md': read_regular(root / 'components/hub/presentation/spec.md'),
+             'federation-spec.md': read_regular(root / 'components/hub/federation/spec.md'),
+             'configuration-spec.md': read_regular(root / 'components/hub/configuration/spec.md'),
+             'identity-spec.md': read_regular(root / 'components/hub/identity/spec.md'),
+             'protocol-spec.md': read_regular(root / 'components/hub/protocol/spec.md'),
+             'directory-spec.md': read_regular(root / 'components/hub/directory/spec.md'),
+             'directory-queries.md': read_regular(root / 'components/hub/directory/queries.md'),
+             'history-spec.md': read_regular(root / 'components/hub/history/spec.md'),
+             'history-interface.md': read_regular(root / 'components/hub/history/interface.md'),
+             'history-evaluator.md': read_regular(root / 'components/hub/history/evaluator.md'),
+             'retrieval-spec.md': read_regular(root / 'components/hub/retrieval/spec.md'),
+             'retrieval-index.md': read_regular(root / 'components/hub/retrieval/index.md'),
+             'retrieval-interface.md': read_regular(root / 'components/hub/retrieval/interface.md'),
+             'feedback-spec.md': read_regular(root / 'components/hub/feedback/spec.md'),
+             'feedback-replay.md': read_regular(root / 'components/hub/feedback/replay.md'),
+             'feedback-interface.md': read_regular(root / 'components/hub/feedback/interface.md'),
+             'archive-spec.md': read_regular(root / 'components/hub/archive/spec.md'),
+             'archive-interface.md': read_regular(root / 'components/hub/archive/interface.md'),
+             'evidence-spec.md': read_regular(root / 'components/hub/evidence/spec.md')}
+    files.update(specification_files(root / "components/hub"))
+    write_context(files, args.output)
     output = Path(args.output)
-    output.mkdir(parents=True, exist_ok=False)
-    manifest_bytes = (json.dumps(manifest, indent=2) + '\n').encode()
-    with tarfile.open(output / 'payload.tar', 'w', format=tarfile.USTAR_FORMAT) as archive:
-        directory = tarfile.TarInfo('app')
-        directory.type = tarfile.DIRTYPE
-        directory.mode = 0o755
-        archive.addfile(directory)
-        payloads = {name: content for name, content in files.items() if name != 'Dockerfile'}
-        payloads['manifest.json'] = manifest_bytes
-        for name, content in sorted(payloads.items()):
-            info = tarfile.TarInfo('app/' + name)
-            info.mode = 0o644
-            info.size = len(content)
-            archive.addfile(info, io.BytesIO(content))
-    (output / 'Dockerfile').write_bytes(files['Dockerfile'])
-    (output / 'manifest.json').write_bytes(manifest_bytes)
-    for path in output.iterdir():
-        path.chmod(0o644)
-        os.utime(path, (0, 0))
     print(json.dumps({'context': str(output.resolve()), 'artifact_sha256': digest}))
 
 

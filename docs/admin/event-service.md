@@ -56,6 +56,13 @@ of it for remote access. Never publish the broker/controller ports or REST Proxy
 The qualification-only `events.test.compose.yaml` exposes REST Proxy to loopback
 and is excluded from the application package.
 
+The accepted container staging context includes the complete authored hub Markdown
+specification tree at `/app/specification/`, including federation, multi-project,
+eventing and resource contracts. `/app/manifest.json` binds each packaged input to
+its SHA-256 digest. Older flat specification filenames remain for compatibility.
+Staging rejects symlink and nonregular specification inputs; generated lock files
+are excluded from this authored-document tree.
+
 Broker readiness precedes proxy readiness and initial hub creation. After start,
 a broker failure appears in eventing diagnostics; the hub keeps its durable
 outbox and retries. HTTP liveness is separate from model availability. An accepted

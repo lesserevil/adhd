@@ -178,7 +178,7 @@ async def main(args):
         if args.image:
             args.command=None;args.rest_url=None;args.credentials=None;args.keep_work=root/'hub';args.with_model=False
             args.eventing_rest_url='https://kafka-rest:8082';args.deadline=45
-            seed_fixture=Fixture(args)
+            seed_fixture=Fixture(argparse.Namespace(**{**vars(args), "image":None}))
             seed_fixture.config.update(host='0.0.0.0',port=8766,public_url='http://127.0.0.1:'+str(args.hub_port),store_path='/data/hub.dets',server_id=uuid4().hex)
             seed_fixture.config['eventing'].update(bearer_token=first,tls_ca_pem=issuer.ca_pem.decode())
             private(root/'hub-seed.json',json.dumps(seed_fixture.config).encode())
@@ -236,13 +236,13 @@ async def main(args):
                     except httpx.HTTPError:pass
                     await asyncio.sleep(.2)
                 else:raise AssertionError('Accepted image readiness failed')
-            run(ns(['cp','deployment/hub:/config/initial-admin-password.txt',str(root/'initial-admin-password.txt')]))
+            run(ns(['cp',pod('hub')['metadata']['name']+':/config/initial-admin-password.txt',str(root/'initial-admin-password.txt')]))
             password=re.search(r'^Password: (.+)$',(root/'initial-admin-password.txt').read_text(),re.M)[1]
             private(root/'credentials.json',json.dumps({'agents':seed_fixture.tokens,'admin':{'username':'admin','password':password}}).encode())
             sensitive.extend(list(seed_fixture.tokens.values())+[password])
             args.rest_url=base;args.credentials=root/'credentials.json';args.keep_work=root/'client'
-            hub=Fixture(args);await hub.start()
-            run(ns(['cp','deployment/hub:/app/manifest.json',str(root/'running-manifest.json')]))
+            hub=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await hub.start()
+            run(ns(['cp',pod('hub')['metadata']['name']+':/app/manifest.json',str(root/'running-manifest.json')]))
             assert json.loads((root/'running-manifest.json').read_text())==accepted_manifest
             image_id=pod('hub')['status']['containerStatuses'][0]['imageID']
             actual=image_id.rsplit('@',1)[1]
@@ -258,7 +258,7 @@ async def main(args):
         else:
             args.command=None; args.rest_url=None; args.credentials=None
             args.keep_work=root/'hub'; args.with_model=False; args.eventing_rest_url=url; args.deadline=45
-            hub=Fixture(args)
+            hub=Fixture(argparse.Namespace(**{**vars(args), "image":None}))
             hub.config['eventing'].update(bearer_token=first,tls_ca_pem=issuer.ca_pem.decode())
             await hub.start()
         a,b=await hub.agent('red-a'),await hub.agent('red-b')

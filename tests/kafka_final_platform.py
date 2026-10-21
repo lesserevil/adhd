@@ -274,7 +274,7 @@ async def main(args):
             for row in pvcs:
                 pv=json.loads(k(['get','pv',row['spec']['volumeName'],'-o','json'],capture=True))
                 assert pv['spec']['persistentVolumeReclaimPolicy']=='Delete'
-            command(kubectl+['-n',args.name,'cp','deployment/hub:/config/initial-admin-password.txt',str(config_dir/'initial-admin-password.txt')])
+            command(kubectl+['-n',args.name,'cp',obj(['get','pods','-l','app=hub'])['items'][0]['metadata']['name']+':/config/initial-admin-password.txt',str(config_dir/'initial-admin-password.txt')])
             command(kubectl+['-n',args.name,'cp','deployment/hub:/app/manifest.json',str(root/'running-manifest.json')])
             assert json.loads((root/'running-manifest.json').read_text())==manifest
             evidence.value['runtime_image_ids']={name:obj(['get','pods','-l','app='+name])['items'][0]['status']['containerStatuses'][0]['imageID'] for name in ['hub','kafka','kafka-rest']}
@@ -290,7 +290,7 @@ async def main(args):
         password=re.search(r'^Password: (.+)$',(config_dir/'initial-admin-password.txt').read_text(),re.M)[1]
         credentials=root/'credentials.json';credentials.write_text(json.dumps({'agents':tokens,'admin':{'username':'admin','password':password}}));credentials.chmod(0o600)
         args.rest_url=base;args.credentials=credentials;args.with_model=False;args.keep_work=root/'client'
-        fixture=Fixture(args);await fixture.start()
+        fixture=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await fixture.start()
         admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
         assert admin.call({'op':'config_get'})['config']['matcher'] is None
         await b.call(scoped('project-red','subscribe',mode='raw'))
@@ -322,7 +322,7 @@ async def main(args):
             assert {row['metadata']['name']:row['metadata']['uid'] for row in obj(['get','pvc'])['items']}==volume_claims
         # Old HTTP connections may have closed during replacement; the public
         # fixture login is reestablished, preserving only durable credentials.
-        await fixture.close();fixture=Fixture(args);await fixture.start()
+        await fixture.close();fixture=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await fixture.start()
         admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
         assert admin.call({'op':'config_get'})['config']['server_id']==config['server_id']
         assert await a.call(publication_command,mid)==result
@@ -395,7 +395,7 @@ async def main(args):
         recovery_file=root/'recovery-set.json';recovery_file.write_text(json.dumps(recovery,indent=2)+'\n');recovery_file.chmod(0o600)
         evidence.record('consistent-offline-config-all-project-stores-and-kafka-recovery-set-created',archives_sha256=archives,recovery_manifest_sha256=sha(recovery_file))
         await online()
-        fixture=Fixture(args);await fixture.start()
+        fixture=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await fixture.start()
         admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
         sentinel=(await a.call(scoped('project-red','publish',text='Intentional post-backup rollback sentinel')))['publication']
         await poll_until(b,'project-red',{sentinel['id']},45)
@@ -406,7 +406,7 @@ async def main(args):
         assert all(sha(root/name)==value for name,value in archives.items())
         cold_transfer(restore=True)
         await online()
-        fixture=Fixture(args);await fixture.start()
+        fixture=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await fixture.start()
         admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
         blue_a,blue_b=await fixture.agent('blue-a'),await fixture.agent('blue-b')
         restored=admin.call({'op':'config_get'})['config']

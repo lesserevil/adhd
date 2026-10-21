@@ -107,6 +107,30 @@ Origin, cookie and CSRF checks apply server-side and cannot be bypassed by UI mo
 Cookies are a deliberate extension of management/spec.md's old no-cookie token UI;
 legacy key remains JS-memory-only. Never store session credentials in browser storage.
 
+## Browser authentication transitions
+
+The Admin browser binds asynchronous requests to an authentication-context
+generation. Starting logout, changing sign-in credentials, or starting an explicit
+OIDC linking redirect invalidates the previous context before sending the new
+authentication operation. Abort outstanding old-context fetches. Never interpret
+their late success, HTTP401, transport failure or rejected body as a current
+session result, and never let them clear or render over a newer authenticated
+workspace. Current-context HTTP401 still requires sign-in; stale-response fencing
+must not conceal real session expiry, revocation or authorization denial.
+
+Await session installation, including project admission and initial view loading,
+inside the initiating sign-in/boot error boundary. Intentional cancellation or
+supersession must not produce an unhandled promise rejection or an error notice in
+the replacement context. Cancellation is local presentation work: it does not undo
+accepted server mutations, erase their durable receipts, or change their
+message-ID recovery semantics. No new credentials, HTTP routes or wire fields are
+introduced by this browser fencing.
+
+Qualify a delayed real old-session response across logout and a successful new
+login. The newer workspace and its valid server session must survive. Exercise
+logout during installation and ordinary OIDC setup/link/logout on desktop/mobile;
+also prove that a current-session revocation still returns the browser to sign-in.
+
 ## OIDC profile
 
 Authorization Code Flow with PKCE S256 and server-side token exchange. Standards:

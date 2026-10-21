@@ -150,3 +150,9 @@ and acknowledgements, both with and without a default project. The
 [legacy guard trace](../../verification/multi-eventing/legacy-guard-33.json)
 is targeted module-unit evidence of zero checkpoint opener calls, with a real
 positive tracing control; it is not a public legacy lifecycle qualification.
+
+The [exact source34 eventing refresh](../../verification/multi-eventing/native-eventing-34.json)
+passes fifteen native eventing, SDK and fanout/commit crash checks. Its
+[stale canonical-owner refresh](../../verification/federation-stale-owner/manifest34.json)
+passes four routing checks; these are native results and do not attest the pending
+container or deployment qualification.

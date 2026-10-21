@@ -39,10 +39,14 @@ def main():
     p.add_argument('--command', required=True, help='JSON argv before the serve argument')
     p.add_argument('--report', type=Path, required=True)
     p.add_argument('--work', type=Path)
+    p.add_argument('--eventing-rest-urls', help='JSON array of three distinct real Kafka REST services')
     args = p.parse_args()
     root = args.work.resolve() if args.work else Path(tempfile.mkdtemp(prefix='adhd-federation-multi-'))
     root.mkdir(parents=True, exist_ok=True)
     root.chmod(0o700)
+    broker_urls = json.loads(args.eventing_rest_urls) if args.eventing_rest_urls else None
+    if broker_urls is not None:
+        assert len(broker_urls) == 3 and len(set(broker_urls)) == 3
     model = Model()
     hubs = []
     cases = []
@@ -85,6 +89,12 @@ def main():
 
     try:
         command = json.loads(args.command)
+        if broker_urls:
+            clusters = [request(url.rstrip('/'), '/v3/clusters')[1]['data'][0]['cluster_id'] for url in broker_urls]
+            assert len(set(clusters)) == 3, 'Each server must have a distinct Kafka cluster'
+            report['broker_cluster_ids'] = clusters
+            report['limitations'] = [item for item in report['limitations'] if not item.startswith('Eventing')]
+            report['limitations'].append('Kafka is exercised as independent per-server services; this suite does not qualify Kubernetes or replicated broker durability.')
         for i in range(3):
             hub = Hub(command, root / f'server-{i}', 'shared', model.url)
             hub.config.update(server_id=f'{i+1:032x}', eventing={'enabled': False},
@@ -94,6 +104,8 @@ def main():
                                                             'catalog': {'visible': True, 'entries': []}}}}
                                         for name in PROJECTS],
                               agent_projects={'alice': list(PROJECTS), 'bob': ['shared']})
+            if broker_urls:
+                hub.config['eventing'] = {'enabled': True, 'rest_url': broker_urls[i], 'timeout_ms': 3000, 'retry_ms': 100}
             hub.config['federation']['description'] = f'Server {i} builds image decoders.'
             hub.config['federation']['catalog'] = {'visible': True, 'entries': []}
             hubs.append(hub)
@@ -124,6 +136,23 @@ def main():
                 rows = wait(observed, 'Expected four distinct ready server/project peers')
                 assert len({(row['server_id'], row['project_id']) for row in rows}) == 4
         record('catalog-cache-identity-is-server-project-pair-without-false-conflicts')
+
+        if broker_urls:
+            before = len(model.states)
+            for index, hub in enumerate(hubs):
+                call(hub, 'shared', 'subscribe', mode='raw')
+                marker = f'Independent broker fixture {index} {uuid4().hex}'
+                publication = call(hub, 'shared', 'publish', text=marker)['publication']
+                def received(hub=hub, publication=publication):
+                    return any(row.get('publication_id') == publication['id']
+                               for row in call(hub, 'shared', 'poll')['deliveries'])
+                wait(received, 'Own-server Kafka event did not reach its A2A subscriber')
+                for other in hubs:
+                    if other is not hub:
+                        assert not call(other, 'shared', 'search', query=marker)['publications']
+            assert len(model.states) == before
+            record('three-independent-kafka-services-feed-raw-a2a-streams-with-zero-inference')
+
 
         q = call(a, 'shared', 'federated_query', question='Which projects build image decoders?')['query']
         done = finish(a, 'shared', 'get_federated_query', q['id'])

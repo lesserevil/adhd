@@ -207,3 +207,11 @@ group-role and settings flows. Its [intermediate admission and container payload
 The [retired agent ownership validation](agent-retirement-validation.md) records
 retained-identity protection, explicit Admin recovery, cold restarts and
 unavailable snapshot evidence, including the preserved source31 negative witness.
+
+The [source34 OIDC/accounts refresh](../../verification/multi-eventing/oidc-first-setup-34-native.json)
+passes both viewports and four real OIDC exchanges. The
+[source34 role/project refresh](../../verification/multi-eventing/role-browser-34-native.json)
+passes22 native browser groups. Desktop Users and narrow Viewer captures were
+visually inspected; account controls, project selection and read-only agent
+metadata render without document overflow. Final container qualification remains
+separate.

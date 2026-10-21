@@ -156,3 +156,10 @@ passes fifteen native eventing, SDK and fanout/commit crash checks. Its
 [stale canonical-owner refresh](../../verification/federation-stale-owner/manifest34.json)
 passes four routing checks; these are native results and do not attest the pending
 container or deployment qualification.
+
+The [source34 metadata refresh](../../verification/multi-eventing/metadata-refresh-34.json)
+regenerates native-test declarations and the source BOM against the current
+official recipe and locked graph. It changes no application or native-test bytes.
+The first recipe-mismatch lifecycle attempt remains failed; current admission
+must execute afresh. These generated declarations do not replace the independent
+stateful guard, crash or browser qualifications.

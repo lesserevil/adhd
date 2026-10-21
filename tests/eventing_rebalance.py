@@ -80,10 +80,10 @@ async def until(fn,seconds=45):
  raise AssertionError('Managed coordinator phase deadline exceeded')
 
 async def main(args):
- if not args.hub or args.rest_url or args.image:raise ValueError('First qualification is exact native --hub only')
+ if args.rest_url or (not args.hub and not args.image):raise ValueError('Use exact native --hub or reviewed --image')
  assert args.eventing_rest_url.rstrip('/')=='http://127.0.0.1:18087','Only the owned18087 service is authorized'
  relay=Relay(args.eventing_rest_url);local=copy.copy(args);local.eventing_rest_url=relay.base;local.keep_work=None
- f=Fixture(local);e=Evidence(args.report,'adhd/real-coordinator-interference@1');e.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest(),harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),predeclared_limits=LIMITS,scope='Actual managed observer membership/assignment changes alongside manually assigned bridge; no bridge-managed ownership transfer or HA claim',coordinator_snapshots=[],publications=0,hub_hard_restarts=0)
+ f=Fixture(local);e=Evidence(args.report,'adhd/real-coordinator-interference@1');e.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None,harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),predeclared_limits=LIMITS,scope='Actual managed observer membership/assignment changes alongside manually assigned bridge; no bridge-managed ownership transfer or HA claim',coordinator_snapshots=[],publications=0,hub_hard_restarts=0)
  cli_calls=0;observers=[];http=httpx.AsyncClient(trust_env=False,timeout=8);expected={};receipts=[];all_pubs=[];group=None;topic=None
  def persist():e.write()
  async def cli_snapshot(expected_members):
@@ -182,6 +182,7 @@ async def main(args):
    try:await x.close()
    except BaseException:pass
   await f.close()
+  f.bind_evidence(e)
   for path in relay.instances:
    try:await http.delete(relay.url+path,headers={'Accept':V2})
    except httpx.HTTPError:pass

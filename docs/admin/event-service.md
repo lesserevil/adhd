@@ -498,3 +498,11 @@ identity. Actual topic records survived restart/adoption on all three volumes.
 Conflicting explicit IDs failed before formatting. The fixtures were removed.
 This checkpoint is Compose service identity proof with Kubernetes mirror checking;
 it does not substitute for final-image application or Kubernetes runtime evidence.
+
+The [Kubernetes bootstrap diagnostic](../../verification/kafka-bootstrap/kubernetes-manifest.json)
+adds actual fresh-PVC startup under the broker's nonroot user/fsGroup and restart
+with the committed identity, using the exact ConfigMap source. It also repeats
+Secret and trust rotation with the native frozen diagnostic hub and complete
+old/new pod log capture. Its six checks passed and its namespace/PVC/PV were
+removed. The final accepted-image branch of this harness remains a distinct gate;
+this native result is not evidence for the final container's OTP runtime.

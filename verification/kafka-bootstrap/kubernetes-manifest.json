@@ -1,0 +1,59 @@
+{
+  "schema": "adhd/kafka-kubernetes-bootstrap-diagnostic@1",
+  "passed": true,
+  "status": "service-bootstrap-qualified-native-app-diagnostic",
+  "accepted_image_qualified": false,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "production_entitlement_qualified": false,
+  "scope": "Fresh Kubernetes broker volume bootstrapped through exact ConfigMap script with runAsUser/fsGroup1000, actual HTTPS/OAuth REST and native frozen hub22, REST Secret/pod rotation and broker PVC replacement, stable cluster ID/committed records and explicit group progress.",
+  "artifact": {
+    "sha256": "4b6b444dc5c10f573632335d5c7565590d6f6bcc060a11619dd92193c2fa0025",
+    "module_identity_manifest": "verification/kafka-security/manifest.json",
+    "module_identity_manifest_sha256": "8aefe255b450014c3c1979d50019d2a2927e8454b2fd8126eeeb56ccb25b2b70"
+  },
+  "runtime": {
+    "hub": "Elixir1.18.4 OTP27 native diagnostic; not final OTP29 accepted image",
+    "broker_proxy": "Pinned CP8.3.2, imported config/layer equivalence retained separately",
+    "kubernetes": "1.35.0",
+    "kind": "0.33.0"
+  },
+  "inputs": [
+    {
+      "path": "deploy/kafka-bootstrap.py",
+      "sha256": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f"
+    },
+    {
+      "path": "docs/admin/kafka-bootstrap.md",
+      "sha256": "2371e7d4c6bd1318dddf7df7b89a38198d11bb00c11ba3a7bbe4b4953ff3a73f"
+    },
+    {
+      "path": "deploy/k8s/events.yaml",
+      "sha256": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0"
+    },
+    {
+      "path": "deploy/k8s/oauth.patch.yaml",
+      "sha256": "c291143a5a673a1a390b737506dcfc9f3dd581ad811c1de80ed9a162ada13d36"
+    },
+    {
+      "path": "tests/kafka_oauth_k8s.py",
+      "sha256": "0ff0ccecddb3991fcaab4c02b145e2b9a647ea4df9a1171c17d6b8dc6aa8d298"
+    },
+    {
+      "path": "tests/kafka_oauth_provider.py",
+      "sha256": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb"
+    }
+  ],
+  "report": {
+    "path": "verification/kafka-bootstrap/kubernetes-native-diagnostic.json",
+    "sha256": "340e4194233766110c802c0ccf6592ffb286fa8c5ede7e0c8578a42cb9f7ffe0"
+  },
+  "limits": [
+    "Final accepted image branch of the same harness is prepared but was not exercised by this native diagnostic.",
+    "No NetworkPolicy enforcement or proxy-to-broker SASL_SSL qualification.",
+    "Optional native AuthenticationHandler remains Enterprise/licensed or permitted-trial scope, never a free Community auth claim.",
+    "Earlier interim native attempt03 failed because the readiness helper selected a synthetic expired credential; excluded. Corrected fresh run04 is the successful retained report.",
+    "No model was started or called, and existing broker/application/model services were not changed.",
+    "Owned namespace, PVC/PV, portforward, log followers, native hub and bounded issuer were all removed."
+  ]
+}

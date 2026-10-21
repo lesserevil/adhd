@@ -195,6 +195,27 @@ Retention changes are validated against recoverable backend materialization.
 Infrastructure static broker settings may require deployment rollouts, but not a
 hub restart; Admin cannot execute arbitrary shell/Kubernetes commands.
 
+Before deciding a hot transport change, probe the destination cluster and every
+local project topic with finite deadlines; validate partition0-only topology and
+delete-only cleanup, create missing topics, and apply the requested retention.
+Failed preflight leaves the authoritative hub configuration/checkpoints unchanged;
+created destination topics may remain as unused infrastructure. Retention changes
+on an existing destination are external side effects and must be reported as such.
+Record a unique transport-transition ID in the same durable configuration decision
+as the new settings. Retain that decision until every project's state has applied
+the transition; startup completes it before workers start. Per-project application
+is idempotent by transition ID. On a different endpoint/topic binding, retain all
+originals, deliveries and acknowledgements, requeue only events not materialized,
+clear their obsolete physical offsets/observations, and start destination scanning
+at offset0. Record the old checkpoint and a TRANSPORT_CUTOVER recovery gap with
+the exact pending event IDs. Logical deduplication tolerates destination duplicates.
+This is an explicit reviewed cutover, never an implicit consumer reset. A credential
+change on the same binding retains the checkpoint. Quarantine evidence from the
+old binding remains in transition history rather than being silently discarded.
+Fence in-flight work by the full configuration revision, but retain consumer
+instances across unrelated revisions; replace instances when transport settings
+change and close the old instance at its original authorized endpoint.
+
 Migration with multi/spec.md snapshots the legacy ingestion highwater, preserves
 originals, subscription descriptions, pending jobs, delivery IDs/matches/acks and
 retry identities. Initialize outbox only for events needing transport after the

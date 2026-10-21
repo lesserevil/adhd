@@ -821,6 +821,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Own [the Kafka pub/sub program](kafka-pubsub.md). Project-wide event subscriptions receive publications from all agents without inference; optional plain-text filters narrow an authorized stream. Separate event transport, durable agent delivery and searchable originals. Implementation is authorized and underway with integrated contracts, real service packaging and partial independent development evidence; final qualification remains open.
 - **Depends on:** MULTI-001
 - **Implementation:**
+  - [ ] Review the four implementation groups and model-free/filtered end-to-end acceptance scenario in [the detailed plan](kafka-pubsub.md#work-and-acceptance-order); use this as the next contract-review action.
   - [ ] Define event envelopes, project/topic/partition identity, subscription selection/filter modes, activation watermarks, ordering, replay and delivery deduplication.
   - [ ] Specify exact A2A/Admin/broker schemas, compatibility, durability boundaries and filter revision/error semantics before implementation.
   - [ ] Select and pin a maintained Kafka client and compatible broker; explicitly revise the current standard-runtime-only constraint and record license/dependency/build implications.

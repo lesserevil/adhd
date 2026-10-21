@@ -190,6 +190,32 @@ Old semantic subscriptions must not silently become unfiltered subscriptions.
 
 ## Work and acceptance order
 
+Implement this program in four reviewable groups, together with the corresponding
+MULTI work. Contract review precedes code that changes agent-visible behavior;
+packaging can proceed once the broker boundary is defined.
+
+1. **Contracts and infrastructure:** KAFKA-001/002/007 define the event and
+   subscription schemas, durable handoff, broker integration and both deployment
+   packages. Establish the model-free startup path first.
+2. **Agent streams and optional filtering:** KAFKA-003/004 add independent A2A
+   subscriptions, polling/acknowledgement and isolated semantic-filter work.
+   Demonstrate all-agent project fan-out without inference before adding filters.
+3. **Facts and administration:** KAFKA-005/006 preserve backend search and add hot
+   Admin configuration, diagnostics and safe connection/filter changes. A rejected
+   filter decision must never remove the original from searchable history.
+4. **Upgrade and qualification:** KAFKA-008/009 prove migration, recovery and
+   interoperability on the exact combined multi-project artifact in Compose and
+   Kubernetes before closing the program.
+
+The minimum end-to-end demonstration uses agents A and B publishing in project P
+and two independent subscribers. One subscribes to every P event; the other adds
+the plain-text criterion “API compatibility changes.” Both publishers' events
+reach the raw subscriber with zero model calls; only matching events reach the
+filtered subscriber. With the model disabled, raw delivery and literal fact search
+continue. Filtered work reports its unavailable/pending state, and every accepted
+original remains searchable, including events rejected by the filter. Events in
+an unauthorized project remain inaccessible through every path.
+
 | Item | Deliverable | Dependencies |
 | --- | --- | --- |
 | KAFKA-001 | Contracts, dependency/client selection, event/subscription modes and durability design. | MULTI-001 |

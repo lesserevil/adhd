@@ -2282,6 +2282,151 @@
         "confirm"
       ],
       "additionalProperties": false
+    },
+    "RebindStore": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "store_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-maxBytes": 4096,
+          "pattern": "^/[^\\u0000]*$"
+        },
+        "expected_route_generation": {
+          "$ref": "#/$defs/Positive"
+        },
+        "snapshot_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "checkpoint_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "project_id",
+        "store_path",
+        "expected_route_generation",
+        "snapshot_sha256",
+        "checkpoint_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "RebindRequest": {
+      "type": "object",
+      "properties": {
+        "config_file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-maxBytes": 4096,
+          "pattern": "^/[^\\u0000]*$"
+        },
+        "expected_server_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "expected_config_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "expected_config_journal_sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Sha256"
+            }
+          ]
+        },
+        "expected_registry_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "expected_recovery_journal_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "expected_marker_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "stores": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/RebindStore"
+          },
+          "uniqueItems": true,
+          "x-uniqueBy": "project_id"
+        },
+        "message_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "confirm": {
+          "const": true
+        },
+        "confirm_stopped": {
+          "const": true
+        }
+      },
+      "required": [
+        "config_file",
+        "expected_server_id",
+        "expected_config_sha256",
+        "expected_config_journal_sha256",
+        "expected_registry_sha256",
+        "expected_recovery_journal_sha256",
+        "expected_marker_sha256",
+        "stores",
+        "message_id",
+        "confirm",
+        "confirm_stopped"
+      ],
+      "additionalProperties": false
+    },
+    "RebindResult": {
+      "type": "object",
+      "properties": {
+        "rebound": {
+          "const": true
+        },
+        "server_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "registry_revision": {
+          "$ref": "#/$defs/Positive"
+        },
+        "projects": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          }
+        }
+      },
+      "required": [
+        "rebound",
+        "server_id",
+        "registry_revision",
+        "projects"
+      ],
+      "additionalProperties": false
+    },
+    "RebindCLI": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "const": "rebind-storage"
+        },
+        {
+          "$ref": "#/$defs/RebindRequest"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
     }
   },
   "oneOf": [
@@ -2296,6 +2441,12 @@
     },
     {
       "$ref": "#/$defs/Error"
+    },
+    {
+      "$ref": "#/$defs/RebindCLI"
+    },
+    {
+      "$ref": "#/$defs/RebindResult"
     }
   ],
   "x-projectRecoveryInvariants": [

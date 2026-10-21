@@ -48,6 +48,19 @@ generation digest. Paths never derive from display names. Bind the registry to
 the configured server and configuration location; reject unknown schemas,
 duplicate identities/aliases, colliding routes and symlink/foreign files.
 
+Persist an independent owner-only CONFIG_FILE.stores.marker loss witness in the
+same recoverable creation/adoption transaction. Registry is CONFIG_FILE.stores;
+recovery operations/receipts/reservations are CONFIG_FILE.recovery; existing
+configuration receipts are CONFIG_FILE.journal; the serialized tagged decision is
+CONFIG_FILE.transaction. Every full backup includes the marker and complete
+metadata set. Existing marker plus absent/corrupt registry without a valid owned
+creation/adoption decision is global integrity failure, never fresh admission.
+An absent marker plus conflicting metadata/store evidence is also not fresh.
+Location binding is not silently changed at startup. The explicit offline
+rebind-storage interface below supports complete stopped-server backups moved to
+a different configuration location, preserving all server/project identities and
+state. Selective project recovery does not perform that whole-server rebind.
+
 Bootstrap explicitly distinguishes fresh installation, verified existing complete
 stores, and known initialized missing stores. Installing the registry for an
 existing store verifies its snapshot/header without a second live DETS opener.
@@ -231,8 +244,10 @@ server-wide registry/decision integrity stops startup entirely.
 ## Transport, late work and identifiers
 
 Each restored target gets a 128-bit CSPRNG project epoch distinct from every
-retained/live/backup epoch on this server. New topic is the normal hashed topic
-stem plus ".r" + lowercase32hex(epoch), before ".events.v1"; group is topic +
+retained/live/backup epoch on this server. New topic is exactly effective
+topic_prefix + "." + first16 SHA256(UTF8(server_id)) + "." + first16
+SHA256(UTF8(project_id)) + ".r" + lowercase32hex(epoch) + ".events.v1";
+group is topic +
 ".fanout". Record full identities and epoch for collision checks. Legacy routes
 retain exact old topic names. Transport changes use current connection, TLS,
 credentials and effective target retention/caps. Recovery is permitted with

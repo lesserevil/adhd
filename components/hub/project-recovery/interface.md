@@ -241,3 +241,64 @@ is required". Existing codes retain their accepted messages.
 Independent contract vectors are `tests/fixtures/project-recovery.json`, checked
 by `tests/project_recovery_contract.py`; these qualify future schema shape and
 semantic bindings only, not a running implementation or authorization behavior.
+
+## Explicit offline complete-server metadata rebind
+
+The public CLI additionally accepts exactly ["rebind-storage",RebindRequest].
+This is an offline operator operation for a complete stopped-server backup moved
+to an explicitly chosen CONFIG_FILE location, not an Admin HTTP command or a
+selective populated-target restore. All normal hot project recovery/settings
+remain available through Admin. The operator must stop the previous owner and
+confirm_stopped:true; this single-owner prerequisite is not a claim of distributed
+process locking. Never infer a location change from missing files during serve.
+
+RebindRequest is closed: config_file (new absolute UTF8 path), expected_server_id,
+expected_config_sha256,expected_config_journal_sha256 (nullable only for proven
+absence),expected_registry_sha256,expected_recovery_journal_sha256,
+expected_marker_sha256,stores,message_id,confirm:true,confirm_stopped:true.
+Every stores entry is exactly project_id,store_path (new absolute target checkpoint
+path),expected_route_generation,snapshot_sha256,checkpoint_sha256. It must name
+all and only initialized registered projects, <=256, unique project IDs and paths.
+Uninitialized entries remain uninitialized; the configured registry project set
+must still match. Read files only through these explicit new paths, never the
+old location strings embedded in copied metadata. Snapshot suffix remains
+.snapshot. Bind SHA256 to exact existing bytes and verify complete store/header,
+registry, marker, recovery journal and configuration-receipt consistency. Apply
+recovery byte/record/deadline bounds per project, one verification table at a time;
+there is no unbounded archive extraction or directory discovery.
+
+The copied .stores/.stores.marker/.recovery/.journal set must have mutually valid
+original location/server identities. Config file must validate with the same
+server/project/alias/owner references; it is read, not replaced by this command.
+Unrelated changes to credentials/roles/settings are neither imported nor made.
+The current copied .transaction must be absent: reject an incomplete decided
+installation or pending relocation/recovery, instead of deleting its decision.
+First recover such a backup into one complete generation through its ordinary
+recovery path. Refuse hash/schema/reference/path/link conflicts and foreign files.
+Explicitly absent .journal is valid only when no configuration receipt history is
+claimed; do not substitute an empty journal for a missing claimed one.
+
+Idempotency is external to every project, keyed by offline-owner/message_id with
+the canonical complete request digest. A verified completed identical receipt is
+returned before old-hash/path preconditions; changed input under the same ID is
+IDEMPOTENCY_CONFLICT. Before decision failure leaves all input metadata/stores
+unchanged and removes only owned stage. Fsync one tagged rebind decision recording
+old/new metadata identities, mappings and receipt. After decision, finish the
+whole metadata location/route rewrite or fail closed; startup replays that decision
+before writer activation. Preserve every server/project/alias identity, project/
+allocation epoch, allocation counter, record, acknowledgement, source/mutation
+receipt, sequence, selection provenance, topic/group and broker position. Product
+checkpoint/snapshot bytes are verified but not rewritten. Do not call Kafka or
+replay history. Update only location/route metadata and its revision/receipt;
+unexecuted old review plans become stale because their route/path proof changed.
+Keep initialized flags and loss witness intact. An unknown or partial input set
+cannot authorize an empty project or overwrite later activated writes.
+
+Success emits one JSON object RebindResult on stdout: rebound:true,server_id,
+registry_revision,projects (the complete distinct mapped project IDs). Exit0.
+Failure exits1 with a fixed Error JSON object on stderr and no success/stdout:
+INVALID_PARAMS,RESTORE_CONFLICT,RECOVERY_REQUIRED or IDEMPOTENCY_CONFLICT as
+applicable. Do not echo paths, raw metadata, tokens or hashes in diagnostics.
+The same complete request recovers/replays its durable outcome after a crash.
+Native and exact-image moved full-server restore must qualify this command,
+separately from selective target restore and ordinary same-location cold restore.

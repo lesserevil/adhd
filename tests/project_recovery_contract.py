@@ -35,6 +35,9 @@ def semantic(definition,value):
    assert plan['aliases']==sorted(plan['aliases']) and plan['project_id'] not in plan['aliases']
    assert plan['selected']['route_generation']>plan['target']['route_generation']
    assert plan['selected']['project_epoch']!=plan['selected']['allocation_epoch']
+   if plan['selected']['transport_enabled']:
+    topic=plan['policy']['topic_prefix']+'.'+hashlib.sha256(plan['server_id'].encode()).hexdigest()[:16]+'.'+hashlib.sha256(plan['project_id'].encode()).hexdigest()[:16]+'.r'+plan['selected']['project_epoch']+'.events.v1'
+    assert plan['selected']['topic']==topic
  if definition=='Operation':
   if value['plan']:
    assert value['project_id']==value['plan']['project_id']
@@ -48,6 +51,10 @@ def semantic(definition,value):
    reasons=[x['reason'] for x in value['failure']['conflicts']];assert len(reasons)==len(set(reasons)) and reasons==sorted(reasons)
  if definition=='Status' and value['operation']:
   assert value['project_id']==value['operation']['project_id'];semantic('Operation',value['operation'])
+ if definition in ('RebindRequest','RebindCLI'):
+  request=value[1] if definition=='RebindCLI' else value
+  ids=[x['project_id'] for x in request['stores']];paths=[x['store_path'] for x in request['stores']]
+  assert len(ids)==len(set(ids)) and len(paths)==len(set(paths))
  if definition=='BackupManifest':assert value['aliases']==sorted(value['aliases']) and value['project_id'] not in value['aliases']
 
 def main():

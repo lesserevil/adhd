@@ -134,7 +134,7 @@ async def checks(f, evidence):
 
 async def filtered_faults(f, evidence, publisher, filtered, raw):
     f.model.mode = "error"
-    await filtered.call(scoped(P, "subscribe", mode="filtered", filter="Only API compatibility changes"))
+    subscription = (await filtered.call(scoped(P, "subscribe", mode="filtered", filter="Only API compatibility changes")))["subscription"]
     calls = f.model.calls
     publication = (await publisher.call(scoped(P, "publish", text="API compatibility breaking change")))["publication"]
     await poll_until(raw, P, {publication["id"]}, f.args.deadline)
@@ -154,6 +154,51 @@ async def filtered_faults(f, evidence, publisher, filtered, raw):
     await asyncio.sleep(.4)
     assert not (await filtered.call(scoped(P, "poll")))["deliveries"]
     evidence.record("optional-filter-error-and-invalid-result-preserve-raw-progress-and-search-retry-once")
+    await filtered.call(scoped(P, "unsubscribe", subscription_id=subscription["id"]))
+    await subscription_revisions(f, evidence, publisher, filtered, raw)
+
+
+async def subscription_revisions(f, evidence, publisher, subscriber, raw):
+    f.model.mode = "error"
+    subscription = (await subscriber.call(scoped(P, "subscribe", mode="filtered", filter="Criterion before editing")))["subscription"]
+    old = (await publisher.call(scoped(P, "publish", text="Accepted under old filtered revision")))["publication"]
+    await poll_until(raw, P, {old["id"]}, f.args.deadline)
+    edit = scoped(P, "update_subscription", subscription_id=subscription["id"],
+                  expected_revision=subscription["revision"], mode="raw")
+    subscription = (await subscriber.call(edit))["subscription"]
+    reject(await f.raw("red-b", edit))
+    new = (await publisher.call(scoped(P, "publish", text="Accepted under new raw revision")))["publication"]
+    rows = await poll_until(subscriber, P, {new["id"]}, f.args.deadline)
+    assert not any(d.get("publication_id") == old["id"] for d in rows)
+    assert all(r["mode"] == "raw" and r["subscription_revision"] == subscription["revision"]
+               for d in rows for r in d["matches"])
+    await acknowledge(subscriber, rows)
+    f.model.mode = "nonmatch"
+    # Fence inference completion with an observed typed request for the frozen
+    # old event. A raw stream reaching newer data alone cannot prove its fate.
+    deadline = time.monotonic() + f.args.deadline
+    while time.monotonic() < deadline:
+        if any(r.get("state", {}).get("publication", {}).get("id") == old["id"] for r in f.model.requests):
+            break
+        await asyncio.sleep(.1)
+    else:
+        raise AssertionError("Old revision event never reached its explicitly configured decision queue")
+    await asyncio.sleep(.5)
+    assert not (await subscriber.call(scoped(P, "poll")))["deliveries"]
+    subscription = (await subscriber.call(scoped(P, "update_subscription", subscription_id=subscription["id"],
+        expected_revision=subscription["revision"], mode="raw", paused=True)))["subscription"]
+    paused = (await publisher.call(scoped(P, "publish", text="Accepted while stream paused")))["publication"]
+    await poll_until(raw, P, {paused["id"]}, f.args.deadline)
+    assert not (await subscriber.call(scoped(P, "poll")))["deliveries"]
+    subscription = (await subscriber.call(scoped(P, "update_subscription", subscription_id=subscription["id"],
+        expected_revision=subscription["revision"], mode="raw", paused=False)))["subscription"]
+    resumed = (await publisher.call(scoped(P, "publish", text="Accepted after explicit stream resume")))["publication"]
+    rows = await poll_until(subscriber, P, {resumed["id"]}, f.args.deadline)
+    assert {d["publication_id"] for d in rows} == {resumed["id"]}
+    await acknowledge(subscriber, rows)
+    await subscriber.call(scoped(P, "unsubscribe", subscription_id=subscription["id"]))
+    f.model.mode = "match"
+    evidence.record("revision-conflicts-frozen-filter-work-hot-raw-switch-and-pause-resume-watermarks")
 
 
 async def broker_faults(f, evidence, publisher, raw):

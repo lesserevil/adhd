@@ -161,6 +161,8 @@ async def main(args):
         evidence.finish()
     finally:
         await f.close()
+        f.bind_evidence(evidence)
+        evidence.write()
         gateway.close()
 
 

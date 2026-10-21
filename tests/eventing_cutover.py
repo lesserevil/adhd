@@ -192,6 +192,8 @@ async def main(args):
         evidence.finish()
     finally:
         await fixture.close()
+        fixture.bind_evidence(evidence)
+        evidence.write()
         gateway.close()
 
 

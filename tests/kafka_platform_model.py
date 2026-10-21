@@ -7,8 +7,9 @@ from multi_support import Fixture,arguments,scoped,poll_until,reject
 
 async def main():
  p=arguments('Diagnostic real short-response optional filtering');p.add_argument('--model-url',required=True);p.add_argument('--gateway-report',type=Path,required=True);p.add_argument('--with-backend-queries',action='store_true',help='Qualify actual semantic history and a second raw project with the same live endpoint')
- args=p.parse_args();f=Fixture(args);await f.start()
+ args=p.parse_args();f=Fixture(args)
  try:
+  await f.start()
   a,b=await f.agent('red-a'),await f.agent('red-b');admin=f.admin()
   for s in (await b.call(scoped('project-red','list_subscriptions')))['subscriptions']:
    await b.call(scoped('project-red','unsubscribe',subscription_id=s['id']))

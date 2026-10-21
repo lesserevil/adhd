@@ -124,12 +124,18 @@ may have the same text in another project; the project and ID together identify
 the resource. An actor with access to both projects must still select the intended
 project on every ambiguous request. Role grants do not replace project admission.
 
-The [independent two-project evidence matrix](../validation/multi-evidence-04.json)
-records ten passing groups against a precisely hashed development candidate and
+The [independent two-project evidence matrix](../validation/multi-evidence-28.json)
+records eleven passing groups against a precisely hashed development candidate and
 real Kafka. It reuses an agent, questions, source/item IDs and message IDs across
 two projects, checks query ownership and frozen watermarks, rejects foreign label
 gold and optimizer training IDs, and exercises independent cohort exposure,
-paired replays, recipe changes and selection resets. It also kills and restarts
+paired replays, recipe changes and selection resets. Actual `evaluate_index`
+requests reject foreign held-out IDs; cancelling one project leaves the other
+project able to finish a real evaluation after restart with its own final-case
+references and summary. This routing fixture permits 64 KiB History requests and
+positive cost deltas, and authors relevance from the original IDs actually
+supplied to its typed endpoint; it does not certify the default quality policy.
+The matrix also kills and restarts
 the hub after revoking an owner while its evaluator request is in flight. The
 controlled typed evaluator proves evidence routing and failure isolation; this
 qualification does not measure semantic model quality.

@@ -8,8 +8,10 @@ import asyncio
 import copy
 import hashlib
 import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import time
+import threading
 from uuid import uuid4
 
 import httpx
@@ -20,6 +22,59 @@ from multi_support import Evidence, Fixture, MEMBERSHIPS, arguments, scoped
 
 RED, BLUE = "project-red", "project-blue"
 MARK = {RED: "RED-EVIDENCE-ONLY", BLUE: "BLUE-EVIDENCE-ONLY"}
+
+
+def contextual_fixture():
+    """Typed ArchiveFixture with explicit candidate-content relevance cases.
+
+    This is authored deterministic routing evidence, not semantic model quality.
+    The original endpoint records every exchange and authors the other typed decisions.
+    """
+    model = ArchiveFixture()
+    upstream, original_close = model.url, model.close
+    model.context_roots = set()
+    questions = {"Was specimen " + value + " present?" for value in ("Quartz", "Obsidian", "Jade", "Opal")}
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *_):
+            pass
+        def do_GET(self):
+            self.respond(200, {"ready": True})
+        def respond(self, status, value):
+            raw = json.dumps(value).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            try:
+                self.wfile.write(raw)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            response = httpx.post(upstream, json=body, timeout=5, trust_env=False)
+            result = response.json()
+            if response.status_code == 200 and "useful" in body["questions"] and body.get("state", {}).get("question") in questions:
+                supplied = body["state"]["candidate"]["fragments"]
+                relevant = any(f["origin_publication_id"] in model.context_roots for f in supplied)
+                result["answers"]["useful"]["noul"] = .99 if relevant else .01
+            if response.status_code == 200 and body.get("state", {}).get("question") == "Was specimen Opal present?":
+                for key, choice in (("assessment", "no_evidence"), ("answer", "unknown")):
+                    if key in body["questions"]:
+                        result["answers"][key] = {"type": "choice", "choice": choice, "confidence": 1.0,
+                            "probabilities": {label: float(label == choice) for label in body["questions"][key]["criteria"]}}
+            self.respond(response.status_code, result)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    server.daemon_threads = True
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    model.url = "http://127.0.0.1:" + str(server.server_port) + "/v1/systemone"
+    def close():
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+        original_close()
+    model.close = close
+    return model
 
 
 async def wait(fn, message, seconds=35):
@@ -186,6 +241,7 @@ async def checks(m, evidence):
     evidence.record("paired-replay-same-mid-owner-and-project-namespaces-keep-held-out-exposure-and-model-evidence-independent")
 
     await optimizer(m, evidence)
+    await evaluation_scope(m, evidence)
     durable = {p: (await m.call(p, "get_retrieval_replay", query_id=replays[p]["id"]))["query"] for p in (RED, BLUE)}
     f.hard_stop()
     f.admin_client = None
@@ -253,6 +309,111 @@ async def optimizer(m, evidence):
     evidence.record("optimizer-foreign-training-rejected-local-proposal-cancel-and-project-recipe-selection-reset-do-not-cross-projects")
 
 
+async def evaluation_scope(m, evidence):
+    """Execute real evaluation jobs; scope is distinct from full quality gates."""
+    f = m.f
+    config = f.admin().call({"op": "config_get"})["config"]
+    projects = copy.deepcopy(config["projects"])
+    for project in projects:
+        if project["id"] in (RED, BLUE):
+            project["settings"]["retrieval"] = {"recipe": {"context_depth": 1}}
+    f.admin().call({"op": "config_update", "patch": {"projects": projects,
+        "history": {"request_bytes": 65536}, "optimization": {
+            "max_total_bytes_delta": 268435456, "max_total_calls_delta": 100000,
+            "min_held_out_groups": 1, "min_regression_groups": 1}}}, mutation=True)
+    m.model.retrieval_noul = None
+    training = {RED: [], BLUE: []}
+    async def make_case(project, case, cohort, negative=False):
+        tag = "evaluation-" + case
+        root = await m.record(project, MARK[project] + " Context original " + case, "context")
+        m.model.context_roots.add(root["publication"]["id"])
+        middle = await m.record(project, "Acknowledged", "context",
+            context={"links": [{"relation": "reply", "publication_id": root["publication"]["id"]}]})
+        leaf = await m.record(project, "Yes", tag,
+            context={"links": [{"relation": "reply", "publication_id": middle["publication"]["id"]}]})
+        await m.ready(project)
+        m.model.assessment = "no_evidence" if negative else "direct"
+        m.model.retrieval_noul = .01 if cohort == "training" else None
+        started = (await m.call(project, "query_archive", "same-evaluation-query-" + case,
+            question="Was specimen " + {"training-Gamma": "Quartz", "training-Delta": "Obsidian",
+                "held-Epsilon": "Jade", "regression-Zeta": "Opal"}[case] + " present?",
+            scope={"information_type": tag}))["query"]
+        query = await m.finish(project, "get_archive_query", started)
+        attempt = await m.attempt(project, query)
+        label = {"expectation": "no_evidence" if negative else "supported",
+            "support_ids": [] if negative else [root["publication"]["id"], leaf["publication"]["id"]],
+            "cohort": cohort, "tags": ["negation", "correction"] if negative else [],
+            "note": "Independent evaluation namespace assertion; not semantic-quality certification", "confirmed": True}
+        m.admin(project, "save_retrieval_label", True, attempt_id=attempt["id"],
+            expected_label_revision=attempt["label_revision"], label=label)
+        m.model.assessment = "direct"
+        m.model.retrieval_noul = None
+        if cohort == "training":
+            labelled = (await m.call(project, "get_retrieval_attempt", attempt_id=attempt["id"]))["attempt"]
+            assert labelled["adjudicated_diagnosis"] in ("confirmed_retrieval_gap", "confirmed_context_assembly_gap"), labelled["adjudicated_diagnosis"]
+        return attempt["id"]
+    for project in (RED, BLUE):
+        for case in ("training-Gamma", "training-Delta"):
+            training[project].append(await make_case(project, case, "training"))
+    proposals = {p: m.admin(p, "propose_index", True, "same-evaluation-proposal",
+        training_attempt_ids=training[p])["proposal"] for p in (RED, BLUE)}
+    def proposal(project):
+        return m.admin(project, "index_proposal", proposal_id=proposals[project]["id"], limit=64)["proposal"]
+    for project in (RED, BLUE):
+        settled = await wait(lambda: (q if (q := proposal(project))["status"] != "pending" else None),
+            "Real training did not freeze an evaluation winner", 90)
+        assert settled["status"] == "awaiting_evaluation", (project, settled["status"], settled.get("error"), settled["variants"])
+        proposals[project] = settled
+    held, regression = {}, {}
+    for project in (RED, BLUE):
+        held[project] = [await make_case(project, "held-Epsilon", "held_out")]
+        regression[project] = [await make_case(project, "regression-Zeta", "regression", negative=True)]
+    for project, other in ((RED, BLUE), (BLUE, RED)):
+        before = proposal(project)
+        denied = m.admin(project, "evaluate_index", True, expected=404,
+            proposal_id=proposals[project]["id"], held_out_attempt_ids=held[other], regression_attempt_ids=regression[project])
+        assert denied["error"]["code"] == "NOT_FOUND" and proposal(project) == before
+    m.model.mode, m.model.delay = "slow", .8
+    blue_before = proposal(BLUE)
+    red = m.admin(RED, "evaluate_index", True, "same-evaluate-mid", proposal_id=proposals[RED]["id"],
+        held_out_attempt_ids=held[RED], regression_attempt_ids=regression[RED])["proposal"]
+    assert red["phase"] == "evaluating" and red["held_out_attempt_ids"] == held[RED]
+    assert proposal(BLUE) == blue_before
+    blue = m.admin(BLUE, "evaluate_index", True, "same-evaluate-mid", proposal_id=proposals[BLUE]["id"],
+        held_out_attempt_ids=held[BLUE], regression_attempt_ids=regression[BLUE])["proposal"]
+    for project in (RED, BLUE):
+        await wait(lambda: any(c["cohort"] != "training" for c in proposal(project)["children"]),
+            "Local evaluate_index did not create a real final-case replay child")
+        current = proposal(project)
+        assert current["held_out_attempt_ids"] == held[project] and current["regression_attempt_ids"] == regression[project]
+        permitted = set(training[project] + held[project] + regression[project])
+        assert all(c["attempt_id"] in permitted for c in current["children"] + current["cases"])
+        assert not set(training[BLUE if project == RED else RED]) & permitted
+    m.admin(RED, "cancel_index_proposal", True, proposal_id=red["id"])
+    assert proposal(RED)["status"] == "cancelled" and proposal(BLUE)["status"] != "cancelled"
+    f.hard_stop()
+    f.admin_client = None
+    m.model.mode = "normal"
+    await f.start()
+    m.actor = await f.agent("bridge")
+    assert proposal(RED)["status"] == "cancelled"
+    resumed = await wait(lambda: q if (q := proposal(BLUE))["status"] != "pending" else None,
+        "Blue evaluation did not settle independently after restart", 90)
+    if resumed["status"] == "partial":
+        m.admin(BLUE, "continue_index_proposal", True, proposal_id=blue["id"], retry_failed=True)
+        resumed = await wait(lambda: q if (q := proposal(BLUE))["status"] != "pending" else None,
+            "Explicit Blue evaluation recovery did not settle", 90)
+    assert resumed["held_out_attempt_ids"] == held[BLUE] and resumed["regression_attempt_ids"] == regression[BLUE]
+    assert resumed["phase"] != "training" and any(c["cohort"] != "training" for c in resumed["children"])
+    permitted = set(training[BLUE] + held[BLUE] + regression[BLUE])
+    assert all(c["attempt_id"] in permitted for c in resumed["children"] + resumed["cases"])
+    assert proposal(RED)["status"] == "cancelled"
+    assert resumed["evaluation"] is not None and len([c for c in resumed["cases"] if c["cohort"] != "training"]) == 2
+    evidence.record("actual-evaluate-index-foreign-held-out-rejected-local-final-case-children-and-cancel-restart-remain-project-scoped",
+        red_status=proposal(RED)["status"], blue_status=resumed["status"], blue_phase=resumed["phase"],
+        local_final_cases=2, scope_policy="64KiB History requests and positive cost-delta limits; actual recall and answer gates unchanged")
+
+
 async def revoked_work(m, evidence):
     f = m.f
     m.model.mode, m.model.delay = "slow", .8
@@ -290,7 +451,7 @@ async def main(args):
     args.keep_work = args.keep_work.resolve()
     args.with_model = False
     f = Fixture(args)
-    model = ArchiveFixture()
+    model = contextual_fixture()
     f.model = model
     f.config.update(matcher={"url": model.url, "model": "Nemotron-Deciffusion-8B-v2.1", "timeout_ms": 3000, "retry_ms": 100},
                     archive={"audit_rate_ppm": 0}, optimization={"enabled": True, "max_variants": 1})

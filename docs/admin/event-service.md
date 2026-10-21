@@ -153,3 +153,8 @@ explicit durable-position restoration and retention settings. It deliberately
 labels its result service-only: it does not prove A2A, backend search, application
 migration, GPU scheduling or production HA. Combined qualification must bind those
 tests to the accepted app artifact, image, broker/proxy pins and exact manifests.
+
+The [service qualification manifest](../../verification/kafka-service-qualified.json)
+binds the real Compose and Kubernetes service probes, including retained records
+after broker restart/pod replacement, to their exact image and manifest inputs.
+Its scope excludes full-hub acceptance and release qualification.

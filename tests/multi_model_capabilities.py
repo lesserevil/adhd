@@ -17,7 +17,7 @@ async def main(args):
         f.config[name]=feature.copy()
     evidence=Evidence(args.report,'adhd/independent-backend-models@1')
     import hashlib
-    evidence.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest(),
+    evidence.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None,
                           harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     try:
         await f.start()
@@ -60,7 +60,13 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        f.bind_evidence(evidence)
+        evidence.write()
 
 
 if __name__=='__main__':

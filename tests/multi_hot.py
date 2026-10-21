@@ -55,7 +55,13 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        await fixture.close()
+        try:
+            await fixture.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        fixture.bind_evidence(evidence)
+        evidence.write()
 
 
 if __name__ == "__main__":

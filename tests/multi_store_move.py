@@ -165,7 +165,13 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        f.bind_evidence(evidence)
+        evidence.write()
 
 
 if __name__ == '__main__':

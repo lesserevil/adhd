@@ -2,15 +2,16 @@
 """Real password/session expiry, provider outage and bootstrap recovery checks."""
 import argparse,hashlib,json,os,shutil,subprocess,tempfile,time
 from pathlib import Path
-from foundation_acceptance import Runtime,Client,Provider,free_port
+from foundation_acceptance import Client,Provider,free_port
+from multi_workflow_upgrade import UpgradeRuntime
 
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--report',default='verification/auth-lifecycle.json');args=p.parse_args();command=json.loads(args.command)
+ p=argparse.ArgumentParser(description=__doc__);target=p.add_mutually_exclusive_group(required=True);target.add_argument('--command');target.add_argument('--image');p.add_argument('--image-manifest',type=Path);p.add_argument('--report',default='verification/auth-lifecycle.json');args=p.parse_args();command=json.loads(args.command) if args.command else []
  parent=Path('_build/roadmap/auth-faults').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));cases=[];runtimes=[]
  def record(name):cases.append({'case':name,'passed':True});print('PASS',name,flush=True)
  def setup(name,stage=None):
-  r=Runtime(root/name,command);runtimes.append(r);template=root/(name+'-seed');port=free_port()
+  r=UpgradeRuntime(root/name,command,args.image,args.image_manifest);runtimes.append(r);template=root/(name+'-seed');port=free_port()
   subprocess.run(['python3','scripts/configure_hub.py','--directory',str(template),'--port',str(port),'--store-path',str(r.root/'state.dets')],check=True,stdout=subprocess.DEVNULL)
   c=json.loads((template/'hub.json').read_text());initial=(template/'initial-admin-password.txt').read_text();r.base='http://127.0.0.1:'+str(port)
   if stage:
@@ -73,9 +74,14 @@ def main():
   while time.monotonic()<deadline:time.sleep(min(5,max(0,deadline-time.monotonic())))
   _,session,_=current.get('/admin/session');assert not session['authenticated'];current.api({'op':'overview'},expected=401)
   assert r.process.poll() is None and r.pid==pid;record('real-session-expiry-with-hot-sixty-second-lifetime-and-no-restart')
-  Path(args.report).write_text(json.dumps({'schema':'adhd/auth-lifecycle@1','passed':True,'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest()},indent=2)+'\n')
+  result={'schema':'adhd/auth-lifecycle@1','passed':True,'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None}
  finally:
   for r in runtimes:r.stop()
   provider.close()
+ if args.image:
+  result['runtimes']=[r.owned_image.identity() for r in runtimes]
+  result['artifact_sha256']=result['runtimes'][0]['artifact_sha256']
+  result['image_id']=result['runtimes'][0]['image_config_identity']
+ Path(args.report).write_text(json.dumps(result,indent=2)+'\n')
 
 if __name__=='__main__':main()

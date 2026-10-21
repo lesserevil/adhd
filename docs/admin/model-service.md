@@ -105,3 +105,12 @@ took 111 ms and 90 ms. The report binds candidate `31f33131ba3b6cf0f0ad30c2df056
 and its exact harness; [relay observations](../../verification/multi-eventing/live-model-28-gateway.json)
 include the later resumed classification and semantic query. Final retained-image
 qualification remains a separate gate.
+
+The admitted OTP29 container was subsequently exercised on both platforms:
+[Compose model evidence](../../verification/kafka-platform/compose-accepted-model.json)
+and [Kubernetes model evidence](../../verification/kafka-platform/kind-accepted-model.json).
+Their parent platform manifests bind each external model check to the exact
+accepted artifact and actual running image. Each records all six provider POSTs,
+including scoped semantic history and the resumed filtered subscription after hot
+model re-enablement. These authored workload checks do not imply general calibration,
+latency guarantees or qualification of GPU hardware beyond the tested host.

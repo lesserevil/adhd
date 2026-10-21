@@ -25,7 +25,7 @@ for your distribution. Component interoperability and supported patch lines are
 published in the [Confluent matrix](https://docs.confluent.io/platform/current/installation/versions-interoperability.html).
 The hub uses Elixir/OTP HTTP against the [REST Proxy v2 API](https://docs.confluent.io/platform/current/kafka-rest/api.html),
 not a newly authored Kafka wire client. No registry authentication or commercial
-Confluent security plugin is required by these manifests.
+Confluent security plugin is required by the model-free baseline manifests.
 
 ## Model-free Compose application
 
@@ -87,7 +87,23 @@ add `-f deploy/app.model.compose.yaml --profile model` and set the verified
 [model service](model-service.md). Alternatively configure an existing remote
 endpoint in Admin. Set matcher URL `http://model:8770/v1/systemone` for the Compose
 model. Enabling a model/filter is a hot hub setting; adding the optional GPU
-container is an infrastructure operation.
+container is an infrastructure operation. In Admin Settings, configure the matcher
+URL, model identifier, timeout/retry and threshold, or clear the matcher to disable
+semantic filters. History, retrieval and archive model overrides remain independent
+of pub/sub filtering. User-login OIDC is configured in the same Admin interface;
+it is separate from both the model endpoint and event-service OAuth credentials.
+
+The hot server `resources` settings bound model, ordinary network and eventing
+concurrency independently, with per-project limits in each lane and a shared
+`max_waiters` bound. These fields are server limits, not project overrides; use
+Admin Settings and the resource-status display to inspect active/queued work,
+grants and rejection/timeout counts. Defaults and exact ranges are in the
+`components/hub/resources/spec.md` resource contract. Lowering a limit
+restricts new work without terminating accepted requests. Model saturation cannot
+consume the independent eventing lane. Changing the configuration-file location
+is the only hub configuration operation requiring a restart; changing a container
+image, GPU allocation or broker-owned static infrastructure remains a deployment
+rollout rather than a hub setting.
 
 ## Kubernetes application
 

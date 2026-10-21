@@ -38,5 +38,13 @@
     "Upgrade scope is only pinned CP8.3.1 to8.3.2 broker; no cross-minor or application downgrade compatibility claim. Kafka transport remains at least once with durable event-id deduplication, not native REST exactly once.",
     "Earlier preflight attempts01/02 are excluded. Model calls were sequential with the acceptance ladder and existing model configuration/service unchanged.",
     "Owned Compose containers/networks/volumes were removed; private recovery archives and credentials remain ignored and are not committed."
-  ]
+  ],
+  "historical_dependencies": {
+    "tests/foundation_acceptance.py": {
+      "sha256": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+      "snapshot": "verification/kafka-platform/platform-foundation-dependency.py.source",
+      "source_commit": "a8f7de8794e0cc8997381735009e38d9c014591b",
+      "reproduce": "Restore these snapshot bytes to their logical tests/ path alongside the exact tested harness when reproducing the report. Later root foundation regression changes are not attributed to this earlier platform run."
+    }
+  }
 }

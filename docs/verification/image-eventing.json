@@ -1,0 +1,880 @@
+{
+  "schema": "adhd/image-eventing-qualification@1",
+  "passed": true,
+  "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+  "suites": [
+    {
+      "name": "controls",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-controls.json",
+      "raw_report_sha256": "6e72ee9bdd0aa22a84c6f55f1e738b29cfc9018c066a100bae2fd1e52acdda3b",
+      "checks": [
+        {
+          "name": "retained-pre-cutover-original-replays-with-original-identity-and-no-automatic-history",
+          "passed": true
+        },
+        {
+          "name": "blocked-real-kafka-publication-keeps-accepted-threshold-model-and-endpoint",
+          "passed": true,
+          "threshold": 5000
+        },
+        {
+          "name": "bounded-explicit-replay-preserves-activation-idempotency-and-acknowledgements",
+          "passed": true
+        },
+        {
+          "name": "physical-corruption-repair-republishes-linked-accepted-original-with-stable-envelope",
+          "passed": true
+        },
+        {
+          "name": "replay-range-admission-is-atomic-and-obeys-current-durable-backpressure",
+          "passed": true
+        },
+        {
+          "name": "exact-digest-retry-and-audited-reconcile-recover-real-foreign-kafka-record",
+          "passed": true
+        },
+        {
+          "name": "repair-replay-audit-and-acknowledgements-survive-hard-restart",
+          "passed": true
+        },
+        {
+          "name": "archived-project-rejects-new-replay-and-preserves-accepted-control-idempotency",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "network_mode": "host",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "5df1607a80be04de12f95c50324cff2b7e9de35d6cd5c6bb787b5a53e07c48d3",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "5df1607a80be04de12f95c50324cff2b7e9de35d6cd5c6bb787b5a53e07c48d3",
+            "exit_code": 137,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "f94e5b5d32755305c9f730c44c6df29207782817010c90c7c5ff45df0f257f1d",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "stopped",
+            "container_id": "f94e5b5d32755305c9f730c44c6df29207782817010c90c7c5ff45df0f257f1d",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          }
+        ]
+      },
+      "harness_sha256": "2505578f0de18643fa41f9ca53feb8b003d32a6db445a323a95c561c9380f2ed",
+      "legacy_input_sha256": {
+        "elixir": "53bb7030df56920b2bb965ac26a82319d5f894f07c898f500170103996072df8",
+        "artifact-8357c70f92037db433cd": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48"
+      }
+    },
+    {
+      "name": "caps-b",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-caps-b.json",
+      "raw_report_sha256": "3aeb173cac28990c69759c56867dd38dbb0c4312757dd94c0599680e67073c69",
+      "checks": [
+        {
+          "name": "real-kafka-raw-stream-progresses-with-ready-project-and-subscription-caps-full",
+          "passed": true
+        },
+        {
+          "name": "hot-cap-reduction-retains-overcap-jobs-and-hard-restart-preserves-durable-deferred-intents",
+          "passed": true
+        },
+        {
+          "name": "off-state-publication-freezes-last-effective-adapter-and-threshold-across-reenable-and-restart",
+          "passed": true
+        },
+        {
+          "name": "replay-shares-bounded-ready-slots-and-distinguishes-deferred-intents-from-materialized-handoff",
+          "passed": true
+        },
+        {
+          "name": "project-overrides-bound-real-filter-jobs-and-unsubscribe-cancels-paused-deferred-intents",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "network_mode": "host",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "e9d38dbf523053be9f4d35cbfb24e83f625bcc7d5e403accc2b70652325b8001",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "e9d38dbf523053be9f4d35cbfb24e83f625bcc7d5e403accc2b70652325b8001",
+            "exit_code": 137,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "e7cd593ea5a3a9b1c39e78a2ee44da2d9d407d80412a1f7e80279c8c12c38e71",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "e7cd593ea5a3a9b1c39e78a2ee44da2d9d407d80412a1f7e80279c8c12c38e71",
+            "exit_code": 137,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "1ddb9774123fbc8dd557c051feffc486696e03d09c8351c35e93df3a09a01972",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "stopped",
+            "container_id": "1ddb9774123fbc8dd557c051feffc486696e03d09c8351c35e93df3a09a01972",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          }
+        ]
+      },
+      "harness_sha256": "eaef31f8137c03d0d76e7ea3306cda461b5cc2c3ca493bf1f5dc64877f8ba904"
+    },
+    {
+      "name": "dormant",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-dormant.json",
+      "raw_report_sha256": "629e585231bafb2ac0832b59c8d0b8700d5d8e8ce5c8bd4e7293b47e432d5c74",
+      "checks": [
+        {
+          "name": "held-worker-rapid-adapter-change-and-disable-persists-B-before-ack-and-hard-restart",
+          "passed": true
+        },
+        {
+          "name": "project-effective-adapter-provenance-is-independent-of-root-changes",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "network_mode": "host",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "68c274d9a12e0fff3bc110a1aeb35fa8a5f6b90ec21de699afa0e0023627eb16",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "68c274d9a12e0fff3bc110a1aeb35fa8a5f6b90ec21de699afa0e0023627eb16",
+            "exit_code": 137,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "d926e64febfdb4e1434bd6d9d66c0d984ff3c161dd5b6e9c5765dde5c384e845",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "stopped",
+            "container_id": "d926e64febfdb4e1434bd6d9d66c0d984ff3c161dd5b6e9c5765dde5c384e845",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          }
+        ]
+      },
+      "harness_sha256": "1e5ca90b59723e2f800f4817e87e83ec595f0cfb58c6ad3a0d9d6b0db548798c"
+    },
+    {
+      "name": "policy",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-policy.json",
+      "raw_report_sha256": "4dc095a1bd3787a2e604f74834d285203ef39977342c5d23a204c373293c885c",
+      "checks": [
+        {
+          "name": "failed-second-project-preflight-never-shrinks-first-project-broker-retention",
+          "passed": true
+        },
+        {
+          "name": "stale-fetched-batch-recreates-consumer-at-durable-position-after-hot-change",
+          "passed": true
+        },
+        {
+          "name": "project-retention-budget-and-topic-cutover-preserve-independent-project-progress-and-acks",
+          "passed": true
+        },
+        {
+          "name": "per-field-null-reset-inherits-root-and-new-project-preflight-needs-no-live-empty-writer",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "network_mode": "host",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "fb52fbd3411c182804504cde2efacc4449aab764bd50c1f050e237cd49324a5b",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "stopped",
+            "container_id": "fb52fbd3411c182804504cde2efacc4449aab764bd50c1f050e237cd49324a5b",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          }
+        ]
+      },
+      "harness_sha256": "b33bf16c51d5165b4ba796f3d89dbe2edc3a19769891c6108ab71a9c619c99c4"
+    },
+    {
+      "name": "admin",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-admin.json",
+      "raw_report_sha256": "c2d3a8ef03fbaecfc47887c6920778621e7d3136f42d8aef66a4145cfb65d3b6",
+      "checks": [
+        {
+          "name": "revisioned-admin-edit-is-idempotent-and-preserves-pending-filter-work",
+          "passed": true
+        },
+        {
+          "name": "mode-selectors-pause-and-resume-affect-future-events-without-resurrecting-acks",
+          "passed": true
+        },
+        {
+          "name": "admin-subscription-pagination-enumerates-more-than-one-hundred-without-gaps-or-repeats",
+          "passed": true
+        },
+        {
+          "name": "only-admin-edits-currently-admitted-owner-and-archive-fences-new-edits",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "network_mode": "host",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "d063acba99e59067d1d0c9e328718bb59c8a09921fbc6adcc20ebee5418124ea",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "stopped",
+            "container_id": "d063acba99e59067d1d0c9e328718bb59c8a09921fbc6adcc20ebee5418124ea",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          }
+        ]
+      },
+      "harness_sha256": "235b5a462129f4b83fbdee65abf227bdb3979230311a1ab99d92783271f8b7b6"
+    },
+    {
+      "name": "retention",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-retention.json",
+      "raw_report_sha256": "8b6d9cab6a2ffe71c23ffaac98de1b7a43bec4fdfdc55ed01ea14f8d1a754d74",
+      "checks": [
+        {
+          "name": "publish-and-publish-record-preserve-new-acceptance-message-source-retry-and-disabled-legacy-receipts",
+          "passed": true
+        },
+        {
+          "name": "actual-delete-records-log-start-advancement-reconstructs-missing-originals-with-search-and-ack-preservation",
+          "passed": true,
+          "physical_operation": "Kafka Admin DeleteRecords via kafka-delete-records",
+          "previous_checkpoint": 2,
+          "log_start_before": 0,
+          "log_start_after": 4,
+          "reconstructed_originals": 2
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "network_mode": "host",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "c7b45abbbf83dda37ad7f9d39e379b4bffe8b4498ab99da4095ac5eb1659650e",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "c7b45abbbf83dda37ad7f9d39e379b4bffe8b4498ab99da4095ac5eb1659650e",
+            "exit_code": 137,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "762c7f5a422d0edf3b800c77f119b8f9c6aa88f576acc0d81c74836b72d67369",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "762c7f5a422d0edf3b800c77f119b8f9c6aa88f576acc0d81c74836b72d67369",
+            "exit_code": 137,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "11c1d404f7b06bc8532acd5bf08d9b0d5deff3fe44f4fdf41745b44c8862163b",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "stopped",
+            "container_id": "11c1d404f7b06bc8532acd5bf08d9b0d5deff3fe44f4fdf41745b44c8862163b",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          }
+        ]
+      },
+      "harness_sha256": "ac7e184d23ed2d86f386d4e3e218d1781e0357c04340439a4ed3ae39a320533f"
+    },
+    {
+      "name": "federation",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-federation.json",
+      "raw_report_sha256": "63f6eaa177b628bf4120f03840b3d585b1d255bc32a02051e4a9b645988340db",
+      "checks": [
+        {
+          "name": "three-real-servers-with-identical-project-ids-and-display-labels",
+          "passed": true
+        },
+        {
+          "name": "catalog-cache-identity-is-server-project-pair-without-false-conflicts",
+          "passed": true
+        },
+        {
+          "name": "three-independent-kafka-services-feed-raw-a2a-streams-with-zero-inference",
+          "passed": true
+        },
+        {
+          "name": "asynchronous-discovery-retains-all-four-server-project-answers",
+          "passed": true
+        },
+        {
+          "name": "query-id-namespace-binds-origin-server-origin-project-and-destination-project",
+          "passed": true
+        },
+        {
+          "name": "bounded-server-catalog-pagination-with-complete-authorized-project-snapshot",
+          "passed": true
+        },
+        {
+          "name": "same-server-canonical-routing-requires-explicit-frozen-admitted-project-scope",
+          "passed": true
+        },
+        {
+          "name": "remote-canonical-source-query-uses-server-project-pair-and-v2-source-jobs",
+          "passed": true
+        },
+        {
+          "name": "duplicate-canonical-claims-across-local-projects-are-conflicts",
+          "passed": true
+        },
+        {
+          "name": "live-project-pair-revocation-keeps-other-origin-grants-without-restart",
+          "passed": true
+        },
+        {
+          "name": "hard-restart-preserves-project-pair-revocation-and-accepted-query-identity",
+          "passed": true
+        },
+        {
+          "name": "accepted-legacy-binary-and-multi-project-server-query-in-both-directions",
+          "passed": true
+        },
+        {
+          "name": "archived-default-project-legacy-routes-export-no-catalog-and-reject-work",
+          "passed": true
+        },
+        {
+          "name": "durable-project-peer-jobs-and-caches-exclude-transport-credentials",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "network_mode": "host",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "fe1901cd8dca215829d28e92510894d469964ce0d3b57b6e23fb011d10e06794",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "started",
+            "container_id": "628402a15ac688ea1df761f4e7d33e5c1520757e92180b0c5e971b8c4711cab5",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "started",
+            "container_id": "438f15827ee2e004273a637af5cb877741d77a7100ebbb4b3b33fb25dadfa561",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "628402a15ac688ea1df761f4e7d33e5c1520757e92180b0c5e971b8c4711cab5",
+            "exit_code": 137,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "66e519d840c9dc15a2bfdfc5e552ae3c793071fa69d3376f0652ee54ddb29ca6",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+            "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+          },
+          {
+            "action": "stopped",
+            "container_id": "fe1901cd8dca215829d28e92510894d469964ce0d3b57b6e23fb011d10e06794",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "stopped",
+            "container_id": "66e519d840c9dc15a2bfdfc5e552ae3c793071fa69d3376f0652ee54ddb29ca6",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          },
+          {
+            "action": "stopped",
+            "container_id": "438f15827ee2e004273a637af5cb877741d77a7100ebbb4b3b33fb25dadfa561",
+            "exit_code": 0,
+            "wait_observed": true,
+            "observed_absent": true
+          }
+        ]
+      },
+      "harness_sha256": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104",
+      "validated_messages": 263,
+      "broker_cluster_ids": [
+        "MkU3OEVBNTcwNTJENDM2Qk",
+        "NEiAAXk0v1xqZFCdSDoQjA",
+        "fjeg-3qUTXeBAowpk82ixg"
+      ],
+      "legacy_input_sha256": {
+        "elixir": "53bb7030df56920b2bb965ac26a82319d5f894f07c898f500170103996072df8",
+        "artifact-8357c70f92037db433cd": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48"
+      }
+    },
+    {
+      "name": "model",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-model.json",
+      "raw_report_sha256": "b00284c0d1015c6bcd053cc07f49a7e5b8e4b3b2c6e1853ae229677ef100ec9d",
+      "checks": [
+        {
+          "name": "raw-and-default-subscriptions-need-no-filter-or-model-and-start-after-activation",
+          "passed": true
+        },
+        {
+          "name": "all-publishers-including-self-independent-subscribers-and-overlap-dedup",
+          "passed": true,
+          "publications": 3,
+          "subscribers": 3,
+          "controlled_model_calls": 0
+        },
+        {
+          "name": "read-after-publish-and-post-ack-literal-search-retain-originals-with-zero-inference",
+          "passed": true
+        },
+        {
+          "name": "private-addressed-messages-are-never-public-events-or-searchable-facts",
+          "passed": true
+        },
+        {
+          "name": "blank-conflicting-and-unknown-filter-selector-inputs-fail-closed",
+          "passed": true
+        },
+        {
+          "name": "deterministic-selector-fields-intersect-values-union-without-inference",
+          "passed": true,
+          "cases": 6
+        },
+        {
+          "name": "optional-filter-error-and-invalid-result-preserve-raw-progress-and-search-retry-once",
+          "passed": true
+        },
+        {
+          "name": "revision-conflicts-frozen-filter-work-hot-raw-switch-and-pause-resume-watermarks",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "c55d58f5d2abe16fd91c78854079e531d4c5c4ac7ca91581a24309bd2466b707",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "stopped",
+            "container_id": "c55d58f5d2abe16fd91c78854079e531d4c5c4ac7ca91581a24309bd2466b707",
+            "observed_absent": true
+          }
+        ],
+        "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+      }
+    },
+    {
+      "name": "faults-bound",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-faults-bound.json",
+      "raw_report_sha256": "b4a70142091f256fe88642e4efdebb164743f12c8b6d7c6a2088e3601bf08bb1",
+      "checks": [
+        {
+          "name": "real-produce-ack-lost-physical-duplicates-logically-deduplicated",
+          "passed": true,
+          "actual_produce_acks": 2,
+          "distinct_offsets": 2
+        },
+        {
+          "name": "logical-delivery-and-source-retry-ack-survive-process-kill-and-broker-replay",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "c438133e523e42e960f93d42365d2045119fce4e62fb2442f6d49d12d3e15a4a",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "c438133e523e42e960f93d42365d2045119fce4e62fb2442f6d49d12d3e15a4a",
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "76b1869defa5d12f628c5d1980c0b0890e2e2c01f712d06dbbb65495ad88b323",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "stopped",
+            "container_id": "76b1869defa5d12f628c5d1980c0b0890e2e2c01f712d06dbbb65495ad88b323",
+            "observed_absent": true
+          }
+        ],
+        "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+      }
+    },
+    {
+      "name": "fairness",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-fairness.json",
+      "raw_report_sha256": "e430c6aace9da0b9ed6d339a6c6fe9077b10b37f92acbd637dc9376495fde3d2",
+      "checks": [
+        {
+          "name": "model-global-cap-and-real-raw-kafka-literal-search-progress-while-held",
+          "passed": true,
+          "actual_provider_calls": 1,
+          "observed_model_concurrency": 1,
+          "model_pool_active": 1,
+          "blue_model_queued": true
+        },
+        {
+          "name": "another-project-model-turn-precedes-hot-project-backlog-drain",
+          "passed": true,
+          "provider_project_order": [
+            "project-red",
+            "project-blue"
+          ],
+          "actual_provider_calls": 2,
+          "pool_grants": 2,
+          "grants_are_not_provider_call_count": true
+        },
+        {
+          "name": "slow-failing-peer-network-cap-independent-of-kafka-and-model-free-raw",
+          "passed": true,
+          "actual_peer_http_calls": 4,
+          "observed_peer_concurrency": 1,
+          "additional_model_calls": 0
+        },
+        {
+          "name": "bounded-redacted-server-diagnostics",
+          "passed": true,
+          "maximum_waiters": 8,
+          "observed_waiters": 1,
+          "finite_ingress_tickets": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "0fbfff4b604a3063a5046b47fd66d4c9b1633a1cbff890035f789ff376e32704",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "stopped",
+            "container_id": "0fbfff4b604a3063a5046b47fd66d4c9b1633a1cbff890035f789ff376e32704",
+            "observed_absent": true
+          }
+        ],
+        "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+      }
+    },
+    {
+      "name": "protocol",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-protocol.json",
+      "raw_report_sha256": "15e153d83e46994d97015083876dc49abb0565baf2fa783b23063279160b0066",
+      "checks": [
+        {
+          "name": "authored-valid-invalid-agent-peer-v2-and-reason-vectors-independently-validated",
+          "passed": true,
+          "valid": 24,
+          "invalid": 27,
+          "vectors_sha256": "dda0ddc201c0df5d398724899dc7727c1674763930100b694edf5c30eb251d6a",
+          "served_schema_sha256": "4682ee497ad8377918daac0c29e4c4f1508cb5ecbb060231b1ac5c21fefbc32b"
+        },
+        {
+          "name": "invalid-agent-vectors-also-rejected-at-actual-a2a-runtime-boundary",
+          "passed": true
+        },
+        {
+          "name": "live-sdk-publication-subscription-raw-reason-poll-and-revisioned-edit-conformance",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "01cfa93866814e960ded441db2b1975cff60c4cd414c6ea302f5e73d507da439",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "stopped",
+            "container_id": "01cfa93866814e960ded441db2b1975cff60c4cd414c6ea302f5e73d507da439",
+            "observed_absent": true
+          }
+        ],
+        "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+      }
+    },
+    {
+      "name": "cutover-bound",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-cutover-bound.json",
+      "raw_report_sha256": "26cd4bdfdd3a69ce2cd43f9bf7e0cd2706755d09b13637ab7ad5534ef7581fb0",
+      "checks": [
+        {
+          "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+          "passed": true
+        },
+        {
+          "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+          "passed": true
+        },
+        {
+          "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+          "passed": true
+        },
+        {
+          "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+          "passed": true
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "6ad5911b29e1de2743253c645c912eef4469fc701e68654df34bae0b22880132",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "6ad5911b29e1de2743253c645c912eef4469fc701e68654df34bae0b22880132",
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "2ef7e3678737d9724bf910ac985c1ed533f85a2295d682f3840eb0d32b8cd84f",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "stopped",
+            "container_id": "2ef7e3678737d9724bf910ac985c1ed533f85a2295d682f3840eb0d32b8cd84f",
+            "observed_absent": true
+          }
+        ],
+        "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+      },
+      "harness_sha256": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d"
+    },
+    {
+      "name": "broker",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/imagefinal-broker.json",
+      "raw_report_sha256": "db50287dd5ef32d5ef8764ab90b7993269d227e192948953f2ad0df421df1976",
+      "checks": [
+        {
+          "name": "raw-and-default-subscriptions-need-no-filter-or-model-and-start-after-activation",
+          "passed": true
+        },
+        {
+          "name": "all-publishers-including-self-independent-subscribers-and-overlap-dedup",
+          "passed": true,
+          "publications": 3,
+          "subscribers": 3,
+          "controlled_model_calls": 0
+        },
+        {
+          "name": "read-after-publish-and-post-ack-literal-search-retain-originals-with-zero-inference",
+          "passed": true
+        },
+        {
+          "name": "private-addressed-messages-are-never-public-events-or-searchable-facts",
+          "passed": true
+        },
+        {
+          "name": "blank-conflicting-and-unknown-filter-selector-inputs-fail-closed",
+          "passed": true
+        },
+        {
+          "name": "deterministic-selector-fields-intersect-values-union-without-inference",
+          "passed": true,
+          "cases": 6
+        },
+        {
+          "name": "real-broker-outage-outbox-hub-kill-recovery-and-acked-replay-dedup",
+          "passed": true,
+          "events": 3
+        }
+      ],
+      "runtime": {
+        "kind": "docker",
+        "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+        "canonical_manifest_sha256": "3aab5f64a4006ffd82ba5505279ee0428b6695682c4ffc73a921bba5fa973365",
+        "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+        "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "5178c893a848c309ee15a031a83133500e2d869713c1d16152e3e171b6382252",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "5178c893a848c309ee15a031a83133500e2d869713c1d16152e3e171b6382252",
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "57e760271af0292643ca3b16ef7a2ef849eca1a8626695791ce61ebffa6ff03d",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "hard-killed",
+            "container_id": "57e760271af0292643ca3b16ef7a2ef849eca1a8626695791ce61ebffa6ff03d",
+            "observed_absent": true
+          },
+          {
+            "action": "started",
+            "container_id": "68eacfaf275aa669dc11974423d0cefb7cb3e19004d2e6e6f3b9a32490ac09a9",
+            "image_config_identity": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190"
+          },
+          {
+            "action": "stopped",
+            "container_id": "68eacfaf275aa669dc11974423d0cefb7cb3e19004d2e6e6f3b9a32490ac09a9",
+            "observed_absent": true
+          }
+        ],
+        "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+      }
+    }
+  ],
+  "limitations": [
+    "These results attest accepted source30/imageb999 only; a later artifact requires equivalence review and its own appropriate execution evidence.",
+    "Host-network Linux Docker fixtures exercise application integration; bridge-network deployment, Kubernetes and replicated durability have separate evidence.",
+    "Native C filesystem boundary injection remains native evidence; image tests claim actual container kill/replacement where recorded, not those native syscall boundaries.",
+    "Controlled typed models qualify protocol and policy, not semantic model quality.",
+    "Physical retention uses actual Kafka DeleteRecords log-start advancement, not elapsed wall-clock expiry."
+  ],
+  "checks_passed": 67
+}

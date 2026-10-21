@@ -155,3 +155,29 @@ This is native candidate qualification. Retained-source admission, immutable ima
 qualification and project lifecycle/release gates remain separately recorded by
 the coordinating workflow; controlled models do not establish semantic quality,
 and single-node brokers do not establish replicated durability.
+
+The [immutable-image eventing report](image-eventing.json) records67 passing checks
+across13 suites on accepted image
+`sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190`,
+containing the exact source30 artifact above. Each suite binds the image configuration
+identity, reviewed manifest bytes, actual application digest and actual Docker
+container lifecycle. Coverage includes controls, caps, dormant filters, project
+policy, Admin edits, physical log-prefix loss, three-cluster federation, controlled
+models, lost producer replies, fairness, protocol conformance, normal transport
+cutover and private-broker stop/start. The retention service was an owned disposable
+Kafka deployment; baseline services were preserved.
+
+A first cap run exhausted its45-second replay-observation deadline while real
+producer progress continued with bounded ready jobs and durable deferred targets.
+The independent diagnostic found no quarantine or lost state. Increasing that
+observation deadline to the existing120-second recovery bound allowed a fresh run
+to pass all five checks. Two manually managed suites were repeated after adding
+missing runtime identity binding; only those bound reruns appear in the report.
+
+These are Linux host-network Docker integration results for source30. They do not
+attest the later source31 artifact, replicated durability or semantic model quality.
+Native C syscall-boundary injections remain separate native evidence; image runs
+exercise actual container replacement and normal cutover. Hub fixtures retain
+successful signal, wait/exit and removal witnesses; shared SDK fixtures record
+actual Docker signal/removal evidence without asserting unavailable exit witnesses.
+The owned broker remains available for the subsequent artifact qualification.

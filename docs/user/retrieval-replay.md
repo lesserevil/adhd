@@ -249,3 +249,11 @@ one run per suite. Harness hashes match the source30 matrix; gold, thresholds
 and assertions remain unchanged, including the declared 8 KiB paired-feedback
 assessment profile. These native results make no image qualification claim and
 do not change either failed optimizer experiment or the open positive optimizer gate.
+
+The [source34 native optional-model stream and backend smoke](../validation/live-eventing-backend-34-native.json)
+uses six actual provider POSTs under a hard cap of twelve. It checks decisive
+positive/negative filtering, raw delivery while inference is disabled, direct
+History support with project isolation, and exactly one delivery of accepted
+paused filter work after re-enabling the model. The owned relay and private bridge
+are removed afterward. This feature witness does not claim lifecycle or image
+qualification and does not change the unresolved optimizer experiments.

@@ -1,0 +1,62 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "lifecycle_admitted": false,
+  "cases": 18,
+  "scope": "Exact native development08 built-in regression + zero compilation warnings. Artifact08 predates cold coordinator availability drift fix; no recovery crash qualification.",
+  "runtime": "retained Elixir1.18.4 / OTP27",
+  "command": "ERL_FLAGS=\"+S 2:2\" elixir HUB --litai-test",
+  "reports": [
+    {
+      "development_artifact": "06",
+      "artifact_sha256": "7e9d087a345ea0f0344ad724e9ffdcf2dfa1fca5b4e4ff62d8f4ff7b48803e3c",
+      "passed": false,
+      "excluded": true,
+      "note": "Old native fixture lacked admitted schema4 allocator header; fixed authentic fixtures, allocator unchanged.",
+      "files": [
+        {
+          "path": "verification/project-recovery-native/dev06.json",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "verification/project-recovery-native/dev06.stderr",
+          "sha256": "466dd983b16e655acf4706abb1ad264be0ca15c2b1bc2eb3339829edf697b601"
+        }
+      ]
+    },
+    {
+      "development_artifact": "07",
+      "artifact_sha256": "7086de21342ca18f477e109e07bb12a0eea2840775c98c07b9c9ffb175147190",
+      "passed": false,
+      "excluded": true,
+      "note": "Native18 passed but compiler emitted undefined attribute warnings; excluded from clean compile gate.",
+      "files": [
+        {
+          "path": "verification/project-recovery-native/dev07.json",
+          "sha256": "8050b5a9b9e441ff9270589e559e677d69733a70d8b43073324ce38940d7f6e3"
+        },
+        {
+          "path": "verification/project-recovery-native/dev07.stderr",
+          "sha256": "08da31cb39ff9e2f2edc17f7bd11b9cce066c598bb4c9fa250aed6ca47d7dfa4"
+        }
+      ]
+    },
+    {
+      "development_artifact": "08",
+      "artifact_sha256": "c321e96649da802e7fc67525d59f792993a1a8ef0320f8babf327e2ea18365d7",
+      "passed": true,
+      "excluded": false,
+      "note": "Native18 passed and stderr empty; no crash, network, broker or lifecycle claim.",
+      "files": [
+        {
+          "path": "verification/project-recovery-native/dev08.json",
+          "sha256": "8050b5a9b9e441ff9270589e559e677d69733a70d8b43073324ce38940d7f6e3"
+        },
+        {
+          "path": "verification/project-recovery-native/dev08.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    }
+  ]
+}

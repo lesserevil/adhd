@@ -107,7 +107,12 @@ raw exception/URL/path/owner inputs. HTTP400 INVALID_PARAMS;401 UNAUTHORIZED;
 IDEMPOTENCY_CONFLICT,RESTORE_STALE_PLAN,RESTORE_CONFLICT,BACKPRESSURE;
 503 RESTORE_BUSY,RECOVERY_REQUIRED,CONFIG_APPLY_IN_PROGRESS (Retry-After:1).
 An unknown/unauthorized project uses existing non-disclosing project behavior.
-No acceptance or idempotency success is written for these rejections.
+No acceptance or idempotency success is written for these rejections. For a new
+initialize request, a known initialized registry entry (ready, recovery_required
+or restoring) is a cheap preacceptance409 RESTORE_CONFLICT, even if its current
+store appears empty. A previously accepted identical message ID is replayed first
+after current Admin authorization; completing initialization cannot invalidate its
+original receipt. Expensive file/reference checks remain asynchronous.
 
 Asynchronous Failure is exactly code,reason,retryable,conflicts,truncated. code is
 RESTORE_INVALID_BACKUP,RESTORE_CONFLICT,RESTORE_STALE_PLAN,RESTORE_TIMEOUT,

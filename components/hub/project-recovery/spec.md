@@ -293,13 +293,23 @@ and never reused after recovery, including failed/abandoned generations. New IDs
 are KIND + "_" + lowercase32hex(allocation_epoch) + "_" + lowercase base36(counter),
 KIND matching [a-z][a-z0-9]{0,15}, counter a positive JSON-safe integer with no leading
 zero. Allocate/increment atomically with the accepted record; reject exhaustion,
-never wrap or reset within an epoch. Apply to publications, subscriptions,
-deliveries/private messages, event IDs not derived from originals, all semantic/
-federated/source/index jobs, contexts/evidence/feedback/labels/cohorts, replay,
-primitives/proposals/evaluations/selection generations and internal IDs exported
-in receipts. Server-owned recovery operation/plan IDs use a separate persistent
+never wrap or reset within an epoch. Apply to every newly allocated standalone object identity across publications,
+subscriptions, deliveries/private messages, event IDs not derived from originals,
+all semantic/federated/source/index jobs, contexts/evidence/feedback/labels/cohorts,
+replay, primitives/proposals/evaluations/selection generations and internal object
+IDs exported in receipts. Content-addressed recipe/qualification identities and
+derived feedback/attempt/cohort/cluster/evidence lineage hashes remain deterministic
+when their existing contracts define identity that way. Such derivation must bind
+the preserved original or namespaced parent/source identity for every distinct
+logical object; hashing only reused counters or mutable text is not a substitute.
+The same content-addressed object may intentionally retain its same identity; a
+different lost post-backup logical object must not be recreated under that ID.
+Every independently allocated identity in each family still uses the fresh
+namespace: deterministic IDs are not a generic bypass of allocation fencing. Server-owned recovery operation/plan IDs use a separate persistent
 server metadata allocator, never the target allocator. User/agent/project/server
-identity and client message/source IDs are not rewritten.
+identity and client message/source IDs are not rewritten. Config-generated reset
+message IDs are external idempotency tokens, not newly allocated product objects;
+preserve their existing retry semantics.
 
 Existing IDs remain opaque valid IDs, not counters to parse or authorization.
 Store readers accept both legacy and new allocation formats. A new-format store

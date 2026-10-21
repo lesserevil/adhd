@@ -100,6 +100,13 @@ class ImageHub(Hub):
         observed=self.inspect(self.container)
         assert observed is not None,'Owned tracked container vanished before exit could be witnessed'
         identity=observed['Id'];running=observed['State']['Running']
+        if not running and observed['State']['Status']=='created':
+            subprocess.run(['docker','rm',identity],text=True,capture_output=True,check=True,timeout=30)
+            assert self.inspect(identity) is None
+            self.finish_client()
+            self.target.lifecycle.append({'action':'startup-not-started','container_id':identity,
+                'wait_observed':False,'observed_absent':True})
+            return
         action='already-exited'
         if running:
             command=['docker','kill','--signal','KILL',identity] if hard else ['docker','stop','--time','10',identity]
@@ -113,11 +120,14 @@ class ImageHub(Hub):
         if running and hard:assert exit_code==137,'Requested KILL did not produce observed exit137'
         subprocess.run(['docker','rm',identity],text=True,capture_output=True,check=True,timeout=30)
         assert self.inspect(identity) is None,'Owned container still exists after successful removal'
+        self.finish_client()
+        self.target.lifecycle.append({'action':action,'container_id':identity,'exit_code':exit_code,
+            'wait_observed':True,'observed_absent':True})
+
+    def finish_client(self):
         if self.process:
             try:self.process.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 self.process.terminate();self.process.wait(timeout=5)
         for handle in self.handles:handle.close()
         self.handles=[];self.container=None
-        self.target.lifecycle.append({'action':action,'container_id':identity,'exit_code':exit_code,
-            'wait_observed':True,'observed_absent':True})

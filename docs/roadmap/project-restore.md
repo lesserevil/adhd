@@ -1,8 +1,8 @@
 # Selective project recovery
 
-- **Status:** active
+- **Status:** partial
 - **Owning queue item:** [MULTI-007](active-work.md#multi-007-bound-shared-resources-and-operate-project-lifecycles)
-- **Completion / archival evidence:** pending; design only, no implemented selective restore
+- **Completion / archival evidence:** pending; native development restore is implemented, complete qualification remains open
 
 ## Required outcome
 
@@ -92,6 +92,16 @@ the opaque-ID format and validate old/new snapshot compatibility before changing
 allocators. Restoring a backup does not claim to recover missing post-backup data.
 
 ## Required evidence
+
+The [native private-delivery restore](../../verification/project-recovery-private/manifest.json)
+passes five checks on a frozen development artifact: a known missing target is
+restored under its original identity, acknowledgements stay acknowledged, newer
+unrelated data and global configuration survive, and the restored generation opens
+after a cold restart. This run used no Kafka or model and does not satisfy the
+complete evidence list below. [Offline backup validation](../../verification/project-recovery/backup-validator.json)
+and [real HTTP epoch checks](../../verification/project-recovery/http-epoch/manifest.json)
+provide separate bounded evidence. The next action is complete native Kafka,
+feature-family and syscall-fault qualification, including portable full-server rebind.
 
 - Restore an empty and an explicitly missing target from a hash-bound backup while
   another project retains newer originals, acknowledgements, jobs, receipts and

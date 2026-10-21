@@ -64,6 +64,7 @@ specification_roots:
   - optimization/interface.md
   - multi/spec.md
   - eventing/spec.md
+  - resources/spec.md
 ---
 # Agentic Distributed Harness Depot (ADHD)
 

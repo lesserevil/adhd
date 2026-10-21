@@ -175,6 +175,7 @@ class Fixture:
         return self.admin_client
 
     def hard_stop(self):
+        self.admin_client = None
         if not self.process:
             raise ValueError("Process fault tests require a locally owned --hub or --command")
         if self.process.poll() is None:

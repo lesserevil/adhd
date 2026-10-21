@@ -1,0 +1,44 @@
+{
+  "suite": "adhd/eventing-acceptance@1",
+  "started_at": "2026-10-21T18:43:55.505405+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "raw-and-default-subscriptions-need-no-filter-or-model-and-start-after-activation",
+      "passed": true
+    },
+    {
+      "name": "all-publishers-including-self-independent-subscribers-and-overlap-dedup",
+      "passed": true,
+      "publications": 3,
+      "subscribers": 3,
+      "controlled_model_calls": 0
+    },
+    {
+      "name": "read-after-publish-and-post-ack-literal-search-retain-originals-with-zero-inference",
+      "passed": true
+    },
+    {
+      "name": "private-addressed-messages-are-never-public-events-or-searchable-facts",
+      "passed": true
+    },
+    {
+      "name": "blank-conflicting-and-unknown-filter-selector-inputs-fail-closed",
+      "passed": true
+    },
+    {
+      "name": "deterministic-selector-fields-intersect-values-union-without-inference",
+      "passed": true,
+      "cases": 6
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability.",
+    "Optional semantic filter fault phase requires a separate --with-model run.",
+    "Actual broker process faults require --broker-container; this run covers healthy real broker handoff."
+  ],
+  "artifact_sha256": "8862790b407b91ac900b4e5212316c94f10459eb58c515ad630cb9b31d5a9d0e",
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "finished_at": "2026-10-21T18:44:27.811247+00:00"
+}

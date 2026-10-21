@@ -25,6 +25,7 @@ class LostReplyGateway:
         self.upstream = upstream.rstrip("/")
         self.produces = []
         self.dropped = 0
+        self.blocked = False
         self.lock = threading.Lock()
         fixture = self
 
@@ -45,6 +46,9 @@ class LostReplyGateway:
 
             def forward(self):
                 body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+                if fixture.blocked:
+                    self.send_error(503)
+                    return
                 headers = {key: value for key, value in self.headers.items()
                            if key.lower() not in {"host", "content-length", "connection", "accept-encoding"}}
                 with httpx.Client(follow_redirects=False, trust_env=False, timeout=10) as client:

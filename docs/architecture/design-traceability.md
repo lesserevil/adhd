@@ -38,9 +38,10 @@ product restriction through pending MULTI-001 through MULTI-008 in the active
 queue. The [multiple-project plan](../roadmap/multi-project.md) maps identity,
 admission, durable partitioning/migration, agent evidence workflows, peer routing,
 hot Admin configuration and resource fairness to their owning hub contracts.
-The current contracts and accepted artifact remain single-project; this plan
-does not establish runtime support. Versioned normative contracts and independent
-multi-project qualification must precede any such claim.
+The new `components/hub/multi/spec.md` owns the target multi-project contracts;
+the previously accepted artifact remains single-project. Independent qualification
+of the combined architecture is still pending, with partial candidate evidence in
+`verification/multi-eventing-progress.json`.
 
 The Kafka pub/sub direction in `PROJECT.md` maps to pending KAFKA-001 through
 KAFKA-009 and the [eventing plan](../roadmap/kafka-pubsub.md). It replaces mandatory
@@ -50,6 +51,13 @@ from broker retention. Hub contracts own protocol/durability/access changes;
 deployment artifacts and dependency Flavors own Kafka/client packaging and the
 Compose/Kubernetes application. Coordinate MULTI migration and final acceptance;
 the existing model-only artifact does not qualify this target architecture.
+
+`components/hub/eventing/spec.md` owns the selected REST Proxy adapter, exact
+commit-versus-position offset semantics and recoverable hot transport transitions.
+`components/hub/resources/spec.md` owns bounded model/network/eventing lanes,
+per-project fairness, deadline/revision fencing and Admin-only resource diagnostics.
+The generated candidates and independent fault, browser, SDK and deployment reports
+remain separate from final lifecycle admission and release evidence.
 
 MODEL-001 owns the [model Compose deployment](../../deploy/model.compose.yaml),
 checkpoint-verifying startup helper and live SystemOne acceptance. The model

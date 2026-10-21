@@ -567,6 +567,12 @@ and hash-bound local qualification remain reviewable. Issue #97 stays open; clea
 full upstream release qualification/publication and application framework adoption
 remain separate future gates.
 
+The subsequent clean full Python regression now passes with exit0. Its exact
+machine outcomes are retained in
+`verification/upstream-python-clean.json.gz` and hash-bound by the local
+qualification record: 1,740 passed, 100 explicit skips, zero failures. Other
+upstream release gates, publication and application adoption remain unclaimed.
+
 MODEL-001 deployment qualification found Docker tmpfs defaults to `noexec`; first
 inference could not load Triton's compiled extension. The Compose scratch mount
 now explicitly permits execution while retaining read-only root/checkpoint,
@@ -898,6 +904,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Implementation:**
   - [ ] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation.
   - [ ] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay.
+  - [ ] Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.
   - [ ] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.
 - **Evidence:**
   - [ ] Inspect desktop/mobile role-scoped flows, stale revisions, CSRF, access revocation and model on/off transitions.

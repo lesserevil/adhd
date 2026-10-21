@@ -57,6 +57,46 @@ and persist across restarts. A conflict requires refreshing before resubmission.
 Back up the whole storage directory, including its durable snapshot, before moving
 or restoring accepted data; see [operations](operations.md).
 
+**Events** shows selected-project transport state, quarantined offsets, replay
+plans and the recovery audit. Retry reads the same quarantined record again;
+Reconcile explicitly skips that physical record and recovers pending accepted
+originals. Both require an explanation and confirmation. Foreign broker content
+never becomes a stored fact merely because an operator skips it.
+
+Historical replay is explicit: choose an inclusive retained sequence range and
+exact subscription revisions. New subscriptions ordinarily receive future events
+only. The first 100 subscriptions are listed; **Additional replay targets** accepts
+exact IDs and current revisions for targets outside that list. Select at most 64
+targets and at most 1,000 originals. Refresh replay status and the recovery audit
+to inspect progress. Existing acknowledgements remain effective after replay.
+Switching projects discards the old view and pending form context; Refresh reloads
+current project admission before asking for project data.
+
+Settings exposes **Use custom Kafka REST CA certificates** and a PEM field. Only
+CA certificates are accepted; private keys, leaf certificates and malformed or
+trailing content fail validation. Disabling this override restores system roots.
+These settings are hot; TLS trust behavior is defined in the eventing contract.
+
+The bounded [desktop/mobile recovery evidence](../validation/eventing-browser-02.json)
+records 12 passed groups for its exact development artifact and harness, including
+real Kafka poison-row retry/reconcile, explicit replay beyond the list's first
+page, acknowledgement/idempotency preservation, strict CA forms and live access
+revocation. It includes source and screenshot/accessibility-capture hashes rather
+than private application state. The CA form trial used an HTTP broker and does
+not establish TLS handshake behavior; final lifecycle qualification is separate.
+Reproduce against an isolated real broker with:
+
+```bash
+python tests/eventing_browser.py --hub /path/to/hub.exs \
+  --eventing-rest-url http://127.0.0.1:18082 \
+  --keep-work _build/events-browser --report _build/events-browser.json
+```
+
+Use the repository's test environment with Playwright/Chromium already installed.
+The suite launches an isolated hub, uses synthetic fixture accounts and generates
+private certificate keys beneath its private work directory. It never replaces
+operator certificates or provider configuration.
+
 Retrieval indexes in Settings exposes model inheritance, confidence, timeouts,
 budgets, storage bounds and primitive recipes. The index panel shows active,
 previous and building generations, coverage, watermarks, progress and errors.

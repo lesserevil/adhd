@@ -137,7 +137,11 @@ def main():
         for token in [h.config['admin_token'],*h.config['agents'].values()]:assert token not in raw
         record('real-hard-kill-recovers-reservation-originals-source-retries-private-queues-and-acknowledgements')
         # Completed results and exact historical evidence retain the creation label.
-        before=durable;update(h,{'project_id':'renamed-history-fixture'});after=get(h,durable);assert after==before
+        before=durable
+        registry=Client(h,h.config['admin_token']).api({'op':'config_get'})['config']['projects']
+        legacy=next(project for project in registry if project['id']==h.config['project_id'])
+        legacy['name']='Renamed History fixture'
+        update(h,{'projects':registry});after=get(h,durable);assert after==before
         h.stop(hard=True);h.start();assert get(h,durable)==before
         record('project-rename-and-restart-preserve-frozen-query-label-snapshot-and-model-evidence')
         # A small independent runtime makes capacity limits deterministic.

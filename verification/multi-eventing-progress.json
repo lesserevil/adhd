@@ -51,6 +51,11 @@
       "path": "_build/roadmap/multi/hub-11.exs",
       "sha256": "15dedcddcac73e1467b49c0218efc4eb95eb5675abec6c2e5c3aa25a6178bafd",
       "admitted": false
+    },
+    "thirteenth": {
+      "path": "_build/roadmap/multi/hub-13.exs",
+      "sha256": "9f37f1addb2eb98b113639c01c4b00d996167cd22ed138e0f748ba93166a4d05",
+      "admitted": false
     }
   },
   "reports": {
@@ -167,6 +172,11 @@
       "path": "verification/multi-eventing/federation-09.json",
       "sha256": "b99c62e29f1beccac6dd90fbe40d5b8c43f6c5d864738ee41261693898b92de1",
       "checks": 12
+    },
+    "browser-13": {
+      "path": "verification/multi-eventing/browser-13.json",
+      "sha256": "6142e916912c5b274bd577d6bac91c350804e5ffcd9feca259cdefee90258ada",
+      "checks": 16
     }
   },
   "remaining": [
@@ -188,12 +198,14 @@
     "Native18 and independent multi9/raw6/cutover3 groups pass with shared resource admission integrated on candidate10. Later source changes need current-artifact acceptance.",
     "Real three-server federation candidate08 passes10 groups with8 controlled model calls; per-server independent Kafka federation acceptance remains in progress.",
     "Crash injection exposed decided migration recovery accepting a damaged backup on candidate06. Candidate11 verifies backup hashes before recovery/completion; fault requalification is in progress.",
-    "Candidate11 now passes all5 native Linux migration crash/corrupt-backup cases (28 groups) plus no-default-project hot host binding/all-project recipe reset/restart (4 groups). Candidate federation09 passes12groups on3servers and3distinct real Kafka clusters with237independently schema-validated messages; exact artifact and service evidence remain separate from final lifecycle qualification."
+    "Candidate11 now passes all5 native Linux migration crash/corrupt-backup cases (28 groups) plus no-default-project hot host binding/all-project recipe reset/restart (4 groups). Candidate federation09 passes12groups on3servers and3distinct real Kafka clusters with237independently schema-validated messages; exact artifact and service evidence remain separate from final lifecycle qualification.",
+    "Candidate13 browser16 desktop/mobile checks pass with console/request-failure instrumentation. Newly added peer-grant/agent-membership/broker-secret/resource-status controls still require dedicated interaction tests. An initial root browser run hit legitimate login rate limiting because the cached Admin fixture helper had not been integrated; helper corrected and complete fresh run passes."
   ],
   "service_qualification": "verification/kafka-service-qualified.json",
   "documentation_validation": {
     "passed": false,
     "scope": "stale authority-review marker after intentional new contracts; refresh required",
     "accepted_test_receipt": "stale after intentional authority changes; current candidate not admitted"
-  }
+  },
+  "resource_qualification": "verification/resource-progress/manifest.json"
 }

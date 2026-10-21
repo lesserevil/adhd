@@ -1,0 +1,15 @@
+# OPTIONAL SEPARATE PROXY-TO-BROKER BOUNDARY, not enabled by the OAuth overlay.
+# Merge into private kafka-rest.properties only with a matching secured broker.
+# This is one service identity shared by the server; hub admission still owns
+# per-project authorization. Supply Kafka ACLs for the intended topics/groups.
+bootstrap.servers=SASL_SSL://kafka:9092
+client.security.protocol=SASL_SSL
+client.ssl.endpoint.identification.algorithm=https
+client.ssl.truststore.type=PKCS12
+client.ssl.truststore.location=/run/adhd-security/broker-trust.p12
+client.ssl.truststore.password=REPLACE_WITH_PRIVATE_TRUSTSTORE_PASSWORD
+client.sasl.mechanism=SCRAM-SHA-512
+client.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="ADHD_SERVICE_PRINCIPAL" password="REPLACE_WITH_PRIVATE_BROKER_PASSWORD";
+# Do not enable principal propagation or RBAC based on the incoming JWT unless
+# separately licensed, configured and qualified. Broker credential rotation is
+# independent of the hot hub HTTP bearer setting; roll proxy/broker if required.

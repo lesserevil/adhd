@@ -1,0 +1,26 @@
+# Optional Confluent Enterprise/trial OAuth profile, not the Community baseline.
+# Supply a private directory with reviewed kafka-rest.properties and PKCS12 files.
+# See docs/admin/event-service.md before use. There is no plaintext REST listener.
+services:
+  kafka-rest:
+    profiles: [enterprise-oauth]
+    user: "${ADHD_KAFKA_SECURITY_UID:-1000}:${ADHD_KAFKA_SECURITY_GID:-1000}"
+    entrypoint: [/usr/bin/kafka-rest-start, /run/adhd-security/kafka-rest.properties]
+    environment:
+      KAFKA_REST_LISTENERS: https://0.0.0.0:8082
+      KAFKAREST_HEAP_OPTS: -Xms128m -Xmx384m
+      KAFKAREST_OPTS: >-
+        -Dorg.apache.kafka.sasl.oauthbearer.allowed.urls=${ADHD_KAFKA_JWKS_URL:?Set the exact trusted HTTPS JWKS URL}
+      ADHD_SECURITY_ENTITLEMENT: ${ADHD_KAFKA_OAUTH_ENTITLEMENT:?Set enterprise or permitted-trial after reviewing upstream license terms}
+    volumes:
+      - type: bind
+        source: ${ADHD_KAFKA_SECURITY_DIR:?Set the absolute private OAuth/TLS material directory}
+        target: /run/adhd-security
+        read_only: true
+    healthcheck:
+      # Liveness only: authorization and broker readiness require the real probe.
+      test: [CMD-SHELL, 'bash -ec "exec 3<>/dev/tcp/127.0.0.1/8082"']
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 12

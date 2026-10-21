@@ -1,0 +1,22 @@
+{
+  "schema": "adhd/oauth-deployment-rendering@1",
+  "passed": true,
+  "scope": "Read-only manifest rendering; not Kubernetes runtime or production security qualification",
+  "checks": [
+    "kubernetes-keeps-pin-private-secret-and-https-only-entrypoint",
+    "kubernetes-tcp-probes-do-not-bypass-authentication",
+    "compose-requires-explicit-enterprise-profile-and-private-identity-material",
+    "native-jwks-verifier-explicitly-checks-hostname-and-issuer-audience"
+  ],
+  "harness_sha256": "e57b132b97fe9c5c5fe4ca457a8970af33e0e4e230b632d61d9973d06dc51864",
+  "input_sha256": {
+    "deploy/events.compose.yaml": "cc6a02c1c51eb97d4201d2d893bd53928ab4a1c1961f17c489c1c207834635b6",
+    "deploy/events.oauth.compose.yaml": "3897d4d4135eefd150a12daf45ffbda098f5353e49fd86b277061935de0fb27c",
+    "deploy/k8s/events.yaml": "83ce33a019619ddea5b03146dfac4078d0f69e7ddf6878d7b320068d627f8aac",
+    "deploy/k8s/oauth.patch.yaml": "c291143a5a673a1a390b737506dcfc9f3dd581ad811c1de80ed9a162ada13d36",
+    "deploy/security/kafka-rest.oauth.properties.example": "005b04820782f090b0aca23653c24d1c018057d961f7a5a11d9b8b9882edfe88",
+    "deploy/security/kafka-rest.broker-security.properties.example": "64a9d294c748fb7d0295461290d4290e3fd881bffa82e3f3ada128640f5e567b"
+  },
+  "rendered_kubernetes_sha256": "c0267e680826378add1c445f146bfe65c27158a2e0b82234cb807e1a55290c35",
+  "kubectl": "v1.35.0"
+}

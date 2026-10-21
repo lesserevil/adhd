@@ -1,0 +1,48 @@
+# Strategic-merge patch for Deployment/kafka-rest, namespace adhd.
+# Apply through an operator-owned kustomization after creating the private Secret
+# adhd-kafka-oauth with kafka-rest.properties, rest.p12 and issuer-trust.p12.
+# Optional Confluent Enterprise/permitted-trial profile. No actual secrets here.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-rest
+  namespace: adhd
+spec:
+  template:
+    metadata:
+      annotations:
+        adhd.security/license-scope: Confluent Enterprise or permitted trial
+    spec:
+      containers:
+      - name: kafka-rest
+        command: [/usr/bin/kafka-rest-start, /run/adhd-security/kafka-rest.properties]
+        env:
+        - name: KAFKA_REST_LISTENERS
+          value: https://0.0.0.0:8082
+        - name: KAFKAREST_HEAP_OPTS
+          value: -Xms128m -Xmx384m
+        - name: KAFKAREST_OPTS
+          valueFrom:
+            secretKeyRef:
+              name: adhd-kafka-oauth
+              key: java-options
+        volumeMounts:
+        - name: kafka-oauth
+          mountPath: /run/adhd-security
+          readOnly: true
+        # TCP availability only. Authenticated topic/consumer probes remain required.
+        readinessProbe:
+          $patch: replace
+          tcpSocket: {port: 8082}
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          $patch: replace
+          tcpSocket: {port: 8082}
+          initialDelaySeconds: 30
+          periodSeconds: 20
+      volumes:
+      - name: kafka-oauth
+        secret:
+          secretName: adhd-kafka-oauth
+          defaultMode: 0440

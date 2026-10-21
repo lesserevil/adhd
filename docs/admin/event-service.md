@@ -15,6 +15,7 @@ The initial supported package is Linux amd64, Confluent Platform **8.3.2**
 | --- | --- | --- |
 | Kafka broker | `confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f` | Apache Kafka Apache-2.0; bundled image packages retain their own licenses. |
 | REST Proxy and maintained Java Kafka client | `confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058` | Confluent Community License, external source-available dependency. |
+| Optional native OAuth initializer | Bundled `confluent-security-plugins-common` 8.3.2 in the pinned proxy image | Confluent Enterprise or documented permitted trial; see the optional profile below. |
 | Optional Nemotron service | `ghcr.io/pst2154/nemotron-deciffusion@sha256:494aac2d7af43b7a70234792623a510bf29045a45b3aa893bc3170108ded9cea` | Service, CUDA/image dependencies and model checkpoint retain their licenses; see [model service](model-service.md). |
 
 ADHD remains Apache-2.0. That license does not relicense external dependencies.
@@ -265,3 +266,131 @@ processing records 0 through 2, POST `/offsets` carries the **last consumed offs
 uses position 3. These are distinct wire positions; posting 3 to commit would
 advance the broker checkpoint to 4. The corrected service probe checks this
 against real Kafka instead of inferring commit state from an empty poll.
+
+## Optional native OAuth and HTTPS profile
+
+The optional `deploy/events.oauth.compose.yaml` and
+`deploy/k8s/oauth.patch.yaml` configure Confluent's native
+`AuthenticationHandler`. Its implementation is in
+`confluent-security-plugins-common-8.3.2.jar`, listed among the
+[Enterprise security-plugin artifacts](https://docs.confluent.io/platform/8.3/confluent-security-plugins/kafka-rest.html).
+These files are an **Enterprise or permitted trial** option; they do not change
+the Community baseline or grant a commercial license. Upstream documents a
+30-day trial without a key. Production operators must provide an appropriate
+entitlement and configure any required component licensing through Confluent's
+supported procedure. Jar availability or successful startup is not proof of a
+production entitlement. No RBAC, MDS fallback, client principal propagation or
+license-check bypass is selected by this profile.
+
+Prepare an owner-only directory containing a completed
+`kafka-rest.properties`, the REST server PKCS12 keystore `rest.p12`, and
+`issuer-trust.p12`. Start from
+`deploy/security/kafka-rest.oauth.properties.example`; replace every placeholder,
+provide real trusted certificates, and keep passwords, signing credentials and
+completed property files out of Git. The REST listener is HTTPS only. Set an
+exact trusted issuer, HTTPS JWKS URL, expected audience, subject/groups claims and
+JWKS URL allowlist. The hub's user-login OIDC provider remains independent.
+
+AuthenticationHandler's JWKS HTTPS client reads the **unprefixed**
+`ssl.endpoint.identification.algorithm=https`. Set it explicitly: the upstream
+custom trust context otherwise defaults to skipping hostname verification. The
+separate `client.ssl.endpoint.identification.algorithm=https` concerns the
+client configuration and is not a substitute for this handler setting. Consult
+[truststore configuration](https://docs.confluent.io/platform/8.3/security/authentication/oauth-oidc/configure-truststore.html)
+and the [handler configuration](https://docs.confluent.io/platform/8.3/security/authentication/multi-protocol/authenticationhandler.html).
+Do not use a wildcard IdP URL allowlist or any certificate-verification bypass.
+
+```sh
+export ADHD_KAFKA_SECURITY_DIR=/absolute/private/kafka-security
+export ADHD_KAFKA_SECURITY_UID="$(id -u)"
+export ADHD_KAFKA_SECURITY_GID="$(id -g)"
+export ADHD_KAFKA_JWKS_URL=https://issuer.example/.well-known/jwks.json
+export ADHD_KAFKA_OAUTH_ENTITLEMENT=enterprise
+# permitted-trial is appropriate only within upstream's allowed evaluation terms.
+docker compose -f deploy/events.compose.yaml -f deploy/events.oauth.compose.yaml \
+  --profile enterprise-oauth up -d
+```
+
+The UID/GID must be able to read the private material; the baseline proxy image
+runs as UID 1000. Do not solve a mismatch by making private keys world readable.
+With `deploy/app.compose.yaml`, include the same optional overlay/profile and
+configure the hub's eventing URL as `https://kafka-rest:8082`. Its certificate must
+cover that exact service name. Host diagnostic access uses the test-only loopback
+port overlay and a certificate covering the loopback origin; this does not
+publish an agent-facing Kafka endpoint.
+
+For Kubernetes, apply `oauth.patch.yaml` as a strategic-merge patch to the
+existing REST Deployment through an operator-owned kustomization. Create the
+`adhd-kafka-oauth` Secret from the same three completed private files and a
+`java-options` value containing the exact
+`-Dorg.apache.kafka.sasl.oauthbearer.allowed.urls=HTTPS_JWKS_URL` JVM option.
+Use the existing nonroot identity and fsGroup to read the mounted Secret. Never
+commit a rendered Secret. The existing image pins, resource bounds, single
+broker, private Services and NetworkPolicies remain in force. An enforcing CNI
+is still required for those policies to restrict traffic.
+
+The optional profile's TCP probes establish process availability only. Before
+activating it in the hub, run authenticated metadata, producer and consumer
+checks against the actual service. Missing credentials must fail on both v2 and
+v3 routes. Valid JWTs need a trusted issuer, audience, time bounds and signature;
+invalid, expired, unknown-key and malformed credentials must fail. The proxy's
+TLS issuer checks must reject a trusted certificate with the wrong hostname.
+
+In the Admin event settings, set the HTTPS REST origin, optional `bearer_token`
+and optional `tls_ca_pem`. The certificate-only PEM field accepts 1..16 CA
+certificates up to 64 KiB, replacing OS trust roots for this connection when set.
+Omit it to use OS roots. It is public certificate material, never a private key.
+Both paths always verify the server chain and hostname. Settings updates and
+custom trust changes are hot and preflight the actual candidate connection;
+failed authentication or TLS must leave the current configuration active.
+
+Hot replacement changes which token the hub sends; it does not revoke an
+otherwise valid JWT at its issuer. Use short validity periods and the issuer's
+supported revocation/key-retirement policy. The diagnostic rotates to a separately
+signed token, retires the old JWKS signing key, and observes the old token being
+rejected after refresh while new traffic advances the same durable project
+checkpoint. Do not infer immediate per-token revocation from local replacement.
+
+This overlay secures **hub to REST Proxy** and **REST Proxy to HTTPS JWKS**.
+Its broker connection remains a separately isolated private plaintext lane.
+`kafka-rest.broker-security.properties.example` documents an independent
+SASL_SSL/SCRAM service-principal boundary for deployments that cross untrusted
+broker networks; it requires matching secured Kafka listeners, trusted broker
+certificates, service credentials and Kafka ACLs. It is not enabled or qualified
+by the minimal OAuth profile. Broker/controller/quorum security and proxy service
+credential rotation have their own rollout; they must not require a hub restart.
+
+REST Proxy 8.3.2 also logs that it ignores producer `enable.idempotence`.
+Correctness therefore depends on the hub's durable outbox, event identities and
+materialization deduplication; the deployment flag does not confer broker-native
+exactly-once or idempotent REST production.
+
+Restrict issuance of the event-service audience to the hub service identities in
+your IdP. A valid accepted JWT authenticates access to this server's REST service;
+it does not assign ADHD user roles or project membership. This minimal profile
+does not add per-token Kafka ACLs; broker authorization belongs to its separately
+configured service principal and the hub continues to enforce project admission.
+
+`tests/kafka_oauth.py` creates and cleans a wholly isolated real broker/proxy and
+bounded synthetic HTTPS JWKS issuer. It never changes existing service instances
+or model configuration. Supply a fresh ignored work directory and a generated
+candidate with hot custom-CA support. Native `elixir`/`erl` must be on PATH:
+
+```sh
+.venv/bin/python tests/kafka_oauth.py --hub "$CANDIDATE" \
+  --work _build/oauth-proof --report _build/oauth-proof.json \
+  --project adhd-oauth-proof --port 18087
+```
+
+Completed properties, keystores, JWTs, initial hub password and raw logs remain
+private in the ignored fixture directory. Retained reports contain only outcomes,
+content hashes, image identities and numeric checkpoints. These diagnostic runs
+do not qualify production entitlement, replicated broker availability, broker
+SASL/TLS, or final application lifecycle/package provenance.
+
+The [native OAuth/TLS diagnostic manifest](../../verification/kafka-security/manifest.json)
+binds the successful real broker/hub rotation run, deployment rendering, exact
+artifact/module identities, image pins, license inventory and committed harnesses.
+Its Kubernetes scope is rendering only; its full-hub result is explicitly a
+development diagnostic rather than lifecycle, package or production entitlement
+qualification.

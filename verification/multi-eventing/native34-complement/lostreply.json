@@ -1,0 +1,22 @@
+{
+  "suite": "adhd/real-kafka-lost-reply@1",
+  "started_at": "2026-10-21T22:11:05.337419+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "real-produce-ack-lost-physical-duplicates-logically-deduplicated",
+      "passed": true,
+      "actual_produce_acks": 2,
+      "distinct_offsets": 2
+    },
+    {
+      "name": "logical-delivery-and-source-retry-ack-survive-process-kill-and-broker-replay",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "finished_at": "2026-10-21T22:11:46.763254+00:00"
+}

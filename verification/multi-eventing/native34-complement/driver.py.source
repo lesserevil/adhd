@@ -1,0 +1,26 @@
+import concurrent.futures,hashlib,json,os,subprocess,sys
+from pathlib import Path
+root=Path('/home/horde/src/adhd');out=root/'_build/roadmap/multi/native34-complement';out.mkdir(exist_ok=False)
+hub=root/'_build/roadmap/multi/hub-filter-34.exs';expected='7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9'
+assert hashlib.sha256(hub.read_bytes()).hexdigest()==expected
+python=root/'.venv/bin/python';native=root/'_build/federation/native';env=os.environ.copy();env['PATH']=str(native/'erlang/bin')+':'+str(native/'elixir/bin')+':'+env['PATH'];env['ERL_FLAGS']='+S 2:2';env['PYTHONPATH']=str(root/'tests')
+command=json.dumps([str(native/'elixir/bin/elixir'),str(hub)])
+legacy=json.dumps([str(native/'elixir/bin/elixir'),str(root/'_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd')])
+rest='http://127.0.0.1:18082';private='http://127.0.0.1:18087';broker='adhd-imagefinal-a31f2c-kafka-1'
+owned=subprocess.check_output(['docker','inspect','--format','{{index .Config.Labels "com.docker.compose.project"}}',broker],text=True).strip();assert owned=='adhd-imagefinal-a31f2c'
+jobs=[]
+for name,file,extra in [('controls','eventing_controls.py',['--legacy-command',legacy]),('caps','eventing_filter_budget.py',[]),('dormant','eventing_dormant_policy.py',[]),('admin','eventing_admin_edit.py',[]),('policy','eventing_project_policy.py',[])]:
+ jobs.append((name,file,['--command',command,'--work',str(out/(name+'-work')),'--eventing-rest-url',rest]+extra))
+for name,file,extra in [('lostreply','eventing_faults.py',[]),('fairness','multi_fairness.py',[]),('cutover','eventing_cutover.py',[]),('cutover-decision','eventing_cutover.py',['--crash-at','transition-decision']),('cutover-project','eventing_cutover.py',['--crash-at','transition-project'])]:
+ jobs.append((name,file,['--hub',str(hub),'--eventing-rest-url',rest,'--deadline','90']+extra))
+serial=[('retention','eventing_retention.py',['--command',command,'--eventing-rest-url',private,'--owned-broker-container',broker,'--work',str(out/'retention-work')]),('outage','eventing_acceptance.py',['--hub',str(hub),'--eventing-rest-url',private,'--broker-container',broker,'--deadline','90']),('federation','federation_multi.py',['--command',command,'--legacy-command',legacy,'--eventing-rest-urls',json.dumps([rest,'http://127.0.0.1:18085',private]),'--work',str(out/'federation-work')])]
+plan={'artifact_sha256':expected,'runs_per_suite':1,'parallelism':2,'jobs':[{'name':n,'script':f,'args':a,'harness_sha256':hashlib.sha256((root/'tests'/f).read_bytes()).hexdigest()} for n,f,a in jobs+serial]};(out/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
+def run(job):
+ name,file,args=job;report=out/(name+'.json');cmd=[str(python),str(root/'tests'/file)]+args+['--report',str(report)]
+ print('START',name,flush=True)
+ with (out/(name+'.log')).open('w') as log:r=subprocess.run(cmd,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT)
+ print('DONE',name,r.returncode,flush=True);return {'name':name,'exit_code':r.returncode,'report':str(report)}
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(run,jobs))
+for job in serial:results.append(run(job))
+(out/'matrix.json').write_text(json.dumps({'passed':all(r['exit_code']==0 for r in results),'results':results},indent=2)+'\n')
+sys.exit(any(r['exit_code'] for r in results))

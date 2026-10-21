@@ -859,6 +859,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Evidence:**
   - [ ] Kill hub/broker around each publish/checkpoint boundary; prove no acknowledged event is lost and retries do not create duplicate logical publications.
   - [ ] Exercise multi-project isolation, rebalances, broker unavailability, disk/queue limits and recovery with a real Kafka service.
+- **Current native qualification:** [The source34 complementary matrix](../../verification/multi-eventing/native34-complement/manifest.json) retains 66 passing checks across 13 single-run suites, including real broker outage/recovery, retention recovery, project policy, resource limits, delivery retries, cutover interruption and three-broker federation. Twelve raw reports bind the exact artifact directly; the lost-reply report is bound compositionally through its frozen plan and retained driver, with that limitation explicit. This supplements the separate 15-check core/protocol/durability proof. Immutable-image qualification and actual coordinator-rebalance evidence remain open.
 
 ### [ ] KAFKA-003 — Bridge Kafka subscriptions to durable A2A deliveries
 

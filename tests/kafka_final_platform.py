@@ -252,6 +252,14 @@ async def main(args):
             command(kubectl+['-n',args.name,'cp','deployment/hub:/app/manifest.json',str(root/'running-manifest.json')])
             assert json.loads((root/'running-manifest.json').read_text())==manifest
             evidence.value['runtime_image_ids']={name:obj(['get','pods','-l','app='+name])['items'][0]['status']['containerStatuses'][0]['imageID'] for name in ['hub','kafka','kafka-rest']}
+            if not args.kind_node:
+                raise ValueError('Kind qualification requires explicit --kind-node for immutable runtime-image verification')
+            runtime_digest=evidence.value['runtime_image_ids']['hub'].rsplit('@',1)[1]
+            manifest_bytes=command(['docker','exec',args.kind_node,'ctr','-n','k8s.io','content','get',runtime_digest],capture=True)
+            assert 'sha256:'+hashlib.sha256(manifest_bytes).hexdigest()==runtime_digest
+            runtime_config=json.loads(manifest_bytes)['config']['digest']
+            assert runtime_config==args.image
+            evidence.value['runtime_hub_image_config_digest']=runtime_config
         await ready()
         password=re.search(r'^Password: (.+)$',(config_dir/'initial-admin-password.txt').read_text(),re.M)[1]
         credentials=root/'credentials.json';credentials.write_text(json.dumps({'agents':tokens,'admin':{'username':'admin','password':password}}));credentials.chmod(0o600)
@@ -415,6 +423,7 @@ if __name__=='__main__':
     p.add_argument('--port',type=int,default=18890)
     p.add_argument('--kubectl',type=Path)
     p.add_argument('--kubeconfig',type=Path)
+    p.add_argument('--kind-node',help='Explicit owned Kind Docker node for read-only runtime config identity verification')
     p.add_argument('--cluster-image',help='Unique immutable-derived local name for the previously loaded verified hub image')
     p.add_argument('--broker-image',default='confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f')
     p.add_argument('--proxy-image',default='confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058')

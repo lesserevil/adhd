@@ -82,9 +82,9 @@ async def basic_families(f, phase):
         "private_delivery": private, "queries": queries, "attempt": full_attempt, "replay": replay}
 
 
-def offline_bundle(f, r, backup_id):
+def offline_bundle(f, r, backup_id, project=RED):
     assert f.process.poll() is not None, "Offline bundle requires a stopped actual owner"
-    entry, checkpoint = route(f.file, RED)
+    entry, checkpoint = route(f.file, project)
     source = Path(str(checkpoint) + ".snapshot")
     state = snapshot(source)
     # The fixture deliberately configures this explicit private root before
@@ -98,7 +98,7 @@ def offline_bundle(f, r, backup_id):
         path = directory / name
         path.write_bytes(body)
         path.chmod(0o600)
-    manifest = {"schema": "adhd/project-backup@1", "server_id": entry["server_id"], "project_id": RED,
+    manifest = {"schema": "adhd/project-backup@1", "server_id": entry["server_id"], "project_id": project,
         "aliases": sorted(entry["aliases"]), "captured_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "source": {"route_generation": state["route_generation"], "project_epoch": state["project_epoch"],
             "allocation_epoch": state["allocation_epoch"], "storage_generation": state["storage_generation"], "sequence": state["seq"]},

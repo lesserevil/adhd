@@ -1,0 +1,209 @@
+{
+  "suite": "adhd/eventing-durable-boundaries@1",
+  "started_at": "2026-10-21T22:40:29.397952+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "offset-before-post",
+      "passed": true,
+      "kind": "real-broker-network",
+      "boundary": {
+        "path": "/consumers/adhd.74426ff112df8292.73786e979410fe19.events.v1.fanout/instances/adhd-tq4RzKDsH3DbnIQFQOqFFqbWAMPqFqdR/offsets",
+        "request": {
+          "offsets": [
+            {
+              "offset": 1,
+              "partition": 0,
+              "topic": "adhd.74426ff112df8292.73786e979410fe19.events.v1"
+            }
+          ]
+        },
+        "upstream_called": false
+      },
+      "installed": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      },
+      "prospective": null,
+      "broker_offsets": {
+        "offsets": [
+          {
+            "topic": "adhd.74426ff112df8292.73786e979410fe19.events.v1",
+            "partition": 0,
+            "offset": 1,
+            "metadata": ""
+          }
+        ]
+      },
+      "expected_next_offset": 2,
+      "committed_delivery_identity_preserved": true,
+      "baseline_ack_retained": true,
+      "restored": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      }
+    },
+    {
+      "name": "offset-after-post",
+      "passed": true,
+      "kind": "real-broker-network",
+      "boundary": {
+        "path": "/consumers/adhd.24f3f6b9eeee896d.73786e979410fe19.events.v1.fanout/instances/adhd-UkzlMpRsx7ssMBGwmRcLs-V6BHArsThB/offsets",
+        "request": {
+          "offsets": [
+            {
+              "offset": 1,
+              "partition": 0,
+              "topic": "adhd.24f3f6b9eeee896d.73786e979410fe19.events.v1"
+            }
+          ]
+        },
+        "upstream_called": true,
+        "upstream_status": 200
+      },
+      "installed": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      },
+      "prospective": null,
+      "broker_offsets": {
+        "offsets": [
+          {
+            "topic": "adhd.24f3f6b9eeee896d.73786e979410fe19.events.v1",
+            "partition": 0,
+            "offset": 2,
+            "metadata": ""
+          }
+        ]
+      },
+      "expected_next_offset": 2,
+      "committed_delivery_identity_preserved": true,
+      "baseline_ack_retained": true,
+      "restored": {
+        "deliveries": [
+          {
+            "id": "delivery-82f2aa3f237b-5",
+            "publication_id": "publication-82f2aa3f237b-4"
+          }
+        ],
+        "next_offset": 2,
+        "event_state": "materialized"
+      }
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "harness_sha256": "a84a6010340efa0a4faaeb7132b4a56bd5a3deac93f0ea66a3c1df14e4125610",
+  "hook_sha256": "a063a38b171984688ff8fe8c5ef31acf3e222d0693119ff90670be4a369da718",
+  "kernel_stops": [
+    {
+      "container_id": "6116714274d69e8950d0413fbbbe6a5cada08ce47b15d4cd953baa0490d57926",
+      "signal": "SIGSTOP"
+    },
+    {
+      "container_id": "133fdb2ff52aa83329494662a2693392b1f3e7ac6b2d88dd265ca0fd3b6fce15",
+      "signal": "SIGSTOP"
+    }
+  ],
+  "runtime_offset-before-post": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "6116714274d69e8950d0413fbbbe6a5cada08ce47b15d4cd953baa0490d57926",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "6116714274d69e8950d0413fbbbe6a5cada08ce47b15d4cd953baa0490d57926",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "ffa1da350092ac32c09664dc9033f312076304c7542a49aee7b5e27a4abbcc53",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "ffa1da350092ac32c09664dc9033f312076304c7542a49aee7b5e27a4abbcc53",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "95f24a928956b5226b9fd5c9cde8aa6ef93c00c35e1602513093f90eb7b54db2",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "95f24a928956b5226b9fd5c9cde8aa6ef93c00c35e1602513093f90eb7b54db2",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "runtime_offset-after-post": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "133fdb2ff52aa83329494662a2693392b1f3e7ac6b2d88dd265ca0fd3b6fce15",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "133fdb2ff52aa83329494662a2693392b1f3e7ac6b2d88dd265ca0fd3b6fce15",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "1a09203fd786b2f976b7b43b38d403b21e38a371c4a6bd2cb36c2cad72cdd471",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "1a09203fd786b2f976b7b43b38d403b21e38a371c4a6bd2cb36c2cad72cdd471",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "7ac75c3da9fd21b1986add5f6122288e993bf29951005faaba8d3ca059340415",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "7ac75c3da9fd21b1986add5f6122288e993bf29951005faaba8d3ca059340415",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "finished_at": "2026-10-21T22:43:07.306802+00:00"
+}

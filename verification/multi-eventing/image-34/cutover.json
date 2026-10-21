@@ -1,0 +1,62 @@
+{
+  "suite": "adhd/real-kafka-hot-cutover@1",
+  "started_at": "2026-10-21T22:39:14.244531+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+      "passed": true
+    },
+    {
+      "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+      "passed": true
+    },
+    {
+      "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+      "passed": true
+    },
+    {
+      "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "harness_sha256": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d",
+  "source_sha256": null,
+  "finished_at": "2026-10-21T22:40:28.147115+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "2febe4ddaa6592b52c082318269440a8d87e158e63cc1d62d54fdcb635069cb7",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "2febe4ddaa6592b52c082318269440a8d87e158e63cc1d62d54fdcb635069cb7",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "50a4bd33fc72c4952d41cddcc668702f8229306a667aace7cd84e93a26644b8c",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "50a4bd33fc72c4952d41cddcc668702f8229306a667aace7cd84e93a26644b8c",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "image_id": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+}

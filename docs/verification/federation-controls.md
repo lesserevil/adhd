@@ -112,3 +112,46 @@ Controlled typed models qualify transport and frozen-policy use, not semantic
 quality. One real Kafka broker does not qualify replicated durability. These are
 candidate proofs; final retained-source admission and combined-artifact tests
 remain separate lifecycle gates.
+
+## Final native source qualification
+
+The [bounded durable qualification report](native-eventing.json) records77 passing
+checks across15 independent suites against frozen `hub-filter-30.exs` SHA256
+`698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836`.
+It includes each raw report's hash, named checks, available harness/source hashes,
+pinned broker images, and the three distinct Kafka cluster identities. These
+results supersede earlier candidate reports for the covered native feature gates.
+
+Coverage includes controlled-model/raw selector behavior, lost real producer
+acknowledgements, actual broker stop/start plus hub kill, capped and deferred filter
+work, dormant project model provenance, Admin revisions/paging, project policy and
+failed retention preflight, normal transport cutover and actual SIGKILL at both
+durable-decision and partial-project boundaries, shared-resource fairness,
+independent schema/official-SDK conformance, and three-server federation. The latter
+passed14 groups with251 independently validated wire messages and exercised the
+previously accepted profile1 binary in both directions.
+
+Physical retention loss was induced on an explicitly owned disposable broker by
+Kafka's real Admin DeleteRecords operation through `kafka-delete-records`. The
+harness advanced actual log-start offsets beyond the hub's durable checkpoint while
+two accepted originals had been appended but not observed. Restart reconstructed
+both originals with identical event envelopes, retained backend search/get results,
+preserved existing acknowledgements, and exposed a reconciled RETENTION_GAP. This
+qualifies actual broker log-prefix loss, not elapsed wall-clock retention expiry.
+
+Qualification found and corrected publication receipt normalization dropping
+existing `eventing` metadata, and a historical-policy diagnostic returning a string
+instead of the closed `{code,at}` error shape. New acceptance, message/source retries,
+`publish_record`, and disabled-mode legacy receipts are checked explicitly. The
+broker-outage fixture's obsolete `event` key was corrected to `eventing`; its strict
+assertion was preserved. The transition crash fixture uses the previously authored
+C hooks missing from the original integrated helper. Earlier failed fixture attempts
+and source28/29 observations are diagnostic evidence, not passing final30 results.
+
+All owned hubs/models stopped. The private broker/REST containers, network and
+volume used for broker faults and the third federation service were removed; the
+preexisting services on18082/18085 and the user model container were left running.
+This is native candidate qualification. Retained-source admission, immutable image
+qualification and project lifecycle/release gates remain separately recorded by
+the coordinating workflow; controlled models do not establish semantic quality,
+and single-node brokers do not establish replicated durability.

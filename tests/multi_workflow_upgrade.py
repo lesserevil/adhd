@@ -113,14 +113,20 @@ def main():
         return {"jobs": jobs, "labels": labels, "cohorts": api(runtime, {"op": "feedback_cohorts", "limit": 64}),
             "deliveries": api(runtime, {"op": "deliveries"}), "publications": api(runtime, {"op": "overview"})["counts"]["publications"],
             "counts": counts}
-    def compare(runtime, expected, reset_global_generation=False):
+    def compare(runtime, expected, allow_generation_retirement=False):
         unavailable = []
+        if allow_generation_retirement:
+            current = api(runtime, {"op": "retrieval_index"})["index"]
+            generations = {current[key]["id"] for key in ("active", "previous") if current[key] is not None}
         for (kind, identifier), value in expected["jobs"].items():
             actual = api(runtime, {"op": "query_job", "query_id": identifier, "limit": 64})
             retained_value = copy.deepcopy(value)
-            if (reset_global_generation and kind == "optimization"
+            if (allow_generation_retirement and kind == "optimization"
                     and value["query"].get("global_evidence_available") is True
                     and actual["query"].get("global_evidence_available") is False):
+                # Independently verify that the saved isolated generation is no
+                # longer either publicly retained current global generation.
+                assert value["query"]["index_manifest"]["id"] not in generations, identifier
                 retained_value["query"]["global_evidence_available"] = False
                 unavailable.append(identifier)
             assert actual == retained_value, (kind, identifier)
@@ -167,8 +173,15 @@ def main():
             assert retained[key] == selection[key], key
         assert retained["qualification_current"] == (retained["current_runtime"] == selection["current_runtime"])
         assert ready["active"]["server_id"] == index["active"]["server_id"]
-        compare(target, expected)
-        record("legacy-upgrade-preserves-exact-history-retrieval-archive-replay-optimizer-evidence-labels-cohorts-deliveries-and-selection")
+        changed_runtime = retained["current_runtime"] != selection["current_runtime"]
+        retired = compare(target, expected, allow_generation_retirement=bool(args.image and changed_runtime))
+        # A different native runtime can rebuild derived active index generations.
+        # Freeze that truthful availability projection for exact restart checks;
+        # immutable paired evidence and all other fields remain byte-equivalent.
+        expected = copy.deepcopy(expected)
+        for identifier in retired:
+            expected["jobs"]["optimization", identifier]["query"]["global_evidence_available"] = False
+        record("legacy-upgrade-preserves-exact-history-retrieval-archive-replay-optimizer-evidence-labels-cohorts-deliveries-and-selection", changed_runtime=changed_runtime, retired_global_generation_ids=retired)
         target.stop(hard=True)
         target.start()
         compare(target, expected)
@@ -178,10 +191,11 @@ def main():
         reset = api(target, {"op": "retrieval_index"})["index"]["selection"]
         assert reset["revision"] == retained["revision"] + 1 and not reset["applied"]
         assert reset["selected"] is None and reset["previous"] is None
+        wait(lambda: api(target, {"op": "retrieval_index"})["index"]["status"] == "ready")
         # Current isolated global-index availability is separate from immutable
         # paired raw evidence. Explicit reset drops that old generation; all
         # other historical projection fields must remain identical.
-        unavailable = compare(target, expected, reset_global_generation=True)
+        unavailable = compare(target, expected, allow_generation_retirement=True)
         assert unavailable, "The accepted producer must contain a retained global generation"
         record("operator-reset-after-migration-preserves-originals-and-historical-evidence", unavailable_global_generation_ids=unavailable)
         assert original_files == {name: hashlib.sha256((original_root / name).read_bytes()).hexdigest() for name in original_files}

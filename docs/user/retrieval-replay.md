@@ -171,3 +171,11 @@ repeats all eleven isolation groups using the exact reviewed image manifest and
 payload. Three actual container kills and replacements preserve private backend
 data while checking query ownership, revocation and optimizer evaluation fences;
 the report records each container ID and verified removal.
+
+The [admitted-image accepted-store upgrade](../validation/multi-workflow-upgrade-image-30.json)
+repeats all four workflow migration groups with actual container replacement.
+The changed native runtime rebuilds derived global index generations; an old
+proposal's global-generation availability may fall only when its saved manifest
+is absent from the current and previous generations. All paired raw evidence,
+labels, saved queries and learned selection remain exact. The check waits for
+index readiness before comparing generation topology after an explicit reset.

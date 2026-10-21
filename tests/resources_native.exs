@@ -130,6 +130,36 @@ defmodule ResourcesTests do
     wait_for(fn->R.stats()["ingress_tickets"]==0 end)
     assert R.stats()["lanes"]["model"]["ingress_rejections"]>0
   end
+  test "owner death cancels its registered pending local HTTP request" do
+    {:ok,_}=Application.ensure_all_started(:inets)
+    {:ok,listener}=:gen_tcp.listen(0,[:binary,active: false,ip: {127,0,0,1},reuseaddr: true])
+    {:ok,{_,port}}=:inet.sockname(listener)
+    parent=self()
+    server=spawn(fn->
+      {:ok,socket}=:gen_tcp.accept(listener)
+      {:ok,_}=:gen_tcp.recv(socket,0,1000)
+      send(parent,:http_accepted)
+      result=:gen_tcp.recv(socket,0,3000)
+      send(parent,{:http_after_owner_death,result})
+      :gen_tcp.close(socket)
+    end)
+    owner=spawn(fn->
+      ADHD.Scope.put("red")
+      R.run(:model,2500,fn remaining->
+        {:ok,id}=:httpc.request(:get,{String.to_charlist("http://127.0.0.1:#{port}/pending"),[]},[timeout: remaining],[sync: false,body_format: :binary])
+        :ok=R.track_http(id)
+        send(parent,:http_registered)
+        receive do :finish->:ok end
+      end)
+    end)
+    assert_receive :http_accepted,1000
+    assert_receive :http_registered,1000
+    Process.exit(owner,:kill)
+    assert_receive {:http_after_owner_death,{:error,:closed}},1500
+    wait_for(fn->R.stats()["ingress_tickets"]==0 end)
+    :gen_tcp.close(listener)
+    Process.exit(server,:normal)
+  end
   test "invalid config rejected and native unstarted fallback only before startup" do
     assert catch_throw(R.normalize(%{"resources"=>%{"max_waiters"=>-1}}))=={:domain,"INVALID_PARAMS"}
     assert catch_throw(R.normalize(%{"resources"=>%{"unknown"=>1}}))=={:domain,"INVALID_PARAMS"}

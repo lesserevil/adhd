@@ -60,7 +60,14 @@ scheduler does not make arbitrary application callbacks preemptible. Do not
 release a still-running request's slot merely because a diagnostic deadline has
 elapsed. Release it after the bounded HTTP operation finishes or its owning
 process exits. Monitor owners so exceptions and killed workers cannot strand
-active or queued capacity.
+active or queued capacity. Register each asynchronous HTTP request ID with its
+active resource ticket immediately after dispatch and before waiting for a
+response. Allow only one outbound request ID per callback. If registration fails,
+cancel that HTTP request and fail admission explicitly. Owner death cancels its
+registered local HTTP request as well as releasing capacity. Cancellation stops
+the local client request/connection; it cannot promise that a remote provider
+aborts computation it has already accepted. Native unit calls before scheduler
+startup may omit tracking; an already-started runtime may not silently omit it.
 
 Fence queued requests against the current configuration revision and project
 lifecycle immediately before execution. A changed revision invalidates prepared

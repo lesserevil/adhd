@@ -93,13 +93,15 @@ class BudgetRelay:
         assert not self.exhausted and time.monotonic() < self.deadline, "Frozen provider budget exhausted"
 
     def close(self):
-        with self.lock:
-            self.closed = True
-            self.lock.wait_for(lambda: self.inflight == 0, timeout=12)
-            assert self.inflight == 0, "Provider exchange did not settle within its reserved timeout"
-        self.server.shutdown()
-        self.server.server_close()
-        self.thread.join(timeout=2)
+        try:
+            with self.lock:
+                self.closed = True
+                self.lock.wait_for(lambda: self.inflight == 0, timeout=12)
+                assert self.inflight == 0, "Provider exchange did not settle within its reserved timeout"
+        finally:
+            self.server.shutdown()
+            self.server.server_close()
+            self.thread.join(timeout=2)
 
 
 def verify_plan(args):
@@ -318,17 +320,30 @@ async def main(args):
                     evidence.value.setdefault("archive_cancellation_error_types", []).append(type(cleanup_error).__name__)
             pid = evidence.value.get("proposal_id")
             if pid:
-                admin.call(scoped(target["project_id"], "cancel_index_proposal", proposal_id=pid), mutation=True)
+                try:
+                    admin.call(scoped(target["project_id"], "cancel_index_proposal", proposal_id=pid), mutation=True)
+                except Exception as cleanup_error:
+                    evidence.value["proposal_cancellation_error_type"] = type(cleanup_error).__name__
             admin.call({"op": "config_update", "patch": {"matcher": None, "optimization": {"enabled": False}}}, mutation=True)
         except Exception as cleanup_error:
             evidence.value["cancellation_error_type"] = type(cleanup_error).__name__
     finally:
-        relay.close()
-        await f.close()
-        f.bind_evidence(evidence)
-        evidence.value["provider_budget_observed"] = {"upstream_http_posts": relay.count, "denied_requests": relay.denied,
-            "exhausted": relay.exhausted, "exchange_log_sha256": digest(relay.log.read_bytes()) if relay.log.exists() else None}
-        evidence.finish(error)
+        try:
+            relay.close()
+        except BaseException as cleanup_error:
+            evidence.value.setdefault("cleanup_failure_types", []).append(type(cleanup_error).__name__)
+            error = error or cleanup_error
+        finally:
+            try:
+                await f.close()
+            except BaseException as cleanup_error:
+                evidence.value.setdefault("cleanup_failure_types", []).append(type(cleanup_error).__name__)
+                error = error or cleanup_error
+            finally:
+                f.bind_evidence(evidence)
+                evidence.value["provider_budget_observed"] = {"upstream_http_posts": relay.count, "denied_requests": relay.denied,
+                    "exhausted": relay.exhausted, "exchange_log_sha256": digest(relay.log.read_bytes()) if relay.log.exists() else None}
+                evidence.finish(error)
     if error:
         raise error
 

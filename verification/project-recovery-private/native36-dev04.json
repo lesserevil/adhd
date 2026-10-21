@@ -1,0 +1,53 @@
+{
+  "suite": "private-target-restore",
+  "started_at": "2026-10-21T23:46:02.685932+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "known-missing-does-not-initialize-on-cold-start",
+      "passed": true
+    },
+    {
+      "name": "hash-bound-source-and-target-plan-with-fresh-epochs",
+      "passed": true
+    },
+    {
+      "name": "durable-apply-completes-with-private-records-and-ack-count",
+      "passed": true
+    },
+    {
+      "name": "other-current-project-and-global-config-preserved-original-private-visible-ack-hidden",
+      "passed": true
+    },
+    {
+      "name": "restored-generation-opens-after-cold-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "scope": "NoKafka/noModel: private deliveries and acknowledged-state target-only restore plus cold restart",
+  "lifecycle_admitted": false,
+  "result": {
+    "allocation_epoch": "42ccf6f139762abce303f77408b5e2a4",
+    "initialized": false,
+    "project_epoch": "aee96ca2350b8cf77a728a33475d7c5e",
+    "project_id": "project-red",
+    "restored": {
+      "acknowledged_deliveries": 1,
+      "deliveries": 2,
+      "pending_jobs": 0,
+      "publications": 0,
+      "retained_records": 67,
+      "subscriptions": 0
+    },
+    "route_generation": 2,
+    "sequence": 2,
+    "storage_generation": 6,
+    "topic": null,
+    "transport_discontinuity": true
+  },
+  "finished_at": "2026-10-21T23:47:40.243616+00:00"
+}

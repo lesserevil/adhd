@@ -790,6 +790,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.
   - [ ] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.
   - [ ] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.
+  - [ ] Repair first-time OIDC setup so the Admin connection test is available for proposed settings before initial save; the inherited browser regression found the button hidden until a provider was already configured. Requalify the corrected artifact and image.
 - **Evidence:**
   - [ ] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.
 
@@ -804,6 +805,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Specify fair scheduling and accounting across projects and job classes, bounded queues/caches/storage and backpressure.
   - [ ] Fence workers against project archival, access changes and configuration revisions; preserve durable accepted work with explicit terminal/paused states.
   - [ ] Add project-aware diagnostics/audit records and documented full-server and project backup/restore semantics, collision handling and container recovery.
+  - [ ] Resolve project-level recovery scope before closure: exact-image Compose/Kind prove consistent full-server recovery only. Selective restore preserving other current projects has no implemented/tested tool; clarify whether this milestone requires that capability or an explicit current full-server boundary. Never attest selective restore from full-set backup results.
 - **Evidence:**
   - [ ] Saturate one project with slow/failing model and peer work; demonstrate bounded progress for another and truthful costs/coverage.
   - [ ] Exercise hot lifecycle changes, worker crashes, restart, container replacement and backup/restore without leakage or duplicated committed results.

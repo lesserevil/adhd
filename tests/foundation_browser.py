@@ -3,18 +3,20 @@
 import argparse,hashlib,json,tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
-from foundation_acceptance import Runtime,Client,Provider,free_port
+from foundation_acceptance import Client,Provider,free_port
+from multi_workflow_upgrade import UpgradeRuntime
 
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--report',default='verification/foundation-browser.json');args=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);target=p.add_mutually_exclusive_group(required=True);target.add_argument('--command');target.add_argument('--image');p.add_argument('--image-manifest',type=Path);p.add_argument('--report',default='verification/foundation-browser.json');args=p.parse_args()
  parent=Path('_build/roadmap/browser').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent))
- runtime=Runtime(root/'hub',json.loads(args.command));provider=Provider(root);results=[]
+ command=json.loads(args.command) if args.command else [];runtime=UpgradeRuntime(root/'hub',command,args.image,args.image_manifest);provider=Provider(root);results=[]
  try:
   runtime.start();password=(runtime.root/'initial-admin-password.txt').read_text().split('Password: ')[1].strip()
   admin=Client(runtime);admin.login('admin',password)
-  dev=admin.api({'op':'save_user','user':{'username':'browser-dev','name':'Browser Developer','email':'dev@example.invalid','role':'Developer','password':'browser-developer-password'}},mutation=True)['user']
-  admin.api({'op':'save_user','user':{'username':'browser-view','name':'Browser Viewer','email':'view@example.invalid','role':'Viewer','password':'browser-viewer-password'}},mutation=True)
+  project=runtime.config['project_id']
+  dev=admin.api({'op':'save_user','user':{'username':'browser-dev','name':'Browser Developer','email':'dev@example.invalid','role':'Developer','project_ids':[project],'password':'browser-developer-password'}},mutation=True)['user']
+  admin.api({'op':'save_user','user':{'username':'browser-view','name':'Browser Viewer','email':'view@example.invalid','role':'Viewer','project_ids':[project],'password':'browser-viewer-password'}},mutation=True)
   with sync_playwright() as pw:
    browser=pw.chromium.launch(headless=True,args=['--no-sandbox'])
    for name,viewport in [('desktop',{'width':1440,'height':1000}),('mobile',{'width':390,'height':844})]:
@@ -81,8 +83,11 @@ def main():
     for ctx in (context,dctx,vctx,octx):ctx.close()
    browser.close()
   assert provider.exchanges>=2
-  Path(args.report).write_text(json.dumps({'schema':'adhd/foundation-browser@1','passed':True,'artifact_sha256':hashlib.sha256(Path(json.loads(args.command)[-1]).read_bytes()).hexdigest(),'viewports':results,'real_oidc_exchanges':provider.exchanges},indent=2)+'\n');print('PASS desktop/mobile accounts, roles, live settings and real OIDC')
+  result={'schema':'adhd/foundation-browser@1','passed':True,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None,'viewports':results,'real_oidc_exchanges':provider.exchanges,'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
  finally:runtime.stop();provider.close()
+ if runtime.owned_image:
+  result['runtime']=runtime.owned_image.identity();result['artifact_sha256']=result['runtime']['artifact_sha256'];result['image_id']=result['runtime']['image_config_identity']
+ Path(args.report).write_text(json.dumps(result,indent=2)+'\n');print('PASS desktop/mobile accounts, roles, live settings and real OIDC')
 
 if __name__=='__main__':
     # Both bootstrap suites deliberately verify the documented default port.

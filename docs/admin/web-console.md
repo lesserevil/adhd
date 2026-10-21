@@ -184,3 +184,8 @@ repeats all eighteen groups against immutable image `b99978ef…` and artifact
 `698496fe…`. It checks the actual container manifest and payload, records its
 owned lifecycle, and exercises desktop and mobile forms with real Kafka. The
 rendered subscription views were also visually inspected at both viewport sizes.
+
+The [complete profile-2 role/project browser qualification](../../verification/multi-eventing/role-browser-30.json)
+records 22 native and 22 admitted-container desktop/mobile groups, including
+project lifecycle, access, owner-bound agents, overrides and stale-context fencing.
+It complements the focused Admin-control qualification above.

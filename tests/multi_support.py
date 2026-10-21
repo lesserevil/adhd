@@ -98,6 +98,7 @@ class Fixture:
         self.clients = []
         self.model = ModelFixture() if args.with_model else None
         self.admin_credentials = None
+        self.admin_client = None
         if args.rest_url:
             if not args.credentials:
                 raise ValueError("--rest-url requires a private --credentials file")
@@ -161,6 +162,8 @@ class Fixture:
                                    headers={"Authorization": "Bearer " + self.tokens[name], "A2A-Version": "1.0"})
 
     def admin(self):
+        if self.admin_client is not None:
+            return self.admin_client
         if self.admin_credentials:
             cred = self.admin_credentials
         else:
@@ -168,7 +171,8 @@ class Fixture:
             cred = {"username": "admin", "password": re.search(r"^Password: (.+)$", text, re.M)[1]}
         client = Client(self)
         client.login(cred["username"], cred["password"])
-        return Admin(client, self)
+        self.admin_client = Admin(client, self)
+        return self.admin_client
 
     def hard_stop(self):
         if not self.process:

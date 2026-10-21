@@ -179,3 +179,13 @@ proposal's global-generation availability may fall only when its saved manifest
 is absent from the current and previous generations. All paired raw evidence,
 labels, saved queries and learned selection remain exact. The check waits for
 index readiness before comparing generation topology after an explicit reset.
+
+The [fixed native candidate30 optimizer quality run](../validation/optimizer-live-quality-30-diagnostic.json)
+did not qualify its frozen winner. Its correction control selected the original
+“Correction: No” with probability 0.448863, tied with `unknown`, below the required
+0.5. All three linked original records reached the model at the same frozen
+watermark; the original observation and both replay branches retained the same
+low-confidence result. The optimizer correctly rejected the winner with
+`QUALITY_REGRESSION`, despite positive recall gain and reduced total cost. This
+report preserves the exact original and replay exchanges; inspection added no
+model calls. Positive live optimizer qualification remains open.

@@ -189,3 +189,12 @@ The [complete profile-2 role/project browser qualification](../../verification/m
 records 22 native and 22 admitted-container desktop/mobile groups, including
 project lifecycle, access, owner-bound agents, overrides and stale-context fencing.
 It complements the focused Admin-control qualification above.
+
+The [candidate30 inherited rendered and fairness matrix](../validation/deep-rendered-30.json)
+records all eight existing suites in both native and admitted-image modes:
+History, retrieval, Archive, feedback and optimizer desktop/mobile workflows,
+plus three independent-lane fairness checks. These controlled fixtures verify
+hot forms, evidence rendering, ownership, cancellation, responsiveness and real
+container lifecycle handling. Fairness uses an explicit two-model-permit project
+profile and preserves the original timing and request-count assertions; this
+report does not certify semantic model quality or a one-permit throughput bound.

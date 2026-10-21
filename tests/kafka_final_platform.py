@@ -384,6 +384,10 @@ async def main(args):
             assert child['passed'] and child['backend_query']['positive_original_cited']
             assert child['hot_model_enable_and_disable'] and child['model_free_second_project_zero_inference']
             assert child['artifact_sha256'] is None  # External child has no artifact authority.
+            gateway_snapshot=args.gateway_report.read_bytes()
+            assert hashlib.sha256(gateway_snapshot).hexdigest()==child['gateway_report_sha256']
+            (root/'optional-model-gateway.json').write_bytes(gateway_snapshot)
+            (root/'optional-model-gateway.json').chmod(0o600)
             assert admin.call({'op':'config_get'})['config']['matcher'] is None
             evidence.value['optional_model']={'passed':True,'report_sha256':sha(child_path),
                 'harness_sha256':sha(repo/'tests/kafka_platform_model.py'),

@@ -12,6 +12,7 @@ import hashlib
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import ssl
@@ -39,19 +40,41 @@ async def main(args):
     kubectl = [str(args.kubectl.resolve()), '--kubeconfig', str(args.kubeconfig.resolve())]
     log = (root / 'operations.log').open('ab')
     evidence = Evidence(args.report, 'adhd/kafka-kubernetes-native-oauth@1')
-    evidence.value.update(lifecycle_qualified=False, production_entitlement_qualified=False,
+    artifact_sha=hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None
+    accepted_manifest=None
+    if args.image:
+        if not all([args.context,args.acceptance_report,args.cluster_image,args.kind_node]):
+            raise ValueError('Image mode requires accepted context/report, loaded cluster image and explicit Kind node')
+        accepted_manifest=json.loads((args.context/'manifest.json').read_text())
+        acceptance=json.loads(args.acceptance_report.read_text())
+        artifact_sha=accepted_manifest['files']['hub.exs']
+        assert acceptance.get('passed') is True and acceptance.get('artifact_sha256')==artifact_sha
+        assert json.loads(subprocess.check_output(['docker','image','inspect',args.image]))[0]['Id']==args.image
+        assert json.loads(subprocess.check_output(['docker','image','inspect',args.cluster_image]))[0]['Id']==args.image
+        check_container=subprocess.check_output(['docker','create',args.image],text=True).strip()
+        try:
+            subprocess.run(['docker','cp',check_container+':/app',str(root/'image-app')],check=True,stdout=subprocess.DEVNULL)
+            assert json.loads((root/'image-app/manifest.json').read_text())==accepted_manifest
+            for name,digest in accepted_manifest['files'].items():
+                path=args.context/'Dockerfile' if name=='Dockerfile' else root/'image-app'/name
+                assert path.is_file() and not path.is_symlink() and hashlib.sha256(path.read_bytes()).hexdigest()==digest
+        finally:
+            subprocess.run(['docker','rm',check_container],check=True,stdout=subprocess.DEVNULL)
+    evidence.value.update(lifecycle_qualified=False, release_qualified=False, production_entitlement_qualified=False,
         license_scope='Confluent Enterprise or documented permitted trial',
-        limitations=['Diagnostic native hub; final retained image lifecycle is a separate gate.',
+        limitations=['Actual admitted deployment image verified against staging and independent artifact acceptance; full release lifecycle remains a separate gate.' if args.image else 'Diagnostic native hub; final retained image lifecycle is a separate gate.',
                     'Single broker, private plaintext proxy-to-broker lane; no SASL_SSL qualification.',
                     'NetworkPolicy enforcement is not qualified by this probe.'],
         requested_images={'kafka': args.broker_image, 'kafka-rest': args.proxy_image},
-        artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest(),
+        artifact_sha256=artifact_sha,image_config_digest=args.image,hub_runtime='accepted-container' if args.image else 'native-development',
         input_sha256={str(path.relative_to(repo)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in [Path(__file__), repo/'tests/kafka_oauth_provider.py',
                          repo/'deploy/k8s/events.yaml', repo/'deploy/k8s/oauth.patch.yaml',
                          repo/'deploy/security/kafka-rest.oauth.properties.example']})
     evidence.value['harness_dependencies_sha256']={name+'.py': hashlib.sha256(Path(sys.modules[name].__file__).read_bytes()).hexdigest() for name in ['multi_support','foundation_acceptance','hub_acceptance']}
-    issuer = hub = http = forward = None
+    issuer = hub = http = forward = hub_forward = None
+    seed_fixture=None
+    log_followers=[]
     owned = completed = False
     tokens = []
     sensitive = []
@@ -81,17 +104,31 @@ async def main(args):
             if forward.poll() is not None:
                 raise AssertionError('Owned port-forward exited')
             try:
-                if http.get(url+'/brokers', headers={'Authorization':'Bearer '+tokens[-1]}).status_code == 200:
+                if http.get(url+'/brokers', headers={'Authorization':'Bearer '+second}).status_code == 200:
                     return
             except httpx.HTTPError:
                 pass
             await asyncio.sleep(.2)
         raise AssertionError('Authenticated REST port-forward readiness failed')
+    def follow(resource):
+        log_followers.append(subprocess.Popen(kubectl+ns(['logs','--follow',resource,'--all-containers=true','--prefix=true']),stdout=log,stderr=log))
     def pod(label):
         rows = obj(ns(['get','pods','-l','app='+label]))['items']
         rows = [row for row in rows if not row['metadata'].get('deletionTimestamp')]
         assert len(rows) == 1
         return rows[0]
+    def hub_identity():
+        if not args.image:
+            assert hub.process.poll() is None
+            return hub.process.pid
+        current=pod('hub')
+        status=current['status']['containerStatuses'][0]
+        assert status['restartCount']==0 and 'running' in status['state']
+        raw=run(ns(['exec','deployment/hub','--','cat','/proc/1/stat']),capture=True).decode()
+        assert raw.split(' ',1)[0]=='1'
+        started=raw.rsplit(')',1)[1].split()[19]
+        return (current['metadata']['uid'],status['containerID'],started)
+
     def secret():
         return obj(ns(['get','secret','adhd-kafka-oauth']))
     def update_secret():
@@ -136,8 +173,18 @@ async def main(args):
         issuer=Issuer(root/'security',args.issuer_bind)
         issuer.java_truststore(); sensitive.append(issuer.password)
         properties(); update_secret()
+        first=issuer.token(exp=int(time.time())+1200); second=issuer.token('second',exp=int(time.time())+1200)
+        tokens.extend([first,second])
+        if args.image:
+            args.command=None;args.rest_url=None;args.credentials=None;args.keep_work=root/'hub';args.with_model=False
+            args.eventing_rest_url='https://kafka-rest:8082';args.deadline=45
+            seed_fixture=Fixture(args)
+            seed_fixture.config.update(host='0.0.0.0',port=8766,public_url='http://127.0.0.1:'+str(args.hub_port),store_path='/data/hub.dets',server_id=uuid4().hex)
+            seed_fixture.config['eventing'].update(bearer_token=first,tls_ca_pem=issuer.ca_pem.decode())
+            private(root/'hub-seed.json',json.dumps(seed_fixture.config).encode())
+            run(ns(['create','secret','generic','hub-seed','--from-file=hub.json='+str(root/'hub-seed.json')]))
         stage=root/'render'; stage.mkdir(mode=0o700)
-        for name in ('events.yaml','oauth.patch.yaml'):
+        for name in (['events.yaml','oauth.patch.yaml','hub.yaml'] if args.image else ['events.yaml','oauth.patch.yaml']):
             (stage/name).write_bytes((repo/'deploy/k8s'/name).read_bytes())
         # The image override permits offline imported manifests, whose config/layer
         # equivalence must be recorded separately from original registry identities.
@@ -145,8 +192,10 @@ async def main(args):
         for name, image in [('confluentinc/cp-kafka',args.broker_image),('confluentinc/cp-kafka-rest',args.proxy_image)]:
             new_name,digest=image.rsplit('@',1)
             images.append({'name':name,'newName':new_name,'digest':digest})
+        if args.image:
+            images.append({'name':'adhd-hub','newName':args.cluster_image.rsplit(':',1)[0],'newTag':args.cluster_image.rsplit(':',1)[1]})
         (stage/'kustomization.yaml').write_text(json.dumps({'apiVersion':'kustomize.config.k8s.io/v1beta1',
-            'kind':'Kustomization','namespace':args.namespace,'resources':['events.yaml'],
+            'kind':'Kustomization','namespace':args.namespace,'resources':['events.yaml','hub.yaml'] if args.image else ['events.yaml'],
             'patches':[{'path':'oauth.patch.yaml'}],'images':images}))
         rendered=run(['kustomize',str(stage)],capture=True)
         evidence.value['rendered_sha256']=hashlib.sha256(rendered).hexdigest()
@@ -154,14 +203,13 @@ async def main(args):
         run(['apply','-f','-'],data=rendered)
         run(ns(['rollout','status','statefulset/kafka','--timeout=180s']),timeout=200)
         run(ns(['rollout','status','deployment/kafka-rest','--timeout=180s']),timeout=200)
+        follow('kafka-0');follow('deployment/kafka-rest')
         pvc=obj(ns(['get','pvc','data-kafka-0']))
         assert pvc['status']['phase']=='Bound'
         pv=obj(['get','pv',pvc['spec']['volumeName']])
         assert pv['spec']['persistentVolumeReclaimPolicy']=='Delete'
         evidence.value['persistent_volume_reclaim_policy']='Delete'
         evidence.value['runtime_image_ids']={name:pod(name)['status']['containerStatuses'][0]['imageID'] for name in ['kafka','kafka-rest']}
-        first=issuer.token(exp=int(time.time())+900); second=issuer.token('second',exp=int(time.time())+900)
-        tokens.extend([first,second])
         url='https://127.0.0.1:'+str(args.port)
         http=httpx.Client(verify=ssl.create_default_context(cafile=str(issuer.root/'ca.pem')),timeout=15)
         await start_forward()
@@ -175,13 +223,46 @@ async def main(args):
         # Restore current valid token for subsequent port-forward readiness checks.
         tokens.append(second)
         evidence.record('live-secret-mounted-native-https-oauth-protects-real-kubernetes-broker')
-        args.command=None; args.rest_url=None; args.credentials=None
-        args.keep_work=root/'hub'; args.with_model=False; args.eventing_rest_url=url; args.deadline=45
-        hub=Fixture(args)
-        hub.config['eventing'].update(bearer_token=first,tls_ca_pem=issuer.ca_pem.decode())
-        await hub.start()
+        if args.image:
+            run(ns(['rollout','status','deployment/hub','--timeout=180s']),timeout=200)
+            base='http://127.0.0.1:'+str(args.hub_port)
+            hub_forward=subprocess.Popen(kubectl+ns(['port-forward','service/hub',str(args.hub_port)+':8766','--address','127.0.0.1']),stdout=log,stderr=log)
+            deadline=time.monotonic()+30
+            async with httpx.AsyncClient() as client:
+                while time.monotonic()<deadline:
+                    assert hub_forward.poll() is None
+                    try:
+                        if (await client.get(base+'/health',timeout=2)).status_code==200:break
+                    except httpx.HTTPError:pass
+                    await asyncio.sleep(.2)
+                else:raise AssertionError('Accepted image readiness failed')
+            run(ns(['cp','deployment/hub:/config/initial-admin-password.txt',str(root/'initial-admin-password.txt')]))
+            password=re.search(r'^Password: (.+)$',(root/'initial-admin-password.txt').read_text(),re.M)[1]
+            private(root/'credentials.json',json.dumps({'agents':seed_fixture.tokens,'admin':{'username':'admin','password':password}}).encode())
+            sensitive.extend(list(seed_fixture.tokens.values())+[password])
+            args.rest_url=base;args.credentials=root/'credentials.json';args.keep_work=root/'client'
+            hub=Fixture(args);await hub.start()
+            run(ns(['cp','deployment/hub:/app/manifest.json',str(root/'running-manifest.json')]))
+            assert json.loads((root/'running-manifest.json').read_text())==accepted_manifest
+            image_id=pod('hub')['status']['containerStatuses'][0]['imageID']
+            actual=image_id.rsplit('@',1)[1]
+            raw=subprocess.check_output(['docker','exec',args.kind_node,'ctr','-n','k8s.io','content','get',actual])
+            assert 'sha256:'+hashlib.sha256(raw).hexdigest()==actual
+            assert json.loads(raw)['config']['digest']==args.image
+            evidence.value['runtime_image_ids']['hub']=image_id
+            evidence.value['runtime_hub_image_config_digest']=args.image
+            evidence.value['staging_manifest_sha256']=hashlib.sha256((args.context/'manifest.json').read_bytes()).hexdigest()
+            evidence.value['acceptance_report_sha256']=hashlib.sha256(args.acceptance_report.read_bytes()).hexdigest()
+            follow('deployment/hub')
+            evidence.record('actual-kubernetes-hub-image-and-process-runtime-bind-accepted-artifact-and-complete-specification-manifest')
+        else:
+            args.command=None; args.rest_url=None; args.credentials=None
+            args.keep_work=root/'hub'; args.with_model=False; args.eventing_rest_url=url; args.deadline=45
+            hub=Fixture(args)
+            hub.config['eventing'].update(bearer_token=first,tls_ca_pem=issuer.ca_pem.decode())
+            await hub.start()
         a,b=await hub.agent('red-a'),await hub.agent('red-b')
-        admin=hub.admin(); pid=hub.process.pid
+        admin=hub.admin(); pid=hub_identity()
         await b.call(scoped('project-red','subscribe',mode='raw'))
         original=(await a.call(scoped('project-red','publish',text='Kubernetes secured cursor before Secret rotation')))['publication']
         rows=await poll_until(b,'project-red',{original['id']},45)
@@ -190,7 +271,8 @@ async def main(args):
         assert before>=1 and await checkpoint(status['topic'],first,before)==before
         admin.call({'op':'config_update','patch':{'eventing':{'bearer_token':second}}},mutation=True)
         current=admin.call({'op':'config_get'})['config']
-        for patch in [{'tls_ca_pem':None},{'bearer_token':issuer.token(exp=int(time.time())-3600)}]:
+        expired=issuer.token(exp=int(time.time())-3600);tokens.append(expired)
+        for patch in [{'tls_ca_pem':None},{'bearer_token':expired}]:
             admin.call({'op':'config_update','patch':{'eventing':patch}},mutation=True,expected=409)
             assert admin.call({'op':'config_get'})['config']==current
         issuer.retire('first')
@@ -199,6 +281,16 @@ async def main(args):
             assert time.monotonic()<deadline
             await asyncio.sleep(.2)
         evidence.record('hot-admin-token-rotation-and-retired-jwks-key-denial-preserve-hub-pid-and-committed-cursor',broker_next_offset=before)
+        current=admin.call({'op':'config_get'})['config']
+        unrelated=Issuer(root/'wrong-root',args.issuer_bind)
+        wrong_ca=unrelated.ca_pem.decode();unrelated.close()
+        for patch,status_code in [({'tls_ca_pem':None},409),({'tls_ca_pem':wrong_ca},409),
+            ({'tls_ca_pem':'not a CA certificate'},400),
+            ({'tls_ca_pem':issuer.ca_pem.decode()+(issuer.root/'issuer-key.pem').read_text()},400)]:
+            admin.call({'op':'config_update','patch':{'eventing':patch}},mutation=True,expected=status_code)
+            assert admin.call({'op':'config_get'})['config']==current
+            assert hub_identity()==pid
+        evidence.record('runtime-postrotation-missing-wrong-malformed-and-private-key-ca-updates-fail-without-activation-or-hub-restart')
         # Replace actual private PKCS12 credentials and TLS server certificate in
         # the Kubernetes Secret, then recreate REST pod to activate mounted data.
         old_secret=secret(); old_rest=pod('kafka-rest')['metadata']['uid']
@@ -215,16 +307,18 @@ async def main(args):
         run(ns(['rollout','restart','deployment/kafka-rest']))
         run(ns(['rollout','status','deployment/kafka-rest','--timeout=180s']),timeout=200)
         assert pod('kafka-rest')['metadata']['uid']!=old_rest
+        follow('deployment/kafka-rest')
         await start_forward()
         assert get(second).status_code==200 and get(first).status_code in (401,403)
         assert get(second).json()['data'][0]['cluster_id']==cluster
         assert await checkpoint(status['topic'],second,before)==before
-        assert hub.process.pid==pid and hub.process.poll() is None
+        assert hub_identity()==pid
         evidence.record('live-secret-keystore-password-and-certificate-rotation-plus-rest-pod-replacement-preserve-data-and-cursor')
         old_broker=pod('kafka')['metadata']['uid']; old_pvc=pvc['metadata']['uid']
         run(ns(['delete','pod','kafka-0','--wait=true']),timeout=150)
         run(ns(['rollout','status','statefulset/kafka','--timeout=180s']),timeout=200)
         assert pod('kafka')['metadata']['uid']!=old_broker
+        follow('kafka-0')
         assert obj(ns(['get','pvc','data-kafka-0']))['metadata']['uid']==old_pvc
         deadline=time.monotonic()+40
         while True:
@@ -242,7 +336,7 @@ async def main(args):
         assert all(row.get('publication_id')!=original['id'] for row in rows)
         end=admin.call(scoped('project-red','eventing_status'))['next_offset']
         assert end>before and await checkpoint(status['topic'],second,end)==end
-        assert hub.process.pid==pid and hub.process.poll() is None
+        assert hub_identity()==pid
         evidence.record('broker-pod-replacement-retains-pvc-cluster-original-ack-and-group-checkpoint-with-new-a2a-progress',before=before,after=end)
         evidence.value['jwks_fetches']=issuer.requests
         completed=True
@@ -252,13 +346,23 @@ async def main(args):
     finally:
         if hub:
             await hub.close()
+        if hub_forward:
+            hub_forward.terminate()
+            try:hub_forward.wait(timeout=5)
+            except subprocess.TimeoutExpired:hub_forward.kill();hub_forward.wait(timeout=5)
         if owned:
-            for name in ('kafka','kafka-rest'):
+            for name in (['hub','kafka','kafka-rest'] if args.image else ['kafka','kafka-rest']):
                 with suppress(Exception):
                     run(ns(['logs','-l','app='+name,'--all-containers=true','--prefix=true']))
             stop_forward()
             with suppress(Exception):
                 run(['delete','namespace',args.namespace,'--wait=true','--timeout=120s'],timeout=140)
+        for follower in log_followers:
+            try:follower.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                follower.terminate()
+                try:follower.wait(timeout=5)
+                except subprocess.TimeoutExpired:follower.kill();follower.wait(timeout=5)
         if http:
             http.close()
         if issuer:
@@ -275,7 +379,7 @@ async def main(args):
                     assert time.monotonic()<deadline
                     await asyncio.sleep(.3)
                 logs=(root/'operations.log').read_bytes()
-                if hub:
+                if hub and not args.image:
                     logs+=(hub.root/'stdout.log').read_bytes()+(hub.root/'stderr.log').read_bytes()
                 assert all(value.encode() not in logs for value in tokens+sensitive+['-----BEGIN PRIVATE KEY-----'])
                 evidence.record('owned-namespace-pvcs-pvs-and-forward-cleaned-and-runtime-logs-redact-all-credentials')
@@ -294,7 +398,14 @@ if __name__=='__main__':
     p.add_argument('--issuer-bind',required=True,help='Private host bridge address reachable by cluster pods')
     p.add_argument('--broker-image',required=True)
     p.add_argument('--proxy-image',required=True)
-    p.add_argument('--hub',type=Path,required=True)
+    source=p.add_mutually_exclusive_group(required=True)
+    source.add_argument('--hub',type=Path,help='Native diagnostic artifact')
+    source.add_argument('--image',help='Actual accepted Docker image config ID')
+    p.add_argument('--context',type=Path)
+    p.add_argument('--acceptance-report',type=Path)
+    p.add_argument('--cluster-image',help='Exact accepted image preloaded under unique immutable-derived tag')
+    p.add_argument('--kind-node',help='Explicit owned Kind Docker node for read-only runtime image verification')
+    p.add_argument('--hub-port',type=int,default=18930)
     p.add_argument('--work',type=Path,required=True)
     p.add_argument('--report',type=Path,required=True)
     p.add_argument('--port',type=int,default=18887)

@@ -296,3 +296,5 @@ gate keeps profile2.0 free of recovery operations. This is a compatibility resul
 it provides no runtime qualification for the new recovery feature.
 
 Recovery development checkpoint05 is retained separately in [the admission and unfinished restore reports](../validation/recovery-development-05.json). Admission passed five groups; broader restore, legacy selection and unsafe-input tests retain their exact failures and do not establish complete selective recovery qualification.
+
+The unadmitted recovery development snapshot06 separately passed [actual accepted learned-selection recovery](../validation/recovery-learned-dev06.json): 41 History, eight retrieval, eight Archive, 20 paired replay and three optimizer workflow records, eight labels, the actual selected recipe and qualification, and unrelated newer project data survived target-only restore and hard restart. Preparation used public rollback of an already qualified recipe with zero model calls; a process-local provider network fence blocked connections. This is storage/provenance preservation, not a new live optimizer quality qualification or release admission.

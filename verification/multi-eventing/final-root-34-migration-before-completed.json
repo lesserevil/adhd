@@ -1,0 +1,53 @@
+{
+  "suite": "adhd/multi-eventing-migration@1",
+  "started_at": "2026-10-21T21:57:16.127010+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-legacy-runtime-authored-originals-source-retries-acks-and-pending-work",
+      "passed": true
+    },
+    {
+      "name": "actual-runtime-killed-at-observed-durable-migration-boundary",
+      "passed": true,
+      "stage": "before-completed",
+      "marker_phase": "decided",
+      "signal": "SIGKILL",
+      "kernel_state_before_kill": "stopped",
+      "preserved_backup_sha256": {
+        "hub.json": "9dc05888e3ce2969b31b49fc8e7cb492a0c1fd62ffbb09dd715703bb30d48553",
+        "hub.dets": "1c0788186e56a588be934ff273656cbfae9ebf83c6728a68a76339a0a2a2443a",
+        "hub.dets.snapshot": "1c843994abe5d260382a716dfe8e538d99b860c8fd412fcfb7e2fd6903fd0f4f"
+      },
+      "fault_source_sha256": "05763fb46eec22d4f0c8133a4e62003b4ff2324d22bc82696311b73f19d11226",
+      "fault_library_sha256": "403d213f3c1e74bbf24f8d15c1705fa979761c0b73d77b75021e2228b2379b0e"
+    },
+    {
+      "name": "upgrade-preserves-credentials-originals-source-identities-private-deliveries-acks-and-filter-mode",
+      "passed": true
+    },
+    {
+      "name": "hot-kafka-cutover-never-replays-history-to-new-raw-stream-and-resumes-legacy-filter-work",
+      "passed": true
+    },
+    {
+      "name": "repeated-kill-reopen-migration-is-idempotent-and-acknowledged-deliveries-never-resurrect",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "legacy_artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+  "migration_source_sha256": {
+    "Migration": "abfd2e2326d99f31ef0614262c8cfa9032ffd38e4e99fbf575d304c9a8ec8314",
+    "Config": "6862e6ee5d1883fd0902c464f9f2c7f82983460894b209b76a0ebbb313ac4576",
+    "Storage": "809b339b7e29635f2d048c6ddfade42f31a1938b6280ef36ea8a67ad1beb828a",
+    "Store": "bf1e8146aad05099e17c2f726ebb5b2203f3f27bfd51a07db82f5c705bd60fa9",
+    "CLI": "a3abc68c2bdbe4b82ff844fb9c22d40e04e8b4cc4998dad468b54c21aa10edb2"
+  },
+  "harness_sha256": "f5d64ac70583fcc7a8f27bbd6439af48b7509b67ea9eb1727fe573114fdc5e55",
+  "finished_at": "2026-10-21T21:58:47.239608+00:00"
+}

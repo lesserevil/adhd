@@ -115,6 +115,7 @@ def verify(work,plan):
  if plan.get('bootstrap_dependency'):verify_bootstrap_dependency(work/'bound/bootstrap12',plan['bootstrap_dependency'],plan)
  if plan.get('direct_api_endpoint')and not plan.get('diagnostic_only'):assert plan.get('bootstrap_dependency')and plan.get('controller_direct_api_endpoint')
  assert plan['cluster']=='adhd-netpol-qa40' and plan['network']==plan['cluster']+'-net' and plan['node']==plan['cluster']+'-control-plane'
+ if plan.get('utility_diagnostic'):assert plan['fixture_pods']==1 and plan['routes']==0 and plan.get('bootstrap_dependency')and not plan.get('diagnostic_only')
  assert plan['image']=='sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21'
  assert sha(work/'bound/admission.json')==plan['admission_sha256']
  assert json.loads((work/'bound/image-manifest.json').read_text())['files']['hub.exs']==plan['artifact_sha256']
@@ -134,7 +135,7 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py','kafka_network_policy_cri.py','kafka_network_policy_cri_unit.py'):
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py','kafka_network_policy_cri.py','kafka_network_policy_cri_unit.py','kafka_network_policy_utility.py','kafka_network_policy_utility_unit.py'):
   shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)
@@ -185,6 +186,9 @@ def prepare(args):
  if bootstrap_binding:plan['bootstrap_dependency']=bootstrap_binding
  if route_amendment:plan['route_observer_amendment']=route_amendment
  if not args.diagnostic_only:plan['owned_cri_failure_observer']={'docker_commands':6,'total_commands':32,'total_seconds':60,'total_bytes':8388608,'cgroup_files':['memory.events','memory.events.local','memory.current','memory.max','memory.peak','pids.current','pids.max','pids.events','cpu.max','cpu.stat','cgroup.events'],'scope':'Only exact failed PodUID/containerID on issued Kind node; parent-before-child; unknown layout unsupported/no scan.'}
+ if getattr(args,'utility_diagnostic',False):
+  assert not args.diagnostic_only and bootstrap_binding
+  plan.update(utility_diagnostic=True,fixture_pods=1,routes=0,utility_entry_limits={'commands':16,'bytes':4194304,'original_ready_seconds':30,'per_command_seconds':40},runtime_flags_scope='Record actual duplicate OCI ERL_FLAGS whitelist; do not infer effective override.',scope='Diagnostic-only ONE original192Mi/+S1:1 Pod/namespace, Ready30 plus private CRI/Podparent counters. No CNI18routes/app/Kafka/model qualification.')
  if getattr(args,'controller_direct_api_endpoint',False):
   assert args.direct_api_endpoint and (args.diagnostic_only or bootstrap_binding)
   plan['controller_direct_api_endpoint']={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
@@ -346,16 +350,23 @@ class Executor:
   self.run('load-qa40',[p['tools']['kind']['path'],'load','docker-image','adhd-hub:qa40','--name',p['cluster']],timeout=180)
   assert json.loads(self.docker('qa40-image-after-load','image','inspect','adhd-hub:qa40').stdout)[0]['Id']==p['image']
   argv=[p['tools']['python']['path'],str(self.work/'frozen/tests/kafka_network_policy.py'),'--kubectl',p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG'],'--context',str(self.work/'bound/context'),'--admission-manifest',str(self.work/'bound/admission.json'),'--admission-sha256',p['admission_sha256'],'--image',p['image'],'--cluster-image','adhd-hub:qa40','--kind-cluster',p['cluster'],'--kind-node',p['node'],'--namespace','adhd-netpol-gate40','--policy',str(self.work/'frozen/deploy/k8s/private.yaml'),'--work',str(self.work/'runtime/gate'),'--report',str(self.work/'gate-report.json')]
+  if p.get('utility_diagnostic'):
+   argv=[p['tools']['python']['path'],str(self.work/'frozen/tests/kafka_network_policy_utility.py'),'--kubectl',p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG'],'--kind-node',p['node'],'--cluster-image','adhd-hub:qa40','--namespace','adhd-netpol-utility40','--work',str(self.work/'runtime/gate'),'--report',str(self.work/'gate-report.json')]
   # Private hash-sealed observation authority; never passed to application traffic.
   observed=self.inspect(self.known_node);self.node_owned(observed);self.network_owned(self.inspect(self.known_network,network=True))
   context={'schema':'adhd/policy-owned-node-observer@1','node_id':self.known_node,'network_id':self.known_network,'node_name':p['node'],'node_image':p['node_image']['configuration_digest'],'node_ip':observed['NetworkSettings']['Networks'][p['network']]['IPAddress'],'network_name':p['network'],'owner_nonce':p['owner_nonce'],'cluster':p['cluster'],'docker':p['tools']['docker'],'socket':p['docker_socket'],'docker_config':str(self.work/'bound/docker-config')}
   context_path=self.work/'runtime/node-observer.json';save(context_path,context)
   self.env.update(ADHD_POLICY_NODE_CONTEXT=str(context_path),ADHD_POLICY_NODE_CONTEXT_SHA256=sha(context_path))
   self.run('network-gate',argv,timeout=None)
-  report=json.loads((self.work/'gate-report.json').read_text());assert report['passed'] and report['image_config_identity']==p['image'] and report['policy_sha256']==sha(self.work/'frozen/deploy/k8s/private.yaml')
-  assert len(report['before'])==len(report['after'])==18 and all(r['reachable'] for r in report['before'])
-  assert all(r['reachable']==r['expected_reachable'] for r in report['after']) and len(report['fixture_runtime_images'])==9
-  assert len(report['owned_namespace_cleanup'])==2 and all(r['observed_absent'] for r in report['owned_namespace_cleanup'])
+  report=json.loads((self.work/'gate-report.json').read_text())
+  if p.get('utility_diagnostic'):
+   assert report['diagnostic_only']and report['original_ready_passed']and report['diagnostic_completed']and report['routes_qualified']==0 and report['fixture_pods']==1
+   assert len(report['namespace_cleanup'])==1 and report['namespace_cleanup'][0]['observed_absent']and not report['cleanup_errors']
+  else:
+   assert report['passed'] and report['image_config_identity']==p['image'] and report['policy_sha256']==sha(self.work/'frozen/deploy/k8s/private.yaml')
+   assert len(report['before'])==len(report['after'])==18 and all(r['reachable'] for r in report['before'])
+   assert all(r['reachable']==r['expected_reachable'] for r in report['after']) and len(report['fixture_runtime_images'])==9
+   assert len(report['owned_namespace_cleanup'])==2 and all(r['observed_absent'] for r in report['owned_namespace_cleanup'])
   self.capture_volumes(self.inspect(self.known_node))
   assert self.protected()==before,'Protected existing cluster/network changed'
   return before
@@ -500,7 +511,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--verify-only',action='store_true')
  p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
  for n in ('repo-root','cluster-plan','context','admission-manifest','node-config','oci-inputs'):p.add_argument('--'+n,type=Path)
- p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');p.add_argument('--controller-direct-api-endpoint',action='store_true');p.add_argument('--bootstrap-proof',type=Path);p.add_argument('--bootstrap-proof-sha256');p.add_argument('--route-baseline',type=Path);args=p.parse_args()
+ p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');p.add_argument('--controller-direct-api-endpoint',action='store_true');p.add_argument('--bootstrap-proof',type=Path);p.add_argument('--bootstrap-proof-sha256');p.add_argument('--route-baseline',type=Path);p.add_argument('--utility-diagnostic',action='store_true');args=p.parse_args()
  if args.prepare:prepare(args)
  elif args.verify_only:
   work=args.work.absolute();assert args.plan_sha256 and sha(work/'plan.json')==args.plan_sha256

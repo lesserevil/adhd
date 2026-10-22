@@ -99,8 +99,10 @@ def observe(capture):
  fence('before')
  cri=command('cri-container',['exec',c['node_id'],'crictl','inspect',cid],524288);assert cri[1]==0
  value=json.loads(cri[2]);cid,status,path=container_info(value,pod);capture.save(cri)
+ process=value['info']['runtimeSpec']['process'];environment_flags=[v.split('=',1)[1]for v in process.get('env',[])if v.startswith('ERL_FLAGS=')]
+ assert environment_flags and all(v in ('+S 2:2','+S 1:1')for v in environment_flags)
  routes=paths(path,pod['metadata']['uid'],cid)
- result={'enabled':True,'available':True,'container_id':cid,'pod_uid':pod['metadata']['uid'],'cri_state':{k:status.get(k)for k in ('state','reason','exitCode','createdAt','startedAt','finishedAt')},'cgroup_layout_supported':routes is not None,'cgroup_paths':routes,'container_parent_order':'Exact Pod parent first; preserve its counters even if container cgroup is destroyed.'}
+ result={'enabled':True,'available':True,'container_id':cid,'pod_uid':pod['metadata']['uid'],'cri_state':{k:status.get(k)for k in ('state','reason','exitCode','createdAt','startedAt','finishedAt')},'cgroup_layout_supported':routes is not None,'cgroup_paths':routes,'container_parent_order':'Exact Pod parent first; preserve its counters even if container cgroup is destroyed.','runtime_process_args':process['args'],'runtime_ERL_FLAGS_entries':environment_flags,'effective_ERL_FLAGS':'not inferred from duplicate entries'}
  if routes:
   cg=command('cri-cgroup',['exec',c['node_id'],'sh','-eu','-c',CGROUP_SCRIPT,'adhd-owned-cgroup',*routes],1048576)
   result['cgroup_read_returncode']=cg[1];capture.save(cg)

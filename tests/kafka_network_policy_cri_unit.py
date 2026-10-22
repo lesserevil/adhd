@@ -30,7 +30,7 @@ class Checks(unittest.TestCase):
    with self.assertRaises(AssertionError):m.paths('/ignored',uid,cid)
  def fixture(self):
   pod={'metadata':{'uid':UID,'name':'broker','namespace':'adhd-netpol-owned'},'spec':{'containers':[{'command':['elixir','-e','ORIGINAL'],'env':[{'name':'ERL_FLAGS','value':'+S 1:1'}],'resources':{'limits':{'cpu':'1','memory':'192Mi'}}}]},'status':{'containerStatuses':[{'name':'fixture','containerID':'containerd://'+CID,'imageID':'pinned-image'}]}}
-  value={'status':{'id':CID,'metadata':{'name':'fixture'},'labels':{'io.kubernetes.pod.uid':UID,'io.kubernetes.pod.name':'broker','io.kubernetes.pod.namespace':'adhd-netpol-owned'},'imageRef':'pinned-image'},'info':{'runtimeSpec':{'process':{'args':['elixir','-e','ORIGINAL'],'user':{'uid':1000,'gid':1000}},'linux':{'resources':{'memory':{'limit':201326592}},'cgroupsPath':'/kubepods/pod'+UID+'/'+CID}}}}
+  value={'status':{'id':CID,'metadata':{'name':'fixture'},'labels':{'io.kubernetes.pod.uid':UID,'io.kubernetes.pod.name':'broker','io.kubernetes.pod.namespace':'adhd-netpol-owned'},'imageRef':'pinned-image'},'info':{'runtimeSpec':{'process':{'args':['elixir','-e','ORIGINAL'],'env':['ERL_FLAGS=+S 2:2','ERL_FLAGS=+S 1:1'],'user':{'uid':1000,'gid':1000}},'linux':{'resources':{'memory':{'limit':201326592}},'cgroupsPath':'/kubepods/pod'+UID+'/'+CID}}}}
   return pod,value
  def test_cri_exact_container_pod_image_process_resources(self):
   pod,x=self.fixture();self.assertEqual(m.container_info(x,pod)[0],CID)
@@ -69,7 +69,7 @@ class Checks(unittest.TestCase):
    def save(self,row):self.saved.append(row)
   capture=Fake()
   with patch.object(m,'context',return_value=c):result=m.observe(capture)
-  self.assertTrue(result['available']);self.assertTrue(result['cgroup_layout_supported']);self.assertEqual(len(capture.calls),6);self.assertEqual(capture.fences,['cri-before','cri-after'])
+  self.assertTrue(result['available']);self.assertEqual(result['runtime_ERL_FLAGS_entries'],['+S 2:2','+S 1:1']);self.assertEqual(result['effective_ERL_FLAGS'],'not inferred from duplicate entries');self.assertTrue(result['cgroup_layout_supported']);self.assertEqual(len(capture.calls),6);self.assertEqual(capture.fences,['cri-before','cri-after'])
   cg=next(row for row in capture.calls if row[0]=='cri-cgroup');self.assertEqual(cg[1][-2:],result['cgroup_paths']);self.assertIn('oom_kill 1',capture.saved[3][2].decode());self.assertIn('UNAVAILABLE',capture.saved[3][2].decode())
   cri['info']['runtimeSpec']['linux']['cgroupsPath']='kubelet-kubepods-burstable-pod'+UID.replace('-','_')+'.slice:cri-containerd:'+CID
   capture=Fake()

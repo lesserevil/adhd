@@ -1,0 +1,87 @@
+{
+  "schema": "adhd/development-diagnostic@1",
+  "diagnostic_only": true,
+  "lifecycle_admitted": false,
+  "baseline_artifact_sha256": "1ab074a9d82938c7f73854e70c9c680ca2fe623a4eabd5cfb9217662068d6979",
+  "baseline20s_passed": false,
+  "single_change_overlay_original20s_passed": true,
+  "overlay_checks": 7,
+  "no_deadline_change": true,
+  "findings": [
+    "Broker producer/offset/metadata upstream medians8\u201316ms, consumer longpoll1.006s.",
+    "Local overlay shows Resources acquisition median0.159ms and Store callback median0.002ms; Eventing wire median1.065s with one-second queuing bands.",
+    "OTP27 keepalive selector chooses existing busy handler; three workers queue behind its longpolls. Nonempty request socket_opts bypasses reuse and forces Connection:close in pinned httpc_manager.",
+    "Baseline64requests0close and one idle broker TCP afterdisable. Single-change86requests86close, atmost3relay clients active, zero broker TCPs afterdisable (8samples).",
+    "Only Eventing HTTP reuse changed in causal overlay; original20s gate+hotmove+16acceptedwrites+coldrestart+controlledmodelresume all7pass."
+  ],
+  "runnable_tools": {
+    "tests/kafka_request_timing.py": "fedf61341cbb2963e4ae0ed7f1b1e1ff454712fba7a1854e0a0fe4fb83df6781",
+    "tests/kafka_local_timing.exs": "ea2b6fff32c4beca584f928d2723822ee5bd0a24c91617816a40e4e05fe83ab3",
+    "tests/kafka_socket_lifecycle.py": "98d02214211c07ffc3acaa40ccaa5c5feaac62e36061d4789a07699064adc15f"
+  },
+  "executed_driver_hashes": {
+    "move-http14.py": "c437a55ab3d1fd6f4f4daf3c36e49115c930cc62786c82666da8c2dadb435c9b",
+    "instrument-timing.exs": "ea2b6fff32c4beca584f928d2723822ee5bd0a24c91617816a40e4e05fe83ab3",
+    "socket-idle14.py": "98d02214211c07ffc3acaa40ccaa5c5feaac62e36061d4789a07699064adc15f",
+    "move-progress14.py": "dd9ada31217e2bddf831d6e5342ac02c2ae69cd1771f6968c2a18a959430e2b7"
+  },
+  "driver_note": "Timing relay was executed from ignored temporary copy; committed runnable successor generalizes its import location and adds bounded shutdown draining. Original executed-byte digests retained; not claiming successor bytes were that historical execution. Local instrumentation and socket tools retain exact executed bytes.",
+  "pinned_primary_inputs": {
+    "httpc_manager.erl": "f927d2307956063dae4d0288d0b6180df1ac221bac8b23679e2474ab0e4e2a13",
+    "httpc_internal.hrl": "ba8ea26d3110af1f72d65a525678502bd98cac9defb63d09d773690b3dc11e89"
+  },
+  "reports": [
+    {
+      "path": "verification/project-recovery-timing/hub-http-isolation14-manifest.json",
+      "sha256": "8be670a872156dd15ca4964405ebdeeaa60936fb910708955199a5bdeedf0688"
+    },
+    {
+      "path": "verification/project-recovery-timing/local14-overlay.json",
+      "sha256": "c060bac4f8350de77cabfd483d04bf4742f1c613647a9be05e28d0c3f27f18a4"
+    },
+    {
+      "path": "verification/project-recovery-timing/local14-summary.json",
+      "sha256": "a95f1d9856fa903fae84c58c6de472592664751da79409f5daa2ed71d2baa75b"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-http-durations.json",
+      "sha256": "0292edda129a7678d23a241e102ac1bfbc6055d791be09cbfb1a04398f724ccb"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-http-isolation-durations.json",
+      "sha256": "35e71fdf0d1521f8e970d2dac563e114831d18bf8ede6a9ea94943ef67324f77"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-http-isolation.json",
+      "sha256": "031e1ec2c38d91e8faf58df794e2c26f6a122e6e6c883c76d506d915a611afbb"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-http.json",
+      "sha256": "8e4d8aa7211940fe31217c204b9178d6d2f43784b0b2d1c5ea01ce60501446ef"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-local-timing-http.json",
+      "sha256": "94be78cb5d9d61e8719ec5e5391e6cecfbf4993823e22a0b76d3e7f4fe3c0b86"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-local-timing.json",
+      "sha256": "e2d00a0a39256f4e0a273b0fb3865f7f7d3db70506dd9ebf078a9a67baf1fedc"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-progress.json",
+      "sha256": "17d4778b7fb4b62b65398281a48b72727c2ad4e9d417772fb601885237fe091b"
+    },
+    {
+      "path": "verification/project-recovery-timing/move14-progress.log",
+      "sha256": "bc9bb25b7a7243169fd5eb8fa51df747d3b3a0008236dd54639631127dcd3f54"
+    },
+    {
+      "path": "verification/project-recovery-timing/socket-baseline14.json",
+      "sha256": "4f89981d77a1a2ac3d2842b3812e9cf1483ac86da4051e87f646d0a7d66bac75"
+    },
+    {
+      "path": "verification/project-recovery-timing/socket-isolation14.json",
+      "sha256": "0fef2145822171c33417bf48aaf6896677dce2e3bfd0aa2f19ffeae3e336e71d"
+    }
+  ]
+}

@@ -124,6 +124,19 @@ class Custody(unittest.TestCase):
             with self.assertRaises(AssertionError): m.command(['no-op'], 39)
             launch.assert_not_called()
 
+    def test_selector_construction_failure_still_joins_owned_client(self):
+        child = Mock(pid=123, stdout=Mock(), stderr=Mock())
+        child.poll.return_value = None; child.wait.return_value = -9
+        with patch.object(m.subprocess, 'Popen', return_value=child), \
+             patch.object(m.selectors, 'DefaultSelector', side_effect=OSError('selector unavailable')), \
+             patch.object(m.os, 'getpgid', return_value=123), patch.object(m.os, 'killpg') as kill, \
+             patch.object(m.time, 'monotonic', return_value=0):
+            with self.assertRaisesRegex(OSError, 'selector unavailable'):
+                m.command(['docker', 'exec', 'owned-node', 'ctr'], 30)
+            kill.assert_called_once_with(123, m.signal.SIGKILL)
+            child.wait.assert_called_once_with(timeout=5)
+            child.stdout.close.assert_called_once(); child.stderr.close.assert_called_once()
+
 
 if __name__ == '__main__':
     with patch('subprocess.Popen', side_effect=AssertionError('No process starts')):

@@ -73,9 +73,10 @@ def configuration(raw, descriptor, expected):
 def command(argv, deadline, limit=MAX_CONTENT):
     remaining = deadline - time.monotonic(); assert remaining > 0, 'Image custody deadline'
     child = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
-    streams = selectors.DefaultSelector(); output = {'out': bytearray(), 'err': bytearray()}
+    streams = None; output = {'out': bytearray(), 'err': bytearray()}
     primary = None
     try:
+        streams = selectors.DefaultSelector()
         for name, stream in [('out', child.stdout), ('err', child.stderr)]:
             os.set_blocking(stream.fileno(), False); streams.register(stream, selectors.EVENT_READ, name)
         while streams.get_map():
@@ -100,7 +101,8 @@ def command(argv, deadline, limit=MAX_CONTENT):
         raise
     finally:
         errors = []
-        try: streams.close()
+        try:
+            if streams is not None: streams.close()
         except BaseException as error: errors.append(error)
         try:
             if child.poll() is None:

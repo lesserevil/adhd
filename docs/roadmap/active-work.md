@@ -99,6 +99,19 @@ owned cleanup. Next: finish full recovery, compiled readiness and affected
 integration/deployment gates. Native evidence does not qualify the image's runtime
 behavior.
 
+The successor core13 attempt stopped in its first foundation program after 11
+partial checks: enabling OIDC returned `CONFIG_CONFLICT` with live revision 19
+following the external-file reload exercise. No whole foundation result or later
+core program is qualified by that attempt. The fixture retains a full private
+configuration dictionary from before the successful external reload and restores
+it after its invalid-file check; mutation helpers then obtain revision metadata
+from that file. Review this stale-restoration premise against the live revision
+contract, retain the original false run and cleanup evidence, and synchronize the
+fixture's last-good full configuration after the accepted reload if confirmed.
+The failed request's exact expected revision was not retained; do not invent it or
+change application conflict behavior. Preserve all original assertions, deadlines
+and conflict-denial checks, with no automatic mutation retry.
+
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
 passes28 whole suites/156 checks; its separately verified foundation prefix adds20

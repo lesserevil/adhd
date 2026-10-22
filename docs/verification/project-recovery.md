@@ -121,5 +121,20 @@ old reply cannot create delivery/quarantine or advance the fresh offset. Releasi
 the fresh reply delivers the original once, and its acknowledgement survives cold
 restart. A retired active HTTP request now wakes its waiting owner through the
 existing failure path, and the event worker survives a retired unit's failed error
-recording. Ordinary completed HTTP releases add no cancellation message. Combined14
-and full image/platform qualification remain independently gated.
+recording. Ordinary completed HTTP releases add no cancellation message. The
+[exact combined14 run](../../verification/project-recovery-pending-kafka/native14-manifest.json)
+also passes all five checks; full image/platform qualification remains open.
+The [retirement/link-boundary component report](../../verification/project-recovery/retirement-review14.json)
+binds exact source36-dev14 artifact
+`1ab074a9d82938c7f73854e70c9c680ca2fe623a4eabd5cfb9217662068d6979`
+and six passing isolated checks. Real held HTTP verifies prompt retired-request
+failure before the peer releases its response while Blue keeps its slot;
+twenty ordinary real HTTP completions leave no unmatched failure messages.
+The actual Eventing loop remains alive and begins independent work repeatedly
+when a missing writer rejects both the work and failure-recording callbacks.
+Actual closed staged tables verify both snapshot/checkpoint half-link recovery,
+continued strict rejection of third/different-inode links, and preservation of a
+valid advanced target. These are component checks, separate from the full
+hub/Kafka/crash evidence. An initial harness compile attempt failed on ambiguous
+Elixir `!=` spacing before any application modules ran; the corrected harness is
+bound by the report digest.

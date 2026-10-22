@@ -1,0 +1,67 @@
+{
+  "suite": "federation-v2-recovery-http",
+  "started_at": "2026-10-22T00:24:10.439698+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "authorized-uninitialized-target-is-retryable",
+      "passed": true,
+      "response": {
+        "http_status": 503,
+        "code": "RECOVERY_REQUIRED",
+        "retry_after": "1"
+      }
+    },
+    {
+      "name": "unauthorized-project-pair-remains-hidden",
+      "passed": true,
+      "response": {
+        "http_status": 403,
+        "code": "FORBIDDEN",
+        "retry_after": null
+      }
+    },
+    {
+      "name": "agent-token-cannot-authenticate-as-peer",
+      "passed": true,
+      "response": {
+        "http_status": 401,
+        "code": "UNAUTHORIZED",
+        "retry_after": null
+      }
+    },
+    {
+      "name": "initialized-target-retains-ordinary-not-found",
+      "passed": true,
+      "response": {
+        "http_status": 404,
+        "code": "NOT_FOUND",
+        "retry_after": null
+      }
+    },
+    {
+      "name": "authorized-known-missing-target-is-retryable-after-cold-start",
+      "passed": true,
+      "response": {
+        "http_status": 503,
+        "code": "RECOVERY_REQUIRED",
+        "retry_after": "1"
+      }
+    },
+    {
+      "name": "healthy-other-project-and-global-control-remain-available",
+      "passed": true,
+      "response": {
+        "http_status": 404,
+        "code": "NOT_FOUND",
+        "retry_after": null
+      }
+    }
+  ],
+  "limitations": [
+    "No semantic, Kafka, crash, or admitted-image qualification."
+  ],
+  "lifecycle_admitted": false,
+  "scope": "Real authenticated v2 HTTP; no Kafka or model; owned unknown and missing targets with healthy peer project",
+  "finished_at": "2026-10-22T00:24:52.674312+00:00"
+}

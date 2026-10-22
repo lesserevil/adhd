@@ -4,6 +4,7 @@ Constructors are inert. Native fencing never contacts the denied service; image
 probes execute only after the actual owned application container has started.
 """
 import hashlib
+import copy
 import json
 import os
 from pathlib import Path
@@ -24,7 +25,7 @@ def stop_independently(runtimes):
     return errors
 
 
-def model_endpoints(config):
+def model_endpoints(config, *, require_nonempty=True):
     endpoints = set()
     contexts = [config]
     for project in config.get('projects') or []:
@@ -49,7 +50,7 @@ def model_endpoints(config):
             assert parsed.hostname in ('127.0.0.1', 'localhost', '::1'), 'Non-loopback model endpoint'
             assert not parsed.username and not parsed.password
             endpoints.add((parsed.hostname, parsed.port or (443 if parsed.scheme == 'https' else 80)))
-    assert endpoints, 'No model endpoint isolation witness'
+    if require_nonempty:assert endpoints, 'No model endpoint isolation witness'
     return sorted(endpoints)
 
 
@@ -95,28 +96,37 @@ class NativeProviderFence:
                 'observations': self.observations, 'provider_exports': 0}
 
 
-def isolated_image_argv(base, config):
+def isolated_image_argv(base, config, *, provider_endpoints=None):
     """Pure adaptation: private default bridge and one localhost app mapping."""
     assert base[:2] == ['docker', 'run'] and base[base.index('--network') + 1] == 'host'
     assert config['host'] == '0.0.0.0'
     port = config['port']
     assert type(port) is int and 1024 <= port <= 65535
     assert config['public_url'] == 'http://127.0.0.1:' + str(port)
-    assert all(endpoint_port != port for _, endpoint_port in model_endpoints(config))
+    endpoints=model_endpoints(config) if provider_endpoints is None else provider_endpoints
+    assert endpoints and all(host in ('127.0.0.1','localhost','::1') and type(endpoint_port) is int
+        and 0<endpoint_port<=65535 and endpoint_port!=port for host,endpoint_port in endpoints)
     result = list(base)
     result[result.index('--network') + 1] = 'bridge'
     return result[:-1] + ['--publish', '127.0.0.1:' + str(port) + ':' + str(port), result[-1]]
 
 
 class IsolatedWorkflowImage(OwnedImage):
-    def __init__(self, image, manifest, root):
+    def __init__(self, image, manifest, root, *, historical_provider_config=None):
         super().__init__(image, manifest, root)
         self.config_file = None
         self.isolation_observations = []
+        self.historical_provider_config=copy.deepcopy(historical_provider_config)
+
+    def isolation_endpoints(self,config):
+        if self.historical_provider_config is None:return model_endpoints(config)
+        return sorted(set(model_endpoints(self.historical_provider_config)) |
+            set(model_endpoints(config,require_nonempty=False)))
 
     def argv(self, config_file):
         self.config_file = Path(config_file)
-        return isolated_image_argv(super().argv(config_file), json.loads(self.config_file.read_text()))
+        config=json.loads(self.config_file.read_text())
+        return isolated_image_argv(super().argv(config_file),config,provider_endpoints=self.isolation_endpoints(config))
 
     def observe(self):
         super().observe()
@@ -130,8 +140,10 @@ class IsolatedWorkflowImage(OwnedImage):
         assert namespace != os.readlink('/proc/self/ns/net')
         executable = self.docker('exec', self.name, 'readlink', '/proc/1/exe').stdout.decode().strip()
         assert Path(executable).name in ('beam.smp', 'beam')
+        cmdline=self.docker('exec',self.name,'cat','/proc/1/cmdline').stdout
+        assert b'/app/hub.exs' in cmdline.split(b'\0') and json.dumps(['serve',str(self.config_file)]).encode() in cmdline.split(b'\0')
         assert row['State']['Pid'] > 0
-        endpoints = model_endpoints(config)
+        endpoints = self.isolation_endpoints(config)
         probe = ('[host,port]=System.argv(); '
                  'case :gen_tcp.connect(String.to_charlist(host),String.to_integer(port),[:binary,active: false],1000) do '
                  '{:error,:econnrefused}->IO.puts("isolated-model-port-refused"); '
@@ -141,8 +153,11 @@ class IsolatedWorkflowImage(OwnedImage):
             assert observed == b'isolated-model-port-refused\n'
         self.isolation_observations.append({'container_id': row['Id'], 'host_vm_pid': row['State']['Pid'],
             'image_config_identity': row['Image'], 'network_mode': 'bridge', 'private_network_namespace': namespace,
+            'vm_cmdline_sha256':hashlib.sha256(cmdline).hexdigest(),
             'localhost_published_app_port': config['port'], 'model_endpoints_refused_inside_namespace':
-            [{'host': host, 'port': endpoint_port} for host, endpoint_port in endpoints], 'provider_exports': 0})
+            [{'host': host, 'port': endpoint_port} for host, endpoint_port in endpoints],
+            'effective_current_model_endpoints':[{'host':host,'port':port} for host,port in model_endpoints(config,require_nonempty=False)],
+            'historical_provider_route_proof':self.historical_provider_config is not None,'provider_exports': 0})
 
     def identity(self):
         result = super().identity()

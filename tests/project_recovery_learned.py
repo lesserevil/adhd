@@ -25,6 +25,26 @@ from multi_workflow_upgrade import wait
 from project_recovery_acceptance import Recovery, BLUE
 from project_recovery_restore import offline_bundle
 from project_recovery_state import canonical, digest, exact, route, snapshot
+from workflow_provider_isolation import IsolatedWorkflowImage, model_endpoints
+from image_filesystem_fault import RetainedImage
+
+
+class IsolatedRecoveryImage(IsolatedWorkflowImage):
+    """Retain paused learned-state target in an actual private model namespace."""
+    stop=RetainedImage.stop
+    authoritative_absence=staticmethod(RetainedImage.authoritative_absence)
+
+    def __init__(self,image,manifest,root,historical_config):
+        super().__init__(image,manifest,root,historical_provider_config=historical_config)
+        self.armed=False;self.last_exit_code=None
+
+    def argv(self,config_file):
+        result=super().argv(config_file);result.remove('--rm');return result
+
+    def identity(self):
+        result=super().identity()
+        result.update(cleanup_blocked=getattr(self,'cleanup_blocked',False),retained_exit_code=self.last_exit_code)
+        return result
 
 
 class LegacyFixture(Fixture):
@@ -85,6 +105,7 @@ def fence(args, f, config):
     parsed = urlsplit(url)
     assert parsed.hostname in {'127.0.0.1', 'localhost', '::1'}
     port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+    assert {value for _,value in model_endpoints(config)}=={port}, 'Single-port native fence must cover every effective model route'
     library = f.root / 'no-provider.so'
     source = Path(__file__).with_name('project_recovery_no_provider.c')
     subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-shared', '-fPIC', '-O2',
@@ -141,6 +162,7 @@ async def checks(args, f, evidence):
             if path.is_file() and path.name.startswith(offline.name):
                 shutil.copy2(path, f.root / path.name)
         config = producer.config
+        historical_provider_config=copy.deepcopy(config)
         legacy_state = snapshot(f.root / (offline.name + '.snapshot'))
         project = config['project_id']
         assert project != BLUE
@@ -156,6 +178,9 @@ async def checks(args, f, evidence):
             {'id': BLUE, 'name': 'Unrelated project', 'status': 'active', 'description': '', 'settings': {}}]
         config['agent_projects'] = {name: [project] for name in config['agents']}
         f.config = config; f.tokens = config['agents']
+        if args.image:
+            f.config['host']='0.0.0.0'
+            f.image_runtime=IsolatedRecoveryImage(args.image,args.image_manifest,f.root,historical_provider_config)
         f.file.write_text(json.dumps(config)); f.file.chmod(0o600)
         await f.start()
         r = Recovery(f, args.recovery_schema)

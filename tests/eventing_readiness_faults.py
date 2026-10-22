@@ -54,8 +54,59 @@ def reap_owned_native(fixture,identity):
     assert process.poll()is not None
 
 
+def sanitized_case_diagnostic(case,proxy,operation,elapsed,config,primary,cleanup_types):
+    """Bounded public-policy trace only; never retain paths, bodies or identities."""
+    states={'queued','verifying','ready','applying','decided','complete','failed'}
+    codes={'RESTORE_INVALID_BACKUP','RESTORE_CONFLICT','RESTORE_STALE_PLAN','RESTORE_TIMEOUT','RESTORE_IO_ERROR','RESTORE_UNAVAILABLE','RECOVERY_REQUIRED'}
+    reasons={'hash','schema','identity','alias','owner_missing','owner_changed','owner_unprovable','populated','missing_admission','partial_target','path','revision','route','expired','limits','io','transport','timeout','decision_integrity','snapshot_integrity'}
+    def number(value,maximum):
+        return value if type(value)in(int,float)and 0<=value<=maximum else None
+    def typename(value):
+        return value if isinstance(value,str)and len(value)<=64 and value.isidentifier()else 'UnknownError'
+    def policy(value):
+        if not isinstance(value,dict):return None
+        if value.get('invalid_data')is True:return {'invalid_data':True}
+        result={}
+        for key in ('cleanup_policy','retention_ms'):
+            rows=value.get(key,[]);rows=rows if isinstance(rows,list)else[];safe=[]
+            for row in rows[:8]:
+                if key=='cleanup_policy'and row in ('delete','compact'):safe.append(row)
+                elif key=='retention_ms'and isinstance(row,str)and len(row)<=19 and (row=='-1'or row=='0'or row.isascii()and row.isdecimal()and row[0]!='0')and -1<=int(row)<=9223372036854775807:safe.append(row)
+                elif isinstance(row,dict)and isinstance(row.get('invalid_value_type'),str)and row.get('invalid_value_type')in {'str','int','float','bool','dict','list','NoneType'}:safe.append({'invalid_value_type':row['invalid_value_type']})
+                else:safe.append({'invalid_value':True})
+            result[key]=safe
+            if len(rows)>8:result[key+'_truncated']=True
+        return result
+    events=list(proxy.events)if proxy is not None else[];safe_events=[]
+    for event in events[:256]:
+        if not isinstance(event,dict):continue
+        safe_events.append({'at':number(event.get('at'),1e12),
+            'method':event.get('method')if event.get('method')in ('GET','POST','DELETE')else None,
+            'category':event.get('category')if event.get('category')in ('metadata','configs','alter','offsets')else None,
+            'status':event.get('status')if type(event.get('status'))is int and 100<=event['status']<=599 else None,
+            'selected_create':event.get('selected_create')is True,'injected':event.get('injected')is True,
+            'actual_configuration':policy(event.get('actual_configuration')),
+            'durable_transaction_present':event.get('durable_transaction_present')if type(event.get('durable_transaction_present'))is bool else None})
+    selected=None
+    if isinstance(operation,dict):
+        failure=operation.get('failure');safe_failure=None
+        if isinstance(failure,dict):
+            safe_failure={'code':failure.get('code')if isinstance(failure.get('code'),str)and failure.get('code')in codes else None,
+                'reason':failure.get('reason')if isinstance(failure.get('reason'),str)and failure.get('reason')in reasons else None,
+                'retryable':failure.get('retryable')if type(failure.get('retryable'))is bool else None}
+        selected={'state':operation.get('state')if isinstance(operation.get('state'),str)and operation.get('state')in states else None,'failure':safe_failure}
+    eventing=config.get('eventing',{})if isinstance(config,dict)else{}
+    recovery=config.get('recovery',{})if isinstance(config,dict)else{}
+    return {'case':case,'selected_operation':selected,'elapsed_seconds':number(elapsed,3600),
+        'eventing_timeout_ms':number(eventing.get('timeout_ms'),1000000000),
+        'recovery_timeout_ms':number(recovery.get('timeout_ms'),1000000000),
+        'events':safe_events,'event_count':len(events),'events_truncated':len(events)>256,
+        'assertion_or_primary_type':typename(type(primary).__name__)if primary is not None else None,
+        'cleanup_failure_types':[typename(v)for v in cleanup_types[:16]],'cleanup_types_truncated':len(cleanup_types)>16}
+
+
 async def run_case(args,case,e):
-    proxy=None;f=None;native_identity=None;primary=None
+    proxy=None;f=None;native_identity=None;primary=None;operation=None;started=None;elapsed=None
     try:
         local=copy.copy(args);local.keep_work=(args.keep_work/case)if args.keep_work else None
         f=Fixture(local,initialize_projects=False)
@@ -172,6 +223,7 @@ async def run_case(args,case,e):
         primary=error
         raise
     finally:
+        diagnostic_elapsed=elapsed if elapsed is not None else(time.monotonic()-started if started is not None else None)
         failures=[]
         if f is not None and not f.image_runtime and f.process is not None and f.process.poll()is None and native_identity is None:
             try:native_identity=owned_native_identity(f.process)
@@ -192,6 +244,9 @@ async def run_case(args,case,e):
                 assert native_identity['reaped']
                 e.value.setdefault('native_runtime_cases',{})[case]=native_identity
             e.value.setdefault('proxy_cleanup',[]).append({'case':case,'constructed':proxy is not None,'handlers':proxy.handlers if proxy else 0,'thread_alive':proxy.thread.is_alive()if proxy else False,'failures':proxy.failures if proxy else[],'cleanup_failure_types':failures})
+        except BaseException as error:failures.append(type(error).__name__)
+        try:
+            e.value.setdefault('case_diagnostics',{})[case]=sanitized_case_diagnostic(case,proxy,operation,diagnostic_elapsed,f.config if f is not None else{},primary,failures)
             e.write()
         except BaseException as error:failures.append(type(error).__name__)
         if failures:

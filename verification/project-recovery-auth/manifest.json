@@ -1,0 +1,22 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "cases": 9,
+  "lifecycle_admitted": false,
+  "scope": "Existing auth lifecycle regression under explicit auth-only fixture: project initialization disabled because this suite accepts no project data. Actual bootstrap/password/session expiry, OIDC fixture outage and config failure; no model/Kafka calls.",
+  "artifact_sha256": "1ab074a9d82938c7f73854e70c9c680ca2fe623a4eabd5cfb9217662068d6979",
+  "harness": {
+    "path": "tests/auth_lifecycle.py",
+    "sha256": "f4ca59ebbe89cff09d33c79d190673d6bedbf03b8dbcaee79ba5af542bf0afba"
+  },
+  "inputs": {
+    "tests/foundation_acceptance.py": "994f0e7baa27d68ed56dd91017191b07a8ff6f5104e10b1a2d52accb7fc0364b",
+    "tests/multi_workflow_upgrade.py": "def7e5e89ce4ee383ec53722c8936fe50635294f1cb5b48d3e2c6d1f110a77d9"
+  },
+  "dependency_revision_note": "Foundation helper loaded from5d5d062 before later relocation-main fixture-only edits; Runtime code remained unchanged.",
+  "report": {
+    "path": "verification/project-recovery-auth/native14.json",
+    "sha256": "960c11b7c0a929ada54a002a51d8a7d27d1e06f919cd42253e4119fdef9ac9a9"
+  },
+  "command": "python tests/auth_lifecycle.py --command JSON_ARGV --report REPORT"
+}

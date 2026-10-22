@@ -1,0 +1,30 @@
+{
+  "schema": "adhd/cni-static-fixture-preparation@1",
+  "runtime_executed": false,
+  "compiler_executed": false,
+  "root_policy_commit": "b7416fe",
+  "original_gate_sha256": "ffc486039d78b72e09cbc8feb2a327471d6101afb1591bf4606580f44f692d3d",
+  "files": {
+    "tests/kafka_network_policy.py": "b6e462cf5293e06e2ee2f419bb105db5f8bb2d145a85fe1f5323429aac4c0116",
+    "tests/network_policy_static.py": "e03d6e2d356a5252b1fe945b96346e9a6cd926ad1db072261b13f71e88c275af",
+    "tests/network_policy_tcp.c": "abad9ee2e4fd61ae9f0b881d9411387f9e9843bfe3e318450bbaac28c63f9e5c",
+    "tests/network_policy_static_prepare.py": "4eed8c5cb38f10d0dc80cf1f9bceea58cbc977fadc39aea301333e0b7f7d054d",
+    "tests/network_policy_static_unit.py": "71b11ebe57a0a1c3ff86d478346892b783eb48f9077385d71894e013b778ede8"
+  },
+  "original_assertions_retained": 36,
+  "pure_results": {
+    "new_checks": 5,
+    "existing_checks": 5,
+    "passed": true
+  },
+  "banner_hex": "616468642d706f6c6963792d76310a",
+  "banner_bytes": 15,
+  "required_route_counts": {
+    "pods": 9,
+    "before_reachable": 18,
+    "after_allowed": 5,
+    "after_denied": 13
+  },
+  "build_preparation": "Use network_policy_static_prepare.py with the existing verified host-dependencies.json closure. It reads/verifies only; no compiler invocation. Additional static startup objects/libc/libgcc archives are hash-bound. Actual compile and image protocol probes remain root review gates.",
+  "limits": "No ELF has been built or loaded; source/static pure checks do not establish runtime protocol behavior, image loader compatibility or CNI enforcement. Static mode explicitly requires IPv4, matching the original default inet transport. No BEAM/app/Kafka/OOM conclusion."
+}

@@ -19,6 +19,7 @@ import yaml
 
 from image_qualification_inputs import reviewed_payload
 from kafka_platform_matrix import kube_endpoint
+import network_policy_static as static
 
 
 SERVE = '''
@@ -101,6 +102,16 @@ def pod(name, label, namespace, image):
                                 'capabilities': {'drop': ['ALL']}}}]}}
 
 
+
+def fixture_pod(name, label, namespace, image, helper=False):
+    value = pod(name, label, namespace, image)
+    return static.mount(value) if helper else value
+
+
+def probe_command(host, port, helper=False):
+    return [static.PATH, 'probe', host, str(port)] if helper else ['elixir', '-e', PROBE, '--', host, str(port)]
+
+
 def probe_result(result):
     assert result.returncode == 0, 'Probe execution failed; this is not an observed policy denial'
     assert not result.stderr.strip(), 'Unexpected probe diagnostics'
@@ -119,6 +130,11 @@ def namespace_delete(namespace, uid):
 
 
 def main(args):
+    helper_path = getattr(args, 'static_helper', None)
+    helper_sha = getattr(args, 'static_helper_sha256', None)
+    assert bool(helper_path) == bool(helper_sha)
+    helper_bytes = static.read_helper(helper_path, helper_sha) if helper_path else None
+    helper_records = []
     root = args.work.absolute()
     assert root.resolve() == root and not root.exists()
     assert re.fullmatch(r'adhd-netpol-[a-z0-9]+(?:-[a-z0-9]+)*', args.namespace) and len(args.namespace) <= 55
@@ -175,10 +191,19 @@ def main(args):
             actual = read(['get', 'namespace', namespace])
             assert actual['metadata']['labels']['adhd-policy-owner'] == owner
             created[namespace] = actual['metadata']['uid']
+        if helper_bytes is not None:
+            for namespace, uid in created.items():
+                expected = static.configmap(namespace, uid, owner, helper_bytes)
+                checked(['create', '-f', '-'], json.dumps(expected).encode())
+                actual = read(['-n', namespace, 'get', 'configmap', static.NAME])
+                helper_records.append((expected, static.verify_configmap(actual, expected)))
+            report['static_helper'] = {'sha256': helper_sha,
+                'scope': 'TCP protocol only; no BEAM or application qualification',
+                'configmaps': [{'namespace': x['metadata']['namespace'], 'uid': uid} for x, uid in helper_records]}
         for name, label in PODS.items():
-            checked(['create', '-f', '-'], json.dumps(pod(name, label, args.namespace, args.cluster_image)).encode())
+            checked(['create', '-f', '-'], json.dumps(fixture_pod(name, label, args.namespace, args.cluster_image, helper_bytes is not None)).encode())
         for name, label in PEERS.items():
-            checked(['create', '-f', '-'], json.dumps(pod(name, label, args.namespace + '-peer', args.cluster_image)).encode())
+            checked(['create', '-f', '-'], json.dumps(fixture_pod(name, label, args.namespace + '-peer', args.cluster_image, helper_bytes is not None)).encode())
         addresses = {}
         for namespace, names in [(args.namespace, PODS), (args.namespace + '-peer', PEERS)]:
             for name, role in names.items():
@@ -194,6 +219,8 @@ def main(args):
                     raise
                 actual = read(['-n', namespace, 'get', 'pod', name])
                 assert actual['metadata']['namespace'] == namespace and actual['metadata']['labels']['app'] == role
+                if helper_bytes is not None:
+                    static.verify_mount(actual, fixture_pod(name, role, namespace, args.cluster_image, True))
                 statuses = actual['status']['containerStatuses']
                 assert len(statuses) == 1 and statuses[0]['ready'] and statuses[0]['restartCount'] == 0
                 observed_image = statuses[0]['imageID'].removeprefix('docker-pullable://')
@@ -203,6 +230,8 @@ def main(args):
                 report['fixture_runtime_images'].append({'namespace': namespace, 'pod': name,
                     'pod_uid': actual['metadata']['uid'], 'runtime_image_id': observed_image,
                     'image_config_identity': actual_image['status']['id'], 'role': role})
+                address = ipaddress.ip_address(actual['status']['podIP'])
+                assert helper_bytes is None or address.version == 4, 'Static fixture requires original IPv4 transport'
                 ipaddress.ip_address(actual['status']['podIP'])
                 addresses[name] = actual['status']['podIP']
         routes = ROUTES + CROSS_ROUTES
@@ -211,8 +240,7 @@ def main(args):
             namespace = args.namespace + '-peer' if source in PEERS else args.namespace
             remaining = 40 if deadline is None else deadline - time.monotonic()
             assert remaining > 0, 'Policy convergence deadline'
-            result = probe_result(run(['-n', namespace, 'exec', source, '--', 'elixir', '-e',
-                                       PROBE, '--', addresses[target], str(port)], timeout=min(40, remaining)))
+            result = probe_result(run(['-n', namespace, 'exec', source, '--'] + probe_command(addresses[target], port, helper_bytes is not None), timeout=min(40, remaining)))
             assert deadline is None or time.monotonic() <= deadline, 'Policy convergence deadline'
             return result
 
@@ -235,6 +263,8 @@ def main(args):
                 break
             assert time.monotonic() < deadline, 'Shipped ingress policy not enforced'
             time.sleep(.2)
+        for expected, uid in helper_records:
+            static.verify_configmap(read(['-n', expected['metadata']['namespace'], 'get', 'configmap', static.NAME]), expected, uid)
         for recorded in report['fixture_runtime_images']:
             actual = read(['-n', recorded['namespace'], 'get', 'pod', recorded['pod']])
             assert actual['metadata']['uid'] == recorded['pod_uid']
@@ -290,5 +320,7 @@ if __name__ == '__main__':
         p.add_argument('--' + name, type=Path, required=True)
     for name in ('namespace', 'image', 'cluster-image', 'kind-cluster', 'kind-node', 'admission-sha256'):
         p.add_argument('--' + name, required=True)
+    p.add_argument('--static-helper', type=Path)
+    p.add_argument('--static-helper-sha256')
     p.add_argument('--policy', type=Path, default=Path(__file__).resolve().parents[1] / 'deploy/k8s/private.yaml')
     main(p.parse_args())

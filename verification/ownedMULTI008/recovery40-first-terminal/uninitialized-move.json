@@ -1,0 +1,96 @@
+{
+  "suite": "uninitialized-project-relocation",
+  "started_at": "2026-10-22T06:35:44.203727+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "unexpected-uninitialized-source-file-blocks-hot-rebase-without-config-or-byte-change",
+      "passed": true
+    },
+    {
+      "name": "unexpected-uninitialized-target-file-blocks-hot-rebase-without-config-or-byte-change",
+      "passed": true
+    },
+    {
+      "name": "accepted-hot-move-rebases-proven-empty-route-without-admitting-or-allocating-namespace",
+      "passed": true
+    },
+    {
+      "name": "authenticated-admin-can-initialize-new-project-while-old-storage-is-inaccessible",
+      "passed": true
+    },
+    {
+      "name": "cold-restart-opens-current-routes-and-retains-postmove-accepted-data-with-old-storage-inaccessible",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "No Kafka, model, crash or selective restore qualification; lifecycle admission is independently bound by the parent plan."
+  ],
+  "scope": "NoKafka/noModel public Admin initialization after accepted hot anchor relocation; inaccessible old directory is actual mode000",
+  "lifecycle_admitted": false,
+  "finished_at": "2026-10-22T06:36:56.536493+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "c93ae52b54fcf03051a2c479b5993c31547d89438801e484033dd80d2ca34845",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "c93ae52b54fcf03051a2c479b5993c31547d89438801e484033dd80d2ca34845",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "526680f1ce3b038ddb03c1b52f9afdf2145d6f549323c3bbc5e69c1f335842d4",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "stopped",
+        "container_id": "526680f1ce3b038ddb03c1b52f9afdf2145d6f549323c3bbc5e69c1f335842d4",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-bfa200507ca64a2d",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-f9a70884257242ff",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+}

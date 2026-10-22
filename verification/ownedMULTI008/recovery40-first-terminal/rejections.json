@@ -1,0 +1,141 @@
+{
+  "suite": "project-recovery-rejections",
+  "started_at": "2026-10-22T06:29:08.584981+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "populated-target-cannot-be-merged-or-replaced-by-restore",
+      "passed": true
+    },
+    {
+      "name": "invalid-backup-wrong-hash-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "hash"
+    },
+    {
+      "name": "invalid-backup-wrong-length-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "hash"
+    },
+    {
+      "name": "invalid-backup-unknown-manifest-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "invalid-backup-duplicate-json-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "invalid-backup-symlink-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "path"
+    },
+    {
+      "name": "invalid-backup-hardlink-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "path"
+    },
+    {
+      "name": "invalid-backup-compressed-etf-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "limits"
+    },
+    {
+      "name": "invalid-backup-unknown-snapshot-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "rotated-unowned-agent-credential-cannot-inherit-retained-private-state",
+      "passed": true,
+      "reason": "owner_unprovable"
+    },
+    {
+      "name": "configuration-change-invalidates-reviewed-plan-without-rewriting-its-digest-or-opening-target",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "harness_sha256": "5f52d1994395a776ea8dbcd9dee8c9dc5a4488fd7e8c394f98cf61dda53635a6",
+  "finished_at": "2026-10-22T06:31:01.607222+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "9e112db8ba6b3ef8a2e4438f3f544ff8b99e38f14cd307f7454a655433952466",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "9e112db8ba6b3ef8a2e4438f3f544ff8b99e38f14cd307f7454a655433952466",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "45a856d38d561162ff881d30da6f01b028c35151683d38c4f7cf647142a51cbd",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "45a856d38d561162ff881d30da6f01b028c35151683d38c4f7cf647142a51cbd",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "48df2a7335287ec609f786e7abd6778c475bae75144db8ae3d2a377406425795",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "stopped",
+        "container_id": "48df2a7335287ec609f786e7abd6778c475bae75144db8ae3d2a377406425795",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-61f3c9cfaca44c9b",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-6bbe379f54944edb",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+}

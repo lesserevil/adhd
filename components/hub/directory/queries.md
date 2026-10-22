@@ -42,6 +42,17 @@ established owner with a fresh canonical claim may answer despite unrelated
 directory outages, with incomplete coverage reported explicitly. Unknown initial
 ownership waits for complete visible directory observations before choosing an
 owner. No late result after cancellation/deadline. Preserve old messageId replay results.
+An already accepted and dispatched pending source job retains its pinned owner,
+query ID and original deadline through restart and recovery. Cache expiry or a
+transient lack of a fresh owner catalog alone MUST keep that result pending, with
+unavailable directory coverage, until the original deadline or a fresh canonical
+revalidation. Do not dispatch or accept answers through stale metadata. Once
+revalidated, resume the original idempotent remote job; do not create a replacement
+remote identity or extend its deadline. This retry rule requires the same owner
+and retained admitted peer from the accepted membership snapshot. Explicit peer
+removal, identity conflict, canonical revocation and expired deadlines retain
+their terminal behavior. A new query without an already dispatched pinned result
+still reports established-owner unavailability under the rules below.
 
 Resolve canonical claims before any source-specific network question dispatch.
 A replica, derived record or alias alone cannot be an owner. A unique currently

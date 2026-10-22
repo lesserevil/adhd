@@ -7,6 +7,7 @@ import re
 import struct
 import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import kafka_network_policy as gate
@@ -30,6 +31,29 @@ class StaticFixture(unittest.TestCase):
                 bad = copy.deepcopy(actual); bad['spec']['containers'][0]['volumeMounts'][0][field] = value
                 with self.assertRaises(AssertionError): helper.verify_mount(bad, expected)
         self.assertEqual(len(gate.PODS) + len(gate.PEERS), 9)
+
+    def test_foreign_mount_shadow_and_service_account_mount(self):
+        expected = gate.fixture_pod('hub', 'hub', 'adhd-netpol-unit', 'tag', True)
+        actual = copy.deepcopy(expected)
+        actual['spec']['containers'][0]['volumeMounts'].append({
+            'name': 'service-account', 'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'readOnly': True})
+        helper.verify_mount(actual, expected)
+        for path in ('/policy-helper/tcp', '/policy-helper', '/', '/policy-helper/child',
+                     '/other/../policy-helper/tcp', '//policy-helper/tcp'):
+            bad = copy.deepcopy(expected)
+            bad['spec']['containers'][0]['volumeMounts'].append({'name': 'foreign', 'mountPath': path})
+            with self.subTest(path=path), self.assertRaises(AssertionError):
+                helper.verify_mount(bad, expected)
+
+    def test_atime_only_change_is_not_source_mutation(self):
+        fields = ('dev', 'ino', 'mode', 'uid', 'gid', 'nlink', 'size', 'mtime_ns', 'ctime_ns')
+        base = dict(zip(('st_' + x for x in fields), range(len(fields))))
+        before = SimpleNamespace(**base, st_atime_ns=1)
+        after = SimpleNamespace(**base, st_atime_ns=2)
+        self.assertEqual(helper.identity(before), helper.identity(after))
+        for field in ('st_mtime_ns', 'st_ctime_ns', 'st_size', 'st_ino'):
+            changed = dict(base); changed[field] += 1
+            self.assertNotEqual(helper.identity(before), helper.identity(SimpleNamespace(**changed, st_atime_ns=2)))
 
     def test_all_original_routes_and_command_boundaries(self):
         routes = gate.ROUTES + gate.CROSS_ROUTES
@@ -75,6 +99,17 @@ class StaticFixture(unittest.TestCase):
             path = Path(directory) / 'tcp'; path.write_bytes(data)
             digest = hashlib.sha256(data).hexdigest()
             self.assertEqual(helper.read_helper(path, digest), data)
+            info = path.stat()
+            fields = {name: getattr(info, name) for name in dir(info) if name.startswith('st_')}
+            fields['st_atime_ns'] += 1
+            with patch.object(helper.os, 'fstat', return_value=SimpleNamespace(**fields)):
+                self.assertEqual(helper.read_helper(path, digest), data)
+            changed = dict(fields); changed['st_mtime_ns'] += 1
+            with patch.object(helper.os, 'fstat', return_value=SimpleNamespace(**changed)):
+                with self.assertRaises(AssertionError): helper.read_helper(path, digest)
+            altered = bytearray(data); altered[-1] = 1; path.write_bytes(altered)
+            with self.assertRaises(AssertionError): helper.read_helper(path, digest)
+            path.write_bytes(data)
             with self.assertRaises(AssertionError): helper.read_helper(path, '0' * 64)
             alias = path.with_name('alias'); alias.symlink_to(path)
             with self.assertRaises(AssertionError): helper.read_helper(alias, digest)

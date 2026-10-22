@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import os
+import posixpath
 from pathlib import Path
 import re
 import stat
@@ -9,6 +10,12 @@ import struct
 
 NAME = 'policy-tcp-helper'
 PATH = '/policy-helper/tcp'
+
+
+def identity(info):
+    # Reading may legitimately update atime. All source identity/content clocks remain bound.
+    return tuple(getattr(info, 'st_' + field) for field in
+        ('dev', 'ino', 'mode', 'uid', 'gid', 'nlink', 'size', 'mtime_ns', 'ctime_ns'))
 
 
 def read_helper(path, expected):
@@ -19,10 +26,10 @@ def read_helper(path, expected):
     assert stat.S_ISREG(before.st_mode) and before.st_uid == os.getuid() and before.st_nlink == 1
     assert 0 < before.st_size <= 1024 * 1024
     with path.open('rb') as stream:
-        assert os.fstat(stream.fileno()) == before
+        assert identity(os.fstat(stream.fileno())) == identity(before)
         data = stream.read(1024 * 1024 + 1)
-        assert os.fstat(stream.fileno()) == before
-    assert path.lstat() == before and hashlib.sha256(data).hexdigest() == expected
+        assert identity(os.fstat(stream.fileno())) == identity(before)
+    assert identity(path.lstat()) == identity(before) and hashlib.sha256(data).hexdigest() == expected
     assert data[:7] == b'\x7fELF\x02\x01\x01' and len(data) >= 64
     assert struct.unpack_from('<H', data, 18)[0] == 62
     offset = struct.unpack_from('<Q', data, 32)[0]
@@ -67,3 +74,13 @@ def verify_mount(actual, expected):
     container = actual['spec']['containers'][0]
     assert container['command'] == [PATH, 'serve']
     assert [v for v in container['volumeMounts'] if v['name'] == NAME] == expected['spec']['containers'][0]['volumeMounts']
+
+    owned = '/policy-helper'
+    for entry in container['volumeMounts']:
+        if entry['name'] == NAME:
+            continue
+        path = entry['mountPath']
+        assert isinstance(path, str) and path.startswith('/')
+        path = posixpath.normpath('/' + path.lstrip('/'))
+        assert not (path == owned or path.startswith(owned + '/') or
+                    owned.startswith(path.rstrip('/') + '/')), 'Foreign mount shadows owned helper'

@@ -1,0 +1,124 @@
+{
+  "suite": "adhd/hot-registry-invariants@1",
+  "started_at": "2026-10-22T04:47:36.416803+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "legacy-default-dry-and-apply-reject-downgrade-removal-and-default-rebinding",
+      "passed": true,
+      "negative_requests": 6
+    },
+    {
+      "name": "legacy-default-file-reload-rejects-downgrade-removal-server-and-default-identity-changes",
+      "passed": true,
+      "proposals": 4
+    },
+    {
+      "name": "legacy-default-cold-restart-preserves-both-project-originals-acks-registry-and-revision",
+      "passed": true
+    },
+    {
+      "name": "no-default-dry-and-apply-reject-downgrade-removal-and-default-rebinding",
+      "passed": true,
+      "negative_requests": 6
+    },
+    {
+      "name": "no-default-file-reload-rejects-downgrade-removal-server-and-default-identity-changes",
+      "passed": true,
+      "proposals": 4
+    },
+    {
+      "name": "no-default-cold-restart-preserves-both-project-originals-acks-registry-and-revision",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "harness_sha256": "672e39899f42126c822e85b981fb6b4cf40faf4fff20f6b959397433d37b4e58",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_37646429fc57385123f6cae699ee8194_1",
+      "operation_id": "restore_37646429fc57385123f6cae699ee8194_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_37646429fc57385123f6cae699ee8194_3",
+      "operation_id": "restore_37646429fc57385123f6cae699ee8194_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_37646429fc57385123f6cae699ee8194_5",
+      "operation_id": "restore_37646429fc57385123f6cae699ee8194_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime_legacy-default": {
+    "kind": "docker",
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "66150893a694f2b2c92465b414d81821458f4b5fe0d99d526587b2d9e3ecc3a8",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "66150893a694f2b2c92465b414d81821458f4b5fe0d99d526587b2d9e3ecc3a8",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "12688d7d95d115fa45a20a1624173a8404c98fc7bc607540dca8d33845feaf89",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "stopped",
+        "container_id": "12688d7d95d115fa45a20a1624173a8404c98fc7bc607540dca8d33845feaf89",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "runtime_no-default": {
+    "kind": "docker",
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "d24596025739b3220ab50770c108447e61a671e80d0b456b56c4f70d2c9a485e",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "d24596025739b3220ab50770c108447e61a671e80d0b456b56c4f70d2c9a485e",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "9fda68bd46fac449fc0562a97e99a994ed443b4fe09b97cc84f2f68e57d8ccc2",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "stopped",
+        "container_id": "9fda68bd46fac449fc0562a97e99a994ed443b4fe09b97cc84f2f68e57d8ccc2",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "finished_at": "2026-10-22T04:50:10.311406+00:00"
+}

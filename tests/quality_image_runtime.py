@@ -119,7 +119,38 @@ class Relay:
 class QualityCustody(sdk.SDKCustody):
  def start(self,original,obj,*args,**kwargs):
   assert self.is_image(obj),'Quality lane requires actual image; no native fallback'
-  return super().start(original,obj,*args,**kwargs)
+  import federation_acceptance
+  if not isinstance(obj,federation_acceptance.Hub):return super().start(original,obj,*args,**kwargs)
+  # This older fixture keeps its config in memory until its sole original
+  # write inside start. Audit that exact value without moving the write.
+  assert id(obj) not in self.busy;self.busy.add(id(obj));self.instances.append(obj)
+  raw=json.dumps(obj.config).encode();event={'action':'start','kind':'docker','root':str(obj.root),'config_sha256':hashlib.sha256(raw).hexdigest(),
+   'selected_models':sdk.base.audit_models(obj.config,set()),'completed':False,'config_origin':'Exact in-memory config; original start retains sole write'}
+  assert event['selected_models'];self.events.append(event);obj._controlled_custody_attempt=event
+  try:
+   result=original(obj,*args,**kwargs)
+   assert event.get('actual_launch_config_sha256')==event['config_sha256'],'Actual original config write differs from audited memory'
+   self.inspect_image(obj,event);event['completed']=True;obj._controlled_custody_event=event
+   return result
+  except BaseException as error:
+   event['failure_type']=type(error).__name__
+   try:event['startup_failure_diagnostics']=sdk.startup_diagnostics(self,obj)
+   except BaseException as diagnostic:event['startup_diagnostic_error_type']=type(diagnostic).__name__
+   try:self.cleanup_one(obj)
+   except BaseException as cleanup:self.errors.append(type(cleanup).__name__)
+   raise
+  finally:self.busy.remove(id(obj))
+ def original_launch_config(self,obj,path):
+  # Called immediately before the original Popen, after its own write/chmod.
+  expected=obj.root/'config.json';assert path==expected and path.resolve()==expected.absolute()
+  sdk.base.regular(path);raw=path.read_bytes();event=obj._controlled_custody_attempt
+  assert hashlib.sha256(raw).hexdigest()==event['config_sha256']
+  obj.config_file=path;event['actual_launch_config_sha256']=hashlib.sha256(raw).hexdigest()
+ def cleanup_one(self,obj):
+  try:return super().cleanup_one(obj)
+  finally:
+   for handle in getattr(obj,'handles',[]):
+    if not handle.closed:handle.close()
 
 
 def install_live(custody,relay):
@@ -127,6 +158,18 @@ def install_live(custody,relay):
  original=sdk.base.audit_models
  sdk.base.audit_models=lambda value,allowed,path=():original(value,{relay.url},path)
  custody.install()
+ import subprocess
+ previous_popen=subprocess.Popen
+ def original_launch(argv,*args,**kw):
+  if isinstance(argv,(list,tuple)) and argv:
+   try:command=json.loads(argv[-1])
+   except (ValueError,TypeError):command=[]
+   if len(command)==2 and command[0]=='serve':
+    path=Path(command[1])
+    for instance in custody.instances:
+     if id(instance) in custody.busy and isinstance(instance,federation_acceptance.Hub) and path==instance.root/'config.json':custody.original_launch_config(instance,path)
+  return previous_popen(argv,*args,**kw)
+ subprocess.Popen=original_launch
  import federation_acceptance
  for method in ['start','stop']:
   function=getattr(federation_acceptance.Hub,method);wrapper=custody.start if method=='start' else custody.stop

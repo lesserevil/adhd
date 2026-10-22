@@ -54,6 +54,22 @@ class QualityGuards(unittest.TestCase):
   with patch.object(runtime.sdk.SDKCustody,'start') as original:
    with self.assertRaises(AssertionError):c.start(None,object())
    original.assert_not_called()
+ def test_federation_original_write_stays_inside_start_once(self):
+  import federation_acceptance
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory);obj=federation_acceptance.Hub.__new__(federation_acceptance.Hub);obj.root=root;obj.config={'matcher':{'url':'owned'}};obj.image='image';obj.container=None;obj.handles=[]
+   c=runtime.QualityCustody.__new__(runtime.QualityCustody);c.busy=set();c.instances=[];c.events=[];c.errors=[];c.is_image=lambda _:True;c.inspect_image=lambda *a:None;result=object();writes=[]
+   def original(instance):
+    path=root/'config.json';self.assertFalse(path.exists());self.assertFalse(hasattr(instance,'config_file'))
+    path.write_text(json.dumps(instance.config));path.chmod(0o600);writes.append(path);c.original_launch_config(instance,path);return result
+   with patch.object(runtime.sdk.base,'audit_models',return_value=[{'url':'owned'}]):self.assertIs(c.start(original,obj),result)
+   self.assertEqual(len(writes),1);self.assertEqual(obj.config_file,root/'config.json');self.assertTrue(c.events[0]['completed']);self.assertEqual(c.busy,set())
+ def test_federation_launch_rejects_changed_original_config(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory);path=root/'config.json';path.write_text('{}');path.chmod(0o600)
+   obj=SimpleNamespace(root=root,_controlled_custody_attempt={'config_sha256':'0'*64});c=runtime.QualityCustody.__new__(runtime.QualityCustody)
+   with self.assertRaises(AssertionError):c.original_launch_config(obj,path)
+   self.assertFalse(hasattr(obj,'config_file'))
  def test_changed_driver_rejected(self):
   with tempfile.TemporaryDirectory() as directory:
    w=Path(directory);p=w/'run.py';shutil.copyfile(matrix.__file__,p);plan={'driver_sha256':matrix.sha(p)};s=importlib.util.spec_from_file_location('changed_quality',p);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);p.write_text(p.read_text()+'\n# changed\n')

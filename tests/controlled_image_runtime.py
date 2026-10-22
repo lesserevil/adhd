@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import runpy
+import re
 import stat
 import subprocess
 import sys
@@ -40,6 +41,17 @@ def audit_models(value,allowed,path=()):
     elif isinstance(value,list):
         for index,item in enumerate(value):found+=audit_models(item,allowed,path+(str(index),))
     return found
+
+
+def authoritative_absence(result,identifier):
+    """Only the exact Docker missing-object response proves owned absence."""
+    assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',identifier)
+    if result.returncode==0:return False
+    expected=[f'Error: No such object: {identifier}\n',f'Error: No such container: {identifier}\n',
+              f'Error response from daemon: No such container: {identifier}\n']
+    assert result.returncode==1 and result.stderr in [v.encode() for v in expected]
+    assert result.stdout in (b'',b'[]\n')
+    return True
 
 
 def proc_identity(pid):
@@ -79,9 +91,7 @@ class Custody:
         return subprocess.run(['docker',*args],capture_output=True,check=check,timeout=30)
     def absent(self,name):
         result=self.docker('inspect',name,check=False)
-        if result.returncode==0:return False
-        assert b'no such' in result.stderr.lower(),'Docker absence not proven'
-        return True
+        return authoritative_absence(result,name)
     def fixture(self,cls):
         original=cls.__init__;custody=self
         def init(obj,*args,**kwargs):
@@ -109,6 +119,8 @@ class Custody:
         assert row['HostConfig']['PidMode']=='' and row['HostConfig']['NetworkMode']=='host'
         assert row['HostConfig']['ReadonlyRootfs'] is True
         event.update(container_name=name,container_id=row['Id'],host_vm_pid=row['State']['Pid'])
+        launch=next(v for v in reversed(self.launches) if v.get('name')==name)
+        launch['container_id']=row['Id'];self.ledger.write_text(json.dumps(self.launches,indent=2)+'\n')
         manifest=self.docker('exec',name,'cat','/app/manifest.json').stdout
         assert manifest==self.manifest_bytes,'Actual running payload manifest differs'
         files=self.manifest['files'];paths=['/app/'+key for key in files]
@@ -131,7 +143,7 @@ class Custody:
         self.busy.add(id(obj));self.instances.append(obj)
         event={'action':'start','kind':'docker' if self.is_image(obj) else 'native-producer',
                'root':str(obj.root),'config_sha256':None,'completed':False}
-        self.events.append(event)
+        self.events.append(event);obj._controlled_custody_attempt=event
         try:
             config=self.config_path(obj);regular(config)
             assert config.resolve().is_relative_to(Path(self.plan['runtime_cwd']))
@@ -158,11 +170,22 @@ class Custody:
     def cleanup_one(self,obj):
         name=self.name(obj) if self.is_image(obj) else None
         if name:
-            row=self.docker('inspect',name,check=False)
-            if row.returncode==0:
-                actual=json.loads(row.stdout)[0]
-                assert actual['Image']==self.image,'Refuse cleanup of foreign container'
-                self.docker('rm','--force',name)
+            event=getattr(obj,'_controlled_custody_attempt',{})
+            known=event.get('container_id') if event.get('container_name')==name else None
+            inspection=self.docker('inspect',name,check=False)
+            if not authoritative_absence(inspection,name):
+                actual=json.loads(inspection.stdout)[0]
+                assert actual['Image']==self.image,'Refuse cleanup of foreign image'
+                assert any(Path(m['Source'])==Path(obj.root) for m in actual['Mounts']),'Refuse foreign private mount'
+                if known:assert actual['Id']==known,'Owned name now identifies a different container'
+                identifier=known or actual['Id']
+                same=json.loads(self.docker('inspect',identifier).stdout)[0]
+                assert same['Id']==identifier and same['Image']==self.image
+                self.docker('rm','--force',identifier)
+                assert self.absent(identifier)
+                event.update(cleanup_container_id=identifier,known_container_id_used=known is not None)
+            elif known:
+                assert self.absent(known)
             assert self.absent(name)
         process=getattr(obj,'process',None)
         if process and process.poll() is None:
@@ -175,8 +198,15 @@ class Custody:
         self.stopping.add(id(obj));event=getattr(obj,'_controlled_custody_event',None)
         name=self.name(obj) if self.is_image(obj) else None
         try:
+            known=event.get('container_id') if event and event.get('container_name')==name else None
+            if name and known:
+                before=self.docker('inspect',name,check=False)
+                if not authoritative_absence(before,name):
+                    assert json.loads(before.stdout)[0]['Id']==known,'Refuse original stop after owned-name replacement'
+                else:assert self.absent(known)
             result=original(obj,*args,**kwargs)
             if name:assert self.absent(name)
+            if known:assert self.absent(known)
             process=getattr(obj,'process',None)
             assert process is None or process.poll() is not None,'Owned subprocess still running'
             if event:

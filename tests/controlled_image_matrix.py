@@ -10,6 +10,7 @@ import ast
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import stat
@@ -145,6 +146,16 @@ def verify(plan,work):
     assert [v['expected_groups'] for v in plan['jobs']]==list(SUITES.values())
 
 
+def authoritative_absence(result,identifier):
+    assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',identifier)
+    if result.returncode==0:return False
+    expected=[f'Error: No such object: {identifier}\n',f'Error: No such container: {identifier}\n',
+              f'Error response from daemon: No such container: {identifier}\n']
+    assert result.returncode==1 and result.stderr in [v.encode() for v in expected]
+    assert result.stdout in (b'',b'[]\n')
+    return True
+
+
 def cleanup_ledger(job,plan):
     """Exact owned launch cleanup even if a child hits its outer deadline."""
     import signal
@@ -172,12 +183,16 @@ def cleanup_ledger(job,plan):
         if row['kind']=='docker':
             assert row['image']==plan['image_config_identity']
             result=subprocess.run(['docker','inspect',row['name']],capture_output=True,timeout=30)
-            if result.returncode==0:
+            if not authoritative_absence(result,row['name']):
                 actual=json.loads(result.stdout)[0];assert actual['Image']==row['image']
+                if row.get('container_id'):assert actual['Id']==row['container_id'],'Owned name now identifies different container'
                 mounts=actual['Mounts'];assert any(Path(m['Source']).is_relative_to(Path(plan['runtime_cwd'])) for m in mounts)
-                subprocess.run(['docker','rm','--force',row['name']],capture_output=True,check=True,timeout=30)
+                subprocess.run(['docker','rm','--force',actual['Id']],capture_output=True,check=True,timeout=30)
             result=subprocess.run(['docker','inspect',row['name']],capture_output=True,timeout=30)
-            assert result.returncode!=0 and b'no such' in result.stderr.lower(),'Owned container absence not proved'
+            assert authoritative_absence(result,row['name'])
+            if row.get('container_id'):
+                missing=subprocess.run(['docker','inspect',row['container_id']],capture_output=True,timeout=30)
+                assert authoritative_absence(missing,row['container_id'])
         if pid and identity:
             deadline=time.monotonic()+10
             while time.monotonic()<deadline:

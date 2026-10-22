@@ -144,7 +144,7 @@ The new receipt is retained separately from the original admission; the compiled
 image remains unchanged. [Ten independently complete parent items](../../verification/ownedMULTI008/closed-ten-parent-batch05-review/manifest.json)
 are now closed through the proper CLI in dependency order, with current receipt
 verification preserved. Six parents remain open;
-selective recovery and enforcing-CNI traffic remain active qualification work.
+selective recovery and successor application/Kafka integration remain active.
 
 The [leaf-by-leaf closure review](../../verification/final05-leaf-closure-proposal/review.json)
 supports49 additional implementation/evidence checklist closures across the
@@ -157,7 +157,8 @@ Kafka federation and callback proofs. The
 passes all three cases/13 original assertions with unchanged bounds. Two full
 selective-recovery leaves remain open, together with the separate integrated
 deployment and parent completion gates. The documentation receipt/context bridge
-is now independently complete; selective recovery and CNI enforcement remain open.
+is now independently complete. CNI enforcement is qualified separately; selective
+recovery and successor application qualification remain open.
 
 The user has now authorized implementation of all outstanding roadmap work,
 grouped in branches with parallel agents. MULTI-001 through MULTI-008 and
@@ -1179,8 +1180,9 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 - **Leaf qualification:** Four contract/pubsub demonstration leaves are complete
   under [the current evidence map](../../verification/ownedMULTI008/documentation-cli-progress-and-leaf-review/leaf-proposal.json).
-  Complete declared verification, selective recovery, enforcing-CNI traffic and
-  the final receipt/context bridge remain required before parent closure.
+  Enforcing-CNI traffic now passes the separate network gate. Complete declared
+  verification, selective recovery, successor application qualification and the
+  final receipt/context bridge remain required before parent closure.
 
 - **Priority:** P1
 - **Owner:** hub acceptance, protocol conformance and deployment documentation

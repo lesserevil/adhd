@@ -65,6 +65,18 @@ transaction completion and preserved records, acknowledgments, routes and offset
 Repeat a cold start to check idempotence. Existing generic config crashes and
 topic-prefix cutover tests do not cover this retention-specific recovery boundary.
 
+The [complete successor readiness run](../../verification/eventing-readiness-native23-positive/manifest.json)
+now passes all 23 cases against the proper successor export and receipt, with
+zero unrun cases, verified input/tool closure and all owned native processes and
+proxies cleaned up. It preserves the original assertions and deadlines, observes
+the independent positive-control capacity, verifies the actual old/new Kafka
+retention values around the durable decision, and retains the shared-budget queue
+expiry. Both earlier failed runs remain false. Next: complete the separate
+committed-retention failure and unchanged-file cold-recovery companion, then bind
+both passing reports into fresh source admission before staging and independently
+building the successor compiled image. Compiled-image and deployment qualification
+remain open.
+
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
 passes28 whole suites/156 checks; its separately verified foundation prefix adds20

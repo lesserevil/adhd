@@ -26,6 +26,7 @@ from kafka_oauth_custody import NamespaceLease
 from kafka_selective_platform import (prepare_bundle, bundle_tar, exercise_selective_restore,
     verify_selective_restore, missing_target_anchor, MISSING_TARGET_SCRIPT, helper_absent)
 from project_recovery_acceptance import Recovery
+from kafka_deployed_model import run as run_deployed_model, relay_scope
 
 
 BROKER_OLD='confluentinc/cp-kafka@sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e'
@@ -38,6 +39,9 @@ def sha(path):
 
 async def main(args):
     repo=Path(__file__).resolve().parents[1]
+    if args.model_only:
+        assert not args.selective_recovery and not args.broker_patch_upgrade
+        assert not args.model_url and not args.gateway_report and not args.model_window_file
     if args.broker_patch_upgrade and args.platform!='compose':
         raise ValueError('Broker patch upgrade is a Compose-only qualification')
     if not 0 < args.recovery_deadline <= 300:
@@ -49,8 +53,8 @@ async def main(args):
     operations=(root/'operations.log').open('ab')
     evidence=Evidence(args.report,'adhd/accepted-kafka-platform@1')
     evidence.value.update(platform=args.platform,release_qualified=False,
-        selective_recovery_requested=args.selective_recovery,
-        required_application_profile='2.1.0' if args.selective_recovery else None,
+        selective_recovery_requested=args.selective_recovery,model_only_requested=args.model_only,
+        required_application_profile='2.1.0' if args.selective_recovery or args.model_only else None,
         limitations=['One broker and one hub; no replicated availability qualification.',
                     'Baseline private network, no OAuth/SASL qualification in this probe.',
                     'Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate.'])
@@ -318,10 +322,11 @@ async def main(args):
             staging_sha256={name:sha(context/name) for name in ['manifest.json','payload.tar','Dockerfile']},
             input_sha256={str(path.relative_to(repo)):sha(path) for path in [Path(__file__),repo/'deploy/app.compose.yaml',repo/'deploy/events.compose.yaml',repo/'deploy/k8s/events.yaml',repo/'deploy/k8s/hub.yaml',repo/'deploy/init-config.py']})
         evidence.record('actual-image-payload-and-complete-specification-manifest-match-accepted-staging-inputs')
-        mode_report=root/'helper-mode-probe.json'
-        command([sys.executable,str(repo/'tests/kafka_backup_modes.py'),'--image',args.image,'--work',str(root/'helper-mode-probe'),'--report',str(mode_report)],timeout=90)
-        mode_result=json.loads(mode_report.read_text());assert mode_result['passed'] and mode_result['image_config_digest']==args.image
-        evidence.value['offline_helper_mode_probe']={'passed':True,'report_sha256':sha(mode_report)}
+        if not args.model_only:
+            mode_report=root/'helper-mode-probe.json'
+            command([sys.executable,str(repo/'tests/kafka_backup_modes.py'),'--image',args.image,'--work',str(root/'helper-mode-probe'),'--report',str(mode_report)],timeout=90)
+            mode_result=json.loads(mode_report.read_text());assert mode_result['passed'] and mode_result['image_config_digest']==args.image
+            evidence.value['offline_helper_mode_probe']={'passed':True,'report_sha256':sha(mode_report)}
         config_dir=root/'config';data_dir=root/'data';data_dir.mkdir(mode=0o700)
         base='http://127.0.0.1:'+str(args.port)
         command(['python3',str(repo/'deploy/init-config.py'),str(config_dir),'--project-id','project-red','--public-url',base])
@@ -413,20 +418,38 @@ async def main(args):
         credentials=root/'credentials.json';credentials.write_text(json.dumps({'agents':tokens,'admin':{'username':'admin','password':password}}));credentials.chmod(0o600)
         args.rest_url=base;args.credentials=credentials;args.with_model=False;args.keep_work=root/'client'
         args.deadline=args.recovery_deadline
-        args.initialize_projects=args.selective_recovery
-        if args.selective_recovery:
+        args.initialize_projects=args.selective_recovery or args.model_only
+        if args.selective_recovery or args.model_only:
             async with httpx.AsyncClient(trust_env=False) as http:
                 response=await http.get(base+'/protocol/schema',timeout=5)
                 response.raise_for_status()
                 assert response.json()['$id']=='urn:adhd:protocol:2.1'
         fixture=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await fixture.start()
-        if args.selective_recovery:
+        if args.selective_recovery or args.model_only:
             assert len(fixture.initializations)==len(PROJECTS)
             evidence.record('actual-profile21-explicit-admin-initialization-of-all-platform-projects',
                             initialized_projects=len(fixture.initializations))
             args.initialize_projects=False
         admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
         assert admin.call({'op':'config_get'})['config']['matcher'] is None
+        if args.model_only:
+            if args.platform=='compose':
+                row=json.loads(command(['docker','inspect',identities()['hub']],capture=True))[0]
+                network=row['NetworkSettings']['Networks'][args.name+'_default']
+                actual_scope=relay_scope(network['Gateway'],[network['IPAddress']],
+                    {'platform':'compose','hub_container_id':row['Id'],'network_id':network['NetworkID']})
+            else:
+                node=json.loads(command(['docker','inspect',args.kind_node],capture=True))[0]
+                assert node['Config']['Labels']['io.x-k8s.kind.cluster']==args.kind_node.removesuffix('-control-plane')
+                network=node['NetworkSettings']['Networks']['kind']
+                pod=obj(['get','pods','-l','app=hub'])['items'][0]
+                assert pod['metadata']['namespace']==args.name
+                actual_scope=relay_scope(network['Gateway'],sorted({network['IPAddress'],pod['status']['podIP']}),
+                    {'platform':'k8s','node_id':node['Id'],'hub_pod_uid':pod['metadata']['uid'],'network_id':network['NetworkID']})
+            await run_deployed_model(args,root=root,repo=repo,base=base,credentials=credentials,
+                expected=expected,command=command,vm_identity=vm_identity,scope=actual_scope,admin=admin,evidence=evidence)
+            completed=True
+            return
         await b.call(scoped('project-red','subscribe',mode='raw'))
         mid=secrets.token_hex(16)
         publication_command=scoped('project-red','publish',text='Final retained deployment durability '+mid,source={'kind':'slack','id':'qualification','item_id':mid})
@@ -738,6 +761,8 @@ if __name__=='__main__':
     p.add_argument('--port',type=int,default=18890)
     p.add_argument('--kubectl',type=Path)
     p.add_argument('--kubeconfig',type=Path)
+    p.add_argument('--model-only',action='store_true',help='Separate profile2.1 live-filter/backend gate; skips already qualified baseline replacement/backup scenarios')
+    p.add_argument('--model-relay-port',type=int,default=18960,help='Fresh private owned relay port; only used with --model-only')
     p.add_argument('--model-url',help='Optional live short-response endpoint reachable by this deployed hub')
     p.add_argument('--model-window-file',type=Path,help='Optional owned coordination file; wait at most30minutes before live model child')
     p.add_argument('--gateway-report',type=Path,help='Private report from the bounded owned model relay')

@@ -1214,6 +1214,13 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 ### [ ] KAFKA-009 — Qualify Kafka pubsub and update all operating contracts
 
+- **Successor fixture isolation:** The retained Kafka14 basis uses private REST
+  port 18088, which is still owned by its historical qualification service. The
+  existing fresh-service requirement needs a separately selected owned port.
+  Parameterize only that private endpoint, retaining the original default and the
+  healthy baseline endpoints, all 14 programs, 68 checks and deadlines. Verify the
+  selected loopback mapping, service ownership and distinct cluster identities
+  before execution; preserve the historical service and its evidence.
 - **Leaf qualification:** Four contract/pubsub demonstration leaves are complete
   under [the current evidence map](../../verification/ownedMULTI008/documentation-cli-progress-and-leaf-review/leaf-proposal.json).
   Enforcing-CNI traffic now passes the separate network gate. Complete declared

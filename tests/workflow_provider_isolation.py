@@ -14,19 +14,41 @@ from urllib.parse import urlsplit
 from container_fixture import OwnedImage
 
 
+def stop_independently(runtimes):
+    errors = []
+    for name, runtime in runtimes:
+        try:
+            runtime.stop()
+        except BaseException as error:
+            errors.append((name, error))
+    return errors
+
+
 def model_endpoints(config):
     endpoints = set()
-    matcher = config.get('matcher') or {}
-    for name in ('matcher', 'history', 'retrieval', 'archive', 'optimization'):
-        section = config.get(name) or {}
-        url = section.get('url') or matcher.get('url')
-        if not url:
-            continue
-        parsed = urlsplit(url)
-        assert parsed.scheme in ('http', 'https')
-        assert parsed.hostname in ('127.0.0.1', 'localhost', '::1'), 'Non-loopback model endpoint'
-        assert not parsed.username and not parsed.password
-        endpoints.add((parsed.hostname, parsed.port or (443 if parsed.scheme == 'https' else 80)))
+    contexts = [config]
+    for project in config.get('projects') or []:
+        settings = project.get('settings') or {}
+        # Inspect every explicit override as well as inherited root routes. The
+        # union safely covers effective merges and never admits a hidden route.
+        contexts.append({**config, **settings})
+        for name in ('matcher', 'history', 'retrieval', 'archive', 'optimization'):
+            override = settings.get(name)
+            if isinstance(override, dict):
+                inherited = config.get(name) or {}
+                contexts.append({**config, name: {**inherited, **override}})
+    for context in contexts:
+        matcher = context.get('matcher') or {}
+        for name in ('matcher', 'history', 'retrieval', 'archive', 'optimization'):
+            section = context.get(name) or {}
+            url = section.get('url') or matcher.get('url')
+            if not url:
+                continue
+            parsed = urlsplit(url)
+            assert parsed.scheme in ('http', 'https')
+            assert parsed.hostname in ('127.0.0.1', 'localhost', '::1'), 'Non-loopback model endpoint'
+            assert not parsed.username and not parsed.password
+            endpoints.add((parsed.hostname, parsed.port or (443 if parsed.scheme == 'https' else 80)))
     assert endpoints, 'No model endpoint isolation witness'
     return sorted(endpoints)
 

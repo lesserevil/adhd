@@ -14,7 +14,7 @@ import tempfile
 import time
 
 from foundation_acceptance import Runtime, Client, free_port
-from workflow_provider_isolation import NativeProviderFence, IsolatedWorkflowImage
+from workflow_provider_isolation import NativeProviderFence, IsolatedWorkflowImage, stop_independently
 
 
 class UpgradeRuntime(Runtime):
@@ -142,6 +142,7 @@ def main():
     def record(name, **details):
         checks.append({"name": name, "passed": True, **details})
         print("PASS", name, flush=True)
+    primary_error = None
     try:
         producer.start()
         provider_fence.observe(producer.process)
@@ -216,9 +217,27 @@ def main():
             "provider_isolation_helper_sha256": hashlib.sha256(Path(__file__).with_name("workflow_provider_isolation.py").read_bytes()).hexdigest(),
             "image": args.image, "artifact_sha256": hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None,
             "evidence_projection_digest": digest({"jobs": [{"kind": k, "id": i, "value": value} for (k, i), value in expected["jobs"].items()], "labels": expected["labels"]})}
+    except BaseException as error:
+        primary_error = error
+        raise
     finally:
-        target.stop()
-        producer.stop()
+        cleanup_errors = stop_independently((('target', target), ('producer', producer)))
+        if primary_error is not None or cleanup_errors:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(json.dumps({'suite': 'adhd/multi-workflow-upgrade@1', 'passed': False,
+                'checks': checks, 'failure_type': type(primary_error).__name__ if primary_error else None,
+                'cleanup_failures': [{'runtime': name, 'error_type': type(error).__name__}
+                                     for name, error in cleanup_errors],
+                'harness_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                'image': args.image,
+                'retained_private_work': str(root)}, indent=2) + "\n")
+        if cleanup_errors:
+            if primary_error is not None:
+                primary_error.add_note('Independent runtime cleanup failures: ' +
+                    ', '.join(name + ':' + type(error).__name__ for name, error in cleanup_errors))
+            else:
+                raise cleanup_errors[0][1]
+    result['provider_export_fence'] = provider_fence.report()
     if target.owned_image:
         result["runtime"] = target.owned_image.identity()
         result["artifact_sha256"] = result["runtime"]["artifact_sha256"]

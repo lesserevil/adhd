@@ -1,6 +1,6 @@
 """Pure preparation checks; never compiles/starts a runtime or opens a socket."""
 from pathlib import Path
-from workflow_provider_isolation import model_endpoints, NativeProviderFence, isolated_image_argv
+from workflow_provider_isolation import model_endpoints, NativeProviderFence, isolated_image_argv, stop_independently
 
 
 def main():
@@ -25,7 +25,28 @@ def main():
         pass
     else:
         raise AssertionError('Single-port native fence admitted another effective port')
-    print('PASS workflow isolation4: effective routes, bridge mapping, unsafe routes, complete native port coverage')
+    try:
+        model_endpoints({**config, 'projects': [{'id': 'hidden', 'settings': {
+            'history': {'url': 'http://external.invalid:18770'}}}]})
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('Project model override escaped route validation')
+    inherited = {**config, 'projects': [{'id': 'local', 'settings': {
+        'matcher': {'url': 'http://localhost:18770'}, 'history': {'url': None}}}]}
+    assert model_endpoints(inherited) == [('127.0.0.1', 18770), ('localhost', 18770)]
+    calls = []
+    original = RuntimeError('owned target cleanup failure')
+    class FakeRuntime:
+        def __init__(self, name):
+            self.name = name
+        def stop(self):
+            calls.append(self.name)
+            if self.name == 'target':
+                raise original
+    errors = stop_independently((('target', FakeRuntime('target')), ('producer', FakeRuntime('producer'))))
+    assert calls == ['target', 'producer'] and errors == [('target', original)]
+    print('PASS workflow isolation7: effective routes, bridge mapping, unsafe routes, complete native port coverage')
 
 
 if __name__ == '__main__':

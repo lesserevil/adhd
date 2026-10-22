@@ -8,6 +8,7 @@ provider. Live writer loss uses the existing test-only Store DOWN observer.
 from __future__ import annotations
 import asyncio
 import copy
+from datetime import datetime, timezone
 import hashlib
 import http.client
 import json
@@ -187,11 +188,14 @@ async def scenario(args,a,b,ar,relay,model,e,scope,private,label):
     await until(ready,'Directory did not recover after actual offline backup')
     for kind,q in retained.items():
         current=await read(kind,q)
+        remaining=(datetime.fromisoformat(q['deadline_at'].replace('Z','+00:00'))-datetime.now(timezone.utc)).total_seconds()
         e.value.setdefault('cold_restart_pending_queries',[]).append({
             'scenario':label,'kind':kind,'query_id':q['id'],
             'original_deadline_at':q['deadline_at'],'status':current['status'],
+            'remaining_original_deadline_seconds':remaining,
             'source_result_statuses':[v['status'] for v in current.get('results',[])]})
         e.write()
+        assert remaining>0,'Original query expired during fixture cold boot; pending-continuity premise not established'
         assert current['status']=='pending','A nonterminal accepted query stopped before its original deadline during cold restart'
         for field in ('id','project_id','owner_id','question','created_at','deadline_at'):
             assert current[field]==q[field],field

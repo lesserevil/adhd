@@ -67,13 +67,13 @@ the original failed attempt retained. The [image core run](../../verification/im
 passes ten complete suites but exposes an ownership-verification crash; two later
 suites remain unrun. The [narrow successor40 repair](../../verification/ownership40-development/manifest.json)
 passes18 native checks and all three public ownership fault/recovery checks;
-its independent formal admission is running. The final native recovery remainder
-passed 11 more complete suites before its pending-query validator reported a
-baseline-expectation mismatch; the [terminal review](../../verification/project-recovery/development38/native-final18/manifest.json)
-retains that aggregate as failed and proves all14 strict vectors passed. The
-original invocation omitted the existing `--fixed-baseline` flag for the repaired
-artifact. A fresh final-seven batch is running with that flag; all466 frozen inputs,
-11 external bindings, remaining suite order and assertions are unchanged. The reviewed image filesystem/migration ladder
+its independent formal admission is running. The [complete native recovery inventory](../../verification/project-recovery/development38/native-final7/manifest.json)
+now passes all52 unique whole suites, including all15 actual crash variants. Root
+independently verifies its exact original order as13+21+11+7 complete passes. The
+three earlier aggregate runs remain failed; their partial suites are excluded.
+The final invocation uses the existing `--fixed-baseline` flag for the repaired
+query validator. All466 frozen inputs and11 external bindings are unchanged;
+this is native38 evidence, without an image or latest-successor qualification claim. The reviewed image filesystem/migration ladder
 ran serially with17 original jobs /85 expected checks and all five observers
 bound to the passing actual image ABI probes. The [terminal failed run](../../verification/image38-filesystem-plan03-negative/manifest.json) stopped at the after-decision
 store-move custody check: the process tuple changed between pre-STOP observations;

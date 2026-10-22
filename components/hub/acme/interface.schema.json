@@ -1,0 +1,812 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:adhd:acme:1",
+  "title": "ACME001 additive contract input for application profile2.2; not accepted2.1 runtime exports",
+  "$defs": {
+    "Revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "MessageId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "x-maxBytes": 128,
+      "pattern": "\\S"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
+      "maxLength": 20
+    },
+    "NullableTimestamp": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "Domain": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 253,
+      "pattern": "^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    },
+    "Domains": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Domain"
+      },
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "BindAddress": {
+      "type": "string",
+      "maxLength": 45,
+      "anyOf": [
+        {
+          "format": "ipv4"
+        },
+        {
+          "format": "ipv6"
+        }
+      ]
+    },
+    "DirectoryURL": {
+      "type": "string",
+      "minLength": 9,
+      "maxLength": 2048,
+      "format": "uri",
+      "pattern": "^https://[^/?#@\\s]+(?:/[^?#\\s]*)?$"
+    },
+    "Email": {
+      "type": "string",
+      "maxLength": 254,
+      "x-maxBytes": 254,
+      "anyOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[^\\s@\\x00-\\x1f\\x7f]+@[^\\s@\\x00-\\x1f\\x7f]+\\.[^\\s@\\x00-\\x1f\\x7f]+$"
+        }
+      ]
+    },
+    "CACertFile": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-maxBytes": 4096,
+          "pattern": "^[^\\x00-\\x1f\\x7f]+$"
+        }
+      ]
+    },
+    "ACMEConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "directory_url": {
+          "$ref": "#/$defs/DirectoryURL",
+          "default": "https://acme-staging-v02.api.letsencrypt.org/directory"
+        },
+        "email": {
+          "$ref": "#/$defs/Email",
+          "default": ""
+        },
+        "domains": {
+          "$ref": "#/$defs/Domains",
+          "default": []
+        },
+        "accept_terms": {
+          "type": "boolean",
+          "default": false
+        },
+        "renew_before_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90,
+          "default": 30
+        },
+        "retry_seconds": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 86400,
+          "default": 300
+        },
+        "order_timeout_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 600000,
+          "default": 120000
+        },
+        "ca_cert_file": {
+          "$ref": "#/$defs/CACertFile",
+          "default": null
+        }
+      },
+      "required": [
+        "enabled",
+        "directory_url",
+        "email",
+        "domains",
+        "accept_terms",
+        "renew_before_days",
+        "retry_seconds",
+        "order_timeout_ms",
+        "ca_cert_file"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "properties": {
+              "email": {
+                "minLength": 3
+              },
+              "domains": {
+                "minItems": 1
+              },
+              "accept_terms": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TLSConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "host": {
+          "$ref": "#/$defs/BindAddress",
+          "default": "0.0.0.0"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8443
+        },
+        "challenge_host": {
+          "$ref": "#/$defs/BindAddress",
+          "default": "0.0.0.0"
+        },
+        "challenge_port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8080
+        },
+        "acme": {
+          "$ref": "#/$defs/ACMEConfig"
+        }
+      },
+      "required": [
+        "enabled",
+        "host",
+        "port",
+        "challenge_host",
+        "challenge_port",
+        "acme"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "acme": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            },
+            "required": [
+              "acme"
+            ]
+          },
+          "then": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Certificate": {
+      "type": "object",
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "serial": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9a-f][0-9a-f]*)$",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "not_before": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "not_after": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "sha256",
+        "serial",
+        "not_before",
+        "not_after"
+      ],
+      "additionalProperties": false
+    },
+    "LastError": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_NETWORK"
+            },
+            "message": {
+              "const": "Certificate authority connection failed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_AUTHORIZATION"
+            },
+            "message": {
+              "const": "Domain authorization failed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_RATE_LIMIT"
+            },
+            "message": {
+              "const": "Certificate authority rate limit reached."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_ACCOUNT"
+            },
+            "message": {
+              "const": "Certificate authority account is unavailable."
+            },
+            "retryable": {
+              "const": false
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_ORDER_TIMEOUT"
+            },
+            "message": {
+              "const": "Certificate request timed out."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_PROCESS"
+            },
+            "message": {
+              "const": "Certificate client failed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_CERTIFICATE"
+            },
+            "message": {
+              "const": "Issued certificate validation failed."
+            },
+            "retryable": {
+              "const": false
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_STORAGE"
+            },
+            "message": {
+              "const": "Managed certificate state is unavailable."
+            },
+            "retryable": {
+              "const": false
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_CONFIG_CHANGED"
+            },
+            "message": {
+              "const": "Certificate request configuration changed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_RECOVERY"
+            },
+            "message": {
+              "const": "Interrupted certificate request requires recovery."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TLSStatus": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "https_state": {
+          "enum": [
+            "disabled",
+            "waiting",
+            "ready",
+            "expired",
+            "error"
+          ]
+        },
+        "acme_state": {
+          "enum": [
+            "disabled",
+            "idle",
+            "ordering",
+            "backoff",
+            "error"
+          ]
+        },
+        "domains": {
+          "$ref": "#/$defs/Domains"
+        },
+        "active_domains": {
+          "$ref": "#/$defs/Domains"
+        },
+        "certificate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Certificate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_attempt_at": {
+          "$ref": "#/$defs/NullableTimestamp"
+        },
+        "next_attempt_at": {
+          "$ref": "#/$defs/NullableTimestamp"
+        },
+        "last_success_at": {
+          "$ref": "#/$defs/NullableTimestamp"
+        },
+        "last_error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LastError"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "config_revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "enabled",
+        "https_state",
+        "acme_state",
+        "domains",
+        "active_domains",
+        "certificate",
+        "last_attempt_at",
+        "next_attempt_at",
+        "last_success_at",
+        "last_error",
+        "config_revision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "https_state": {
+                "const": "disabled"
+              },
+              "acme_state": {
+                "const": "disabled"
+              },
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "https_state": {
+                "enum": [
+                  "waiting",
+                  "ready",
+                  "expired",
+                  "error"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "waiting"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "certificate": {
+                "type": "null"
+              },
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "ready"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "certificate": {
+                "$ref": "#/$defs/Certificate"
+              },
+              "active_domains": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "expired"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "certificate": {
+                "$ref": "#/$defs/Certificate"
+              },
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "error"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "acme_state": {
+                "const": "backoff"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "next_attempt_at": {
+                "$ref": "#/$defs/Timestamp"
+              },
+              "last_error": {
+                "$ref": "#/$defs/LastError"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "acme_state": {
+                "const": "ordering"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "last_attempt_at": {
+                "$ref": "#/$defs/Timestamp"
+              },
+              "next_attempt_at": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "acme_state": {
+                "const": "disabled"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "next_attempt_at": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TLSStatusCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "tls_status"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false
+    },
+    "TLSRenewCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "tls_renew"
+        },
+        "config_revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "confirm": {
+          "const": true
+        },
+        "message_id": {
+          "$ref": "#/$defs/MessageId"
+        }
+      },
+      "required": [
+        "op",
+        "config_revision",
+        "confirm",
+        "message_id"
+      ],
+      "additionalProperties": false
+    },
+    "TLSRenewResult": {
+      "type": "object",
+      "properties": {
+        "accepted": {
+          "const": true
+        },
+        "config_revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "accepted",
+        "config_revision"
+      ],
+      "additionalProperties": false
+    },
+    "AdminCommand": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TLSStatusCommand"
+        },
+        {
+          "$ref": "#/$defs/TLSRenewCommand"
+        }
+      ]
+    },
+    "TLSRenewUnavailable": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "TLS_RENEW_UNAVAILABLE"
+            },
+            "message": {
+              "const": "Managed ACME renewal is disabled."
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

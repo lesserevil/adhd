@@ -1,0 +1,639 @@
+{
+  "schema": "adhd/storage-recovery@1",
+  "scope": "full",
+  "passed": true,
+  "cases": [
+    {
+      "case": "kill-at-snapshot-data-sync",
+      "passed": true,
+      "snapshot_installed": false,
+      "checkpoint_needed_repair": false,
+      "observer": {
+        "stage": "snapshot-data-sync",
+        "pid": 1,
+        "syscall": "fsync"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "kill-at-snapshot-install",
+      "passed": true,
+      "snapshot_installed": true,
+      "checkpoint_needed_repair": false,
+      "observer": {
+        "stage": "snapshot-install",
+        "pid": 1,
+        "syscall": "rename"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "kill-at-checkpoint-write",
+      "passed": true,
+      "snapshot_installed": true,
+      "checkpoint_needed_repair": true,
+      "observer": {
+        "stage": "checkpoint-write",
+        "pid": 1,
+        "syscall": "pwrite"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "kill-at-checkpoint-sync",
+      "passed": true,
+      "snapshot_installed": true,
+      "checkpoint_needed_repair": true,
+      "observer": {
+        "stage": "checkpoint-sync",
+        "pid": 1,
+        "syscall": "fsync"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "corrupt-checksum-fails-closed-without-reset-and-matched-restore-works",
+      "passed": true
+    },
+    {
+      "case": "stale-snapshot-cannot-roll-back-a-newer-acknowledged-checkpoint",
+      "passed": true
+    },
+    {
+      "case": "validly-checksummed-foreign-identity-snapshot-is-rejected",
+      "passed": true
+    },
+    {
+      "case": "missing-checkpoint-reconstructed-from-complete-valid-snapshot",
+      "passed": true
+    },
+    {
+      "case": "unrelated-checkpoint-corruption-is-not-silently-treated-as-an-interrupted-write",
+      "passed": true
+    },
+    {
+      "case": "snapshot-symlink-is-rejected-without-modifying-its-target",
+      "passed": true
+    }
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "runtime": [
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "20711591ae2059262ca9ef109cc930843cc70ad3f93b052fb876292eb1440e98",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "hard-killed",
+          "container_id": "20711591ae2059262ca9ef109cc930843cc70ad3f93b052fb876292eb1440e98",
+          "exit_code": 137,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "83d467acbf338062687bc876044c040d6658d9a3f803ebdb30f8f01f1480709c",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "83d467acbf338062687bc876044c040d6658d9a3f803ebdb30f8f01f1480709c",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-a35324b1879143ba",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-4149ae22f7314f2e",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false,
+      "observer_source": "storage_write_fault.c",
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "observer_loader_proof_sha256": "ff956dc08be50b5496d1b8ec343201ae6d1efa3c1109ddb04b90208c2603c791",
+      "actual_beam_kernel_custody": [
+        {
+          "container_id": "20711591ae2059262ca9ef109cc930843cc70ad3f93b052fb876292eb1440e98",
+          "source": "storage_write_fault.c",
+          "stage": "snapshot-data-sync",
+          "observer_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "host_process_pid": 3358216,
+          "namespace_pid": 1,
+          "signal_method": "ancestor-pidfd-SIGSTOP",
+          "pid_namespace": "pid:[4026533600]",
+          "executable_basename": "beam.smp",
+          "cmdline_sha256": "ea44e6f5b16747919327bb0d93a9977fcf9a0ed2bb53ae582a5b45b80c1016fc",
+          "process_maps_sha256": "7d8d13230d625dddcfbb84d47ba7020d2d4dd3059bb98da21275fbb6921a5286",
+          "process_maps_witness_phase": "kernel-stopped",
+          "observer_mapping_sha256": "b99b0416ef2c6fe4166309845583141024df42c6fdf629455a87ed22367dffd7",
+          "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "kernel_state": "stopped"
+        }
+      ],
+      "observer_disarmed_after_kill": true,
+      "observer_rearms": [],
+      "offline_helpers": [
+        {
+          "kind": "offline-codec-only",
+          "owned_name": "adhd-fs-codec-80aa1b03d7874a34",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "network": "none",
+          "source_sha256": "ba2e99706e34349237516707802b3bbec5bd3617da893e608acbcfb49fe47441",
+          "exit_code": 0,
+          "codec_failure_type": null,
+          "cleanup_failure_types": [],
+          "observed_absent": true
+        }
+      ]
+    },
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "1fa4d7ca9ce1859d94a13fe479ee30b014833008dae577974c3b92b5a219107c",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "hard-killed",
+          "container_id": "1fa4d7ca9ce1859d94a13fe479ee30b014833008dae577974c3b92b5a219107c",
+          "exit_code": 137,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "86186cfd0d4af6d19a5181140f22572bd7ee494eea4a47e8cf4b4538759813fb",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "86186cfd0d4af6d19a5181140f22572bd7ee494eea4a47e8cf4b4538759813fb",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-5c2db43d5e3d41dc",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-da014fce0a45423e",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false,
+      "observer_source": "storage_write_fault.c",
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "observer_loader_proof_sha256": "ff956dc08be50b5496d1b8ec343201ae6d1efa3c1109ddb04b90208c2603c791",
+      "actual_beam_kernel_custody": [
+        {
+          "container_id": "1fa4d7ca9ce1859d94a13fe479ee30b014833008dae577974c3b92b5a219107c",
+          "source": "storage_write_fault.c",
+          "stage": "snapshot-install",
+          "observer_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "host_process_pid": 3364028,
+          "namespace_pid": 1,
+          "signal_method": "ancestor-pidfd-SIGSTOP",
+          "pid_namespace": "pid:[4026533600]",
+          "executable_basename": "beam.smp",
+          "cmdline_sha256": "3f45812c5de0063301ff3144b8cce2e2407d044cb7c00b7b263a76af2be7b898",
+          "process_maps_sha256": "c5271906b9c373399c4c19a8c9b68b082a53c85c671552fa01df1dc0ece91061",
+          "process_maps_witness_phase": "kernel-stopped",
+          "observer_mapping_sha256": "7bcb67ccd91f0bfe58ece55bdd6dfe88b3394edafc560c0a232fd08d42277a87",
+          "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "kernel_state": "stopped"
+        }
+      ],
+      "observer_disarmed_after_kill": true,
+      "observer_rearms": [],
+      "offline_helpers": [
+        {
+          "kind": "offline-codec-only",
+          "owned_name": "adhd-fs-codec-12aa920855974a66",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "network": "none",
+          "source_sha256": "ba2e99706e34349237516707802b3bbec5bd3617da893e608acbcfb49fe47441",
+          "exit_code": 0,
+          "codec_failure_type": null,
+          "cleanup_failure_types": [],
+          "observed_absent": true
+        }
+      ]
+    },
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "5542d0399ca2f03fce060750ad9a937d446e1f49282ed93e998745c28153bd5b",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "hard-killed",
+          "container_id": "5542d0399ca2f03fce060750ad9a937d446e1f49282ed93e998745c28153bd5b",
+          "exit_code": 137,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "71553d1d0d6154d7b364c54f0ff74850c892a463cb2292c29a34a91196fb63c9",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "71553d1d0d6154d7b364c54f0ff74850c892a463cb2292c29a34a91196fb63c9",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-806dc6273a6f42a3",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-9e47bfddfcc24073",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false,
+      "observer_source": "storage_write_fault.c",
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "observer_loader_proof_sha256": "ff956dc08be50b5496d1b8ec343201ae6d1efa3c1109ddb04b90208c2603c791",
+      "actual_beam_kernel_custody": [
+        {
+          "container_id": "5542d0399ca2f03fce060750ad9a937d446e1f49282ed93e998745c28153bd5b",
+          "source": "storage_write_fault.c",
+          "stage": "checkpoint-write",
+          "observer_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "host_process_pid": 3370864,
+          "namespace_pid": 1,
+          "signal_method": "ancestor-pidfd-SIGSTOP",
+          "pid_namespace": "pid:[4026533600]",
+          "executable_basename": "beam.smp",
+          "cmdline_sha256": "fdbb41f979d76fde0dec080bceba36f85a1f225f3d3b7e51e6c69b01fe2b7f5a",
+          "process_maps_sha256": "1c057b8956617eb75d508ea15f69b5676b31b4fd35bfd75f0a0bd6396423a60a",
+          "process_maps_witness_phase": "kernel-stopped",
+          "observer_mapping_sha256": "fb1abaf1e0da04b9d8d0156db2c1d31fad2f8783bfb108168b637797f981dd1a",
+          "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "kernel_state": "stopped"
+        }
+      ],
+      "observer_disarmed_after_kill": true,
+      "observer_rearms": [],
+      "offline_helpers": [
+        {
+          "kind": "offline-codec-only",
+          "owned_name": "adhd-fs-codec-e9f85976d73d4bb9",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "network": "none",
+          "source_sha256": "ba2e99706e34349237516707802b3bbec5bd3617da893e608acbcfb49fe47441",
+          "exit_code": 0,
+          "codec_failure_type": null,
+          "cleanup_failure_types": [],
+          "observed_absent": true
+        }
+      ]
+    },
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "3f669d1b3d93cf82e9053d6bc7d36d914eade222402bceb3b3ad2077d1629485",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "hard-killed",
+          "container_id": "3f669d1b3d93cf82e9053d6bc7d36d914eade222402bceb3b3ad2077d1629485",
+          "exit_code": 137,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "540fbfa47b598f863be894e94afaafed2fca0dc532901f1fd873837388475ce2",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "540fbfa47b598f863be894e94afaafed2fca0dc532901f1fd873837388475ce2",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-45c9ed086cbe4f38",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-79f8215e0b824874",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false,
+      "observer_source": "storage_write_fault.c",
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "observer_loader_proof_sha256": "ff956dc08be50b5496d1b8ec343201ae6d1efa3c1109ddb04b90208c2603c791",
+      "actual_beam_kernel_custody": [
+        {
+          "container_id": "3f669d1b3d93cf82e9053d6bc7d36d914eade222402bceb3b3ad2077d1629485",
+          "source": "storage_write_fault.c",
+          "stage": "checkpoint-sync",
+          "observer_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "host_process_pid": 3377428,
+          "namespace_pid": 1,
+          "signal_method": "ancestor-pidfd-SIGSTOP",
+          "pid_namespace": "pid:[4026533669]",
+          "executable_basename": "beam.smp",
+          "cmdline_sha256": "02e00c12e194e75d229b1b8a03e44ec6823acf5aade83f54c8e5ecc10f6093ef",
+          "process_maps_sha256": "11f9cbbfb6ee921349ebe7f574ebf1c98b74f227d29b5a812b051b6b2ffd0685",
+          "process_maps_witness_phase": "kernel-stopped",
+          "observer_mapping_sha256": "c93f695d4cfb3a27934babd3b635b349c875e520ae8300a1c724255372cd52e1",
+          "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+          "kernel_state": "stopped"
+        }
+      ],
+      "observer_disarmed_after_kill": true,
+      "observer_rearms": [],
+      "offline_helpers": [
+        {
+          "kind": "offline-codec-only",
+          "owned_name": "adhd-fs-codec-7add7a53678b4ade",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "network": "none",
+          "source_sha256": "ba2e99706e34349237516707802b3bbec5bd3617da893e608acbcfb49fe47441",
+          "exit_code": 0,
+          "codec_failure_type": null,
+          "cleanup_failure_types": [],
+          "observed_absent": true
+        }
+      ]
+    },
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "9a2bd9b6b9c9e7cc3a30842f9239d8976d864a4eccfa926f0443d1deced846cb",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "9a2bd9b6b9c9e7cc3a30842f9239d8976d864a4eccfa926f0443d1deced846cb",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "d786e132ae6f4e281c8d1ab91e8d27681a2e7ff429cfbb2f011f03787d77ba4b",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "d786e132ae6f4e281c8d1ab91e8d27681a2e7ff429cfbb2f011f03787d77ba4b",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "6ea41dade7a498f8e0c062ea72d1e842a1b0d80f910a0115f38f0aa8233cde8a",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "6ea41dade7a498f8e0c062ea72d1e842a1b0d80f910a0115f38f0aa8233cde8a",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "30ed9eb1c3c4f7e67e8da73e4c3c065826a647a735c2de658e134d058d37d344",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "30ed9eb1c3c4f7e67e8da73e4c3c065826a647a735c2de658e134d058d37d344",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "39880d3d230cc693615df7b843c9e19d002ad7b21a248da281ab727b4ea13c16",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "39880d3d230cc693615df7b843c9e19d002ad7b21a248da281ab727b4ea13c16",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "ff34f564bdc2504ff5e063a4a6d0d10eea891430fbe3be459713e71c0dabeb5c",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "ff34f564bdc2504ff5e063a4a6d0d10eea891430fbe3be459713e71c0dabeb5c",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "00b3217d89fae3f9a8c746987555b2947144470c88a5745898e091385410d652",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "00b3217d89fae3f9a8c746987555b2947144470c88a5745898e091385410d652",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "362b148dd86b08ce0af28d82daa4405382df41af6f2b1702e75f82d0d6023ed3",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "362b148dd86b08ce0af28d82daa4405382df41af6f2b1702e75f82d0d6023ed3",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "dace25947b6b9000d46716fd9776ee167cb5c35946750d051e1cb72dbda5ec81",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "dace25947b6b9000d46716fd9776ee167cb5c35946750d051e1cb72dbda5ec81",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "be1d8f2f5a060e7fee76e9c86724c70b4b72119928780f59f834ad5b61eb1b75",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "be1d8f2f5a060e7fee76e9c86724c70b4b72119928780f59f834ad5b61eb1b75",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-90649d7a04bf4013",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-1e97ca4d1632452d",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false,
+      "offline_helpers": [
+        {
+          "kind": "offline-codec-only",
+          "owned_name": "adhd-fs-codec-328102780b9c4918",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "network": "none",
+          "source_sha256": "dda6cefc891cc9fc1d6311b5af478830b491f8e999cf915625fa76c061dfc4cc",
+          "exit_code": 0,
+          "codec_failure_type": null,
+          "cleanup_failure_types": [],
+          "observed_absent": true
+        }
+      ]
+    }
+  ]
+}

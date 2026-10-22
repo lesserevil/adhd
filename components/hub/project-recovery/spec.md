@@ -112,6 +112,12 @@ A closed checkpoint-only source is supported; an unclosed checkpoint requires th
 independently validated authoritative matching snapshot under ordinary interrupted
 write recovery. Full native-state validation must precede adoption staging/decision.
 Do not infer fresh identity from a malformed, foreign or wrong-project survivor.
+The oldest supported schema1 producer did not persist a server ID. Only that
+well-formed historical absence permits provisional server-ID genesis: validate
+its complete raw state and project/aliases under one provisional ID before any
+backup/marker/decision mutation, then reuse that exact ID in the decided
+configuration and adopted registry/generation. A non-null stored ID must match;
+never substitute an ID for malformed identity or any non-schema1 missing header.
 
 Do not chmod an unverified configured path or open historical files natively to
 secure them. Use the verified bytes/state to create owner-private staging and active

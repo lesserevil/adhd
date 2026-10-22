@@ -1,7 +1,7 @@
 {
   "schema": "literate-ai/component-acceptance-oracle@1",
   "component": "hub",
-  "specification_set_identity": "sha256:f1e44bf064169acde83ca4b44e330ef6981a8c115d9e64704f7e3bcec2bc0a57",
+  "specification_set_identity": "sha256:31f1a83b51610f73bbee60048be6ea38819c43e0485ec906ae9cee3ef078aa28",
   "cases": [
     {
       "case_id": "validate-ack-vector",
@@ -1701,6 +1701,277 @@
       "expected_result": {
         "valid": true,
         "op": "create_agent"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-status",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "project_restore_status",
+          "project_id": "verifier-project-cedar"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "project_restore_status"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-retained-operation-status",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "project_restore_status",
+          "project_id": "verifier-project-cedar",
+          "operation_id": "verifier-prior-operation-147"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "project_restore_status"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-implicit-restore-plan",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "project_restore_plan",
+          "project_id": "verifier-project-cedar",
+          "expected_revision": 137,
+          "message_id": "verifier-plan-137",
+          "backup_id": "cedar_backup.137",
+          "manifest_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "allow_missing": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "project_restore_plan"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-explicit-restore-plan",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "project_restore_plan",
+          "project_id": "verifier-project-cedar",
+          "expected_revision": 139,
+          "message_id": "verifier-plan-139",
+          "backup_id": "cedar-backup-139",
+          "manifest_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "allow_missing": false,
+          "mode": "restore"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "project_restore_plan"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-initialize-plan",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "project_restore_plan",
+          "project_id": "verifier-project-cedar",
+          "expected_revision": 149,
+          "message_id": "verifier-initialize-149",
+          "confirm": true,
+          "mode": "initialize"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "project_restore_plan"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-confirmed-apply",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "project_restore_apply",
+          "project_id": "verifier-project-cedar",
+          "expected_revision": 151,
+          "message_id": "verifier-apply-151",
+          "plan_id": "verifier-retained-plan-151",
+          "plan_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "confirm": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "project_restore_apply"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-hot-settings",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_validate",
+          "expected_revision": 157,
+          "patch": {
+            "recovery": {
+              "backup_root": "/var/lib/adhd/verifier-backups",
+              "max_backup_bytes": 67108864,
+              "max_records": 100000,
+              "scan_batch_records": 256,
+              "timeout_ms": 300000,
+              "plan_ttl_ms": 900000,
+              "max_operations": 10000
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_validate"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-partial-default-reset",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_validate",
+          "expected_revision": 163,
+          "patch": {
+            "recovery": {
+              "backup_root": null,
+              "scan_batch_records": null,
+              "max_operations": null
+            }
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_validate"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-all-default-reset",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_validate",
+          "expected_revision": 167,
+          "patch": {
+            "recovery": null
+          }
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_validate"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-source-submit",
+      "arguments": [
+        "validate",
+        {
+          "op": "source_query",
+          "project_id": "verifier-project-cedar",
+          "question": "Which canonical source contains the Cedar build records?",
+          "sources": [
+            {
+              "provider": "github",
+              "host": "github.com",
+              "tenant": "verifier",
+              "resource": "cedar-repository"
+            }
+          ],
+          "deadline_ms": 120000
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "source_query"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-source-result",
+      "arguments": [
+        "validate",
+        {
+          "op": "get_source_query",
+          "project_id": "verifier-project-cedar",
+          "query_id": "verifier-prior-source-query-173"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "get_source_query"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-source-cancel",
+      "arguments": [
+        "validate",
+        {
+          "op": "cancel_source_query",
+          "project_id": "verifier-project-cedar",
+          "query_id": "verifier-prior-source-query-179"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "cancel_source_query"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-source-admin-list",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "query_jobs",
+          "project_id": "verifier-project-cedar",
+          "agent_id": "verifier-agent-cedar",
+          "kind": "source",
+          "limit": 100
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_jobs"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-owned-admin-detail",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "query_job",
+          "project_id": "verifier-project-cedar",
+          "query_id": "verifier-prior-source-query-181"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "query_job"
+      }
+    },
+    {
+      "case_id": "oracle-recovery-confirmed-admin-cancel",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "cancel_query_job",
+          "project_id": "verifier-project-cedar",
+          "query_id": "verifier-prior-source-query-191",
+          "message_id": "verifier-query-cancel-191",
+          "confirm": true
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "cancel_query_job"
       }
     }
   ]

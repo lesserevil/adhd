@@ -1153,7 +1153,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 - **Priority:** P2
 - **Owner:** hub agent integration, A2A contracts and interoperability acceptance
-- **Direction:** Make ADHD compatible with OpenRig so agents in different rigs can exchange project events, messages and knowledge through ADHD.
+- **Direction:** Make ADHD compatible with OpenRig so agents in different rigs can exchange project events, messages and knowledge through ADHD. Preserve this cross-rig compatibility as the multi-project, Kafka and federation work evolves.
 - **Conclusion:** OpenRig and ADHD are complementary: retain OpenRig for agent execution and work coordination, and ADHD for durable information exchange and federation. Preserve A2A as the agent-facing boundary and support independently operated rigs without requiring every participating agent to use OpenRig. The pinned OpenRig integration now uses an external A2A adapter with private rig/seat/project bindings. Native OpenRig A2A support is not assumed.
 - **Depends on:** MULTI-008, KAFKA-009, PROTO-001
 - **Implementation:**

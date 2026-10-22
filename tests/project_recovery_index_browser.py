@@ -58,10 +58,10 @@ async def viewport(args, browser, name, width, height, evidence):
             # Allow the fulfilled fetch promise and its catch to run in-browser.
             await page.evaluate('()=>new Promise(resolve=>setTimeout(resolve,100))')
             alert=await page.get_by_role('alert').inner_text()
-            observation={'viewport':name,'phase':phase,'project':await page.get_by_label('Project',exact=True).input_value(),'alert_text':alert}
-            evidence.value.setdefault('observations',[]).append(observation)
+            phase_observation={'viewport':name,'phase':phase,'project':await page.get_by_label('Project',exact=True).input_value(),'alert_text':alert}
+            evidence.value.setdefault('observations',[]).append(phase_observation)
             captures.append(await capture(page,f.root,phase));evidence.value.setdefault('captures',[]).append(captures[-1]);evidence.write()
-            assert alert=='' and observation['project']==BLUE
+            assert alert=='' and phase_observation['project']==BLUE
             if phase=='view-switch':
                 await expect(page.locator('#content').get_by_role('heading',name='Retrieval index',exact=True)).to_have_count(0)
             else:await expect(page.locator('#content').get_by_role('heading',name=RED,exact=True)).to_have_count(0)

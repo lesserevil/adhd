@@ -1,0 +1,118 @@
+{
+  "suite": "adhd/project-recovery-pending-kafka@1",
+  "started_at": "2026-10-22T01:07:56.759548+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-accepted-pending-event-backed-up-and-old-topic-consumer-response-held",
+      "passed": true
+    },
+    {
+      "name": "same-accepted-event-republished-to-fresh-topic-while-both-real-consumer-replies-are-held",
+      "passed": true,
+      "old_topic": "adhd.3fd53239c55a3469.73786e979410fe19.rcac83c60e4a8fd5a98ab2a384ad973ec.events.v1",
+      "new_topic": "adhd.3fd53239c55a3469.73786e979410fe19.rbf849fb1630f4b4714c9b7aeaf36416b.events.v1"
+    },
+    {
+      "name": "released-old-topic-response-cannot-materialize-or-attach-offset-to-restored-target",
+      "passed": true,
+      "response_transport": "retired_connection"
+    },
+    {
+      "name": "fresh-topic-response-materializes-original-event-once-with-original-publication-identity",
+      "passed": true
+    },
+    {
+      "name": "acknowledgement-and-current-blue-survive-real-cold-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "harness_sha256": "f16b241173ec144febf86beaa12ff1cbe249651c196e4de273339e4391da4ee1",
+  "runner_sha256": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+  "provider_calls": 0,
+  "scope": "Actual real Kafka consumer reply across same-VM target-only restore; isolated native runner, not admitted image/platform qualification",
+  "actual_old_response": {
+    "path": "/consumers/adhd.3fd53239c55a3469.73786e979410fe19.rcac83c60e4a8fd5a98ab2a384ad973ec.events.v1.fanout/instances/adhd-R5LXfg1-nmf79Khm4xd8xQKjp_G34Ud7/records?timeout=1000&max_bytes=262144",
+    "rows": [
+      {
+        "topic": "adhd.3fd53239c55a3469.73786e979410fe19.rcac83c60e4a8fd5a98ab2a384ad973ec.events.v1",
+        "key": "project-red",
+        "value": {
+          "author_id": "bridge",
+          "created_at": "2026-10-22T01:08:18.010Z",
+          "event_id": "publication_a94b270e98a5a92c8e5a28a09db8073e_3",
+          "project_id": "project-red",
+          "project_sequence": 2,
+          "publication": {
+            "author_id": "bridge",
+            "created_at": "2026-10-22T01:08:18.010Z",
+            "data": {},
+            "id": "publication_a94b270e98a5a92c8e5a28a09db8073e_3",
+            "information_type": "message",
+            "occurred_at": "2026-10-22T01:08:18.010Z",
+            "project_id": "project-red",
+            "source": {
+              "id": "bridge",
+              "kind": "agent"
+            },
+            "text": "One accepted event survives physical transport reset."
+          },
+          "publication_id": "publication_a94b270e98a5a92c8e5a28a09db8073e_3",
+          "schema_version": 1,
+          "server_id": "1256d0b2c0c4d66a78355572e61c5add"
+        },
+        "partition": 0,
+        "offset": 0
+      }
+    ],
+    "status": 200,
+    "received_at": 189219.008275823,
+    "released_at": 189250.181303062,
+    "transport": "retired_connection"
+  },
+  "actual_new_response": {
+    "path": "/consumers/adhd.3fd53239c55a3469.73786e979410fe19.rbf849fb1630f4b4714c9b7aeaf36416b.events.v1.fanout/instances/adhd-b3wwVHKJlwRqZtaQSmaBtU5y3cOe0rt0/records?timeout=1000&max_bytes=262144",
+    "rows": [
+      {
+        "topic": "adhd.3fd53239c55a3469.73786e979410fe19.rbf849fb1630f4b4714c9b7aeaf36416b.events.v1",
+        "key": "project-red",
+        "value": {
+          "author_id": "bridge",
+          "created_at": "2026-10-22T01:08:18.010Z",
+          "event_id": "publication_a94b270e98a5a92c8e5a28a09db8073e_3",
+          "project_id": "project-red",
+          "project_sequence": 2,
+          "publication": {
+            "author_id": "bridge",
+            "created_at": "2026-10-22T01:08:18.010Z",
+            "data": {},
+            "id": "publication_a94b270e98a5a92c8e5a28a09db8073e_3",
+            "information_type": "message",
+            "occurred_at": "2026-10-22T01:08:18.010Z",
+            "project_id": "project-red",
+            "source": {
+              "id": "bridge",
+              "kind": "agent"
+            },
+            "text": "One accepted event survives physical transport reset."
+          },
+          "publication_id": "publication_a94b270e98a5a92c8e5a28a09db8073e_3",
+          "schema_version": 1,
+          "server_id": "1256d0b2c0c4d66a78355572e61c5add"
+        },
+        "partition": 0,
+        "offset": 0
+      }
+    ],
+    "status": 200,
+    "received_at": 189250.158994432,
+    "released_at": 189250.545250792,
+    "transport": "written"
+  },
+  "finished_at": "2026-10-22T01:09:31.546475+00:00"
+}

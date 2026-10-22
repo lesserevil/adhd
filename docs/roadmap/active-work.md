@@ -159,6 +159,23 @@ and owned-resource absence. The [Kafka negative audit](../../verification/kafka4
 and [full recovery negative audit](../../verification/recovery41-full25-first-failure/audit.json)
 preserve the failed aggregates and their passing whole-program prefixes separately;
 later private Kafka service cleanup does not change either failed result.
+The [secured Kind audit](../../verification/ownedMULTI008/source41-secured-kind-positive/audit.json)
+also passes its seven reported checks with all 48 original assertion sites
+conserved; the current program has 51 assertion sites, which are not 51 separate
+reported cases. The [focused browser qualification](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json)
+passes Admin18, Events12 and recovery2 with exact compiled VM custody, all 26
+PNG/accessibility snapshot pairs and owned cleanup. Its separate
+[manual desktop/mobile review](../../verification/ownedMULTI008/source41-focused-ui-manual-review/review.json)
+covers 18 actual captures and two accessibility reads.
+
+The [auth setup path repair](../../verification/ownedMULTI008/source41-auth-path-repair/review.json)
+now passes its independent-working-directory fixture tests. A
+[fresh full core13 plan](../../verification/ownedMULTI008/source41-core03-preparation/review.json)
+retains all original jobs rather than borrowing its eleven-program prefix.
+The [focused rebind controller](../../verification/rebind-focused41-once-controller/manifest.json)
+and [federation timing diagnostic](../../verification/federation-admin-timing-preparation/metadata-review.json)
+run the original scenarios with additive sanitized observations; neither changes
+the failed aggregate or independently closes the full regression requirement.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

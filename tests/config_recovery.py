@@ -31,6 +31,15 @@ def append_verified_identity(runtimes,image_runtime):
         runtimes.append(image_runtime.identity())
 
 
+def effective_initial_revision(client):
+    # Legacy raw files may omit the documented default revision. Observe the
+    # authenticated public value; do not rewrite input or guess its revision.
+    revision = client.api({'op': 'config_get'})['config_revision']
+    if type(revision) is not int or revision < 1:
+        raise AssertionError('Invalid public configuration revision')
+    return revision
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     target = parser.add_mutually_exclusive_group(required=True)
@@ -72,7 +81,7 @@ def main():
         try:
             runtime.start()
             agent = Client(runtime)
-            initial_revision = runtime.config['config_revision']
+            initial_revision = effective_initial_revision(Client(runtime, admin_token))
             publication = agent.rpc({'op': 'publish', 'text': 'Original survives every commit boundary.'}, token, mid='durable-original')['publication']
             patch = {'port': new_port,
                      'store_path': str(new_store), 'threshold_ppm': 777777}

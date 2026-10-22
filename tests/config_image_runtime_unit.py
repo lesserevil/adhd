@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from config_image_runtime import ConfigurationFaultRuntime
-from config_recovery import append_verified_identity
+from config_recovery import append_verified_identity, effective_initial_revision
 from image_filesystem_abi import selected_families, fixture
 from image_filesystem_fault import SOURCES
 
@@ -67,6 +67,16 @@ class ConfigurationImageGuards(unittest.TestCase):
         append_verified_identity(runtimes,image)
         self.assertEqual(calls,['identity'])
         self.assertEqual(runtimes,[{'kind':'docker'}])
+
+    def test_initial_revision_uses_authenticated_public_effective_value(self):
+        calls=[]
+        for revision in [1, 7, 9001]:
+            client=SimpleNamespace(api=lambda command: calls.append(command) or {'config_revision':revision})
+            self.assertEqual(effective_initial_revision(client),revision)
+        self.assertEqual(calls,[{'op':'config_get'}]*3)
+        for bad in [None,0,-1,True,1.0,'1']:
+            client=SimpleNamespace(api=lambda command: {'config_revision':bad})
+            with self.assertRaises(AssertionError):effective_initial_revision(client)
 
     def test_actual_vm_exit_and_cleanup_failure_propagation(self):
         runtime = ConfigurationFaultRuntime.__new__(ConfigurationFaultRuntime)

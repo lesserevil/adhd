@@ -36,6 +36,20 @@ class ConfigMatrixGuards(unittest.TestCase):
   self.assertTrue(matrix.audit_configuration(base,False))
   for changed in [dict(base,matcher={'url':'http://127.0.0.1:18770/v1/systemone'}),dict(base,eventing={'enabled':True,'rest_url':'http://127.0.0.1:18082'}),dict(base,history={'assessment':{'endpoint':'http://127.0.0.1:18770'}}),dict(base,projects=[{'settings':{'history':{'assessment':{'url':'http://127.0.0.1:18770'}}}}])]:
    with self.assertRaises(AssertionError):matrix.audit_configuration(changed,False)
+ def test_legacy_disabled_shape_requires_actual_public_transport_proof(self):
+  base={'matcher':{'url':'http://127.0.0.1:1/v1/systemone'}}
+  self.assertTrue(matrix.audit_configuration(base,False))
+  self.assertTrue(matrix.audit_configuration(dict(base,eventing={'enabled':False}),False))
+  for changed in [dict(base,eventing=None),dict(base,eventing={}),dict(base,eventing={'enabled':True}),dict(base,eventing={'enabled':False,'rest_url':'http://127.0.0.1:18082'}),dict(base,projects=[{'settings':{'eventing':{'topic_prefix':'different'}}}])]:
+   with self.assertRaises(AssertionError):matrix.audit_configuration(changed,False)
+  command={'op':'project_restore_status','project_id':'legacy'}
+  response={'operation':{'state':'ready','kind':'plan','plan':{'mode':'initialize','selected':{'transport_enabled':False,'topic':None}}}}
+  row=matrix.initialization_observation(command,response)
+  self.assertFalse(row['transport_enabled']);self.assertIsNone(row['topic'])
+  for selected in [{'transport_enabled':True,'topic':'active'}, {'transport_enabled':False,'topic':'unexpected'}]:
+   changed={'operation':{**response['operation'],'plan':{'mode':'initialize','selected':selected}}}
+   with self.assertRaises(AssertionError):matrix.initialization_observation(command,changed)
+  self.assertIsNone(matrix.initialization_observation(command,{'operation':None}))
  def test_actual_execute_once_refuses_before_child(self):
   from controlled_image_matrix import durable_once_marker
   with tempfile.TemporaryDirectory() as directory:

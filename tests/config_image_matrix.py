@@ -140,18 +140,23 @@ def snapshot(runtime):
   'actual_beam_kernel_custody':image.custody,'observer_disarmed':not image.armed,'cleanup_blocked':getattr(image,'cleanup_blocked',False),
   'probe_cleanup_blocked':image.probe_cleanup_blocked,'probe_active_name':image.probe_active_name,
   'docker_client_exited':runtime.process is None or runtime.process.poll() is not None,
-  'running_payload_custody':getattr(runtime,'reviewed_payload_custody',[])}
+  'running_payload_custody':getattr(runtime,'reviewed_payload_custody',[]),
+  'public_initialization_custody':getattr(runtime,'reviewed_initialization_custody',[])}
 
 
 def audit_configuration(config,initial):
  # These are the original unreachable matcher selection and no-model transports.
  assert config['matcher']['url']=='http://127.0.0.1:1/v1/systemone'
  assert not config.get('peers')
- assert not (config.get('eventing') or {}).get('rest_url')
- if not initial:assert (config.get('eventing') or {}).get('enabled') is False
+ if 'eventing' in config:
+  eventing=config['eventing']
+  assert isinstance(eventing,dict) and eventing.get('enabled') is False
+  assert not eventing.get('rest_url')
+ # An absent legacy eventing object is disabled, confirmed separately by the
+ # actual public initialization plan rather than assuming a new-install default.
  for project in config.get('projects',[]):
   settings=project.get('settings') or {}
-  for family in ['matcher','history','retrieval','archive','feedback','optimization']:
+  for family in ['matcher','history','retrieval','archive','feedback','optimization','eventing']:
    assert not settings.get(family),'Original fixture must not add effective model overrides'
  def model_urls(value):
   if isinstance(value,dict):
@@ -165,15 +170,29 @@ def audit_configuration(config,initial):
  return True
 
 
+def initialization_observation(body,response):
+ if body.get('op')!='project_restore_status':return None
+ operation=response.get('operation')
+ if not operation or operation['state'] not in ['ready','complete']:return None
+ plan=operation.get('plan')
+ assert plan and plan['mode']=='initialize'
+ selected=plan['selected']
+ assert selected['transport_enabled'] is False and selected['topic'] is None
+ return {'project_id':body['project_id'],'state':operation['state'],'kind':operation['kind'],
+  'mode':plan['mode'],'transport_enabled':selected['transport_enabled'],'topic':selected['topic'],
+  'initialized':(operation.get('result') or {}).get('initialized')}
+
+
 def child(work,expected):
  assert sha(work/'plan.json')==expected;plan=json.loads((work/'plan.json').read_text());verify(work,plan)
  target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
  assert json.loads((work/'started.json').read_text())['plan_sha256']==expected
  sys.path.insert(0,str(work/'frozen/tests'))
  from config_image_runtime import ConfigurationFaultRuntime
+ from foundation_acceptance import Client
  import runpy
  original_init=ConfigurationFaultRuntime.__init__;original_start=ConfigurationFaultRuntime.start;original_stop=ConfigurationFaultRuntime.stop
- original_popen=subprocess.Popen;instances=[];launches=[];primary=None;errors=[]
+ original_popen=subprocess.Popen;original_api=Client.api;instances=[];launches=[];primary=None;errors=[]
  def progress():
   for runtime in instances:
    image=runtime.image_runtime
@@ -185,12 +204,24 @@ def child(work,expected):
   save(work/'custody-progress.json',{'runtimes':[snapshot(r) for r in instances],'launches':launches})
  def init(obj,*args,**kwargs):
   original_init(obj,*args,**kwargs);instances.append(obj);progress()
+ def observed_api(client,body,*args,**kwargs):
+  value=original_api(client,body,*args,**kwargs)
+  observation=initialization_observation(body,value)
+  if observation is not None:
+   runtime=client.runtime
+   assert runtime in instances
+   if not hasattr(runtime,'reviewed_initialization_custody'):runtime.reviewed_initialization_custody=[]
+   runtime.reviewed_initialization_custody.append(observation);progress()
+  return value
  def start(obj,*args,**kwargs):
   try:
    # No actual external provider/broker is selected by these original cases.
    audit_configuration(obj.config,initial=not obj.image_runtime.verified)
    result=original_start(obj,*args,**kwargs)
    audit_configuration(obj.config,initial=False)
+   proof=getattr(obj,'reviewed_initialization_custody',[])
+   assert any(v['state']=='ready' and v['transport_enabled'] is False and v['topic'] is None for v in proof)
+   assert any(v['state']=='complete' and v['initialized'] is True for v in proof)
    image=obj.image_runtime;image.observe()
    row=json.loads(image.docker('inspect',image.container_id).stdout)[0]
    assert row['Id']==image.container_id and row['Image']==target['image_config_identity'] and row['State']['Running']
@@ -225,7 +256,7 @@ def child(work,expected):
   result=original_popen(argv,*args,**kwargs)
   if launch:launch['client_pid']=result.pid;progress()
   return result
- ConfigurationFaultRuntime.__init__=init;ConfigurationFaultRuntime.start=start;ConfigurationFaultRuntime.stop=stop;subprocess.Popen=popen
+ ConfigurationFaultRuntime.__init__=init;ConfigurationFaultRuntime.start=start;ConfigurationFaultRuntime.stop=stop;subprocess.Popen=popen;Client.api=observed_api
  try:sys.argv=plan['test_argv'];runpy.run_path(sys.argv[0],run_name='__main__')
  except BaseException as error:primary=error
  finally:
@@ -290,6 +321,9 @@ def qualify(value,custody,plan):
   started={v['container_id'] for v in runtime['container_lifecycle'] if v['action']=='started'}
   stopped={v['container_id'] for v in runtime['container_lifecycle'] if v.get('observed_absent')}
   assert len(started)==2 and started<=stopped
+  admission=runtime['public_initialization_custody']
+  assert any(v['state']=='ready' and v['transport_enabled'] is False and v['topic'] is None for v in admission)
+  assert any(v['state']=='complete' and v['initialized'] is True for v in admission)
   payload=runtime['running_payload_custody'];assert len(payload)==2 and {row['container_id'] for row in payload}==started
   assert all(row['actual_app_files']==59 and row['all_manifest_app_hashes_matched'] and row['host_vm_pid']>0
     and row['namespace_vm_pid']==1 and row['pid_mode']!='host' and row['image_config_identity']==target['image_config_identity']

@@ -134,6 +134,17 @@ class WireAgent:
         return self.values.pop()
 
 
+def original_gap_requirement(query,detail,case,recipe):
+    """Recurrence requires a real search gap; final controls may be scan-only."""
+    if detail['recipe'] is not None:assert detail['recipe']==recipe
+    if case['cohort']=='training':
+        search=query['search']
+        assert search and search['status']=='completed' and search['error'] is None and search['candidates']==[]
+        assert query['assessment'] is None and 'no_candidates' in query['fallback_reasons']
+        assert detail['recipe']==recipe
+        assert detail['adjudicated_diagnosis'] in ('confirmed_retrieval_gap','confirmed_context_assembly_gap')
+
+
 def verify(args):
     raw=args.manifest.read_bytes();m=json.loads(raw);p=m['preregistration'];c=m['continuation']
     assert m['status']=='FROZEN_FOR_HARNESS_REVIEW_NOT_EXECUTED'
@@ -212,8 +223,6 @@ async def checks(f,e,m,budget):
         assert scan['primary_complete'] and scan['final_complete'] and not scan['truncated']
         assert set(scan['expanded_ids'])|{ids['2']}==supplied
         assert all(g['reason']=='cycle' and g['target_id'] in supplied for g in scan['gaps'])
-        assert q['search'] and q['search']['status']=='completed' and q['search']['error'] is None and q['search']['candidates']==[]
-        assert q['assessment'] is None and 'no_candidates' in q['fallback_reasons'] and q['scan']['coverage']['final_complete']
         async def captured():
             rows=(await call('list_retrieval_attempts',limit=64))['items'];return next((v for v in rows if v['archive_query_id']==q['id']),None)
         row=await wait(captured);label=copy.deepcopy(case['gold']);label['support_ids']=[ids[k] for k in label.pop('support_keys')]
@@ -221,9 +230,9 @@ async def checks(f,e,m,budget):
         management('save_retrieval_label',True,attempt_id=row['id'],expected_label_revision=0,label=label)
         detail=management('feedback_attempt',attempt_id=row['id'])['attempt']
         assert detail['status']=='completed' and detail['owner_id']==name and detail['labels'][-1]['confirmed']
-        assert detail['recipe']==p['recipe'] and detail['label_revision']==1
+        assert detail['label_revision']==1
+        original_gap_requirement(q,detail,case,p['recipe'])
         assert detail['labels'][-1]['support_ids']==label['support_ids'] and detail['labels'][-1]['cohort']==case['cohort']
-        if case['cohort']=='training':assert detail['adjudicated_diagnosis'] in ('confirmed_retrieval_gap','confirmed_context_assembly_gap')
         e.value.setdefault('confirmed_attempts',[]).append({'case':case['id'],'detail':detail,'gold':label});e.write()
         return row['id'],detail
     async def settled(pid):
@@ -340,7 +349,7 @@ async def checks(f,e,m,budget):
     assert not any(v['id']==delivery['id'] for v in (await call('poll'))['deliveries'])
     for record in captures.values():assert (await call('get_record',publication_id=record['publication']['id']))['record']==record
     assert budget.count==provider_calls and not budget.violations
-    e.value['qualification']='positive-scoped-lexical-native-witness';e.record('disabled-rollback-reset-and-hard-restart-preserve-same-originals-and-ack-without-provider-work')
+    e.value['qualification']='positive-scoped-lexical-'+('image' if f.image_runtime else 'native')+'-witness';e.record('disabled-rollback-reset-and-hard-restart-preserve-same-originals-and-ack-without-provider-work')
 
 
 async def main(args):

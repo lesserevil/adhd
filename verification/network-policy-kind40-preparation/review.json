@@ -1,0 +1,86 @@
+{
+  "schema": "adhd/enforcing-cni-kind-preparation-review@1",
+  "prepared": true,
+  "executed": false,
+  "execution_ready": false,
+  "root_GO_and_reviewed_executor_required": true,
+  "image_pulls_cluster_pods_models_installs_or_starts": 0,
+  "plan_sha256": "5a67a89f7edd0a8bbcced3a00378a54907c53bce9bb611915ec27607ed33e57b",
+  "input_files": 244,
+  "cluster": "adhd-netpol-qa40",
+  "dedicated_network": "adhd-netpol-qa40-net",
+  "protected_existing_cluster": "adhd-event-qual",
+  "protected_existing_network": "kind",
+  "kind_version": "0.33.0",
+  "kubectl_version": "1.35.0",
+  "Calico_version": "3.33.0",
+  "Kubernetes_node_version": "1.35.5",
+  "node_image": {
+    "repository": "registry-1.docker.io/kindest/node",
+    "tag": "v1.35.5",
+    "index_digest": "sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95",
+    "linux_amd64_digest": "sha256:397bcc4ab091b9632fb3639d5cf020943ca40e90fe7bcc38409738a4a0d056ee",
+    "configuration_digest": "sha256:caf23176b804ea639d96b2266829fdff42ca8f064bd9d32c00ad913b23ced7d9"
+  },
+  "CNI_images": [
+    {
+      "repository": "quay.io/calico/calico",
+      "tag": "v3.33.0",
+      "index_digest": "sha256:4ebc20730127bc9e8bf1db5f5a2d8b58cf37fe0e891b3c7b5471992221d213e5",
+      "linux_amd64_digest": "sha256:3eba6eb95b51b337bf255ecaf5c669b4b2ba04f9f813aa89785aa6853ecf9817",
+      "configuration_digest": "sha256:4ad92d437c956a625db81b6d3d669956a5a275e9db3966abbb2e92718de4dfd4"
+    },
+    {
+      "repository": "quay.io/calico/third-party-cni-plugins",
+      "tag": "v3.33.0",
+      "index_digest": "sha256:0f32f48279484c0d6f0e0d0e767b2d0e1a6c6ca34cb3421a61b989d992f3df41",
+      "linux_amd64_digest": "sha256:ae6464c7d8ffae03f2f26ed411a5b69e91baf31d8d538923645459f4f301a917",
+      "configuration_digest": "sha256:d4cd73c87e181c2243e4a13b5e0eaae461b6588e439f5d5148517f5b0986bc24"
+    },
+    {
+      "repository": "quay.io/calico/node",
+      "tag": "v3.33.0",
+      "index_digest": "sha256:565d8db3200e443955557f8f28ff44ab8a4a456754bc74a19c4f2f3444af9b1c",
+      "linux_amd64_digest": "sha256:224903e17a8d0588a6b9781331bd64935b0ef741a4208043f7dd9fcc834fc7cd",
+      "configuration_digest": "sha256:93e6f0b640645b62626a00c55e5252c361bc3166bf695c4b385cbea4d045fb69"
+    }
+  ],
+  "tools": {
+    "kind": {
+      "path": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+      "sha256": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d"
+    },
+    "kubectl": {
+      "path": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+      "sha256": "a2e984a18a0c063279d692533031c1eff93a262afcc0afdc517375432d060989"
+    },
+    "docker": {
+      "path": "/usr/bin/docker",
+      "sha256": "6d1ac33d27f9f73d1feb0184e7c0847c1b6051dd60b7a6ec7b3ad9a2f7ca01ea"
+    },
+    "python": {
+      "path": "/usr/bin/python3.12",
+      "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f"
+    }
+  },
+  "original_calico_manifest_sha256": "2de8f47595fb9c41b3f47d7b767a1f8e72ecf84057af834738ff12689a234da5",
+  "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+  "kind_config_sha256": "b340cbd75ab973c72d980aafe38fb5e5fb223b34791816276d731107bc43ad45",
+  "only_six_image_reference_rewrites_all_other_manifest_semantics_unchanged": true,
+  "official_kind_kubectl_checksums_match_local_tools": true,
+  "default_kind_network_no_new_member": true,
+  "namespace_pods_and_route_counts": {
+    "fresh_namespaces": 2,
+    "fixture_pods": 9,
+    "routes": 18
+  },
+  "scope": "UNSTARTED research/command plan for shipped NetworkPolicy network-layer enforcement only, no Kafka/hub/application/release/HA/security-adapter qualification",
+  "sources": [
+    "https://docs.tigera.io/calico/3.33/getting-started/kubernetes/kind",
+    "https://docs.tigera.io/calico/3.33/getting-started/kubernetes/requirements",
+    "https://github.com/kubernetes-sigs/kind/releases/tag/v0.33.0",
+    "https://raw.githubusercontent.com/kubernetes-sigs/kind/v0.33.0/pkg/cluster/internal/providers/docker/provider.go",
+    "https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/calico.yaml"
+  ],
+  "limits": "Declarative unstarted command/research plan, not execution authorization. Needs reviewed closed once-only executor with target image/context/admission/tool/cleanup checks before any install; no mutation or CNI enforcement evidence yet."
+}

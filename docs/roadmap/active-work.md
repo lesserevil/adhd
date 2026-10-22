@@ -42,18 +42,27 @@ registered project during restart. That additional operation returned
 `RESTORE_IO_ERROR`; its underlying cause is unproven. That attempt did not qualify
 the original restart assertions. Fixture bootstrap is now restricted to its
 initial inventory, preserving explicit admission for later projects and all
-original assertions/deadlines. The fresh ten-suite continuation has passed the
-multi-project restart and is running the remaining suites.
+original assertions/deadlines. The [fresh ten-suite continuation](../../verification/final05-core13-composed94-positive/manifest.json)
+passes all59 checks. Together with the original three whole suites/35 checks,
+the original core13 program now covers94 checks with no partial checks counted.
 [Native browser qualification](../../verification/native40-ui-whole86-positive/manifest.json)
 passes nine whole programs/86 assertions, matching the independently qualified
 container browser scope. [Kafka qualification](../../verification/final05-kafka-whole68-positive/manifest.json)
 passes all14 whole programs/68 checks. The first full NetworkPolicy route run
 [failed before traffic](../../verification/network-policy-kind40-route13-negative/audit.json)
 on broker fixture readiness; its underlying Pod cause is unknown. A bounded
-failure-only readiness observer is prepared, with the isolated import preflight
-corrected before any new runtime start. Full-application recovery and the proper
+failure-only readiness observer is now running after its corrected isolated
+import preflight passed. Full-application recovery and the proper
 documentation receipt lifecycle remain running; no parent item is closed by these
 partial results.
+
+The [leaf-by-leaf closure review](../../verification/final05-leaf-closure-proposal/review.json)
+supports49 additional implementation/evidence checklist closures across the
+multi-project and Kafka programs. Historical subsystem tests remain scoped to
+their original artifacts and are complemented by exact unchanged-code comparisons
+and current integration tests. The broad stale-owner evidence leaf and two full
+selective-recovery leaves remain open, together with the separate integrated
+configuration, deployment, documentation and parent completion gates.
 
 The user has now authorized implementation of all outstanding roadmap work,
 grouped in branches with parallel agents. MULTI-001 through MULTI-008 and
@@ -803,14 +812,14 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Introduce a durable project registry and project-qualified keys, preserving stable server identity, original provenance and legacy default-project behavior. Choose the physical store layout from crash-safety and hot-lifecycle requirements rather than assuming one DETS file per project.
 - **Depends on:** MULTI-001, KAFKA-001
 - **Implementation:**
-  - [ ] Add registry, immutable IDs, mutable labels/aliases and explicit active/archive lifecycle; reserve deletion for a separately specified policy.
-  - [ ] Partition all data, idempotency, queues, cursors, snapshots, caches and derived state by project; validate references at persistence boundaries.
-  - [ ] Implement versioned legacy config/store migration with preflight, backup, interruption recovery and explicit downgrade restrictions.
-  - [ ] Coordinate backend/outbox/project key ownership and one recoverable migration sequence with KAFKA-001 and KAFKA-008.
+  - [x] Add registry, immutable IDs, mutable labels/aliases and explicit active/archive lifecycle; reserve deletion for a separately specified policy.
+  - [x] Partition all data, idempotency, queues, cursors, snapshots, caches and derived state by project; validate references at persistence boundaries.
+  - [x] Implement versioned legacy config/store migration with preflight, backup, interruption recovery and explicit downgrade restrictions.
+  - [x] Coordinate backend/outbox/project key ownership and one recoverable migration sequence with KAFKA-001 and KAFKA-008.
   - [x] Reject hot removal of the project registry or any admitted project, including dry validation; candidate33 accepted an Admin patch deleting projects and memberships. Preserve complete configuration/revision and retained project data on rejection, including installations without a default project.
 - **Evidence:**
-  - [ ] Upgrade actual earlier accepted stores and preserve publications, private deliveries, acknowledgements, queries, source IDs and selected optimizer recipes.
-  - [ ] Kill/restart migration and project transactions; prove no partial admission, silent empty stores, identity reassignment or cross-project key collisions.
+  - [x] Upgrade actual earlier accepted stores and preserve publications, private deliveries, acknowledgements, queries, source IDs and selected optimizer recipes.
+  - [x] Kill/restart migration and project transactions; prove no partial admission, silent empty stores, identity reassignment or cross-project key collisions.
 
 ### [ ] MULTI-003 — Enforce project access and agent memberships
 
@@ -820,12 +829,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Keep exactly one server role per user and existing OIDC highest-role rules. Add project admission independently of roles; Admin has full server access, Developer manages only their own permitted agents, Viewer remains read-only. Agent membership may include several projects; credentials never gain access from a requested project ID.
 - **Depends on:** MULTI-001, MULTI-002
 - **Implementation:**
-  - [ ] Add Admin-managed user project access and agent project memberships with stable ownership and explicit project selection.
-  - [ ] Enforce role, admission, ownership and membership checks on every direct and indirect operation, including live revocation and queued work.
-  - [ ] Preserve local admin bootstrap, OIDC provider links, groups-to-role configuration and non-transitive email correlation; do not import remote access grants.
+  - [x] Add Admin-managed user project access and agent project memberships with stable ownership and explicit project selection.
+  - [x] Enforce role, admission, ownership and membership checks on every direct and indirect operation, including live revocation and queued work.
+  - [x] Preserve local admin bootstrap, OIDC provider links, groups-to-role configuration and non-transitive email correlation; do not import remote access grants.
   - [x] Prevent a Developer from recreating a removed agent ID that retains private deliveries, receipts, subscriptions or owned jobs in any project. A public-interface probe on candidate31 verified new-owner access to the former owner's private queue. Preserve explicit Admin recovery/reassignment and retained data; add native/container retirement/recreation regression evidence. Candidate32 implements an all-project verified-snapshot guard; native first-install OIDC/accounts checks remain passing in `verification/multi-eventing/oidc-first-setup-32.json`. Independent candidate32 retirement and snapshot-fault suites pass, and role/browser checks pass22 groups. Review found a legacy missing-snapshot path could attempt the bootstrap DETS opener; candidate33 removes that fallback and uses only a verified snapshot server identity. Its legacy/fault requalification and official artifact/image admission remain required.
 - **Evidence:**
-  - [ ] Exercise the role/owner/project matrix through API and browser, including guessed IDs, forged scopes, stale sessions, token rotation and revocation during work. The [independent OIDC policy image run](../../verification/ownedMULTI008/compiled05-oidc-policy-positive/manifest.json) now passes all five original cases and16 assertions on compiled05, retaining the native path and original policy assertions. The auth-only fixture uses the actual private bootstrap password, publicly disables its unused event transport before first project admission and verifies all projects ready after the original renamed-admin restart. Two actual compiled VMs, hard restart and strict owned cleanup are independently bound; the first fixture failure remains retained. The broader role/owner/project matrix still requires its complete qualification.
+  - [x] Exercise the role/owner/project matrix through API and browser, including guessed IDs, forged scopes, stale sessions, token rotation and revocation during work. The [independent OIDC policy image run](../../verification/ownedMULTI008/compiled05-oidc-policy-positive/manifest.json) now passes all five original cases and16 assertions on compiled05, retaining the native path and original policy assertions. The auth-only fixture uses the actual private bootstrap password, publicly disables its unused event transport before first project admission and verifies all projects ready after the original renamed-admin restart. Two actual compiled VMs, hard restart and strict owned cleanup are independently bound; the first fixture failure remains retained. The broader role/owner/project matrix is independently qualified by the exact sourceC native API9/role/account evidence and current native/container browser9/86, including guessed scopes, session revocation, token rotation and delayed-work fences; the leaf-only evidence binding is retained separately from parent program closure.
 
 ### [ ] MULTI-004 — Scope agent coordination and evidence workflows to projects
 
@@ -835,13 +844,13 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Use explicit authorized project context throughout. Default publication, messaging and subscriptions remain project-local; multi-project agents use separate project operations. Cross-project search is an explicit bounded fan-out with per-project provenance, never an implicit merged corpus.
 - **Depends on:** MULTI-002, MULTI-003, KAFKA-001
 - **Implementation:**
-  - [ ] Scope publish/get/search/send/subscribe/poll/ack, source deduplication, corrections and reference traversal; prevent cross-project references from granting visibility.
-  - [ ] Scope history/retrieval/archive jobs, feedback/cohorts/replay, optimizer training/evaluation/selection and all caches, snapshots and cancellation.
-  - [ ] Add explicit authorized local project discovery and cross-project query fan-out with per-project coverage, deadlines, incremental results and revocation handling.
-  - [ ] Apply KAFKA-001's raw/filtered subscription boundaries; integrate the A2A Kafka bridge and independent fact-history projection through KAFKA-003 and KAFKA-005.
+  - [x] Scope publish/get/search/send/subscribe/poll/ack, source deduplication, corrections and reference traversal; prevent cross-project references from granting visibility.
+  - [x] Scope history/retrieval/archive jobs, feedback/cohorts/replay, optimizer training/evaluation/selection and all caches, snapshots and cancellation.
+  - [x] Add explicit authorized local project discovery and cross-project query fan-out with per-project coverage, deadlines, incremental results and revocation handling.
+  - [x] Apply KAFKA-001's raw/filtered subscription boundaries; integrate the A2A Kafka bridge and independent fact-history projection through KAFKA-003 and KAFKA-005.
 - **Evidence:**
-  - [ ] Run interleaved projects with identical local IDs and content; prove delivery, deduplication, evidence, replay and optimizer isolation.
-  - [ ] Prove explicit fan-out returns only admitted project evidence with accurate partial coverage and no private addressed messages.
+  - [x] Run interleaved projects with identical local IDs and content; prove delivery, deduplication, evidence, replay and optimizer isolation.
+  - [x] Prove explicit fan-out returns only admitted project evidence with accurate partial coverage and no private addressed messages.
 
 ### [ ] MULTI-005 — Federate servers hosting multiple projects
 
@@ -851,12 +860,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Authenticate peer servers independently from source/destination project authorization. Publish only approved project catalogs; canonical ownership routes to an exact server/project pair while remaining exclusive for each external source scope. Preserve asynchronous durable requests and explicit incomplete coverage.
 - **Depends on:** MULTI-001, MULTI-003, MULTI-004
 - **Implementation:**
-  - [ ] Version directory discovery, per-project catalogs, canonical claims, peer trust grants and identity correlation; cache by stable server/project/revision.
-  - [ ] Bind durable requests, status polling, responses and idempotency to authenticated origin server plus origin and destination projects; reject scope substitution and stale authority.
-  - [ ] Handle same-server canonical routing, conflicts, project archival, peer revocation and negotiated legacy peers without duplicate delivery or silent downgrade.
+  - [x] Version directory discovery, per-project catalogs, canonical claims, peer trust grants and identity correlation; cache by stable server/project/revision.
+  - [x] Bind durable requests, status polling, responses and idempotency to authenticated origin server plus origin and destination projects; reject scope substitution and stale authority.
+  - [x] Handle same-server canonical routing, conflicts, project archival, peer revocation and negotiated legacy peers without duplicate delivery or silent downgrade.
 - **Evidence:**
   - [ ] Qualify at least three real servers with multiple projects, local/remote canonical routing, conflicting owners, stale caches, outages, retries and revocation.
-  - [ ] Validate exact new wire traffic independently and test old/new peer compatibility, bounded forwarding, privacy and unchanged server-local roles.
+  - [x] Validate exact new wire traffic independently and test old/new peer compatibility, bounded forwarding, privacy and unchanged server-local roles.
 
 ### [ ] MULTI-006 — Manage multiple projects through the hot Admin console
 
@@ -888,12 +897,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Share per-server Kafka and an optional existing short-response model service while enforcing per-project admission/budgets and server-wide limits. Raw pub/sub must progress without a model. Make create/archive/resume operations hot and define their effect on accepted work, retries and evidence retention; coordinate Kafka-specific fairness and lifecycle fencing with KAFKA-002 through KAFKA-006.
 - **Depends on:** MULTI-002, MULTI-004, MULTI-005
 - **Implementation:**
-  - [ ] Specify fair scheduling and accounting across projects and job classes, bounded queues/caches/storage and backpressure.
-  - [ ] Fence workers against project archival, access changes and configuration revisions; preserve durable accepted work with explicit terminal/paused states.
-  - [ ] Add project-aware diagnostics/audit records and documented full-server and project backup/restore semantics, collision handling and container recovery.
+  - [x] Specify fair scheduling and accounting across projects and job classes, bounded queues/caches/storage and backpressure.
+  - [x] Fence workers against project archival, access changes and configuration revisions; preserve durable accepted work with explicit terminal/paused states.
+  - [x] Add project-aware diagnostics/audit records and documented full-server and project backup/restore semantics, collision handling and container recovery.
   - [ ] Implement selective recovery into a missing or logically empty target under its original server/project identity, with an Admin plan, complete ownership/reference validation, target-only durable storage/Kafka generations and worker fencing. Preserve every other current project and current global configuration; reject populated logical targets. Follow [the project recovery plan](project-restore.md). The closed recovery authority in `components/hub/project-recovery/spec.md` and [87 independent wire vectors plus six examples](../../verification/project-recovery/contracts.json) are reviewed. Storage registry/bundle verification, Admin jobs, fresh allocation and transport generations, and worker fences are in progress; [five allocator development checks](../../verification/project-recovery/allocator-development.json) pass without claiming integrated recovery. The [development integration checkpoint](../../verification/project-recovery/integration-development.json) records allocator, callback/ticket fences and Admin recovery UI seams; [Nine frozen native component checks](../../verification/project-recovery/components/manifest.json) now pass for nested origin fences, active/queued target tickets, transport reset and pending-work preservation; the decision coordinator compiles. Guarded native development12 now passes18 regression cases and five actual private restore checks; the checkpoint guard passes82 vectors on each of OTP27 and OTP29, and six actual hostile offline rebind cases reject without metadata changes. Native development13 also passes six authenticated federation HTTP checks, including recovery503/Retry-After. The full twelve-boundary crash matrix, actual late network callbacks, broad successor regressions and formal artifact/image/platform qualification remain open. The [compiled05 late-callback qualification](../../verification/final05-recovery-callback28-positive/manifest.json) now passes all five original programs /28 checks, covering pending model/Kafka callbacks, outgoing and incoming queries, and peer epoch fencing through actual instrumented compiled boot. Original assertions, two-slot fixture profile and deadlines remain unchanged; root independently revalidates all21 actual VMs, cache/source custody,58 owned handles and789 process identities after cleanup. Default OCI startup remains covered separately by SDK/UI/deployment. Full-server restore does not discharge this requirement.
 - **Evidence:**
-  - [ ] Saturate one project with slow/failing model and peer work; demonstrate bounded progress for another and truthful costs/coverage.
+  - [x] Saturate one project with slow/failing model and peer work; demonstrate bounded progress for another and truthful costs/coverage.
   - [ ] Exercise hot lifecycle changes, worker crashes, restart, container replacement and backup/restore without leakage or duplicated committed results.
 
 ### [ ] MULTI-008 — Qualify and document the multiple-project upgrade
@@ -954,12 +963,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Implement project-isolated topics and bounded producers/consumers with an explicit durable outbox or equivalent verified handoff. Preserve stable event identity across retries and coordinate backend writes with broker publication without claiming end-to-end exactly-once delivery.
 - **Depends on:** KAFKA-001, MULTI-002
 - **Implementation:**
-  - [ ] Provision documented internal topics/partitions and authentication/ACL boundaries; keep private addressed messages and credentials outside public event topics.
-  - [ ] Implement durable publish acceptance, retry/deduplication, consumer checkpoints and health/backpressure under broker outages.
-  - [ ] Fence consumers and topic lifecycle against project archive, restore, credential rotation and configuration revisions.
+  - [x] Provision documented internal topics/partitions and authentication/ACL boundaries; keep private addressed messages and credentials outside public event topics.
+  - [x] Implement durable publish acceptance, retry/deduplication, consumer checkpoints and health/backpressure under broker outages.
+  - [x] Fence consumers and topic lifecycle against project archive, restore, credential rotation and configuration revisions.
 - **Evidence:**
-  - [ ] Kill hub/broker around each publish/checkpoint boundary; prove no acknowledged event is lost and retries do not create duplicate logical publications.
-  - [ ] Exercise multi-project isolation, rebalances, broker unavailability, disk/queue limits and recovery with a real Kafka service.
+  - [x] Kill hub/broker around each publish/checkpoint boundary; prove no acknowledged event is lost and retries do not create duplicate logical publications.
+  - [x] Exercise multi-project isolation, rebalances, broker unavailability, disk/queue limits and recovery with a real Kafka service.
 - **Current native qualification:** [The source34 complementary matrix](../../verification/multi-eventing/native34-complement/manifest.json) retains 66 passing checks across 13 single-run suites, including real broker outage/recovery, retention recovery, project policy, resource limits, delivery retries, cutover interruption and three-broker federation. Twelve raw reports bind the exact artifact directly; the lost-reply report is bound compositionally through its frozen plan and retained driver, with that limitation explicit. This supplements the separate 15-check core/protocol/durability proof. [Actual managed-observer coordinator changes and manual-bridge recovery](../../verification/multi-eventing/rebalance-34/assessment.json) now pass five native checks; this does not claim managed bridge ownership transfer or HA. Immutable-image qualification remains open.
 
 ### [ ] KAFKA-003 — Bridge Kafka subscriptions to durable A2A deliveries
@@ -970,12 +979,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** A project-wide unfiltered subscription includes all authorized project publications across agents, including the subscriber own publications. Independent subscribers each receive their stream; Kafka worker load sharing must not accidentally distribute events among agents instead of broadcasting.
 - **Depends on:** KAFKA-002, MULTI-003, MULTI-004
 - **Implementation:**
-  - [ ] Add explicit project subscriptions with optional deterministic selectors and no required model/description; preserve legacy described subscriptions as filtered mode.
-  - [ ] Persist independent subscription progress and recipient deliveries; separate broker processing offsets from agent acknowledgements and handle out-of-order ack safely.
-  - [ ] Define overlapping-subscription deduplication, unsubscribe/pause/resume, offline consumers, bounded replay and explicit retention-gap handling without weakening existing unacknowledged-delivery durability.
+  - [x] Add explicit project subscriptions with optional deterministic selectors and no required model/description; preserve legacy described subscriptions as filtered mode.
+  - [x] Persist independent subscription progress and recipient deliveries; separate broker processing offsets from agent acknowledgements and handle out-of-order ack safely.
+  - [x] Define overlapping-subscription deduplication, unsubscribe/pause/resume, offline consumers, bounded replay and explicit retention-gap handling without weakening existing unacknowledged-delivery durability.
 - **Evidence:**
-  - [ ] Run official A2A SDK flows with multiple subscribers receiving every project event and no direct broker access; prove zero model calls.
-  - [ ] Exercise disconnect/reconnect, concurrent subscribe/publish, filter changes, repeated polls/acks, overlapping subscriptions and consumer rebalances.
+  - [x] Run official A2A SDK flows with multiple subscribers receiving every project event and no direct broker access; prove zero model calls.
+  - [x] Exercise disconnect/reconnect, concurrent subscribe/publish, filter changes, repeated polls/acks, overlapping subscriptions and consumer rebalances.
 
 ### [ ] KAFKA-004 — Apply optional Jev-like filters without blocking raw streams
 
@@ -985,12 +994,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Evaluate only explicitly filtered subscriptions using the existing replaceable short-response decision adapter. Failure remains pending/error rather than a negative match or silent delivery of unfiltered content; raw subscriptions and unrelated projects progress independently.
 - **Depends on:** KAFKA-003
 - **Implementation:**
-  - [ ] Define filter enable/disable/edit revisions, threshold policy, input context and durable retry/backlog state; use deterministic selectors before inference.
-  - [ ] Add isolated queues, fairness, timeouts, per-project/subscription budgets and filter-decision provenance without inventing probabilities for raw deliveries. Current integration bounds the model-ready queue and retains overflow as deferred frozen targets in original durable event state; raw fanout must continue and diagnostics must distinguish ready, deferred and paused work.
-  - [ ] Make the model provider optional at startup; expose unsupported/unavailable filtered subscriptions explicitly and preserve accepted pending decisions across recovery.
+  - [x] Define filter enable/disable/edit revisions, threshold policy, input context and durable retry/backlog state; use deterministic selectors before inference.
+  - [x] Add isolated queues, fairness, timeouts, per-project/subscription budgets and filter-decision provenance without inventing probabilities for raw deliveries. Current integration bounds the model-ready queue and retains overflow as deferred frozen targets in original durable event state; raw fanout must continue and diagnostics must distinguish ready, deferred and paused work.
+  - [x] Make the model provider optional at startup; expose unsupported/unavailable filtered subscriptions explicitly and preserve accepted pending decisions across recovery.
 - **Evidence:**
-  - [ ] With no model configured and with a hung/failing model, prove raw subscriptions deliver promptly with zero inference calls and other projects are not starved.
-  - [ ] Validate real short-response filtered matches/nonmatches, malformed decisions, retries, hot filter edits and revocation without silent misses or duplicated deliveries.
+  - [x] With no model configured and with a hung/failing model, prove raw subscriptions deliver promptly with zero inference calls and other projects are not starved.
+  - [x] Validate real short-response filtered matches/nonmatches, malformed decisions, retries, hot filter edits and revocation without silent misses or duplicated deliveries.
 
 ### [ ] KAFKA-005 — Preserve backend fact search independently of pubsub
 
@@ -1000,12 +1009,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Retain durable original publications and provenance in the backend; only deliveries are filtered. Literal/metadata search works without a model; semantic/history/archive workflows may use an optional model with explicit availability and coverage states.
 - **Depends on:** KAFKA-002, MULTI-004
 - **Implementation:**
-  - [ ] Define backend/index ingestion watermarks and read-after-publish/search visibility; recover projection lag without treating missing indexed facts as negative evidence.
-  - [ ] Preserve original history after broker retention, filter rejection, delivery acknowledgement and subscriber removal; keep private messages excluded.
-  - [ ] Decouple search/model workers and readiness from raw eventing, adapting replay/cohorts/optimizer evidence to project-scoped event identities and optional models.
+  - [x] Define backend/index ingestion watermarks and read-after-publish/search visibility; recover projection lag without treating missing indexed facts as negative evidence.
+  - [x] Preserve original history after broker retention, filter rejection, delivery acknowledgement and subscriber removal; keep private messages excluded.
+  - [x] Decouple search/model workers and readiness from raw eventing, adapting replay/cohorts/optimizer evidence to project-scoped event identities and optional models.
 - **Evidence:**
-  - [ ] Publish with no model and no subscriptions; prove facts remain searchable after filtering, acknowledgements, restart and broker log expiry.
-  - [ ] Exercise lag/rebuild/restore and model-disabled semantic queries with truthful coverage and unchanged evidence/privacy guarantees.
+  - [x] Publish with no model and no subscriptions; prove facts remain searchable after filtering, acknowledgements, restart and broker log expiry.
+  - [x] Exercise lag/rebuild/restore and model-disabled semantic queries with truthful coverage and unchanged evidence/privacy guarantees.
 
 ### [ ] KAFKA-006 — Expose hot Kafka and subscription controls in Admin
 
@@ -1052,12 +1061,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Preserve old descriptions as explicit semantic filters, existing delivery IDs/acks, original facts and pending decisions. New project-wide subscriptions are unfiltered. Coordinate one recoverable migration/cutover with MULTI-002 instead of independent competing upgrades.
 - **Depends on:** KAFKA-003, KAFKA-004, KAFKA-005, KAFKA-007
 - **Implementation:**
-  - [ ] Specify ordered schema/config upgrades, cutover watermarks and topic initialization for legacy and already multi-project stores.
-  - [ ] Reconcile durable outbox, Kafka offsets, pending model jobs, deliveries and backend projection state without replaying old publications as newly subscribed events.
-  - [ ] Provide preflight, backups, resumable migration markers, abort/recovery and explicit downgrade restrictions for store plus broker state.
+  - [x] Specify ordered schema/config upgrades, cutover watermarks and topic initialization for legacy and already multi-project stores.
+  - [x] Reconcile durable outbox, Kafka offsets, pending model jobs, deliveries and backend projection state without replaying old publications as newly subscribed events.
+  - [x] Provide preflight, backups, resumable migration markers, abort/recovery and explicit downgrade restrictions for store plus broker state.
 - **Evidence:**
-  - [ ] Migrate actual earlier accepted stores with offline agents, pending filters, duplicate retries and acknowledged deliveries; compare identities and counts.
-  - [ ] Inject crashes at every cutover boundary and restore backups; prove no silent loss, unsolicited history replay, cross-project leakage or double delivery.
+  - [x] Migrate actual earlier accepted stores with offline agents, pending filters, duplicate retries and acknowledged deliveries; compare identities and counts.
+  - [x] Inject crashes at every cutover boundary and restore backups; prove no silent loss, unsolicited history replay, cross-project leakage or double delivery.
 
 ### [ ] KAFKA-009 — Qualify Kafka pubsub and update all operating contracts
 

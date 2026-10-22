@@ -1,0 +1,98 @@
+%{
+  "artifact_sha256" => "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "baseline_expected" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+  "baseline_outcome" => ":ok",
+  "checks" => 14,
+  "checks_detail" => [
+    %{
+      "actual" => ":ok",
+      "expected" => "ok",
+      "id" => "untouched-actual-pending-source-and-discovery",
+      "passed" => true
+    },
+    %{
+      "actual" => ":ok",
+      "expected" => "ok",
+      "id" => "valid-ipv6",
+      "passed" => true
+    },
+    %{
+      "actual" => ":ok",
+      "expected" => "ok",
+      "id" => "valid-ipv6-loopback",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "uppercase-host",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "leading-dash-host",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "malformed-ipv6",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "extra-ipv6-groups",
+      "passed" => true
+    },
+    %{
+      "actual" => ":ok",
+      "expected" => "ok",
+      "id" => "conditional-number-exact-bound",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "conditional-number-below-bound",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "noninteger-numeric-boolean",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "supported-label-needs-evidence",
+      "passed" => true
+    },
+    %{
+      "actual" => ":ok",
+      "expected" => "ok",
+      "id" => "supported-label-one-evidence",
+      "passed" => true
+    },
+    %{
+      "actual" => "{\"RESTORE_INVALID_BACKUP\", \"schema\"}",
+      "expected" => "invalid",
+      "id" => "no-evidence-label-forbids-support",
+      "passed" => true
+    },
+    %{
+      "actual" => ":ok",
+      "expected" => "ok",
+      "id" => "no-evidence-label-empty-support",
+      "passed" => true
+    }
+  ],
+  "harness_sha256" => "94ec00810377f26067c7aa90d5489582e220d2f3d642cf85ec72354b14cba3f5",
+  "passed" => false,
+  "schema" => "adhd/backup-query-schema-check@1",
+  "scope" => "Pure full-state validator on actual untouched accepted pending-query bundle, plus explicitly derived hostile/conditional-schema state vectors; no bundle reader, DETS opener, provider, recovery install, container or admission claim",
+  "snapshot_sha256" => "23a2db32c1cad3b2512a931e4be1d0cd4d729f9f0ffb838cd21f57e371af82ff",
+  "validator_sha256" => "021afad3d25533a407f72140d1cf460ffb3ceee786c30ab1c9f4a44998377903"
+}

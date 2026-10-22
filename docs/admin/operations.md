@@ -129,12 +129,16 @@ different CPU architectures, compiler versions or Docker versions. See Docker's
 
 Transfer the staged directory and `deploy/run.sh`, `scripts/configure_hub.py` to
 the Linux host. Preserve their relative paths and run the remaining commands on
-that host, as a non-root account with Docker access:
+that host, as a non-root account with Docker access. This host-networked runner
+also needs its dedicated Kafka/REST service ready first; the
+[native quickstart](../user/getting-started.md#private-configuration) shows the
+loopback-only backend setup. Select the actual private REST origin explicitly:
 
 ```bash
 docker build --build-arg SOURCE_DATE_EPOCH=0 --provenance=false -t adhd-hub:local _build/container
 docker image inspect adhd-hub:local --format '{{.Id}}'
-python3 scripts/configure_hub.py --directory .adhd/container
+python3 scripts/configure_hub.py --directory .adhd/container \
+  --eventing-rest-url http://127.0.0.1:18082
 sh deploy/run.sh .adhd/container/hub.json .adhd/container/data
 curl --fail http://127.0.0.1:8766/health
 ```
@@ -145,7 +149,10 @@ never overwritten. The defaults create two identities, `agent-a` and `agent-b`,
 with distinct random tokens, plus local user `admin` with a random password saved
 in `initial-admin-password.txt`. Files have mode 0600 and their directory is 0700.
 Sign in at `/admin`, complete the name/email profile, and use Users, Agents and
-Settings for subsequent configuration.
+Settings for subsequent configuration. Complete the
+[first-use Recovery review/apply](web-console.md#first-use-project-initialization)
+for each new project before publishing; a ready global health endpoint alone does
+not establish project storage availability.
 
 The runner requires Linux `realpath`, Python 3, an available configured port, and
 writable configuration/data directories owned by the invoking account. It can

@@ -44,7 +44,7 @@ FIELDS = (
 )
 SAVE_DIALOG = 'Apply these TLS settings immediately? Listener changes take effect without restarting.'
 RENEW_DIALOG = 'Request renewal using the current issuer, account and hostnames? Issuer rate limits still apply.'
-API_OPS = {'list_projects', 'project_restore_status', 'overview', 'users',
+API_OPS = {'list_projects', 'project_restore_status', 'overview', 'retrieval_index', 'users',
            'config_get', 'config_update', 'tls_status', 'tls_renew'}
 
 
@@ -122,6 +122,15 @@ def request_op(request, base, op):
         return False
     value = request.post_data_json
     return isinstance(value, dict) and value.get('op') == op
+
+
+def allowed_request(method, url, body, base):
+    parsed = urlsplit(url)
+    if url == base + '/admin/api':
+        return method == 'POST' and isinstance(body, dict) and body.get('op') in API_OPS
+    return url.startswith(base + '/') and not parsed.query and not parsed.fragment and (method, parsed.path) in {
+        ('GET', '/admin'), ('GET', '/admin/assets/app.css'), ('GET', '/admin/assets/app.js'),
+        ('GET', '/admin/session'), ('POST', '/admin/login'), ('POST', '/admin/logout')}
 
 
 @asynccontextmanager
@@ -313,15 +322,8 @@ async def run_browser_phase(browser, *, base, credential_files, output_dir,
                     restore_attempted = False
                     async def network(route):
                         request = route.request
-                        parsed = urlsplit(request.url)
-                        allowed = request.url.startswith(base + '/') and not parsed.query and not parsed.fragment
-                        if request.url == base + '/admin/api':
-                            body = request.post_data_json
-                            allowed = request.method == 'POST' and isinstance(body, dict) and body.get('op') in API_OPS
-                        else:
-                            allowed = allowed and (request.method, parsed.path) in {
-                                ('GET', '/admin'), ('GET', '/admin/assets/app.css'), ('GET', '/admin/assets/app.js'),
-                                ('GET', '/admin/session'), ('POST', '/admin/login'), ('POST', '/admin/logout')}
+                        body = request.post_data_json if request.url == base + '/admin/api' and request.method == 'POST' else None
+                        allowed = allowed_request(request.method, request.url, body, base)
                         if allowed:
                             await route.continue_()
                         else:
@@ -495,6 +497,18 @@ def self_test():
             self.assertEqual(private_base('http://127.0.0.2:8766/'), 'http://127.0.0.2:8766')
             for value in ('http://example.org:80', 'http://admin:secret@127.0.0.1:80', 'http://127.0.0.1:80/x', 'http://127.0.0.1:80/?secret=x'):
                 with self.assertRaises((AssertionError, ValueError)): private_base(value)
+        def test_exact_startup_request_policy(self):
+            base='http://127.0.0.2:8766'
+            self.assertTrue(allowed_request('POST',base+'/admin/api',{'op':'retrieval_index','project_id':'Blue'},base))
+            self.assertTrue(allowed_request('GET',base+'/admin/session',None,base))
+            for method,url,body in [
+                ('POST','http://127.0.0.3:8766/admin/api',{'op':'retrieval_index'}),
+                ('POST',base+'/admin/api',{'op':'arbitrary_operation'}),
+                ('GET',base+'/admin/api',{'op':'tls_status'}),
+                ('GET',base+'/admin/session?secret=x',None),
+                ('POST',base+'/admin/assets/app.js',None),
+            ]:
+                self.assertFalse(allowed_request(method,url,body,base))
         def test_retry_bounds_and_field_closure(self):
             self.assertEqual(next_retry(30),31);self.assertEqual(next_retry(86400),86399)
             with self.assertRaises(AssertionError): next_retry(True)

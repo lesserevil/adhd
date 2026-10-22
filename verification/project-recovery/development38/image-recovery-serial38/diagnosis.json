@@ -1,0 +1,50 @@
+{
+  "schema": "adhd/recovery-image-staging-read-only-diagnosis@1",
+  "status": "INFERENCE_NOT_LIVE_COUNTER_PROOF",
+  "runtime_or_provider_actions": 0,
+  "proven_observations": [
+    "Old Red Kafka consumer response held before restore apply.",
+    "Apply remained staging with17022bytes/104records progress; no durable decision at20s harness deadline.",
+    "Configured Kafka per-request queue+HTTP deadline30s and recovery operation timeout300s.",
+    "Model callback separate eventing-lane fixture passed4groups."
+  ],
+  "code_path": [
+    {
+      "file": "project_restore.exs",
+      "line": 1562,
+      "role": "Fresh-topic Eventing.preflight_restore precedes Config.recovery_decide and epoch activation."
+    },
+    {
+      "file": "eventing.exs",
+      "line": 98,
+      "role": "preflight_restore provisions fresh topic and checks zero beginning/end offsets."
+    },
+    {
+      "file": "eventing.exs",
+      "line": 189,
+      "role": "Every preflight HTTP request acquires Resources eventing ticket with configured30000ms budget."
+    },
+    {
+      "file": "resources.exs",
+      "line": 7,
+      "role": "Default project_eventing_concurrency1."
+    },
+    {
+      "file": "resources.exs",
+      "line": 200,
+      "role": "available counts all same-project active eventing tickets."
+    },
+    {
+      "file": "resources.exs",
+      "line": 243,
+      "role": "Existing active HTTP ticket is retired when project epoch changes; Store DOWN alone does not change epoch."
+    }
+  ],
+  "inference": "A fresh-topic preflight may wait behind the deliberately held old consumer HTTP request in the single Red eventing lane before the durable decision can advance the epoch. This can exceed20s without exceeding the300s accepted recovery operation budget.",
+  "limits": [
+    "No live resource counters or general gateway administrative request timeline was retained; exact blocking call is not proven.",
+    "Closed staging directory was removed during cleanup, so its post-cleanup absence cannot locate the worker.",
+    "No throughput guarantee, data-loss claim, application-fix claim, adjusted deadline, or automatic retry follows from this diagnosis."
+  ],
+  "code_identity": "Exact admitted image38 artifact1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7; line references are matching source38-recovery component files, not edits."
+}

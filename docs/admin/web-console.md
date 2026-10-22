@@ -34,7 +34,8 @@ a backup nor grants agent/user membership. Profile 2.1 exposes the same process
 through Admin `project_restore_plan` (`mode:"initialize",confirm:true`),
 `project_restore_status` and `project_restore_apply`, binding the returned plan
 ID/hash and configuration revision; see the
-[normative interface](../../components/hub/project-recovery/interface.md).
+[published protocol inventory](../protocol/README.md). The normative source is
+`components/hub/project-recovery/interface.md`.
 
 Never use this flow for `recovery_required`: that status can mean an initialized
 store is missing or damaged. Preserve its files/registry/journals and use a

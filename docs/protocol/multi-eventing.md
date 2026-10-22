@@ -52,8 +52,9 @@ its ordinary work fails closed with `RECOVERY_REQUIRED`. Admin plan/apply/status
 operations remain available to initialize an unknown empty target or recover a
 verified missing/logically empty target. Agent tokens cannot initialize it.
 Global health readiness does not establish target availability. See the
-[recovery interface](../../components/hub/project-recovery/interface.md) for the
-closed operation/result shapes and Admin versus A2A HTTP status rules.
+[published recovery interface inventory](README.md) for the
+closed operation/result shapes and Admin versus A2A HTTP status rules. Its
+normative source is `components/hub/project-recovery/interface.md`.
 
 During a hot all-project backend move, frozen writers reject new transactions
 with retryable CONFIG_APPLY_IN_PROGRESS. Admin HTTP returns503 and Retry-After:1;

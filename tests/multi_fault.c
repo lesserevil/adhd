@@ -101,20 +101,24 @@ static int adoption_snapshot_link(const char *source, const char *destination) {
       !source || !destination || !project_snapshot(store, destination)) return 0;
   size_t a = strlen(source), b = strlen(destination);
   if (a < 9 || b < 9 || strcmp(source + a - 9, ".snapshot")) return 0;
-  char path[4096], marker[4096], body[1048576], from[8192], to[8192];
+  char path[4096], marker[4096], from[8192], to[8192];
+  const size_t capacity = 1048576;
   snprintf(path, sizeof(path), "%s.transaction", config);
   snprintf(marker, sizeof(marker), "%s.project-upgrade", config);
   if (!has_phase(marker, "decided")) return 0;
   int fd = open(path, O_RDONLY | O_CLOEXEC);
   if (fd < 0) return 0;
-  ssize_t count = read(fd, body, sizeof(body) - 1);
+  char *body = malloc(capacity);
+  if (!body) { close(fd); return 0; }
+  ssize_t count = read(fd, body, capacity - 1);
   close(fd);
-  if (count <= 0 || count == (ssize_t)sizeof(body) - 1) return 0;
+  if (count <= 0 || count == (ssize_t)capacity - 1 || a - 9 > 4000 || b - 9 > 4000) { free(body); return 0; }
   body[count] = 0;
-  if (a - 9 > 4000 || b - 9 > 4000) return 0;
   snprintf(from, sizeof(from), "\"stage\":\"%.*s\"", (int)a - 9, source);
   snprintf(to, sizeof(to), "\"target\":\"%.*s\"", (int)b - 9, destination);
-  return strstr(body, "\"kind\":\"registry_adoption\"") && strstr(body, from) && strstr(body, to);
+  int matched = strstr(body, "\"kind\":\"registry_adoption\"") && strstr(body, from) && strstr(body, to);
+  free(body);
+  return matched;
 }
 
 static void stop_once(void) {

@@ -265,6 +265,7 @@ def main():
     choice.add_argument('--command');choice.add_argument('--image')
     parser.add_argument('--report',default='verification/foundation-acceptance.json')
     parser.add_argument('--protocol-version',type=int,choices=(1,2),default=1,help='Expected published profile; use 2 for the multi-project/Kafka candidate')
+    parser.add_argument('--protocol-profile',choices=('1','2','2.1'),help='Exact expected schema profile, including a required minor version')
     args=parser.parse_args()
     parent=Path('_build/roadmap/tests').resolve();parent.mkdir(parents=True,exist_ok=True)
     root=Path(tempfile.mkdtemp(prefix='run-',dir=parent))
@@ -377,13 +378,21 @@ def main():
         record('admin-full-private-data-access-with-developer-viewer-denial')
         newstore=runtime.root/'moved-store.dets'
         admin.api({'op':'config_update','patch':{'store_path':str(newstore)}},mutation=True)
-        assert newstore.is_file() and runtime.config['store_path']==str(newstore)
+        assert runtime.config['store_path']==str(newstore)
+        selected_store=newstore
+        if Path(str(runtime.file)+'.stores').exists():
+            from project_recovery_state import route
+            selected_store=route(runtime.file,runtime.config['project_id'])[1]
+        assert selected_store.is_file()
         assert developer.rpc({'op':'get','publication_id':publication['id']},token)['publication']['id']==publication['id']
         assert delivery['id'] in [d['id'] for d in developer.rpc({'op':'poll'},token)['deliveries']]
         developer.rpc({'op':'ack','delivery_ids':[delivery['id']]},token)
-        occupied=runtime.root/'occupied.dets';occupied.write_text('must not overwrite')
+        occupied=runtime.root/'occupied.dets'
+        protected=Path(str(occupied)+str(selected_store)[len(str(newstore)):])
+        protected.parent.mkdir(parents=True,exist_ok=True)
+        protected.write_text('must not overwrite')
         admin.api({'op':'config_update','patch':{'store_path':str(occupied)}},expected=409,mutation=True)
-        assert occupied.read_text()=='must not overwrite' and runtime.config['store_path']==str(newstore)
+        assert protected.read_text()=='must not overwrite' and runtime.config['store_path']==str(newstore)
         record('live-store-migration-preserves-history-deliveries-and-failed-move-rollback')
 
         held=socket.socket();held.bind(('127.0.0.1',0));held.listen()
@@ -522,7 +531,7 @@ def main():
             log=(runtime.root/name).read_text()
             assert all(secret not in log for secret in (password,devpass,viewpass,token,'fixture-client-secret'))
         status,descriptor,_=again.get('/protocol');assert status==200 and descriptor['version']==args.protocol_version
-        status,schema,_=again.get('/protocol/schema');assert status==200 and schema['$id']=='urn:adhd:protocol:'+str(args.protocol_version)
+        status,schema,_=again.get('/protocol/schema');assert status==200 and schema['$id']=='urn:adhd:protocol:'+(args.protocol_profile or str(args.protocol_version))
         assert len(schema.get('$defs',{}))>=10
         status,openapi,_=again.get('/protocol/openapi');assert status==200 and openapi['openapi']=='3.1.0'
         assert '/admin/login' in openapi['paths'] and '/admin/api' in openapi['paths']

@@ -32,11 +32,13 @@ async def main(args):
     subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-shared', '-fPIC', '-O2',
                     '-o', str(library), str(source), '-ldl'], check=True)
     sentinel = f.root / 'move-fault.json'
+    armed = f.root / 'move-fault.armed'
     injected = copy.copy(args)
     injected.hub = None
     injected.command = json.dumps(['env', 'LD_PRELOAD=' + str(library),
         'ADHD_MOVE_STAGE=' + args.crash_at, 'ADHD_MOVE_CONFIG=' + str(f.file),
-        'ADHD_MOVE_TARGET=' + str(target), 'ADHD_MOVE_SENTINEL=' + str(sentinel), 'elixir', str(args.hub)])
+        'ADHD_MOVE_TARGET=' + str(target), 'ADHD_MOVE_SENTINEL=' + str(sentinel),
+        'ADHD_MOVE_ARM=' + str(armed), 'elixir', str(args.hub)])
     f.args = injected
     evidence = Evidence(args.report, 'adhd/multi-store-move-crash@1')
     evidence.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest(),
@@ -65,6 +67,11 @@ async def main(args):
         hidden=(await agents['hidden-a'].call(scoped('project-hidden','publish',text='Hidden crash recovery')))['publication']
         before=admin.call({'op':'config_get'})['config']
         evidence.record('all-project-public-originals-and-acknowledgements-created-before-move')
+        # Profile2.1 initialization has its own real .transaction decisions;
+        # this probe targets only the subsequent authored hot-move mutation.
+        assert not sentinel.exists()
+        with armed.open('x') as file:
+            file.write('armed\n');file.flush();os.fchmod(file.fileno(),0o600);os.fsync(file.fileno())
         pending=asyncio.create_task(asyncio.to_thread(admin.call,
             {'op':'config_update','patch':{'store_path':str(target)}},mutation=True))
         end=time.monotonic()+25

@@ -11,7 +11,8 @@
 static _Atomic int fired;
 static int selected(const char *name) {
   const char *stage=getenv("ADHD_MOVE_STAGE");
-  return stage && !strcmp(stage,name);
+  const char *armed=getenv("ADHD_MOVE_ARM");
+  return (!armed || access(armed,F_OK)==0) && stage && !strcmp(stage,name);
 }
 static int decided(void) {
   char path[4096];

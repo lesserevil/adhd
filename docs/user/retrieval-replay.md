@@ -1,5 +1,13 @@
 # Retrieval feedback and paired replay
 
+Qualification notes below retain their original candidate identities and failures.
+The later [source38 native/image optimizer qualification](../../verification/multi-eventing/optimizer38-positive/manifest.json)
+provides the positive evidence that the earlier attempts lacked. Its
+[source-conservation and integration review](../../verification/final05-requirement-closure-refresh/audit.json)
+explains the scope carried forward to source40/compiled05; it does not relabel
+historical runs or establish general model accuracy. Current integrated recovery
+and deployment gates remain in the [active queue](../roadmap/active-work.md).
+
 Terminal Archive runs are captured asynchronously, after their own model lease and
 referenced child runs have settled. Capture includes successful searches, audited
 searches, fallback scans, empty scopes and incomplete/error observations. Disabling

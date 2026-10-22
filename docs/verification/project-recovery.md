@@ -1,5 +1,14 @@
 # Project recovery validation
 
+The reports below preserve historical development boundaries. Later
+[compiled05 callback qualification](../../verification/final05-recovery-callback28-positive/manifest.json)
+passes all five callback programs, and [model-free platform qualification](../../verification/ownedMULTI008/compiled05-baseline-platform-positive/manifest.json)
+covers Compose and Kubernetes recovery. These scoped successes do not complete
+the full crash matrix: the ordinary continuation exposed a transient Kafka
+topic-metadata visibility failure before its requested after-cleanup boundary.
+The [active queue](../roadmap/active-work.md) tracks the eventing repair,
+successor qualification and separate enforcing-network-policy gate.
+
 The [offline validator report](../../verification/project-recovery/backup-validator.json)
 records33 independent native-state, ownership, reference and bounds checks. It
 validates complete retained snapshots without opening DETS or invoking live

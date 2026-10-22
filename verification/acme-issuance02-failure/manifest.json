@@ -1,0 +1,38 @@
+{
+  "schema": "adhd/acme-real-flow-negative@1",
+  "passed": false,
+  "whole_bootstrap_groups": 5,
+  "actual_CA_gets": 3,
+  "actual_successful_proofs": 0,
+  "actual_host_port_match": "All3 real CA Host hashes exactly match one.acme.test:8080; app configured challenge_port18080. Current strict product Host rule allows80 or configured challenge_port.",
+  "fixture_repair_proposal": "Keep CA and preserved Host8080; bind relay127.0.0.1:8080 and app ordinary challenge127.0.0.2:8080. No hostname/header rewrite or weaker vectors.",
+  "separate_proven_app_failure": "Failure TLSStatus GET crashed linked app: ArgumentError :erlang.not(nil), TLS.public/1 next_attempt_at conditional uses not s.job when nil.",
+  "private_state_observations": {
+    "last_attempt_at": 1792712186527,
+    "last_error": {
+      "code": "ACME_PROCESS",
+      "message": "Certificate client failed.",
+      "retryable": true
+    },
+    "last_success_at": null,
+    "next_attempt_at": 1792712220645,
+    "ordering": false
+  },
+  "real_account_key_files_present": 1,
+  "public_failure_status_observation": "AssertionError",
+  "report_sha256": "4d15a61bba471f609aa9584fe5d6b460cad4f57574f5022977dec064dfffbe56",
+  "private_log_refs": [
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance02/hub/stdout.log",
+      "sha256": "cc7703ce68ef7f5dd0d2bbec84e67ef8a0b746986cea6756267df557d61cb78e",
+      "bytes": 1018
+    },
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance02/hub/stderr.log",
+      "sha256": "47306c341463d866a5739b57774ad965c1f8a0cda7617a281904a8c2ddf118d6",
+      "bytes": 465
+    }
+  ],
+  "cleanup": "Actual owned VM PID/start reaped+independentlyabsent, relay closed/handlers0, no cleanup errors. No persistent CA/DNS/model/Kafka services touched.",
+  "scope": "No actual proof/issuance/HTTPS/renewal qualification. Failure remains false; no speculative account/private-state rewrite."
+}

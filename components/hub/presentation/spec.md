@@ -20,6 +20,13 @@ required by configuration/spec.md and identity/spec.md. Fit the long name on des
 without document overflow, truncated words or overlapping controls. Preserve the
 existing operations-workspace design; no visual redesign is required.
 
+All console text, including complete namespaced public object IDs, must fit its
+allocated content width on desktop and 390px mobile. Wrap long IDs across lines
+in replay subscription checkbox labels and replay-status paragraphs while
+retaining the full original string, readable controls and accessible labels.
+The document must fit the viewport. Navigation and tables may scroll inside
+their own bounded regions; text outside those regions must remain fully visible.
+
 The public Agent Card keeps name `ADHD` and uses description
 `Agentic Distributed Harness Depot (ADHD): a private A2A information hub for agent coordination.`
 All other Agent Card protocol, capability, bearer authentication and skill fields

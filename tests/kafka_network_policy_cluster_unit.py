@@ -13,6 +13,23 @@ class Guards(unittest.TestCase):
  def setUp(self):self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name).resolve()
  def tearDown(self):self.temp.cleanup()
  def plan(self):return {'cluster':'adhd-netpol-qa40','network':'adhd-netpol-qa40-net','node':'adhd-netpol-qa40-control-plane','owner_label':'owner','owner_nonce':'nonce','bridge_subnet':'10.240.240.0/24','node_image':{'configuration_digest':'sha256:node'},'tools':{'python':{'path':'/test/python'},'docker':{'path':'/test/docker'}},'docker_socket':{'path':'/test/socket'}}
+ def test_direct_endpoint_uid_mismatch_prevents_configmap_creation(self):
+  import base64
+  import kafka_network_policy_endpoint as endpoint
+  p=self.plan();runner=g.Executor(self.root,p);runner.known_node='a'*64;runner.known_network='net'
+  p.update(diagnostic_only=True,direct_api_endpoint={'mode':'owned-node-InternalIP','port':6443,'require_peer_hostname_tls':True,'read_preflight_only_before_configmap':True})
+  runtime=self.root/'runtime';runtime.mkdir()
+  Path(runner.env['KUBECONFIG']).write_text(json.dumps({'clusters':[{'name':'kind-'+p['cluster'],'cluster':{'server':'https://127.0.0.1:1','certificate-authority-data':base64.b64encode(b'-----BEGIN CERTIFICATE-----').decode()}}]}))
+  node={'Id':runner.known_node,'Name':'/'+p['node'],'State':{'Running':True},'Image':'sha256:node','Config':{'Labels':{'io.x-k8s.kind.cluster':p['cluster'],'io.x-k8s.kind.role':'control-plane'}},'NetworkSettings':{'Networks':{p['network']:{'NetworkID':'net','IPAddress':'10.240.240.2'}}}}
+  api={'metadata':{'name':p['node'],'uid':'node-uid'},'status':{'addresses':[{'type':'InternalIP','address':'10.240.240.2'}]}}
+  ns={'metadata':{'name':'kube-system','uid':'ns-uid'}};seen=[]
+  def run(name,args,**kw):
+   seen.append(name);value=api if name in ['endpoint-node','endpoint-direct-node'] else ns
+   return subprocess.CompletedProcess([],0,json.dumps(value).encode(),b'')
+  with patch.object(runner,'inspect',return_value=node),patch.object(runner,'node_owned'),patch.object(runner,'network_owned'),patch.object(runner,'run',side_effect=run),patch.object(runner,'docker',return_value=subprocess.CompletedProcess([],0,b'{"metadata":{"uid":"foreign"}}',b'')),patch.object(endpoint,'verify_tls',return_value={'verified':True}):
+   with self.assertRaises(AssertionError):runner.install_direct_api_endpoint(['kubectl'])
+  self.assertNotIn('create-direct-api-configmap',seen)
+  self.assertFalse((runtime/'direct-api-configmap.json').exists())
  def test_stream_command_fixed_namespace_targets(self):
   for index in range(3):
    command,target=g.stream_command('a'*64,index)

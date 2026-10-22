@@ -101,7 +101,7 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py'):
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py'):
   shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)
@@ -130,6 +130,8 @@ def prepare(args):
  images=json.loads((bound/'images.json').read_text());node=next(i for i in images if 'kindest' in i['repository']);cni=[i for i in images if 'calico/' in i['repository']]
  socket=Path('/var/run/docker.sock').resolve(strict=True);s=socket.stat()
  plan={'schema':'adhd/enforcing-cni-kind-executor@1','prepared':True,'executed':False,'root_GO_required':True,'cluster':base['cluster'],'network':base['dedicated_network'],'node':base['node'],'bridge_subnet':base['network_subnet'],'owner_label':'adhd-policy-owner','owner_nonce':os.urandom(16).hex(),'image':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'node_image':node,'node_anonymous_volume_destinations':['/var'],'node_image_declared_volumes':sorted((json.loads(node_config.read_text())['config'].get('Volumes') or {}).keys()),'CNI_images':cni,'CNI_provisioning':'exact-OCI-archive-import','CNI_transfer':'owned-node-exec-stdin-private-varlib','CNI_archives':oci_report['images'],'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'external_inputs':[external(oci_source/name) for name in ('manifest.json','0.oci.tar','1.oci.tar','2.oci.tar')]+[external(node_config),external(source),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+list(tools.values()),'docker_socket':{'path':str(socket),'identity':[s.st_dev,s.st_ino]},'lane_lock':str(root/'_build/roadmap/netpol-kind.lane.lock'),'automatic_retries':0,'parallelism':1,'fixture_pods':9,'routes':18,'scope':'Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.','runtime_starts_during_preparation':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED'}
+ assert not args.direct_api_endpoint or args.diagnostic_only,'Direct endpoint first requires explicit diagnostic-only review'
+ if args.direct_api_endpoint:plan['direct_api_endpoint']={'mode':'owned-node-InternalIP','port':6443,'require_peer_hostname_tls':True,'read_preflight_only_before_configmap':True}
  if args.diagnostic_only:
   from kafka_network_policy_diagnostics import LIMITS
   plan.update(diagnostic_only=True,diagnostic_limits=LIMITS,fixture_pods=0,routes=0,scope='Diagnostic-only exact Calico bootstrap; bounded private pre-cleanup reads, no route/app/Kafka qualification.')
@@ -257,6 +259,7 @@ class Executor:
    actual=json.loads(self.docker('inspect-cni'+str(i),'exec',self.known_node,'crictl','inspecti',ref).stdout)
    verify_import(im,listing,observed,(self.work/'bound/downloads'/original_name).read_bytes(),actual)
   k=[p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG']]
+  if p.get('direct_api_endpoint'):self.install_direct_api_endpoint(k)
   self.run('install-calico',k+['create','-f',str(self.work/'bound/calico-pinned.yaml')],timeout=120)
   if p.get('diagnostic_only'):
    from kafka_network_policy_diagnostics import Diagnostics,LIMITS,bounded,observe_rollout
@@ -293,6 +296,34 @@ class Executor:
   self.capture_volumes(self.inspect(self.known_node))
   assert self.protected()==before,'Protected existing cluster/network changed'
   return before
+ def install_direct_api_endpoint(self,k):
+  from kafka_network_policy_endpoint import address_for,authority,verify_tls,configmap,inside_command,NAME
+  import yaml
+  p=self.plan;assert p['diagnostic_only'] and p['direct_api_endpoint']=={'mode':'owned-node-InternalIP','port':6443,'require_peer_hostname_tls':True,'read_preflight_only_before_configmap':True}
+  node=self.inspect(self.known_node);self.node_owned(node);self.network_owned(self.inspect(self.known_network,True))
+  ns=json.loads(self.run('endpoint-namespace',k+['get','namespace','kube-system','-o','json','--request-timeout=10s'],timeout=15).stdout)
+  api=json.loads(self.run('endpoint-node',k+['get','node',p['node'],'-o','json','--request-timeout=10s'],timeout=15).stdout)
+  assert ns['metadata']['name']=='kube-system' and ns['metadata']['uid']
+  address=address_for(node,api,p,self.known_node,self.known_network)
+  ca=authority(yaml.safe_load(Path(self.env['KUBECONFIG']).read_text()),p['cluster'])
+  tls=verify_tls(address,ca)
+  direct=[*k,'--server=https://'+address+':6443']
+  remote=json.loads(self.run('endpoint-direct-namespace',direct+['get','namespace','kube-system','-o','json','--request-timeout=10s'],timeout=15).stdout)
+  direct_node=json.loads(self.run('endpoint-direct-node',direct+['get','node',p['node'],'-o','json','--request-timeout=10s'],timeout=15).stdout)
+  inside=json.loads(self.docker('endpoint-inside-node',*inside_command(self.known_node,address),timeout=15).stdout)
+  assert remote['metadata']['uid']==inside['metadata']['uid']==ns['metadata']['uid']
+  assert direct_node['metadata']['uid']==api['metadata']['uid'] and direct_node['metadata']['name']==p['node']
+  value=configmap(address,ns['metadata']['uid'],api['metadata']['uid'],p['owner_nonce']);path=self.work/'runtime/direct-api-configmap.json'
+  assert not path.exists();save(path,value)
+  self.run('create-direct-api-configmap',k+['create','-f',str(path)],timeout=15)
+  actual=json.loads(self.run('verify-direct-api-configmap',k+['-n','kube-system','get','configmap',NAME,'-o','json','--request-timeout=10s'],timeout=15).stdout)
+  assert actual['metadata']['name']==NAME and actual['metadata']['namespace']=='kube-system' and actual['metadata']['uid']
+  assert actual['data']==value['data'] and actual['metadata']['labels']==value['metadata']['labels'] and actual['metadata']['annotations']==value['metadata']['annotations']
+  after=json.loads(self.run('endpoint-namespace-after',k+['get','namespace','kube-system','-o','json','--request-timeout=10s'],timeout=15).stdout)
+  assert after['metadata']['uid']==ns['metadata']['uid']
+  self.node_owned(self.inspect(self.known_node))
+  self.direct_api_proof={'address':address,'port':6443,'namespace_uid':ns['metadata']['uid'],'node_uid':api['metadata']['uid'],'configmap_uid':actual['metadata']['uid'],'owner_nonce':p['owner_nonce'],'tls':tls,'inside_own_node_verified':True,'host_direct_API_verified':True,'pinned_calico_manifest_sha256':sha(self.work/'bound/calico-pinned.yaml'),'separate_configmap_sha256':sha(path)}
+
  def finish(self):
   p=self.plan;errors=[]
   for kind,issued in [('node',self.node_issued),('network',self.network_issued)]:
@@ -370,7 +401,7 @@ def execute(work,digest):
     except BaseException as e:cleanup_errors.append(e)
    try:verify(work,plan);unchanged=True
    except BaseException as e:unchanged=False;cleanup_errors.append(e)
-   save(work/'result.json',{'schema':'adhd/enforcing-cni-kind-result@1','passed':error is None and not cleanup_errors and unchanged,'plan_sha256':digest,'image':plan['image'],'scope':plan['scope'],'failure_type':type(error).__name__ if error else None,'cleanup_failure_types':[type(e).__name__ for e in cleanup_errors],'cleanup':runner.cleanup,'owned_anonymous_volumes':runner.owned_volumes,'anonymous_volume_candidates':sorted(runner.volume_candidates),'events':runner.events,'inputs_unchanged':unchanged})
+   save(work/'result.json',{'schema':'adhd/enforcing-cni-kind-result@1','passed':error is None and not cleanup_errors and unchanged,'plan_sha256':digest,'image':plan['image'],'scope':plan['scope'],'failure_type':type(error).__name__ if error else None,'cleanup_failure_types':[type(e).__name__ for e in cleanup_errors],'cleanup':runner.cleanup,'owned_anonymous_volumes':runner.owned_volumes,'anonymous_volume_candidates':sorted(runner.volume_candidates),'events':runner.events,'inputs_unchanged':unchanged,'direct_api_endpoint_proof':getattr(runner,'direct_api_proof',None)})
   if error:
    if cleanup_errors:error.add_note('Independent cleanup failures: '+','.join(type(e).__name__ for e in cleanup_errors))
    raise error
@@ -381,7 +412,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
  for n in ('repo-root','cluster-plan','context','admission-manifest','node-config','oci-inputs'):p.add_argument('--'+n,type=Path)
- p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');args=p.parse_args()
+ p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');args=p.parse_args()
  if args.prepare:prepare(args)
  else:sys.exit(execute(args.work.absolute(),args.plan_sha256))
 if __name__=='__main__':main()

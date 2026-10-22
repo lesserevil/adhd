@@ -1,0 +1,67 @@
+{
+  "read_only_checks_passed": true,
+  "prepared_only": true,
+  "proper_cli_required_for_new_receipt": true,
+  "new_authority_or_receipt_assigned": false,
+  "actual_cli_argv_cwd": "<project-root>",
+  "actual_read_only_cli_invocations": [
+    [
+      "_build/federation/litai/bin/python",
+      "_build/federation/litai/bin/litai",
+      "project",
+      "documentation-review",
+      "--help"
+    ],
+    [
+      "_build/federation/litai/bin/python",
+      "_build/federation/litai/bin/litai",
+      "rebuild",
+      "--help"
+    ],
+    [
+      "_build/federation/litai/bin/python",
+      "_build/federation/litai/bin/litai",
+      "verify",
+      "--help"
+    ],
+    [
+      "_build/federation/litai/bin/python",
+      "_build/federation/litai/bin/litai",
+      "project",
+      "validate",
+      "--help"
+    ],
+    [
+      "_build/federation/litai/bin/python",
+      "_build/federation/litai/bin/litai",
+      "project",
+      "documentation-review",
+      "."
+    ]
+  ],
+  "actual_review_result": {
+    "command": "project.documentation-review",
+    "ok": true,
+    "authority_identity": "sha256:70258782794b44b7a02876a42fed27ea339e8cf34707f7a4526f6f2171cab970",
+    "document": "docs/architecture/design-traceability.md",
+    "state": "current"
+  },
+  "pinned_cli_entry_sha256": "084a527efc98af40042e6fce5901f3af5d5eee906d5d3be878c757b197d603fc",
+  "framework_distribution_identity": "sha256:2a8303d48ec698eca8a19e1e67424353fd7a09b81594d51c230e78204ab8f399",
+  "inspected_pinned_framework_rules": {
+    "cli/project.py": "documentation_review_from_args delegates --record to atomic record_project_authority_review; no model reconciliation needed for human-authored docs.",
+    "adapters/project_verification.py": "Receipt gate calls require_current_project_test_receipt for current authority.",
+    "test_receipts.py": "require_current_project_test_receipt rejects stale authority-bound receipts.",
+    "cli/rebuild.py": "RetainedSourceInput.capture binds exact source, component lock and project authority; authorization must match fresh review.",
+    "application/project_authority.py": "Authority inventory includes non-roadmap documentation; review marker itself is normalized for hashing."
+  },
+  "known_source_tree_metadata": {
+    "test_manifest_sha256": "ab747ebb12dba52938fe87ce143f39d003fc22b1441f1935846093e351012dd9",
+    "source_bom_sha256": "cff7aa30161dfe6073eb7feb7b70efe6701e99c3a018e264c985e21f91172ed9",
+    "metadata_may_not_be_hand_rewritten": "Recheck prospective recipe/declarations/BOM with the actual pinned framework after docs apply. If any metadata identity unexpectedly differs, stop and review rather than fabricate it."
+  },
+  "no_current_staging_doc_inputs": true,
+  "no_generated_source_or_app_or_service_or_provider_starts": true,
+  "no_marker_receipt_lifecycle_or_current_context_changes": true,
+  "scope_limit": "Future lifecycle/stage success and image bridge are not asserted. Old f811 admission and raw receipts/results remain historical immutable evidence; final bridge must be separate and fail on any payload/cache/input drift."
+}

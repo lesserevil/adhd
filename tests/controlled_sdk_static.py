@@ -20,13 +20,16 @@ class SDKPreparationGuards(unittest.TestCase):
   files={'hub.exs':'c'*64,**{'f'+str(i):'d'*64 for i in range(58)}};manifest={'files':{**files,'Dockerfile':'e'*64}}
   obj=SimpleNamespace(root=root,tokens={'a':'private-test-token'},_controlled_custody_attempt={})
   custody=SimpleNamespace(name=lambda obj:name,is_image=lambda obj:True,image=image,manifest=manifest,manifest_bytes=json.dumps(manifest).encode(),plan={'expected_app_files':59})
-  row={'Name':'/'+name,'Id':cid,'Image':image,'Mounts':[{'Source':str(root),'Destination':str(root)}],'State':{'Running':True,'Pid':123},'HostConfig':{'PidMode':''}}
+  row={'Name':'/'+name,'Id':cid,'Image':image,'Mounts':[{'Type':'bind','Source':str(root),'Destination':str(root)}],'State':{'Running':True,'Pid':123},'HostConfig':{'PidMode':''}}
   return custody,obj,row,files
  def test_foreign_inspection_never_issues_logs_or_exec(self):
-  custody,obj,row,files=self.fake_custody();row['Image']='sha256:'+'f'*64;calls=[]
-  def read(argv,deadline):calls.append(argv);return {'returncode':0,'stdout':json.dumps([row]).encode(),'stderr':b''}
-  result=runtime.startup_diagnostics(custody,obj,read)
-  self.assertFalse(result['owned_identity_verified']);self.assertEqual(len(calls),1);self.assertEqual(result['observations'],{})
+  for foreign in ['image','mount-type']:
+   custody,obj,row,files=self.fake_custody();calls=[]
+   if foreign=='image':row['Image']='sha256:'+'f'*64
+   else:row['Mounts'][0]['Type']='volume'
+   def read(argv,deadline):calls.append(argv);return {'returncode':0,'stdout':json.dumps([row]).encode(),'stderr':b''}
+   result=runtime.startup_diagnostics(custody,obj,read)
+   self.assertFalse(result['owned_identity_verified']);self.assertEqual(len(calls),1);self.assertEqual(result['observations'],{})
  def test_owned_readonly_diagnostics_bind_actual_vm_payload_and_redact(self):
   custody,obj,row,files=self.fake_custody();calls=[]
   def read(argv,deadline):
@@ -75,7 +78,8 @@ class SDKPreparationGuards(unittest.TestCase):
    def wait(**kwargs):state['waited']+=1;return 0
    process=SimpleNamespace(stdout=pipes[0],stderr=pipes[1],poll=lambda:0 if state['closed'] else None,kill=kill,wait=wait)
    with patch.object(runtime.subprocess,'Popen',return_value=process):
-    with self.assertRaises(exception):runtime.bounded(['never-executed'],time.monotonic()+.025,limit)
+    with self.assertRaises(exception) as caught:runtime.bounded(['never-executed'],time.monotonic()+.025,limit)
+   self.assertTrue(caught.exception.owned_diagnostic_client['reaped']);self.assertTrue(caught.exception.owned_diagnostic_client['forced_kill'])
    self.assertEqual(state['killed'],1);self.assertEqual(state['waited'],1);self.assertTrue(all(stream.closed for stream in pipes))
 
 if __name__=='__main__':

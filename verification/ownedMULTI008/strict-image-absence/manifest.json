@@ -1,0 +1,41 @@
+{
+  "schema": "adhd/strict-shared-image-absence@1",
+  "passed": true,
+  "runtime_ready": false,
+  "actual_process_container_probe_provider_calls": 0,
+  "checks": {
+    "startup": 15,
+    "payload_probe": 15,
+    "offline": 6,
+    "entry": 9,
+    "rebind": 13
+  },
+  "original_finding": {
+    "classification": "Read-only synthetic inputs, no actual failed container cleanup claimed.",
+    "before": "EventingFaultImage accepted identifier-only case mismatch or contradictory nonempty stdout because regex IGNORECASE covered identity and stdout was unchecked.",
+    "after": "Delegates existing strict OwnedImage.probe_absence; only diagnostic prefix case insensitive, identifier exact and stdout empty/[] required."
+  },
+  "new_negative_proofs": [
+    "Both EventingFaultImage and RetainedImage receive mismatched-case missing messages, attempt independent known-name cleanup, and keep cleanup_blocked true when only that malformed absence recurs.",
+    "Both helpers receive contradictory object stdout with missing-object stderr and retain unconfirmed cleanup; no replacement claim.",
+    "Actual-format lowercase prefix plus [] remains accepted; uppercase foreign64hex identity rejected."
+  ],
+  "dependency_effects": [
+    "No new import or application/observer changes: Eventing runtime already imports OwnedImage.",
+    "RetainedImage, FilesystemFaultImage, offline codecs, image rebind and recovery entry fallback share corrected classifier automatically.",
+    "Existing frozen snapshots remain immutable; future final42 and40 plans must bind changed helper bytes. No existing C/ABI proof is relabeled."
+  ],
+  "files": {
+    "tests/image_eventing_runtime.py": "38b395b9673a2db66683a6b81d213c09645db73164832dbb822788cd4b6e3dd3",
+    "tests/image_startup_cleanup_unit.py": "76d011284837be50654ccde22519c66d698484d3da8b65485b19fb44bda774b6",
+    "tests/container_fixture.py": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0"
+  },
+  "logs": {
+    "verification/ownedMULTI008/strict-image-absence/image_startup_cleanup_unit.log": "46dd9888dfb629b24f3793ce23acaf3fa64696bc309f588f4c1666e7aac89a6a",
+    "verification/ownedMULTI008/strict-image-absence/image_payload_probe_unit.log": "b565133ab43eb843485dd8441615b1c2f89b21ce2bae650170287548bd6b07bf",
+    "verification/ownedMULTI008/strict-image-absence/image_offline_cleanup_unit.log": "397cfb9419f3b297a99e21038847b73e84ef55901531254418864150c692cedb",
+    "verification/ownedMULTI008/strict-image-absence/image_recovery_entry_unit.log": "9486236ff5e2c42065ffc71d6d79ecf62df3f8747bee40b170a52500721ab78d",
+    "verification/ownedMULTI008/strict-image-absence/image_rebind_runtime_unit.log": "da1ea2d5f44fb9cbb205891e632ea7860d7afc5f0f1116de53a4b4a3484a0173"
+  },
+  "setup_observation": "Initial system-Python offline import lacked httpx; existing repository virtualenv runs all checks successfully. No application runtime involved."
+}

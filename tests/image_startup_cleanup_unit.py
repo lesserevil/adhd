@@ -76,10 +76,21 @@ def main():
             target=fixture(cls,foreign);fails(target.stop)
             assert calls==[('inspect',NAME)] and target.cleanup_blocked
             assert not target.events[-1]['observed_absent']
+            for malformed in (reply(1,stderr=('No such object: '+NAME.upper()).encode()),
+                              reply(1,stdout=b'[{"Id":"contradictory"}]',stderr=('No such object: '+NAME).encode())):
+                calls=[]
+                def contradictory(*args,check=True):
+                    calls.append(args)
+                    return reply() if args[0]=='rm' else malformed
+                target=fixture(cls,contradictory);fails(target.stop)
+                assert calls==[('inspect',NAME),('rm','--force',NAME),('inspect',NAME)]
+                assert target.cleanup_blocked and target.events[-1]['observed_absent'] is False
+        assert EventingFaultImage.authoritative_absence(reply(1,stdout=b'[]',stderr=('error: no such object: '+NAME).encode()),NAME)
+        assert not EventingFaultImage.authoritative_absence(reply(1,stderr=('No such object: '+IDENTIFIER.upper()).encode()),IDENTIFIER)
         for result in (reply(1,stderr=b'network: no such network'),reply(1,stderr=b'No such object: other'),reply(2),reply(0),reply(2,stderr=('No such object: '+NAME).encode()),reply(1,stderr=('Cannot connect to daemon\nNo such object: '+NAME).encode())):
             assert not EventingFaultImage.authoritative_absence(result,NAME)
     assert starts==[]
-    print('PASS image startup cleanup11: five lifecycle cases on each helper plus strict classifier; before-create authoritative absence, transient original failure plus cleanup, daemon unknown failure, transport exception cleanup, foreign preservation, strict missing-object classifier; process attempts0')
+    print('PASS image startup cleanup15: five lifecycle cases on each helper plus strict classifier; before-create authoritative absence, transient original failure plus cleanup, daemon unknown failure, transport exception cleanup, foreign preservation, strict case-sensitive identifier/contradictory stdout denial plus retained/eventing unknown-cleanup lifecycle; process attempts0')
 
 
 if __name__=='__main__':main()

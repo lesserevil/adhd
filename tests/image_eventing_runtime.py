@@ -82,11 +82,10 @@ class EventingFaultImage(OwnedImage):
     @staticmethod
     def authoritative_absence(result, identifier):
         """Only Docker's explicit missing-object result proves absence."""
-        if result.returncode != 1:
-            return False
-        error=result.stderr.decode(errors='replace')
-        return re.fullmatch(r'(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*'
-                            +re.escape(identifier),error.strip(),re.IGNORECASE) is not None
+        # Share the reviewed probe classifier: only the diagnostic prefix is
+        # case-insensitive; the requested identity must match exactly, and a
+        # contradictory object payload cannot establish absence.
+        return OwnedImage.probe_absence(result,identifier)
 
     def stop(self, hard=False):
         if self.name is None:

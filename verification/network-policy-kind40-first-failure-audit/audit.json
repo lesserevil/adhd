@@ -1,0 +1,56 @@
+{
+  "schema": "adhd/network-policy05-independent-negative-audit@1",
+  "original_run_passed": false,
+  "audit_passed": true,
+  "plan_sha256": "e983594bea6a6d57265b53177730b391fb69f3392b3e3cdc1eeac36e97ce99a5",
+  "result_sha256": "38b21eb26362323733a66b2993cb738cb75a6e0b4386478c1783012dccd09341",
+  "root_manifest_sha256": "1d9e776538bb6abeed23f1c2a8b99a8058e49f77264cbf47af29132f847d1609",
+  "root_cleanup_sha256": "0f3a4feed6f2270b2f7956a31ffecb748b0585d19f56795890d8287d0bb9b5e5",
+  "full_input_closure_unchanged": true,
+  "closure_counts": {
+    "frozen": 351,
+    "bound": 25
+  },
+  "external_inputs": 10,
+  "tool_files": 6403,
+  "strict_absence": [
+    {
+      "kind": "container",
+      "identifier": "be99d09163919302842cf1e383f7767b40e1f6b38fc279f05942e71bb05e279c",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: be99d09163919302842cf1e383f7767b40e1f6b38fc279f05942e71bb05e279c\n",
+      "strictly_absent": true
+    },
+    {
+      "kind": "container",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-netpol-qa40-control-plane\n",
+      "strictly_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: network adhd-netpol-qa40-net not found\n",
+      "strictly_absent": true
+    },
+    {
+      "kind": "volume",
+      "identifier": "ad3bed84a451b3988951a81919b471c9ae076a12dd8b3772300afb6ae906b195",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: get ad3bed84a451b3988951a81919b471c9ae076a12dd8b3772300afb6ae906b195: no such volume\n",
+      "strictly_absent": true
+    }
+  ],
+  "protected_cluster_id_before_after_current": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "protected_network_id_before_after_current": "26b3643d8a75a1d90eaea327bae0c609aa0672f07079e36dff40dd47e68d171c",
+  "protected_network_members_before_after_current_equal": true,
+  "calico_installed": false,
+  "policy_route_checks": 0,
+  "scope": "Independent terminal audit only; original setup failure and false result remain false. Root alone removed the proven fresh anonymous volume; this audit performs read-only inspection, no cleanup or retry."
+}

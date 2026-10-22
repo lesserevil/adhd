@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16/frozen/tests/eventing_dormant_policy.py", line 77, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16/frozen/tests/eventing_dormant_policy.py", line 45, in main
+    call('subscribe',project=project,mode='raw')
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16/frozen/tests/eventing_dormant_policy.py", line 37, in call
+    def call(op,agent='alice',project='p',**kw):return h.call({'op':op,'project_id':project,**kw},agent=agent)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16/frozen/tests/federation_acceptance.py", line 175, in call
+    assert 'error' not in result, result
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'error': {'code': -32000, 'data': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'domain': 'adhd.hub', 'metadata': {'code': 'RECOVERY_REQUIRED'}, 'reason': 'RECOVERY_REQUIRED'}], 'message': 'Request failed'}, 'id': 1, 'jsonrpc': '2.0'}

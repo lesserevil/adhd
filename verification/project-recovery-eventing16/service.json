@@ -1,0 +1,39 @@
+{
+  "owner": {
+    "project": "adhd-complement16-94d82c",
+    "port": 18088,
+    "purpose": "owned complementary16 retention/outage+third independent federation broker"
+  },
+  "containers": [
+    {
+      "id": "e25ce2faf58291ff98d362f29bed485e27ebce37806d50769db70bc24e2f990f",
+      "name": "adhd-complement16-94d82c-kafka-1",
+      "image": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+      "image_config_id": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+      "compose_project": "adhd-complement16-94d82c",
+      "healthy": "healthy",
+      "post_tests_healthy": "healthy"
+    },
+    {
+      "id": "3dfd9751980a35505429b363545f77ac7321e453f6f695b64cd781a8d80ff49e",
+      "name": "adhd-complement16-94d82c-kafka-rest-1",
+      "image": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+      "image_config_id": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "compose_project": "adhd-complement16-94d82c",
+      "healthy": "healthy",
+      "post_tests_healthy": "healthy"
+    }
+  ],
+  "inputs": {
+    "deploy/events.compose.yaml": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b",
+    "deploy/events.test.compose.yaml": "4ebfe4dca1bb566eaca7780e0c9c6f9b2da0990d79154875718c33e5c2cf7a44",
+    "deploy/kafka-bootstrap.py": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f"
+  },
+  "actual_cluster_id": "v9rhj-UTQZKsUqTHiPxu0g",
+  "cluster_identity_preserved_after_real_outage": true,
+  "private_reports": {
+    "retention": "105f263dda7f5ddca192bb1c09e279b79706fb62bb0aa4e0dd2895a98bbbfbcb",
+    "outage": "85e9302905326de5b4e34623bf8bc8698083af337285f9412cbf647e549bf7b6",
+    "federation": "d754cc35e59c235b12dc1c8e5ae1c428fc7e5a636e46227b75a2f855f28d4964"
+  }
+}

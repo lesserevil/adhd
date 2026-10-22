@@ -1,0 +1,17 @@
+PASS failed-second-project-preflight-never-shrinks-first-project-broker-retention
+PASS stale-fetched-batch-recreates-consumer-at-durable-position-after-hot-change
+PASS project-retention-budget-and-topic-cutover-preserve-independent-project-progress-and-acks
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16-admitted/frozen/tests/eventing_project_policy.py", line 117, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16-admitted/frozen/tests/eventing_project_policy.py", line 109, in main
+    assert retained(status('new')['topic'])==7200000
+                    ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16-admitted/frozen/tests/eventing_project_policy.py", line 44, in status
+    def status(project):return admin('eventing_status',project)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/event16-admitted/frozen/tests/eventing_project_policy.py", line 33, in admin
+    assert code==200,(code,value)
+           ^^^^^^^^^
+AssertionError: (503, {'error': {'code': 'RECOVERY_REQUIRED', 'message': 'Project recovery is required'}})

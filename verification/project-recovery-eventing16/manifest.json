@@ -1,0 +1,258 @@
+{
+  "schema": "adhd/composed-native-eventing@1",
+  "passed": true,
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "lifecycle_admitted": false,
+  "suites": 13,
+  "checks_passed": 66,
+  "scope": "Exact16 complementarynative regression; controlledmodel endpoints only. RealKafka transport/filterbudgets/dormantpolicy/revisionedAdmin/retentionpolicies/lostreplies/fairness/hotcutover+two observedkernel crashes/DeleteRecords/outage/three independentfederatedKafka clusters.",
+  "native_runtime": "Elixir1.18.4/OTP27",
+  "runner": {
+    "path": "tests/multi_eventing_matrix.py",
+    "sha256": "aaf6a75ecbcceb0a780be03235377bd2fa75eacdb2b37777f39e5e4f9c76b240"
+  },
+  "fixture_helpers": [
+    {
+      "path": "tests/federation_acceptance.py",
+      "sha256": "7fbeb4fb2965977c0a469ae5e704caba2e6e4a75203e798ce02f5fe4aea9be73"
+    },
+    {
+      "path": "tests/eventing_target.py",
+      "sha256": "eb8a991b05aac299d1f499741bb3a2d383cbca65ac9d029a3107826ade10d331"
+    },
+    {
+      "path": "tests/eventing_project_policy.py",
+      "sha256": "75486d2830e3dbb40422d7e13c0f844d8a6340f9986a9de2f85fe96d58bc34da"
+    }
+  ],
+  "reports": [
+    {
+      "name": "controls",
+      "passed": true,
+      "checks": 8,
+      "report": {
+        "path": "verification/project-recovery-eventing16/controls.json",
+        "sha256": "37a988918640ad039fb10bf2c6bbb84a9581f32a323813714e87e1703e4e7634"
+      },
+      "input_plan": "event16-plan.json"
+    },
+    {
+      "name": "lostreply",
+      "passed": true,
+      "checks": 2,
+      "report": {
+        "path": "verification/project-recovery-eventing16/lostreply.json",
+        "sha256": "322bd2b2f72cc69782165020c8c5f46ded3983cad9c9a1e0984ead2c3f27d7ed"
+      },
+      "input_plan": "event16-plan.json"
+    },
+    {
+      "name": "fairness",
+      "passed": true,
+      "checks": 4,
+      "report": {
+        "path": "verification/project-recovery-eventing16/fairness.json",
+        "sha256": "44d286ca233a96bafff72045f88645ae54a50c85548c36d33ffb38a7ace8be1d"
+      },
+      "input_plan": "event16-plan.json"
+    },
+    {
+      "name": "cutover",
+      "passed": true,
+      "checks": 4,
+      "report": {
+        "path": "verification/project-recovery-eventing16/cutover.json",
+        "sha256": "1c231edaf90dbb6383d0e0064d7ab3e416e8db5c1fc9b82a7b2e212a8b6f8420"
+      },
+      "input_plan": "event16-plan.json"
+    },
+    {
+      "name": "cutover-decision",
+      "passed": true,
+      "checks": 5,
+      "report": {
+        "path": "verification/project-recovery-eventing16/cutover-decision.json",
+        "sha256": "91de89382f2734d87e34f0039be3b9e7bb9de6895bbe45062132cb79328642d2"
+      },
+      "input_plan": "event16-plan.json"
+    },
+    {
+      "name": "cutover-project",
+      "passed": true,
+      "checks": 5,
+      "report": {
+        "path": "verification/project-recovery-eventing16/cutover-project.json",
+        "sha256": "ca88efebe0858fbc4656e524103c6e8acd3c70ba03cdefc54c0fb809316823c6"
+      },
+      "input_plan": "event16-plan.json"
+    },
+    {
+      "name": "caps",
+      "passed": true,
+      "checks": 5,
+      "report": {
+        "path": "verification/project-recovery-eventing16/caps.json",
+        "sha256": "bcdd4dc7abce76d88e149f65bdd387851b777b498a90ee59ab82d9c1a80483e4"
+      },
+      "input_plan": "event16-admitted-plan.json"
+    },
+    {
+      "name": "dormant",
+      "passed": true,
+      "checks": 2,
+      "report": {
+        "path": "verification/project-recovery-eventing16/dormant.json",
+        "sha256": "766de485e781cd97d35ee7d443045530a777e86da3dd3f5f8a32ea2bb3f74305"
+      },
+      "input_plan": "event16-admitted-plan.json"
+    },
+    {
+      "name": "admin",
+      "passed": true,
+      "checks": 4,
+      "report": {
+        "path": "verification/project-recovery-eventing16/admin.json",
+        "sha256": "291ba081fa1ef8b4092cb75292d5af15346aae72906d80f969b23193dd2c9bf6"
+      },
+      "input_plan": "event16-admitted-plan.json"
+    },
+    {
+      "name": "policy",
+      "passed": true,
+      "checks": 4,
+      "report": {
+        "path": "verification/project-recovery-eventing16/policy.json",
+        "sha256": "a411d572df9202a3caf565ba89658d54341b277e1e8aa9db9c603bedef56b0e9"
+      },
+      "input_plan": "event16-policy-plan.json"
+    },
+    {
+      "name": "retention",
+      "passed": true,
+      "checks": 2,
+      "report": {
+        "path": "verification/project-recovery-eventing16/retention.json",
+        "sha256": "105f263dda7f5ddca192bb1c09e279b79706fb62bb0aa4e0dd2895a98bbbfbcb"
+      },
+      "input_plan": "event16-policy-plan.json"
+    },
+    {
+      "name": "outage",
+      "passed": true,
+      "checks": 7,
+      "report": {
+        "path": "verification/project-recovery-eventing16/outage.json",
+        "sha256": "85e9302905326de5b4e34623bf8bc8698083af337285f9412cbf647e549bf7b6"
+      },
+      "input_plan": "event16-policy-plan.json"
+    },
+    {
+      "name": "federation",
+      "passed": true,
+      "checks": 14,
+      "report": {
+        "path": "verification/project-recovery-eventing16/federation.json",
+        "sha256": "d754cc35e59c235b12dc1c8e5ae1c428fc7e5a636e46227b75a2f855f28d4964"
+      },
+      "input_plan": "event16-policy-plan.json"
+    }
+  ],
+  "preserved_failures": [
+    {
+      "phase": "event16",
+      "suite": "caps",
+      "evidence": {
+        "json": {
+          "path": "verification/project-recovery-eventing16/event16-caps-failure.json",
+          "sha256": "77c9728f3542e329a990367f069a04ed380a83e4877df3f3967b1868130f1c4e"
+        },
+        "log": {
+          "path": "verification/project-recovery-eventing16/event16-caps-failure.log",
+          "sha256": "7a9c41c95cb3cce91284565d0b0c9c89fab9a40586f1e09d15b1d1e511146d78"
+        }
+      },
+      "classification": "missing explicit freshproject Admin admission"
+    },
+    {
+      "phase": "event16",
+      "suite": "dormant",
+      "evidence": {
+        "json": {
+          "path": "verification/project-recovery-eventing16/event16-dormant-failure.json",
+          "sha256": "63829f493fa7c62629372e4413fc0a7e520f8e9d62de73ff7fec57401c2e6b93"
+        },
+        "log": {
+          "path": "verification/project-recovery-eventing16/event16-dormant-failure.log",
+          "sha256": "beb48ccca63c9a7e65ea107950902907b0eff181c968b718ad7120d9fe2d74d7"
+        }
+      },
+      "classification": "missing explicit freshproject Admin admission"
+    },
+    {
+      "phase": "event16",
+      "suite": "admin",
+      "evidence": {
+        "json": {
+          "path": "verification/project-recovery-eventing16/event16-admin-failure.json",
+          "sha256": "6c81258270b1178bde3f8681faf3b18b00708ecca5a69dc5208a4ede212a142f"
+        },
+        "log": {
+          "path": "verification/project-recovery-eventing16/event16-admin-failure.log",
+          "sha256": "77af218ac60e2e9751bfb139b242a604a25a298d3649efaa8bd31510be2ce28e"
+        }
+      },
+      "classification": "missing explicit freshproject Admin admission"
+    },
+    {
+      "phase": "event16",
+      "suite": "policy",
+      "evidence": {
+        "json": {
+          "path": "verification/project-recovery-eventing16/event16-policy-failure.json",
+          "sha256": "29cb32ecf4b17e723ed8c285c15521618e2470ff557a7f59cc547b31692f279a"
+        },
+        "log": {
+          "path": "verification/project-recovery-eventing16/event16-policy-failure.log",
+          "sha256": "f4b85b79ac1c80c532d99fdc5ffd5bdd223df10e02bc0be1f7c4a26de5cc8960"
+        }
+      },
+      "classification": "missing explicit freshproject Admin admission"
+    },
+    {
+      "phase": "event16-admitted",
+      "suite": "policy",
+      "evidence": {
+        "json": {
+          "path": "verification/project-recovery-eventing16/event16-admitted-policy-failure.json",
+          "sha256": "1c9fbad78f0e06a8d8bb52aa44cfe7a46ff05785a7f9ef293ccb3354487cdca9"
+        },
+        "log": {
+          "path": "verification/project-recovery-eventing16/event16-admitted-policy-failure.log",
+          "sha256": "b313e79ecd2d5227419f1f6f114906005bc364637aebd974b6845beb072e2c8c"
+        }
+      },
+      "classification": "hot-created unknownproject requires explicit Admin admission after first3checks passed"
+    }
+  ],
+  "initial_healthy_passed": false,
+  "composition": "Six unaffected healthy suites passed once. Caps/dormant/Admin reran only after supported publicAdmin setup; policy reran after setup then again after explicithotnew-project admission. All original checks and firstfailures preserved; no generatedapplication/deadline changes. Three private suites passed once on newestfrozenhelpers.",
+  "frozen_inputs_unchanged": true,
+  "service": {
+    "path": "verification/project-recovery-eventing16/service.json",
+    "sha256": "fcfd4ee612e3adf84944f80e0a6cdf9b344a43002dcc1f6ade5041aaddcf5ec7"
+  },
+  "service_cleanup": {
+    "path": "verification/project-recovery-eventing16/cleanup.json",
+    "sha256": "b82b1a1b29119068dd475da15a11aa234a1075f5d96030a6481729c7789cf5eb",
+    "owned_resources_absent": true
+  },
+  "broker_scope": "Only adhd-complement16-94d82c atloopback18088 was stopped/started and received destructiveDeleteRecords; existing18082/18085 serviced uniqueownedtopics; existing18087 untouched.",
+  "limitations": [
+    "Developmentnative proof only; no formaladmission or exactsuccessorimage claim.",
+    "Controlled localmodels qualify policy/transport/state, not semanticquality.",
+    "Single-nodeclusters do notqualify replicatedKafka durability.",
+    "ActualDeleteRecords loss, not elapsedwallclockretention expiry.",
+    "SIGKILL/filesystem boundaries do notqualify hardwarepowerloss.",
+    "Broker cp-kafka8.3.2 Apache2; externalRESTProxy cp-kafka-rest8.3.2 ConfluentCommunityLicense; this baseline test does notqualify optionalEnterprise authentication."
+  ]
+}

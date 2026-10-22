@@ -1,0 +1,28 @@
+{
+  "schema": "adhd/physical-retention@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "publish-and-publish-record-preserve-new-acceptance-message-source-retry-and-disabled-legacy-receipts",
+      "passed": true
+    },
+    {
+      "name": "actual-delete-records-log-start-advancement-reconstructs-missing-originals-with-search-and-ack-preservation",
+      "passed": true,
+      "physical_operation": "Kafka Admin DeleteRecords via kafka-delete-records",
+      "previous_checkpoint": 2,
+      "log_start_before": 0,
+      "log_start_after": 4,
+      "reconstructed_originals": 2
+    }
+  ],
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "harness_sha256": "ac7e184d23ed2d86f386d4e3e218d1781e0357c04340439a4ed3ae39a320533f",
+  "limitations": [
+    "DeleteRecords advances actual Kafka log start; this does not claim a wall-clock retention expiry wait.",
+    "One real broker; no replicated durability or semantic model claim."
+  ],
+  "runtime": {
+    "kind": "native"
+  }
+}

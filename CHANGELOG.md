@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Hub storage: validate supported historical local checkpoints before migration,
+  preserve original files and rollback backups, and adopt verified pre-federation
+  identities into private generations. Imported backups retain strict ownership
+  and permission checks. Successor lifecycle and deployment qualification continue.
+
 - Container staging includes the complete locked specification closure, including recovery JSON Schema, and accepts an explicitly selected verifier CLI.
 
 - Protocol: specify profile 2 for stable projects, separate project admission,

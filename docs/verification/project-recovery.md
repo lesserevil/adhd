@@ -169,3 +169,23 @@ preparation path, renew authority review/authorization, then rerun admission.
 The first prospective recipe review incorrectly selected ordinary coding-provider scope. `verification/project-recovery/development16/retained-provider-correction.json` preserves the official pre-build rejection and supersedes that exact-recipe claim: retained-source model selection independently derives the observed recipe and generation key, with the same source BOM. The oracle/declaration review remains separate. Fresh current authority and retained authorization are required before retry; no failed attempt, CAS object or receipt was rewritten.
 
 The staging construction follow-up `verification/project-recovery/development16/staging-closure-review.json` verifies33 locked normative payloads, including exact recovery JSON Schema bytes in manifest/archive,14 positive/negative input tests and deterministic synthetic archives. It does not claim actual accepted-artifact staging or image qualification.
+
+The [second source36 lifecycle attempt](../../verification/project-recovery/development16/rebuild2-terminal-review.json)
+completed its native and independent acceptance stages, then failed during source
+cache publication. Its test manifest differed from the required canonical bytes
+by exactly one trailing newline. Preserve the failed attempt and immutable cache;
+generate the successor manifest using canonical bytes without that newline. This
+does not constitute admission or an accepted successor receipt.
+
+The [source37 local adoption checks](../../verification/local-legacy37/manifest.json)
+and [actual interrupted upgrade](../../verification/local-legacy37/runtime-manifest.json)
+cover historical permissions, original preservation, strict imports, complete
+validation, real cold replacement and predecision source-change refusal. Its
+[four SDK ladders](../../verification/local-legacy37/sdk/manifest.json) pass17 cases,
+and [controlled workflows](../../verification/local-legacy37/controlled/manifest.json)
+pass92 groups. Context qualification remains failed for the additional supported
+pre-federation schema2 producer without a server ID. The new immutable source38
+[identity checks](../../verification/project-recovery/development38/identity.json)
+accept its actual valid checkpoint and reject malformed, foreign and newer missing
+identities. Full public Context, lifecycle and exact image qualification remain
+separate gates; source37 results do not attest source38.

@@ -195,6 +195,19 @@ matching-job and federated-query status. Avoid putting bearer tokens in diagnost
 
 ## Backup and restore
 
+Local upgrades validate historical schema1..3 checkpoints and snapshots before
+creating a new active generation. Supported historical modes0600,0640,0644,0660
+and0664 are accepted only for regular, singly linked files owned by the running
+server, without symlink path components. The hub keeps original bytes, permissions,
+inodes and existing rollback backups unchanged; the adopted generation is private.
+This does not change the strict private-file requirements for imported backups.
+
+Pre-federation schema1 and schema2 stores can lack a server ID. After validating
+the complete historical state, the hub chooses one ID and retains it through
+migration and restart. A malformed or conflicting ID, or a missing ID in schema3
+or later, is rejected. A schema4 generation requires its matching registry and
+recovery metadata; use whole-server recovery when those files have been lost.
+
 Each store has a matching `.snapshot` recovery file. Keep the checkpoint and
 snapshot together: startup rejects conflicting generations rather than rolling
 back acknowledged data. A valid snapshot recovers an interrupted DETS write; it

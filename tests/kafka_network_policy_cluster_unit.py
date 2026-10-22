@@ -83,4 +83,28 @@ class Guards(unittest.TestCase):
   with patch.object(g,'verify',return_value=True),patch.object(g.subprocess,'Popen') as process:
    with self.assertRaises(AssertionError):runner.run('mock',['never'])
    process.assert_not_called()
+ def test_fresh_anonymous_volume_bound_to_owned_node(self):
+  runner=g.Executor(self.root,dict(self.plan(),node_anonymous_volume_destinations=['/var']));runner.preexisting_volumes={'other'};name='a'*64
+  row={'HostConfig':{'Binds':['/var','/lib/modules:/lib/modules:ro']},'Mounts':[{'Type':'volume','Name':name,'Driver':'local','Destination':'/var','Source':'/vol/'+name}]}
+  volume={'Name':name,'Driver':'local','Scope':'local','CreatedAt':'now','Mountpoint':'/vol/'+name}
+  with patch.object(runner,'node_owned',return_value='node'),patch.object(runner,'docker',return_value=subprocess.CompletedProcess([],0,json.dumps([volume]).encode())):
+   runner.capture_volumes(row);self.assertTrue(runner.volumes_verified);self.assertEqual(runner.owned_volumes[0]['name'],name)
+   runner.preexisting_volumes.add(name)
+   with self.assertRaises(AssertionError):runner.capture_volumes(row)
+   self.assertFalse(runner.volumes_verified)
+ def test_named_volume_request_rejected(self):
+  runner=g.Executor(self.root,dict(self.plan(),node_anonymous_volume_destinations=['/var']));runner.preexisting_volumes=set()
+  with patch.object(runner,'node_owned',return_value='node'),patch.object(runner,'docker') as docker:
+   with self.assertRaises(AssertionError):runner.capture_volumes({'HostConfig':{'Binds':['named:/var']},'Mounts':[]})
+   docker.assert_not_called();self.assertFalse(runner.volumes_verified)
+ def test_verified_known_volume_cleanup_flags_and_strict_absence(self):
+  runner=g.Executor(self.root,self.plan());runner.node_issued=True;runner.known_node='owned';runner.volumes_verified=True;runner.volume_candidates={'a'*64};calls=[]
+  missing=subprocess.CompletedProcess([],1,b'[]',('Error response from daemon: get '+'a'*64+': no such volume').encode())
+  def docker(*args,**kwargs):calls.append(args);return missing if args[0]=='verify-volume-absence' else subprocess.CompletedProcess([],0,b'',b'')
+  with patch.object(runner,'inspect',side_effect=[OSError('daemon'),None,None]),patch.object(runner,'docker',side_effect=docker):errors=runner.finish()
+  self.assertTrue(errors);self.assertEqual(calls[0],('fallback-remove-node','rm','--force','--volumes','owned'));self.assertTrue(runner.cleanup[-1]['observed_absent'])
+ def test_volume_absence_not_mixed_or_casefolded(self):
+  good=lambda name:subprocess.CompletedProcess([],1,b'[]',('Error response from daemon: get '+name+': no such volume').encode())
+  self.assertTrue(g.volume_absent(good('Name'),'Name'));self.assertFalse(g.volume_absent(good('name'),'Name'))
+  mixed=good('Name');mixed.stderr+=b'\ndaemon error';self.assertFalse(g.volume_absent(mixed,'Name'))
 if __name__=='__main__':unittest.main()

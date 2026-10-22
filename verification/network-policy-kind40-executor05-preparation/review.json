@@ -1,0 +1,31 @@
+{
+  "schema": "adhd/enforcing-cni-kind-volume-preparation@1",
+  "prepared": true,
+  "executed": false,
+  "runtime_installs_pulls_cluster_pod_model_starts": 0,
+  "pure_tests": 17,
+  "plan_sha256": "e983594bea6a6d57265b53177730b391fb69f3392b3e3cdc1eeac36e97ce99a5",
+  "driver_sha256": "319d0f9e28cdcf7c5f11e4cb831ddeb468c56c0f62712eea1a9bec6fd16ece95",
+  "frozen_files": 351,
+  "bound_files": 25,
+  "external_inputs": 10,
+  "tool_files": 6403,
+  "actual_node_image_config_sha256": "caf23176b804ea639d96b2266829fdff42ca8f064bd9d32c00ad913b23ced7d9",
+  "node_image_Config_Volumes": [],
+  "anonymous_volume_origin": "Kindv0.33.0 Dockerprovision.go line237 adds --volume /var; imageconfig itselfhasnoVolumes. ReadonlyexistingKindnodeMount confirms64hexanonymous/var, nevermodified.",
+  "guards": [
+    "preexistingvolumenamesnapshot beforeKindcreate",
+    "onlyownnodewithboundID/image/role/dedicatednetwork, explicitHostConfig.Binds /var, expectedvolumeDestination/var,64hexfreshname notinpreexistinglist",
+    "DockerlocalvolumeName/CreatedAt/Driver/Scope/Mountpoint bound; repeatedproof beforecleanup; staleprooflatchinvalidated onfailure",
+    "normalrm--volumes; fallback--force--volumes onlyvalidfreshanonymousproof; unknown/preexisting/namedsharednevervolume-deleted",
+    "strictindependentvolumeinspectabsence foreach actuallyrecordedownedcandidate, case-sensitiveidentifier andno mixederrors; retainedunknownclosurefails",
+    "currentrootsharedkubeendpointhelper capturedinfrozenclosure; no oldfrozen04mutation"
+  ],
+  "only_current_root_overlay": {
+    "tests/kafka_network_policy_cluster.py": "319d0f9e28cdcf7c5f11e4cb831ddeb468c56c0f62712eea1a9bec6fd16ece95"
+  },
+  "once_absent": true,
+  "supersedes_unstarted04": true,
+  "scope": "Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.",
+  "root_review_GO_required": true
+}

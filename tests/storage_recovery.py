@@ -11,28 +11,57 @@ def main():
     parent=Path('_build/roadmap/storage-recovery').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));cases=[];model=ModelFixture();hubs=[]
     def runtime(name,argv):
         r=Runtime(root/name,argv);r.file.write_text(json.dumps({'project_id':'storage-fixture','port':free_port(),'store_path':str(r.root/'hub.dets'),
-            'agents':{'alice':secrets.token_urlsafe(32),'bob':secrets.token_urlsafe(32)},'admin_token':secrets.token_urlsafe(32),
+            'projects':[{'id':name,'name':name,'status':'active','settings':{}} for name in ('storage-fixture','healthy-blue')],
+            'agents':{name:secrets.token_urlsafe(32) for name in ('alice','bob','blue')},
+            'agent_projects':{'alice':['storage-fixture'],'bob':['storage-fixture'],'blue':['healthy-blue']},'admin_token':secrets.token_urlsafe(32),
             'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':500,'retry_ms':100}}));r.file.chmod(0o600);hubs.append(r)
         if argv != command:
             # Provision and migrate through the real runtime before delaying
             # every filesystem call. These cases target subsequent publication
             # commits; startup/migration crashes have dedicated independent suites.
             r.command=command;r.start();r.stop();r.command=argv
-        r.start();return r
-    def rpc(r,cmd,mid=None,actor='alice'):return Client(r).rpc(cmd,r.config['agents'][actor],mid=mid)
+        r.start()
+        r.profile21=Client(r).get('/protocol/schema')[1].get('$id')=='urn:adhd:protocol:2.1'
+        r.blue_witness=rpc(r,{'op':'publish_record','text':'Independent Blue survives Red failure'},mid='blue-safety-witness',actor='blue')
+        return r
+    def rpc(r,cmd,mid=None,actor='alice'):
+        return Client(r).rpc({'project_id':'healthy-blue' if actor=='blue' else 'storage-fixture',**cmd},r.config['agents'][actor],mid=mid)
+    def selected(r):
+        if Path(str(r.file)+'.stores').exists():
+            from project_recovery_state import route
+            return route(r.file,'storage-fixture')[1]
+        return Path(r.config['store_path'])
     def record(name,**extra):cases.append({'case':name,'passed':True,**extra});print('PASS',name,extra,flush=True)
     def rejected(r):
-        try:r.start()
-        except AssertionError:assert r.process.poll() is not None and r.process.returncode!=0
-        else:raise AssertionError('Invalid persistent state was accepted')
-        finally:r.stop()
+        # Profile2.1 quarantines one failed project while authenticated global
+        # control and a separately accepted Blue witness remain operational.
+        previous=r.initialize_projects
+        r.initialize_projects=False
+        try:
+            r.start()
+            profile=Client(r).get('/protocol/schema')[1].get('$id')
+            assert profile=='urn:adhd:protocol:2.1','Earlier profiles must reject invalid state globally'
+            client=Client(r,r.config['admin_token'])
+            status=client.api({'op':'project_restore_status','project_id':'storage-fixture'})
+            assert status['availability']=='recovery_required'
+            assert client.api({'op':'config_get'})['config']['server_id']==r.config['server_id']
+            result=rpc(r,{'op':'get_record','publication_id':r.blue_witness['record']['publication']['id']},actor='blue')
+            assert result['record']==r.blue_witness['record']
+            rejected=client.api({'op':'overview','project_id':'storage-fixture'},expected=503)
+            assert rejected['error']['code']=='RECOVERY_REQUIRED'
+        except AssertionError:
+            assert not r.profile21, 'Profile2.1 target corruption killed global control or failed an isolation assertion'
+            assert r.process.poll() is not None and r.process.returncode!=0
+        finally:
+            r.stop()
+            r.initialize_projects=previous
     try:
         dirty_witness=False
         for boundary in (() if args.integrity_only else ('snapshot-data-sync','snapshot-install','checkpoint-write','checkpoint-sync')):
             model.mode='match';trace=root/(boundary+'.trace')
             traced=['strace','-f','-yy','-s','1024','-e','trace=rename,pwrite64,fsync','-e','inject=rename:delay_exit=1s',
                 '-e','inject=fsync:delay_exit=1s','-e','inject=pwrite64:delay_exit=100ms','-o',str(trace)]+command
-            r=runtime(boundary,traced);data=Path(r.config['store_path']);snapshot=Path(str(data)+'.snapshot')
+            r=runtime(boundary,traced);data=selected(r);snapshot=Path(str(data)+'.snapshot')
             rpc(r,{'op':'subscribe','description':'Observe source records'},mid='baseline-subscription',actor='bob')
             baseline_command={'op':'publish_record','text':'Acknowledged original evidence','context':{'question':'What was observed?','subject':'original'},'source':{'kind':'email','id':'origin','item_id':'original-event'}}
             original=rpc(r,baseline_command,mid='baseline-publication')['record'];oid=original['publication']['id']
@@ -75,7 +104,7 @@ def main():
             record('kill-at-'+boundary,snapshot_installed=committed,checkpoint_needed_repair=needs_repair)
             r.stop()
         assert dirty_witness or args.integrity_only,'Fault injection never produced the original DETS needs_repair condition'
-        model.mode='match';r=runtime('integrity',command);data=Path(r.config['store_path']);snapshot=Path(str(data)+'.snapshot')
+        model.mode='match';r=runtime('integrity',command);data=selected(r);snapshot=Path(str(data)+'.snapshot')
         expected=rpc(r,{'op':'publish_record','text':'Integrity original','context':{'subject':'integrity'}},mid='integrity-original');r.stop();good=snapshot.read_bytes()
         damaged=bytearray(good);damaged[-1]^=1;snapshot.write_bytes(damaged);rejected(r);assert snapshot.read_bytes()==damaged
         snapshot.write_bytes(good);r.start();assert rpc(r,{'op':'publish_record','text':'Integrity original','context':{'subject':'integrity'}},mid='integrity-original')==expected;r.stop()

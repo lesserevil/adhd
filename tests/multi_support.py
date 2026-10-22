@@ -230,6 +230,11 @@ class Fixture:
     def admin(self):
         if self.admin_client is not None:
             return self.admin_client
+        if not self.admin_credentials and not self.args.rest_url:
+            existing = json.loads(self.file.read_text())
+            if existing.get('admin_token'):
+                self.admin_client = Admin(Client(self, existing['admin_token']), self)
+                return self.admin_client
         if self.admin_credentials:
             cred = self.admin_credentials
         else:

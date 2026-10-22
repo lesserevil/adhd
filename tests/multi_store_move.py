@@ -59,6 +59,16 @@ async def main(args):
         identity = admin.call({'op': 'config_get'})['config']['server_id']
         old_root = Path(admin.call({'op': 'config_get'})['config']['store_path'])
         project_filenames = [p.name for p in Path(str(old_root) + '.projects').glob('*.dets')]
+        registry_file = Path(str(f.file) + '.stores')
+        selected_sources = None
+        if registry_file.exists():
+            from project_recovery_state import registry
+            selected_sources = [Path(entry['storage_anchor']) for entry in registry(f.file)['projects'].values() if entry['initialized']]
+            assert len(selected_sources) == 3
+        def destinations(anchor):
+            if selected_sources is not None:
+                return [Path(str(anchor) + str(path)[len(str(old_root)):]) for path in selected_sources]
+            return ([anchor] if not args.no_default else []) + [Path(str(anchor) + '.projects') / name for name in project_filenames]
         evidence.record('originals-source-retries-acknowledged-and-unacknowledged-deliveries-created-in-isolated-projects')
 
         # A foreign destination is never overwritten, and no proposal activates.
@@ -66,15 +76,10 @@ async def main(args):
         collision.write_bytes(b'foreign destination must survive\n')
         foreign_digest = hashlib.sha256(collision.read_bytes()).hexdigest()
         before = admin.call({'op': 'config_get'})['config']
-        if args.no_default:
-            # No default binding means the root is an anchor, not an open file.
-            target = Path(str(collision) + '.projects')
-            target.mkdir()
-            red_path = target / project_filenames[0]
-            red_path.write_bytes(b'foreign destination must survive\n')
-            protected = red_path
-        else:
-            protected = collision
+        protected = destinations(collision)[0] if selected_sources is not None or args.no_default else collision
+        if protected != collision:
+            protected.parent.mkdir(parents=True)
+            protected.write_bytes(b'foreign destination must survive\n')
         admin.call({'op': 'config_update', 'patch': {'store_path': str(collision)}}, mutation=True, expected=409)
         assert admin.call({'op': 'config_get'})['config'] == before
         assert hashlib.sha256(protected.read_bytes()).hexdigest() == foreign_digest
@@ -110,10 +115,11 @@ async def main(args):
         assert f.process.pid == pid and f.process.poll() is None
         config = admin.call({'op': 'config_get'})['config']
         assert config['store_path'] == str(destination) and config['server_id'] == identity
-        expected = [destination] if not args.no_default else []
-        expected += [Path(str(destination) + '.projects') / name for name in project_filenames]
+        expected = destinations(destination)
         assert all(p.is_file() and Path(str(p) + '.snapshot').is_file() for p in expected)
-        if not args.no_default:
+        if selected_sources is not None:
+            assert all(path.is_file() for path in selected_sources)
+        elif not args.no_default:
             assert old_root.is_file()
         assert not Path(str(f.file) + '.transaction').exists()
         evidence.record('every-project-writer-moves-hot-at-one-revision-without-process-restart', project_count=3)

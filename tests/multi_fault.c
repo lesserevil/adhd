@@ -90,6 +90,33 @@ static int boundary(const char *source, const char *destination) {
   return 0;
 }
 
+/* Schema4 migration installs a closed generation through real link/unlink,
+ * instead of replacing the legacy source snapshot. Bind the observed pair to
+ * the durable registry-adoption decision before stopping after link succeeds. */
+static int adoption_snapshot_link(const char *source, const char *destination) {
+  const char *stage = getenv("ADHD_CRASH_STAGE");
+  const char *config = getenv("ADHD_CRASH_CONFIG");
+  const char *store = getenv("ADHD_CRASH_STORE");
+  if (!stage || strcmp(stage, "after-snapshot") || !config || !store ||
+      !source || !destination || !project_snapshot(store, destination)) return 0;
+  size_t a = strlen(source), b = strlen(destination);
+  if (a < 9 || b < 9 || strcmp(source + a - 9, ".snapshot")) return 0;
+  char path[4096], marker[4096], body[1048576], from[8192], to[8192];
+  snprintf(path, sizeof(path), "%s.transaction", config);
+  snprintf(marker, sizeof(marker), "%s.project-upgrade", config);
+  if (!has_phase(marker, "decided")) return 0;
+  int fd = open(path, O_RDONLY | O_CLOEXEC);
+  if (fd < 0) return 0;
+  ssize_t count = read(fd, body, sizeof(body) - 1);
+  close(fd);
+  if (count <= 0 || count == (ssize_t)sizeof(body) - 1) return 0;
+  body[count] = 0;
+  if (a - 9 > 4000 || b - 9 > 4000) return 0;
+  snprintf(from, sizeof(from), "\"stage\":\"%.*s\"", (int)a - 9, source);
+  snprintf(to, sizeof(to), "\"target\":\"%.*s\"", (int)b - 9, destination);
+  return strstr(body, "\"kind\":\"registry_adoption\"") && strstr(body, from) && strstr(body, to);
+}
+
 static void stop_once(void) {
   const char *sentinel = getenv("ADHD_CRASH_SENTINEL");
   const char *stage = getenv("ADHD_CRASH_STAGE");
@@ -132,5 +159,23 @@ int renameat2(int fromdir, const char *source, int todir, const char *destinatio
   if (point == 1) stop_once();
   int result = syscall(SYS_renameat2, fromdir, source, todir, destination, flags);
   if (!result && point == 2) stop_once();
+  return result;
+}
+
+int link(const char *source, const char *destination) {
+  static int (*original)(const char *, const char *);
+  if (!original) original = dlsym(RTLD_NEXT, "link");
+  int point = adoption_snapshot_link(source, destination);
+  int result = original(source, destination);
+  if (!result && point) stop_once();
+  return result;
+}
+
+int linkat(int fromdir, const char *source, int todir, const char *destination, int flags) {
+  static int (*original)(int, const char *, int, const char *, int);
+  if (!original) original = dlsym(RTLD_NEXT, "linkat");
+  int point = adoption_snapshot_link(source, destination);
+  int result = original(fromdir, source, todir, destination, flags);
+  if (!result && point) stop_once();
   return result;
 }

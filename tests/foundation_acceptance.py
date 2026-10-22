@@ -38,8 +38,9 @@ def free_port():
 
 
 class Runtime:
-    def __init__(self, root, command, image=None):
+    def __init__(self, root, command, image=None, *, initialize_projects=True):
         self.root, self.command, self.image = root, command, image
+        self.initialize_projects = initialize_projects
         root.mkdir(mode=0o700)
         self.file = root / 'hub.json'
         self.base = 'http://127.0.0.1:8766'
@@ -74,10 +75,55 @@ class Runtime:
                 if self.file.exists():
                     self.base = 'http://127.0.0.1:' + str(self.config.get('port', 8766))
                 if Client(self).get('/health')[0] == 200:
+                    self.initialize_unknown_projects()
                     return
             except (URLError,ConnectionError,TimeoutError): pass
             time.sleep(.1)
         raise AssertionError('Runtime readiness deadline')
+
+    def initialize_unknown_projects(self):
+        """Fixture-only public Admin admission; known missing stores never initialize."""
+        if not self.initialize_projects:
+            return
+        status, schema, _ = Client(self).get('/protocol/schema')
+        if status != 200 or schema.get('$id') != 'urn:adhd:protocol:2.1':
+            return
+        client = Client(self, self.config.get('admin_token'))
+        if not client.bearer:
+            text = (self.root / 'initial-admin-password.txt').read_text()
+            client.login('admin', re.search(r'^Password: (.+)$', text, re.M)[1])
+        # This fixture family tests the pre-Kafka/model-only surface. A pristine
+        # bootstrap advertises eventing without a broker endpoint: select the
+        # documented disabled transport explicitly, never invent broker success.
+        eventing = self.config.get('eventing') or {}
+        if eventing.get('enabled') is True and not eventing.get('rest_url'):
+            client.api({'op': 'config_update', 'patch': {'eventing': {'enabled': False}}}, mutation=True)
+        projects = client.api({'op': 'list_projects'})['projects']
+        for project in projects:
+            project_id = project['id']
+            def call(op, **fields):
+                return client.api({'op': op, 'project_id': project_id, **fields})
+            availability = call('project_restore_status')['availability']
+            if availability == 'ready':
+                continue
+            assert availability == 'uninitialized', 'Fixture must not initialize an existing unavailable project'
+            revision = client.api({'op': 'config_get'})['config_revision']
+            def settle(receipt, desired):
+                deadline = time.monotonic() + 30
+                while time.monotonic() < deadline:
+                    op = call('project_restore_status', operation_id=receipt['operation_id'])['operation']
+                    if op['state'] == desired:
+                        return op
+                    assert op['state'] not in ('failed', 'blocked', 'expired', 'stale'), op['failure']
+                    time.sleep(.05)
+                raise AssertionError('Fixture Admin admission deadline')
+            receipt = call('project_restore_plan', mode='initialize', expected_revision=revision,
+                           confirm=True, message_id=uuid4().hex)
+            plan = settle(receipt, 'ready')['plan']
+            applied = call('project_restore_apply', plan_id=plan['plan_id'], plan_sha256=plan['plan_sha256'],
+                           expected_revision=revision, confirm=True, message_id=uuid4().hex)
+            assert settle(applied, 'complete')['result']['initialized'] is True
+            assert client.api({'op': 'config_get'})['config_revision'] == revision
 
     def stop(self, hard=False):
         if self.container:

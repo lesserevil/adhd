@@ -11,7 +11,7 @@ def main():
  parent=Path('_build/roadmap/auth-faults').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));cases=[];runtimes=[]
  def record(name):cases.append({'case':name,'passed':True});print('PASS',name,flush=True)
  def setup(name,stage=None):
-  r=UpgradeRuntime(root/name,command,args.image,args.image_manifest);runtimes.append(r);template=root/(name+'-seed');port=free_port()
+  r=UpgradeRuntime(root/name,command,args.image,args.image_manifest);r.initialize_projects=False;runtimes.append(r);template=root/(name+'-seed');port=free_port()
   subprocess.run(['python3','scripts/configure_hub.py','--directory',str(template),'--port',str(port),'--store-path',str(r.root/'state.dets')],check=True,stdout=subprocess.DEVNULL)
   c=json.loads((template/'hub.json').read_text());initial=(template/'initial-admin-password.txt').read_text();r.base='http://127.0.0.1:'+str(port)
   if stage:

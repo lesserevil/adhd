@@ -44,12 +44,13 @@ def main():
         try:
             runtime.start()
             agent = Client(runtime)
+            initial_revision = runtime.config['config_revision']
             publication = agent.rpc({'op': 'publish', 'text': 'Original survives every commit boundary.'}, token, mid='durable-original')['publication']
             patch = {'port': new_port,
                      'store_path': str(new_store), 'threshold_ppm': 777777}
             if args.protocol_version == 1:
                 patch['project_id'] = 'after-crash'
-            request = {'op': 'config_update', 'patch': patch, 'expected_revision': 1,
+            request = {'op': 'config_update', 'patch': patch, 'expected_revision': initial_revision,
                        'confirm': True, 'message_id': 'crash-change'}
             def mutate():
                 try: Client(runtime, admin_token).api(request)
@@ -80,7 +81,7 @@ def main():
             assert fetched['text'] == publication['text'] and fetched['project_id'] == config['project_id']
             if is_new:
                 assert client.api(request)['applied'] is True
-                assert runtime.config['config_revision'] == 2
+                assert runtime.config['config_revision'] == initial_revision + 1
             assert not Path(str(runtime.file) + '.transaction').exists()
             cases.append({'case': 'kill-at-' + boundary + '-rename', 'passed': True,
                           'recovered': 'new' if is_new else 'old'})

@@ -51,6 +51,38 @@ def wait(fn, message, seconds=30):
     raise AssertionError(message)
 
 
+ADMIN_TIMING_LIMIT = 256
+ADMIN_PATCH_KEYS = frozenset(('projects', 'agent_projects', 'federation', 'eventing',
+                             'agents', 'users', 'auth', 'resources', 'model',
+                             'server_id', 'default_project_id'))
+
+
+def timed_admin_request(hub, body, diagnostics, server_ordinal):
+    """Observe the original request without retaining credentials or body values."""
+    started = time.monotonic()
+    row = {'monotonic_start': started, 'server_ordinal': server_ordinal,
+           'op': body.get('op') if body.get('op') in ('config_get', 'config_update') else 'other'}
+    mid = body.get('message_id')
+    if isinstance(mid, str):
+        row['message_id_sha256'] = hashlib.sha256(mid.encode()).hexdigest()
+    patch = body.get('patch')
+    if isinstance(patch, dict):
+        row['patch_keys'] = sorted({key if key in ADMIN_PATCH_KEYS else '<other>' for key in patch})
+    try:
+        status, value = request(hub.base, '/admin/api', body, hub.config['admin_token'])
+        row['status'] = status if isinstance(status, int) and not isinstance(status, bool) else None
+        return status, value
+    except BaseException as error:
+        row['exception_type'] = type(error).__name__
+        raise
+    finally:
+        row['duration_seconds'] = time.monotonic() - started
+        if len(diagnostics['requests']) < ADMIN_TIMING_LIMIT:
+            diagnostics['requests'].append(row)
+        else:
+            diagnostics['omitted_requests'] += 1
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     add_target_arguments(p)
@@ -76,7 +108,7 @@ def main():
     report = {'schema': 'adhd/multi-federation-acceptance@1', 'passed': False,
               'limitations': ['Controlled model fixture qualifies transport and authority, not semantic quality.',
                               'Eventing is explicitly legacy mode; this suite does not qualify Kafka or deployments.'],
-              'checks': cases}
+              'checks': cases, 'admin_request_timings': {'requests': [], 'omitted_requests': 0}}
     report.update(target.report())
 
     def record(name, **details):
@@ -99,7 +131,7 @@ def main():
         return result
 
     def admin(hub, body):
-        status, value = request(hub.base, '/admin/api', body, hub.config['admin_token'])
+        status, value = timed_admin_request(hub, body, report['admin_request_timings'], hubs.index(hub))
         assert status == 200, (status, value)
         return value
 
@@ -360,13 +392,15 @@ def main():
         report['failure_type'] = type(error).__name__
         raise
     finally:
-        for hub in hubs:
-            hub.stop()
-        if legacy:
-            legacy.stop()
-        model.close()
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(report, indent=2) + '\n')
+        try:
+            for hub in hubs:
+                hub.stop()
+            if legacy:
+                legacy.stop()
+            model.close()
+        finally:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(json.dumps(report, indent=2) + '\n')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,64 @@
+{
+  "schema": "adhd/oidc-policy-image-custody@1",
+  "application_assertions_unchanged": true,
+  "failure_type": "AssertionError",
+  "runtimes": [
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "payload_verified": true,
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false,
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "0b8ec40d88b0128f7a29a7571fc70cf2aa8f6005b055b48bc814cc64cef7d0a4",
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+        },
+        {
+          "action": "stopped",
+          "container_id": "0b8ec40d88b0128f7a29a7571fc70cf2aa8f6005b055b48bc814cc64cef7d0a4",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-5dfe998d52c145a2",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-adb8733fa1cb4db1",
+          "container_id": null,
+          "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "kernel_vm_observations": [
+        {
+          "container_id": "0b8ec40d88b0128f7a29a7571fc70cf2aa8f6005b055b48bc814cc64cef7d0a4",
+          "host_pid": 3201677,
+          "kernel_start_time": "21802802",
+          "pid_namespace": "pid:[4026534022]",
+          "executable": "/usr/local/lib/erlang/erts-17.1.1/bin/beam.smp",
+          "command_sha256": "0075bf1b45437cc09be5d3bb4dae014e5eee966b7d1971172c840b11aa5c7b69"
+        }
+      ]
+    }
+  ]
+}

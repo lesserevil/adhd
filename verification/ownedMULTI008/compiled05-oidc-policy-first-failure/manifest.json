@@ -1,0 +1,81 @@
+{
+  "schema": "adhd/compiled05-oidc-first-failure@1",
+  "passed": false,
+  "root_session": 13755,
+  "authoritative_exit_code": 1,
+  "plan_sha256": "25de4d3baace23d80236f8c5e58377978b0e62d7e421bcefb102319e2d767832",
+  "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "policy_cases_completed": 0,
+  "failure_scope": "Public unknown-project initialization before first OIDC policy case",
+  "safe_journal_status": {
+    "kind": "apply",
+    "state": "failed",
+    "failure": {
+      "code": "RESTORE_IO_ERROR",
+      "conflicts": [],
+      "reason": "io",
+      "retryable": true,
+      "truncated": false
+    },
+    "mode": "initialize",
+    "transport_enabled": true,
+    "progress": {
+      "bytes_read": 0,
+      "maximum_bytes": 67108864,
+      "maximum_records": 100000,
+      "records_checked": 39
+    },
+    "target_availability": "uninitialized",
+    "registry_initialized": false
+  },
+  "configured_transport": {
+    "enabled": true,
+    "rest_url": "http://127.0.0.1:8082"
+  },
+  "before_decision": {
+    "transaction_absent": true,
+    "stage_removed": true,
+    "generation_parent_empty": true
+  },
+  "strict_cleanup_independently_rechecked": {
+    "container_ids_absent": [
+      "0b8ec40d88b0128f7a29a7571fc70cf2aa8f6005b055b48bc814cc64cef7d0a4"
+    ],
+    "issued_probe_names_absent": [
+      "adhd-accept-probe-5dfe998d52c145a2",
+      "adhd-accept-probe-adb8733fa1cb4db1"
+    ],
+    "kernel_vm_pid_absent": 3201677,
+    "original_matrix_cleanup_confirmed_false_unchanged": true
+  },
+  "input_closure_independently_rechecked": {
+    "passed": true,
+    "frozen_files": 376,
+    "bound_files": 5,
+    "external_inputs": 7,
+    "tool_trees": 3
+  },
+  "private_fixture_sha256": {
+    "hub.json": "5a42e03bd3d4c44fdf18306f4d81173eb1b4a6b81121f310ac7f1dd42ae7cfad",
+    "hub.json.pre-registry": "5a42e03bd3d4c44fdf18306f4d81173eb1b4a6b81121f310ac7f1dd42ae7cfad",
+    "hub.json.recovery": "3f7be0499de7b5ab501e3bd02d6671d61443b94f0cb6167ebf31beba3db91028",
+    "hub.json.stores": "a68752e17c6a2a169f1715ed3fb5dcd53288f2588d811c0baf3c4b1374602818",
+    "hub.json.stores.marker": "5c5651a87a94a9e9f2f3e9d8c36752aad95a28723deb842cf29d113d835fc995",
+    "stdout.log": "cf940eae63a0031d5e2d6953dd98b25e742cf4fd08b65c61759a08754f00650d",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_sha256": {
+    "project_restore.exs": "7406b8913b78105f545ba129db26cf8dd21f25dbd6442511965bc76fd057431b",
+    "eventing.exs": "879566cb1dfc3dc571d147a888407bb073cdb920f0167dea1a0d696421110b9e",
+    "storage.exs": "2ff6f2ac7d6191b346c502c81d1030bcf02f9ca132e95358689f47d132ec889b"
+  },
+  "fixture_source_sha256": {
+    "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+    "oidc_policy.py": "6db58c2a5c67a7073cc6784cb02a4906dba5c625833ab0cf6c133227558ee672",
+    "oidc_policy_image.py": "402f946ac33427c7dcb305ea52585e088601beecfc4d816a2477a8251c97fdcf"
+  },
+  "diagnosis": "The auth-only fixture configure_hub default explicitly enables Kafka at8082; foundation public initializer preserves nonempty endpoint. Eventing preflight occurs after closed staging and before durable decision, transport failures are mapped to genericRESTORE_IO_ERROR/io. This matches journal/disk evidence; original has no syscall/HTTP-return trace so exact raising operation is not proven. Current no8082listener observation is not a historical listener claim. No product failure asserted.",
+  "proposed_fixture_correction": "Parent approved public Admin disable eventing for auth-only fixture then unchanged public initialization. Preserve original5cases/16assertions/defaultnativepath/bounds and firstfalse. Bootstrap rename/restart auth-precondition edge separately reported before implementation.",
+  "scope": "Read-only failure retention and current strict cleanup/input audit only. No policy pass, retry, hub/provider/compiler start, or broker/model request. No raw secret configuration/password copied."
+}

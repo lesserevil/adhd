@@ -50,6 +50,20 @@ Red work and shared three-second budget within the ten-second recovery budget.
 Retain bounded failure traces before assertions can discard them. Next: review
 that fixture correction and run all 23 independent cases against the passing
 export and receipt; the earlier failure remains false.
+The [corrected-control run](../../verification/eventing-readiness-native23-retention-failure/manifest.json)
+passes 15 whole cases, including the observed shared-budget queue expiry, then
+fails existing-retention after its durable decision and real Kafka alter; seven
+cases remain unrun. The desired policy and transaction remain, as required for
+an incomplete committed transition. Its positive retention fixture also shares
+one project HTTP ticket with Blue's normal poll; establish two project tickets
+and observe independent policy capacity without changing its one-second budget
+or any policy/readback/preservation assertions. The original failure cause stays
+unconfirmed. Add a separate deterministic postdecision readback-failure test:
+fail only the selected topic's readback after real alteration under the durable
+decision, then cold-start unchanged state and prove desired-policy replay,
+transaction completion and preserved records, acknowledgments, routes and offsets.
+Repeat a cold start to check idempotence. Existing generic config crashes and
+topic-prefix cutover tests do not cover this retention-specific recovery boundary.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

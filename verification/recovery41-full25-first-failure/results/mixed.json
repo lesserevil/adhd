@@ -1,0 +1,209 @@
+{
+  "suite": "target-only-project-restore",
+  "started_at": "2026-10-22T14:36:20.277236+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "target-only-restore-keeps-originals-private-acks-current-security-and-other-project-newer-position",
+      "passed": true,
+      "retained_ids": 127,
+      "lost_post_backup_ids": 103,
+      "new_ids": 103,
+      "families": [
+        "publication",
+        "subscription",
+        "delivery",
+        "history",
+        "retrieval",
+        "archive",
+        "feedback",
+        "replay",
+        "optimizer-proposal",
+        "optimizer-child",
+        "optimizer-evaluation",
+        "selection-reset",
+        "event-replay",
+        "repair",
+        "audit"
+      ],
+      "complete_accepted_subtrees_compared": [
+        "publications",
+        "subscriptions",
+        "deliveries",
+        "contexts",
+        "idempotency",
+        "sources",
+        "admin_idempotency",
+        "history_queries",
+        "retrieval_queries",
+        "archive_queries",
+        "feedback",
+        "replay_queries"
+      ],
+      "explicit_public_allocated_family_counts": {
+        "publication": 25,
+        "subscription": 2,
+        "delivery": 2,
+        "event-replay-delivery": 1,
+        "history": 1,
+        "retrieval": 1,
+        "archive": 1,
+        "archive-plan": 1,
+        "replay": 1,
+        "proposal": 1,
+        "proposal-child-replay": 8,
+        "event-replay": 1,
+        "event-audit": 2,
+        "index-rebuild": 1,
+        "public-history": 21,
+        "public-retrieval": 10,
+        "public-archive": 9,
+        "public-archive-plan": 9,
+        "public-replay": 9,
+        "public-optimization": 1,
+        "public-index-generation": 2
+      },
+      "unseeded_families": [
+        "source-query",
+        "federated-query"
+      ],
+      "optimizer_quality_results": {
+        "retained": "rejected",
+        "lost": "rejected",
+        "recovered": "rejected"
+      },
+      "transport_discontinuity": true
+    },
+    {
+      "name": "apply-retry-and-cold-start-preserve-newer-activated-generation-without-reinstalling-older-backup",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "fixture_phase_wait_seconds": {
+    "optimizer_training": 300,
+    "optimizer_evaluation": 300,
+    "kafka_replay_materialization": 300,
+    "kafka_drain": 300,
+    "replay_delivery": 300,
+    "quarantine": 300,
+    "repair_retry": 300,
+    "index_rebuild": 300
+  },
+  "timing_scope": "Bounded complete-state lifecycle fixture, not throughput qualification; all original cases, gold and quality gates retained.",
+  "authored_recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+  "scope": "Target restore and public original/query/feedback/replay/optimizer/selection and actual Kafka repair/replay/audit allocator families using controlled typed replies. Deterministic lineage hashes remain stable. SourceQuery/FederatedQuery allocation and federation/crash/browser gates remain separate; no full allocator or live semantic model qualification claim.",
+  "finished_at": "2026-10-22T14:54:38.844707+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "790d47458fd46c0e8130d485f29f7fce5fc34c1e57577d436675a62d0c3b864d",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "790d47458fd46c0e8130d485f29f7fce5fc34c1e57577d436675a62d0c3b864d",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "df8693ee91571c09985e0698a9e28668a6f010c0592e7f24e11cccfe16b3eb5e",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "df8693ee91571c09985e0698a9e28668a6f010c0592e7f24e11cccfe16b3eb5e",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "365a547dc0359da86a205b3b1c3c233c44111b65210cbdddf0bf3b2608ca4757",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "365a547dc0359da86a205b3b1c3c233c44111b65210cbdddf0bf3b2608ca4757",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "d705f8601c0064f2466e8a48f67fcc6e57b72fe62907e2940f8fcfa6e81f5345",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "d705f8601c0064f2466e8a48f67fcc6e57b72fe62907e2940f8fcfa6e81f5345",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-596262f1651447a6",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-2de19bc99f5a4aeb",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-8d1da71242d642ec",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-28e7578d47624972",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+}

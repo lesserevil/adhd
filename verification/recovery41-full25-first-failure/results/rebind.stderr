@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/_build/recovery41-compiled01-full25/frozen/tests/image_recovery_entry.py", line 142, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/_build/recovery41-compiled01-full25/frozen/tests/image_recovery_entry.py", line 139, in main
+    run_script(args.script,argv,args.timeout,args.cleanup_report,compiled)
+  File "/home/horde/src/adhd/_build/recovery41-compiled01-full25/frozen/tests/image_recovery_entry.py", line 87, in run_script
+    try:runpy.run_path(str(script),run_name='__main__')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/horde/src/adhd/_build/recovery41-compiled01-full25/frozen/tests/storage_rebind.py", line 156, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/_build/recovery41-compiled01-full25/frozen/tests/storage_rebind.py", line 138, in main
+    process=command.start(['rebind-storage',req],stdout=out,stderr=err,deadline=deadline,environment={k:v for k,v in env.items() if k.startswith('ADHD_REBIND_')}) if a.image else subprocess.Popen(command+[json.dumps(['rebind-storage',req])],stdout=out,stderr=err,env=env,start_new_session=True);active=(process,[out,err])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/recovery41-compiled01-full25/frozen/tests/image_rebind_runtime.py", line 73, in start
+    self.observe_vm(session,deadline)
+  File "/home/horde/src/adhd/_build/recovery41-compiled01-full25/frozen/tests/image_rebind_runtime.py", line 134, in observe_vm
+    assert expected and all(isinstance(arg,str) and arg.encode() in cmdline.split(b'\0') for arg in expected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -83,7 +83,13 @@ def verify_bootstrap_dependency(directory,binding,plan):
  assert audit['protected_cluster_before_after_same_ID']==audit['protected_cluster_currently_running_same_ID']
  assert prior['diagnostic_only']is True and prior['controller_direct_api_endpoint']=={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
  for key in ('node_image','CNI_images','CNI_archives','image','artifact_sha256','admission_sha256','canonical_manifest_sha256','direct_api_endpoint','controller_direct_api_endpoint'):assert prior[key]==plan[key]
- for name in ('tests/kafka_network_policy.py','deploy/k8s/private.yaml'):assert prior['frozen']['files'][name]==plan['frozen']['files'][name]
+ assert prior['frozen']['files']['deploy/k8s/private.yaml']==plan['frozen']['files']['deploy/k8s/private.yaml']
+ old_program=prior['frozen']['files']['tests/kafka_network_policy.py'];new_program=plan['frozen']['files']['tests/kafka_network_policy.py']
+ if old_program!=new_program:
+  from kafka_network_policy_readiness import overlay
+  baseline=directory.parent/'route-original-program.py';assert sha(plain(baseline))==old_program
+  assert hashlib.sha256(overlay(baseline.read_bytes())).hexdigest()==new_program
+  assert plan['route_observer_amendment']=={'kind':'failure-only-bounded-readiness-observer','original_sha256':old_program,'amended_sha256':new_program}
  for name in ('kind.yaml','calico-pinned.yaml','images.json'):assert prior['bound']['files'][name]==plan['bound']['files'][name]
  proof=result['direct_api_endpoint_proof'];assert proof==audit['direct_api_endpoint_proof']
  assert proof['host_direct_API_verified']and proof['inside_own_node_verified']and proof['tls']['verify_peer']and proof['tls']['port']==6443
@@ -125,7 +131,7 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py'):
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py'):
   shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)
@@ -156,6 +162,16 @@ def prepare(args):
   directory=bound/'bootstrap12';directory.mkdir()
   for source,name in [(bootstrap_proof,'audit.json'),(bootstrap_proof.parent/'plan.json','plan.json'),(bootstrap_proof.parent/'result.json','result.json')]:shutil.copyfile(plain(source),directory/name)
   bootstrap_binding={'audit_sha256':sha(directory/'audit.json'),'plan_sha256':sha(directory/'plan.json'),'result_sha256':sha(directory/'result.json')}
+ route_amendment=None
+ baseline_path=getattr(args,'route_baseline',None)
+ if baseline_path is not None:
+  assert bootstrap_binding and not args.diagnostic_only
+  from kafka_network_policy_readiness import overlay
+  prior=json.loads((bound/'bootstrap12/plan.json').read_text());baseline=plain(baseline_path)
+  assert sha(baseline)==prior['frozen']['files']['tests/kafka_network_policy.py']
+  assert overlay(baseline.read_bytes())==(frozen/'tests/kafka_network_policy.py').read_bytes()
+  shutil.copyfile(baseline,bound/'route-original-program.py')
+  route_amendment={'kind':'failure-only-bounded-readiness-observer','original_sha256':sha(baseline),'amended_sha256':sha(frozen/'tests/kafka_network_policy.py')}
  (work/'runtime').mkdir();shutil.copyfile(plain(__file__),work/'driver.py')
  tools={name:external(p) for name,p in [('python',sys.executable),('kind',root/'.worktrees/deployment/_build/kafka/kind'),('kubectl',root/'.worktrees/deployment/_build/kafka/kubectl'),('docker','/usr/bin/docker'),('ip','/usr/sbin/ip')]}
  for n in ('kind','kubectl','docker'):assert tools[n]['sha256']==base['tools'][n]['sha256']
@@ -164,6 +180,7 @@ def prepare(args):
  plan={'schema':'adhd/enforcing-cni-kind-executor@1','prepared':True,'executed':False,'root_GO_required':True,'cluster':base['cluster'],'network':base['dedicated_network'],'node':base['node'],'bridge_subnet':base['network_subnet'],'owner_label':'adhd-policy-owner','owner_nonce':os.urandom(16).hex(),'image':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'node_image':node,'node_anonymous_volume_destinations':['/var'],'node_image_declared_volumes':sorted((json.loads(node_config.read_text())['config'].get('Volumes') or {}).keys()),'CNI_images':cni,'CNI_provisioning':'exact-OCI-archive-import','CNI_transfer':'owned-node-exec-stdin-private-varlib','CNI_archives':oci_report['images'],'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'external_inputs':[external(oci_source/name) for name in ('manifest.json','0.oci.tar','1.oci.tar','2.oci.tar')]+[external(node_config),external(source),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+list(tools.values()),'docker_socket':{'path':str(socket),'identity':[s.st_dev,s.st_ino]},'lane_lock':str(root/'_build/roadmap/netpol-kind.lane.lock'),'automatic_retries':0,'parallelism':1,'fixture_pods':9,'routes':18,'scope':'Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.','runtime_starts_during_preparation':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED'}
  assert not args.direct_api_endpoint or args.diagnostic_only or bootstrap_binding,'Direct full gate requires qualified bootstrap12 dependency'
  if bootstrap_binding:plan['bootstrap_dependency']=bootstrap_binding
+ if route_amendment:plan['route_observer_amendment']=route_amendment
  if getattr(args,'controller_direct_api_endpoint',False):
   assert args.direct_api_endpoint and (args.diagnostic_only or bootstrap_binding)
   plan['controller_direct_api_endpoint']={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
@@ -474,7 +491,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
  for n in ('repo-root','cluster-plan','context','admission-manifest','node-config','oci-inputs'):p.add_argument('--'+n,type=Path)
- p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');p.add_argument('--controller-direct-api-endpoint',action='store_true');p.add_argument('--bootstrap-proof',type=Path);p.add_argument('--bootstrap-proof-sha256');args=p.parse_args()
+ p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');p.add_argument('--controller-direct-api-endpoint',action='store_true');p.add_argument('--bootstrap-proof',type=Path);p.add_argument('--bootstrap-proof-sha256');p.add_argument('--route-baseline',type=Path);args=p.parse_args()
  if args.prepare:prepare(args)
  else:sys.exit(execute(args.work.absolute(),args.plan_sha256))
 if __name__=='__main__':main()

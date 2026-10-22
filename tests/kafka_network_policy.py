@@ -182,7 +182,16 @@ def main(args):
         addresses = {}
         for namespace, names in [(args.namespace, PODS), (args.namespace + '-peer', PEERS)]:
             for name, role in names.items():
-                checked(['-n', namespace, 'wait', '--for=condition=Ready', 'pod/' + name, '--timeout=30s'])
+                try:
+                    checked(['-n', namespace, 'wait', '--for=condition=Ready', 'pod/' + name, '--timeout=30s'])
+                except (AssertionError, subprocess.TimeoutExpired) as readiness_error:
+                    try:
+                        from kafka_network_policy_readiness import capture
+                        report['readiness_diagnostics'] = capture(root / 'readiness-private', kubectl, namespace, created[namespace], owner, name, role, args.cluster_image, args.kind_node)
+                    except BaseException as diagnostic_error:
+                        report['readiness_diagnostics_error_type'] = type(diagnostic_error).__name__
+                        readiness_error.add_note('Owned readiness diagnostics failed: ' + type(diagnostic_error).__name__)
+                    raise
                 actual = read(['-n', namespace, 'get', 'pod', name])
                 assert actual['metadata']['namespace'] == namespace and actual['metadata']['labels']['app'] == role
                 statuses = actual['status']['containerStatuses']

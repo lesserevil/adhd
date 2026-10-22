@@ -1,0 +1,107 @@
+{
+  "qualification": "Existing authored browser assertions passed both viewports, but manual screenshot review found a stale top availability label. This is not complete rendered recovery acceptance; next test strengthens ready-label assertions. No release admission.",
+  "raw_report_sha256": "836dba1880066f61d8aa22a5d16559fea872ab2a265e8384f49c49b7c2218d8d",
+  "report": {
+    "suite": "project-recovery-browser",
+    "started_at": "2026-10-22T00:02:40.148311+00:00",
+    "passed": true,
+    "checks": [
+      {
+        "name": "desktop-rendered-init-hot-settings-missing-target-restore-current-security-and-project-epoch",
+        "passed": true,
+        "viewport": {
+          "width": 1440,
+          "height": 1000
+        },
+        "captures": [
+          {
+            "name": "uninitialized",
+            "png_sha256": "17933553d76ed1c9d2bbb1091ef719d320c4917e1c0a7006d1dc222a56716c4c",
+            "structure_sha256": "14809487679e08185bb65b84c7bd2fb70f893084811a991b319cd0bc130e0c17",
+            "relative_capture": "desktop/uninitialized.png"
+          },
+          {
+            "name": "review-initialization",
+            "png_sha256": "9c2ac1f179368f5d4abd7d48aca74333c962bda7eb83a48ffd6bba544af18f43",
+            "structure_sha256": "3a4795323f93c9bb522cdbc190608a7b4a6baf656e0f2a66fdc6a33a40b76577",
+            "relative_capture": "desktop/review-initialization.png"
+          },
+          {
+            "name": "review-restore",
+            "png_sha256": "172af1afd818fe4c53caeaf33fcb50a4b6593cc9f8f21942114ac39847acf0e3",
+            "structure_sha256": "8ca55826710ab8371ca45563d9e0395949bddfb92a2b76a7e308ba45b9b2a989",
+            "relative_capture": "desktop/review-restore.png"
+          },
+          {
+            "name": "restored",
+            "png_sha256": "99d039e29534dce7680af40613df8149d005cec7e79154936e0381728fe0bd6b",
+            "structure_sha256": "050dba58ae80a302cae7bc6c82f8b730f6ac01b086315a37d69d05767edb9344",
+            "relative_capture": "desktop/restored.png"
+          }
+        ],
+        "normal_path_errors": [],
+        "delay_scope": "One unmodified actual status response released after project switch"
+      },
+      {
+        "name": "mobile-rendered-init-hot-settings-missing-target-restore-current-security-and-project-epoch",
+        "passed": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "captures": [
+          {
+            "name": "uninitialized",
+            "png_sha256": "2a8549d1a59b5483d52859b5326f51afca04584afeb5c9ede687529eab74000f",
+            "structure_sha256": "2f17ec68a70ac3bf9d7ed815deb93c4301d87575fc3730b1fb50515931ef5df1",
+            "relative_capture": "mobile/uninitialized.png"
+          },
+          {
+            "name": "review-initialization",
+            "png_sha256": "ee94affea75d1e478fa89ea4a5917c099dd985ea1f4700aefaa0a42040483e68",
+            "structure_sha256": "87127e1f69ea89546a1a453aca9be73e848ab8020e24ec5ec205cc4e11be6281",
+            "relative_capture": "mobile/review-initialization.png"
+          },
+          {
+            "name": "review-restore",
+            "png_sha256": "a2cd202b4fc5b39e35a1827e0341e8951fb9cb01971cfb0dc887896f895bd4e1",
+            "structure_sha256": "59879bbaac73efc4c4e8999cb98f4f50ca18c08a48b4ddf2542b31f6da3e94ce",
+            "relative_capture": "mobile/review-restore.png"
+          },
+          {
+            "name": "restored",
+            "png_sha256": "f0f0dc96af83365c639410aad2791ae601907c20714137586998d769c843ce88",
+            "structure_sha256": "37bf14c7c0f54a28cf2c45c058c13c6b475aac8cee904c0292aaca0d0f4130bb",
+            "relative_capture": "mobile/restored.png"
+          }
+        ],
+        "normal_path_errors": [],
+        "delay_scope": "One unmodified actual status response released after project switch"
+      }
+    ],
+    "limitations": [
+      "Controlled model responses prove transport/failure isolation, not semantic quality.",
+      "A single broker does not qualify replicated Kafka durability."
+    ],
+    "harness_sha256": "4554629a36180bf811ca00feb15c9666a7cf02c8bdde99f1e90e6c32f50ca469",
+    "artifact_sha256": "2c700cd6b9306df79492d4f4b509cdbddacbd730460cc4f79406a5f0ccb49d39",
+    "late_response_observation": {
+      "viewport": "mobile",
+      "selected_project": "project-blue",
+      "alert_text": "",
+      "old_target_visible": false
+    },
+    "finished_at": "2026-10-22T00:05:49.853298+00:00"
+  },
+  "manual_finding": {
+    "observed": "After completed restore, top Target project-red label remains recovery_required while Recovery status is ready/apply complete, in both desktop/restored.png and mobile/restored.png.",
+    "new_regression": "Require top Target project-red ready after initialization and restore activation.",
+    "source_change_owner": "Root Web owner; independent harness does not edit generated source."
+  },
+  "direct_visual_inspection": [
+    "desktop/review-restore.png",
+    "desktop/restored.png",
+    "mobile/review-initialization.png",
+    "mobile/restored.png"
+  ]
+}

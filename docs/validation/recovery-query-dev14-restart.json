@@ -1,0 +1,176 @@
+{
+  "qualification": "Development14 failed before target loss/restore. Nonexpired accepted pending SourceQuery becomes partial/unavailable during ordinary cold restart; this does not qualify callback fencing or recovery. Root implementation owner is assessing cache revalidation behavior.",
+  "raw_report_sha256": "bae4c4e9b266b12af0cf43e95afbac9cf06c5c7481dff5881290ac87c4154256",
+  "harness_git_commit": "cc4ddcf",
+  "report": {
+    "suite": "project-recovery-source-discovery-queries",
+    "started_at": "2026-10-22T00:44:27.901484+00:00",
+    "passed": false,
+    "checks": [],
+    "limitations": [
+      "Controlled model responses prove transport/failure isolation, not semantic quality.",
+      "A single broker does not qualify replicated Kafka durability."
+    ],
+    "artifact_sha256": "1ab074a9d82938c7f73854e70c9c680ca2fe623a4eabd5cfb9217662068d6979",
+    "harness_sha256": "96c8c1c6e32cea77fe9154c9db8152f8887f0a65a748a18e5d81bde3667b1e4b",
+    "dependency_sha256": {
+      "/home/horde/src/adhd/tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+      "/home/horde/src/adhd/components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+      "/home/horde/src/adhd/.worktrees/acceptance/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+      "/home/horde/src/adhd/.worktrees/acceptance/tests/multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c"
+    },
+    "limits": {
+      "relay_slots": 12,
+      "relay_requests": 512,
+      "held_response_seconds": 30,
+      "query_deadline_ms": 120000
+    },
+    "scope": "Native actual two-hub/two-broker pending source/discovery and callback fencing; local controlled model only, not semantic quality or release admission.",
+    "broker_cluster_ids": [
+      "MkU3OEVBNTcwNTJENDM2Qk",
+      "NEiAAXk0v1xqZFCdSDoQjA"
+    ],
+    "relay_errors": [],
+    "controlled_model_requests": 257,
+    "provider_posts": 0,
+    "finished_at": "2026-10-22T00:45:46.483432+00:00",
+    "failure_type": "AssertionError"
+  },
+  "observations": {
+    "backed_up_query": {
+      "coverage": [
+        {
+          "project_id": "project-red",
+          "server_id": "19c55c0181ff425d9e9dda201e07b835",
+          "status": "ready"
+        },
+        {
+          "project_id": "project-red",
+          "server_id": "5b940aad8acf43b18e0be1b31cddab30",
+          "status": "ready"
+        }
+      ],
+      "created_at": "2026-10-22T00:44:58.140Z",
+      "deadline_at": "2026-10-22T00:46:58.140Z",
+      "id": "sourcequery_bc7fedf5b922f138946f20c2be3d04d2_2",
+      "owner_id": "bridge",
+      "project_id": "project-red",
+      "question": "retained-source Which source maintains image decoders?",
+      "results": [
+        {
+          "owner_project_id": "project-red",
+          "owner_server_id": "5b940aad8acf43b18e0be1b31cddab30",
+          "requested": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "response": null,
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "status": "pending"
+        }
+      ],
+      "status": "pending"
+    },
+    "cold_current_query": {
+      "coverage": [
+        {
+          "project_id": "project-red",
+          "server_id": "19c55c0181ff425d9e9dda201e07b835",
+          "status": "ready"
+        },
+        {
+          "project_id": "project-red",
+          "server_id": "5b940aad8acf43b18e0be1b31cddab30",
+          "status": "unavailable"
+        }
+      ],
+      "created_at": "2026-10-22T00:44:58.140Z",
+      "deadline_at": "2026-10-22T00:46:58.140Z",
+      "id": "sourcequery_bc7fedf5b922f138946f20c2be3d04d2_2",
+      "owner_id": "bridge",
+      "project_id": "project-red",
+      "question": "retained-source Which source maintains image decoders?",
+      "results": [
+        {
+          "owner_project_id": "project-red",
+          "owner_server_id": "5b940aad8acf43b18e0be1b31cddab30",
+          "requested": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "response": null,
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "status": "unavailable"
+        }
+      ],
+      "status": "partial"
+    },
+    "remote_status": "completed",
+    "remote_response_sha256": "884e202f406836efa06fc7515d1174dec592060fc8c9c37ffbc5e8265a6e4a9b",
+    "remaining_original_deadline_at_failure_seconds": 71.656568,
+    "cold_ready_catalog_at": "2026-10-22T00:45:23.669Z",
+    "config_current_sha256": "0764f0ddf1928381b7faae04651e656fea5f0d03b14a9e9e2824abaf240e05d1",
+    "config_backup_sha256": "0764f0ddf1928381b7faae04651e656fea5f0d03b14a9e9e2824abaf240e05d1",
+    "backup_snapshot_sha256": "f7dcb226ce45ea2fba167e487c782571bc4c9d665da54001bc0f9669bd557d64",
+    "origin_snapshot_sha256": "4b5b8511866ff9e069f5842bdc34f060ecf2beab2d93239aea84aef0df4088a8",
+    "remote_snapshot_sha256": "c09c8123cadc6c6e5535ee62f3f08596b519abe54daaf055e78b96b3cccb7436"
+  },
+  "relay_summary": {
+    "requests": 407,
+    "counts": [
+      {
+        "op": "catalog",
+        "http_status": 200,
+        "query_status": null,
+        "count": 11
+      },
+      {
+        "op": "identities",
+        "http_status": 200,
+        "query_status": null,
+        "count": 11
+      },
+      {
+        "op": "source_submit",
+        "http_status": 202,
+        "query_status": "pending",
+        "count": 79
+      },
+      {
+        "op": "source_status",
+        "http_status": 200,
+        "query_status": "pending",
+        "count": 78
+      },
+      {
+        "op": "submit",
+        "http_status": 202,
+        "query_status": "pending",
+        "count": 114
+      },
+      {
+        "op": "status",
+        "http_status": 200,
+        "query_status": "pending",
+        "count": 114
+      }
+    ],
+    "held_replies": 0
+  },
+  "suspected_path": "SourceQueries.prepare resolve unavailable followed by replace_result/finish, while an expired startup directory cache awaits its first authenticated fresh snapshot. This is an inference from exact persisted state and request ordering, not an instrumented execution trace.",
+  "scope": "No target Store kill, restore apply, callback release, or new allocation namespace reached. Both owned native hubs and relay/model cleaned, broker services untouched; zero provider requests. Deadline120000ms fixed before acceptance; no extension or relabeling."
+}

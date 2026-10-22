@@ -12,6 +12,14 @@ class Checks(unittest.TestCase):
   self.assertEqual(actual[1],actual[0]+'/cri-containerd-'+CID+'.scope')
   self.assertEqual(m.paths(actual[1].removeprefix('/sys/fs/cgroup'),UID,CID),actual)
   self.assertIn('for root in "$@"',m.CGROUP_SCRIPT);self.assertLess(m.CGROUP_SCRIPT.index("printf 'UNAVAILABLE"),m.CGROUP_SCRIPT.index('for file in'))
+ def test_observed_kubelet_root_exact_parent_hierarchy(self):
+  uid='88e9a64a-e762-401c-8ac7-a7f008d67c72';cid='899ca1f20d1166ec8d5ed37792eb3702f546eceb890053458917c515c67dac1a'
+  slice='kubelet-kubepods-burstable-pod'+uid.replace('-','_')+'.slice'
+  raw=slice+':cri-containerd:'+cid
+  expected='/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-burstable.slice/'+slice
+  self.assertEqual(m.paths(raw,uid,cid),[expected,expected+'/cri-containerd-'+cid+'.scope'])
+  self.assertEqual(m.paths(expected.removeprefix('/sys/fs/cgroup')+'/cri-containerd-'+cid+'.scope',uid,cid),[expected,expected+'/cri-containerd-'+cid+'.scope'])
+  for bad in [raw.replace('kubelet-','foreign-',1),raw.replace('burstable','besteffort'),raw.replace(cid,'b'*64),raw.replace(uid.replace('-','_'),'foreign'),raw+'/..',raw.replace('kubelet-','kubelet-foreign-',1)]:self.assertIsNone(m.paths(bad,uid,cid))
  def test_cgroupfs_exact_and_unknown_no_scan(self):
   parent='/kubepods/burstable/pod'+UID
   self.assertEqual(m.paths(parent+'/'+CID,UID,CID),['/sys/fs/cgroup'+parent,'/sys/fs/cgroup'+parent+'/'+CID])
@@ -63,6 +71,11 @@ class Checks(unittest.TestCase):
   with patch.object(m,'context',return_value=c):result=m.observe(capture)
   self.assertTrue(result['available']);self.assertTrue(result['cgroup_layout_supported']);self.assertEqual(len(capture.calls),6);self.assertEqual(capture.fences,['cri-before','cri-after'])
   cg=next(row for row in capture.calls if row[0]=='cri-cgroup');self.assertEqual(cg[1][-2:],result['cgroup_paths']);self.assertIn('oom_kill 1',capture.saved[3][2].decode());self.assertIn('UNAVAILABLE',capture.saved[3][2].decode())
+  cri['info']['runtimeSpec']['linux']['cgroupsPath']='kubelet-kubepods-burstable-pod'+UID.replace('-','_')+'.slice:cri-containerd:'+CID
+  capture=Fake()
+  with patch.object(m,'context',return_value=c):result=m.observe(capture)
+  self.assertTrue(result['cgroup_layout_supported']);self.assertIn('/kubelet.slice/',result['cgroup_paths'][0]);self.assertEqual(len(capture.calls),6)
+  self.assertIn('oom_kill 1',capture.saved[3][2].decode());self.assertIn('UNAVAILABLE',capture.saved[3][2].decode())
   cri['info']['runtimeSpec']['linux']['cgroupsPath']='unsupported'
   capture=Fake()
   with patch.object(m,'context',return_value=c):result=m.observe(capture)

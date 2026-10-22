@@ -31,6 +31,11 @@ def paths(raw,uid,cid):
   parent='/kubepods.slice'+('/'+prefix+'.slice'if qos else '')+'/'+pod
   container=parent+'/cri-containerd-'+cid+'.scope'
   if raw in (pod+':cri-containerd:'+cid,container):return ['/sys/fs/cgroup'+parent,'/sys/fs/cgroup'+container]
+ # Exact observed Kind kubelet-rooted burstable slice (no arbitrary prefix).
+ pod='kubelet-kubepods-burstable-pod'+uid.replace('-','_')+'.slice'
+ parent='/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-burstable.slice/'+pod
+ container=parent+'/cri-containerd-'+cid+'.scope'
+ if raw in (pod+':cri-containerd:'+cid,container):return ['/sys/fs/cgroup'+parent,'/sys/fs/cgroup'+container]
  return None
 
 def context():

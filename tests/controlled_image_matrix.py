@@ -206,11 +206,24 @@ def cleanup_ledger(job,plan):
     return events
 
 
+def durable_once_marker(path,value):
+    """Never erase a partial/uncertain attempt; require file+directory durability."""
+    assert path.parent.resolve()==path.parent.absolute(),'Marker parent redirected'
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as output:
+        info=os.fstat(output.fileno());assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and info.st_uid==os.getuid()
+        output.write((json.dumps(value,sort_keys=True)+'\n').encode());output.flush();os.fsync(output.fileno())
+        named=path.lstat();assert (named.st_dev,named.st_ino)==(info.st_dev,info.st_ino)
+    directory=os.open(path.parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try:os.fsync(directory)
+    finally:os.close(directory)
+
+
 def execute(work,expected):
     assert sha(work/'plan.json')==expected
     plan=json.loads((work/'plan.json').read_text());verify(plan,work)
     assert not Path(plan['runtime_cwd']).exists()
-    with (work/'started.json').open('x') as marker:json.dump({'plan_sha256':expected,'started_at':time.time()},marker)
+    durable_once_marker(work/'started.json',{'plan_sha256':expected,'started_at':time.time()})
     Path(plan['runtime_cwd']).mkdir(mode=0o700)
     env=dict(os.environ);env['PATH']=plan['path_prefix']+':'+env['PATH'];env['PYTHONDONTWRITEBYTECODE']='1'
     env['LD_PRELOAD']=plan['fence_library'];env['ADHD_RECOVERY_DENY_PROVIDER_PORT']='18770'

@@ -5,9 +5,14 @@ import unittest
 from subprocess import CompletedProcess
 from types import SimpleNamespace
 import json
+import os
+import stat
+import hashlib
+import importlib.util
+from unittest.mock import patch
 from pathlib import Path
 from controlled_image_runtime import Custody,audit_models,regular,authoritative_absence as runtime_absent
-from controlled_image_matrix import fileset,authoritative_absence as driver_absent
+from controlled_image_matrix import fileset,durable_once_marker,authoritative_absence as driver_absent
 
 URL='http://127.0.0.1:19001/v1/systemone'
 
@@ -64,6 +69,32 @@ class Preparation(unittest.TestCase):
             _controlled_custody_attempt={'container_name':'owned-name','container_id':'known-id'})
         with self.assertRaisesRegex(AssertionError,'different container'):custody.cleanup_one(obj)
         self.assertEqual(calls,[('inspect','owned-name')])
+
+    def test_once_marker_fsyncs_file_then_parent_and_never_rewrites(self):
+        with tempfile.TemporaryDirectory() as text:
+            path=Path(text)/'started.json';calls=[];real=os.fsync
+            def record(fd):
+                calls.append('directory' if stat.S_ISDIR(os.fstat(fd).st_mode) else 'file')
+                return real(fd)
+            with patch('controlled_image_matrix.os.fsync',side_effect=record):durable_once_marker(path,{'attempt':'one'})
+            self.assertEqual(calls,['file','directory']);original=path.read_bytes()
+            with self.assertRaises(FileExistsError):durable_once_marker(path,{'attempt':'two'})
+            self.assertEqual(path.read_bytes(),original)
+    def test_actual_execute_reentry_refuses_before_compiler_or_child(self):
+        with tempfile.TemporaryDirectory() as text:
+            root=Path(text).resolve();(root/'frozen').mkdir()
+            driver=root/'run.py';driver.write_bytes(Path(__file__).with_name('controlled_image_matrix.py').read_bytes())
+            spec=importlib.util.spec_from_file_location('test_owned_driver',driver)
+            module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+            plan={'driver_sha256':hashlib.sha256(driver.read_bytes()).hexdigest(),'frozen_inputs':{},'externals':{},'bound_inputs':{},
+                  'runtime_cwd':str(root/'runtime'),'planned_suites':list(module.SUITES),
+                  'jobs':[{'name':name,'expected_groups':count} for name,count in module.SUITES.items()]}
+            (root/'plan.json').write_text(json.dumps(plan));expected=module.sha(root/'plan.json')
+            marker=root/'started.json';durable_once_marker(marker,{'plan_sha256':expected});before=marker.read_bytes()
+            with patch.object(module.subprocess,'run',side_effect=AssertionError('No compiler or child may be attempted')) as launch:
+                with self.assertRaises(FileExistsError):module.execute(root,expected)
+                launch.assert_not_called()
+            self.assertEqual(marker.read_bytes(),before);self.assertFalse((root/'runtime').exists())
 
     def test_file_links_refused_before_start(self):
         with tempfile.TemporaryDirectory() as text:

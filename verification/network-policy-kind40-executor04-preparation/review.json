@@ -1,0 +1,65 @@
+{
+  "schema": "adhd/enforcing-cni-kind-executor-preparation@1",
+  "prepared": true,
+  "executed": false,
+  "runtime_image_pull_install_cluster_pod_provider_starts": 0,
+  "pure_tests": 13,
+  "plan_sha256": "93bd92b9e160147b7bb276564e030e97ab4162864143ca37fe3ea2b440854420",
+  "driver_sha256": "c00b084a942c41af02b9df4fdba7776c96cb2ce25b9decbbaed5bd331101d5d3",
+  "research_plan_sha256": "5a67a89f7edd0a8bbcced3a00378a54907c53bce9bb611915ec27607ed33e57b",
+  "image": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "admission_sha256": "a78519154311d105ed84ed2e0887490b47d22807141eb2371163fc2c1a0b0f03",
+  "frozen_files": 349,
+  "frozen_directories": 28,
+  "bound_files": 24,
+  "bound_directories": 3,
+  "external_inputs": 9,
+  "tool_files": 6403,
+  "tool_directories": 628,
+  "shipped_policy_and_gate_match_original_reviewed_research_snapshot": true,
+  "only_root_overlay": {
+    "tests/kafka_network_policy_cluster.py": "c00b084a942c41af02b9df4fdba7776c96cb2ce25b9decbbaed5bd331101d5d3"
+  },
+  "once_absent": true,
+  "node_image": {
+    "repository": "registry-1.docker.io/kindest/node",
+    "tag": "v1.35.5",
+    "index_digest": "sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95",
+    "linux_amd64_digest": "sha256:397bcc4ab091b9632fb3639d5cf020943ca40e90fe7bcc38409738a4a0d056ee",
+    "configuration_digest": "sha256:caf23176b804ea639d96b2266829fdff42ca8f064bd9d32c00ad913b23ced7d9"
+  },
+  "CNI_images": [
+    {
+      "repository": "quay.io/calico/calico",
+      "tag": "v3.33.0",
+      "index_digest": "sha256:4ebc20730127bc9e8bf1db5f5a2d8b58cf37fe0e891b3c7b5471992221d213e5",
+      "linux_amd64_digest": "sha256:3eba6eb95b51b337bf255ecaf5c669b4b2ba04f9f813aa89785aa6853ecf9817",
+      "configuration_digest": "sha256:4ad92d437c956a625db81b6d3d669956a5a275e9db3966abbb2e92718de4dfd4"
+    },
+    {
+      "repository": "quay.io/calico/third-party-cni-plugins",
+      "tag": "v3.33.0",
+      "index_digest": "sha256:0f32f48279484c0d6f0e0d0e767b2d0e1a6c6ca34cb3421a61b989d992f3df41",
+      "linux_amd64_digest": "sha256:ae6464c7d8ffae03f2f26ed411a5b69e91baf31d8d538923645459f4f301a917",
+      "configuration_digest": "sha256:d4cd73c87e181c2243e4a13b5e0eaae461b6588e439f5d5148517f5b0986bc24"
+    },
+    {
+      "repository": "quay.io/calico/node",
+      "tag": "v3.33.0",
+      "index_digest": "sha256:565d8db3200e443955557f8f28ff44ab8a4a456754bc74a19c4f2f3444af9b1c",
+      "linux_amd64_digest": "sha256:224903e17a8d0588a6b9781331bd64935b0ef741a4208043f7dd9fcc834fc7cd",
+      "configuration_digest": "sha256:93e6f0b640645b62626a00c55e5252c361bc3166bf695c4b385cbea4d045fb69"
+    }
+  ],
+  "ownership_guards": [
+    "newnamesabsent; route/subnetcollisions andprotectedexistingkindnetwork+cluster snapshot",
+    "exactnodeimage/cluster/role/dedicatednetworkID; exactnetworkID/nonce/subnet",
+    "inlinekubeconfigendpoint matchesactualownednode loopbackpublishedport beforekubectl mutation; configbytespinned aftercreate",
+    "no foreignobjectdeletion; independentknownIDcleanup afterinspecterror; noforce-networkremoval; strictID+issuednameabsence",
+    "actualownednode KILL137/wait/exit/remove; subprocessownprocessgroupsjoined ontimeout; primaryfailurepreserved"
+  ],
+  "scope": "Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.",
+  "execution_authorized": false,
+  "execution_instruction": "Root review and explicit GO for exactdriver/plan required; no execute attempted. Prior executor01 failed onlycanonical socket path atpreparation;02/03 neverexecuted and superseded."
+}

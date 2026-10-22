@@ -116,6 +116,12 @@ async def run_case(args,case,e):
             await poll_until(red,RED,{item['id']},args.deadline)
         else:
             assert operation['state']=='failed',operation
+            def red_released():
+                status=f.admin().call({'op':'resource_status'})
+                counts=status['lanes']['eventing']['projects'].get(RED,{'active':0,'queued':0})
+                if counts['active']==0 and counts['queued']==0:return status
+            released=await until(red_released,2)
+            e.value.setdefault('failed_operation_resource_release',[]).append({'case':case,'resources':released})
             assert operation['failure']['code']in {'RESTORE_IO_ERROR','RESTORE_TIMEOUT'}
             assert not Path(str(f.file)+'.transaction').exists()
             current_red,_=route(f.file,RED);assert current_red==red_route

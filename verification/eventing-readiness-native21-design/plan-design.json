@@ -1,0 +1,94 @@
+{
+  "schema": "adhd/eventing-readiness-native21-execution-design@1",
+  "executable": false,
+  "runtime_authorized": false,
+  "runtime_started": false,
+  "qualified": false,
+  "pending_target": {
+    "artifact": null,
+    "artifact_sha256": null,
+    "official_receipt": null,
+    "receipt_sha256": null,
+    "component_lock_identity": null,
+    "specification_set_identity": null,
+    "reason": "Bind only actual root-exported artifact and reviewed official lifecycle outputs after they exist; candidate source presence is not admission."
+  },
+  "harness": {
+    "eventing_readiness_faults.py": "803b3e2606270d4211a75ba60bc8bde817f502e9d2a7c6abb5adbc24c50a56f1",
+    "eventing_readiness_proxy.py": "46de11fddaadb85940a3684984ce8cb5d6e0a14dca51f6e8411702c51d152af4",
+    "eventing_readiness_proxy_unit.py": "6f1b83354d0f0ca3e1bc97433df67d66b6908af9f7f865122817bc299e9bacf1"
+  },
+  "canonical_authority": {
+    "components/hub/eventing/spec.md": "4e92f5fa837b9becf446b2733c1e460f53314efc1f3b93734ac0a08ec564f4ba",
+    "components/hub/project-recovery/spec.md": "c9e6a069cb789ab4eff9efd4925396a9856a8df5038b09e802ec5ab459dfe4be",
+    "components/hub/resources/spec.md": "43136b7d22154f733621f1296062e95b4a6fea51645a09ffafee3cd6c4e45789",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "execution": {
+    "order": "All21 authored cases, serial, each fresh owned private fixture; stop at first failure, no automatic retries or case reselection.",
+    "cases": [
+      "lag",
+      "queue-control",
+      "duplicate",
+      "duplicate-bad-topology",
+      "never",
+      "queue",
+      "forbidden",
+      "server-error",
+      "malformed",
+      "bad-cleanup",
+      "partitions-float",
+      "retention-missing",
+      "retention-float",
+      "retention-negative",
+      "retention-duplicate",
+      "existing-retention",
+      "offset-nonzero",
+      "offset-negative",
+      "offset-missing",
+      "offset-float",
+      "offset-string"
+    ],
+    "argv_template": [
+      "<pinned-venv-python>",
+      "-I",
+      "-B",
+      "<frozen-tests>/eventing_readiness_faults.py",
+      "--hub",
+      "<actual-accepted-export>",
+      "--eventing-rest-url",
+      "http://127.0.0.1:18082",
+      "--recovery-schema",
+      "<frozen-authority>/components/hub/project-recovery/interface.schema.json",
+      "--keep-work",
+      "<fresh-private-results>/fixtures",
+      "--report",
+      "<fresh-private-results>/report.json"
+    ],
+    "provider_calls": 0,
+    "no_broker_mutation": "No broker stop/restart/topic deletion; fixture creates only own random namespace topics through real REST.",
+    "no_mocked_success": "Selected faults surround actual Kafka creation; positive cases require actual subscription delivery and preserved Blue publication/ack.",
+    "waits": "Existing Fixture45s readiness, existing20s recovery observation and actual application1000/3000ms Eventing/10000ms queue owner budgets unchanged;2s post-failure Red lane release observation is a resource-liveness assertion, not an extension to the operation deadline."
+  },
+  "freeze_and_admission_checks": [
+    "Require actual artifact regular owned nonredirected file, exact export digest tied to reviewed lifecycle receipt/source/lock; reject candidate-only targets.",
+    "Freeze exact harness and complete declared local Python import closure plus actual referenced schema/refs/authority bytes; record full relative file SET, hashes, modes, reject symlinks and unexpected entries before and after.",
+    "Pin actual Python/Elixir/Erlang top executables and required qualified tool roots/PATH; do not claim recursive OS-library closure.",
+    "Use immutable copied export identical to official export, never write sourceC/compiled05/candidate or receipts/locks.",
+    "Verify original21 case order and original program entry; bind driver actual __file__ digest; guard once with exclusive nofollow marker, fsync marker and parent before child.",
+    "Private fresh result root must not exist; one program owns serial cases, no outer deadline bypassing finally; original harness unwinds fixture and proxy independently.",
+    "No imports or verification may open/start runtime/proxy/model. Root separately reviews full sealed plan and authorizes execute."
+  ],
+  "qualification_and_cleanup": [
+    "Require report schema, actual21 cases true only if all execute; any first false remains false, unrun cases explicit.",
+    "Retain per-case actual native PID/start ticks/cmd hash and reaped status, proxy handlers0/thread stopped/failure list; inspect exact recorded identities and scoped fixture processes independently without broad kill or cleanup mutation.",
+    "After every failed operation, retain authenticated public resource_status proving Red Eventing active0/queued0 while allowing legitimate Blue activity.",
+    "Keep queue premise and actual active/queued observations; late or absent within0.5s is fixture-premise failure, not product failure.",
+    "Reverify full frozen/external/bound file SET/hashes after terminal; preserve original reports/logs/first failure and sanitized proof metadata, no credentials/config bodies."
+  ],
+  "blocked_until": [
+    "Official root actual export and lifecycle proof available",
+    "Full frozen execution plan prepared and independently reviewed",
+    "Root runtime GO"
+  ]
+}

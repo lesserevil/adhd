@@ -18,7 +18,7 @@ class Guards(unittest.TestCase):
   with self.assertRaises(FileExistsError):g.write(self.root/'once',b'second')
   self.assertEqual((self.root/'once').read_bytes(),b'first')
  def execute_fixture(self):
-  p={'driver_sha256':'d','core_work':str(self.root),'argv':['never'],'bound_inputs':{},'tool_trees':[{}, {'root':'/elixir'},{'root':'/erl'}],'tools':{'python':{'path':'/python'}}}
+  p={'driver_sha256':'d','core_work':str(self.root),'argv':['never'],'bound_inputs':{},'socket':{'path':'/owned/docker.sock'},'tool_trees':[{}, {'root':'/elixir'},{'root':'/erl'}],'tools':{'python':{'path':'/python'}}}
   (self.root/'plan.json').write_text(json.dumps(p));return g.sha(self.root/'plan.json')
  def test_duplicate_admission_zero_second_child(self):
   digest=self.execute_fixture();args=MagicMock(work=self.root,plan_sha256=digest);child=MagicMock(pid=123);child.wait.return_value=0;child.poll.return_value=0
@@ -27,6 +27,7 @@ class Guards(unittest.TestCase):
    g.execute(args)
    with self.assertRaises(FileExistsError):g.execute(args)
    self.assertEqual(process.call_count,1)
+   env=process.call_args.kwargs['env'];self.assertEqual(env['DOCKER_HOST'],'unix:///owned/docker.sock');self.assertEqual(env['DOCKER_CONFIG'],str(self.root/'docker-config'))
  def test_failed_child_does_not_pass(self):
   digest=self.execute_fixture();args=MagicMock(work=self.root,plan_sha256=digest);child=MagicMock(pid=123);child.wait.return_value=1;child.poll.return_value=1
   (self.root/'matrix.json').write_text('{"passed":true}')

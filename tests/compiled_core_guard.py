@@ -49,6 +49,8 @@ def verify(work,plan):
  assert sha(regular(core/'driver.py'))==plan['core_driver_sha256']
  assert inventory(core/'frozen')==plan['frozen']
  assert inventory(work/'admission')==plan['admission']
+ assert inventory(work/'docker-config')==plan['docker_config']
+ assert (work/'docker-config/config.json').read_bytes()==b'{}'
  assert inventory(Path(plan['context']))==plan['context_inputs']
  for name,digest in plan['bound_inputs'].items():assert sha(regular(core/name))==digest
  assert str(Path(sys.executable).absolute())==plan['tools']['python']['path']
@@ -74,6 +76,7 @@ def prepare(args):
  for name,digest in {'manifest.json':sha(admission),**admitted['files']}.items():
   assert Path(name).name==name and name not in ('.','..')
   src=regular(admission.parent/name);assert sha(src)==digest;write(work/'admission'/name,src.read_bytes())
+ (work/'docker-config').mkdir(mode=0o700);write(work/'docker-config/config.json',b'{}')
  write(work/'guard.py',regular(__file__).read_bytes())
  tools={n:fs.external(p) for n,p in [('python',sys.executable),('docker','/usr/bin/docker'),('flock','/usr/bin/flock')]}
  sock=Path('/var/run/docker.sock').resolve();info=sock.stat();assert stat.S_ISSOCK(info.st_mode)
@@ -81,7 +84,7 @@ def prepare(args):
        'driver_sha256':sha(work/'guard.py'),'core_work':str(root),'core_plan_sha256':sha(root/'plan.json'),
        'core_driver_sha256':sha(root/'driver.py'),'image':core['image_config_identity'],'artifact_sha256':core['artifact_sha256'],
        'canonical_manifest_sha256':core['canonical_manifest_sha256'],'admission_sha256':sha(admission),
-       'frozen':inventory(root/'frozen'),'admission':inventory(work/'admission'),'bound_inputs':core['bound_inputs'],
+       'frozen':inventory(root/'frozen'),'admission':inventory(work/'admission'),'docker_config':inventory(work/'docker-config'),'bound_inputs':core['bound_inputs'],
        'context':str(context),'context_inputs':inventory(context),'tools':tools,
        'tool_trees':[fs.tool_tree(args.repo_root/p) for p in ['.venv','_build/federation/native/elixir','_build/federation/native/erlang']],
        'external_inputs':list(tools.values())+[fs.external(core['legacy_hub'])],
@@ -97,7 +100,7 @@ def execute(args):
  assert sha(work/'plan.json')==args.plan_sha256;plan=json.loads((work/'plan.json').read_text());verify(work,plan)
  write(work/'execution.started',json.dumps({'plan_sha256':args.plan_sha256}).encode())
  env={k:v for k,v in os.environ.items() if not k.startswith(('LD_','PYTHON','DOCKER_','ERL_','ELIXIR_'))}
- core=Path(plan['core_work']);env.update(PYTHONPATH=str(core/'frozen/tests'),PYTHONDONTWRITEBYTECODE='1',ERL_FLAGS='+S 2:2',PATH=str(Path(plan['tools']['python']['path']).parent)+':'+str(Path(plan['tool_trees'][1]['root'])/'bin')+':'+str(Path(plan['tool_trees'][2]['root'])/'bin')+':/usr/bin:/bin')
+ core=Path(plan['core_work']);env.update(DOCKER_HOST='unix://'+plan['socket']['path'],DOCKER_CONFIG=str(work/'docker-config'),PYTHONPATH=str(core/'frozen/tests'),PYTHONDONTWRITEBYTECODE='1',ERL_FLAGS='+S 2:2',PATH=str(Path(plan['tools']['python']['path']).parent)+':'+str(Path(plan['tool_trees'][1]['root'])/'bin')+':'+str(Path(plan['tool_trees'][2]['root'])/'bin')+':/usr/bin:/bin')
  row={'passed':False,'started':False};primary=None
  try:
   with (work/'core.log').open('xb') as log:

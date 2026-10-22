@@ -1,6 +1,6 @@
 {
   "schema": "adhd/sdk40-transparent-health-start@1",
-  "status": "RUNNING_UNQUALIFIED",
+  "status": "TERMINAL_FALSE_READINESS",
   "plan_sha256": "09aee394469f52201143aa64a8f9c47de888079c4f0d5bf758093e67576e4bd4",
   "driver_sha256": "e2d255cda3506854976d516a8c6baa317401b2589333d37766378ada02aa39e8",
   "root_full304_frozen11_external5_bound_and_critical_helpers_reverified_before_start": true,
@@ -9,5 +9,16 @@
   "original_checks": 17,
   "original_readiness_seconds": 30,
   "extra_health_requests": 0,
-  "scope": "Transparent recording of original SDK readiness calls; original response/exception identity and deadline preserved. No runtime result implied."
+  "scope": "Original image readiness deadline failed, no whole SDK case completed. Native producer succeeded; exact running image VM/payload observed. Owned listener/closure audit and durable negative proof pending; startup cause not established.",
+  "observed_original_health_calls": {
+    "native_producer": {
+      "ConnectError": 163,
+      "HTTP200_exact_ready": 1
+    },
+    "image": {
+      "ConnectError": 207,
+      "HTTP_responses": 0
+    }
+  },
+  "completed_sdk_cases": 0
 }

@@ -3,11 +3,19 @@ import ast
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import patch
 import kafka_oauth_k8s_matrix as runner
 
 
 def main():
+    basis={'cluster_image':'adhd-hub:qa40'}
+    assert runner.selected_cluster_image(SimpleNamespace(),basis)=='adhd-hub:qa40'
+    assert runner.selected_cluster_image(SimpleNamespace(cluster_image='adhd-hub:qa40-compiled05'),basis)=='adhd-hub:qa40-compiled05'
+    for tag in ['foreign:tag','adhd-hub:tag/path','adhd-hub:','adhd-hub:tag --network=host']:
+        try:runner.selected_cluster_image(SimpleNamespace(cluster_image=tag),basis)
+        except AssertionError:pass
+        else:raise AssertionError('Foreign or malformed tag accepted')
     code=compile(Path(runner.__file__).read_text(),runner.__file__,'exec')
     with patch.object(sys,'argv',[runner.__file__,'--execute']),patch('subprocess.Popen',side_effect=AssertionError('No processes')):
         try:exec(code,{'__name__':'__main__','__file__':runner.__file__})
@@ -35,7 +43,7 @@ def main():
         except AssertionError as error:assert 'own matrix differs' in str(error)
         else:raise AssertionError('Stale own copy accepted')
         (work/'frozen/tests/kafka_oauth_k8s_matrix.py').write_text('current');runner.verify_own_matrix(work)
-    print('PASS securedKind preparation pure6: authored entry rejected before helpers, zero real preflight calls, original48assertions/static initialization/shipped inline bootstrap verification, fixed keytoolsource, publishednode-port mismatch denial and no hidden namespace-delete errors; runtimes/providers0')
+    print('PASS securedKind preparation pure12: authored entry rejected before helpers, zero real preflight calls, original48assertions/static initialization/shipped inline bootstrap verification, fixed keytoolsource, publishednode-port mismatch denial and no hidden namespace-delete errors; runtimes/providers0')
 
 
 if __name__=='__main__':main()

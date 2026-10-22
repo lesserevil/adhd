@@ -135,9 +135,15 @@ def verify(work,plan,preflight=True):
     return True
 
 
+def selected_cluster_image(args,basis):
+    tag=getattr(args,'cluster_image',None) or basis['cluster_image']
+    assert re.fullmatch(r'adhd-hub:[A-Za-z0-9_.-]+',tag), 'Invalid owned hub tag'
+    return tag
+
+
 def prepare(a):
     work=a.work.absolute();assert not work.exists() and work.parent.resolve(strict=True)==work.parent
-    basis=json.loads(a.platform_plan.read_text());assert re.fullmatch('adhd-oauth-[a-z0-9-]+',a.namespace)
+    basis=json.loads(a.platform_plan.read_text());cluster_image=selected_cluster_image(a,basis);assert re.fullmatch('adhd-oauth-[a-z0-9-]+',a.namespace)
     assert a.port!=a.hub_port
     for port in (a.port,a.hub_port):free_port(port)
     selected=reviewed_payload(a.context/'manifest.json',a.admission,a.admission_sha256,a.image,json.loads((a.context/'manifest.json').read_text())['files']['hub.exs'])
@@ -171,14 +177,14 @@ def prepare(a):
     tool_elf={name:host_dependencies.elf_inputs(row['realpath']) for name,row in tools.items() if name in ('kubectl','kind')}
     assert all(value['interpreter'] is None and not value['needed'] for value in tool_elf.values()), 'Additional dynamic tool dependency requires closed capture'
     sock=Path('/run/docker.sock').stat();assert stat.S_ISSOCK(sock.st_mode)
-    facts=cluster_facts(tools['kubectl']['path'],work/'bound/kubeconfig',basis['kind_node'],basis['cluster_image'],a.broker_image,a.proxy_image,a.namespace)
+    facts=cluster_facts(tools['kubectl']['path'],work/'bound/kubeconfig',basis['kind_node'],cluster_image,a.broker_image,a.proxy_image,a.namespace)
     assert facts['selected_images']['hub']['id']==a.image
     endpoint=kube_endpoint(work/'bound/kubeconfig',facts['node']['cluster'])
     shutil.copyfile(__file__,work/'driver.py');verify_own_matrix(work);dump(work/'bound/config.json',{})
     env=host_dependencies.child_environment(original['env'],dependencies,work/'bound',work/'results/pycache',Path('/run/docker.sock'))
     argv=[str(a.python),'-s','-B',str(work/'frozen/tests/kafka_oauth_k8s.py'),'--image',a.image,'--context',str(work/'context'),
         '--acceptance-report',str(work/'bound/admission.json'),'--kubectl',tools['kubectl']['path'],'--kubeconfig',str(work/'bound/kubeconfig'),
-        '--kind-node',basis['kind_node'],'--cluster-image',basis['cluster_image'],'--namespace',a.namespace,'--issuer-bind',facts['issuer_bind'],
+        '--kind-node',basis['kind_node'],'--cluster-image',cluster_image,'--namespace',a.namespace,'--issuer-bind',facts['issuer_bind'],
         '--broker-image',a.broker_image,'--proxy-image',a.proxy_image,'--port',str(a.port),'--hub-port',str(a.hub_port),
         '--work',str(work/'oauth-work'),'--report',str(work/'result.json')]
     plan={'schema':'adhd/secured-kind-oauth-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','driver_sha256':sha(work/'driver.py'),'parent_pycache_prefix':str(work/'parent-cache'),
@@ -186,7 +192,7 @@ def prepare(a):
         'artifact_sha256':json.loads((a.context/'manifest.json').read_text())['files']['hub.exs'],'image':a.image,'canonical_manifest_sha256':sha(a.context/'manifest.json'),'admission_sha256':a.admission_sha256,
         'docker_socket':{'path':'/run/docker.sock','identity':[sock.st_dev,sock.st_ino]},'static_tool_elf':tool_elf,'platform_basis_sha256':sha(a.platform_plan),
         'frozen_inputs':tree(work/'frozen'),'bound_inputs':tree(work/'bound'),'context_inputs':tree(work/'context'),'tools':tools,'facts':facts,'kube_endpoint':endpoint,
-        'namespace':a.namespace,'cluster_image':basis['cluster_image'],'broker_image':a.broker_image,'proxy_image':a.proxy_image,'ports':{'rest':a.port,'hub':a.hub_port},'argv':argv,'env':env,
+        'namespace':a.namespace,'cluster_image':cluster_image,'broker_image':a.broker_image,'proxy_image':a.proxy_image,'ports':{'rest':a.port,'hub':a.hub_port},'argv':argv,'env':env,
         'automatic_retries':0,'parallelism':1,'outer_timeout':None,'original_assertions':48,'live_specification_drift':drift,'provider_calls_authorized':0,
         'scope':'Optional Confluent Enterprise/permitted trial TLS/OAuth, hottrust/token +Secret/keystore/pod rotations on actual40. Singlebroker/privateplaintextproxybroker. No SASL_SSL/NetworkPolicy-enforcement/production-entitlement/release claim.',
         'original_deadlines':'All original timeouts/assertions retained; fixed keytool probe now uses reviewed bounded30s owned Docker probe.',
@@ -219,7 +225,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);m=p.add_mutually_exclusive_group(required=True);m.add_argument('--prepare',action='store_true');m.add_argument('--execute',action='store_true')
     p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
     for n in ['repo-root','context','admission','original-plan','platform-plan']:p.add_argument('--'+n,type=Path)
-    for n in ['image','admission-sha256','broker-image','proxy-image']:p.add_argument('--'+n)
+    for n in ['image','admission-sha256','broker-image','proxy-image','cluster-image']:p.add_argument('--'+n)
     p.add_argument('--require-compiled-runtime',action='store_true',help='Require separately reviewed compiled cache/entrypoint audit in fresh admission')
     p.add_argument('--namespace',default='adhd-oauth-40');p.add_argument('--port',type=int,default=18940);p.add_argument('--hub-port',type=int,default=18941)
     p.add_argument('--python',type=Path,default=Path(sys.executable).absolute());a=p.parse_args()

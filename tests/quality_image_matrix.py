@@ -31,6 +31,13 @@ def write(path,value):path.write_text(json.dumps(value,indent=2)+'\n')
 def load(path,name):
  spec=importlib.util.spec_from_file_location(name,path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
+def compiled_cache_binding(path,admission,image,artifact,manifest_sha):
+ # Reuse the SDK cache contract and its actual-image custody implementation.
+ directory=Path(__file__).parent
+ if Path(__file__).name=='run.py':directory=directory/'frozen/tests'
+ helper=load(directory/'controlled_sdk_matrix.py','quality_compiled_sdk_binding')
+ return helper.compiled_cache_binding(path,admission,image,artifact,manifest_sha)
+
 def tree(root):
  assert root.is_absolute() and root.resolve()==root and root.is_dir() and not root.is_symlink()
  files={};directories=[]
@@ -49,6 +56,8 @@ def prepare(a):
  admission=json.loads(a.admission.read_text());image=admission['image_config_identity'];artifact_hash=admission['artifact_sha256']
  reader=load(repo/'tests/image_qualification_inputs.py','reviewed_sdk_inputs')
  selected=reader.reviewed_payload(a.context/'manifest.json',a.admission,a.admission_sha256,image,artifact_hash)
+ compiled=compiled_cache_binding(a.compiled_cache_manifest,admission,image,artifact_hash,sha(a.context/'manifest.json')) if a.compiled_cache_manifest else None
+ assert compiled is not None or 'compiled_runtime_audit' not in admission,'Compiled target requires explicit cache manifest binding'
  work.mkdir(parents=True,mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700)
  for part in ['tests','scripts']:
   for path in (repo/part).rglob('*'):
@@ -58,6 +67,7 @@ def prepare(a):
   shutil.copyfile(Path(__file__).parent/name,frozen/'tests'/name)
  bindings={'image-manifest.json':a.context/'manifest.json','staged-Dockerfile':a.context/'Dockerfile','admission.json':a.admission,
   'receipt.json':a.admission.parent/'receipt.json','rebuild.json':a.admission.parent/'rebuild.json'}
+ if compiled:bindings.update({'cache-manifest.json':a.compiled_cache_manifest,'cache-metadata.json':a.compiled_cache_manifest.with_name('cache-metadata.json')})
  for name,path in bindings.items():assert path.resolve()==path.absolute() and not path.is_symlink();shutil.copyfile(path,work/name)
  assert all(sha(work/name)==admission['files'][name] for name in ['receipt.json','rebuild.json'])
  envelope=json.loads((work/'rebuild.json').read_text());result=envelope['result'];artifact=Path(result['artifact'])
@@ -75,13 +85,13 @@ def prepare(a):
  tools={label:{'path':str(path.absolute()),'resolved':str(path.resolve()),'sha256':sha(path.resolve())} for label,path in [('python',Path(sys.executable)),('docker',Path(shutil.which('docker')))]}
  shutil.copyfile(__file__,work/'run.py')
  plan={'schema':'adhd/live-quality-image-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','image_config_identity':image,'artifact_sha256':artifact_hash,
-  'canonical_manifest_sha256':sha(work/'image-manifest.json'),'admission_sha256':a.admission_sha256,'actual_formal_native_export':str(artifact),
+  'compiled_cache':compiled,'canonical_manifest_sha256':sha(work/'image-manifest.json'),'admission_sha256':a.admission_sha256,'actual_formal_native_export':str(artifact),
   'frozen':str(frozen),'frozen_tree':tree(frozen),'frozen_inputs':tree(frozen)['files'],'externals':externals,
   'bound_inputs':{name:sha(work/name) for name in bindings},'driver_sha256':sha(work/'run.py'),'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),
   'admitted_specification_drift':drift,'manifest':str(work/'image-manifest.json'),'staged_dockerfile':str(work/'staged-Dockerfile'),
   'expected_app_files':selected['audit']['actual_app_files'],'specifications':len(selected['specifications']),
   'native_artifact_sha256':[],'jobs':jobs,'planned_suites':list(CASES),'expected_groups':69,
-  'tools':tools,'python':sys.executable,'runtime_cwd':str(runtime),'fence_library':str(work/'unused-no-native-fence'),'fence_audit':str(work/'unused-no-native-audit'),
+  'tools':tools,'qualified_path':'/usr/bin:/bin','python':sys.executable,'runtime_cwd':str(runtime),'fence_library':str(work/'unused-no-native-fence'),'fence_audit':str(work/'unused-no-native-audit'),
   'runs_per_suite':1,'automatic_retries':0,'parallelism':1,'maximum_owned_hubs':1,'stop_first_failure':True,
   'original_readiness_seconds':{'foundation_Runtime':45,'federation_Hub':60},'original_query_seconds':{'history':35,'retrieval':25,'archive':45,'feedback':60},
   'provider_upstream':'http://127.0.0.1:18770/v1/systemone','provider_model':'Nemotron-Deciffusion-8B-v2.1','maximum_provider_posts':288,'provider_window_seconds_per_suite':WINDOWS,'maximum_provider_window_seconds':sum(WINDOWS.values()),'relay_retries':0,
@@ -97,9 +107,13 @@ def verify(plan,work):
  assert tree(work/'frozen')==plan['frozen_tree'] and plan['frozen_inputs']==plan['frozen_tree']['files']
  for path,digest in plan['externals'].items():assert not Path(path).is_symlink() and sha(path)==digest
  for path,digest in plan['bound_inputs'].items():assert not (work/path).is_symlink() and sha(work/path)==digest
+ if plan.get('compiled_cache'):
+  admission=json.loads((work/'admission.json').read_text())
+  assert compiled_cache_binding(work/'cache-manifest.json',admission,plan['image_config_identity'],plan['artifact_sha256'],plan['canonical_manifest_sha256'])==plan['compiled_cache']
  assert plan['planned_suites']==list(CASES) and [v['name'] for v in plan['jobs']]==list(CASES)
  assert [v['expected_groups'] for v in plan['jobs']]==list(CASES.values()) and plan['original_readiness_seconds']=={'foundation_Runtime':45,'federation_Hub':60}
  for row in plan['tools'].values():assert str(Path(row['path']).resolve())==row['resolved'] and sha(row['resolved'])==row['sha256']
+ assert plan['tools']['docker']['path']=='/usr/bin/docker' and shutil.which('docker',path=plan['qualified_path'])=='/usr/bin/docker'
  assert plan['expected_groups']==69 and plan['automatic_retries']==0 and plan['parallelism']==1
  return True
 
@@ -108,7 +122,7 @@ def execute(work,expected):
  assert sha(work/'plan.json')==expected;plan=json.loads((work/'plan.json').read_text());verify(plan,work)
  helper=load(work/'frozen/tests/controlled_image_matrix.py','reviewed_sdk_execution_helpers')
  assert not Path(plan['runtime_cwd']).exists();helper.durable_once_marker(work/'started.json',{'plan_sha256':expected,'started_at':time.time()})
- Path(plan['runtime_cwd']).mkdir(mode=0o700);env=dict(os.environ);env['PYTHONDONTWRITEBYTECODE']='1';env['ERL_FLAGS']='+S 2:2'
+ Path(plan['runtime_cwd']).mkdir(mode=0o700);env=dict(os.environ);env['PATH']=plan['qualified_path'];env['PYTHONDONTWRITEBYTECODE']='1';env['ERL_FLAGS']='+S 2:2'
  rows=[];failure=None
  try:
   for job in plan['jobs']:
@@ -148,6 +162,6 @@ if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__);mode=parser.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  parser.add_argument('--work',type=Path,required=True);parser.add_argument('--reviewed-plan-sha256')
  for name in ['repo','context','admission','prior']:parser.add_argument('--'+name,type=Path)
- parser.add_argument('--admission-sha256');args=parser.parse_args();work=args.work.absolute()
+ parser.add_argument('--compiled-cache-manifest',type=Path);parser.add_argument('--admission-sha256');args=parser.parse_args();work=args.work.absolute()
  if args.prepare:prepare(args)
  else:sys.exit(execute(work,args.reviewed_plan_sha256))

@@ -87,29 +87,37 @@ class Diagnostics:
         self.kubectl, self.env, self.cwd, self.node, self.fence = kubectl, env, cwd, node, fence
         self.clock = clock; self.rows = []; self.used = 0; self.pins = None
     def phase(self, seconds): self.deadline = self.clock() + seconds
+    def check_fence(self):
+        remaining = self.deadline - self.clock(); available = LIMITS['total_bytes'] - self.used
+        assert remaining > 0 and available > 0
+        cap = min(available, LIMITS['metadata_bytes'])
+        count = self.fence(min(remaining, LIMITS['command_seconds']), cap)
+        assert type(count) is int and 0 <= count <= cap
+        self.used += count
     def call(self, label, args, cap=None, parse=True):
         assert re.fullmatch('[a-z0-9-]+', label)
         remaining = self.deadline - self.clock()
         assert remaining > 0
-        self.fence(min(remaining, LIMITS['command_seconds']))
+        self.check_fence()
         remaining = self.deadline - self.clock()
         assert remaining > 0 and self.used < LIMITS['total_bytes']
         cap = min(cap or LIMITS['metadata_bytes'], LIMITS['total_bytes'] - self.used)
         row = {'name': label, 'argv': self.kubectl + args, 'passed': False}; self.rows.append(row)
-        out = err = b''
+        out = err = b''; charged = False
         try:
             code, out, err = bounded(row['argv'], self.env, self.cwd,
                                     min(remaining, LIMITS['command_seconds']), cap)
             row['returncode'] = code
             assert self.clock() <= self.deadline
             if code != 0: raise CommandUnavailable('diagnostic command exit')
-            self.fence(min(self.deadline-self.clock(), LIMITS['command_seconds'])); row['passed'] = True
+            self.used += len(out) + len(err); charged = True
+            self.check_fence(); row['passed'] = True
             return json.loads(out) if parse else out
         except BaseException as error:
             out, err = getattr(error, 'diagnostic_partial', (out, err))
             row['error_type'] = type(error).__name__; raise
         finally:
-            self.used += len(out) + len(err)
+            if not charged: self.used += len(out) + len(err)
             for extension, data in [('stdout', out), ('stderr', err)]:
                 path = self.root / (str(len(self.rows)).zfill(2) + '-' + label + '.' + extension)
                 fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)

@@ -12,7 +12,7 @@ d=importlib.util.module_from_spec(spec);spec.loader.exec_module(d)
 class Guards(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
-  self.root=Path(self.tmp.name).resolve();self.session=d.Diagnostics(self.root/'private',['kubectl'],{},self.root,'owned-node',lambda _:None)
+  self.root=Path(self.tmp.name).resolve();self.session=d.Diagnostics(self.root/'private',['kubectl'],{},self.root,'owned-node',lambda timeout,cap:0)
  def test_owner_requires_controller_kind_and_uid(self):
   obj={'metadata':{'ownerReferences':[{'uid':'a','kind':'DaemonSet','controller':True}]}}
   self.assertTrue(d.owner(obj,'a','DaemonSet'));self.assertFalse(d.owner(obj,'b','DaemonSet'));self.assertFalse(d.owner(obj,'a','ReplicaSet'))
@@ -21,6 +21,12 @@ class Guards(unittest.TestCase):
   self.assertEqual(d.LIMITS['anchor_seconds']+d.LIMITS['capture_seconds'],90)
   self.assertEqual(d.LIMITS['command_seconds'],10);self.assertEqual(d.LIMITS['total_bytes'],8*1024*1024)
   self.assertEqual(d.LIMITS['log_requests'],16)
+ def test_custody_and_api_output_share_same_aggregate_cap(self):
+  self.session.phase(10);self.session.fence=lambda timeout,cap:3
+  with patch.dict(d.LIMITS,total_bytes=10),patch.object(d,'bounded',return_value=(0,b'{}',b'')) as run:
+   self.assertEqual(self.session.call('budget',[]),{})
+   self.assertEqual(run.call_args.args[-1],7)
+   self.assertEqual(self.session.used,8)
  def test_deadline_prevents_command(self):
   self.session.phase(0)
   with patch.object(d,'bounded') as run:

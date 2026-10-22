@@ -261,16 +261,18 @@ class Executor:
   if p.get('diagnostic_only'):
    from kafka_network_policy_diagnostics import Diagnostics,LIMITS,bounded,observe_rollout
    assert p['diagnostic_limits']==LIMITS
-   def fence(timeout):
+   def fence(timeout,cap):
     assert timeout>0 and sha(plain(self.env['KUBECONFIG']))==self.kubeconfig_sha256
-    deadline=time.monotonic()+timeout
+    deadline=time.monotonic()+timeout;used=0
     for network,identifier in [(False,self.known_node),(True,self.known_network)]:
      remaining=deadline-time.monotonic();assert remaining>0
      argv=[p['tools']['docker']['path']]+(['network','inspect'] if network else ['inspect'])+[identifier]
-     code,out,err=bounded(argv,self.env,self.work/'runtime',remaining,LIMITS['metadata_bytes'])
+     assert cap-used>0
+     code,out,err=bounded(argv,self.env,self.work/'runtime',remaining,cap-used);used+=len(out)+len(err)
      assert code==0 and time.monotonic()<=deadline
      rows=json.loads(out);assert len(rows)==1
      self.network_owned(rows[0]) if network else self.node_owned(rows[0])
+    return used
    diagnostic=Diagnostics(self.work/'runtime/private-diagnostics',k,self.env,self.work/'runtime',p['node'],fence)
    self.diagnostic=diagnostic;diagnostic.anchor()
    def rollout():

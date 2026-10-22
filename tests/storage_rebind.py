@@ -3,6 +3,12 @@
 import argparse,hashlib,json,os,shutil,signal,socket,subprocess,time,uuid
 from pathlib import Path
 from urllib.request import Request,urlopen
+from image_rebind_runtime import ImageRebindRuntime, stop_image_process, stop_image_boundary
+from image_filesystem_fault import fault_arguments
+
+def target_arguments(parser):
+ group=parser.add_mutually_exclusive_group(required=True);group.add_argument('--command');group.add_argument('--image')
+ parser.add_argument('--image-manifest',type=Path);fault_arguments(parser)
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def write(p,value):p.write_text(json.dumps(value,separators=(',',':')));p.chmod(0o600)
@@ -31,7 +37,7 @@ def command_for(p,mid):
  return {'config_file':str(p),'expected_server_id':r['server_id'],'expected_config_sha256':sha(p),'expected_config_journal_sha256':sha(str(p)+'.journal') if Path(str(p)+'.journal').exists() else None,'expected_registry_sha256':sha(str(p)+'.stores'),'expected_recovery_journal_sha256':sha(str(p)+'.recovery'),'expected_marker_sha256':sha(str(p)+'.stores.marker'),'stores':stores,'message_id':mid,'confirm':True,'confirm_stopped':True}
 def product_hashes(cmd):return {m['project_id']:{'checkpoint':sha(m['store_path']),'snapshot':sha(m['store_path']+'.snapshot')} for m in cmd['stores']}
 def cli(command,arg,root,name,env=None,error=None):
- r=subprocess.run(command+[json.dumps(arg,separators=(',',':'))],capture_output=True,timeout=150,env=env)
+ r=command.run(arg,timeout=150) if isinstance(command,ImageRebindRuntime) else subprocess.run(command+[json.dumps(arg,separators=(',',':'))],capture_output=True,timeout=150,env=env)
  (root/(name+'.stdout')).write_bytes(r.stdout);(root/(name+'.stderr')).write_bytes(r.stderr);print(name,'exit',r.returncode,flush=True)
  if error:
   assert r.returncode==1 and not r.stdout,(name,r.returncode)
@@ -41,9 +47,9 @@ def cli(command,arg,root,name,env=None,error=None):
  return json.loads(r.stdout)
 def start(command,p,root,name):
  out=(root/(name+'.stdout')).open('wb');err=(root/(name+'.stderr')).open('wb')
- process=subprocess.Popen(command+[json.dumps(['serve',str(p)])],stdout=out,stderr=err,start_new_session=True)
- base='http://127.0.0.1:'+str(json.loads(p.read_text())['port']);deadline=time.monotonic()+100
+ process=None;base='http://127.0.0.1:'+str(json.loads(p.read_text())['port']);deadline=time.monotonic()+100
  try:
+  process=command.start(['serve',str(p)],stdout=out,stderr=err,deadline=deadline) if isinstance(command,ImageRebindRuntime) else subprocess.Popen(command+[json.dumps(['serve',str(p)])],stdout=out,stderr=err,start_new_session=True)
   while time.monotonic()<deadline:
    assert process.poll() is None,(name,'startup exited')
    try:
@@ -51,17 +57,25 @@ def start(command,p,root,name):
    except Exception:time.sleep(.1)
   raise AssertionError('startup timeout')
  except BaseException:
-  if process.poll() is None:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=10)
+  if process and hasattr(process,'_adhd_image_rebind'):stop_image_process(process,hard=True)
+  elif process and process.poll() is None:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=10)
   out.close();err.close();raise
 def stop(process,handles):
+ if hasattr(process,'_adhd_image_rebind'):
+  try:stop_image_process(process)
+  finally:
+   for h in handles:h.close()
+  return
  if process.poll() is None:
   os.killpg(process.pid,signal.SIGTERM)
   try:process.wait(timeout=15)
   except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=10)
  for h in handles:h.close()
 def main():
- ap=argparse.ArgumentParser(__doc__);ap.add_argument('--command',required=True);ap.add_argument('--artifact',type=Path,required=True);ap.add_argument('--source',type=Path,required=True);ap.add_argument('--history-source',type=Path);ap.add_argument('--work',type=Path,required=True);ap.add_argument('--report',type=Path,required=True);a=ap.parse_args()
- command=json.loads(a.command);work=a.work.resolve();work.mkdir(parents=True,exist_ok=False);work.chmod(0o700);checks=[];active=None
+ ap=argparse.ArgumentParser(__doc__);target_arguments(ap);ap.add_argument('--artifact',type=Path,required=True);ap.add_argument('--source',type=Path,required=True);ap.add_argument('--history-source',type=Path);ap.add_argument('--work',type=Path,required=True);ap.add_argument('--report',type=Path,required=True);a=ap.parse_args()
+ work=a.work.resolve();work.mkdir(parents=True,exist_ok=False);work.chmod(0o700);checks=[];active=None
+ if a.image:assert a.image_fault_library and a.image_fault_proof,'Full image rebind requires qualified source-specific fsync observer'
+ command=ImageRebindRuntime(a,work) if a.image else json.loads(a.command)
  try:
   origin=work/'origin';p=copied(a.source,origin);c=json.loads(p.read_text());c['store_path']=str(origin/'unused-old-anchor'/'hub.dets');c['port']=port();c['public_url']='http://127.0.0.1:'+str(c['port']);c['matcher']=None;c['eventing']['enabled']=False;write(p,c)
   cmd=command_for(p,'prepare-own-origin');before=product_hashes(cmd);config=sha(p)
@@ -116,20 +130,27 @@ def main():
    for k,v in previous['operations'].items():
     if k not in ready:assert current['operations'][k]==v
    checks.append({'id':'actual-retained-recovery-history-receipts-preserved-ready-plans-stale','passed':True,'plans_staled':len(ready)})
-  library=work/'rebind_fault.so';subprocess.run(['gcc','-shared','-fPIC','-std=c11','-Wall','-Wextra',str(Path(__file__).with_name('rebind_fault.c')),'-ldl','-o',str(library)],check=True,capture_output=True)
+  library=a.image_fault_library if a.image else work/'rebind_fault.so'
+  if not a.image:subprocess.run(['gcc','-shared','-fPIC','-std=c11','-Wall','-Wextra',str(Path(__file__).with_name('rebind_fault.c')),'-ldl','-o',str(library)],check=True,capture_output=True)
   for stage in ['decision-durable','registry-durable','receipt-durable']:
    fp=copied(backup,work/stage);req=command_for(fp,'fault-'+stage);before=product_hashes(req);cfg=sha(fp);sentinel=work/(stage+'.sentinel.json');env={**os.environ,'LD_PRELOAD':str(library),'ADHD_REBIND_CONFIG':str(fp),'ADHD_REBIND_STAGE':stage,'ADHD_REBIND_SENTINEL':str(sentinel)}
-   out=(work/(stage+'.stdout')).open('wb');err=(work/(stage+'.stderr')).open('wb');process=subprocess.Popen(command+[json.dumps(['rebind-storage',req])],stdout=out,stderr=err,env=env,start_new_session=True);active=(process,[out,err]);deadline=time.monotonic()+140
+   out=(work/(stage+'.stdout')).open('wb');err=(work/(stage+'.stderr')).open('wb');deadline=time.monotonic()+140
+   process=command.start(['rebind-storage',req],stdout=out,stderr=err,deadline=deadline,environment={k:v for k,v in env.items() if k.startswith('ADHD_REBIND_')}) if a.image else subprocess.Popen(command+[json.dumps(['rebind-storage',req])],stdout=out,stderr=err,env=env,start_new_session=True);active=(process,[out,err])
    while not sentinel.exists() and time.monotonic()<deadline:
     assert process.poll() is None,(stage,'exited before observed fsync');time.sleep(.05)
    assert sentinel.exists(),stage;witness=json.loads(sentinel.read_text());assert witness['directory_fsync_result']==0
-   os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=10);out.close();err.close();active=None;assert process.returncode==-signal.SIGKILL
+   if a.image:stop_image_boundary(process,witness)
+   else:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=10)
+   out.close();err.close();active=None
+   if a.image:assert process.returncode==137
+   else:assert process.returncode==-signal.SIGKILL
    assert Path(str(fp)+'.transaction').exists();recovered=cli(command,['rebind-storage',req],work,stage+'-retry')
    assert recovered['rebound'] and not Path(str(fp)+'.transaction').exists() and product_hashes(req)==before and sha(fp)==cfg
    assert cli(command,['rebind-storage',req],work,stage+'-replay')==recovered
    checks.append({'id':stage+'-kernel-kill-exact-recovery','passed':True,'witness':witness,'exit_code':process.returncode,'product_bytes_unchanged':True})
-  report={'schema':'adhd/storage-rebind-native-check@1','passed':True,'scope':'Actual native CLI/full-server moved restore and real metadata fsync+kernel-kill boundaries; no image claim','artifact_sha256':sha(a.artifact),'harness_sha256':sha(__file__),'fault_hook_sha256':sha(Path(__file__).with_name('rebind_fault.c')),'checks':checks}
-  a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(report,indent=2)+'\n');print('PASS',len(checks),'native portable/rebind groups',flush=True)
+  report={'schema':'adhd/storage-rebind-image-check@1' if a.image else 'adhd/storage-rebind-native-check@1','passed':True,'scope':'Actual immutable-image public CLI/full-server moved restore and actual BEAM metadata fsync+kernel-kill custody' if a.image else 'Actual native CLI/full-server moved restore and real metadata fsync+kernel-kill boundaries; no image claim','artifact_sha256':sha(a.artifact),'harness_sha256':sha(__file__),'fault_hook_sha256':sha(Path(__file__).with_name('rebind_fault.c')),'checks':checks}
+  if a.image:report['runtime']=command.evidence()
+  a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(report,indent=2)+'\n');print('PASS',len(checks),'image portable/rebind groups' if a.image else 'native portable/rebind groups',flush=True)
  finally:
   if active:stop(*active)
 if __name__=='__main__':main()

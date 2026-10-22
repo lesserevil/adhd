@@ -20,6 +20,7 @@ import yaml
 from image_qualification_inputs import reviewed_payload
 from kafka_platform_matrix import kube_endpoint
 import network_policy_static as static
+import network_policy_image_custody as image_custody
 
 
 SERVE = '''
@@ -224,12 +225,11 @@ def main(args):
                 statuses = actual['status']['containerStatuses']
                 assert len(statuses) == 1 and statuses[0]['ready'] and statuses[0]['restartCount'] == 0
                 observed_image = statuses[0]['imageID'].removeprefix('docker-pullable://')
-                actual_image = json.loads(subprocess.check_output(['docker', 'exec', args.kind_node,
-                                                                  'crictl', 'inspecti', observed_image], timeout=30))
+                actual_image, custody = image_custody.observe(args.kind_node, statuses[0]['imageID'], args.image)
                 assert actual_image['status']['id'] == args.image
                 report['fixture_runtime_images'].append({'namespace': namespace, 'pod': name,
                     'pod_uid': actual['metadata']['uid'], 'runtime_image_id': observed_image,
-                    'image_config_identity': actual_image['status']['id'], 'role': role})
+                    'image_config_identity': actual_image['status']['id'], 'role': role, 'image_custody': custody})
                 address = ipaddress.ip_address(actual['status']['podIP'])
                 assert helper_bytes is None or address.version == 4, 'Static fixture requires original IPv4 transport'
                 ipaddress.ip_address(actual['status']['podIP'])
@@ -268,6 +268,7 @@ def main(args):
         for recorded in report['fixture_runtime_images']:
             actual = read(['-n', recorded['namespace'], 'get', 'pod', recorded['pod']])
             assert actual['metadata']['uid'] == recorded['pod_uid']
+            assert actual['status']['containerStatuses'][0]['imageID'] == recorded['image_custody']['pod_status_image_ref']
             assert actual['metadata']['namespace'] == recorded['namespace']
             assert actual['metadata']['labels']['app'] == recorded['role']
             status = actual['status']['containerStatuses'][0]

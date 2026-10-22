@@ -158,7 +158,7 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py','kafka_network_policy_cri.py','kafka_network_policy_cri_unit.py','kafka_network_policy_utility.py','kafka_network_policy_utility_unit.py','network_policy_static.py'):
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py','kafka_network_policy_cri.py','kafka_network_policy_cri_unit.py','kafka_network_policy_utility.py','kafka_network_policy_utility_unit.py','network_policy_static.py','network_policy_image_custody.py'):
   shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)

@@ -1,0 +1,24 @@
+PASS critical-annotations-all-have-independent-handlers-and-unknown-extensions-fail-closed
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/native40-core28-01/run.py", line 269, in <module>
+    else:sys.exit(child(a.work.absolute(),a.reviewed_plan_sha256,a.child)if a.child else execute(a.work.absolute(),a.reviewed_plan_sha256))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/native40-core28-01/run.py", line 219, in child
+    i=sys.argv.index(row['script']);sys.argv=sys.argv[i:];runpy.run_path(row['script'],run_name='__main__')
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/native40-core28-01/frozen/tests/protocol_acceptance.py", line 615, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/native40-core28-01/frozen/tests/protocol_acceptance.py", line 473, in main
+    fixtures=json.loads(Path('docs/protocol/examples.json').read_text())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'docs/protocol/examples.json'

@@ -1,0 +1,58 @@
+{
+  "schema": "adhd/legacy-checkpoint-permission-diagnosis@1",
+  "scope": "Read-only original inspection and pure checkpoint parsing; owned byte-identical copy identity probe; no production source edits or full startup claim",
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "config_keys": [
+    "agents",
+    "host",
+    "matcher",
+    "port",
+    "project_id",
+    "store_path",
+    "threshold_ppm"
+  ],
+  "migration_phase": "prepared",
+  "checkpoint_schema": 1,
+  "checkpoint_mode": "0o664",
+  "checkpoint_links": 1,
+  "checkpoint_sha256": "e9a123cde4d4f3160b6322f71918a8fd1c6f634e9932abd64f38ffcfc4de0a00",
+  "original_matches_migration_backup": true,
+  "owned_copy_bytes_unchanged": true,
+  "pure_closed_checkpoint_parse": "passed",
+  "owned_original_mode_identity_probe": {
+    "result": [
+      "RESTORE_INVALID_BACKUP",
+      "path"
+    ],
+    "stack": [
+      "RecoveryFiles.read/4",
+      "Storage.guard_checkpoint/2",
+      "Projects.server/1"
+    ]
+  },
+  "owned_copy_after_chmod0600_identity_probe_passed": true,
+  "cause": "Strict private bundle reader reused for ordinary legacy checkpoint; accepted historical writer created group-readable/writable mode0664",
+  "second_guard": "StorageRegistry.initial also requires RecoveryFiles.private on existing legacy checkpoint/snapshot before adoption",
+  "admission": {
+    "stage_executed": false
+  },
+  "prior_qualified_source34": {
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "identity_probe": "Projects.server read existing legacy checkpoint without private mode gate",
+    "checkpoint_permission_migration": "Storage.open chmod existing checkpoint0600 after native open",
+    "snapshot_permission_migration": "Storage.read_snapshot chmod existing snapshot0600",
+    "scope": "Read-only source comparison; this diagnosis does not rerun source34 startup"
+  },
+  "original_preservation": {
+    "configuration_equals_pre_migration_backup": true,
+    "checkpoint_equals_pre_migration_backup": true,
+    "checkpoint_still_mode0664": true,
+    "marker_still_prepared": true
+  },
+  "harnesses": {
+    "probe.exs": "c60dd1e5d77caca11fc66ee9c600a0a842f9cfc9ecedb1d9187bf236c95eb547",
+    "probe-server.exs": "bc001e603387dbddcf4d1e65d25ad7f6643bcd5728aa7b0baac12da10f0b16d2"
+  },
+  "owned_probe_log_sha256": "1803cd31faa833e0b3dd61316f6d8167b6622c82562703ceddadb3eddaca6e96",
+  "limitation": "Identity guard boundary only: no full legacy upgrade is claimed. Source16 archive SDK workflow failed before migration decision. New fix must qualify the complete workflow separately."
+}

@@ -1,0 +1,137 @@
+{
+  "schema": "adhd/kafka-service-qualification@1",
+  "status": "qualified-service-only",
+  "passed": true,
+  "application_qualified": false,
+  "release_qualified": false,
+  "model_calls": 0,
+  "scope": [
+    "Real single-node Compose Kafka+REST Proxy",
+    "Real single-node Kubernetes Kafka+REST Proxy",
+    "Ordered publication and explicit consumer positions",
+    "Duplicate replay before materialization/commit",
+    "Records survive broker restart and broker pod replacement using retained volumes"
+  ],
+  "limits": [
+    "Does not qualify A2A, app backend search, app migration, or hub runtime.",
+    "Singlebroker replication1 is not HA.",
+    "Kind default CNI does not enforce NetworkPolicy; no enforcement claim.",
+    "Optional GPU manifest server-validated, not scheduled.",
+    "Kubernetes node registryDNS unavailable; Docker-exported equivalent config/layers imported as OCI with distinct exact manifest digests.",
+    "Raw broker/proxy service probe uses fixture events, not normative app events."
+  ],
+  "versions": {
+    "confluent_platform": "8.3.2",
+    "kafka_release_line": "4.3",
+    "kind": "0.33.0",
+    "kubernetes": "1.35.0",
+    "compose": "5.5.1"
+  },
+  "images": {
+    "broker": {
+      "registry_manifest": "sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+      "image_config": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+      "kubernetes_imported_oci_manifest": "sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+      "license": "Apache-2.0 (Kafka; bundled dependencies retain own licenses)"
+    },
+    "proxy": {
+      "registry_manifest": "sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+      "image_config": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "kubernetes_imported_oci_manifest": "sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+      "license": "Confluent Community License"
+    },
+    "kind_node": {
+      "manifest": "sha256:4613778f3cfcd10e615029370f5786704559103cf27bef934597ba562b269661",
+      "image_config": "sha256:a9f00b2666c3e111d51e6cab9b122e2c96cc539f22ffbf0612169bfafdb9818b"
+    }
+  },
+  "reports": [
+    {
+      "path": "verification/kafka-service/compose.json",
+      "sha256": "fc8a28107e4b302e3de1892d2159c404540c229354c0f74e2dd9d42cc3681c15",
+      "scope": "real-kafka-rest-service-only"
+    },
+    {
+      "path": "verification/kafka-service/compose-retained.json",
+      "sha256": "879c7fc7822855368083735a860af98ef1fd978152bbc95c5ad5e6dc7a9e9415",
+      "scope": "real-kafka-retained-records-after-operator-replacement"
+    },
+    {
+      "path": "verification/kafka-service/kubernetes.json",
+      "sha256": "03a3f59da21cdecf05755a6ec5ee9963fe8ff2be00db2e205710d4efb6c65268",
+      "scope": "real-kafka-rest-service-only"
+    },
+    {
+      "path": "verification/kafka-service/kubernetes-retained.json",
+      "sha256": "fbfa78f32dda3928f7ad6708c2a27b9b07f8f1afe786344d08b734d6fee200d5",
+      "scope": "real-kafka-retained-records-after-operator-replacement"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "deploy/events.compose.yaml",
+      "sha256": "cc6a02c1c51eb97d4201d2d893bd53928ab4a1c1961f17c489c1c207834635b6"
+    },
+    {
+      "path": "deploy/events.test.compose.yaml",
+      "sha256": "4ebfe4dca1bb566eaca7780e0c9c6f9b2da0990d79154875718c33e5c2cf7a44"
+    },
+    {
+      "path": "deploy/app.compose.yaml",
+      "sha256": "caae0b621b7b380fad3d509dd6c09aa50b5b68b2d6f10c32f8a0929cb487934a"
+    },
+    {
+      "path": "deploy/app.model.compose.yaml",
+      "sha256": "bb253a2e3cfd9bf1c2841dd76459e0015f445be06c8c7d9999d637e18614867e"
+    },
+    {
+      "path": "deploy/init-config.py",
+      "sha256": "6e559cb28078757c67d04908b2f45fe93f94668d6d64d6305172732dbf281d5c"
+    },
+    {
+      "path": "deploy/k8s/events.yaml",
+      "sha256": "83ce33a019619ddea5b03146dfac4078d0f69e7ddf6878d7b320068d627f8aac"
+    },
+    {
+      "path": "deploy/k8s/hub.yaml",
+      "sha256": "20f26eca2660146d35311c83ebaf3c6c9accb9becbc3f82e8f5fa43e77605cb5"
+    },
+    {
+      "path": "deploy/k8s/model.yaml",
+      "sha256": "1c7829a639dfafba580736de809b08422f627e39ceee9f251a4c3ebb920da6b4"
+    },
+    {
+      "path": "deploy/k8s/private.yaml",
+      "sha256": "bb2c39acf279a30bfe9f21c0df1ff4672872e8403a52cf3176efacd3e661940a"
+    },
+    {
+      "path": "deploy/k8s/kustomization.yaml",
+      "sha256": "4315d349139ac21ab3475230951b8eb602ee04db1f5f256b0e90a54239d83fcd"
+    },
+    {
+      "path": "tests/kafka_service.py",
+      "sha256": "f977a34d819fde31ade8db1d5f904860dfbdbf636f3902ab3e331ca317e75e67"
+    }
+  ],
+  "test_commands": [
+    "docker compose -p FIXTURE -f deploy/events.compose.yaml -f deploy/events.test.compose.yaml up -d --wait",
+    "python3 tests/kafka_service.py --url URL --output REPORT",
+    "docker compose -p FIXTURE -f deploy/events.compose.yaml -f deploy/events.test.compose.yaml restart kafka",
+    "python3 tests/kafka_service.py --url URL --verify-report REPORT --output RETAINED_REPORT",
+    "kubectl apply --dry-run=server -k deploy/k8s",
+    "kubectl delete pod kafka-0 -n adhd",
+    "kubectl rollout status statefulset/kafka -n adhd",
+    "python3 tests/kafka_service.py --url FORWARDED_K8S_URL --verify-report REPORT --output RETAINED_REPORT"
+  ],
+  "rest_commit_semantics": {
+    "post_offsets_field": "last consumed offset",
+    "get_offsets_field": "broker next offset",
+    "verified_posted_last_offset": 2,
+    "verified_broker_next_offset": 3,
+    "positions_field": "next offset to fetch"
+  },
+  "fixture_notes": [
+    "Compose service and retained-record reports share a fresh post-upgrade8.3.2 fixture.",
+    "Kubernetes corrected commit-roundtrip and retained-record reports use independent topics. The retained record fixture predates the recorded broker pod replacement."
+  ]
+}

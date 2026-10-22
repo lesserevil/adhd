@@ -1,0 +1,124 @@
+{
+  "schema": "adhd/eventing-readiness-native23-first-failure-audit@1",
+  "passed": false,
+  "original_result_preserved": true,
+  "whole_passed": [
+    "lag"
+  ],
+  "whole_passed_count": 1,
+  "failed_case": "queue-control",
+  "unrun": [
+    "duplicate",
+    "duplicate-bad-topology",
+    "never",
+    "queue",
+    "forbidden",
+    "server-error",
+    "malformed",
+    "bad-cleanup",
+    "partitions-float",
+    "retention-missing",
+    "retention-float",
+    "retention-negative",
+    "retention-duplicate",
+    "existing-retention",
+    "offset-nonzero",
+    "offset-negative",
+    "offset-missing",
+    "offset-float",
+    "offset-string",
+    "metadata-lag",
+    "offset-end-float"
+  ],
+  "unrun_count": 21,
+  "partial_failed_case_excluded": true,
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "receipt_identity": "sha256:72b3b0625a2bb912399c63eea7925c8bdd46d9a6ae0e070b9b9347d2b6975c45",
+  "plan_sha256": "c35e69fb7c41686eaa8612c76d48f8e77c55cc66ce8ee8464f6efbdb2fa1520f",
+  "driver_sha256": "e596d664e1e3d439e0e5d7f2714d106799ef2e7134471c358344254f0c5b8e16",
+  "closure_audit": {
+    "full_frozen_set_hashes_no_symlinks": true,
+    "frozen_regular_files": 422,
+    "full_bound_set_hashes_no_symlinks": true,
+    "bound_regular_files": 3,
+    "qualified_tool_roots_rechecked": 3,
+    "official_export_rebuild_receipt_binding_rechecked": true,
+    "actual_case_order": "Original21 preserved prefix plus metadata-lag,offset-end-float appended"
+  },
+  "cleanup_audit": {
+    "recorded_native_identities": [
+      {
+        "case": "lag",
+        "pid": 909678,
+        "start_ticks": 23349501,
+        "command_sha256": "8f1ccb731d4fda7bce0ceccfe08a3c49e1ac0543eeae2b07a7c2421d4304be3c",
+        "reaped": true,
+        "same_identity_absent": true
+      },
+      {
+        "case": "queue-control",
+        "pid": 914993,
+        "start_ticks": 23353125,
+        "command_sha256": "e6025bbff0f679829ddca2765de8c1660c6f76f0768b5c5d23594309d6311cd8",
+        "reaped": true,
+        "same_identity_absent": true
+      }
+    ],
+    "both_actual_start_identities_independently_absent": true,
+    "proxy_cleanup": [
+      {
+        "case": "lag",
+        "constructed": true,
+        "handlers": 0,
+        "thread_alive": false,
+        "failures": [],
+        "cleanup_failure_types": []
+      },
+      {
+        "case": "queue-control",
+        "constructed": true,
+        "handlers": 0,
+        "thread_alive": false,
+        "failures": [],
+        "cleanup_failure_types": []
+      }
+    ],
+    "independent_scoped_results_processes": [],
+    "recording_limits": "Only actual recorded native PIDs/start identities and scoped owned paths are qualified; no global process or daemon emptiness claim."
+  },
+  "failure_observation": {
+    "assertion": "faults.py141 expected complete operation and one create; retained Red apply is failed RESTORE_IO_ERROR/io/retryabletrue.",
+    "elapsed_from_public_operation_timestamps_ms": 3212,
+    "proxy_per_request_failure_events_retained": false,
+    "exact_injected_failure_count_proved_for_failed_case": false,
+    "cause": "Unresolved from this proof. The3000ms Eventing budget and10000ms owning recovery budget are actual accepted fixture settings; do not infer all20 declared faults occurred or classify deadline/reset behavior without retained causal evidence.",
+    "next_safe_action": "Read-only root broker/proxy/runtime diagnosis; no rerun or source repair authorized. Improve always-finally sanitized event/operation capture only after review."
+  },
+  "whole_lag_scope": "One genuine create, two selected configs404 injections, later actual metadata/config200 and zero-offset read, real Red delivery and unrelated Blue original/ack preserved. Not a23-case success.",
+  "private_files_hash_bound_only": [
+    {
+      "path": "/home/horde/src/adhd/_build/eventing-readiness-native23-01/results/fixtures/queue-control/hub.json.recovery",
+      "sha256": "52e68a520bbadb9d079d77f96aeb07fb7dc7d68f6c6462059475560feb5f1e31"
+    },
+    {
+      "path": "/home/horde/src/adhd/_build/eventing-readiness-native23-01/results/fixtures/queue-control/hub.json",
+      "sha256": "ad3f235db1ef6bff4b92cad3f0315fa2019f35e83f44dad4ac194fcdf873a011"
+    },
+    {
+      "path": "/home/horde/src/adhd/_build/eventing-readiness-native23-01/results/fixtures/queue-control/stdout.log",
+      "sha256": "01fa22fab5aa5698b18b6200378284eb2da19ffd59aba71d5cbb92b0bb7548c4"
+    },
+    {
+      "path": "/home/horde/src/adhd/_build/eventing-readiness-native23-01/results/fixtures/queue-control/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "no_new_runtime_or_provider_calls_by_audit": true,
+  "files": {
+    "result.json": "c8ce6bb25095cc9ae30253a2bce15e9a84a92e36921c6a87eb1246c4c09aedb6",
+    "stderr.log": "c8eaa39e50e778e1de6c423d414cc10a81bb738b1864c7f9c67f376a8b71d863",
+    "report.json": "b7a41db28b0595689d4e01d5b59887b989ba322a102ad926a09379c50e02b289",
+    "plan.json": "c35e69fb7c41686eaa8612c76d48f8e77c55cc66ce8ee8464f6efbdb2fa1520f",
+    "sanitized-operation.json": "2a1a603a7d5dc3e32f6e23a20fab96179582bc42c0bdd37abc8cf8ddecc1014d"
+  }
+}

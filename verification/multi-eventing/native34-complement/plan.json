@@ -1,0 +1,188 @@
+{
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "runs_per_suite": 1,
+  "parallelism": 2,
+  "jobs": [
+    {
+      "name": "controls",
+      "script": "eventing_controls.py",
+      "args": [
+        "--command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+        "--work",
+        "/home/horde/src/adhd/_build/roadmap/multi/native34-complement/controls-work",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--legacy-command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd\"]"
+      ],
+      "harness_sha256": "2505578f0de18643fa41f9ca53feb8b003d32a6db445a323a95c561c9380f2ed"
+    },
+    {
+      "name": "caps",
+      "script": "eventing_filter_budget.py",
+      "args": [
+        "--command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+        "--work",
+        "/home/horde/src/adhd/_build/roadmap/multi/native34-complement/caps-work",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082"
+      ],
+      "harness_sha256": "eaef31f8137c03d0d76e7ea3306cda461b5cc2c3ca493bf1f5dc64877f8ba904"
+    },
+    {
+      "name": "dormant",
+      "script": "eventing_dormant_policy.py",
+      "args": [
+        "--command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+        "--work",
+        "/home/horde/src/adhd/_build/roadmap/multi/native34-complement/dormant-work",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082"
+      ],
+      "harness_sha256": "1e5ca90b59723e2f800f4817e87e83ec595f0cfb58c6ad3a0d9d6b0db548798c"
+    },
+    {
+      "name": "admin",
+      "script": "eventing_admin_edit.py",
+      "args": [
+        "--command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+        "--work",
+        "/home/horde/src/adhd/_build/roadmap/multi/native34-complement/admin-work",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082"
+      ],
+      "harness_sha256": "235b5a462129f4b83fbdee65abf227bdb3979230311a1ab99d92783271f8b7b6"
+    },
+    {
+      "name": "policy",
+      "script": "eventing_project_policy.py",
+      "args": [
+        "--command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+        "--work",
+        "/home/horde/src/adhd/_build/roadmap/multi/native34-complement/policy-work",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082"
+      ],
+      "harness_sha256": "b33bf16c51d5165b4ba796f3d89dbe2edc3a19769891c6108ab71a9c619c99c4"
+    },
+    {
+      "name": "lostreply",
+      "script": "eventing_faults.py",
+      "args": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--deadline",
+        "90"
+      ],
+      "harness_sha256": "cd8dee401860ead28178fb35e01e6c5cfc9fdeb95857738870ac4f545ffd344a"
+    },
+    {
+      "name": "fairness",
+      "script": "multi_fairness.py",
+      "args": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--deadline",
+        "90"
+      ],
+      "harness_sha256": "9656405e3d077421b42eab6abebe55282368cc0f198b9b2270415925316da38e"
+    },
+    {
+      "name": "cutover",
+      "script": "eventing_cutover.py",
+      "args": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--deadline",
+        "90"
+      ],
+      "harness_sha256": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d"
+    },
+    {
+      "name": "cutover-decision",
+      "script": "eventing_cutover.py",
+      "args": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--deadline",
+        "90",
+        "--crash-at",
+        "transition-decision"
+      ],
+      "harness_sha256": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d"
+    },
+    {
+      "name": "cutover-project",
+      "script": "eventing_cutover.py",
+      "args": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--deadline",
+        "90",
+        "--crash-at",
+        "transition-project"
+      ],
+      "harness_sha256": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d"
+    },
+    {
+      "name": "retention",
+      "script": "eventing_retention.py",
+      "args": [
+        "--command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18087",
+        "--owned-broker-container",
+        "adhd-imagefinal-a31f2c-kafka-1",
+        "--work",
+        "/home/horde/src/adhd/_build/roadmap/multi/native34-complement/retention-work"
+      ],
+      "harness_sha256": "ac7e184d23ed2d86f386d4e3e218d1781e0357c04340439a4ed3ae39a320533f"
+    },
+    {
+      "name": "outage",
+      "script": "eventing_acceptance.py",
+      "args": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18087",
+        "--broker-container",
+        "adhd-imagefinal-a31f2c-kafka-1",
+        "--deadline",
+        "90"
+      ],
+      "harness_sha256": "d4b6828ba3aaeec6d291768e58e7f324322db76f0498ee40871456d1c4da8938"
+    },
+    {
+      "name": "federation",
+      "script": "federation_multi.py",
+      "args": [
+        "--command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+        "--legacy-command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd\"]",
+        "--eventing-rest-urls",
+        "[\"http://127.0.0.1:18082\", \"http://127.0.0.1:18085\", \"http://127.0.0.1:18087\"]",
+        "--work",
+        "/home/horde/src/adhd/_build/roadmap/multi/native34-complement/federation-work"
+      ],
+      "harness_sha256": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104"
+    }
+  ]
+}

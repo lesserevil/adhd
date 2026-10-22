@@ -1,0 +1,58 @@
+{
+  "suite": "adhd/kafka-durable-installation-identity@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "kubernetes-configmap-exactly-mirrors-readonly-bootstrap-and-no-shared-cluster-id",
+      "passed": true
+    },
+    {
+      "name": "exclusive-private-seed-resumes-and-explicit-mismatch-fails",
+      "passed": true
+    },
+    {
+      "name": "existing-legacy-metadata-adopted-without-rewrite-and-conflicting-explicit-id-rejected",
+      "passed": true
+    },
+    {
+      "name": "seed-metadata-and-node-identity-mismatches-rejected",
+      "passed": true
+    },
+    {
+      "name": "symlink-seed-meta-directories-traversal-unidentified-data-and-duplicate-metadata-fail-closed",
+      "passed": true
+    },
+    {
+      "name": "real-fresh-volume-0-permissions-random-id-restart-adoption-and-mismatch-rejection",
+      "passed": true
+    },
+    {
+      "name": "real-fresh-volume-1-permissions-random-id-restart-adoption-and-mismatch-rejection",
+      "passed": true
+    },
+    {
+      "name": "real-fresh-volume-2-permissions-random-id-restart-adoption-and-mismatch-rejection",
+      "passed": true
+    },
+    {
+      "name": "two-real-fresh-installations-publish-distinct-kraft-cluster-identities",
+      "passed": true,
+      "distinct_cluster_ids": 2
+    },
+    {
+      "name": "all-owned-containers-networks-volumes-cleaned",
+      "passed": true
+    }
+  ],
+  "lifecycle_qualified": false,
+  "limits": [
+    "Single broker Compose identity qualification; no new hub runtime claim."
+  ],
+  "inputs_sha256": {
+    "tests/kafka_bootstrap.py": "d5dc36ca572a745555c9e1c13409c164b3db73537316db01aadf181af29a5e12",
+    "deploy/kafka-bootstrap.py": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f",
+    "deploy/events.compose.yaml": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0"
+  },
+  "runtime": "Pinned CP8.3.2 existing Python3; no additional image or hub dependency"
+}

@@ -1,0 +1,101 @@
+{
+  "schema": "adhd/project-recovery-kill-matrix-qualification@1",
+  "passed": false,
+  "stages_passed": 11,
+  "stages_failed": 1,
+  "artifact_sha256": "9b09eee676fb8ac2e95cba38cd29144c09f6e4a03acc0d84fb30747e745b7d71",
+  "reports": [
+    {
+      "stage": "before-stage-snapshot",
+      "passed": true,
+      "checks": 4,
+      "report_sha256": "e667125aa6b1d3bc819c78de60d5adb653a671ff9099d21975d27a86e6522571",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-stage-snapshot",
+      "passed": true,
+      "checks": 4,
+      "report_sha256": "667b1ff80ce464eb8a3438f3b72d643a2ac3b41015c1b79f9d9fca13a941e463",
+      "exit_code": 0
+    },
+    {
+      "stage": "before-decision",
+      "passed": true,
+      "checks": 4,
+      "report_sha256": "847ada2d3658152dace41f3272545ef59ff60df0d09ec646e47fa253090be78f",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-decision",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "50efba56ad266dfbc3c924cb8d89847c2a29510ac7e36650a452bca6e98e0213",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-decision-sync",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "e4bb7216b509ae6939923050743b93d3d68c8658690f7a33ad18f94f945ab2bd",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-install-snapshot",
+      "passed": false,
+      "checks": 2,
+      "report_sha256": "a73c999b199ee1aa3800ac960ca79fdae9b1f05845c2d54aa49617afab973cfa",
+      "exit_code": 1
+    },
+    {
+      "stage": "after-install-checkpoint",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "9ba48b189e5cd1b4cf5688de18eb5cae69be6b5451f8d4c5a8b9eefd0f63f798",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-route-selected",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "8aaef32c783631262f6bb9ec520d26a223e20ba32c74a79d3058e15f52181f86",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-route-ready",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "b050b3a67f3ee57a6ec1533bdad12034b157024a5c2c78da9e2131c12d3ae411",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-completion",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "07fd81013b45200c5ae779849b5d8222dd96df8dff1893865d9d3944f2c3b34a",
+      "exit_code": 0
+    },
+    {
+      "stage": "before-cleanup",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "1a8ff3b4f4b71888fad8d5e89c0dbca612bb91f4d94b7bf7de2418779a496a30",
+      "exit_code": 0
+    },
+    {
+      "stage": "after-cleanup",
+      "passed": true,
+      "checks": 5,
+      "report_sha256": "ff3a98c36b72fa449265c52904af83d2f6faad8033507b96bd3e4a026abea47b",
+      "exit_code": 0
+    }
+  ],
+  "provider_calls": 0,
+  "failure": "Actual after-first-snapshot SIGKILL leaves exact staging and target hardlinks at nlink2. Strict recovery file reads reject this pair; coordinator blocks target, then alias validation reads its unavailable snapshot and stops hub startup. Fix must complete only the owned same-inode pair, without relaxing generic backup nlink1 checks.",
+  "diagnostic_scope": "Config.init catch-only then entry-stack-only overlays on frozen12; complete interrupted fixture copied before diagnosis. Both diagnostics retained original decision; no successful repair claim.",
+  "input_limitations": [
+    "The plan records initial authored dependency hashes. During this multi-child run sibling work updated unused foundation.Runtime fixture admission and a legacy-bearer branch in Fixture.admin. Foundation.Client used by every child is byte-identical to initial tracked source; current cookie-based fixtures take the unchanged Admin branch. This is compositional provenance, not an assertion every child imported identical dependency file bytes."
+  ],
+  "foundation_client_sha256": "a2d23e35d03dc4d7257b9b4642bf0c50cd96c9dec9492831237bd7463d3c0897",
+  "full_recovery_qualified": false
+}

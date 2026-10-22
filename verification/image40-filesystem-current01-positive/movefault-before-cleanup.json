@@ -1,0 +1,145 @@
+{
+  "suite": "adhd/multi-store-move-crash@1",
+  "started_at": "2026-10-22T06:55:42.531938+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "all-project-public-originals-and-acknowledgements-created-before-move",
+      "passed": true
+    },
+    {
+      "name": "actual-runtime-stopped-and-sigkilled-at-requested-filesystem-boundary",
+      "passed": true,
+      "observed_stage": "before-cleanup",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL"
+    },
+    {
+      "name": "startup-recovers-one-complete-generation-with-every-project-original-retry-and-ack-state",
+      "passed": true
+    },
+    {
+      "name": "recovered-project-writers-accept-new-publications-and-drain-real-kafka",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "harness_sha256": "665ff47e24c249ee84c2263013de34657a1a73d2a58746240f16f9d800843e72",
+  "fault_source_sha256": "9af736cb17ffc8faaca52a97ec5995e2ec75fc670cf325c1b1e0bcbf132cd366",
+  "fault_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+  "crash_at": "before-cleanup",
+  "no_default": false,
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_8c7fb7c1c1bf42fd25f13e441817990b_1",
+      "operation_id": "restore_8c7fb7c1c1bf42fd25f13e441817990b_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_8c7fb7c1c1bf42fd25f13e441817990b_3",
+      "operation_id": "restore_8c7fb7c1c1bf42fd25f13e441817990b_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_8c7fb7c1c1bf42fd25f13e441817990b_5",
+      "operation_id": "restore_8c7fb7c1c1bf42fd25f13e441817990b_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "6c1be3a910ab1f749246b012ebc30aef94a5f5e91b27369c48b39aaaf864ff6d",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "6c1be3a910ab1f749246b012ebc30aef94a5f5e91b27369c48b39aaaf864ff6d",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "79d58f8f78b167d8154d0b5a282c5cbceea1fd65bd3d0b4d2fe0da7aca2b0ddf",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "stopped",
+        "container_id": "79d58f8f78b167d8154d0b5a282c5cbceea1fd65bd3d0b4d2fe0da7aca2b0ddf",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-7151d6a9514f4c0b",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-36bf0512ca2f4f7d",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "observer_source": "store_move_fault.c",
+    "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+    "observer_loader_proof_sha256": "afbfd2265809b21aa18d49c874d539ac7c9318c0e3aa65714ed15c3a8f7fd397",
+    "actual_beam_kernel_custody": [
+      {
+        "container_id": "6c1be3a910ab1f749246b012ebc30aef94a5f5e91b27369c48b39aaaf864ff6d",
+        "source": "store_move_fault.c",
+        "stage": "before-cleanup",
+        "observer_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+        "host_process_pid": 2115025,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "efea38367c36f22028d6cc667af89c7c3cd80d436ab06060867b406baf66dde7",
+        "process_maps_sha256": "b238f112b7d1cbe299e04712cae09f4726c0046eb04f53988bd3ee799a1ac7ac",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "2b36e59054e9b2f108ad1906b41041ef5d46aa1a6772362a925c2d1c6c95fdc6",
+        "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+        "kernel_state": "stopped"
+      }
+    ],
+    "observer_disarmed_after_kill": true,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "finished_at": "2026-10-22T06:57:05.756701+00:00"
+}

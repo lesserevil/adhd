@@ -1,0 +1,782 @@
+{
+  "schema": "adhd/final-parent-requirement-index@1",
+  "preparation_only": true,
+  "requirement_rows": [
+    {
+      "id": "MULTI-002/implementation1",
+      "item": "MULTI-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add registry, immutable IDs, mutable labels/aliases and explicit active/archive lifecycle; reserve deletion for a separately specified policy.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-002/implementation2",
+      "item": "MULTI-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Partition all data, idempotency, queues, cursors, snapshots, caches and derived state by project; validate references at persistence boundaries.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-002/implementation3",
+      "item": "MULTI-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Implement versioned legacy config/store migration with preflight, backup, interruption recovery and explicit downgrade restrictions.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-002/implementation4",
+      "item": "MULTI-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Coordinate backend/outbox/project key ownership and one recoverable migration sequence with KAFKA-001 and KAFKA-008.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-002/implementation5",
+      "item": "MULTI-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Reject hot removal of the project registry or any admitted project, including dry validation; candidate33 accepted an Admin patch deleting projects and memberships. Preserve complete configuration/revision and retained project data on rejection, including installations without a default project.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-002/evidence1",
+      "item": "MULTI-002",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Upgrade actual earlier accepted stores and preserve publications, private deliveries, acknowledgements, queries, source IDs and selected optimizer recipes.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-002/evidence2",
+      "item": "MULTI-002",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Kill/restart migration and project transactions; prove no partial admission, silent empty stores, identity reassignment or cross-project key collisions.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-003/implementation1",
+      "item": "MULTI-003",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add Admin-managed user project access and agent project memberships with stable ownership and explicit project selection.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-003/implementation2",
+      "item": "MULTI-003",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Enforce role, admission, ownership and membership checks on every direct and indirect operation, including live revocation and queued work.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-003/implementation3",
+      "item": "MULTI-003",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Preserve local admin bootstrap, OIDC provider links, groups-to-role configuration and non-transitive email correlation; do not import remote access grants.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-003/implementation4",
+      "item": "MULTI-003",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Prevent a Developer from recreating a removed agent ID that retains private deliveries, receipts, subscriptions or owned jobs in any project. A public-interface probe on candidate31 verified new-owner access to the former owner's private queue. Preserve explicit Admin recovery/reassignment and retained data; add native/container retirement/recreation regression evidence. Candidate32 implements an all-project verified-snapshot guard; native first-install OIDC/accounts checks remain passing in `verification/multi-eventing/oidc-first-setup-32.json`. Independent candidate32 retirement and snapshot-fault suites pass, and role/browser checks pass22 groups. Review found a legacy missing-snapshot path could attempt the bootstrap DETS opener; candidate33 removes that fallback and uses only a verified snapshot server identity. Its legacy/fault requalification and official artifact/image admission remain required.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-003/evidence1",
+      "item": "MULTI-003",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Exercise the role/owner/project matrix through API and browser, including guessed IDs, forged scopes, stale sessions, token rotation and revocation during work. The [independent OIDC policy image run](../../verification/ownedMULTI008/compiled05-oidc-policy-positive/manifest.json) now passes all five original cases and16 assertions on compiled05, retaining the native path and original policy assertions. The auth-only fixture uses the actual private bootstrap password, publicly disables its unused event transport before first project admission and verifies all projects ready after the original renamed-admin restart. Two actual compiled VMs, hard restart and strict owned cleanup are independently bound; the first fixture failure remains retained. The broader role/owner/project matrix is independently qualified by the exact sourceC native API9/role/account evidence and current native/container browser9/86, including guessed scopes, session revocation, token rotation and delayed-work fences; the leaf-only evidence binding is retained separately from parent program closure.",
+      "inline_references": [
+        "../../verification/ownedMULTI008/compiled05-oidc-policy-positive/manifest.json"
+      ]
+    },
+    {
+      "id": "MULTI-004/implementation1",
+      "item": "MULTI-004",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Scope publish/get/search/send/subscribe/poll/ack, source deduplication, corrections and reference traversal; prevent cross-project references from granting visibility.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-004/implementation2",
+      "item": "MULTI-004",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Scope history/retrieval/archive jobs, feedback/cohorts/replay, optimizer training/evaluation/selection and all caches, snapshots and cancellation.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-004/implementation3",
+      "item": "MULTI-004",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add explicit authorized local project discovery and cross-project query fan-out with per-project coverage, deadlines, incremental results and revocation handling.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-004/implementation4",
+      "item": "MULTI-004",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Apply KAFKA-001's raw/filtered subscription boundaries; integrate the A2A Kafka bridge and independent fact-history projection through KAFKA-003 and KAFKA-005.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-004/evidence1",
+      "item": "MULTI-004",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Run interleaved projects with identical local IDs and content; prove delivery, deduplication, evidence, replay and optimizer isolation.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-004/evidence2",
+      "item": "MULTI-004",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Prove explicit fan-out returns only admitted project evidence with accurate partial coverage and no private addressed messages.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-005/implementation1",
+      "item": "MULTI-005",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Version directory discovery, per-project catalogs, canonical claims, peer trust grants and identity correlation; cache by stable server/project/revision.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-005/implementation2",
+      "item": "MULTI-005",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Bind durable requests, status polling, responses and idempotency to authenticated origin server plus origin and destination projects; reject scope substitution and stale authority.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-005/implementation3",
+      "item": "MULTI-005",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Handle same-server canonical routing, conflicts, project archival, peer revocation and negotiated legacy peers without duplicate delivery or silent downgrade.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-005/evidence1",
+      "item": "MULTI-005",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Qualify at least three real servers with multiple projects, local/remote canonical routing, conflicting owners, stale caches, outages, retries and revocation. The current [three-server Kafka federation](../../verification/final05-kafka-whole68-positive/manifest.json), [stale-owner four-check run](../../verification/ownedMULTI008/compiled05-stale-canonical-owner-positive/manifest.json) and [callback/epoch fences](../../verification/final05-recovery-callback28-positive/manifest.json) jointly qualify this scope. Expiry uses the original10-second TTL and12-second wait; an unavailable canonical owner never delegates work to a reachable noncanonical server.",
+      "inline_references": [
+        "../../verification/final05-kafka-whole68-positive/manifest.json",
+        "../../verification/ownedMULTI008/compiled05-stale-canonical-owner-positive/manifest.json",
+        "../../verification/final05-recovery-callback28-positive/manifest.json"
+      ]
+    },
+    {
+      "id": "MULTI-005/evidence2",
+      "item": "MULTI-005",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Validate exact new wire traffic independently and test old/new peer compatibility, bounded forwarding, privacy and unchanged server-local roles.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-006/implementation1",
+      "item": "MULTI-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-006/implementation2",
+      "item": "MULTI-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-006/implementation3",
+      "item": "MULTI-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-006/implementation4",
+      "item": "MULTI-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Repair first-time OIDC setup so the Admin connection test is available for proposed settings before initial save; the inherited browser regression found the button hidden until a provider was already configured. Requalify the corrected artifact and image.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-006/implementation5",
+      "item": "MULTI-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Diagnose and repair the [unexpected HTTP401 in the exact-image foundation browser flow](../../verification/multi-eventing/foundation-browser-34-failure.json). A [deterministic actual-service probe](../../verification/multi-eventing/admin-stale401-34/manifest.json) now proves that an old list_projects HTTP401 resets a newly authenticated workspace while its server session remains valid. Fence stale auth responses and cancel old-context requests; requalify normal desktop/mobile OIDC setup, linking and logout without ignoring unexpected errors. The original untraced401 is not definitively attributed. [Native development35ui qualification](../../verification/multi-eventing/admin-session-35/manifest.json) now passes the strict race regression on both viewports, current-session revocation, the unchanged accounts/OIDC browser suite and18 native cases; the same race harness fails actualimage34. Successor artifact admission and image/browser qualification remain required.",
+      "inline_references": [
+        "../../verification/multi-eventing/foundation-browser-34-failure.json",
+        "../../verification/multi-eventing/admin-stale401-34/manifest.json",
+        "../../verification/multi-eventing/admin-session-35/manifest.json"
+      ]
+    },
+    {
+      "id": "MULTI-006/implementation6",
+      "item": "MULTI-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Wrap complete namespaced object IDs in Events replay subscription labels and replay-status paragraphs within the 390px mobile viewport. The [admitted38 browser run](../../verification/native38-ui-initial/manifest.json) fails on document overflow; subsequent painted-text measurements identify these two unwrapped text regions, while navigation remains correctly clipped inside its own scroller. Preserve full IDs, accessible labels, desktop layout and the unchanged replay/acknowledgement assertions; qualify the repair on native and container runtimes before closing this follow-up.",
+      "inline_references": [
+        "../../verification/native38-ui-initial/manifest.json"
+      ]
+    },
+    {
+      "id": "MULTI-006/evidence1",
+      "item": "MULTI-006",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-007/implementation1",
+      "item": "MULTI-007",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Specify fair scheduling and accounting across projects and job classes, bounded queues/caches/storage and backpressure.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-007/implementation2",
+      "item": "MULTI-007",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Fence workers against project archival, access changes and configuration revisions; preserve durable accepted work with explicit terminal/paused states.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-007/implementation3",
+      "item": "MULTI-007",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add project-aware diagnostics/audit records and documented full-server and project backup/restore semantics, collision handling and container recovery.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-007/implementation4",
+      "item": "MULTI-007",
+      "section": "implementation",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Implement selective recovery into a missing or logically empty target under its original server/project identity, with an Admin plan, complete ownership/reference validation, target-only durable storage/Kafka generations and worker fencing. Preserve every other current project and current global configuration; reject populated logical targets. Follow [the project recovery plan](project-restore.md). The closed recovery authority in `components/hub/project-recovery/spec.md` and [87 independent wire vectors plus six examples](../../verification/project-recovery/contracts.json) are reviewed. Storage registry/bundle verification, Admin jobs, fresh allocation and transport generations, and worker fences are in progress; [five allocator development checks](../../verification/project-recovery/allocator-development.json) pass without claiming integrated recovery. The [development integration checkpoint](../../verification/project-recovery/integration-development.json) records allocator, callback/ticket fences and Admin recovery UI seams; [Nine frozen native component checks](../../verification/project-recovery/components/manifest.json) now pass for nested origin fences, active/queued target tickets, transport reset and pending-work preservation; the decision coordinator compiles. Guarded native development12 now passes18 regression cases and five actual private restore checks; the checkpoint guard passes82 vectors on each of OTP27 and OTP29, and six actual hostile offline rebind cases reject without metadata changes. Native development13 also passes six authenticated federation HTTP checks, including recovery503/Retry-After. The full twelve-boundary crash matrix, actual late network callbacks, broad successor regressions and formal artifact/image/platform qualification remain open. The [compiled05 late-callback qualification](../../verification/final05-recovery-callback28-positive/manifest.json) now passes all five original programs /28 checks, covering pending model/Kafka callbacks, outgoing and incoming queries, and peer epoch fencing through actual instrumented compiled boot. Original assertions, two-slot fixture profile and deadlines remain unchanged; root independently revalidates all21 actual VMs, cache/source custody,58 owned handles and789 process identities after cleanup. Default OCI startup remains covered separately by SDK/UI/deployment. Full-server restore does not discharge this requirement.",
+      "inline_references": [
+        "project-restore.md",
+        "../../verification/project-recovery/contracts.json",
+        "../../verification/project-recovery/allocator-development.json",
+        "../../verification/project-recovery/integration-development.json",
+        "../../verification/project-recovery/components/manifest.json",
+        "../../verification/final05-recovery-callback28-positive/manifest.json"
+      ]
+    },
+    {
+      "id": "MULTI-007/evidence1",
+      "item": "MULTI-007",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Saturate one project with slow/failing model and peer work; demonstrate bounded progress for another and truthful costs/coverage.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-007/evidence2",
+      "item": "MULTI-007",
+      "section": "evidence",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Exercise hot lifecycle changes, worker crashes, restart, container replacement and backup/restore without leakage or duplicated committed results.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-008/implementation1",
+      "item": "MULTI-008",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Complete local OCI staging of the locked normative hub specification closure, including the recovery JSON Schema, and allow explicit selection of the verifier CLI/interpreter. The original Markdown-only walker omitted declared JSON authority and an ambient CLI could differ from the project-pinned framework. Preserve existing aliases and deterministic archives; reject changed, missing, redirected or colliding inputs and qualify the exact staged byte identities before successor image claims. This is local deployment packaging, not a native-package or registry release.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-008/implementation2",
+      "item": "MULTI-008",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Update normative specs/traceability, schemas/OpenAPI/examples, agent onboarding, configuration tooling, deployment and operator recovery guides.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-008/implementation3",
+      "item": "MULTI-008",
+      "section": "implementation",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Run the complete multiple-project matrix plus existing regression suites against native and Docker artifacts and the existing model container.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-008/implementation4",
+      "item": "MULTI-008",
+      "section": "implementation",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Record acceptance identities, upgrade/rollback limitations and unresolved gates; close dependent items and the detailed roadmap only when their evidence passes.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-008/implementation5",
+      "item": "MULTI-008",
+      "section": "implementation",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Qualify real oldest-producer0664 and historical snapshot permissions, exact bytes/IDs/acks/retries and cold restart; repair a copy of the actual interrupted prepared migration; prove malformed/foreign/wrong-project/symlink/hardlink/non-owned inputs retain bytes/mode/inode and open no native checkpoint. Recheck strict imported-bundle permission rejection; bind evidence to the repaired successor without relabeling source16.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-008/evidence1",
+      "item": "MULTI-008",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Verify locked normative staging closure and explicit verifier argv construction with independent byte/determinism/collision/symlink tests. The [construction-only proof](../../verification/project-recovery/development16/staging-closure-review.json) passes14 tests and includes all33 locked specifications; the [proper CLI receipt/context bridge](../../verification/ownedMULTI008/final-documentation-compiled05-bridge/manifest.json) now independently verifies actual successor staging of the unchanged compiled05 payload/specification/compiler context. Complete runtime qualification remains a separate gate.",
+      "inline_references": [
+        "../../verification/project-recovery/development16/staging-closure-review.json",
+        "../../verification/ownedMULTI008/final-documentation-compiled05-bridge/manifest.json"
+      ]
+    },
+    {
+      "id": "MULTI-008/evidence2",
+      "item": "MULTI-008",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Demonstrate two agents coordinating in each of two projects on one server, a multi-project agent and a denied third project, plus a multi-server discovery/canonical-routing scenario.",
+      "inline_references": []
+    },
+    {
+      "id": "MULTI-008/evidence3",
+      "item": "MULTI-008",
+      "section": "evidence",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Run declared lifecycle verification and independent wire/privacy/migration/browser/fairness checks with reproducible artifact-bound reports.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-002/implementation1",
+      "item": "KAFKA-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Provision documented internal topics/partitions and authentication/ACL boundaries; keep private addressed messages and credentials outside public event topics.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-002/implementation2",
+      "item": "KAFKA-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Implement durable publish acceptance, retry/deduplication, consumer checkpoints and health/backpressure under broker outages.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-002/implementation3",
+      "item": "KAFKA-002",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Fence consumers and topic lifecycle against project archive, restore, credential rotation and configuration revisions.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-002/evidence1",
+      "item": "KAFKA-002",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Kill hub/broker around each publish/checkpoint boundary; prove no acknowledged event is lost and retries do not create duplicate logical publications.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-002/evidence2",
+      "item": "KAFKA-002",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Exercise multi-project isolation, rebalances, broker unavailability, disk/queue limits and recovery with a real Kafka service.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-003/implementation1",
+      "item": "KAFKA-003",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add explicit project subscriptions with optional deterministic selectors and no required model/description; preserve legacy described subscriptions as filtered mode.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-003/implementation2",
+      "item": "KAFKA-003",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Persist independent subscription progress and recipient deliveries; separate broker processing offsets from agent acknowledgements and handle out-of-order ack safely.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-003/implementation3",
+      "item": "KAFKA-003",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Define overlapping-subscription deduplication, unsubscribe/pause/resume, offline consumers, bounded replay and explicit retention-gap handling without weakening existing unacknowledged-delivery durability.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-003/evidence1",
+      "item": "KAFKA-003",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Run official A2A SDK flows with multiple subscribers receiving every project event and no direct broker access; prove zero model calls.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-003/evidence2",
+      "item": "KAFKA-003",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Exercise disconnect/reconnect, concurrent subscribe/publish, filter changes, repeated polls/acks, overlapping subscriptions and consumer rebalances.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-004/implementation1",
+      "item": "KAFKA-004",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Define filter enable/disable/edit revisions, threshold policy, input context and durable retry/backlog state; use deterministic selectors before inference.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-004/implementation2",
+      "item": "KAFKA-004",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add isolated queues, fairness, timeouts, per-project/subscription budgets and filter-decision provenance without inventing probabilities for raw deliveries. Current integration bounds the model-ready queue and retains overflow as deferred frozen targets in original durable event state; raw fanout must continue and diagnostics must distinguish ready, deferred and paused work.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-004/implementation3",
+      "item": "KAFKA-004",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Make the model provider optional at startup; expose unsupported/unavailable filtered subscriptions explicitly and preserve accepted pending decisions across recovery.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-004/evidence1",
+      "item": "KAFKA-004",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] With no model configured and with a hung/failing model, prove raw subscriptions deliver promptly with zero inference calls and other projects are not starved.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-004/evidence2",
+      "item": "KAFKA-004",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Validate real short-response filtered matches/nonmatches, malformed decisions, retries, hot filter edits and revocation without silent misses or duplicated deliveries.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-005/implementation1",
+      "item": "KAFKA-005",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Define backend/index ingestion watermarks and read-after-publish/search visibility; recover projection lag without treating missing indexed facts as negative evidence.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-005/implementation2",
+      "item": "KAFKA-005",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Preserve original history after broker retention, filter rejection, delivery acknowledgement and subscriber removal; keep private messages excluded.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-005/implementation3",
+      "item": "KAFKA-005",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Decouple search/model workers and readiness from raw eventing, adapting replay/cohorts/optimizer evidence to project-scoped event identities and optional models.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-005/evidence1",
+      "item": "KAFKA-005",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Publish with no model and no subscriptions; prove facts remain searchable after filtering, acknowledgements, restart and broker log expiry.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-005/evidence2",
+      "item": "KAFKA-005",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Exercise lag/rebuild/restore and model-disabled semantic queries with truthful coverage and unchanged evidence/privacy guarantees.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-006/implementation1",
+      "item": "KAFKA-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation. Provide confirmed revisioned subscription edits, pause/resume and selector/filter changes through Admin; preserve queued deliveries and acknowledgements.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-006/implementation2",
+      "item": "KAFKA-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation. Current integration is completing partial per-project topic-prefix, retention and backlog-policy overrides with explicit inheritance; broker endpoint, security and enabled state remain server-wide. Qualify failed multi-project retention proposals against actual broker state before closing this control gate.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-006/implementation3",
+      "item": "KAFKA-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-006/implementation4",
+      "item": "KAFKA-006",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-006/evidence1",
+      "item": "KAFKA-006",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Inspect desktop/mobile role-scoped flows, stale revisions, CSRF, access revocation and model on/off transitions.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-006/evidence2",
+      "item": "KAFKA-006",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Rotate broker credentials and change connection/filter settings live under load; prove no hub restart, lost accepted work or cross-project exposure.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-007/implementation1",
+      "item": "KAFKA-007",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Select pinned Kafka/KRaft images and client compatibility; declare dependencies, persistent volumes, private listeners, secrets, resource limits and readiness/startup/shutdown ordering. Generate and retain a distinct installation cluster ID, preserving existing volume metadata rather than assigning the tutorial cluster ID to every deployment.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-007/implementation2",
+      "item": "KAFKA-007",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Provide Compose and Kubernetes packaging with model-free baseline and optional existing model/GPU service or configured remote model; choose and document Kubernetes manifest/chart ownership.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-007/implementation3",
+      "item": "KAFKA-007",
+      "section": "implementation",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Compile the exact admitted hub modules during the pinned OCI build and verify the source/toolchain/module closure before loading it at startup. Preserve the exported source, original CLI behavior and runtime fault-observer interfaces; do not rerun application compilation on each container start. The [public compiler diagnostic](../../verification/project-recovery/development40/compiler-diagnostic-preparation/root-start.json) retains the original30-second SDK failure and observes module compilation callbacks beyond30seconds after container start. Bind the actual trace and cleanup evidence, then qualify the packaging repair against the unchanged SDK readiness deadline and complete required runtime/deployment regressions; traced timing is diagnostic, not an untraced CPU benchmark. The first [actual compiled-image offline audit](../../verification/container-precompile-image40/admission/manifest.json) confirms unchanged59-file application payload,33 canonical specifications and59 hash-bound compiled modules. It also records a final-stage COPY parent timestamp that prevents a reproducibility claim. The [corrected compiled03 admission](../../verification/container-precompile-image40/compiled03-admission/manifest.json) now binds the actual59-file payload,33 specifications,59 compiled modules and normalized final metadata. Its [complete cache qualification](../../verification/container-cache40-compiled03-positive/audit.json) covers original18 built-in tests, three CLI exports, the copy control and all12 rejection cases, preserving the first false fixture aggregate. The [unchanged original SDK17](../../verification/compiled-sdk-retarget-preparation/whole17-03-positive/manifest.json) now passes all Feedback5/Archive4/History4/Retrieval4 cases against this exact admitted image, retaining the original30-second readiness deadline and actual source/cache/VM custody. A [sequential independent rebuild](../../verification/container-precompile-image40/reproducibility-first-negative/manifest.json) reproduces every final cache byte and metadata entry but yields different intermediate layer identities; bitwise image reproducibility remains open. The corrected compiler-only deterministic option and explicit runtime-directory copy now produce [identical image identities from two independent sequential builds](../../verification/container-precompile-image40/reproducibility05-positive/manifest.json); [compiled05 admission](../../verification/container-precompile-image40/compiled05-admission/manifest.json) retains the unchanged application/specification bytes and actual cache audit. The final image now passes [all17 cache/CLI groups](../../verification/container-cache40-compiled05-positive/audit.json), including18 built-in checks and12 rejection cases, and [all19 ABI probes across six observer families](../../verification/image40-compiled05-abi19-positive/audit.json). All owned cache and ABI container IDs are independently absent. The [fixed live-model quality69](../../verification/quality40-compiled05-positive/audit.json) also passes all22 history,21 retrieval,23 archive and3 feedback cases with actual source/cache/VM custody,174 bounded POSTs and unchanged model identity. The final image also passes [all17 original SDK cases](../../verification/final05-sdk-whole17-positive/manifest.json) under the original30-second readiness deadline and [nine browser programs /86 assertions](../../verification/final05-ui-whole86-positive/manifest.json), including the two actual OpenRig rigs, OIDC accounts and session-response fencing. Root retained [manual continuation capture review](../../verification/final05-preparations/ui/manual-continuation-review.json) alongside the earlier five-capture review; raw images remain private. The [final compiled-image filesystem gate](../../verification/final05-filesystem-whole85-positive/manifest.json) now passes all17 original suites /85 checks; independent audit verifies the complete declared input/tool closure, all67 recorded container IDs,47 probe/codec names and19 recorded kernel PIDs absent, with historical name/start-tick recording limits stated explicitly. Next: finish deployment, remaining recovery and runtime gates, then refresh operator documentation through the final lifecycle review. [Deployed filtering/search evidence](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json) now qualifies all six original cases on each of actual Compose and Kind: twelve bounded provider POSTs total, raw Blue progress, privacy, cited fact queries and same-VM hot disable/resume. Both platform children exited0 and their required qualifiers, complete input closure, model identity, lease release and resource absence are independently verified. The external launcher returned143 for an unknown reason; that outer result remains false and does not replace the two complete child suites. No provider retry was performed. Earlier image evidence remains scoped to its original image.",
+      "inline_references": [
+        "../../verification/project-recovery/development40/compiler-diagnostic-preparation/root-start.json",
+        "../../verification/container-precompile-image40/admission/manifest.json",
+        "../../verification/container-precompile-image40/compiled03-admission/manifest.json",
+        "../../verification/container-cache40-compiled03-positive/audit.json",
+        "../../verification/compiled-sdk-retarget-preparation/whole17-03-positive/manifest.json",
+        "../../verification/container-precompile-image40/reproducibility-first-negative/manifest.json",
+        "../../verification/container-precompile-image40/reproducibility05-positive/manifest.json",
+        "../../verification/container-precompile-image40/compiled05-admission/manifest.json",
+        "../../verification/container-cache40-compiled05-positive/audit.json",
+        "../../verification/image40-compiled05-abi19-positive/audit.json",
+        "../../verification/quality40-compiled05-positive/audit.json",
+        "../../verification/final05-sdk-whole17-positive/manifest.json",
+        "../../verification/final05-ui-whole86-positive/manifest.json",
+        "../../verification/final05-preparations/ui/manual-continuation-review.json",
+        "../../verification/final05-filesystem-whole85-positive/manifest.json",
+        "../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json"
+      ]
+    },
+    {
+      "id": "KAFKA-007/implementation4",
+      "item": "KAFKA-007",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Document single-node versus replicated broker durability, single-writer hub replica limits, backup/restore, rolling broker upgrades and hot hub configuration propagation.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-007/evidence1",
+      "item": "KAFKA-007",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Boot clean Compose and disposable Kubernetes deployments with real Kafka and no model; run A2A pub/sub and backend search smoke tests.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-007/evidence2",
+      "item": "KAFKA-007",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Exercise replacement/restart, PVC or volume reuse, broker failure/upgrade, secret rotation and optional-model enablement; validate manifests and image/dependency/license inventories.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-008/implementation1",
+      "item": "KAFKA-008",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Specify ordered schema/config upgrades, cutover watermarks and topic initialization for legacy and already multi-project stores.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-008/implementation2",
+      "item": "KAFKA-008",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Reconcile durable outbox, Kafka offsets, pending model jobs, deliveries and backend projection state without replaying old publications as newly subscribed events.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-008/implementation3",
+      "item": "KAFKA-008",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Provide preflight, backups, resumable migration markers, abort/recovery and explicit downgrade restrictions for store plus broker state.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-008/evidence1",
+      "item": "KAFKA-008",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Migrate actual earlier accepted stores with offline agents, pending filters, duplicate retries and acknowledged deliveries; compare identities and counts.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-008/evidence2",
+      "item": "KAFKA-008",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Inject crashes at every cutover boundary and restore backups; prove no silent loss, unsolicited history replay, cross-project leakage or double delivery.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-009/implementation1",
+      "item": "KAFKA-009",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Update normative Component contracts, schemas/OpenAPI/examples, client onboarding, traceability, deployment and troubleshooting guides together.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-009/implementation2",
+      "item": "KAFKA-009",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Run zero-model raw-subscription/search acceptance and separate live-model filtered/semantic-query acceptance plus multi-project and federated regressions.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-009/implementation3",
+      "item": "KAFKA-009",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Verify durable handoffs, fanout, fairness, retention/replay gaps and fault recovery at documented limits; record exact artifact/image/broker/client identities.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-009/evidence1",
+      "item": "KAFKA-009",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Demonstrate two projects with multiple publishers and independent raw/filtered subscribers, an unauthorized project and a federated peer using its own Kafka.",
+      "inline_references": []
+    },
+    {
+      "id": "KAFKA-009/evidence2",
+      "item": "KAFKA-009",
+      "section": "evidence",
+      "state_at_review": "open",
+      "exact_requirement_line": "  - [ ] Pass declared verification and independent wire/privacy/fault/migration/deployment suites; document remaining limits and publication gates before closure. Qualify the shipped `deploy/k8s/private.yaml` on a disposable enforcing CNI separately: prove each route is reachable before policy, then verify allowed same-namespace hub-to-REST and REST/broker-to-broker traffic and denied unrelated/cross-namespace traffic at the declared ports. A default Kind cluster or successful policy apply alone does not prove enforcement. This network-layer fixture must remain distinct from actual Kafka/hub deployment qualification.",
+      "inline_references": []
+    },
+    {
+      "id": "INTEROP-001/implementation1",
+      "item": "INTEROP-001",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Inspect and pin the supported OpenRig release/API; specify stable rig/agent identity, ADHD project mapping and a minimal A2A adapter or skill where needed.",
+      "inline_references": []
+    },
+    {
+      "id": "INTEROP-001/implementation2",
+      "item": "INTEROP-001",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Provide setup for agents in separate OpenRig rigs to publish/subscribe, send/poll/acknowledge and search through one ADHD hub, then through federated hubs with canonical routing.",
+      "inline_references": []
+    },
+    {
+      "id": "INTEROP-001/implementation3",
+      "item": "INTEROP-001",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Preserve project admission, owner/role boundaries, provenance, retries and loop/duplicate prevention; keep rig identity as provenance rather than an automatic access grant.",
+      "inline_references": []
+    },
+    {
+      "id": "INTEROP-001/implementation4",
+      "item": "INTEROP-001",
+      "section": "implementation",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Document supported versions, credential provisioning, recovery and the division of responsibility; retain support for agents outside OpenRig.",
+      "inline_references": []
+    },
+    {
+      "id": "INTEROP-001/evidence1",
+      "item": "INTEROP-001",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Run two actual OpenRig rigs with independently authenticated agents: verify cross-rig raw events with zero inference, direct messages, acknowledgements and backend search; include an optional plain-text filter case.",
+      "inline_references": []
+    },
+    {
+      "id": "INTEROP-001/evidence2",
+      "item": "INTEROP-001",
+      "section": "evidence",
+      "state_at_review": "checked",
+      "exact_requirement_line": "  - [x] Verify offline/restart/retry recovery and denial of unauthorized projects, then exercise two rigs using separate federated ADHD servers with exact rig/agent/project/source provenance and no transferred roles.",
+      "inline_references": []
+    }
+  ],
+  "scope": "Exact92 current leaf statements in16 currently open parents. Checked states reflect the reviewed authoritative queue, not a new rerun of their raw qualifiers. This index supplies the final requirement-by-requirement join; eight open rows require their full qualification/consolidation before closure."
+}

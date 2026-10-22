@@ -1,0 +1,183 @@
+# Multi-project federation and event controls qualification
+
+Native candidate qualification on 2026-10-21 passed the independent
+[federation harness](../../tests/federation_multi.py) (14 groups, 273 schema-validated
+wire messages) and [event controls harness](../../tests/eventing_controls.py)
+(8 groups). This is evidence for the named candidate, not a retained-source
+release or semantic model-quality attestation.
+
+| Evidence | SHA-256 |
+| --- | --- |
+| Native candidate `hub-controls-13.exs` | `aabfcf968501260d912b27109c31819c69f4eaf74fe6fc755040a87bc6734ca1` |
+| Federation report `_build/roadmap/multi/federation-13.json` | `75d64a368a3148e2e7e99e63cb82b9ec7c332e8b1ae63af1a04933ab42607b4d` |
+| Controls report `_build/roadmap/multi/controls-13.json` | `98acbfe0b80f7f843d6e22a051baaa78274cf1b8f0898d40399f006f7d417a8d` |
+| Federation harness at execution | `4544718021de73f2ea36a79c8524fd6215109be3b338932d95a9465b896d1ba6` |
+| Controls harness at execution | `79b4ee52f30ecbccf88e97a092506bf5d6a397cf8ca5aca58312200bfae3db9f` |
+| Accepted legacy candidate `index-hub-21.exs` | `1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48` |
+
+The ignored evidence directory contains the exact source-input manifest
+`controls-13-source.json`, private fixture logs/stores/configuration, reports and
+broker container/image identity capture `federation-brokers.json`. Private fixtures
+and generated source are deliberately not checked in.
+
+Three actual multi-project server processes used distinct pinned Kafka/REST Proxy
+8.3.2 services with cluster IDs `MkU3OEVBNTcwNTJENDM2Qk`,
+`NEiAAXk0v1xqZFCdSDoQjA`, and `Xle2vV-sRlSWjarQJq3IFw`. Their project IDs and display
+labels deliberately collided; server IDs were fresh per run to isolate broker
+history. The suite observed four distinct remote server/project answers, exact
+query namespaces, bounded authorized aggregate catalog pages, local/remote
+canonical routing, duplicate ownership conflicts, hot grant revocation and hard
+restart. A separately executed accepted legacy binary queried the new default
+project and was queried by it. Archived legacy routes exported an empty catalog
+and returned HTTP403 for new work. Credential scans covered all project stores.
+Raw Kafka-to-A2A delivery required zero model inference; later semantic queries
+used 15 controlled typed requests. No real-model accuracy or latency claim follows.
+
+The controls suite used a forwarding gateway to an actual Kafka service. It
+proved acceptance-time model URL/model ID/threshold retention across a hot change
+while the broker was blocked; explicit replay of retained pre-cutover originals;
+late-subscriber replay without changing ordinary activation; exact request
+idempotency; acknowledged delivery preservation; atomic refusal under configured
+backpressure; digest/checkpoint guarded quarantine retry and audited physical
+skip; and republishing the original after corrupting its actual producer record.
+Audit, replay status, accepted control identity and acknowledgements survived a
+hard process restart. Archiving rejected new replay while preserving the accepted
+control's idempotent result.
+
+These profiles used HTTP Kafka transport. They do not qualify custom-CA/OAuth
+security, replicated Kafka durability, Kubernetes, live-model quality or the final
+retained build. HTTPS trust-isolation changes following this candidate require
+separate deployment qualification. All private server processes were stopped.
+The extra broker on port 18086 was removed; port 18085 cleanup ownership passed to
+the OpenRig qualification worker, and the preexisting port 18082 service remained.
+
+## Completion audit candidates
+
+A later bounded audit qualified Admin edit/pause/resume, exact revision/message-ID
+retries, model-pending work and acknowledgement preservation, real Developer/Viewer
+denial, live membership/archive fencing, and pagination over 106 subscriptions.
+`hub-contract-audit-27.exs` SHA256
+`423a1de693782489a8c8ef648341bf4b73a782995c744ff3a913c5320ac20c9e`
+passed four independent Admin groups; report `audit-27-admin-edit.json` SHA256
+`aafb9dcc1f2b95a3feb5ff051b3d3c177609b3557849f1966f8c4feddd5ea0d8`.
+
+The same candidate passed four real-Kafka per-project policy groups, including a
+second-project preflight failure leaving the first topic's actual retention
+unchanged, a fetched record held across hot configuration and recovered from its
+durable position, independent project retention/backlog/topic cutover, per-field
+inheritance reset, acknowledgement preservation and new-project provisioning.
+Report `audit-27-project-policy.json` SHA256
+`0e1e3f76de0b0ee04bb65bdfddf1e19ef1c5151d352fc211dbc6a076f5604423`.
+
+The preceding candidate 26 passed all eight foundation protocol groups against
+fresh exact CLI/HTTP schema/OpenAPI exports, preserving independent model/history/
+retrieval semantic negatives and version/authentication boundaries. Its separate
+eventing protocol suite passed three groups with 22 valid/24 invalid vectors and
+actual official-SDK raw delivery. Reports `audit-26-full-protocol.json` and
+`audit-26-eventing-protocol.json` are in the same ignored evidence directory.
+These remain candidate evidence; subsequent filter-queue budget work and the final
+combined retained artifact require their own qualification.
+
+## Bounded filter admission candidate
+
+Frozen `hub-filter-28.exs` SHA256
+`31f33131ba3b6cf0f0ad30c2df0560e2175e8a4e78804017a236da91bb345615`
+passed five independent actual-Kafka groups in `tests/eventing_filter_budget.py`:
+ready project/subscription caps with raw progress; hot reduction retaining existing
+jobs and hard-restart recovery; frozen adapter/threshold while disabled and after
+replacement; deferred replay versus materialized handoff without acknowledgement
+resurrection; actual project budget overrides and unsubscribe cleanup while paused.
+Report `_build/roadmap/multi/filter-28b.json` SHA256
+`e414078bf8567557e3fe4d479f7232785c864f97652e99ca2fe506ae85fb5be3`.
+The first attempt used an insufficient 45-second fixture deadline for draining
+44 decisions under a one-slot cap; the final bounded recovery deadline is120 seconds.
+No generated-source change was needed between those attempts.
+
+The same artifact passed two groups in `tests/eventing_dormant_policy.py`. Holding
+an actual Kafka response prevented the event worker from ticking while Admin
+changed adapter A to B and immediately disabled it. An off-state original retained
+B across hard restart and re-enable with C and a different threshold; a second
+project retained its explicit adapter independently. Report
+`_build/roadmap/multi/filter-28-dormant.json` SHA256
+`109f96a00e546cfccfa2d9d3383e3a70047d26623397cd6c694a8ee380b70d4b`.
+
+`tests/eventing_protocol.py` passed three groups against that artifact with24 valid
+and27 invalid authored vectors, including queue bounds, zero/boolean rejection,
+critical duplicate-ID validation, exact served schema/OpenAPI and official-SDK raw
+publication/delivery/revision conformance. Report
+`_build/roadmap/multi/filter-28-protocol.json` SHA256
+`a3d58d681c4d441892dcfb67ed7d325f786099b356317a0c9dcc72c81129910a`.
+All private hubs/model fixtures stopped; the preexisting Kafka service remained.
+Controlled typed models qualify transport and frozen-policy use, not semantic
+quality. One real Kafka broker does not qualify replicated durability. These are
+candidate proofs; final retained-source admission and combined-artifact tests
+remain separate lifecycle gates.
+
+## Final native source qualification
+
+The [bounded durable qualification report](native-eventing.json) records77 passing
+checks across15 independent suites against frozen `hub-filter-30.exs` SHA256
+`698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836`.
+It includes each raw report's hash, named checks, available harness/source hashes,
+pinned broker images, and the three distinct Kafka cluster identities. These
+results supersede earlier candidate reports for the covered native feature gates.
+
+Coverage includes controlled-model/raw selector behavior, lost real producer
+acknowledgements, actual broker stop/start plus hub kill, capped and deferred filter
+work, dormant project model provenance, Admin revisions/paging, project policy and
+failed retention preflight, normal transport cutover and actual SIGKILL at both
+durable-decision and partial-project boundaries, shared-resource fairness,
+independent schema/official-SDK conformance, and three-server federation. The latter
+passed14 groups with251 independently validated wire messages and exercised the
+previously accepted profile1 binary in both directions.
+
+Physical retention loss was induced on an explicitly owned disposable broker by
+Kafka's real Admin DeleteRecords operation through `kafka-delete-records`. The
+harness advanced actual log-start offsets beyond the hub's durable checkpoint while
+two accepted originals had been appended but not observed. Restart reconstructed
+both originals with identical event envelopes, retained backend search/get results,
+preserved existing acknowledgements, and exposed a reconciled RETENTION_GAP. This
+qualifies actual broker log-prefix loss, not elapsed wall-clock retention expiry.
+
+Qualification found and corrected publication receipt normalization dropping
+existing `eventing` metadata, and a historical-policy diagnostic returning a string
+instead of the closed `{code,at}` error shape. New acceptance, message/source retries,
+`publish_record`, and disabled-mode legacy receipts are checked explicitly. The
+broker-outage fixture's obsolete `event` key was corrected to `eventing`; its strict
+assertion was preserved. The transition crash fixture uses the previously authored
+C hooks missing from the original integrated helper. Earlier failed fixture attempts
+and source28/29 observations are diagnostic evidence, not passing final30 results.
+
+All owned hubs/models stopped. The private broker/REST containers, network and
+volume used for broker faults and the third federation service were removed; the
+preexisting services on18082/18085 and the user model container were left running.
+This is native candidate qualification. Retained-source admission, immutable image
+qualification and project lifecycle/release gates remain separately recorded by
+the coordinating workflow; controlled models do not establish semantic quality,
+and single-node brokers do not establish replicated durability.
+
+The [immutable-image eventing report](image-eventing.json) records67 passing checks
+across13 suites on accepted image
+`sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190`,
+containing the exact source30 artifact above. Each suite binds the image configuration
+identity, reviewed manifest bytes, actual application digest and actual Docker
+container lifecycle. Coverage includes controls, caps, dormant filters, project
+policy, Admin edits, physical log-prefix loss, three-cluster federation, controlled
+models, lost producer replies, fairness, protocol conformance, normal transport
+cutover and private-broker stop/start. The retention service was an owned disposable
+Kafka deployment; baseline services were preserved.
+
+A first cap run exhausted its45-second replay-observation deadline while real
+producer progress continued with bounded ready jobs and durable deferred targets.
+The independent diagnostic found no quarantine or lost state. Increasing that
+observation deadline to the existing120-second recovery bound allowed a fresh run
+to pass all five checks. Two manually managed suites were repeated after adding
+missing runtime identity binding; only those bound reruns appear in the report.
+
+These are Linux host-network Docker integration results for source30. They do not
+attest the later source31 artifact, replicated durability or semantic model quality.
+Native C syscall-boundary injections remain separate native evidence; image runs
+exercise actual container replacement and normal cutover. Hub fixtures retain
+successful signal, wait/exit and removal witnesses; shared SDK fixtures record
+actual Docker signal/removal evidence without asserting unavailable exit witnesses.
+The owned broker remains available for the subsequent artifact qualification.

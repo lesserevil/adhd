@@ -1,0 +1,8 @@
+# Explicit optional GPU profile; raw app.compose.yaml never starts/downloads a model.
+services:
+  model:
+    extends:
+      file: model.compose.yaml
+      service: model
+    profiles: [model]
+    networks: [default]

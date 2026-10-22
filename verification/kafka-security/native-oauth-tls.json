@@ -1,0 +1,65 @@
+{
+  "suite": "adhd/kafka-native-oauth-tls@1",
+  "started_at": "2026-10-21T19:40:14.615434+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "native-jwks-client-rejects-trusted-certificate-with-wrong-hostname",
+      "passed": true
+    },
+    {
+      "name": "trusted-https-and-native-valid-bearer-protect-v2-and-v3-real-broker-operations",
+      "passed": true
+    },
+    {
+      "name": "missing-malformed-signature-issuer-audience-expiration-and-not-before-credentials-fail",
+      "passed": true
+    },
+    {
+      "name": "untrusted-rest-server-certificate-is-rejected-without-trust-bypass",
+      "passed": true
+    },
+    {
+      "name": "live-admin-rejects-expired-bearer-and-missing-private-ca-without-activation",
+      "passed": true
+    },
+    {
+      "name": "postrotation-missing-wrong-malformed-and-private-key-trust-proposals-fail-without-current-config-change",
+      "passed": true
+    },
+    {
+      "name": "hot-admin-bearer-replacement-preserves-pid-original-ack-and-live-kafka-progress-while-retired-key-fails",
+      "passed": true,
+      "next_offset_before": 1,
+      "next_offset_after": 2,
+      "broker_group_next_before": 1,
+      "broker_group_next_after": 2
+    },
+    {
+      "name": "proxy-and-hub-diagnostics-redact-all-synthetic-bearer-values",
+      "passed": true
+    },
+    {
+      "name": "teardown-logs-redact-credentials-and-all-owned-containers-networks-volumes-are-removed",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Native single-broker diagnostic; no replicated durability or production entitlement qualification.",
+    "No semantic model service is started or called; matcher is absent and pub/sub uses raw selectors.",
+    "Private proxy-to-broker plaintext remains separate; broker SASL/TLS and Kubernetes live rollout are not qualified here."
+  ],
+  "lifecycle_qualified": false,
+  "license_scope": "Confluent Enterprise or documented permitted trial",
+  "authentication": "Native AuthenticationHandler; no Basic/MDS fallback; no principal propagation",
+  "broker_security": "Fresh private single-broker plaintext lane; TLS/SASL broker overlay not qualified by this probe",
+  "harness_sha256": "4f4fd12e46235904189464e7d548c054f970dacb22487c85dd81704c586e3d34",
+  "issuer_harness_sha256": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb",
+  "artifact_sha256": "4b6b444dc5c10f573632335d5c7565590d6f6bcc060a11619dd92193c2fa0025",
+  "image_config_digests": {
+    "kafka": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+    "kafka-rest": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56"
+  },
+  "jwks_fetches": 16,
+  "finished_at": "2026-10-21T19:41:12.104832+00:00"
+}

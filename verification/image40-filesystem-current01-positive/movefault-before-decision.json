@@ -1,0 +1,145 @@
+{
+  "suite": "adhd/multi-store-move-crash@1",
+  "started_at": "2026-10-22T06:46:49.978073+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "all-project-public-originals-and-acknowledgements-created-before-move",
+      "passed": true
+    },
+    {
+      "name": "actual-runtime-stopped-and-sigkilled-at-requested-filesystem-boundary",
+      "passed": true,
+      "observed_stage": "before-decision",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL"
+    },
+    {
+      "name": "startup-recovers-one-complete-generation-with-every-project-original-retry-and-ack-state",
+      "passed": true
+    },
+    {
+      "name": "recovered-project-writers-accept-new-publications-and-drain-real-kafka",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "harness_sha256": "665ff47e24c249ee84c2263013de34657a1a73d2a58746240f16f9d800843e72",
+  "fault_source_sha256": "9af736cb17ffc8faaca52a97ec5995e2ec75fc670cf325c1b1e0bcbf132cd366",
+  "fault_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+  "crash_at": "before-decision",
+  "no_default": false,
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_9a378bec591bab4a33f1f6255762f45c_1",
+      "operation_id": "restore_9a378bec591bab4a33f1f6255762f45c_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_9a378bec591bab4a33f1f6255762f45c_3",
+      "operation_id": "restore_9a378bec591bab4a33f1f6255762f45c_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_9a378bec591bab4a33f1f6255762f45c_5",
+      "operation_id": "restore_9a378bec591bab4a33f1f6255762f45c_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "b351cefaadc5c354faa8472aea0816e93311a30c1c3b280931333e3f673a93a2",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "b351cefaadc5c354faa8472aea0816e93311a30c1c3b280931333e3f673a93a2",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "a0e50cdac0e24cf116f66188afb4bcee9942fcec74a53774b015d65983b1b30a",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "stopped",
+        "container_id": "a0e50cdac0e24cf116f66188afb4bcee9942fcec74a53774b015d65983b1b30a",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-093938253d6245a2",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-f4b94b549bff4e07",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "observer_source": "store_move_fault.c",
+    "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+    "observer_loader_proof_sha256": "afbfd2265809b21aa18d49c874d539ac7c9318c0e3aa65714ed15c3a8f7fd397",
+    "actual_beam_kernel_custody": [
+      {
+        "container_id": "b351cefaadc5c354faa8472aea0816e93311a30c1c3b280931333e3f673a93a2",
+        "source": "store_move_fault.c",
+        "stage": "before-decision",
+        "observer_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+        "host_process_pid": 2045808,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026534020]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "eba4ec1471624fb647bbf315180fe9df0950ccb1ae1e1b65501180b3796a6ea6",
+        "process_maps_sha256": "62d05eb448b1a3a0c7782d98ad79ca1abc911510f07e11d95281f39608cf07ef",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "4bdc899593a6565855b1e98625224725408fe45ef573c12c201dd69ab19ccf8e",
+        "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+        "kernel_state": "stopped"
+      }
+    ],
+    "observer_disarmed_after_kill": true,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "finished_at": "2026-10-22T06:48:14.806386+00:00"
+}

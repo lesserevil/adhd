@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/_build/roadmap/final/image40-ownership01/run.py", line 19, in <module>
+    output=probe.probe('elixir','/app/hub.exs','--litai-test')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/roadmap/final/image40-ownership01/frozen/tests/container_fixture.py", line 58, in probe
+    result = self.docker("run", "--rm", "--name", name, "--network", "none", "--read-only",
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/roadmap/final/image40-ownership01/frozen/tests/container_fixture.py", line 34, in docker
+    return subprocess.run(["docker", *args], capture_output=True, check=check, timeout=30)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/lib/python3.12/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['docker', 'run', '--rm', '--name', 'adhd-accept-probe-897ca3a3edd646b9', '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--entrypoint', 'elixir', 'sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21', '/app/hub.exs', '--litai-test']' timed out after 30 seconds
+Payload probe cleanup: observed_absent=True; failures=

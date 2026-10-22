@@ -1,0 +1,48 @@
+{
+  "schema": "adhd/compiled40-cache-plan01-preparation@1",
+  "passed": true,
+  "executed": false,
+  "marker_absent": true,
+  "plan_sha256": "3e56f156fd615489925056804bb983cf809d5149b67592be5c3f82fb670cc71d",
+  "driver_sha256": "1e945a8bbf8c0fc49c2719ed33d60c81b53db8dea997be6642747b1f719c4677",
+  "image_config_identity": "sha256:38223bce96f83763929d3d6ce65b4f1584cb131f19d6622cf8859081469ecfa6",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "context_files": {
+    "Dockerfile": "318017266521153ed72ed9ad1f2ee4c76689c79b4bb5353346905bd010e33c0c",
+    "compiler-inputs.json": "845655f7309dec16fc226348da004cc3e772be1d87e16144c4c8616502dfc695",
+    "manifest.json": "07e9b4f6c67dea46e4155e6dc42fba316bb9f08aa32b00a88258059fcfb33221",
+    "packaging.tar": "c6ea4604ed14c59491e514a073d61609932d0d889041ff72e9f75bb79dfbbbbb",
+    "payload.tar": "6d6ade57ee6ca3e849e997598c21b13c9d7898d0ba43ed859dbadd3628cfc431"
+  },
+  "expected_literal_modules": 59,
+  "negative_cases": [
+    "missing-manifest",
+    "missing-beam",
+    "changed-beam",
+    "extra-beam",
+    "beam-symlink",
+    "missing-build-helper",
+    "changed-build-helper",
+    "changed-boot-comment",
+    "changed-source",
+    "toolchain-version",
+    "toolchain-vm-anchor",
+    "toolchain-extra-anchor"
+  ],
+  "positive_gates": [
+    "original native18",
+    "describe",
+    "protocol-schema",
+    "protocol-openapi",
+    "nonroot copied-cache control"
+  ],
+  "SDK30_and_syscall_fault_custody": "Required separate gates; not claimed here",
+  "pure_checks": 12,
+  "root_GO_required": true,
+  "image_admission_review": "Root owns actual immutable payload/cache admission review; this preparation performs no Docker inspection/create/start",
+  "files": {
+    "tests/container_cache_acceptance.py": "1e945a8bbf8c0fc49c2719ed33d60c81b53db8dea997be6642747b1f719c4677",
+    "tests/container_cache_acceptance_unit.py": "c6d7b8c306e4208054bbb17f93e5424dc2dff42a08025b0955e71f7de8aef185",
+    "verification/container-cache40-compiled02-preparation/pure-tests.log": "cdbfa131bcea388381d783713677acb1540463705844051d5979a9dc7f0c1c3d"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "checks": 5,
+  "lifecycle_admitted": false,
+  "scope": "Native no-Kafka/no-model target-only restore: actual private deliveries/acknowledgements, newer healthy project/global config preserved, cold restart",
+  "artifact_sha256": "8b15b7a3b08e4abd006536a5562a50fde0198a6207410e55e589148a51e0732d",
+  "harness": {
+    "path": "tests/project_recovery_private.py",
+    "sha256": "e93f764bd2f0085a9a0f86491da3bed818429b57c9dd1d687a0dabd7a3cb4b9a"
+  },
+  "inputs": {
+    "tests/multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c",
+    "tests/project_recovery_acceptance.py": "3d07ea75423399449717ab5244a739de4e0e69b966024743c8cbe100933c36ab",
+    "tests/project_recovery_restore.py": "e3ecdd758d3c16beb14ca2f71fbecb9ec0c66b0f71d2784a010431b738889189",
+    "tests/project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa",
+    "tests/foundation_acceptance.py": "ab358cbbf0e9449bee3c2d1c9406e35790ba7076f84011b8eaeb6692a646aea2",
+    "tests/hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e",
+    "tests/archive_support.py": "d17dc84f0c9f49a8b4cd4634654372b730681a2db15e052f5dff4b86284b6b45",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "reports": [
+    {
+      "path": "verification/project-recovery-private/native36-dev04.json",
+      "sha256": "e617aaaab7550e0ff82a3f719388b15e369e236eea73ba209afe5344424fda54",
+      "passed": true
+    },
+    {
+      "path": "verification/project-recovery-private/setup-missing-schema.json",
+      "sha256": "7af78ee924e9da963c90008347e7e8deaf05c011e9a4647cbd390f21b4ee9277",
+      "passed": false,
+      "excluded": true,
+      "reason": "Worktree did not yet contain new recovery schema; explicit --recovery-schema corrected runner setup, unchanged application and harness."
+    }
+  ],
+  "command": "PYTHONPATH=ROOT/tests python tests/project_recovery_private.py --hub HUB --recovery-schema ROOT/components/hub/project-recovery/interface.schema.json --report REPORT --keep-work PRIVATE_DIR --deadline 30",
+  "runtime": "retained Elixir1.18.4 / OTP27",
+  "limitations": [
+    "No broker, model, async feature-family, syscall crash, offline rebind, lifecycle admission or container qualification claim.",
+    "Current development source advanced after this exact immutable artifact."
+  ]
+}

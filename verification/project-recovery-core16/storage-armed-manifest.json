@@ -1,0 +1,37 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "cases": 10,
+  "lifecycle_admitted": false,
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "scope": "Exactdevelopment16 native controlled-model real filesystem crash/recovery and project-isolated corruption. Four actual successful write boundaries observed afteraccepted baseline; real SIGSTOP kernelstate and SIGKILL hubPID checked, both checkpoint boundaries reproduced DETS needs_repair. Six integritycases preserve globalAdmin+acceptedBlue. No applicationdeadline/runtime/source change.",
+  "native_runtime": "Elixir1.18.4/OTP27",
+  "harness": {
+    "path": "tests/storage_recovery.py",
+    "sha256": "90d133a05792a8451df33ee994a80b301fe38499aa8c94477f86b264ec75c445"
+  },
+  "observer": {
+    "path": "tests/storage_write_fault.c",
+    "sha256": "73eae65e688ce1bfd410a20a4744f4336bfab6f480a5776b15ca84948ecea217"
+  },
+  "input_map": {
+    "path": "verification/project-recovery-core16/storage-armed-inputs.json",
+    "sha256": "26ecc32ada63cbb995ec418eeb143e45051b10bb385b591c2d8cffc3fec55992"
+  },
+  "frozen_inputs_unchanged": true,
+  "report": {
+    "path": "verification/project-recovery-core16/storage-armed.json",
+    "sha256": "651f2cfc5db668e46c80f84bb1ddad73e836038c62ad5d593a90734aff5e4ea3"
+  },
+  "initial_failed_fixture": {
+    "path": "verification/project-recovery-core16/storage-startup-diagnostic.json",
+    "sha256": "76c970b3c927612144f9e9ee1a7c51e3d7db312ef9d5b60878bee32b0eaf5c82"
+  },
+  "command": "python FROZEN/tests/storage_recovery.py --command JSON_NATIVE_ARGV --report REPORT",
+  "limits": "Observer inert untilaccepted baseline then watches selectedRed files+crash MID; <=1MiB observer file read; successful real libc call before SIGSTOP; no fake I/O success, no provider calls, no broker changes.",
+  "qualification_limitations": [
+    "Developmentnative proof only, no formal artifact/image admission claim.",
+    "Controlled local matcher checks transport/state semantics, not live model quality.",
+    "SIGKILL process-crash recovery does not qualify hardware power-loss or replicated storage."
+  ]
+}

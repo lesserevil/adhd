@@ -1,0 +1,30 @@
+{
+  "schema": "adhd/platform-driver-review-fixes@1",
+  "passed": true,
+  "runtime_ready": false,
+  "pure_checks": 16,
+  "real_process_attempts": 0,
+  "application_starts": 0,
+  "loader_probes": 0,
+  "provider_calls": 0,
+  "reviewer": "/root/contracts",
+  "findings": [
+    {
+      "finding": "Authored filename --execute bypassed staged helper bootstrap while equal driver hash could still pass.",
+      "repair": "Authored __main__ rejects --execute immediately after builtin sys before all other imports; only isolated staged driver can execute.",
+      "regression": "Actual runpy with yaml/helper imports unavailable confirms exact early rejection."
+    },
+    {
+      "finding": "A child creation failure was classified executed before any child outcome existed.",
+      "repair": "Separate attempted versus observed executed rows; creation error leaves both planned platforms unrun.",
+      "regression": "Mocked subprocess creation error preserves attempted log and truthful attempted/executed/unrun fields; no real process."
+    }
+  ],
+  "files": {
+    "tests/kafka_platform_matrix.py": "0f647ebd258f59baa6fba917bb017c5cbf284597366ddf8985c63d13b2019d82",
+    "tests/kafka_platform_matrix_unit.py": "ed2fbf5f0bd0bb2515977b5a214bd4f2ab374acbf332813e177c56951663f3af"
+  },
+  "pure_log_sha256": "a64281d6ddc2405ffbbceae495e7fe82b53890679a6072e17c792da5235d1d0d",
+  "prior_plans_unchanged": true,
+  "new_plan_not_yet_frozen": true
+}

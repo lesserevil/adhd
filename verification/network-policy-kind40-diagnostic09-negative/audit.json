@@ -1,0 +1,214 @@
+{
+  "schema": "adhd/cni09-independent-terminal-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "raw_result_sha256": "638ce61172715ece808d7d5bd31d23e33073e4a17161197f099cc61d5a7c771e",
+  "raw_plan_sha256": "929c33613b0b843aab85335e843d5b8ca4e753472fe1280ed51b216825defbca",
+  "full_closure_unchanged": true,
+  "original_rollout_seconds": 300,
+  "policy_routes_qualified": 0,
+  "failure": "Original Calico rollout0/1; diagnostics then aborted before any logs because five manifest containers exceeded helper cap4.",
+  "root_cause": "unknown; no actual install-cni log was captured.",
+  "sanitized_statuses": [
+    {
+      "phase": "Pending",
+      "containers": [
+        {
+          "name": "upgrade-ipam",
+          "init": true,
+          "restartCount": 0,
+          "ready": true,
+          "state": {
+            "terminated": {
+              "exitCode": 0,
+              "reason": "Completed"
+            }
+          },
+          "last_exit_code": null
+        },
+        {
+          "name": "cni-plugins",
+          "init": true,
+          "restartCount": 0,
+          "ready": true,
+          "state": {
+            "terminated": {
+              "exitCode": 0,
+              "reason": "Completed"
+            }
+          },
+          "last_exit_code": null
+        },
+        {
+          "name": "install-cni",
+          "init": true,
+          "restartCount": 4,
+          "ready": false,
+          "state": {
+            "terminated": {
+              "exitCode": 1,
+              "reason": "Error"
+            }
+          },
+          "last_exit_code": 1
+        },
+        {
+          "name": "ebpf-bootstrap",
+          "init": true,
+          "restartCount": 0,
+          "ready": false,
+          "state": {
+            "waiting": {
+              "reason": "PodInitializing"
+            }
+          },
+          "last_exit_code": null
+        },
+        {
+          "name": "calico-node",
+          "init": false,
+          "restartCount": 0,
+          "ready": false,
+          "state": {
+            "waiting": {
+              "reason": "PodInitializing"
+            }
+          },
+          "last_exit_code": null
+        }
+      ]
+    }
+  ],
+  "sanitized_events": [
+    {
+      "reason": "Scheduled",
+      "type": "Normal",
+      "count": 1,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Pulled",
+      "type": "Normal",
+      "count": 1,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Created",
+      "type": "Normal",
+      "count": 1,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Started",
+      "type": "Normal",
+      "count": 1,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Pulled",
+      "type": "Normal",
+      "count": 1,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Created",
+      "type": "Normal",
+      "count": 1,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Started",
+      "type": "Normal",
+      "count": 1,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Pulled",
+      "type": "Normal",
+      "count": 5,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Created",
+      "type": "Normal",
+      "count": 5,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "Started",
+      "type": "Normal",
+      "count": 5,
+      "object_kind": "Pod"
+    },
+    {
+      "reason": "BackOff",
+      "type": "Warning",
+      "count": 4,
+      "object_kind": "Pod"
+    }
+  ],
+  "private_raw_metadata": {
+    "01-namespace-pin.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "05-namespace-check.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "03-calico-node-pin.stdout": "98bf1b3fa471f7f77400b123e29e5d3210c3fd587a60760644553fa7745f8178",
+    "04-calico-kube-controllers-pin.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "04-calico-kube-controllers-pin.stdout": "705d0aa482dd6f399fa60698cf4e731e69a9b6fa60099499252135a6bb7c614f",
+    "09-pod-events-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "07-calico-node-status.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "07-calico-node-status.stdout": "98bf1b3fa471f7f77400b123e29e5d3210c3fd587a60760644553fa7745f8178",
+    "05-namespace-check.stdout": "512aa00e0c244e801aa6b02e3307ef1ba528e30d55496166815c8f62c6491b15",
+    "08-calico-node-pods.stdout": "2577c4ba9fc3eeb55ef4480f5f58693a4ca9e62e17487544507d82a59bb5f7ab",
+    "06-node-status.stdout": "049617266fb6153255077b1abe29fe2ff418c7bc837e764f1bd297ec60630911",
+    "02-node-pin.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "06-node-status.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "08-calico-node-pods.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "09-pod-events-1.stdout": "2cc8965b1395d87799ce9da772ac81a2df48d1a567e45e38ce6c47bc173af125",
+    "01-namespace-pin.stdout": "512aa00e0c244e801aa6b02e3307ef1ba528e30d55496166815c8f62c6491b15",
+    "02-node-pin.stdout": "049617266fb6153255077b1abe29fe2ff418c7bc837e764f1bd297ec60630911",
+    "03-calico-node-pin.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "raw_metadata_retained_in_git": false,
+  "strict_absence": [
+    {
+      "kind": "node",
+      "identifier": "513d8e5b767deff370af03acf3967f8bb8da4803dad6d992bb559b3fb9635ea2",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 513d8e5b767deff370af03acf3967f8bb8da4803dad6d992bb559b3fb9635ea2\n",
+      "strict_absent": true
+    },
+    {
+      "kind": "node",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-netpol-qa40-control-plane\n",
+      "strict_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "57c171a1da6f188e66170364acebcba34c1071379dfdd5a9cc5f19b440049365",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: network 57c171a1da6f188e66170364acebcba34c1071379dfdd5a9cc5f19b440049365 not found\n",
+      "strict_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: network adhd-netpol-qa40-net not found\n",
+      "strict_absent": true
+    },
+    {
+      "kind": "anonymous-volume",
+      "identifier": "52879427453fa6ed1698ada2b948add06ee70806a8eb272a27f4a6257d553f95",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: get 52879427453fa6ed1698ada2b948add06ee70806a8eb272a27f4a6257d553f95: no such volume\n",
+      "strict_absent": true
+    }
+  ],
+  "protected_cluster_before_after_current_equal": true
+}

@@ -1,0 +1,130 @@
+{
+  "schema": "adhd/image-eventing-qualified@1",
+  "passed": true,
+  "checks": 69,
+  "reports": [
+    {
+      "path": "admin.json",
+      "sha256": "0867c9496053d05249ecc3f6fc49eabdfbd1e4fd9d12bee3dce779b3b1da3636",
+      "checks": 4,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "boundaries.json",
+      "sha256": "11d9885575d2bb9ce0b6159cd89b90907c67253578475f657d9ae9669d1a7365",
+      "checks": 2,
+      "runtime_bindings": [
+        "runtime_offset-before-post",
+        "runtime_offset-after-post"
+      ]
+    },
+    {
+      "path": "caps.json",
+      "sha256": "ab1c173fd635bdbacfbe38307ac0ee397fba6afa6b69b9999dc71f95aeb211e9",
+      "checks": 5,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "controls.json",
+      "sha256": "02dc0332baabaea78939292a232d49dac15611db7ca57ca7c753834f565e643b",
+      "checks": 8,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "cutover.json",
+      "sha256": "3d7e89a961b96078966abdb494b6be9da6e69a0211c711f7daab9bfcd555c159",
+      "checks": 4,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "dormant.json",
+      "sha256": "856109c3009834b2683bb04d87c6293e1b16560f0d2a643b9f7fcbb748f2f1d5",
+      "checks": 2,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "fairness.json",
+      "sha256": "9164e9f3b6f04c4c95412024545c62bf5fe160c83e491df6ec9f7df6924861f5",
+      "checks": 4,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "federation.json",
+      "sha256": "b0b1d043294b6b66b9084a9c3544d24b3f68f2401ef69b367966e626a19af2fb",
+      "checks": 14,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "lostreply.json",
+      "sha256": "63298c4226c959e70aff213b31733eb48889e3ae29455546510ffa321681932d",
+      "checks": 2,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "model.json",
+      "sha256": "dbaacca40153aa7cfdb0af239a422fda7dbc42323f9a579109be445e8f0fb8df",
+      "checks": 8,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "outage.json",
+      "sha256": "2adc39e6900df03456dc896c1a178b8bec07444c62b1acd8b3a77b7b1e88e020",
+      "checks": 7,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "policy.json",
+      "sha256": "6b0a1a4b0c668dcfcdca933fd04936dc9ca620cde25c33f3f0af89e270e713c9",
+      "checks": 4,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "protocol.json",
+      "sha256": "2ec4b2ec72a0e697f8bef7c5b4eab2580f37dcbbe346a64d901fcf0236fd7c26",
+      "checks": 3,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "retention.json",
+      "sha256": "7837de8878e5b7364f0abfff017a8685e91be251539dfa21ba62b7dd0bc36d40",
+      "checks": 2,
+      "runtime_bindings": [
+        "runtime"
+      ]
+    }
+  ],
+  "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+  "limitations": [
+    "Native syscall/fsync/Config transition hook cases remain separate native proofs; actual Docker network/KILL cases are qualified here.",
+    "The initial rebalance observation failure remains in ../rebalance-34/image-attempt-01.json and matrix.json; corrected counterpart is a separate report and is not yet included in this69-check aggregate.",
+    "Controlled model fixtures prove protocol/failure isolation, not semantic quality or optimizer promotion.",
+    "Single-broker fixtures do not qualify replicated broker durability."
+  ],
+  "retained_failed_attempt": "../rebalance-34/image-attempt-01.json"
+}

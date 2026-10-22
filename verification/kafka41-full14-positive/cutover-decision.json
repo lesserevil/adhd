@@ -1,0 +1,171 @@
+{
+  "suite": "adhd/real-kafka-hot-cutover@1",
+  "started_at": "2026-10-22T15:47:00.574126+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+      "passed": true
+    },
+    {
+      "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+      "passed": true
+    },
+    {
+      "name": "actual-hot-transition-kill-recovers-durable-config-decision-before-readiness",
+      "passed": true,
+      "stage": "transition-decision",
+      "transition_id": "lsn4QyLNvhsu4_7iEQJM-0kLOxJLLn-S",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL",
+      "image_beam_custody": {
+        "host_process_pid": 2125970,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "d1a749119eda53b9deaf0ff8df09de833711d93a2055f6170cbfe0c4ea09e740",
+        "process_maps_sha256": "4da00a79665e8b0dbe352831d6816eff2ff8ff62dfea1282f3fcf0fb1cace1e1",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "12f9a47295dd81279a03f4158ab1b8d554463c90661cc67f7407ac7fcae6db8f",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      }
+    },
+    {
+      "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+      "passed": true
+    },
+    {
+      "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "harness_sha256": "66e9cc66d434c19fb085b767791c913879c586004de9bbcefd53688ee8a44802",
+  "source_sha256": null,
+  "finished_at": "2026-10-22T15:47:58.878966+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_afc15f9b9c321e30d6d3197c63bdce31_1",
+      "operation_id": "restore_afc15f9b9c321e30d6d3197c63bdce31_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_afc15f9b9c321e30d6d3197c63bdce31_3",
+      "operation_id": "restore_afc15f9b9c321e30d6d3197c63bdce31_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_afc15f9b9c321e30d6d3197c63bdce31_5",
+      "operation_id": "restore_afc15f9b9c321e30d6d3197c63bdce31_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "b916246532bf9c5beaf6520bd097545751cc8d523fe2b43c5ea6b7dbec945f57",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "b916246532bf9c5beaf6520bd097545751cc8d523fe2b43c5ea6b7dbec945f57",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "f4562ac61473802d5a43b34890c4f39d28ef12107b66a93f4e3592a3111d032d",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "f4562ac61473802d5a43b34890c4f39d28ef12107b66a93f4e3592a3111d032d",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "cec1284e0df82fd814a1d43c2af7d7082d97d1fc4ffcc58c95c1d64dcf5e5596",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "cec1284e0df82fd814a1d43c2af7d7082d97d1fc4ffcc58c95c1d64dcf5e5596",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-57d26b9448224254",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-8d07d90638214b93",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+    "observer_loader_proof_sha256": "2dc0c880e01d5762f7b421201c332a0a39d67033edb1c722b4fff809050e8084",
+    "actual_beam_kernel_custody": [
+      {
+        "container_id": "b916246532bf9c5beaf6520bd097545751cc8d523fe2b43c5ea6b7dbec945f57",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "stage": "transition-decision",
+        "observer_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "host_process_pid": 2125970,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "d1a749119eda53b9deaf0ff8df09de833711d93a2055f6170cbfe0c4ea09e740",
+        "process_maps_sha256": "4da00a79665e8b0dbe352831d6816eff2ff8ff62dfea1282f3fcf0fb1cace1e1",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "12f9a47295dd81279a03f4158ab1b8d554463c90661cc67f7407ac7fcae6db8f",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      }
+    ],
+    "observer_disarmed_after_kill": true,
+    "cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+}

@@ -1,0 +1,44 @@
+{
+  "suite": "multi-agent-retirement-snapshot-faults",
+  "started_at": "2026-10-22T00:11:52.206006+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "fresh-developer-creation-succeeds-with-complete-snapshot-evidence",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-missing-snapshot-restoration",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-corrupt-snapshot-restoration",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "File faults qualify ownership evidence unavailability, not semantic model quality or replicated Kafka durability."
+  ],
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "harness_sha256": "9e993ec80fd2b9c39076b008836a506ee23e99c9fb9156cabc5fdbc8e2e7677a",
+  "fault_observations": [
+    {
+      "fault": "missing",
+      "http_status": 400,
+      "error_code": "INVALID_PARAMS",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "original_snapshot_sha256": "67204ccfa5ee1b050ba68c55ee8404b2a17d05d9ecd6b1ffe183f25dbbb1d702"
+    },
+    {
+      "fault": "corrupt",
+      "http_status": 503,
+      "error_code": "CONFIG_WRITE_FAILED",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "original_snapshot_sha256": "67204ccfa5ee1b050ba68c55ee8404b2a17d05d9ecd6b1ffe183f25dbbb1d702"
+    }
+  ],
+  "finished_at": "2026-10-22T00:12:12.655969+00:00"
+}

@@ -1,0 +1,152 @@
+[
+  {
+    "Id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "RepoTags": [
+      "adhd-hub:qa40-compiled05",
+      "adhd-hub:qa40-compiled05-repro"
+    ],
+    "RepoDigests": [],
+    "Comment": "buildkit.dockerfile.v0",
+    "Created": "1970-01-01T00:00:00Z",
+    "Config": {
+      "User": "10001:10001",
+      "Env": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "OTP_VERSION=29.1.2",
+        "REBAR3_VERSION=3.27.0",
+        "ELIXIR_VERSION=v1.20.4",
+        "LANG=C.UTF-8",
+        "ERL_FLAGS=+S 2:2",
+        "HOME=/tmp"
+      ],
+      "Entrypoint": [
+        "elixir",
+        "/runtime/adhd/boot.exs",
+        "/app/hub.exs"
+      ],
+      "Cmd": [
+        "[\"serve\",\"/config/hub.json\"]"
+      ],
+      "WorkingDir": "/app",
+      "Labels": {
+        "org.opencontainers.image.licenses": "Apache-2.0",
+        "org.opencontainers.image.title": "ADHD coordination hub",
+        "org.opencontainers.image.version": "29.1.2"
+      },
+      "StopSignal": "SIGTERM",
+      "ArgsEscaped": true,
+      "Healthcheck": {
+        "Test": [
+          "CMD",
+          "elixir",
+          "/app/health.exs"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 10000000000,
+        "StartPeriod": 15000000000,
+        "Retries": 3
+      }
+    },
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Size": 115458346,
+    "GraphDriver": {
+      "Data": {
+        "LowerDir": "/var/lib/docker/overlay2/qep729j5t2s4px90x0afjewvl/diff:/var/lib/docker/overlay2/plfomytxs7o8st1yqtr6rr2sa/diff:/var/lib/docker/overlay2/a77140360e74e301752c13d26dbeab94e403afa7ad36f10fd7e885ac5f1a0678/diff:/var/lib/docker/overlay2/ca7eb32947889a195ce68226963dbaaf424a3e6c92db60fe3caa3158db11d1f9/diff:/var/lib/docker/overlay2/7ca6d431e7debe27896a53374afd9b480bb34790737556b4ce5229bb9c75a0f3/diff",
+        "MergedDir": "/var/lib/docker/overlay2/7oc9z3a87d33nz1t4zbli7xj7/merged",
+        "UpperDir": "/var/lib/docker/overlay2/7oc9z3a87d33nz1t4zbli7xj7/diff",
+        "WorkDir": "/var/lib/docker/overlay2/7oc9z3a87d33nz1t4zbli7xj7/work"
+      },
+      "Name": "overlay2"
+    },
+    "RootFS": {
+      "Type": "layers",
+      "Layers": [
+        "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+        "sha256:db0221faf1729dc0e407fdcc3b594e2c5c37e6acf2d8a775f5fc3bea9b56e238",
+        "sha256:51e8a231d221671ee8e45962158d7a15d1a8a8cba9919d40abf375e74b8f8b08",
+        "sha256:8a43a134cefac7eb43055273a134ecdfa9014fa20bb7160e5cd3e5594ebdab8e",
+        "sha256:b38503284860bba153d64743b6907c3b54b73d5d0f319219d4d746b274667166",
+        "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+      ]
+    },
+    "Metadata": {
+      "LastTagTime": "2026-10-22T08:35:32.65235501Z"
+    }
+  },
+  {
+    "Id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "RepoTags": [
+      "adhd-hub:qa40-compiled05",
+      "adhd-hub:qa40-compiled05-repro"
+    ],
+    "RepoDigests": [],
+    "Comment": "buildkit.dockerfile.v0",
+    "Created": "1970-01-01T00:00:00Z",
+    "Config": {
+      "User": "10001:10001",
+      "Env": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "OTP_VERSION=29.1.2",
+        "REBAR3_VERSION=3.27.0",
+        "ELIXIR_VERSION=v1.20.4",
+        "LANG=C.UTF-8",
+        "ERL_FLAGS=+S 2:2",
+        "HOME=/tmp"
+      ],
+      "Entrypoint": [
+        "elixir",
+        "/runtime/adhd/boot.exs",
+        "/app/hub.exs"
+      ],
+      "Cmd": [
+        "[\"serve\",\"/config/hub.json\"]"
+      ],
+      "WorkingDir": "/app",
+      "Labels": {
+        "org.opencontainers.image.licenses": "Apache-2.0",
+        "org.opencontainers.image.title": "ADHD coordination hub",
+        "org.opencontainers.image.version": "29.1.2"
+      },
+      "StopSignal": "SIGTERM",
+      "ArgsEscaped": true,
+      "Healthcheck": {
+        "Test": [
+          "CMD",
+          "elixir",
+          "/app/health.exs"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 10000000000,
+        "StartPeriod": 15000000000,
+        "Retries": 3
+      }
+    },
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Size": 115458346,
+    "GraphDriver": {
+      "Data": {
+        "LowerDir": "/var/lib/docker/overlay2/qep729j5t2s4px90x0afjewvl/diff:/var/lib/docker/overlay2/plfomytxs7o8st1yqtr6rr2sa/diff:/var/lib/docker/overlay2/a77140360e74e301752c13d26dbeab94e403afa7ad36f10fd7e885ac5f1a0678/diff:/var/lib/docker/overlay2/ca7eb32947889a195ce68226963dbaaf424a3e6c92db60fe3caa3158db11d1f9/diff:/var/lib/docker/overlay2/7ca6d431e7debe27896a53374afd9b480bb34790737556b4ce5229bb9c75a0f3/diff",
+        "MergedDir": "/var/lib/docker/overlay2/7oc9z3a87d33nz1t4zbli7xj7/merged",
+        "UpperDir": "/var/lib/docker/overlay2/7oc9z3a87d33nz1t4zbli7xj7/diff",
+        "WorkDir": "/var/lib/docker/overlay2/7oc9z3a87d33nz1t4zbli7xj7/work"
+      },
+      "Name": "overlay2"
+    },
+    "RootFS": {
+      "Type": "layers",
+      "Layers": [
+        "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+        "sha256:db0221faf1729dc0e407fdcc3b594e2c5c37e6acf2d8a775f5fc3bea9b56e238",
+        "sha256:51e8a231d221671ee8e45962158d7a15d1a8a8cba9919d40abf375e74b8f8b08",
+        "sha256:8a43a134cefac7eb43055273a134ecdfa9014fa20bb7160e5cd3e5594ebdab8e",
+        "sha256:b38503284860bba153d64743b6907c3b54b73d5d0f319219d4d746b274667166",
+        "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+      ]
+    },
+    "Metadata": {
+      "LastTagTime": "2026-10-22T08:35:32.65235501Z"
+    }
+  }
+]

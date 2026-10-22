@@ -1,0 +1,46 @@
+defmodule Hub.CLI do
+  def operations do
+    ["ack", "cancel_federated_query", "federated_query", "get", "get_federated_query", "list_subscriptions", "poll", "publish", "search", "send", "subscribe", "unsubscribe", "whoami"]
+  end
+  def run(["describe"]), do: %{"name" => "ADHD", "version" => "0.1.0", "protocol" => "1.0", "operations" => operations()}
+  def run(["validate", c]) do
+    Hub.V.command(c)
+    %{"valid" => true, "op" => c["op"]}
+  end
+  def run(["validate-admin", c]) do
+    Hub.V.admin(c)
+    %{"valid" => true, "op" => c["op"]}
+  end
+  def run(["serve", path]) when is_binary(path) do
+    cfg = path |> File.read!() |> JSON.decode!() |> Hub.V.config()
+    Hub.Net.start()
+    {:ok, store} = Hub.Store.start(cfg)
+    Process.link(store)
+    listener = Hub.HTTP.start(store, cfg)
+    Hub.Worker.start(store, cfg)
+    IO.puts(JSON.encode!(%{"status" => "ready", "url" => cfg["public_url"]}))
+    ref = Process.monitor(store)
+    receive do
+      {:DOWN, ^ref, :process, _, _} -> :gen_tcp.close(listener); raise "store unavailable"
+    end
+  end
+  def run(_), do: Hub.V.fail()
+  def main(argv) do
+    try do
+      result = case argv do
+        ["--litai-test"] -> Hub.NativeTests.run()
+        ["--litai-smoke"] -> Hub.NativeTests.smoke()
+        [argument] ->
+          args = JSON.decode!(argument)
+          Hub.V.check(is_list(args))
+          run(args)
+        _ -> Hub.V.fail()
+      end
+      IO.puts(JSON.encode!(result))
+    rescue
+      _ -> IO.puts(:stderr, "hub: invalid input or operation failed"); System.halt(1)
+    catch
+      _, _ -> IO.puts(:stderr, "hub: operation failed"); System.halt(1)
+    end
+  end
+end

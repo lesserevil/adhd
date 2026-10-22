@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/tests/kafka_oauth_k8s_matrix.py", line 236, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/tests/kafka_oauth_k8s_matrix.py", line 232, in main
+    if a.prepare:prepare(a)
+                 ^^^^^^^^^^
+  File "/home/horde/src/adhd/tests/kafka_oauth_k8s_matrix.py", line 175, in prepare
+    original=json.loads(a.original_plan.read_text());dependencies=host_dependencies.capture(a.python,original['env']['PATH']);dump(work/'bound/host-dependencies.json',dependencies)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/bound/original-plan.json'

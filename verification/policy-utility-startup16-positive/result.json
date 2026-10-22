@@ -1,0 +1,601 @@
+{
+  "schema": "adhd/policy-utility-startup-diagnostic@1",
+  "diagnostic_completed": true,
+  "scope": "One original192Mi/CPU1/+S1:1 utility on exact image; Docker HEALTHCHECK disabled. No hubapp/Kafka/CNI/routes/provider qualification. No automatic cap change or retry.",
+  "failure_type": null,
+  "cleanup_errors": [],
+  "cleanup": [
+    {
+      "identifier": "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af",
+      "name": "adhd-policy-utility-540d7c0cb5f21d61",
+      "observed_absent": true
+    }
+  ],
+  "observations": {
+    "observations": [
+      {
+        "elapsed": 0.06718505200115032,
+        "state": {
+          "Status": "running",
+          "Running": true,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 4169146,
+          "ExitCode": 0,
+          "Error": "",
+          "StartedAt": "2026-10-22T11:04:48.373334951Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        }
+      },
+      {
+        "elapsed": 5.413542830006918,
+        "state": {
+          "Status": "running",
+          "Running": true,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 4169146,
+          "ExitCode": 0,
+          "Error": "",
+          "StartedAt": "2026-10-22T11:04:48.373334951Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        }
+      },
+      {
+        "elapsed": 10.694348624005215,
+        "state": {
+          "Status": "running",
+          "Running": true,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 4169146,
+          "ExitCode": 0,
+          "Error": "",
+          "StartedAt": "2026-10-22T11:04:48.373334951Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        }
+      },
+      {
+        "elapsed": 16.010957507998683,
+        "state": {
+          "Status": "running",
+          "Running": true,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 4169146,
+          "ExitCode": 0,
+          "Error": "",
+          "StartedAt": "2026-10-22T11:04:48.373334951Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        }
+      },
+      {
+        "elapsed": 21.259041922021424,
+        "state": {
+          "Status": "running",
+          "Running": true,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 4169146,
+          "ExitCode": 0,
+          "Error": "",
+          "StartedAt": "2026-10-22T11:04:48.373334951Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        }
+      },
+      {
+        "elapsed": 26.445715301000746,
+        "state": {
+          "Status": "running",
+          "Running": true,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 4169146,
+          "ExitCode": 0,
+          "Error": "",
+          "StartedAt": "2026-10-22T11:04:48.373334951Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        }
+      }
+    ],
+    "pre_cleanup_state": {
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 4169146,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-10-22T11:04:48.373334951Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+    },
+    "cause": "Only OOMKilled or scoped memory.events can support OOM; exit137 alone cannot. Docker scope does not retrospectively prove deleted Kind Pod cause."
+  },
+  "rows": [
+    {
+      "args": [
+        "inspect",
+        "adhd-policy-utility-540d7c0cb5f21d61"
+      ],
+      "code": 1,
+      "failure": null,
+      "stdout": {
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "stderr": {
+        "bytes": 60,
+        "sha256": "251afe811b25ec44b5820ff0e32debbd5e25f4e2cfd7ee064aa5f1348f4dc9e6"
+      }
+    },
+    {
+      "args": [
+        "image",
+        "inspect",
+        "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 3021,
+        "sha256": "3b4a5ceac2c7ea45e45e0deee19682cff10db5128becb65426401e268d51199b"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "create",
+        "--name",
+        "adhd-policy-utility-540d7c0cb5f21d61",
+        "--label",
+        "adhd-utility-owner=540d7c0cb5f21d61a9bd60f4b27a1007",
+        "--network",
+        "none",
+        "--read-only",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--user",
+        "1000:1000",
+        "--memory",
+        "192m",
+        "--memory-swap",
+        "192m",
+        "--cpus",
+        "1",
+        "--no-healthcheck",
+        "--env",
+        "ERL_FLAGS=+S 1:1",
+        "--entrypoint",
+        "elixir",
+        "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "-e",
+        "\nfor port <- [8082, 9092, 9093] do\n  spawn_link(fn ->\n    {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])\n    Stream.repeatedly(fn ->\n      {:ok, client} = :gen_tcp.accept(socket)\n      :gen_tcp.send(client, \"adhd-policy-v1\\n\")\n      :gen_tcp.close(client)\n    end) |> Stream.run()\n  end)\nend\nProcess.sleep(:infinity)\n"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 65,
+        "sha256": "425670fdc4a91f4a647d6395f6e78b312d3120f2fa5459fd91e8ec9ab776d373"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8265,
+        "sha256": "02dae44b22e7ff29f5e7748b21b297b2322185aa8e56bcd5ef9898e81e3544dc"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "start",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 65,
+        "sha256": "425670fdc4a91f4a647d6395f6e78b312d3120f2fa5459fd91e8ec9ab776d373"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "exec",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af",
+        "sh",
+        "-eu",
+        "-c",
+        "cat /proc/net/tcp; for f in memory.events memory.current memory.max; do printf \"\\n%s\\n\" \"$f\"; cat \"/sys/fs/cgroup/$f\"; done"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 265,
+        "sha256": "301af019a728b2aeec4eba9a274ec2ea5da79396071b6abb46cee0a48e62f349"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "exec",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af",
+        "sh",
+        "-eu",
+        "-c",
+        "cat /proc/net/tcp; for f in memory.events memory.current memory.max; do printf \"\\n%s\\n\" \"$f\"; cat \"/sys/fs/cgroup/$f\"; done"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 265,
+        "sha256": "8f9c66deafd966d692af3cd02627a1fe1e3d614e1409d63e229480b67fb8df2b"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "exec",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af",
+        "sh",
+        "-eu",
+        "-c",
+        "cat /proc/net/tcp; for f in memory.events memory.current memory.max; do printf \"\\n%s\\n\" \"$f\"; cat \"/sys/fs/cgroup/$f\"; done"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 715,
+        "sha256": "de209d086021b509b2351837287a74b2423c8fa37f5a2f50c4893fdb23df9881"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "exec",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af",
+        "sh",
+        "-eu",
+        "-c",
+        "cat /proc/net/tcp; for f in memory.events memory.current memory.max; do printf \"\\n%s\\n\" \"$f\"; cat \"/sys/fs/cgroup/$f\"; done"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 715,
+        "sha256": "b71f161c1f7f807bc62a091cc85aa4959043f81a9ee1689cd58f04628fb23d7b"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "exec",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af",
+        "sh",
+        "-eu",
+        "-c",
+        "cat /proc/net/tcp; for f in memory.events memory.current memory.max; do printf \"\\n%s\\n\" \"$f\"; cat \"/sys/fs/cgroup/$f\"; done"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 715,
+        "sha256": "e6b8b10a269d3477611e0dd3ba4e398de042d3f28ca4bcc0f4bd51667b0e0351"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "exec",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af",
+        "sh",
+        "-eu",
+        "-c",
+        "cat /proc/net/tcp; for f in memory.events memory.current memory.max; do printf \"\\n%s\\n\" \"$f\"; cat \"/sys/fs/cgroup/$f\"; done"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 715,
+        "sha256": "1f08b8d310ae31350b67006456370a8ffc5e1f069b3a7166293de13f9d3a85b6"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "logs",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 8984,
+        "sha256": "0aafe5a666e966cd52731ddd6ebfe854d98ca9de2cb30e3211f6d95cc9c93a00"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "kill",
+        "--signal",
+        "KILL",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 65,
+        "sha256": "425670fdc4a91f4a647d6395f6e78b312d3120f2fa5459fd91e8ec9ab776d373"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "wait",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 4,
+        "sha256": "e3b9c2844b5a5c2677b3a2279db2ec8487491dd9a23d6b22fac153391b3bb63c"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "rm",
+        "--force",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 0,
+      "failure": null,
+      "stdout": {
+        "bytes": 65,
+        "sha256": "425670fdc4a91f4a647d6395f6e78b312d3120f2fa5459fd91e8ec9ab776d373"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+      ],
+      "code": 1,
+      "failure": null,
+      "stdout": {
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "stderr": {
+        "bytes": 88,
+        "sha256": "6f136881808ba80423427f814f6280432bd4ea4e4a74fa5ac681289ed68ba416"
+      }
+    },
+    {
+      "args": [
+        "inspect",
+        "adhd-policy-utility-540d7c0cb5f21d61"
+      ],
+      "code": 1,
+      "failure": null,
+      "stdout": {
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "stderr": {
+        "bytes": 60,
+        "sha256": "251afe811b25ec44b5820ff0e32debbd5e25f4e2cfd7ee064aa5f1348f4dc9e6"
+      }
+    }
+  ],
+  "output_budget_usage": {
+    "normal": {
+      "calls": 19,
+      "bytes": 77757
+    },
+    "cleanup": {
+      "calls": 6,
+      "bytes": 9272
+    }
+  },
+  "inputs_unchanged": true,
+  "plan_sha256": "eae20757977eb6d66c6183f1b4b3b9e17ba7904479d73caf92f85016cace3f9b",
+  "resource_owner": {
+    "name": "adhd-policy-utility-540d7c0cb5f21d61",
+    "cid": "b1dac3071eae8093bf71d6a2f51ae550ec0c00157e90c52abf5b8439b4fc27af"
+  },
+  "routes_qualified": 0
+}

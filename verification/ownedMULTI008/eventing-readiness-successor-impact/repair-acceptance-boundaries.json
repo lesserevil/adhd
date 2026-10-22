@@ -1,0 +1,16 @@
+{
+  "new_KAFKA007_leaf_exact": "  - [ ] Handle transient own-topic metadata unavailability after successful Kafka creation within a bounded shared deadline. Preserve fresh-empty-topic, topology, retention and authorization checks; prove eventual readiness, deadline exhaustion without a restore/configuration commit, and rejection of invalid metadata. Retain the actual creation201/configuration404 recovery failure and qualify the repair through a proper successor artifact/image.",
+  "expected_authored_cases": [
+    "Actual create201 followed by metadata/configs404 for this exact owned topic, then valid complete readiness: succeeds before the same shared absolute deadline.",
+    "Persistent transient own-topic404 exhausts the same absolute deadline; no configuration/restore decision, target activation, namespace reuse or unrelated-project rollback.",
+    "Every relevant read/alter uses remaining shared time, including broker requests and delays. No reset of full timeout per retry; HTTP failures/cancellation retain resource and project-epoch fences.",
+    "Wrong cluster multiplicity, wrong partition count, non-delete cleanup, malformed/missing required metadata and invalid retention remain rejecting cases. No malformed response becomes retry-success.",
+    "401/403, bad TLS roots/hostname, invalid credentials and nontransient broker errors remain fail-closed; no general success masking or arbitrary status retry.",
+    "Already-exists create400/error_code40002 race revalidates the actual exact own topic before success. Existing code returns :ok on this branch; do not use that branch to bypass the new final metadata proof.",
+    "Concurrent old epoch/retired target and active/queued request cancellation terminate boundedly while Blue progresses; do not commit old binding or leak a ticket/socket.",
+    "Fresh namespace beginning/end0 remains mandatory after readiness. Existing nonempty/truncated/reused topic rejects restore even when metadata eventually becomes readable."
+  ],
+  "original_deadlines_and_assertions_retained": true,
+  "no_runtime_executed": true,
+  "boundary_note": "These are concrete cases derived from the new recorded requirement and existing invariants, not claims that the current product already implements the repair."
+}

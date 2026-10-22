@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/cf40b/driver.py", line 349, in <module>
+    elif args.child:child(work,args.plan_sha256)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/cf40b/driver.py", line 238, in child
+    if primary:raise primary
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/cf40b/driver.py", line 229, in child
+    try:sys.argv=plan['test_argv'];runpy.run_path(sys.argv[0],run_name='__main__')
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/cf40b/frozen/tests/config_recovery.py", line 134, in <module>
+    if __name__ == '__main__': main()
+                               ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/cf40b/frozen/tests/config_recovery.py", line 73, in main
+    runtime.start()
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/cf40b/driver.py", line 193, in start
+    audit_configuration(obj.config,initial=False)
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/cf40b/driver.py", line 151, in audit_configuration
+    if not initial:assert (config.get('eventing') or {}).get('enabled') is False
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

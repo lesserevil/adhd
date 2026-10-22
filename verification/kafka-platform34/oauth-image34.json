@@ -1,0 +1,78 @@
+{
+  "suite": "adhd/kafka-kubernetes-native-oauth@1",
+  "started_at": "2026-10-21T22:35:08.357758+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "live-secret-mounted-native-https-oauth-protects-real-kubernetes-broker",
+      "passed": true
+    },
+    {
+      "name": "actual-kubernetes-hub-image-and-process-runtime-bind-accepted-artifact-and-complete-specification-manifest",
+      "passed": true
+    },
+    {
+      "name": "hot-admin-token-rotation-and-retired-jwks-key-denial-preserve-hub-pid-and-committed-cursor",
+      "passed": true,
+      "broker_next_offset": 1
+    },
+    {
+      "name": "runtime-postrotation-missing-wrong-malformed-and-private-key-ca-updates-fail-without-activation-or-hub-restart",
+      "passed": true
+    },
+    {
+      "name": "live-secret-keystore-password-and-certificate-rotation-plus-rest-pod-replacement-preserve-data-and-cursor",
+      "passed": true
+    },
+    {
+      "name": "broker-pod-replacement-retains-pvc-cluster-original-ack-and-group-checkpoint-with-new-a2a-progress",
+      "passed": true,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "name": "owned-namespace-pvcs-pvs-and-forward-cleaned-and-runtime-logs-redact-all-credentials",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Actual admitted deployment image verified against staging and independent artifact acceptance; full release lifecycle remains a separate gate.",
+    "Single broker, private plaintext proxy-to-broker lane; no SASL_SSL qualification.",
+    "NetworkPolicy enforcement is not qualified by this probe."
+  ],
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "production_entitlement_qualified": false,
+  "license_scope": "Confluent Enterprise or documented permitted trial",
+  "requested_images": {
+    "kafka": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+    "kafka-rest": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a"
+  },
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "image_config_digest": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "hub_runtime": "accepted-container",
+  "input_sha256": {
+    "tests/kafka_oauth_k8s.py": "360181193bbfd71fe975a5651009053b76311e3a211c4964ce0c2cb50886b96d",
+    "tests/kafka_oauth_provider.py": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0",
+    "deploy/k8s/oauth.patch.yaml": "c291143a5a673a1a390b737506dcfc9f3dd581ad811c1de80ed9a162ada13d36",
+    "deploy/security/kafka-rest.oauth.properties.example": "005b04820782f090b0aca23653c24d1c018057d961f7a5a11d9b8b9882edfe88"
+  },
+  "harness_dependencies_sha256": {
+    "multi_support.py": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa",
+    "foundation_acceptance.py": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+    "hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e"
+  },
+  "rendered_sha256": "84978059eafaea05c394aca493664e027aedbdd5c423ac9b057ec38cd7f38d61",
+  "persistent_volume_reclaim_policy": "Delete",
+  "runtime_image_ids": {
+    "kafka": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+    "kafka-rest": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+    "hub": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+  },
+  "runtime_hub_image_config_digest": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "staging_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+  "acceptance_report_sha256": "70fd6ee6cd6ae31f13dd69be929a0dc2c8047d4822161946b212798d0adb4244",
+  "jwks_fetches": 42,
+  "finished_at": "2026-10-21T22:37:28.564227+00:00"
+}

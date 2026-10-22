@@ -1,0 +1,26 @@
+async def capture(page, root, name):
+    # Diagnostic-only: preserve the exact original assertion below. Capture
+    # pixels/ARIA/layout first, so an overflowing page is not lost on cleanup.
+    await page.screenshot(path=str(root / (name + "-before-assert.png")), full_page=True)
+    (root / (name + "-before-assert.txt")).write_text(await page.locator("body").aria_snapshot())
+    layout = await page.evaluate("""() => {
+      const fields=['display','position','width','minWidth','maxWidth','boxSizing','whiteSpace','overflowWrap','wordBreak','overflowX','flex','flexShrink','gridTemplateColumns'];
+      function selector(n){if(n===document.documentElement)return 'html';if(n===document.body)return 'body';if(!n.parentElement)return n.tagName.toLowerCase();if(n.id)return '#'+CSS.escape(n.id);const a=[];for(let i=0;n&&n!==document.body&&i<8;i++,n=n.parentElement){const tag=n.tagName.toLowerCase();a.unshift(tag+':nth-of-type('+([...n.parentElement.children].filter(x=>x.tagName===n.tagName).indexOf(n)+1)+')');if(n.parentElement.id){a.unshift('#'+CSS.escape(n.parentElement.id));break}}return a.join(' > ')}
+      function rect(r){return {x:r.x,y:r.y,width:r.width,right:r.right,height:r.height}}
+      function item(n){const s=getComputedStyle(n);return {selector:selector(n),tag:n.tagName,id:n.id,classes:n.className,text:(n.innerText||'').slice(0,240),rect:rect(n.getBoundingClientRect()),clientWidth:n.clientWidth,scrollWidth:n.scrollWidth,style:Object.fromEntries(fields.map(k=>[k,s[k]]))}}
+      function ancestors(n){const out=[];for(let i=0;n&&i<8;i++,n=n.parentElement)out.push(item(n));return out}
+      const nodes=[...document.body.querySelectorAll('*')].filter(n=>{const r=n.getBoundingClientRect(),s=getComputedStyle(n);return r.width>0&&r.height>0&&(r.right>innerWidth+.5||r.left<-.5||(n.scrollWidth>n.clientWidth+1&&s.overflowX==='visible'))}).slice(0,160);
+      const ranges=[];const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let text;
+      while((text=walker.nextNode())&&ranges.length<160){if(!text.data.trim())continue;const range=document.createRange();range.selectNodeContents(text);const excursions=[...range.getClientRects()].filter(r=>r.width>0&&r.height>0&&(r.right>innerWidth+.5||r.left<-.5));if(excursions.length)ranges.push({text:text.data.slice(0,240),rects:excursions.map(rect),parent:item(text.parentElement),ancestors:ancestors(text.parentElement),clipping_ancestors:ancestors(text.parentElement).filter(a=>['auto','scroll','hidden','clip'].includes(a.style.overflowX))});range.detach()}
+      const related=[...document.querySelectorAll('label,p')].filter(n=>/subscription_|^Replay replay_/.test(n.textContent)).slice(0,110).map(item);
+      const active=document.activeElement;const caret=active?{selector:selector(active),tag:active.tagName,type:active.type,name:active.name,selectionStart:active.selectionStart,selectionEnd:active.selectionEnd,scrollLeft:active.scrollLeft,clientWidth:active.clientWidth,scrollWidth:active.scrollWidth}:null;
+      return {innerWidth,documentWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth,offenders:nodes.map(n=>({node:item(n),ancestors:ancestors(n)})),text_ranges:ranges,replay_labels_and_status:related,active_caret:caret};
+    }""")
+    (root / (name + "-layout.json")).write_text(json.dumps(layout,indent=2))
+    assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "Horizontal viewport overflow"
+    await expect(page.get_by_text("NaN", exact=True)).to_have_count(0)
+    await expect(page.get_by_text("Infinity", exact=True)).to_have_count(0)
+    for link in await page.locator("a[href], img[src]").evaluate_all("nodes => nodes.map(n => n.getAttribute('href') || n.getAttribute('src'))"):
+        assert link and not any(part in link for part in ("undefined", "NaN", "Infinity")), "Broken rendered resource URL"
+    await page.screenshot(path=str(root / (name + ".png")), full_page=True)
+    (root / (name + ".txt")).write_text(await page.locator("body").aria_snapshot())

@@ -1,0 +1,57 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/context_acceptance.py", line 21, in main
+    r=runtime('current',command);client=Client(r);schema=client.get('/protocol/schema')[1]
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/context_acceptance.py", line 19, in runtime
+    'admin_token':secrets.token_urlsafe(32),'matcher':{'url':model.url,'model':'Nemotron-Deciffusion-8B-v2.1','timeout_ms':500,'retry_ms':100}}));r.file.chmod(0o600);hubs.append(r);r.start();return r
+                                                                                                                                                                                     ^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 246, in wrapped
+    def wrapped(obj,*a,_original=original,_wrapper=wrapper,**kw):return _wrapper(_original,obj,*a,**kw)
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 155, in start
+    if self.is_image(obj):self.inspect_image(obj,event)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 128, in inspect_image
+    actual=self.docker('exec',name,'sha256sum',*paths).stdout.decode().splitlines()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 91, in docker
+    return subprocess.run(['docker',*args],capture_output=True,check=check,timeout=30)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['docker', 'exec', 'adhd-foundation-f5beaea7c5ce', 'sha256sum', '/app/Dockerfile', '/app/LICENSE', '/app/archive-interface.md', '/app/archive-spec.md', '/app/component.md', '/app/configuration-spec.md', '/app/core-spec.md', '/app/directory-queries.md', '/app/directory-spec.md', '/app/evidence-spec.md', '/app/federation-spec.md', '/app/feedback-interface.md', '/app/feedback-replay.md', '/app/feedback-spec.md', '/app/health.exs', '/app/history-evaluator.md', '/app/history-interface.md', '/app/history-spec.md', '/app/hub.exs', '/app/identity-spec.md', '/app/information-spec.md', '/app/management-spec.md', '/app/presentation-spec.md', '/app/protocol-spec.md', '/app/retrieval-index.md', '/app/retrieval-interface.md', '/app/retrieval-spec.md', '/app/specification/archive/interface.md', '/app/specification/archive/spec.md', '/app/specification/component.md', '/app/specification/configuration/spec.md', '/app/specification/core/spec.md', '/app/specification/directory/queries.md', '/app/specification/directory/spec.md', '/app/specification/eventing/spec.md', '/app/specification/evidence/spec.md', '/app/specification/federation/spec.md', '/app/specification/feedback/interface.md', '/app/specification/feedback/replay.md', '/app/specification/feedback/spec.md', '/app/specification/history/evaluator.md', '/app/specification/history/interface.md', '/app/specification/history/spec.md', '/app/specification/identity/spec.md', '/app/specification/information/spec.md', '/app/specification/management/spec.md', '/app/specification/multi/spec.md', '/app/specification/optimization/interface.md', '/app/specification/optimization/selection.md', '/app/specification/optimization/spec.md', '/app/specification/presentation/spec.md', '/app/specification/project-recovery/interface.md', '/app/specification/project-recovery/interface.schema.json', '/app/specification/project-recovery/spec.md', '/app/specification/protocol/spec.md', '/app/specification/resources/spec.md', '/app/specification/retrieval/index.md', '/app/specification/retrieval/interface.md', '/app/specification/retrieval/spec.md', '/app/specification/storage-relocation/spec.md']' returned non-zero exit status 1.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 291, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 288, in main
+    if failure:raise failure
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 270, in main
+    custody.install();sys.argv=job['test_argv'];runpy.run_path(job['test_argv'][0],run_name='__main__')
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/context_acceptance.py", line 135, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/context_acceptance.py", line 131, in main
+    for r in hubs:r.stop()
+                  ^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 246, in wrapped
+    def wrapped(obj,*a,_original=original,_wrapper=wrapper,**kw):return _wrapper(_original,obj,*a,**kw)
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 208, in stop
+    if name:assert self.absent(name)
+                   ^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 94, in absent
+    return authoritative_absence(result,name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/frozen/tests/controlled_image_runtime.py", line 52, in authoritative_absence
+    assert result.returncode==1 and result.stderr in [v.encode() for v in expected]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

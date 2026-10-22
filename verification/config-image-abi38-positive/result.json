@@ -1,0 +1,60 @@
+{
+  "schema": "adhd/image-filesystem-abi-run@1",
+  "passed": true,
+  "plan_sha256": "774c9889abed547ac1093539a6f71a4764425dc174854dd0925e104a27adedd5",
+  "rows": [
+    {
+      "case": {
+        "source": "config_rename_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "1ab75154b4bab0379613b6ea69902bbcd1750d75e649bf417a70f30cb8cdc4f0",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "journal",
+        "pid": 1,
+        "rename_result": 0
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1542260,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533664]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "afc61eaa8bbdd9807cf39510f7926bca57b863120849ababf3d6c70f04e1a0a6",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "3337ac378c863943b03672226d6ea6c8801deed5a4b1f8c87d73bfe9cea109a8",
+        "observer_library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    }
+  ],
+  "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "application_started": false,
+  "provider_calls": 0,
+  "broker_calls": 0
+}

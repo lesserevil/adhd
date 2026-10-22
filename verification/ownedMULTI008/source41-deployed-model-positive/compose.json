@@ -1,0 +1,155 @@
+{
+  "suite": "adhd/accepted-kafka-platform@1",
+  "started_at": "2026-10-22T15:23:43.399809+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-image-payload-and-complete-specification-manifest-match-accepted-staging-inputs",
+      "passed": true
+    },
+    {
+      "name": "actual-profile21-explicit-admin-initialization-of-all-platform-projects",
+      "passed": true,
+      "initialized_projects": 3
+    },
+    {
+      "name": "actual-packaged-model-only-hot-filter-match-nonmatch-history-citations-raw-privacy-disable-resume-same-vm-bounded-relay",
+      "passed": true
+    },
+    {
+      "name": "owned-platform-services-and-durable-volumes-removed-with-redacted-logs",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "One broker and one hub; no replicated availability qualification.",
+    "Baseline private network, no OAuth/SASL qualification in this probe.",
+    "Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate."
+  ],
+  "platform": "compose",
+  "release_qualified": false,
+  "selective_recovery_requested": false,
+  "model_only_requested": true,
+  "required_application_profile": "2.1.0",
+  "harness_dependencies_sha256": {
+    "multi_support.py": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd",
+    "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+    "hub_acceptance.py": "ddfb691f1d5a52a0b328613ac9db7617c3ebd732ca457e86a42b4febfa10e222",
+    "kafka_selective_platform.py": "f17e456df2d62f9e95d6cdfa62f9982b4775c107636e6fe2ff61e66ff56c5272",
+    "project_recovery_acceptance.py": "8ccd66fedabeb1fe19f47ebdf286db159fb34261726f2cf59a31eb22dd0ab4d9",
+    "project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa"
+  },
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "image_config_digest": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "acceptance_sha256": "b62bf37502c54b7800c57ffd6fede457808d93bf4b701f1ac75aaa38ebd3fdad",
+  "staging_sha256": {
+    "manifest.json": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "payload.tar": "0262dbbd0d620ea293827c053858adc9a3b7bbb79430b93b7fd1c712ab784819",
+    "Dockerfile": "9ded107e56e6d142c629632d9eae514fb15c34aca689de73a07eeeddec5f9efa"
+  },
+  "input_sha256": {
+    "tests/kafka_final_platform.py": "45d143c1362c7f9ba94f0b591cc3e90b6d7f34ac465b4a6143a461bf0f9289d6",
+    "deploy/app.compose.yaml": "caae0b621b7b380fad3d509dd6c09aa50b5b68b2d6f10c32f8a0929cb487934a",
+    "deploy/events.compose.yaml": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0",
+    "deploy/k8s/hub.yaml": "20f26eca2660146d35311c83ebaf3c6c9accb9becbc3f82e8f5fa43e77605cb5",
+    "deploy/init-config.py": "6e559cb28078757c67d04908b2f45fe93f94668d6d64d6305172732dbf281d5c"
+  },
+  "compiled_vm_custody": [
+    {
+      "scope": "actual Docker host PID private container",
+      "container_id": "3ba5fa6e41f7e95b251ae09fb71d2a078a112a7300801a2be270ae14d17538bb",
+      "image": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+      "entrypoint": [
+        "elixir",
+        "/runtime/adhd/boot.exs",
+        "/app/hub.exs"
+      ],
+      "process": {
+        "pid": 1904413,
+        "start_ticks": "24057311",
+        "executable_basename": "beam.smp",
+        "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+        "actual_compiled_boot_and_app_arguments": true
+      },
+      "started_at": "2026-10-22T15:24:34.730551789Z",
+      "restart_count": 0
+    },
+    {
+      "scope": "actual Docker host PID private container",
+      "container_id": "3ba5fa6e41f7e95b251ae09fb71d2a078a112a7300801a2be270ae14d17538bb",
+      "image": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+      "entrypoint": [
+        "elixir",
+        "/runtime/adhd/boot.exs",
+        "/app/hub.exs"
+      ],
+      "process": {
+        "pid": 1904413,
+        "start_ticks": "24057311",
+        "executable_basename": "beam.smp",
+        "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+        "actual_compiled_boot_and_app_arguments": true
+      },
+      "started_at": "2026-10-22T15:24:34.730551789Z",
+      "restart_count": 0
+    }
+  ],
+  "runtime_hub_image_config_digest": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "model_relay_cleanup": {
+    "confirmed": true,
+    "process_exit_code": 0,
+    "listener_independently_absent": true
+  },
+  "optional_model": {
+    "passed": true,
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "image_config_digest": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "report_sha256": "85d18ab6f90a501dda87790cb332c129e84521dd54a878de7445dc09f6420324",
+    "gateway_report_sha256": "592ae24567acd5a7cf94457d023687f96aad9f42649ae99e16d0ba598d66414d",
+    "harness_sha256": "587717c92f6de4631e8bb011c488ba2bfeba46a09d0e0d43768c539532fc1532",
+    "gateway_harness_sha256": "842331ca5c6a42dabf7f75864df4347016b8f4d266fe83f2f7cd83b08b4e1080",
+    "same_packaged_vm_before_after_hot_changes": true,
+    "vm_identity": {
+      "container_id": "3ba5fa6e41f7e95b251ae09fb71d2a078a112a7300801a2be270ae14d17538bb",
+      "vm_host_pid": 1904413,
+      "started_at": "2026-10-22T15:24:34.730551789Z",
+      "restart_count": 0
+    },
+    "relay_process": {
+      "pid": 1907989,
+      "start_ticks": "24058944",
+      "cmdline_sha256": "6d1ff26542ce4f8c88f2651f1c25a7f4853b9f1a48d8af731fa0591de7973190"
+    },
+    "relay_scope": {
+      "bind": "192.168.0.1",
+      "allowed_callers": [
+        "192.168.0.2"
+      ],
+      "resource_binding": {
+        "platform": "compose",
+        "hub_container_id": "3ba5fa6e41f7e95b251ae09fb71d2a078a112a7300801a2be270ae14d17538bb",
+        "network_id": "df0bc3f4db49555a7729a55bf97ae0b6898f0ca3c8db92996cf56ff843e47e0d"
+      }
+    },
+    "budget": {
+      "upstream_attempts": 6,
+      "filter_attempts": 3,
+      "semantic_attempts": 3,
+      "maximum_upstream_posts": 12,
+      "no_retry_forwards": true,
+      "all_requests_privacy_checked": true
+    },
+    "provider_target": "existing localhost18770; no warmup/retry/model-service mutation",
+    "cleanup": {
+      "process_exit_code": 0,
+      "listener_independently_absent": true
+    }
+  },
+  "cleanup": {
+    "owned_platform": true,
+    "resources_independently_absent": true,
+    "failures": []
+  },
+  "finished_at": "2026-10-22T15:25:22.153568+00:00"
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "adhd/retired-agent-guard-review@1",
+  "scope": "read-only source audit; no execution or concurrency experiment claimed",
+  "artifact_sha256": "23c1bbeb067c0ca66f68cdceed4587270376492e17ea1a7fd178497b40f08e9e",
+  "contract_commit": "a24224f04bc5b821677be3e8781a8dce07a9acf8",
+  "reviewed_source_sha256": {
+    "projects": "044be579f04ead11d7f7d43787377786f229073c38eb663aa702f1dc4b2f4dc9",
+    "config": "028d0c3bd031d8a30b88789f5eec98800e39f305a82e7ae04bf2d5adfa7494f7",
+    "store": "733564b093907051dbbd0814db54e4cb4e5d69b0b29dc265a9503873a4a62075",
+    "storage": "42e7b689d65458ea466a50ebac0f5101bd35b8e7b8c0eb28041cddc897a9ce57"
+  },
+  "result": "Legitimate concurrent retirement/recreation ordering is sound. Source32 has a legacy missing-snapshot second-opener attempt; isolated source33 corrects it. No live-file tampering scope expansion needed.",
+  "findings": [
+    {
+      "criterion": "concurrent first old-agent acceptance",
+      "conclusion": "Config mutation serialization plus post-install all-project Store.call barriers close the snapshot-read race. Retirement waits for remember_filter_adapters and Directory.reconcile on every project before returning or serving the next Config request. Old transactions complete first; queued Store.command reads current Config inside its transaction and rejects absent actor. The next Developer create therefore reads snapshots including all accepted earlier old-agent mutations."
+    },
+    {
+      "criterion": "freeze/order",
+      "conclusion": "prepare_moves freezes writers only on path moves; ordinary retirement does not require that freeze because its commit already performs the all-project drain barriers after persistent credential removal. Do not justify safety using the default Store.rename barrier alone, which would omit nondefault writers."
+    },
+    {
+      "criterion": "hidden, archived, missing and corrupt snapshots",
+      "conclusion": "All registered projects are checked independently of owner admission, including after a match. Missing/corrupt snapshots fail closed. However absent legacy c.server_id plus missing default snapshot calls Projects.server bootstrap fallback, which attempts a writable DETS opener on the checkpoint. This violates the no-second-opener guard requirement despite failure-closed behavior. Source33 replaces that bootstrap call with configured or verified-snapshot server identity and validates Directory.server_id."
+    },
+    {
+      "criterion": "retained ownership coverage",
+      "conclusion": "Mutation receipts key authenticated actor and persist indefinitely; additional checks include private delivery recipient/sender, publication author, subscription agent and pending job recipient. Asynchronous accepted work already has its original mutation receipt/job, so later completion cannot create an unguarded first ownership reference after successful retirement."
+    },
+    {
+      "criterion": "journal retry",
+      "conclusion": "A current authorized Admin/Developer may replay its exact old create_agent receipt; it returns the stored result without a configuration/credential mutation. Receipt replay therefore cannot recreate a removed identity or overwrite an Admin reassignment. New IDs/commands still undergo current role, owner, revision, admission and retained-state checks."
+    }
+  ],
+  "limitations": [
+    "Independent acceptance and cold restart experiments are owned by the acceptance agent; this report does not claim their outcomes.",
+    "A hash-valid same-identity snapshot manually rolled back while a live writer retains newer memory is not compared to live Store generation. That requires unsupported live state-file substitution; ordinary atomic persistence, committed relocation and offline paired restore do not produce it. If that adversary becomes in scope, use a generation-bound Store barrier/read rather than another checksum.",
+    "Do not remove/reorder the all-project commit drain barriers without adding an equivalent retirement/recreation fence.",
+    "Source31 remains frozen; this review does not admit, integrate or release source32."
+  ],
+  "subsequent_correction": {
+    "artifact_sha256": "338db41ef00df149779ff3b294f521349e7776e9e934212e1e6eea785af45c24",
+    "scope": "Source33 targeted actual-module open_file/2 trace unit probe PASS4: actual positive control then zero guard calls on healthy-unused, retained, missing and corrupt snapshots. Not a public legacy lifecycle claim.",
+    "evidence": "verification/multi-eventing/legacy-guard-33.json"
+  },
+  "later_registry_defect": {
+    "reproduction": "verification/multi-eventing/downgrade-33.json",
+    "correction": "verification/multi-eventing/registry-guard-34.json",
+    "summary": "Separate Admin registry-null patch downgraded actual33 config to legacy mode;34 now rejects registry removal/rebinding in dry/apply/file paths, qualified6 groups with default/no-default and cold restarts."
+  }
+}

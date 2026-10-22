@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "ROOT/tests/auth_lifecycle.py", line 87, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "ROOT/tests/auth_lifecycle.py", line 25, in main
+    r,c,initial=setup(stage,stage);r.start();text=(r.root/'initial-admin-password.txt').read_text();password=text.split('Password: ')[1].strip();client=Client(r);u=client.login('admin',password)
+                                   ^^^^^^^^^
+  File "ROOT/tests/multi_workflow_upgrade.py", line 30, in start
+    super().start()
+  File "ROOT/tests/foundation_acceptance.py", line 78, in start
+    self.initialize_unknown_projects()
+  File "ROOT/tests/foundation_acceptance.py", line 125, in initialize_unknown_projects
+    assert settle(applied, 'complete')['result']['initialized'] is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ROOT/tests/foundation_acceptance.py", line 117, in settle
+    assert op['state'] not in ('failed', 'blocked', 'expired', 'stale'), op['failure']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'code': 'RESTORE_IO_ERROR', 'conflicts': [], 'reason': 'io', 'retryable': True, 'truncated': False}

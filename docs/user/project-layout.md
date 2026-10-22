@@ -26,7 +26,8 @@ dependency resolution beside it but is not hand-maintained prose. Extra specific
 interface files are exceptional named boundaries, not boilerplate for every Component.
 Harness vectors and private expected-value oracles live outside Component authority.
 
-This project selects the content-pinned Elixir, Make, and macOS Flavors. Make is
+This project selects the content-pinned Elixir, Make, and Linux Flavors. The macOS
+Flavor can be selected explicitly when building on macOS. Make is
 selected when a Component declares a compatible `build.system` slot. The hub's
 accepted generated source is reusable from `generated/committed-source-cache/`;
 every reused candidate still passes current build and acceptance checks. Private

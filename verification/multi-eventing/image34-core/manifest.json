@@ -1,0 +1,155 @@
+{
+  "schema": "adhd/image-project-qualification@2",
+  "passed": true,
+  "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+  "suites": [
+    {
+      "name": "foundation",
+      "report": "foundation.json",
+      "sha256": "831d7cde3bf4710ffa5d3805aab31a0b9b62ba37527e6b78ee68655ec3cd389a",
+      "checks": 20,
+      "harness": "tests/foundation_acceptance.py",
+      "harness_sha256": "ab358cbbf0e9449bee3c2d1c9406e35790ba7076f84011b8eaeb6692a646aea2",
+      "binding": "exact immutable image invocation, pre-run plan and independent image payload audit"
+    },
+    {
+      "name": "wire",
+      "report": "wire-corrected.json",
+      "sha256": "45070bdf48a76299a121441e3226cce49c6db1e8d098ca5936be1cf7baaedeef",
+      "checks": 8,
+      "harness": "tests/protocol_acceptance.py",
+      "harness_sha256": "bc80390d7eff2203029ae49a3e38763f2b37db915cbd07d428bef7088b36c054",
+      "binding": "exact immutable image invocation, pre-run plan and independent image payload audit"
+    },
+    {
+      "name": "multi",
+      "report": "multi.json",
+      "sha256": "0e0beea563fb643c7b53f7e136ba22e33c1e2d445d48016ac288283a5654a22b",
+      "checks": 9,
+      "harness": "tests/multi_acceptance.py",
+      "harness_sha256": "2ee3ebe3df229b39a3680d688ada8feb1e35aa9dc2ba0c6ec9ceba5ae0267d8d",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "store-move",
+      "report": "store-move.json",
+      "sha256": "8534d3a2e2b2ff11ea2aeb70a07535acb44c0217618e3738d139b5f2e1da9496",
+      "checks": 7,
+      "harness": "tests/multi_store_move.py",
+      "harness_sha256": "20ead2101b285cc126713eb6c831ce53a48790122cf60a11ab00db3e7c9cc4cc",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "move-no-default",
+      "report": "move-no-default.json",
+      "sha256": "9e540561deeebb38d83c427780d5a1ddb3573c1df6528f2eb2c7ffcea0be8fbf",
+      "checks": 7,
+      "harness": "tests/multi_store_move.py",
+      "harness_sha256": "20ead2101b285cc126713eb6c831ce53a48790122cf60a11ab00db3e7c9cc4cc",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "hot",
+      "report": "hot.json",
+      "sha256": "ef1cd7c1d2e6653658b82834260bc99caac2a976479f41dde7c0b659983cd014",
+      "checks": 4,
+      "harness": "tests/multi_hot.py",
+      "harness_sha256": "bf78bb55158ed0c8a96888e192c782fbb356b5478ed6a1f53643347ff0521f82",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "backend-models",
+      "report": "backend-models.json",
+      "sha256": "35bfede8d6f93aa46caba344df6ed8be60e44b833a4cbdd78190806c8d4325a1",
+      "checks": 4,
+      "harness": "tests/multi_model_capabilities.py",
+      "harness_sha256": "b86bd726f0e8d7f8f85c2d0ac102d8f987f7f294333a6a2503cea12d2f2a4f35",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "aliases",
+      "report": "aliases.json",
+      "sha256": "897743e0c8687f9bb44e4a55c0bc98ba6e19695fb283d34eff5b53c244f892fc",
+      "checks": 6,
+      "harness": "tests/multi_aliases.py",
+      "harness_sha256": "65f91426b7a83feecbe0ab5b5279984b84f64be17c44f55611d94a82427f5507",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "retirement",
+      "report": "retirement.json",
+      "sha256": "c091e5689acd20dd5c62a9b6b02908db49f457f1e7a68fef27df06c3177cae52",
+      "checks": 7,
+      "harness": "tests/multi_agent_retirement.py",
+      "harness_sha256": "462873283d77907ef6ed6646efe74b45f842d3d0b0ebe02b97c64f4d17f1293f",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "retirement-faults",
+      "report": "retirement-faults.json",
+      "sha256": "04c2536551226b95f478c06ef1bcaf48c19832153e02428dcd26528811ea5eba",
+      "checks": 3,
+      "harness": "tests/multi_agent_retirement_faults.py",
+      "harness_sha256": "8e0abf369f93130553b81d3faf37f4b1ce85703f161b5cbfafe2b09ab47456fc",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "registry",
+      "report": "registry.json",
+      "sha256": "d0cc72fb0ad5169e24defdb7db09ef46e189dfbb272aa1d10c7a0cb79e59dc83",
+      "checks": 6,
+      "harness": "tests/multi_registry_guard.py",
+      "harness_sha256": "672e39899f42126c822e85b981fb6b4cf40faf4fff20f6b959397433d37b4e58",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "auth",
+      "report": "auth.json",
+      "sha256": "e0269c353b41bde5242967363800699448aac65f68c25b1f443511521a626142",
+      "checks": 9,
+      "harness": "tests/auth_lifecycle.py",
+      "harness_sha256": "528d47cdac769e208e7255490c24e5a8da1666d7cf3dc73430a40017dac621b4",
+      "binding": "verified runtime manifest"
+    },
+    {
+      "name": "workflow-upgrade",
+      "report": "workflow-upgrade.json",
+      "sha256": "cf589710de1cad5dae9eb8700beaf80d3123d47530e2628fc733b24d2fd3fbf1",
+      "checks": 4,
+      "harness": "tests/multi_workflow_upgrade.py",
+      "harness_sha256": "def7e5e89ce4ee383ec53722c8936fe50635294f1cb5b48d3e2c6d1f110a77d9",
+      "binding": "verified runtime manifest"
+    }
+  ],
+  "checks_passed": 94,
+  "scope": "13 exact-image core/identity/project/migration/wire suites. Native syscall crashes and unrelated failing foundation-browser normal-path evidence are separate.",
+  "wire_attempts": 2,
+  "retained_invocation_failure": "Original matrix.json remains false: wire behavioral checks passed but an empty reference command made report construction fail. wire.log is unchanged; corrected invocation and unchanged harness passed with its exact native artifact reference. No app/harness repair or assertion relaxation.",
+  "known_open_browser_failure": "verification/multi-eventing/foundation-browser-34-failure.json",
+  "roadmap_complete": false,
+  "files": {
+    "aliases.json": "897743e0c8687f9bb44e4a55c0bc98ba6e19695fb283d34eff5b53c244f892fc",
+    "auth.json": "e0269c353b41bde5242967363800699448aac65f68c25b1f443511521a626142",
+    "backend-models.json": "35bfede8d6f93aa46caba344df6ed8be60e44b833a4cbdd78190806c8d4325a1",
+    "driver.py.source": "3ca5f6bbda726214288a97c415884bc75bd5f9c3c8b735614d0eead945d74862",
+    "foundation.json": "831d7cde3bf4710ffa5d3805aab31a0b9b62ba37527e6b78ee68655ec3cd389a",
+    "hot.json": "ef1cd7c1d2e6653658b82834260bc99caac2a976479f41dde7c0b659983cd014",
+    "matrix.json": "fc20931473fcf361af7db6e1efecafb6f7c853054c61869060ead81d52db2ebf",
+    "move-no-default.json": "9e540561deeebb38d83c427780d5a1ddb3573c1df6528f2eb2c7ffcea0be8fbf",
+    "multi.json": "0e0beea563fb643c7b53f7e136ba22e33c1e2d445d48016ac288283a5654a22b",
+    "plan.json": "d9c14b1bc087a5fa6520c37db78f7d5f46ec7bfa4e8657a7a6f00a9f995aac28",
+    "registry.json": "d0cc72fb0ad5169e24defdb7db09ef46e189dfbb272aa1d10c7a0cb79e59dc83",
+    "retirement-faults.json": "04c2536551226b95f478c06ef1bcaf48c19832153e02428dcd26528811ea5eba",
+    "retirement.json": "c091e5689acd20dd5c62a9b6b02908db49f457f1e7a68fef27df06c3177cae52",
+    "store-move.json": "8534d3a2e2b2ff11ea2aeb70a07535acb44c0217618e3738d139b5f2e1da9496",
+    "wire-corrected-exit.json": "e89df0eae5ec7db81135aed16463968955c578bcc4f2ec43172eff351f080c17",
+    "wire-corrected-plan.json": "b3b8c0281dfb342cff2590732aca73d248974d18b549b12814c46ae8250c5c5c",
+    "wire-corrected.json": "45070bdf48a76299a121441e3226cce49c6db1e8d098ca5936be1cf7baaedeef",
+    "wire-corrected.log": "963a755d786e36c38a94714501b3923964674af205bff582eb9f8c45c2bbd225",
+    "wire.log": "0bf09c3e606b06034fde6f29cc1d8bddcfa0928d3f051283b4dc6ad4d1c17695",
+    "workflow-upgrade.json": "cf589710de1cad5dae9eb8700beaf80d3123d47530e2628fc733b24d2fd3fbf1"
+  },
+  "program_qualification_complete": false
+}

@@ -1,0 +1,110 @@
+{
+  "schema": "adhd/policy-utility-startup16-preparation@1",
+  "prepared_only": true,
+  "executed": false,
+  "resource_provider_starts": 0,
+  "plan_sha256": "eae20757977eb6d66c6183f1b4b3b9e17ba7904479d73caf92f85016cace3f9b",
+  "driver_sha256": "e01f6fac581316ef1d124768e84ed299a55bd53f6913694a167afda2d2d03733",
+  "plan": {
+    "schema": "adhd/policy-utility-startup-plan@1",
+    "executed": false,
+    "root_GO_required": true,
+    "name": "adhd-policy-utility-540d7c0cb5f21d61",
+    "nonce": "540d7c0cb5f21d61a9bd60f4b27a1007",
+    "image": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "pod": {
+      "command": [
+        "elixir",
+        "-e",
+        "\nfor port <- [8082, 9092, 9093] do\n  spawn_link(fn ->\n    {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])\n    Stream.repeatedly(fn ->\n      {:ok, client} = :gen_tcp.accept(socket)\n      :gen_tcp.send(client, \"adhd-policy-v1\\n\")\n      :gen_tcp.close(client)\n    end) |> Stream.run()\n  end)\nend\nProcess.sleep(:infinity)\n"
+      ],
+      "env": [
+        {
+          "name": "ERL_FLAGS",
+          "value": "+S 1:1"
+        }
+      ],
+      "resources": {
+        "requests": {
+          "cpu": "50m",
+          "memory": "48Mi"
+        },
+        "limits": {
+          "cpu": "1",
+          "memory": "192Mi"
+        }
+      },
+      "security": {
+        "runAsNonRoot": true,
+        "runAsUser": 1000,
+        "runAsGroup": 1000
+      },
+      "container_security": {
+        "allowPrivilegeEscalation": false,
+        "readOnlyRootFilesystem": true,
+        "capabilities": {
+          "drop": [
+            "ALL"
+          ]
+        }
+      }
+    },
+    "limits": {
+      "startup_seconds": 30,
+      "per_command_bytes": 65536,
+      "normal_bytes": 524288,
+      "cleanup_reserved_bytes": 524288,
+      "total_bytes": 1048576,
+      "normal_commands": 40,
+      "cleanup_commands": 10
+    },
+    "driver_sha256": "e01f6fac581316ef1d124768e84ed299a55bd53f6913694a167afda2d2d03733",
+    "inputs": {
+      "original.py": "ffc486039d78b72e09cbc8feb2a327471d6101afb1591bf4606580f44f692d3d",
+      "admission.json": "a78519154311d105ed84ed2e0887490b47d22807141eb2371163fc2c1a0b0f03",
+      "docker-config/config.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    "tools": {
+      "python": {
+        "path": "/home/horde/src/adhd/.venv/bin/python",
+        "realpath": "/usr/bin/python3.12",
+        "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f"
+      },
+      "docker": {
+        "path": "/usr/bin/docker",
+        "realpath": "/usr/bin/docker",
+        "sha256": "6d1ac33d27f9f73d1feb0184e7c0847c1b6051dd60b7a6ec7b3ad9a2f7ca01ea"
+      }
+    },
+    "socket": {
+      "path": "/var/run/docker.sock",
+      "identity": [
+        25,
+        1428
+      ]
+    },
+    "scope": "One original192Mi/CPU1/+S1:1 utility on exact image; Docker HEALTHCHECK disabled. No hubapp/Kafka/CNI/routes/provider qualification. No automatic cap change or retry."
+  },
+  "pure_tests": 8,
+  "isolated_preflight": {
+    "argv": [
+      "pinnedPython",
+      "-I",
+      "-B",
+      "actualdriver.py",
+      "--verify-only",
+      "--work",
+      "WORK",
+      "--plan-sha256",
+      "eae20757977eb6d66c6183f1b4b3b9e17ba7904479d73caf92f85016cace3f9b"
+    ],
+    "cwd": "/tmp",
+    "exit_code": 0,
+    "stdout": "{\"verified\":true,\"executed\":false}",
+    "stderr_bytes": 0
+  },
+  "original_gate13_15_failures_unchanged": true,
+  "root_GO_required": true,
+  "interpretation": "One exact original Pod utility image192Mi/CPU1/+S1:1, originalSERVE bytes; no-healthcheck excludes Docker-specific extra BEAM. Preserve precleanup state and do not infer OOM from exit137. Docker scope not retrospectiveKindcause; no app/routes/CNI qualification.",
+  "old_plan01": "Preserved unstarted, superseded before execution to add cumulative1MiB budget with independent512KiB cleanup reserve."
+}

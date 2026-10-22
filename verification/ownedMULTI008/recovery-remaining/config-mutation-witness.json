@@ -1,0 +1,17 @@
+{
+  "schema": "adhd/config-mutation-witness-preparation@1",
+  "scope": "Test-only trace observation correction; no native or image application run claimed",
+  "original_assertions_retained": 11,
+  "original_boundaries": [
+    "transaction",
+    "config",
+    "journal"
+  ],
+  "mutation_deadline_seconds_unchanged": 25,
+  "pure_checks_passed": 2,
+  "finding": "Pre-mutation bootstrap or fixture-admission rename bytes could satisfy a later mutation when scanning the complete strace log.",
+  "repair": "Capture trace byte offset before starting mutation client; observe only appended bytes and reject truncated traces.",
+  "source_sha256": "1aac666385341ce8c8e1cc20197820c51f139ce8a29bc4764351db414dd6e99c",
+  "application_execution": "UNSTARTED",
+  "container_support": "Still pending; native strace cannot qualify image VM custody."
+}

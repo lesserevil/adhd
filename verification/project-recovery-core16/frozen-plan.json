@@ -1,0 +1,534 @@
+{
+  "schema": "adhd/native-core-plan@1",
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "legacy_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+  "runner_sha256": "315bdd9f62a7312a4ad6747e2af77688575058da932572996275f18fda6cc37a",
+  "parallelism": 2,
+  "no_live_provider": true,
+  "frozen_inputs": {
+    "tests/admin_cases.py": "de5f1f532aae3d21e93c324310d6e85c88647db61d111fd1b11e52edcbed2afc",
+    "tests/admin_project_browser.py": "04f9fbf56dd1cd613cc633ae8a5f00aee2caa4ef2279c2ec090bba3c14dc915f",
+    "tests/admin_session_browser.py": "ee0942a292a0a165f095dca0b8a362a9f23fd42650cde61ab75179216e4d97a5",
+    "tests/agent_identity_legacy_probe.exs": "49c6ba51fb16835b88b644407c5c9583c4efcfee4fc4cf5740d4e8684c587fe4",
+    "tests/agent_identity_legacy_probe.py": "37c5e7ea4f7dbaa3a7be2ca503e66da95424cb116fcbf2b8cc593700146a7eda",
+    "tests/archive_acceptance.py": "fb6d2baf1ead675ee7d3680f20a4687462b2965c99b659d8183edabe5dc59b46",
+    "tests/archive_browser.py": "709f22678fff2eb81a3454572ac3a94a98e14d45984a98ddac4eb8246511173c",
+    "tests/archive_fairness.py": "f175f0489f1b9b989d3ee810f1066b02a5217afbd63cb2ee9ec568da2035439f",
+    "tests/archive_quality.py": "358d80ba61cb14b08c7e92114bd18ab5b118e265a9dd948b5eaa4410c5d49ed4",
+    "tests/archive_sdk.py": "ac61aaede03e38b3320fdff8a184f61f88ac51bc8b687eaba62b77f8da6c7137",
+    "tests/archive_support.py": "d17dc84f0c9f49a8b4cd4634654372b730681a2db15e052f5dff4b86284b6b45",
+    "tests/auth_lifecycle.py": "f4ca59ebbe89cff09d33c79d190673d6bedbf03b8dbcaee79ba5af542bf0afba",
+    "tests/config_credentials.py": "f6dea60a07b974becc661905fb1f9bfcf1382a44066d1dd406aa6829c93b867f",
+    "tests/config_recovery.py": "f3c9ca68a50f7c485ca0060c280a9dff22495d1361c1fd320bd907d6531b3537",
+    "tests/configure_profile.py": "29efa1919f15f9f3602482cf4025053faa8e41ea2e94f011fc0029c0f07135fc",
+    "tests/console_regression.py": "6f46bfbe618cbed62d88b505ea7cda04ad079ccec33a7ca143a4929586510217",
+    "tests/container_acceptance.py": "d78909efae902f679b42b985233f91ffd683a9cfbca0ba84ae92effd774ac904",
+    "tests/container_fixture.py": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "tests/context_acceptance.py": "1bd3b1e8cd9a21578d0521d1e91cfc6a8ad3e9731e9ce54cd309a5c9a738b0c0",
+    "tests/context_browser.py": "301ead40d6c552a596de691004db8dd3cc651c8fdc9b0880a154b66601408f93",
+    "tests/directory_acceptance.py": "01e7c0792d55ce230ff4d551eabc745a2d09c3ba653b2607c015c85d1fdb00dd",
+    "tests/eventing_acceptance.py": "d4b6828ba3aaeec6d291768e58e7f324322db76f0498ee40871456d1c4da8938",
+    "tests/eventing_admin_edit.py": "235b5a462129f4b83fbdee65abf227bdb3979230311a1ab99d92783271f8b7b6",
+    "tests/eventing_boundaries.py": "a84a6010340efa0a4faaeb7132b4a56bd5a3deac93f0ea66a3c1df14e4125610",
+    "tests/eventing_browser.py": "81e49696fa53af4351380c6bc4e7906266d3f18cd31e361a78bc85cbce970326",
+    "tests/eventing_controls.py": "2505578f0de18643fa41f9ca53feb8b003d32a6db445a323a95c561c9380f2ed",
+    "tests/eventing_cutover.py": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d",
+    "tests/eventing_deployment.py": "e9659e05f96b456dc96b9050f4acb42121acd2939344046c308314ad7ee5c8bf",
+    "tests/eventing_dormant_policy.py": "1e5ca90b59723e2f800f4817e87e83ec595f0cfb58c6ad3a0d9d6b0db548798c",
+    "tests/eventing_faults.py": "cd8dee401860ead28178fb35e01e6c5cfc9fdeb95857738870ac4f545ffd344a",
+    "tests/eventing_filter_budget.py": "eaef31f8137c03d0d76e7ea3306cda461b5cc2c3ca493bf1f5dc64877f8ba904",
+    "tests/eventing_project_policy.py": "b33bf16c51d5165b4ba796f3d89dbe2edc3a19769891c6108ab71a9c619c99c4",
+    "tests/eventing_protocol.py": "c6ccd5e67812a7620a97ebb803427fe4b8c895266217464603c564732bee5afa",
+    "tests/eventing_rebalance.py": "0813c67a6258784836909a2206e9d01671ad828f1c76edb8f1ea5aebebd05f28",
+    "tests/eventing_retention.py": "ac7e184d23ed2d86f386d4e3e218d1781e0357c04340439a4ed3ae39a320533f",
+    "tests/eventing_sync_fault.c": "a063a38b171984688ff8fe8c5ef31acf3e222d0693119ff90670be4a369da718",
+    "tests/eventing_target.py": "256b0ce0bd6194429a33fec573a61125a907e36c0f1bb5061d2698cfe82968bf",
+    "tests/federation_acceptance.py": "d1e3ebe9f40016945e9f2f28c6300f1e7f56b5b9e7f38587d5d91f6be967ff0c",
+    "tests/federation_multi.py": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104",
+    "tests/federation_stale_owner.py": "4f6ae96fe8c25d9270bddc4327602e9e69c55ef44f5e6d77b16cd08edd941999",
+    "tests/feedback_acceptance.py": "def3fcb75bbe982b0acaa3982660ad9284eb9c56749e12948b20c3367edc2eeb",
+    "tests/feedback_bounds.py": "2c2f93c5da27bce01c7d7803274acce6d89df6e787bb419d0642cc178b02864f",
+    "tests/feedback_browser.py": "26d278c912b4584964f8fbe02faa20adb8f4214426e2f2cfd05ff292dbd2e4f1",
+    "tests/feedback_fairness.py": "d9dd87accc4c6cfd583a0ef6233f540ddb17e90feeb4cfe5dcc9a5796ab6200e",
+    "tests/feedback_faults.py": "d549f5463c49f2f5e2d02517cf21182fb5934281597afc3f468cbd471207c5a1",
+    "tests/feedback_privacy.py": "97db6e42928105043b948086c335ddf6bccee0c29ca9167eb57e611aef0021d6",
+    "tests/feedback_quality.py": "7f9733b33fff5fe23eeb6abd5422da52ac5ae1cfc18f78d0c411897eab7e08d0",
+    "tests/feedback_sdk.py": "4b9ab9b191dae2438e51e3f2363a6d3d56719e88293ca5ebacb8fb9226363c47",
+    "tests/fixtures/project-recovery.json": "8bcf4bf16ba33d50a8eda33f7f2673146271965d5cb5bdfe19fea0759ddeaf19",
+    "tests/foundation_acceptance.py": "b2b3448b89f46e4dc2745f0526f14f5d8121e1d2d7f75ea6db520b133f988448",
+    "tests/foundation_browser.py": "b68c2e915af1b610d0735d29a7193f2d842b05e63abe0f18e82b32ba7dbe28f7",
+    "tests/history_acceptance.py": "edc47d5eede19f99ba6460d12932a96de6dfe876d9fe8bffba5e9dc0fa616938",
+    "tests/history_browser.py": "2108600e39c06b4c5361cf60a1d1ea42a111599f045e5c1cbf7e8bdc767735e7",
+    "tests/history_quality.py": "da46faf8450033e975c8655b56dbfd581291964023a0ceab21c1d699de8013df",
+    "tests/history_sdk.py": "6e58cc002176958940a308dcfefee78b26e45021d2a5e405f9043d9c10b1f0c3",
+    "tests/history_support.py": "33315ee005d9db6fc7211a378449f0ec0a7787793b2d648e48ae9d8d85bad037",
+    "tests/hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e",
+    "tests/information_cases.py": "8ae62c6a085a002575bdb14b777989eaf83158f7cc0f55bf0be00c549b4b575e",
+    "tests/kafka_backup_modes.py": "16dac1414c0bef190c28a3d19947725bbcabf5908604a3d9e4a7989b195ab9c9",
+    "tests/kafka_bootstrap.py": "d5dc36ca572a745555c9e1c13409c164b3db73537316db01aadf181af29a5e12",
+    "tests/kafka_final_platform.py": "3ac70d85bb248613f62479310a762cc7d8a38aeca4296b6b2a4c1ecc758f6005",
+    "tests/kafka_image_equivalence.py": "a53e0af42b470d108437c7e585da58dcac720f347d9adc41b0e55f2ac18ff179",
+    "tests/kafka_oauth.py": "4f4fd12e46235904189464e7d548c054f970dacb22487c85dd81704c586e3d34",
+    "tests/kafka_oauth_k8s.py": "360181193bbfd71fe975a5651009053b76311e3a211c4964ce0c2cb50886b96d",
+    "tests/kafka_oauth_manifests.py": "e57b132b97fe9c5c5fe4ca457a8970af33e0e4e230b632d61d9973d06dc51864",
+    "tests/kafka_oauth_provider.py": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb",
+    "tests/kafka_platform_gateway.py": "713e20e9cb55b898c8c08387054feabe7bb9a38436c84ef6a9f55b70cd7e0f69",
+    "tests/kafka_platform_model.py": "0dca9fb3dcfd8b3d9cd36e6bb7353b2e087ca233438fea800c5818022be6d485",
+    "tests/kafka_platform_recovery.py": "1f6d16ad985b337d1798c8b912f29397a7a0461af66b0ddea9a0f507ed732f19",
+    "tests/kafka_service.py": "f977a34d819fde31ade8db1d5f904860dfbdbf636f3902ab3e331ca317e75e67",
+    "tests/kafka_upgrade.py": "5a396e7f6b6cd6eef228968eb740b7bbf927de3b5ce54b89c2265becb4271184",
+    "tests/matcher_latency.py": "831433073a79e2f6fd7e841c4e28b8ab48043db668cedba8ae98d3367c8b8344",
+    "tests/model_acceptance.py": "48094e76cbbc2965fdf7191b4b83020f33530566065b66e25c918dde7d3d70fe",
+    "tests/model_template_upgrade.py": "038a0f514ecf7269e91c446d0cedeb6774e7377f72909dbb8ffae7e72a1d9b3d",
+    "tests/multi_acceptance.py": "2ee3ebe3df229b39a3680d688ada8feb1e35aa9dc2ba0c6ec9ceba5ae0267d8d",
+    "tests/multi_agent_retirement.py": "462873283d77907ef6ed6646efe74b45f842d3d0b0ebe02b97c64f4d17f1293f",
+    "tests/multi_agent_retirement_faults.py": "9e993ec80fd2b9c39076b008836a506ee23e99c9fb9156cabc5fdbc8e2e7677a",
+    "tests/multi_aliases.py": "65f91426b7a83feecbe0ab5b5279984b84f64be17c44f55611d94a82427f5507",
+    "tests/multi_browser.py": "d60453b42ce0b3337925e0363b025c707e1415346dc2a320d4a859758f5ac744",
+    "tests/multi_evidence.py": "6d2e4275a85f191b9f415677561ad4817f3e2fd0db66f4fab633d7768a946d27",
+    "tests/multi_fairness.py": "9656405e3d077421b42eab6abebe55282368cc0f198b9b2270415925316da38e",
+    "tests/multi_fault.c": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+    "tests/multi_hot.py": "bf78bb55158ed0c8a96888e192c782fbb356b5478ed6a1f53643347ff0521f82",
+    "tests/multi_migration.py": "f5d64ac70583fcc7a8f27bbd6439af48b7509b67ea9eb1727fe573114fdc5e55",
+    "tests/multi_model_capabilities.py": "b86bd726f0e8d7f8f85c2d0ac102d8f987f7f294333a6a2503cea12d2f2a4f35",
+    "tests/multi_registry_guard.py": "672e39899f42126c822e85b981fb6b4cf40faf4fff20f6b959397433d37b4e58",
+    "tests/multi_store_move.py": "8e8ecdbd8111608753198c1b709bfa617d7b09d48f9aed46e9114a316b6e4305",
+    "tests/multi_store_move_fault.py": "6e84953aafdb8c1816c7d7332aca528e686eb8227669729e7f98173dce0a239e",
+    "tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "tests/multi_workflow_upgrade.py": "def7e5e89ce4ee383ec53722c8936fe50635294f1cb5b48d3e2c6d1f110a77d9",
+    "tests/oidc_policy.py": "3991beeb8671cf3db045668fe196d86c29c2d15942fe75709391522e1c4eaa23",
+    "tests/openrig_acceptance.py": "aeaacbbefaf8be31e4a7925c1bf9d60573cbb9ca0b76a8a3b0737ed4d473e82c",
+    "tests/openrig_pin.json": "d11714312a9acf202aedcb692afa6d2bee63852e64e61199a821b58b1ded9d94",
+    "tests/optimization_browser.py": "6eb7efe796fefd7b09e9023cb20526b1ac571ab2fa2b3c5526d3cc953bc0782e",
+    "tests/optimization_fairness.py": "e501cb5cfb6814cdc384077c7b0bc12882357da5a09088d2389882cb656d84e5",
+    "tests/optimization_faults.py": "589567cc495eba053822eda09480f7677f421588446b51ebc7ca726c0bcd15c6",
+    "tests/optimization_positive_witness.py": "5e5db66377685faae57f200924ca8ed4dc39595f50c08cccfb11856513497751",
+    "tests/optimization_quality.py": "4a8f7e31807c31e07521b95964662d86d610b99d13ca2835a0f8fba79588e245",
+    "tests/optimization_selection.py": "421068c315aae949353a0e0d8aa768d67da98e5f1057fbc5ab3d6cbd9f0a41af",
+    "tests/optimization_upgrade.py": "205db54a852665eace5893f9be2b0e7eb8b3d072275e3f3dded34c6e9a373aa3",
+    "tests/optimization_validation.py": "ff945cf14369d4f52931d3d3a54370becbd3fab16eb749576bc8a8aa406ce9a6",
+    "tests/project_allocator.exs": "5b256d1e3f0b29f39958b787acb7239a97652eaf3ad1dd2e0ba59d11180bf091",
+    "tests/project_backup_validation.exs": "95b4554166efe1f84d657726edd57b701c06d6f4ee5dacbe1c73cf05880a0712",
+    "tests/project_epoch_fences.exs": "f04c8b0ec2ad7f8076429301dfa2a06a8046a7f0d4bd889e79fb340355a8f38b",
+    "tests/project_http_epoch.exs": "c1cf0a4c5da26b534c428a1b4308ef991abc3b02434656600cd7e0f9e9a61456",
+    "tests/project_recovery_acceptance.py": "3d07ea75423399449717ab5244a739de4e0e69b966024743c8cbe100933c36ab",
+    "tests/project_recovery_agent_admission.py": "b23e3c289e34e937e209665e7d0e6309a013008a1237fc2f33303198736b5365",
+    "tests/project_recovery_allocators.py": "63991138084c14f2c192d4da6c1fd9ae7a94c8012af189b69c6709c42daa73ed",
+    "tests/project_recovery_browser.py": "c1c80a0533242e9abf11c23105f7ab543d07a2c10238198f1948e0292d2cb804",
+    "tests/project_recovery_capacity.exs": "f258616292d05c7664609c1823e080552a12a4fd83611918345669aa521fa02b",
+    "tests/project_recovery_contract.py": "d24f18a21f0564d99a69a42b58d994a964280d6877c5a394b7ee1179cbabcc9e",
+    "tests/project_recovery_crash.py": "603af5295099a3bf520f07d23d04ccfaca6b29a4d596af3e27c351c8d2f0aff9",
+    "tests/project_recovery_fault.c": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+    "tests/project_recovery_federation.py": "0258aa0a244991b1e55274d7754f57cfa90b45399e88302169022070b56b0066",
+    "tests/project_recovery_files.exs": "634b691fa8645d28d068e7e4620f28d455f5b65902957c4f5330eebee977967d",
+    "tests/project_recovery_handoff.exs": "57c7305ef428823dbf2e5099425747e812b0c2c6bef3698b278b0c1a630d19d5",
+    "tests/project_recovery_index_browser.py": "7e2f74262e45ef9a16656e57e6327208f01a40af60f4d46477d8de069ea79b87",
+    "tests/project_recovery_install.exs": "10bc4e4ee608bd49c717ec7364c1b09027ec4ecd70baf23f4970d1963d186287",
+    "tests/project_recovery_journal.exs": "38e4ac812c2e6cd014383017db19014e2ea807fee1052a59ea0c7ce0f88981fa",
+    "tests/project_recovery_learned.py": "7f2b7c46ffedb66bddf8fd94199268f23fae845de7b4e29674741e66b4f127c7",
+    "tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "tests/project_recovery_no_provider.c": "91f5b528600a7eb27413ee9cd088273a29eb9da21431370a2877a41905fd1ff5",
+    "tests/project_recovery_peer_epoch.py": "018698cdd7ed7de734d632b3fe1f11f3a7adb39c036d67170a8a903537c7f1ac",
+    "tests/project_recovery_pending_kafka.py": "f16b241173ec144febf86beaa12ff1cbe249651c196e4de273339e4391da4ee1",
+    "tests/project_recovery_pending_model.py": "18040cf044a9fbf6fbc82268b19789b20c2b59414b75dd0c3149a6ea14891019",
+    "tests/project_recovery_private.py": "e93f764bd2f0085a9a0f86491da3bed818429b57c9dd1d687a0dabd7a3cb4b9a",
+    "tests/project_recovery_protocol.py": "74a532f5f9718ee2bf57d8e7c90bba48e2dc70e166233407b4483abb47083b52",
+    "tests/project_recovery_registry.exs": "1d4a289163ac1a5fbd3b3127cd9fd6a0a02acb24f1439cf6541c285b31bd703a",
+    "tests/project_recovery_rejections.py": "919bd6da065a67aa8aac38ff344e69901d51612b3448f5851cea4917762fc6c1",
+    "tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "tests/project_recovery_routes.exs": "c3e08a27c82edcf0fa648fd2da7b7e075ad28f49546e32772c44b9dbcfb2f1a9",
+    "tests/project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa",
+    "tests/project_recovery_uninitialized_move.py": "6ac51684d18de343beda89c5fc00f26fa21fac9920aa1d1aa9b3336387401b14",
+    "tests/project_recovery_work.exs": "7968f3ac9e47056009430b85c3d55c63512e981dcd12acc1ade0ce5e59fc4237",
+    "tests/project_recovery_workflows.py": "79c43aa9d287225abf1de35662b3885d357a78cf75d6c7ec3916e8f8903d11e6",
+    "tests/project_retirement_review.exs": "222e64b3e3e2e356227570b6f9514eada63708e79654808f3557d3b4b2c9c748",
+    "tests/project_transport_restore.exs": "a191554fd1382f6d6520daeca11eb145cb742db341d1228d0f29f3c744dee037",
+    "tests/protocol_acceptance.py": "17acfb4bcd29039d5e7f2546946052104281e1b0170b78096090cba7451f6ffc",
+    "tests/protocol_scope.py": "c201e58c8beb06185726d4538544fde2c51eeed5bfef80277a0f9198f5603670",
+    "tests/rebind_fault.c": "214336e720e505aa0da8e2cfd6049fe9fc821220e9b8e9df7727b3702c694b08",
+    "tests/recovery_checkpoint.exs": "7a2a7591409ab5f079cd88d3f8dba3576654843f6dae271ec49fb8c560af80a1",
+    "tests/resources_native.exs": "8228a9d5f584b03fa33187dca37cfbc0c2ee9a59f836212993207ee41b715694",
+    "tests/retrieval_acceptance.py": "4f9cdb2eee905e3c9caae052940fa6b58a3a4e5d57c4f9bb7193ddadc8906e65",
+    "tests/retrieval_browser.py": "7ef5e768f6976b485e4fc8d53b7745eff34e4811a5c118e8820dd9fd39b7eff0",
+    "tests/retrieval_index.py": "dacf4d9803df2dff783b196777b3cb8a8255d181f97efde211727e1d22970805",
+    "tests/retrieval_quality.py": "382fe3556cb1aae005810b6342192809a44a9327bb46cc860869abfe2bdccb49",
+    "tests/retrieval_sdk.py": "93516be2a55d502670b7d508ca856f862de4a673758d7bb5f35afe07dbeb7b4c",
+    "tests/retrieval_support.py": "5c7346f6534a848b82e2416d7affbd5b8cc00dda1df75780672435195058e229",
+    "tests/staging_acceptance.py": "c4b8649f47259f79a7acd2caddf2c251fbb6299bd97e138690e71114f6fc18c4",
+    "tests/staging_inputs.py": "909b3b44cdf680bb1fc226c69d703f8ab29bbb801e9a52536730c7d9f2ac3dd4",
+    "tests/storage_rebind.py": "f29504d7411a73e6bec07d929024e9f0d0d216c07b0ba03e313d71d32a4ba106",
+    "tests/storage_rebind_hostile.py": "0803326cbb0d404a2afae8d80fb669da686e7a0976c5468914324901dc631b8d",
+    "tests/storage_recovery.py": "e3ebe1b538cb7fe6fd496f3a30a810dc5c99e0bc53cfc857e50d77c841e89f39",
+    "tests/store_busy_wire.exs": "ae5e8338b1d9e71dcbd1557c3cf986d6ae83763e47ee4117b0ab416ff54f3fd4",
+    "tests/store_move_fault.c": "9af736cb17ffc8faaca52a97ec5995e2ec75fc670cf325c1b1e0bcbf132cd366",
+    "tests/store_move_native.exs": "7e7f812e344bb8830a7a8a9cc0feab3c34271f1946ceaa795b3077a4eadbedd5",
+    "tests/upgrade_cases.py": "9517e207cd074e76e42f31debb168d9f67dc70d88ba227f31fb099f4e5ae8b97",
+    "scripts/configure_hub.py": "ed9dc8a8116bb2e7ed0abca0b1fc2c7c3d2ba60748577b250d77b566567b7ff0",
+    "scripts/hub_agent.py": "6bf7c6dc138a88ccb3d52352b9bb90ae18235c4694572e36f8e31e3b8dcdd834",
+    "scripts/model_service.py": "86814b18b94a47e10e4d28bcd249164b02c1c4dc45cfad8b8bb099ec35937819",
+    "scripts/openrig_hub.py": "058d985f6cf58d563dc440425fa5f25b3d6ea1893ea4e29be7abfcf487f8c094",
+    "scripts/stage_container.py": "240df56629ee79744d45af94530a6afb56c2476f48329fae791643e5cdf6d454",
+    "components/hub/archive/interface.md": "e2e0a35891d2137b96c1367ab55befeafbd4cf3bad2fdc52a68fc0abb8410b87",
+    "components/hub/archive/spec.md": "c6669a7ab69c6e9b354c175ac350df55011ade398d051c491ee92388add9fee0",
+    "components/hub/component.lock.json": "fa4aae887c606f4d56ecca6decee8f4f05d6af37b5ec1d2f73c433cb04b6d1e2",
+    "components/hub/component.md": "c590d0fbe781d2cc8069657e7cb1ff02a66475bc3fc4100a5d5a6d3f261b9f91",
+    "components/hub/component.resolution-audit.host.json": "b4e7e83987d7a8cfd1d5f3235c63fbb7ee9c1fd68ebdb07cf31aba8874e70fcd",
+    "components/hub/configuration/spec.md": "e974b98c16d809d6652b5ee9749e94b855c2b6c1d293c27ad0c1af3015ed8959",
+    "components/hub/core/spec.md": "d87de2805dda282cf9f02e3fc8e545367d62c222e1ec0d3f1b4906a4e3ca038a",
+    "components/hub/directory/queries.md": "b2f3b63c37ffe6d5c5bcf05341c652de75f66753319031460c8d6fbe3c717ff4",
+    "components/hub/directory/spec.md": "d2e063ca5287ee28e4681b32f0ecbab8044544af0fdb7c4940eac533a94c5252",
+    "components/hub/eventing/spec.md": "c3be8cfa5eaf0a61d72334d38f0805f4d8388c63e0cd60e1f2d1666340c4f66f",
+    "components/hub/evidence/spec.md": "a074a78316958b6bde5582ac223e2f326859750d361c10e67f4d2cb18640eb10",
+    "components/hub/federation/spec.md": "8f2b7ff165c7f417f325a16ed508fdeab472c7a9b20fe2018cbcab2a42ecf016",
+    "components/hub/feedback/interface.md": "c04530967ec6eeb439f5accccb0ddd0e17bd1410ed6f113c32daa0cd3ed05bd4",
+    "components/hub/feedback/replay.md": "e9da3b7ffad2b089822b3c0b6cda9e5634d1bba6a35e402f1bdaecd568e77236",
+    "components/hub/feedback/spec.md": "1d32f968c0365c429991fda76b49e371e55ead326556436f2931ff5de2428723",
+    "components/hub/history/evaluator.md": "842e4d463b59cb7764c5375708fa1de674212f645b3d0af6f46d1f53fadda6be",
+    "components/hub/history/interface.md": "7bab94eb58cf8aa465829173820bcfc7c67f4d3bfeda3672f3d9dc6c16e756e3",
+    "components/hub/history/spec.md": "7ccc95046f4183ec468998957392ba48fede2d452b8a68a81a70bc7163479879",
+    "components/hub/identity/spec.md": "98af9e279c509d6d18c8183e84c19c8b631934a579f6d3705d91eb04ce222f04",
+    "components/hub/information/spec.md": "889c83cf4e44972eadfab43ba5f33dfdf10ca9f1c4776eb228b3fb64b3729037",
+    "components/hub/management/spec.md": "284323177f4750989265b576d51136c3849b385e67e7e8d495adbe603394433c",
+    "components/hub/multi/spec.md": "124e94e8a3aa56291f8c179e41b6b9a3ac268d19e4b6646883c8748ed967588e",
+    "components/hub/optimization/interface.md": "8c8d4b225cdabc31add2c2ea4ac2f312c138b37b337af7a5598ed126e024f8fb",
+    "components/hub/optimization/selection.md": "b3c523a6c2ddc7fedcda36f84a357e07b55d599b2cbb1f9fdd7b09b863d2e949",
+    "components/hub/optimization/spec.md": "01526232cd88786f004c902e38c76860e371dee15279230331372033d48eef0f",
+    "components/hub/presentation/spec.md": "e697a03cab29ff59583a6a4e4aad7c50d58d01e9399bbb871f3cb98cf0e3d529",
+    "components/hub/project-recovery/interface.md": "24e6adb2a13968b14fe2692b81a5b0c8555e3be5c510ddc0a81cd5857f00c3a4",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+    "components/hub/project-recovery/spec.md": "18f544057350e415435ac6c94b3d05b1df82ccda6b3c66e30e98f5ae7a91ef0b",
+    "components/hub/protocol/spec.md": "7555a26b42415a8f2f289e97557c7c6d707ae226cd69af4ea5efc380a46b7a62",
+    "components/hub/resources/spec.md": "43136b7d22154f733621f1296062e95b4a6fea51645a09ffafee3cd6c4e45789",
+    "components/hub/retrieval/index.md": "cd2341468d2cef4ca4987d63eee3f8664623f3b05fcb575361562af5508bdc18",
+    "components/hub/retrieval/interface.md": "501957c678fdabf396fab2a7ee647752a57470a97a9d142e40941048b5a17121",
+    "components/hub/retrieval/spec.md": "ead989174290747fbd73d0fad10df6fa4cb1940940e84e91cdc1e07e51e25940",
+    "components/hub/storage-relocation/spec.md": "ebe50d3725a3e63f420eaf8f61bd589620ed6a385d6eb9658f4c05947f35fbb0"
+  },
+  "jobs": [
+    {
+      "name": "foundation",
+      "script": "foundation_acceptance.py",
+      "arguments": [
+        "--command",
+        "[\"elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs\"]",
+        "--protocol-version",
+        "2"
+      ]
+    },
+    {
+      "name": "multi",
+      "script": "multi_acceptance.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model"
+      ]
+    },
+    {
+      "name": "store-move",
+      "script": "multi_store_move.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model"
+      ]
+    },
+    {
+      "name": "move-no-default",
+      "script": "multi_store_move.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--no-default"
+      ]
+    },
+    {
+      "name": "hot",
+      "script": "multi_hot.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model"
+      ]
+    },
+    {
+      "name": "aliases",
+      "script": "multi_aliases.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd"
+      ]
+    },
+    {
+      "name": "backend-models",
+      "script": "multi_model_capabilities.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model"
+      ]
+    },
+    {
+      "name": "auth",
+      "script": "auth_lifecycle.py",
+      "arguments": [
+        "--command",
+        "[\"elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs\"]"
+      ]
+    },
+    {
+      "name": "storage-crash",
+      "script": "storage_recovery.py",
+      "arguments": [
+        "--command",
+        "[\"elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs\"]"
+      ]
+    },
+    {
+      "name": "movefault-before-decision",
+      "script": "multi_store_move_fault.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--crash-at",
+        "before-decision"
+      ]
+    },
+    {
+      "name": "movefault-after-decision",
+      "script": "multi_store_move_fault.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--crash-at",
+        "after-decision"
+      ]
+    },
+    {
+      "name": "movefault-after-first-snapshot",
+      "script": "multi_store_move_fault.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--crash-at",
+        "after-first-snapshot"
+      ]
+    },
+    {
+      "name": "movefault-after-first-checkpoint",
+      "script": "multi_store_move_fault.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--crash-at",
+        "after-first-checkpoint"
+      ]
+    },
+    {
+      "name": "movefault-before-config",
+      "script": "multi_store_move_fault.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--crash-at",
+        "before-config"
+      ]
+    },
+    {
+      "name": "movefault-after-config",
+      "script": "multi_store_move_fault.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--crash-at",
+        "after-config"
+      ]
+    },
+    {
+      "name": "movefault-before-cleanup",
+      "script": "multi_store_move_fault.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--crash-at",
+        "before-cleanup"
+      ]
+    },
+    {
+      "name": "migration-ordinary",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd"
+      ]
+    },
+    {
+      "name": "migration-before-prepared",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--crash-at",
+        "before-prepared"
+      ]
+    },
+    {
+      "name": "migration-before-decided",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--crash-at",
+        "before-decided"
+      ]
+    },
+    {
+      "name": "migration-before-config",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--crash-at",
+        "before-config"
+      ]
+    },
+    {
+      "name": "migration-after-snapshot",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--crash-at",
+        "after-snapshot"
+      ]
+    },
+    {
+      "name": "migration-before-completed",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--crash-at",
+        "before-completed"
+      ]
+    },
+    {
+      "name": "migration-damage-config",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--damage-backup",
+        "config",
+        "--crash-at",
+        "before-decided"
+      ]
+    },
+    {
+      "name": "migration-damage-backend",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--damage-backup",
+        "backend",
+        "--crash-at",
+        "before-config"
+      ]
+    },
+    {
+      "name": "migration-damage-snapshot",
+      "script": "multi_migration.py",
+      "arguments": [
+        "--hub",
+        "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-36-dev16.exs",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--damage-backup",
+        "snapshot",
+        "--crash-at",
+        "after-snapshot"
+      ]
+    }
+  ]
+}

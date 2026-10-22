@@ -1,0 +1,163 @@
+{
+  "suite": "adhd/multi-eventing-migration@1",
+  "started_at": "2026-10-22T09:37:20.807843+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-legacy-runtime-authored-originals-source-retries-acks-and-pending-work",
+      "passed": true
+    },
+    {
+      "name": "actual-runtime-killed-at-observed-durable-migration-boundary",
+      "passed": true,
+      "stage": "before-prepared",
+      "marker_phase": null,
+      "signal": "SIGKILL",
+      "kernel_state_before_kill": "stopped",
+      "preserved_backup_sha256": {
+        "hub.json": "ef84691f5cfc8408aa4249b82d708f9c0d1f0768bc089b5e9e9e7458e3832eee",
+        "hub.dets": "4fca662a6940f3ec0efd30e180fa709d77f16fd522074da3aaf18521e3928045",
+        "hub.dets.snapshot": "ab036d203ee1e976455732ded54319e4e7fc41f011c6de3bbcde5484ff15fc58"
+      },
+      "fault_source_sha256": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+      "fault_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf"
+    },
+    {
+      "name": "upgrade-preserves-credentials-originals-source-identities-private-deliveries-acks-and-filter-mode",
+      "passed": true
+    },
+    {
+      "name": "hot-kafka-cutover-never-replays-history-to-new-raw-stream-and-resumes-legacy-filter-work",
+      "passed": true
+    },
+    {
+      "name": "repeated-kill-reopen-migration-is-idempotent-and-acknowledged-deliveries-never-resurrect",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "legacy_artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+  "migration_source_sha256": {
+    "Migration": "a66e4999a2212d126113855737a71da76a32cc05c8a013c1e727108e1dbf4aa2",
+    "Config": "de147de80d2d550e716a64aabf3a648a83f500878bccac0dd2e5d3b7fa4839cf",
+    "Storage": "44685d2a8c1203648c258fb3e04f104f53a2f6606e7fc9ec2bc1bf6f9bbdd0dd",
+    "Store": "48196772e90ecdcf5c920c32f0e7942d0a8d775877d5578734bb021643f22919",
+    "CLI": "b40baf093964a0762d4266936b3c26bec617d8921b864388a431605df407d985"
+  },
+  "harness_sha256": "1ebe62bc5c6daa98a0b11259f7aa598fa0a5838fac154bbc406069d7ccf58f70",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "eb19298570dbe17b6c4e315f10b5dc4ec8124754ce054e3987f2c7d018ff47cd",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "eb19298570dbe17b6c4e315f10b5dc4ec8124754ce054e3987f2c7d018ff47cd",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "e9f4e9b1e983964ba48dc5f38bce6159d2f18ad4ef70cd3379f631eefc6cfc95",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "e9f4e9b1e983964ba48dc5f38bce6159d2f18ad4ef70cd3379f631eefc6cfc95",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "03eb230f96849ef0aadbc50d47b9b9cd4efe72e6a258e168bbaa5ea6db909a01",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "03eb230f96849ef0aadbc50d47b9b9cd4efe72e6a258e168bbaa5ea6db909a01",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "37871adacb7fc8d17ca0a903104cfe4ec93b525de619261c44fee4a56c54def5",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "37871adacb7fc8d17ca0a903104cfe4ec93b525de619261c44fee4a56c54def5",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-33537cff9b544dfd",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-ed97e3e1f1af4d32",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "observer_source": "multi_fault.c",
+    "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+    "observer_loader_proof_sha256": "f9b6e7ebdb2de33500cdde158d87ec9904bb7465049bb18c883184f6a4b01953",
+    "actual_beam_kernel_custody": [
+      {
+        "container_id": "eb19298570dbe17b6c4e315f10b5dc4ec8124754ce054e3987f2c7d018ff47cd",
+        "source": "multi_fault.c",
+        "stage": "before-prepared",
+        "observer_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "host_process_pid": 3467961,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "b0679b8eb711be0e2714348313ee5929ee363e151abb1eb3237efc3fba6717b0",
+        "process_maps_sha256": "2075cff11cdfb639992c73af1ff415cdfc4317a3333d5910fd2218030bff7632",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "629347500f34d09c12653b0d439aa686a6a37ca917626f53fafc4dbd966658d5",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      }
+    ],
+    "observer_disarmed_after_kill": true,
+    "observer_rearms": [],
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "finished_at": "2026-10-22T09:38:19.483874+00:00"
+}

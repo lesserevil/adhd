@@ -29,38 +29,19 @@ _build/tools/a2a/hub001/bin/python scripts/hub_agent.py \
 ```
 
 Run these commands from the repository root. Verify that `whoami` returns your
-assigned identity and the intended project before sharing project information.
+assigned identity and project_ids before sharing project information. The Admin
+must also complete [project initialization](../admin/web-console.md#first-use-project-initialization)
+before the project accepts data; `RECOVERY_REQUIRED` is not an agent permission grant
+or a reason to recreate a lost project. With
+profile 2, call list_projects and include project_id in every project command
+when admitted to more than one project. Tokens grant only their current project
+memberships; selecting a name, contextId or guessed record ID grants nothing.
 When a tunnel uses a different local port from the advertised URL, use the
 helper's `--url http://127.0.0.1:LOCAL_PORT` option; the discovered Agent Card must
 also advertise a URL reachable by your client. Ask the administrator to set
 `public_url` consistently with client access.
 
 ## Coordinate work
-
-### Connect a coding session in this checkout
-
-Place an owner-only client configuration at the ignored
-`literate.hub.local.json` path. Include only the assigned agent's token and the
-reachable hub URL. The Kubernetes deployment provides private per-agent files
-under `.adhd/k8s/`; this checkout's coding session uses `agent-a`. Other independent
-agents need their own assigned identities to keep inboxes and acknowledgements
-separate.
-
-With the SDK environment installed as above, the local connection is:
-
-```bash
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py \
-  --agent agent-a '{"op":"whoami"}'
-```
-
-The helper defaults to `literate.hub.local.json`. `AGENTS.md` and `CLAUDE.md`
-require sessions with that file present to follow the coordination skill at
-startup and during work. This is an explicit publish/poll integration through the
-SDK helper; it does not install an MCP server, background poller, or automatic
-session instrumentation. A stopped session does not process deliveries; they
-remain queued until a connected session polls and acknowledges them.
-
-### Share and process work updates
 
 Have your agent read `skills/agent/coordinate-via-hub/SKILL.md`, or install that
 skill using your agent framework's skill mechanism. It describes this loop:
@@ -72,11 +53,18 @@ skill using your agent framework's skill mechanism. It describes this loop:
 3. Process incoming updates, adjust your plan or record follow-up tasks, and then
    acknowledge their delivery IDs.
 
-Use plain-text descriptions that explain the information you need. For example,
+Use {"op":"subscribe","project_id":"PROJECT_ID","mode":"raw"} for all new
+project publications across agents, including your own. Optional selectors can
+match exact information_type, source_kind, source_id or author_id arrays. Use
+mode:filtered and filter text only when semantic narrowing is needed and a model
+is configured. Legacy description is an alias for that filter, not a requirement
+for raw subscriptions. Use plain-text filters that explain the information you need. For example,
 “Changes to API response schemas that require updates to the client decoder” is
 more useful than “project updates.” Reuse an existing appropriate subscription;
 creating a new one does not replay old publications. Use `unsubscribe` when a
-responsibility ends and `search` for historical context.
+responsibility ends and `search` for historical context. Admin can explicitly
+[replay retained history](../protocol/event-recovery.md#explicit-historical-replay)
+to selected subscription revisions; subscribing alone never requests that replay.
 
 See the [two-agent walkthrough](hub-api.md#two-agent-example) for subscribe,
 publish, poll, acknowledge, send, and search commands. Replace its agent IDs
@@ -84,10 +72,10 @@ with your assigned ID and supply your private client file using `--config`.
 
 ## Delivery and retry rules
 
-Successful publication means the update and matching work are durably stored.
-Matching happens asynchronously; a successful publish does not mean a recipient
-already received it. An unavailable model delays matching, while direct messages,
-polling, and search remain usable. An unmatched publication is still searchable.
+Successful publication means the original and transport work are durably stored.
+Kafka publication and recipient fanout are asynchronous; acceptance does not mean
+a recipient has received it. Model outages delay filtered decisions while raw
+streams, direct messages, polling and literal search remain available. An unmatched publication is still searchable.
 
 Polling returns up to 50 unacknowledged deliveries by default; use `limit` from
 1 to 100. Read each item's `id`, process it, and pass handled IDs as
@@ -115,9 +103,6 @@ for message/status history, source metadata, ID retrieval, and source/type filte
 Subscription descriptions
 are at most 4 KiB. Unknown command fields are rejected. Search matches literal
 substrings, without semantic ranking; exact source/type filters can narrow results.
-Search does not resolve superseded reports into current facts. Reconcile later
-completion/correction evidence before treating an earlier work report as current;
-use [evidence queries](querying.md) for current answers and explicit coverage.
 Detailed fields, errors, and raw A2A requests
 are in the [API reference](hub-api.md); connection and delivery diagnosis are in
 [troubleshooting](../admin/troubleshooting.md).

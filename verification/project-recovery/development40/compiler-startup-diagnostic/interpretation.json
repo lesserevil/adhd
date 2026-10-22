@@ -1,0 +1,45 @@
+{
+  "diagnostic_observation_complete": true,
+  "sdk_qualified": false,
+  "original_failure": {
+    "type": "AssertionError",
+    "message": "Hub did not become ready"
+  },
+  "captured_prefix_bytes": 5952,
+  "captured_module_completions": 56,
+  "captured_module_starts": 57,
+  "last_module_completed": [
+    "113",
+    "24341571",
+    "on_module",
+    "ADHD.Web",
+    "hub.exs",
+    "17385"
+  ],
+  "next_module_started": [
+    "114",
+    "24342686",
+    "defmodule",
+    "ADHD.Server",
+    "hub.exs",
+    "17555"
+  ],
+  "same_actual_vm_held_fd_snapshot": {
+    "path": "/home/horde/src/adhd/_build/compiler40-bound02/compiler-prefix.tsv",
+    "sha256": "2cbaa33e05b7cb739f4893ce38b5774a1a2dd880b0e2697a09c291b465b1fe67",
+    "prefix_bytes": 5952,
+    "complete_line_prefix": true,
+    "actual_container_id": "34fab81321dc0ee407781a1f3cc26ba9c55f0593b641a9fa82caee65dbf0da2d",
+    "actual_namespace_pid": 1,
+    "actual_fd": 17,
+    "held_fd_identity": [
+      64769,
+      2390277
+    ],
+    "same_owned_fd_open_before_and_after_read": true,
+    "scope": "Captured bounded prefix while actual VM logger owns same open FD; logger may append later. No trace completion or SDK qualification claim."
+  },
+  "conclusion": "Observed prefix reaches56 module completions and Server module start but not its completion or CLI/Tests completion before original30s unready failure. Supports compilation on the startup critical path. Asynchronous tracer prefix and observer overhead do not prove exact untraced compile duration, CPU cause or store-init absence. No longer deadline/retry/performance fix/SDK qualification.",
+  "public_api_reference": "https://elixir.hexdocs.pm/1.20.4/Code.html#module-compilation-tracers",
+  "packaging_read_only": "Current payload hub18360lines/59top-level defmodules; entrypoint elixir /app/hub.exs compiles source each VM. Top-level CLI immediately executes, so compile-once packaging requires a reviewed compile/boot separation rather than blindly elixirc current script. Record KAFKA007 before any Flavor change."
+}

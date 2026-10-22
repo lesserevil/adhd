@@ -1,0 +1,37 @@
+# OPTIONAL ENTERPRISE/TRIAL PROFILE. Not a Community/Apache license grant.
+# Copy into an owner-only directory as kafka-rest.properties and replace ALL
+# placeholders. Keep complete generated files and key material outside Git.
+host.name=kafka-rest
+listeners=https://0.0.0.0:8082
+bootstrap.servers=kafka:9092
+producer.acks=all
+producer.max.in.flight.requests.per.connection=1
+consumer.enable.auto.commit=false
+rest.servlet.initializor.classes=io.confluent.common.security.jetty.initializer.AuthenticationHandler
+authentication.roles=**
+oauthbearer.jwks.endpoint.url=https://ISSUER/.well-known/jwks.json
+oauthbearer.expected.issuer=https://ISSUER
+oauthbearer.expected.audience=ADHD_EVENT_SERVICE
+oauthbearer.sub.claim.name=sub
+oauthbearer.groups.claim.name=groups
+# Do not configure Basic, LDAP, MDS public keys or client-auth fallback.
+ssl.keystore.type=PKCS12
+ssl.keystore.location=/run/adhd-security/rest.p12
+ssl.keystore.password=REPLACE_WITH_PRIVATE_KEYSTORE_PASSWORD
+ssl.key.password=REPLACE_WITH_PRIVATE_KEYSTORE_PASSWORD
+# This truststore verifies issuer HTTPS. It does not configure the hub's trust.
+ssl.truststore.type=PKCS12
+ssl.truststore.location=/run/adhd-security/issuer-trust.p12
+ssl.truststore.password=REPLACE_WITH_PRIVATE_TRUSTSTORE_PASSWORD
+# AuthenticationHandler reads this unprefixed setting for its JWKS HTTPS client.
+ssl.endpoint.identification.algorithm=https
+# Standalone REST issuer HTTPS uses client-prefixed trust configuration.
+client.ssl.truststore.type=PKCS12
+client.ssl.truststore.location=/run/adhd-security/issuer-trust.p12
+client.ssl.truststore.password=REPLACE_WITH_PRIVATE_TRUSTSTORE_PASSWORD
+client.ssl.endpoint.identification.algorithm=https
+# Broker connection is independently private plaintext in this minimal overlay.
+# To cross an untrusted broker network, replace it with the reviewed TLS/SASL
+# properties in kafka-rest.broker-security.properties.example and secure broker
+# listeners/controller/quorum/ACLs separately. Never infer bearer propagation.
+client.security.protocol=PLAINTEXT

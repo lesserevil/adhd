@@ -1,0 +1,153 @@
+{
+  "schema": "adhd/native29-duplicate-flock-first-terminal@1",
+  "passed": false,
+  "root_reported_exit_code": 1,
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "plan_sha256": "1660b6f64435fc98a7381cd9318f04336f82d0aa82f37a741b421012217cdff2",
+  "driver_sha256": "fbcdda346db4a79a0fcc3f22176db1b56b7bac92deb45f63c143258783f09341",
+  "whole_passing_rows": 1,
+  "whole_foundation_cases": 20,
+  "qualified_prefix": [
+    "foundation"
+  ],
+  "failed_row": "wire",
+  "failed_row_exit_code": 130,
+  "failed_or_unrun_rows": 28,
+  "unrun_rows": [
+    "multi",
+    "store-move",
+    "move-no-default",
+    "hot",
+    "backend-models",
+    "aliases",
+    "retirement",
+    "registry",
+    "auth",
+    "workflow-upgrade",
+    "storage-crash",
+    "movefault-before-decision",
+    "movefault-after-decision",
+    "movefault-after-first-snapshot",
+    "movefault-after-first-checkpoint",
+    "movefault-before-config",
+    "movefault-after-config",
+    "movefault-before-cleanup",
+    "migration-ordinary",
+    "migration-before-prepared",
+    "migration-before-decided",
+    "migration-before-config",
+    "migration-after-snapshot",
+    "migration-before-completed",
+    "migration-damage-config",
+    "migration-damage-backend",
+    "migration-damage-snapshot"
+  ],
+  "wire_application_or_CLI_process_starts": 0,
+  "wire_custody_processes": [],
+  "native_model_provider_requests_injected_by_diagnosis": 0,
+  "cause": "Coordinator holds outer flock; unchanged wire protocol self-lock opens same inode with separate file description and blocks at protocol_acceptance.py403 before Runtime/CLI/model construction. Exact kernel wchan/fd proof and unchangedCPU samples retained.",
+  "owned_interrupt": "Root verified exact PID/start/cmdSHA/nonce/wchan and sent pidfd SIGINT; agent did not stop or retry runtime.",
+  "full_frozen_fileSET_hashes_verified": 351,
+  "external_inputs_verified": 21,
+  "bound_inputs_verified": 5,
+  "producer_state_files_verified": 6,
+  "owned_foundation_PID_start_observations_not_live": [
+    {
+      "pid": 2809175,
+      "starttime": "21528769",
+      "state": "R"
+    },
+    {
+      "pid": 2809176,
+      "starttime": "21528784",
+      "state": "R"
+    },
+    {
+      "pid": 2809178,
+      "starttime": "21528786",
+      "state": "R"
+    },
+    {
+      "pid": 2814451,
+      "starttime": "21532437",
+      "state": "R"
+    },
+    {
+      "pid": 2814486,
+      "starttime": "21532456",
+      "state": "R"
+    },
+    {
+      "pid": 2814497,
+      "starttime": "21532467",
+      "state": "R"
+    },
+    {
+      "pid": 2814520,
+      "starttime": "21532476",
+      "state": "R"
+    },
+    {
+      "pid": 2814545,
+      "starttime": "21532487",
+      "state": "R"
+    },
+    {
+      "pid": 2814550,
+      "starttime": "21532496",
+      "state": "R"
+    },
+    {
+      "pid": 2814558,
+      "starttime": "21532506",
+      "state": "R"
+    },
+    {
+      "pid": 2814709,
+      "starttime": "21532609",
+      "state": "R"
+    },
+    {
+      "pid": 2814714,
+      "starttime": "21532614",
+      "state": "R"
+    },
+    {
+      "pid": 2814765,
+      "starttime": "21532635",
+      "state": "R"
+    },
+    {
+      "pid": 2814895,
+      "starttime": "21532663",
+      "state": "R"
+    }
+  ],
+  "former_lock_holder_and_waiter_absent": [
+    {
+      "pid": 2819250,
+      "starttime": "21536073",
+      "not_live": true
+    },
+    {
+      "pid": 2819251,
+      "starttime": "21536073",
+      "not_live": true
+    }
+  ],
+  "both_exact_run_nonce_scans_empty": true,
+  "files": {
+    "plan.json": "1660b6f64435fc98a7381cd9318f04336f82d0aa82f37a741b421012217cdff2",
+    "driver.py": "fbcdda346db4a79a0fcc3f22176db1b56b7bac92deb45f63c143258783f09341",
+    "matrix.json": "04d3d5fac2e1cc6a66c8b6da4455915a367ca86be003717971c7b7a94eb45e39",
+    "foundation.json": "7046ad12213ff909e2dcb32533d02e42f469e3c7f0b602b0d1870082d45e333a",
+    "foundation-custody.json": "d35324529e142ae137620b22ff14746e008a3d6c91b259e7d1da2c8ad24f4dfe",
+    "foundation.log": "2394dfc090f2fe48226a7fbf14061bedbac92d36f11f378d5974ac6123413e05",
+    "wire.log": "e4838353ac1fba1ee5e328bf0d96196dc9fe21c7660fb90902c8f55f06fe5693",
+    "wire-custody.json": "0b393efde3ea3517010153caa2f9dee5ea349661a1d6b9ed48174505e3252cba",
+    "root-owned-interrupt.json": "ae4288c295c4734e820b488e90718fdfdaa3022a0a6fef3892a13e47e50d4298",
+    "pre-interrupt-lock-observation.json": "99dc5a7c13b54b126d83a1f5f00fda589148d920e7139a118fe64469ad0f4452"
+  },
+  "scope": "Original native29 aggregate remains false. Whole foundation prefix retained, wire has no runtime/product failure result,27 untouched rows unrun. No native29/native31/fullroadmap claim.",
+  "approved_next_fix": "Remove coordinator outer flock only for wire; preserve wire original self --port-lock and all29original scripts/corpora/deadlines. New28 remaining plan reviewed before any restart."
+}

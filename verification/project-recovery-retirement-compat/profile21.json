@@ -1,0 +1,67 @@
+{
+  "suite": "multi-agent-retirement-snapshot-faults",
+  "started_at": "2026-10-22T00:11:52.200106+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "fresh-developer-creation-succeeds-with-complete-snapshot-evidence",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-missing-snapshot-restoration",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-corrupt-snapshot-restoration",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "File faults qualify ownership evidence unavailability, not semantic model quality or replicated Kafka durability."
+  ],
+  "artifact_sha256": "2c700cd6b9306df79492d4f4b509cdbddacbd730460cc4f79406a5f0ccb49d39",
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_89e1073b6ca3c268d80012ec88dc71b0_1",
+      "operation_id": "restore_89e1073b6ca3c268d80012ec88dc71b0_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_89e1073b6ca3c268d80012ec88dc71b0_3",
+      "operation_id": "restore_89e1073b6ca3c268d80012ec88dc71b0_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_89e1073b6ca3c268d80012ec88dc71b0_5",
+      "operation_id": "restore_89e1073b6ca3c268d80012ec88dc71b0_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "harness_sha256": "9e993ec80fd2b9c39076b008836a506ee23e99c9fb9156cabc5fdbc8e2e7677a",
+  "fault_observations": [
+    {
+      "fault": "missing",
+      "http_status": 400,
+      "error_code": "INVALID_PARAMS",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "original_snapshot_sha256": "e99a3e6a5f70494603a35af715578138d47c076e5f383a97dcb2bc080889ac5b"
+    },
+    {
+      "fault": "corrupt",
+      "http_status": 503,
+      "error_code": "CONFIG_WRITE_FAILED",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "original_snapshot_sha256": "e99a3e6a5f70494603a35af715578138d47c076e5f383a97dcb2bc080889ac5b"
+    }
+  ],
+  "finished_at": "2026-10-22T00:12:24.442654+00:00"
+}

@@ -1,0 +1,69 @@
+{
+  "schema": "adhd/image-filesystem-observer-elf@1",
+  "passed": true,
+  "scope": "Host compiler/readelf only; object never loaded",
+  "source": "project_recovery_fault.c",
+  "source_sha256": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+  "library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+  "compile_argv": [
+    "cc",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-shared",
+    "-fPIC",
+    "-nostdlib",
+    "-fno-stack-protector",
+    "-U_FORTIFY_SOURCE",
+    "-D_FORTIFY_SOURCE=0",
+    "-O2",
+    "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/inputs/project_recovery_fault.c",
+    "-o",
+    "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/build/project_recovery_fault/observer.so"
+  ],
+  "elf_machine": "x86_64",
+  "elf_class": "ELF64",
+  "undefined_scalar_symbols": [
+    "_exit",
+    "access",
+    "close",
+    "dlsym",
+    "getenv",
+    "getpid",
+    "kill",
+    "open",
+    "pause",
+    "readlink",
+    "snprintf",
+    "strcmp",
+    "strlen",
+    "strncmp",
+    "strrchr",
+    "strstr",
+    "write"
+  ],
+  "exported_symbols": [
+    "fsync",
+    "link",
+    "rename",
+    "unlink"
+  ],
+  "needed_libraries": [],
+  "glibc_symbol_versions": [],
+  "section_sha256": {
+    "dynamic": "459374a8a795a36f2e4870f6b9cf81a88ef44a3c0d09a93bafc1c5ff95eed788",
+    "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+    "header": "ae2d62ca5d269113f7d51ec9c7a4eb0340470d26521446c3e5140ea08a244eaf",
+    "symbols": "e02d35aabcf142e6b06fca50f892ec6ef1857a0e694a6f1f1d5a3ad7414db2c2"
+  },
+  "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "actual_image_loader_qualified": false,
+  "application_started": false,
+  "required_actual_image_abi_cases": [
+    "fsync",
+    "link",
+    "rename",
+    "unlink"
+  ]
+}

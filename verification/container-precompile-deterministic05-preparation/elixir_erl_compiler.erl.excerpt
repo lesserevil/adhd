@@ -1,0 +1,13 @@
+%% Primary upstream Elixir v1.20.4; SPDX-License-Identifier: Apache-2.0
+
+% Original lines 50..59
+env_compiler_options() ->
+  case persistent_term:get(?MODULE, undefined) of
+    undefined ->
+      Options = compile:env_compiler_options() -- [warnings_as_errors],
+      persistent_term:put(?MODULE, Options),
+      Options;
+
+    Options ->
+      Options
+  end.

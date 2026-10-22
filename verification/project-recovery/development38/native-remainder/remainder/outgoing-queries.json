@@ -1,0 +1,4221 @@
+{
+  "suite": "project-recovery-source-discovery-queries",
+  "started_at": "2026-10-22T04:22:39.562186+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "accepted-pending-source-and-discovery-queries-backed-up-with-real-pinned-remote-jobs",
+      "passed": true,
+      "scenario": "source",
+      "retained_ids": {
+        "source": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "discovery": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "lost_ids": {
+        "source": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "discovery": "query_c4b009c65a4e683408bbffcbc76a748a_5"
+      },
+      "provider_posts": 0
+    },
+    {
+      "name": "released-old-source-and-discovery-success-cannot-cross-live-target-epoch",
+      "passed": true,
+      "scenario": "source",
+      "loss_witness": {
+        "nonce": "9bb54ca331b24d82899a105c42d2e7cf",
+        "project_id": "project-red",
+        "reason": "killed",
+        "store_pid": "#PID<0.323.0>",
+        "vm_pid": "935934"
+      },
+      "allocation_epoch": "795792ea46b8cc53c0a9aedb3876767d",
+      "same_vm": true
+    },
+    {
+      "name": "fresh-source-and-discovery-identities-use-new-epoch-while-retained-jobs-keep-original-remote-pins",
+      "passed": true,
+      "scenario": "source",
+      "fresh_ids": {
+        "source": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "discovery": "query_795792ea46b8cc53c0a9aedb3876767d_2"
+      },
+      "provider_posts": 0
+    },
+    {
+      "name": "cold-start-preserves-completed-original-query-identities-and-unrelated-project",
+      "passed": true,
+      "scenario": "source"
+    },
+    {
+      "name": "accepted-pending-source-and-discovery-queries-backed-up-with-real-pinned-remote-jobs",
+      "passed": true,
+      "scenario": "discovery",
+      "retained_ids": {
+        "source": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "discovery": "query_795792ea46b8cc53c0a9aedb3876767d_4"
+      },
+      "lost_ids": {
+        "source": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "discovery": "query_795792ea46b8cc53c0a9aedb3876767d_6"
+      },
+      "provider_posts": 0
+    },
+    {
+      "name": "released-old-source-and-discovery-success-cannot-cross-live-target-epoch",
+      "passed": true,
+      "scenario": "discovery",
+      "loss_witness": {
+        "nonce": "68e26b940d6d49258adfb9f0fcfeeb95",
+        "project_id": "project-red",
+        "reason": "killed",
+        "store_pid": "#PID<0.323.0>",
+        "vm_pid": "944225"
+      },
+      "allocation_epoch": "a3ec331ac646d786fbc923bbda655e3f",
+      "same_vm": true
+    },
+    {
+      "name": "fresh-source-and-discovery-identities-use-new-epoch-while-retained-jobs-keep-original-remote-pins",
+      "passed": true,
+      "scenario": "discovery",
+      "fresh_ids": {
+        "source": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "discovery": "query_a3ec331ac646d786fbc923bbda655e3f_2"
+      },
+      "provider_posts": 0
+    },
+    {
+      "name": "cold-start-preserves-completed-original-query-identities-and-unrelated-project",
+      "passed": true,
+      "scenario": "discovery"
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "a729671df0900779d48bb9f2ebf9a69e96d79479b9231a2c26793e293cf05e08",
+  "dependency_sha256": {
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "limits": {
+    "relay_slots": 12,
+    "relay_requests": 512,
+    "held_response_seconds": 30,
+    "query_deadline_ms": 120000
+  },
+  "scope": "Native actual two-hub/two-broker pending source/discovery and callback fencing; local controlled model only, not semantic quality or release admission.",
+  "broker_cluster_ids": [
+    "MkU3OEVBNTcwNTJENDM2Qk",
+    "NEiAAXk0v1xqZFCdSDoQjA"
+  ],
+  "cold_restart_pending_queries": [
+    {
+      "scenario": "source",
+      "kind": "source",
+      "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+      "original_deadline_at": "2026-10-22T04:25:11.676Z",
+      "status": "pending",
+      "remaining_original_deadline_seconds": 94.546425,
+      "source_result_statuses": [
+        "pending"
+      ]
+    },
+    {
+      "scenario": "source",
+      "kind": "discovery",
+      "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+      "original_deadline_at": "2026-10-22T04:25:11.806Z",
+      "status": "pending",
+      "remaining_original_deadline_seconds": 94.66656,
+      "source_result_statuses": []
+    },
+    {
+      "scenario": "discovery",
+      "kind": "source",
+      "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+      "original_deadline_at": "2026-10-22T04:26:08.519Z",
+      "status": "pending",
+      "remaining_original_deadline_seconds": 93.582354,
+      "source_result_statuses": [
+        "pending"
+      ]
+    },
+    {
+      "scenario": "discovery",
+      "kind": "discovery",
+      "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+      "original_deadline_at": "2026-10-22T04:26:08.612Z",
+      "status": "pending",
+      "remaining_original_deadline_seconds": 93.586341,
+      "source_result_statuses": []
+    }
+  ],
+  "relay_observations": [
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:23:11.491Z",
+        "items": [
+          {
+            "aliases": [
+              "image-codecs"
+            ],
+            "canonical": true,
+            "description": "Canonical image decoder project",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": true
+      },
+      "response_sha256": "7766044cc34efe752586d3599070ddafa98402131616fc95b4f254467d56a6b7",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "identities",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:23:11.498Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": false
+      },
+      "response_sha256": "5f26fdf950d6edc417a9d2772814524fffea53d47e7ed9510b37d56614b7538a",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:11.676Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "question": "retained-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "a3bdb01fd5188b05a00be090dce167fe385e2953d34a8f757b29e399385ab0b0",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "a3bdb01fd5188b05a00be090dce167fe385e2953d34a8f757b29e399385ab0b0",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:11.676Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "question": "retained-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "a3bdb01fd5188b05a00be090dce167fe385e2953d34a8f757b29e399385ab0b0",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:23:37.062Z",
+        "items": [
+          {
+            "aliases": [
+              "image-codecs"
+            ],
+            "canonical": true,
+            "description": "Canonical image decoder project",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": true
+      },
+      "response_sha256": "0e2075a493700a4e109cadbbae5035955f4b25c7e32e028b024771d1e8b5d751",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "identities",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:23:37.067Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": false
+      },
+      "response_sha256": "fb480a70f8794dc112aaf90605f9a0da35ea843579f67a1910921003ec0cad7e",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:11.676Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "question": "retained-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "a3bdb01fd5188b05a00be090dce167fe385e2953d34a8f757b29e399385ab0b0",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "a3bdb01fd5188b05a00be090dce167fe385e2953d34a8f757b29e399385ab0b0",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:37.146Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "question": "lost-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:37.195Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:11.676Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "question": "retained-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "a3bdb01fd5188b05a00be090dce167fe385e2953d34a8f757b29e399385ab0b0",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "a3bdb01fd5188b05a00be090dce167fe385e2953d34a8f757b29e399385ab0b0",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:37.195Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:37.146Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "question": "lost-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:11.676Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "question": "retained-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "response": {
+          "description": "Canonical image decoder project",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ],
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "server_id": "f436e74993594517bcc30afce3846194"
+        },
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "0c91feec41a49761d181ca12e219cf7de295d0f188093ac1e4843bd29f300510",
+      "phase": "old",
+      "held": true,
+      "released": true,
+      "write_succeeded": false
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:37.195Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:37.146Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "question": "lost-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:37.195Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:37.146Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "question": "lost-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:37.195Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_4",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f1077933eef2bd4a6122f89dd9f531aa413c89876df86444993c83038792322",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:37.195Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_5",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "9de55298fafb328dbd657ddf582170f9741534115838fc1d584f54b38d8842df",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:23:39.590Z",
+        "items": [
+          {
+            "aliases": [
+              "image-codecs"
+            ],
+            "canonical": true,
+            "description": "Canonical image decoder project",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": true
+      },
+      "response_sha256": "20b334368fc5becc6f29e8a3ef47a09086c0e88580b6050729fc10386b8d300e",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "identities",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:23:39.623Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": false
+      },
+      "response_sha256": "795c5a76ed4baa14bbb646c8cf26e435ee8ab201f01ee5e08590c6fae0630eba",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:11.676Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "question": "retained-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_c4b009c65a4e683408bbffcbc76a748a_2",
+        "response": {
+          "description": "Canonical image decoder project",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ],
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "server_id": "f436e74993594517bcc30afce3846194"
+        },
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "0c91feec41a49761d181ca12e219cf7de295d0f188093ac1e4843bd29f300510",
+      "phase": "new",
+      "held": true,
+      "released": true,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "072e3d7bafea5720271e70059d81c9c2438daad1523c5e3eb8c72011777556a9",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:11.806Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "question": "retained-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "d93be362861779657f05ef721f22ed9ff482e488acf459cfb962f0bb4547219d",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_c4b009c65a4e683408bbffcbc76a748a_3",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "d93be362861779657f05ef721f22ed9ff482e488acf459cfb962f0bb4547219d",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:40.599Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "0aedb8101f43d2837d17177994419b3d039b70e5f403579ebeda73d324a5e103",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:40.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "question": "lost-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "701cb554c3816512c86c8525734d51e027d318f3292b64ec527ef30d772940b3",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "0aedb8101f43d2837d17177994419b3d039b70e5f403579ebeda73d324a5e103",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "701cb554c3816512c86c8525734d51e027d318f3292b64ec527ef30d772940b3",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:40.599Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "0aedb8101f43d2837d17177994419b3d039b70e5f403579ebeda73d324a5e103",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "0aedb8101f43d2837d17177994419b3d039b70e5f403579ebeda73d324a5e103",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:25:40.599Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "question": "lost-source Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "405714c9535a095d6ddb3ff00ae2fff45a9904327f020b059e540bdb510e3d37",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:40.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "question": "lost-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "701cb554c3816512c86c8525734d51e027d318f3292b64ec527ef30d772940b3",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_2",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "405714c9535a095d6ddb3ff00ae2fff45a9904327f020b059e540bdb510e3d37",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "701cb554c3816512c86c8525734d51e027d318f3292b64ec527ef30d772940b3",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:25:40.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "question": "lost-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_1",
+        "response": {
+          "description": "Canonical image decoder project",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ],
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "server_id": "f436e74993594517bcc30afce3846194"
+        },
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "03d696d00b67885ea65bc0cf93c345d592bd473525aa0f71e101fbf733cb6dd7",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:24:08.290Z",
+        "items": [
+          {
+            "aliases": [
+              "image-codecs"
+            ],
+            "canonical": true,
+            "description": "Canonical image decoder project",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": true
+      },
+      "response_sha256": "5a0199b36c5952e21d6283b6fd6d2e405b20a337f987e871dd57c029d88406a3",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "identities",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:24:08.298Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": false
+      },
+      "response_sha256": "72682ff950cde0bf159017b7832a67d66218bf53cd48dbf56b7b99a5d0f3e38a",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:08.612Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "question": "retained-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:08.612Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "question": "retained-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:24:34.847Z",
+        "items": [
+          {
+            "aliases": [
+              "image-codecs"
+            ],
+            "canonical": true,
+            "description": "Canonical image decoder project",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": true
+      },
+      "response_sha256": "166d9fe8119a493ec77f476f42d601737971d10a3d10156b00cbc5d0dad5b9fa",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "identities",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:24:34.852Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": false
+      },
+      "response_sha256": "b77dc3667ba4ad2fd1a26ae96f819449ad8c32aaa420a9fc6c4633849688bd6d",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:08.612Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "question": "retained-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:35.177Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6",
+        "question": "lost-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "ee6abf3205a2d2959cbc73fddcfa803e79bf7a1a637375f23a4429361ecd740f",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "ee6abf3205a2d2959cbc73fddcfa803e79bf7a1a637375f23a4429361ecd740f",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:35.047Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "question": "lost-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "88261c6bab880a1b7202a1190586d2ec3b52a4b6cfe071d46a04852ba3408fe7",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:08.612Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "question": "retained-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "88261c6bab880a1b7202a1190586d2ec3b52a4b6cfe071d46a04852ba3408fe7",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "b552816196015dfdbe6696d29d9e81d529811616be775ec4c627f92c455304f4",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:35.177Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6",
+        "question": "lost-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "ee6abf3205a2d2959cbc73fddcfa803e79bf7a1a637375f23a4429361ecd740f",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_6",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "ee6abf3205a2d2959cbc73fddcfa803e79bf7a1a637375f23a4429361ecd740f",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:08.612Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "question": "retained-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "a726cbbe92c87067bc9d7bdf935d4dc2ba87546db0176cd0f578643511ffe662",
+      "phase": "old",
+      "held": true,
+      "released": true,
+      "write_succeeded": false
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:35.047Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "question": "lost-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "88261c6bab880a1b7202a1190586d2ec3b52a4b6cfe071d46a04852ba3408fe7",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "88261c6bab880a1b7202a1190586d2ec3b52a4b6cfe071d46a04852ba3408fe7",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:35.047Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "question": "lost-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "88261c6bab880a1b7202a1190586d2ec3b52a4b6cfe071d46a04852ba3408fe7",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_5",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "88261c6bab880a1b7202a1190586d2ec3b52a4b6cfe071d46a04852ba3408fe7",
+      "phase": "old",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:08.612Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "question": "retained-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "a726cbbe92c87067bc9d7bdf935d4dc2ba87546db0176cd0f578643511ffe662",
+      "phase": "new",
+      "held": true,
+      "released": true,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:24:37.556Z",
+        "items": [
+          {
+            "aliases": [
+              "image-codecs"
+            ],
+            "canonical": true,
+            "description": "Canonical image decoder project",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": true
+      },
+      "response_sha256": "f902669f50e02a430100519fdb5b2d450ae3af3b93be5627325bfcd9fa8e6f93",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "identities",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:24:37.564Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": false
+      },
+      "response_sha256": "8d408024d166f5116fa45ef32335e138f2e3aa55fd2dde9214fdc2e0bc179548",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_795792ea46b8cc53c0a9aedb3876767d_4",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "a726cbbe92c87067bc9d7bdf935d4dc2ba87546db0176cd0f578643511ffe662",
+      "phase": "new",
+      "held": true,
+      "released": true,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "1e731453b47047be312c007cc57f3748ca0a0705829d856bc8dfc34f80ef65ef",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:08.519Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "question": "retained-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_795792ea46b8cc53c0a9aedb3876767d_3",
+        "response": {
+          "description": "Canonical image decoder project",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ],
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "server_id": "f436e74993594517bcc30afce3846194"
+        },
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "6baffad12f8d518590e49e27754879c64f902d0987016a4676bb0b7e0a85f0ee",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:38.790Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "question": "lost-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "515e2e477a29eed0e6a8cfc8777b7da383893611ea4bf60544a6d5ab9f9f6dca",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "515e2e477a29eed0e6a8cfc8777b7da383893611ea4bf60544a6d5ab9f9f6dca",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:38.872Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2",
+        "question": "lost-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f02bb2d66d8deffb95ab05363683293beefc840ae9e6d8c23ef6aeb73f91905",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "2f02bb2d66d8deffb95ab05363683293beefc840ae9e6d8c23ef6aeb73f91905",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:38.790Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "question": "lost-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "515e2e477a29eed0e6a8cfc8777b7da383893611ea4bf60544a6d5ab9f9f6dca",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "deadline_at": "2026-10-22T04:26:38.872Z",
+        "destination_project_id": "project-red",
+        "op": "submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2",
+        "question": "lost-discovery Which project maintains image decoders?"
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "607dd22146822d3478b94fab9b206113280adb76b1ded6369e67e38a05c0e4e4",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "source_status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "pending"
+      },
+      "response_sha256": "515e2e477a29eed0e6a8cfc8777b7da383893611ea4bf60544a6d5ab9f9f6dca",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "status",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2"
+      },
+      "status": 200,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "query_a3ec331ac646d786fbc923bbda655e3f_2",
+        "response": {
+          "description": "We maintain image decoders.",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ]
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "607dd22146822d3478b94fab9b206113280adb76b1ded6369e67e38a05c0e4e4",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T04:26:38.790Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "owner_server_id": "f436e74993594517bcc30afce3846194",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "question": "lost-discovery Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_a3ec331ac646d786fbc923bbda655e3f_1",
+        "response": {
+          "description": "Canonical image decoder project",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T04:23:10.985Z",
+              "data": {},
+              "id": "publication_931ea4d42c6994db22b9ee4b774daa21_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T04:23:10.985Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ],
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "server_id": "f436e74993594517bcc30afce3846194"
+        },
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "status": "completed"
+      },
+      "response_sha256": "c70b3e88f5ff491da958f5cac800ad297e18e0c30ec85973da1316760bf85ecd",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:25:05.833Z",
+        "items": [
+          {
+            "aliases": [
+              "image-codecs"
+            ],
+            "canonical": true,
+            "description": "Canonical image decoder project",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": true
+      },
+      "response_sha256": "60d6b2d3a9f98bb74e1d35ceec4f8a1d4afb46e7b68a6348e3c6a14726f5f452",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    },
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "identities",
+        "origin_project_id": "project-red",
+        "origin_server_id": "016f49a7bcc847188d581d3ca56a4239",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:25:05.840Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "f436e74993594517bcc30afce3846194",
+        "visible": false
+      },
+      "response_sha256": "997a776808f97f3960819ecc99de2f0b91aae6af75e449b15f86ab6b40beb223",
+      "phase": "new",
+      "held": false,
+      "released": false,
+      "write_succeeded": true
+    }
+  ],
+  "relay_errors": [],
+  "controlled_model_requests": 357,
+  "provider_posts": 0,
+  "finished_at": "2026-10-22T04:25:08.753246+00:00"
+}

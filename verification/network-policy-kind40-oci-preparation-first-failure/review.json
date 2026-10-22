@@ -1,0 +1,12 @@
+{
+  "schema": "adhd/cni-oci-host-preparation-failure@1",
+  "passed": false,
+  "stage": "First exact configuration blob HTTPS download; no layer download started",
+  "cause": "HTTPResponse sets fp=None after consuming Content-Length; helper attempted a second socket timeout update before normal EOF read",
+  "scope": "Host file/HTTPS preparation helper defect only; no Docker/cluster/image/application execution",
+  "original_log_sha256": "4d96581dd6e00db651007b8ba1c84404587de51ab4e4f6c49e02980106ab6189",
+  "first_work_directory_preserved": true,
+  "correction": "Skip socket timeout adjustment only after HTTPResponse has closed its socket; exact received size and SHA256 still mandatory",
+  "pure_regression_checks": 9,
+  "retry_policy": "No automatic retry; corrected helper will use a fresh preparation directory"
+}

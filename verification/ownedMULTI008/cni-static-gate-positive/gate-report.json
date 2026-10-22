@@ -1,0 +1,699 @@
+{
+  "schema": "adhd/kubernetes-ingress-policy@1",
+  "passed": true,
+  "scope": "TCP fixtures qualify exact shipped NetworkPolicy enforcement only; no Kafka, hub, OAuth, HA or application qualification.",
+  "policy_sha256": "bb2c39acf279a30bfe9f21c0df1ff4672872e8403a52cf3176efacd3e661940a",
+  "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "cluster_endpoint": "https://127.0.0.1:34619",
+  "before": [
+    {
+      "source": "hub",
+      "target": "rest",
+      "port": 8082,
+      "reachable": true
+    },
+    {
+      "source": "rest",
+      "target": "broker",
+      "port": 9092,
+      "reachable": true
+    },
+    {
+      "source": "rest",
+      "target": "broker",
+      "port": 9093,
+      "reachable": true
+    },
+    {
+      "source": "broker-peer",
+      "target": "broker",
+      "port": 9092,
+      "reachable": true
+    },
+    {
+      "source": "broker-peer",
+      "target": "broker",
+      "port": 9093,
+      "reachable": true
+    },
+    {
+      "source": "outsider",
+      "target": "rest",
+      "port": 8082,
+      "reachable": true
+    },
+    {
+      "source": "outsider",
+      "target": "broker",
+      "port": 9092,
+      "reachable": true
+    },
+    {
+      "source": "outsider",
+      "target": "broker",
+      "port": 9093,
+      "reachable": true
+    },
+    {
+      "source": "hub",
+      "target": "broker",
+      "port": 9092,
+      "reachable": true
+    },
+    {
+      "source": "hub",
+      "target": "broker",
+      "port": 9093,
+      "reachable": true
+    },
+    {
+      "source": "rest-peer",
+      "target": "rest",
+      "port": 8082,
+      "reachable": true
+    },
+    {
+      "source": "hub",
+      "target": "rest",
+      "port": 9092,
+      "reachable": true
+    },
+    {
+      "source": "rest",
+      "target": "broker",
+      "port": 8082,
+      "reachable": true
+    },
+    {
+      "source": "peer-hub",
+      "target": "rest",
+      "port": 8082,
+      "reachable": true
+    },
+    {
+      "source": "peer-rest",
+      "target": "broker",
+      "port": 9092,
+      "reachable": true
+    },
+    {
+      "source": "peer-rest",
+      "target": "broker",
+      "port": 9093,
+      "reachable": true
+    },
+    {
+      "source": "peer-broker",
+      "target": "broker",
+      "port": 9092,
+      "reachable": true
+    },
+    {
+      "source": "peer-broker",
+      "target": "broker",
+      "port": 9093,
+      "reachable": true
+    }
+  ],
+  "after": [
+    {
+      "source": "hub",
+      "target": "rest",
+      "port": 8082,
+      "expected_reachable": true,
+      "reachable": true
+    },
+    {
+      "source": "rest",
+      "target": "broker",
+      "port": 9092,
+      "expected_reachable": true,
+      "reachable": true
+    },
+    {
+      "source": "rest",
+      "target": "broker",
+      "port": 9093,
+      "expected_reachable": true,
+      "reachable": true
+    },
+    {
+      "source": "broker-peer",
+      "target": "broker",
+      "port": 9092,
+      "expected_reachable": true,
+      "reachable": true
+    },
+    {
+      "source": "broker-peer",
+      "target": "broker",
+      "port": 9093,
+      "expected_reachable": true,
+      "reachable": true
+    },
+    {
+      "source": "outsider",
+      "target": "rest",
+      "port": 8082,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "outsider",
+      "target": "broker",
+      "port": 9092,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "outsider",
+      "target": "broker",
+      "port": 9093,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "hub",
+      "target": "broker",
+      "port": 9092,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "hub",
+      "target": "broker",
+      "port": 9093,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "rest-peer",
+      "target": "rest",
+      "port": 8082,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "hub",
+      "target": "rest",
+      "port": 9092,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "rest",
+      "target": "broker",
+      "port": 8082,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "peer-hub",
+      "target": "rest",
+      "port": 8082,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "peer-rest",
+      "target": "broker",
+      "port": 9092,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "peer-rest",
+      "target": "broker",
+      "port": 9093,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "peer-broker",
+      "target": "broker",
+      "port": 9092,
+      "expected_reachable": false,
+      "reachable": false
+    },
+    {
+      "source": "peer-broker",
+      "target": "broker",
+      "port": 9093,
+      "expected_reachable": false,
+      "reachable": false
+    }
+  ],
+  "fixture_runtime_images": [
+    {
+      "namespace": "adhd-netpol-gate40",
+      "pod": "broker",
+      "pod_uid": "7affe24c-1a4b-4b71-8f54-160cea9d6616",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "kafka",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "pod": "rest",
+      "pod_uid": "7ef8bdaa-8990-4e6e-9916-acba6211c20f",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "kafka-rest",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "pod": "hub",
+      "pod_uid": "318cc950-ffba-4fc6-b5f9-14d5397c339b",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "hub",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "pod": "broker-peer",
+      "pod_uid": "103b9b93-f10b-4f93-9031-bb1f717b46c5",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "kafka",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "pod": "rest-peer",
+      "pod_uid": "40355fbc-db8d-45c4-becf-92cd6ee02c0e",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "kafka-rest",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "pod": "outsider",
+      "pod_uid": "bf9c9438-cdf1-478d-bbb5-fa6b0cdea605",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "policy-outsider",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "pod": "peer-hub",
+      "pod_uid": "0cc7d4a0-aba8-4fe8-922e-3251654781b7",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "hub",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "pod": "peer-rest",
+      "pod_uid": "a7cdce5a-5754-4e2d-b153-26f09831970d",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "kafka-rest",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    },
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "pod": "peer-broker",
+      "pod_uid": "31c16df0-a979-4a0f-a2ec-f001caba5d3b",
+      "runtime_image_id": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+      "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+      "role": "kafka",
+      "image_custody": {
+        "pod_status_image_ref": "docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+        "index": {
+          "digest": "sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+          "bytes": 361,
+          "media_type": "application/vnd.oci.image.index.v1+json",
+          "children": 1
+        },
+        "manifest_digest": "sha256:1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+        "manifest_bytes": 1012,
+        "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+        "config_digest": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "config_bytes": 7691,
+        "os": "linux",
+        "architecture": "amd64",
+        "cri_image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "private_input_hashes": [
+          {
+            "name": "root.json",
+            "sha256": "1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad",
+            "bytes": 361
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "1b36e55df981a4bdd3554c1cf5374c883fe157be3a0752cb940b674968856793",
+            "bytes": 1012
+          },
+          {
+            "name": "config.json",
+            "sha256": "e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+            "bytes": 7691
+          },
+          {
+            "name": "cri.json",
+            "sha256": "c4ec993417c5568bf17fd09b5efe462929105d01aa640db4f45877de839c6a48",
+            "bytes": 9713
+          }
+        ]
+      }
+    }
+  ],
+  "owned_namespace_cleanup": [
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "observed_absent": true,
+      "uid": "703efaed-d5c6-454f-adb4-7179fdb4c5f7"
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "observed_absent": true,
+      "uid": "de7cf7fe-c75f-48d6-96f8-024cc4d3608b"
+    }
+  ],
+  "error_type": null,
+  "static_helper": {
+    "sha256": "315f55a2edb05d04a542772628c3ce2688ade29c291342e9ca9a81fe6868bda7",
+    "scope": "TCP protocol only; no BEAM or application qualification",
+    "configmaps": [
+      {
+        "namespace": "adhd-netpol-gate40",
+        "uid": "505dab90-2b20-4ce8-9a18-fb4ec7b1febf"
+      },
+      {
+        "namespace": "adhd-netpol-gate40-peer",
+        "uid": "38e66bc3-b0d2-43e0-ab73-508f8b1036ae"
+      }
+    ]
+  },
+  "traffic_checks_passed": true
+}

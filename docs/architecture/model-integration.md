@@ -3,6 +3,9 @@
 The initial matcher is the user-selected Nemotron Deciffusion 8B v2.1 decision
 model. “Jev-like” describes its role; a Jev account is unnecessary. The Elixir
 hub will call a separately served model through a replaceable adapter.
+Subscription matching needs short, fast relevance decisions; the hub applies its
+threshold and queues matches. No Qwen or generative response step is required in
+this path. Model failure remains retryable work, not a negative relevance answer.
 
 ## Verified inputs
 
@@ -136,3 +139,42 @@ publish a project update, poll the matching delivery, acknowledge it, and query
 the publication. It must also cover disconnection and server restart. A
 deterministic matcher fixture can exercise queue mechanics; a separate real-model
 run must establish semantic matching behavior.
+
+## Application model container
+
+The app now includes a pinned [Compose model service](../../deploy/model.compose.yaml)
+and a checkpoint-verifying [startup helper](../../scripts/model_service.py). See
+[local model deployment](../admin/model-service.md) for CDI GPU access, BF16
+configuration on the A40, loopback exposure and operating commands. Earlier smoke
+results above describe their original hardware and do not establish current-host
+readiness; current evidence is recorded separately under `verification/`.
+
+## History choices
+
+History questions use the same configured SystemOne service through a separate
+`choice` adapter. Assessment and answer choices select original quotations or
+explicit uncertainty; no free-text model generation or Qwen service is involved.
+The normative generic template is `components/hub/history/evaluator.md`. Exact
+request bytes, distributions, model/policy identity and costs remain owner/Admin
+operational evidence. All originals participate in final joint evaluation within
+explicit bounds, including groups previously judged insufficient. Provider errors
+and capacity limits remain partial results. This work does not alter subscription
+`noul` matching or turn model interpretations into publication facts.
+
+## Bounded index optimization
+
+Optimization reuses the existing short-response Retrieval `noul` and History
+`choice` adapters. It adds no weights, embeddings, generated text, executable
+recipes or separate model service. Human labels choose confirmed source assertions;
+models supply fallible relevance and original-answer judgments. Paired work
+reserves actual costs, including full-History fallback and failed/restarted calls.
+
+Training evaluates a bounded deterministic native-neighbor set and freezes one
+winner before fresh held-out evaluation. Recall and correctness are distinct:
+lower fallback alone cannot qualify a recipe. Qualification checks independent
+positive/negative groups, negation/correction controls, actual calls/bytes and native
+storage; observed elapsed time is not an isolated latency guarantee. Optimizer
+orchestration uses the Archive/replay analysis lane while subscription matching
+retains its independent raw configuration and scheduling. Disabled optimization
+pauses its owned fallback scans without pausing independently requested History
+work. Exact current policy/resource limits remain hot Admin settings.

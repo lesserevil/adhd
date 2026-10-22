@@ -1,0 +1,163 @@
+{
+  "suite": "project-recovery-rejections",
+  "started_at": "2026-10-22T14:33:28.573978+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "populated-target-cannot-be-merged-or-replaced-by-restore",
+      "passed": true
+    },
+    {
+      "name": "invalid-backup-wrong-hash-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "hash"
+    },
+    {
+      "name": "invalid-backup-wrong-length-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "hash"
+    },
+    {
+      "name": "invalid-backup-unknown-manifest-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "invalid-backup-duplicate-json-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "invalid-backup-symlink-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "path"
+    },
+    {
+      "name": "invalid-backup-hardlink-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "path"
+    },
+    {
+      "name": "invalid-backup-compressed-etf-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "limits"
+    },
+    {
+      "name": "invalid-backup-unknown-snapshot-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "rotated-unowned-agent-credential-cannot-inherit-retained-private-state",
+      "passed": true,
+      "reason": "owner_unprovable"
+    },
+    {
+      "name": "configuration-change-invalidates-reviewed-plan-without-rewriting-its-digest-or-opening-target",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "harness_sha256": "5f52d1994395a776ea8dbcd9dee8c9dc5a4488fd7e8c394f98cf61dda53635a6",
+  "finished_at": "2026-10-22T14:34:03.633414+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "eeef435ba825eb03dab90c646d38d51212d9eb992387d9096abb900fa539ec5b",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "eeef435ba825eb03dab90c646d38d51212d9eb992387d9096abb900fa539ec5b",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "48d356e51eee8b4e39bf1d64086b2d8cb6d990087a37d2260b8dcab4ed01c241",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "48d356e51eee8b4e39bf1d64086b2d8cb6d990087a37d2260b8dcab4ed01c241",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "4e43a2e525b25bcb03c8fe2f5821ed67392c4c84fc3b32ff39d212cb20ea8229",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "4e43a2e525b25bcb03c8fe2f5821ed67392c4c84fc3b32ff39d212cb20ea8229",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-ffa0e7af9093457f",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-b08dde0dbcc9462e",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-d160dd032c824cc8",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-296a9fcb3a7842e3",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+}

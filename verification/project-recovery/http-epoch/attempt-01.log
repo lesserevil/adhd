@@ -1,0 +1,36 @@
+     warning: clauses with the same name and arity (number of arguments) should be grouped together, "def handle_call/3" was previously defined (_build/roadmap/final/http-epoch-unit36-01/config.exs:242)
+     │
+ 319 │   def handle_call({:recovery_admin,cmd,principal},_,x) do
+     │       ~
+     │
+     └─ _build/roadmap/final/http-epoch-unit36-01/config.exs:319:7
+
+Running ExUnit with seed: 992981, max_cases: 4
+
+
+
+  1) test a restored project's actual held HTTP reply cannot succeed while another project's reply completes (ProjectHTTPEpochTest)
+     _build/roadmap/final/http-epoch-unit36-01/test.exs:67
+     ** (throw) {:domain, "INVALID_PARAMS"}
+     stacktrace:
+       _build/roadmap/final/http-epoch-unit36-01/domain.exs:50: ADHD.Domain.fail/1
+       _build/roadmap/final/http-epoch-unit36-01/storage_registry.exs:63: ADHD.StorageRegistry.validate/3
+       _build/roadmap/final/http-epoch-unit36-01/storage_registry.exs:13: ADHD.StorageRegistry.publish/2
+       _build/roadmap/final/http-epoch-unit36-01/test.exs:25: ProjectHTTPEpochTest.__ex_unit_setup_0/1
+       _build/roadmap/final/http-epoch-unit36-01/test.exs:10: ProjectHTTPEpochTest.__ex_unit__/2
+
+
+
+  2) test a stale project is rejected before any actual HTTP connection (ProjectHTTPEpochTest)
+     _build/roadmap/final/http-epoch-unit36-01/test.exs:91
+     ** (throw) {:domain, "INVALID_PARAMS"}
+     stacktrace:
+       _build/roadmap/final/http-epoch-unit36-01/domain.exs:50: ADHD.Domain.fail/1
+       _build/roadmap/final/http-epoch-unit36-01/storage_registry.exs:63: ADHD.StorageRegistry.validate/3
+       _build/roadmap/final/http-epoch-unit36-01/storage_registry.exs:13: ADHD.StorageRegistry.publish/2
+       _build/roadmap/final/http-epoch-unit36-01/test.exs:25: ProjectHTTPEpochTest.__ex_unit_setup_0/1
+       _build/roadmap/final/http-epoch-unit36-01/test.exs:10: ProjectHTTPEpochTest.__ex_unit__/2
+
+
+Finished in 0.1 seconds (0.1s on load, 0.00s async, 0.01s sync)
+2 tests, 2 failures

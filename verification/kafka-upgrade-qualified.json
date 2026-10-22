@@ -1,0 +1,84 @@
+{
+  "schema": "adhd/kafka-broker-upgrade-qualification@1",
+  "status": "qualified-single-node-patch-upgrade-only",
+  "passed": true,
+  "application_a2a_qualified": false,
+  "release_qualified": false,
+  "versions": {
+    "broker_before": "8.3.1-ccs",
+    "broker_after": "8.3.2-ccs",
+    "proxy": "8.3.2"
+  },
+  "images": {
+    "broker_before": {
+      "manifest": "sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e",
+      "image_config": "sha256:c584e12277be7195dbb71793ae288b26550ef218b5d61013d768942a8a8b13f8",
+      "license": "Apache-2.0 Kafka; bundled dependencies retain own licenses"
+    },
+    "broker_after": {
+      "manifest": "sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+      "image_config": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2"
+    },
+    "proxy": {
+      "manifest": "sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+      "image_config": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "license": "Confluent Community License"
+    }
+  },
+  "topology": {
+    "brokers": 1,
+    "replication_factor": 1,
+    "kraft_cluster_identity_preserved": true,
+    "volume_preserved": true,
+    "proxy_restarted_during_upgrade": false,
+    "other_qualification_brokers_restarted": false
+  },
+  "assertions": {
+    "runtime_versions_observed_in_broker_logs": true,
+    "records_before": 3,
+    "identical_records_after": 3,
+    "broker_committed_next_offset_before": 3,
+    "broker_committed_next_offset_after": 3,
+    "new_record_appended_offset": 3,
+    "new_record_acked": true
+  },
+  "limits": [
+    "Single-node Compose patchupgrade8.3.1 to8.3.2 only; no replicated cluster, crossminor featureupgrade, downgrade or HA claim.",
+    "Uses real Kafka fixtureevents and RESTclient; app/hub lifecycle qualification is separate.",
+    "No TLS/SASL or REST authentication/rotation claim."
+  ],
+  "reports": [
+    {
+      "path": "verification/kafka-upgrade/before.json",
+      "sha256": "54ab9d040dfb9368c231326145fbc298e072ead581cfe88decab5ceae42a285a"
+    },
+    {
+      "path": "verification/kafka-upgrade/after.json",
+      "sha256": "a55cfc4efa08a5e7855a05a7ff7f1470adcab1cac4174ff0fb475f82b20bbef0"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "tests/kafka_upgrade.py",
+      "sha256": "5a396e7f6b6cd6eef228968eb740b7bbf927de3b5ce54b89c2265becb4271184"
+    },
+    {
+      "path": "tests/kafka_service.py",
+      "sha256": "f977a34d819fde31ade8db1d5f904860dfbdbf636f3902ab3e331ca317e75e67"
+    },
+    {
+      "path": "deploy/events.compose.yaml",
+      "sha256": "cc6a02c1c51eb97d4201d2d893bd53928ab4a1c1961f17c489c1c207834635b6"
+    },
+    {
+      "path": "deploy/events.test.compose.yaml",
+      "sha256": "4ebfe4dca1bb566eaca7780e0c9c6f9b2da0990d79154875718c33e5c2cf7a44"
+    }
+  ],
+  "commands": [
+    "Start independent Compose project with broker pinned8.3.1 and proxy pinned8.3.2 on private networks and a fresh volume.",
+    "Run tests/kafka_upgrade.py --phase before --url URL --report BEFORE.",
+    "Change only broker image pin to8.3.2; docker compose up -d --wait using the same project/volume.",
+    "Run tests/kafka_upgrade.py --phase after --url URL --previous BEFORE --report AFTER."
+  ]
+}

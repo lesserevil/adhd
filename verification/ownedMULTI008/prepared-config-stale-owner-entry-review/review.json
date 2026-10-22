@@ -1,0 +1,72 @@
+{
+  "schema": "adhd/config3-staleowner4-static-entry-context-review@1",
+  "passed": true,
+  "review_only": true,
+  "full_verifiers_or_test_suites_not_rerun": true,
+  "plans": {
+    "config3": {
+      "plan_sha256": "0af75ac1feaa6848cea7da122938a0938ef993aa5b2c3d88252165bfd578bd68",
+      "driver_sha256": "e6bfca68ad7ca3b82c8644c36b6b53f6e675fb41b53d512dc4e9fa18348ecd53",
+      "scope": "Explicit admitted target configuration crash3 only; separate from recovery42/native strace3/other images/UI/release. Controlled unreachable model URL127:1; no physical image egress firewall claim.",
+      "execution_not_started": true,
+      "critical_frozen_helpers_sha256": {
+        "config_recovery.py": "a98821950c15f3c4554c1848bd04bbdc8e937f834e4f6fde50432837dc747e67",
+        "config_image_runtime.py": "2fd2fb0dc1b91a0c019109e0d25f1f9f6ed0eb40a59e794c03cd9976d9dab581",
+        "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+        "controlled_sdk_matrix.py": "4fd7c34f839f22d67bfce5e32ff26f7d7db96272641bc7f1d77d1628cc782a5b",
+        "controlled_image_matrix.py": "97b5d7d317a68fb688f7206f6c7bee87b40f68a823bc1314727ed8c535c07044",
+        "image_filesystem_matrix.py": "a49659f684007ee8a8f9dcd80c494f4ef59a05d79e19a0e4ddb00eb9268a27d5"
+      },
+      "runtime_cwd_project_relative": ".worktrees/contracts/_build/config-image40-compiled05-02/runtime",
+      "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "admission_sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec"
+    },
+    "stale_owner4": {
+      "plan_sha256": "1daf3340461175d35f8534d8d79435968aabfe0991640fe060f19b3e3b92cdc6",
+      "driver_sha256": "f85fbd5cda4aa42d878a16124ee4653b40a673141004ed7bc61f2c14ebe2b53c",
+      "scope": "Exactly four unchanged stale-canonical-owner checks, controlled local model, eventing disabled. Separate from federation14/Kafka; no live provider or release claim.",
+      "execution_not_started": true,
+      "critical_frozen_helpers_sha256": {
+        "federation_stale_owner.py": "4f6ae96fe8c25d9270bddc4327602e9e69c55ef44f5e6d77b16cd08edd941999",
+        "eventing_target.py": "eb8a991b05aac299d1f499741bb3a2d383cbca65ac9d029a3107826ade10d331",
+        "federation_acceptance.py": "7fbeb4fb2965977c0a469ae5e704caba2e6e4a75203e798ce02f5fe4aea9be73",
+        "federation_multi.py": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104",
+        "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc"
+      },
+      "runtime_cwd_project_relative": "_build/image05-stale-owner01/runtime",
+      "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "admission_sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec"
+    }
+  },
+  "static_findings": {
+    "config3": "Parent and child -I driver imports only stdlib before explicit verified file-load helpers. validate_admission loads controlled_sdk_matrix/image_filesystem_matrix by exact frozen path; both top levels have stdlib-only imports and no dataclass/decorator module-registration dependence. Child verifies before inserting frozen/tests into sys.path, imports canonical config_image_runtime and foundation_acceptance, patches their identical class objects, then runpy executes original config_recovery with explicit sys.argv. No dependency on ambient CWD or a fixture wrapper alias. Runtime cwd is created once by execute; original child work paths are underneath it.",
+    "stale_owner4": "Child is executed by absolute frozen/tests/federation_stale_owner.py, whose script directory and explicit PYTHONPATH both select the same frozen helpers. eventing_target and federation_acceptance are imported by canonical names, matching shared Hub/Model objects; no custom dataclass module loader or runpy alias. Explicit absolute --work creates fresh parents. Hub public initialization uses Runtime.__new__ with required root/file/base/initialize_projects; config is a property reading that exact file and configured admin_token is supplied. All selected projects are initialized once; restarted known-ready projects skip init, unavailable targets refuse fallback.",
+    "original_scopes": "Config3 uses unreachable loopback model and disabled transport, actual rename observer and native deadlines45/25/16. Staleowner4 uses controlled local model and eventing disabled, catalogueTTL10s and original wait/query bounds. Neither is full Kafka/CNI/live-provider qualification.",
+    "packaging": "Both Docker adapters use exact immutable final05 image and original entrypoint without --entrypoint replacement; tests bind actual /app source+manifest. Config additionally checks compiled cache and running BEAM/PID/kernel boundary custody. Staleowner original four-case target asserts source/manifest/lifecycle rather than independently repeating cache17; image4bc identity and separate admitted cache proof remain its basis.",
+    "no_new_concrete_blocker": "No isolated runtime import/CWD/bootstrap gap found in this review. Preserves inherited reviewed host/tool closure policy; no newly broadened generic Python/OS threat-model claim. Unknown runtime failures still require retained diagnosis, no automatic retry."
+  },
+  "postrun_stage_ready": {
+    "procedure": "verification/ownedMULTI008/final-documentation-retained-plan-review/postrun-stage-and-bridge.json",
+    "script_sha256": "4b8d1762248af64b268bd8ebbcf9576386ff6cfb2cab3b53849738fba5c6ee1c",
+    "actual_compatible_pinned_CLI_entry_sha256": "084a527efc98af40042e6fce5901f3af5d5eee906d5d3be878c757b197d603fc",
+    "expected_context_set": [
+      "Dockerfile",
+      "compiler-inputs.json",
+      "manifest.json",
+      "packaging.tar",
+      "payload.tar"
+    ],
+    "actual_old_context_all5_sha256": {
+      "Dockerfile": "9ded107e56e6d142c629632d9eae514fb15c34aca689de73a07eeeddec5f9efa",
+      "packaging.tar": "4332fbceea1725bf5ceb27061ab88aaf9b4fd92ecbeb387e2daa791fa6969308",
+      "manifest.json": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+      "compiler-inputs.json": "b987a58d1479af63c9470336104699e21fac184339d940df54defb65a96b381d",
+      "payload.tar": "f8b6bf6b66c2a98b640f316c6568757f6f4e6dc25f15e9f13af48e3c75dd42d8"
+    },
+    "conditional_only": "Wait for root actual successful new rebuild/current receipt and full verify. Stage new directory through fresh result/current receipt; compare full context5 plus59payload/33spec/cache/image. No fresh receipt or success assigned while62124live."
+  },
+  "no_app_provider_resource_compiler_probe_or_extra_CLI_starts": true,
+  "root_source_spec_marker_receipt_and_frozen_plans_not_modified": true
+}

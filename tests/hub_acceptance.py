@@ -133,6 +133,16 @@ class Hub:
             try:
                 response = httpx.get(self.base + "/health", timeout=1)
                 if response.status_code == 200 and response.json() == {"status": "ready"}:
+                    # The SDK fixture supplies a handwritten config. Profile2.1
+                    # requires explicit public Admin admission of an unknown
+                    # project; health readiness alone does not initialize it.
+                    # Reuse the version-aware fixture helper, which skips ready
+                    # projects and refuses known missing/corrupt generations.
+                    from foundation_acceptance import Runtime
+                    admission = Runtime.__new__(Runtime)
+                    admission.root, admission.file, admission.base = self.root, self.config_file, self.base
+                    admission.initialize_projects = True
+                    admission.initialize_unknown_projects()
                     return
             except httpx.HTTPError:
                 pass
@@ -405,7 +415,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--command", required=True, help="JSON argv for the built hub, excluding its JSON argument")
     parser.add_argument("--work-dir", default="_build/tests/hub001")
-    parser.add_argument("--matcher-url", required=True, help="Reachable live Nemotron SystemOne URL")
+    model_check = parser.add_mutually_exclusive_group(required=True)
+    model_check.add_argument("--matcher-url", help="Reachable live Nemotron SystemOne URL")
+    model_check.add_argument("--fixture-only", action="store_true",
+                             help="Run deterministic regression checks; explicitly omit live model integration")
     parser.add_argument("--report", default="verification/hub-acceptance.json")
     parser.add_argument("--legacy-command", help="Optional JSON argv for the original prototype, for store-upgrade verification")
     parser.add_argument("--previous-command", help="JSON argv for the schema-2 pre-console runtime")
@@ -432,6 +445,8 @@ def main():
         if args.previous_command:
             from upgrade_cases import schema_two_upgrade_checks
             await schema_two_upgrade_checks(json.loads(args.previous_command), command, root, record)
+        if args.fixture_only:
+            return {"state": "not-run", "reason": "Explicit fixture-only regression run"}
         return await live_checks(command, root, args.matcher_url, record)
 
     live = asyncio.run(run())

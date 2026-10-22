@@ -1,0 +1,20 @@
+{
+  "schema": "adhd/cni14-isolated-root-preflight-negative@1",
+  "passed": false,
+  "execution_started": false,
+  "root_session": 71115,
+  "root_observed_terminal_exit_code": 1,
+  "plan_sha256": "7ed6db60de4b73987006a3ed3df4b78bf704ce755af51ecf8e0909d9d9691ad6",
+  "invocation": "Pinned .venv/bin/python -I -B -c stdlib runpy.run_path(driver.py), JSON plan/hash validation, then actual verify(work,plan); no injected sys.path, no execute/main call.",
+  "failure": {
+    "type": "ModuleNotFoundError",
+    "message": "No module named kafka_network_policy_readiness",
+    "stack": [
+      "driver.py:112 verify -> verify_bootstrap_dependency",
+      "driver.py:89 verify_bootstrap_dependency -> from kafka_network_policy_readiness import overlay"
+    ]
+  },
+  "finding": "Actual execute calls verify before Executor.perform inserts frozen/tests, so the isolated review exposed an import dependency missing from the real startup path. The preparer had already inserted an import path; that review was insufficient.",
+  "resources_or_provider_started": false,
+  "next": "Repair verified frozen import setup before dependency verification and exercise the exact isolated verify-only driver entry before any once-only runtime GO."
+}

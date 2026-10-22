@@ -1,0 +1,117 @@
+# Set both hub image references to the accepted immutable image before applying.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hub-data
+  namespace: adhd
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub
+  namespace: adhd
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hub
+  template:
+    metadata:
+      labels:
+        app: hub
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      initContainers:
+      - name: config-seed
+        image: adhd-hub:qualified
+        command:
+        - sh
+        - -ec
+        - mkdir -p /state/config /state/data; if [ ! -e /state/config/hub.json ];
+          then umask 077; cp /seed/hub.json /state/config/hub.json; chmod 600 /state/config/hub.json; fi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: state
+          mountPath: /state
+        - name: seed
+          mountPath: /seed
+          readOnly: true
+      containers:
+      - name: hub
+        image: adhd-hub:qualified
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ADHD_CONFIG_FILE
+          value: /config/hub.json
+        ports:
+        - containerPort: 8766
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: state
+          mountPath: /config
+          subPath: config
+        - name: state
+          mountPath: /data
+          subPath: data
+        - name: tmp
+          mountPath: /tmp
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: '2'
+            memory: 1Gi
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8766
+          periodSeconds: 5
+          failureThreshold: 36
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8766
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8766
+          periodSeconds: 20
+          failureThreshold: 6
+      volumes:
+      - name: state
+        persistentVolumeClaim:
+          claimName: hub-data
+      - name: seed
+        secret:
+          secretName: hub-seed
+          defaultMode: 292
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi

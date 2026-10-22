@@ -1,0 +1,625 @@
+{
+  "schema": "adhd/compiled05-deployed-plans-review@1",
+  "passed": true,
+  "status": "UNSTARTED_ROOT_REVIEW_REQUIRED",
+  "runtime_ready": false,
+  "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "admission_sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec",
+  "cluster_tag": "adhd-hub:qa40-compiled05",
+  "plans": [
+    {
+      "kind": "secured",
+      "plan_path": "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/plan.json",
+      "plan_sha256": "871168b3d972fe359420b21cb606723c61d2594862f991f587c49c51a98f47a1",
+      "driver_sha256": "6f23b5fce1bef78447dc14efe43c33c47b3e4fe7102922c96d95b86c8d9b355d",
+      "frozen_files": 376,
+      "bound_files": 7,
+      "context_files": 5,
+      "host_dependencies_sha256": "74448cee92b5e67105c62da4f3219374f472d11e195cfaaea5cbd8918e25ecbd",
+      "bound_inputs": {
+        "admission.json": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec",
+        "cache-manifest.json": "99a63d06ea1f899838a4a4fd637f2b5b77d778809b2cc873a114390115e57512",
+        "cache-metadata.json": "7cb82f1c1f03704f64e56a2c4657ec5eb84d4020c2b00be4623161a6dea69c59",
+        "config.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "host-dependencies.json": "74448cee92b5e67105c62da4f3219374f472d11e195cfaaea5cbd8918e25ecbd",
+        "kubeconfig": "e570f2a06eac21824720146d0855a6d9a1f0d3d8ef8c0b13e2c3cb4ded7a2858",
+        "original-kubeconfig.yaml": "e145d22bab7475bf8b25d5e40bfbbc40337c5ecf35c81cef9377bfe62b75fec2"
+      },
+      "context_inputs": {
+        "Dockerfile": "9ded107e56e6d142c629632d9eae514fb15c34aca689de73a07eeeddec5f9efa",
+        "compiler-inputs.json": "b987a58d1479af63c9470336104699e21fac184339d940df54defb65a96b381d",
+        "manifest.json": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+        "packaging.tar": "4332fbceea1725bf5ceb27061ab88aaf9b4fd92ecbeb387e2daa791fa6969308",
+        "payload.tar": "f8b6bf6b66c2a98b640f316c6568757f6f4e6dc25f15e9f13af48e3c75dd42d8"
+      },
+      "tools": {
+        "python": {
+          "path": "/home/horde/src/adhd/.venv/bin/python",
+          "realpath": "/usr/bin/python3.12",
+          "links": {
+            "/home/horde/src/adhd/.venv/bin/python": "python3"
+          },
+          "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+          "mode": 493
+        },
+        "docker": {
+          "path": "/usr/bin/docker",
+          "realpath": "/usr/bin/docker",
+          "links": {},
+          "sha256": "6d1ac33d27f9f73d1feb0184e7c0847c1b6051dd60b7a6ec7b3ad9a2f7ca01ea",
+          "mode": 493
+        },
+        "kubectl": {
+          "path": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+          "realpath": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+          "links": {},
+          "sha256": "a2e984a18a0c063279d692533031c1eff93a262afcc0afdc517375432d060989",
+          "mode": 509
+        },
+        "kind": {
+          "path": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+          "realpath": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+          "links": {},
+          "sha256": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d",
+          "mode": 509
+        }
+      },
+      "facts": {
+        "node": {
+          "name": "adhd-event-qual-control-plane",
+          "id": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+          "image": "sha256:a9f00b2666c3e111d51e6cab9b122e2c96cc539f22ffbf0612169bfafdb9818b",
+          "pid": 3063947,
+          "cluster": "adhd-event-qual",
+          "api_port_binding": {
+            "HostIp": "127.0.0.1",
+            "HostPort": "34113"
+          }
+        },
+        "kind_network_id": "26b3643d8a75a1d90eaea327bae0c609aa0672f07079e36dff40dd47e68d171c",
+        "issuer_bind": "172.21.0.1",
+        "selected_images": {
+          "hub": {
+            "requested": "docker.io/library/adhd-hub:qa40-compiled05",
+            "id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+          },
+          "broker": {
+            "requested": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+            "id": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+            "manifest_sha256": "5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+            "all_layer_equivalence": {
+              "imported_manifest": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+              "original_image": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+              "image_config_digest": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+              "layer_count": 22,
+              "layers": [
+                "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+                "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+                "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+                "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+                "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+                "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+                "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+                "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+                "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+                "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+                "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+                "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+                "sha256:f979e67ba1208050c85a3485b0d429b5ca87583cf1566ef6a15eaba4c02499e1",
+                "sha256:2d8f2b230ab77e2efb8d1e7bbc65049ab19a05768d9811b47317d0b4b5a95ca1",
+                "sha256:952c3a6c3e4ff8f812ad68a5947af3fb37b3a6690367bceec271a91dfe19721a",
+                "sha256:f67820dc57daf56286bb2eddc3518fa16be67f27c7aa2c53f39dbf8b3c4f72ac",
+                "sha256:425f9b8265db8983b191558a5953ed26ae5f2f5f59deeb376b204f2b2e4702e2",
+                "sha256:2fb2a7ac681c37c9af30e9db6c34a01ad57e017dcadbc3ecff4c3c5c90dda524",
+                "sha256:d52b14794d0ebc0d1f1e7def5e96717d159b1fa6b8cc1d53e8585a247d67e413",
+                "sha256:73f59716dd0e95ace0ee203daa77d45d4a880e3d4f775631469592e975b2c0c8",
+                "sha256:319f09fb8cd32006e7faad0f82752764ec389922b88adacf459ad373243921e6",
+                "sha256:9c1edfb7fff9f7880fc12d8f5d20d0e1440c529f61298da526e524e6a8d19ff6"
+              ],
+              "uncompressed_layer_digest_list_sha256": "481d0fcbda54d7289fdd92ce5406d09f9bd616a99a85ef4094e42ca54c03b52c"
+            }
+          },
+          "proxy": {
+            "requested": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+            "id": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+            "manifest_sha256": "ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+            "all_layer_equivalence": {
+              "imported_manifest": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+              "original_image": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+              "image_config_digest": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+              "layer_count": 21,
+              "layers": [
+                "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+                "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+                "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+                "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+                "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+                "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+                "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+                "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+                "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+                "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+                "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+                "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+                "sha256:93305fce7f6f1ab883ed9cf9b58e0a1fac03baaaf5d5bba9981cb1cf4b5bfc50",
+                "sha256:22ab5fc18b6a59305a0c5033e8f34c62f26ed7f74cd8237ce5d9d4509bd3a5ee",
+                "sha256:f735e6662a42494a17c8ad08f3dff5a607119ab58c68090dff02f823638643c6",
+                "sha256:0a7fb11cc683df97273da479350cc40759bc37684cb9cb0a320f3fc4ffabbbb1",
+                "sha256:1d3bc9ce3ba8ea5eea02b9d40e1c3ec0b61d9613c124be2023bb57da2f397f99",
+                "sha256:0ff6b159dc64ac764bf9d17a95eb39e805bf4d1ab68a4590d1e6a1761183ef80",
+                "sha256:b5e61d2385100132cf568c8e0ce3f1a7e4dc9717e47b5863920dc4085ae8e54f",
+                "sha256:50606b71697a4724b171f7d6fc4c7b539cb52f4ad075039102abeba19eba4c3c",
+                "sha256:da167bb6c267aaa48b16a27d2badcbe38da807ecaf4a61dda2e319e34c4ba55f"
+              ],
+              "uncompressed_layer_digest_list_sha256": "44f2518c181a40f78556c0c33654fd07b78152fd78cab6ba81ec07be967daebb"
+            }
+          }
+        },
+        "host_image_equivalence": {
+          "hub": {
+            "config_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+            "layers": [
+              "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+              "sha256:db0221faf1729dc0e407fdcc3b594e2c5c37e6acf2d8a775f5fc3bea9b56e238",
+              "sha256:51e8a231d221671ee8e45962158d7a15d1a8a8cba9919d40abf375e74b8f8b08",
+              "sha256:8a43a134cefac7eb43055273a134ecdfa9014fa20bb7160e5cd3e5594ebdab8e",
+              "sha256:b38503284860bba153d64743b6907c3b54b73d5d0f319219d4d746b274667166",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "proxy": {
+            "config_id": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+            "layers": [
+              "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+              "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+              "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+              "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+              "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+              "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+              "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+              "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+              "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+              "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+              "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+              "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+              "sha256:93305fce7f6f1ab883ed9cf9b58e0a1fac03baaaf5d5bba9981cb1cf4b5bfc50",
+              "sha256:22ab5fc18b6a59305a0c5033e8f34c62f26ed7f74cd8237ce5d9d4509bd3a5ee",
+              "sha256:f735e6662a42494a17c8ad08f3dff5a607119ab58c68090dff02f823638643c6",
+              "sha256:0a7fb11cc683df97273da479350cc40759bc37684cb9cb0a320f3fc4ffabbbb1",
+              "sha256:1d3bc9ce3ba8ea5eea02b9d40e1c3ec0b61d9613c124be2023bb57da2f397f99",
+              "sha256:0ff6b159dc64ac764bf9d17a95eb39e805bf4d1ab68a4590d1e6a1761183ef80",
+              "sha256:b5e61d2385100132cf568c8e0ce3f1a7e4dc9717e47b5863920dc4085ae8e54f",
+              "sha256:50606b71697a4724b171f7d6fc4c7b539cb52f4ad075039102abeba19eba4c3c",
+              "sha256:da167bb6c267aaa48b16a27d2badcbe38da807ecaf4a61dda2e319e34c4ba55f"
+            ]
+          },
+          "broker": {
+            "config_id": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+            "layers": [
+              "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+              "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+              "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+              "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+              "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+              "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+              "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+              "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+              "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+              "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+              "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+              "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+              "sha256:f979e67ba1208050c85a3485b0d429b5ca87583cf1566ef6a15eaba4c02499e1",
+              "sha256:2d8f2b230ab77e2efb8d1e7bbc65049ab19a05768d9811b47317d0b4b5a95ca1",
+              "sha256:952c3a6c3e4ff8f812ad68a5947af3fb37b3a6690367bceec271a91dfe19721a",
+              "sha256:f67820dc57daf56286bb2eddc3518fa16be67f27c7aa2c53f39dbf8b3c4f72ac",
+              "sha256:425f9b8265db8983b191558a5953ed26ae5f2f5f59deeb376b204f2b2e4702e2",
+              "sha256:2fb2a7ac681c37c9af30e9db6c34a01ad57e017dcadbc3ecff4c3c5c90dda524",
+              "sha256:d52b14794d0ebc0d1f1e7def5e96717d159b1fa6b8cc1d53e8585a247d67e413",
+              "sha256:73f59716dd0e95ace0ee203daa77d45d4a880e3d4f775631469592e975b2c0c8",
+              "sha256:319f09fb8cd32006e7faad0f82752764ec389922b88adacf459ad373243921e6",
+              "sha256:9c1edfb7fff9f7880fc12d8f5d20d0e1440c529f61298da526e524e6a8d19ff6"
+            ]
+          }
+        }
+      },
+      "pre_main_review": {
+        "passed": true,
+        "python_flags": [
+          "-I",
+          "-S",
+          "-B",
+          "-X",
+          "pycache_prefix=/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/parent-cache"
+        ],
+        "full_inputs_and_actual_readonly_preflight": true,
+        "once_marker_present": false,
+        "resources_apps_models_compilers_started": false
+      },
+      "execute_argv": [
+        "/home/horde/src/adhd/.venv/bin/python",
+        "-I",
+        "-S",
+        "-B",
+        "-X",
+        "pycache_prefix=/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/parent-cache",
+        "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/driver.py",
+        "--execute",
+        "--work",
+        "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01",
+        "--plan-sha256",
+        "871168b3d972fe359420b21cb606723c61d2594862f991f587c49c51a98f47a1"
+      ],
+      "planned_jobs": [
+        {
+          "argv": [
+            "/home/horde/src/adhd/.venv/bin/python",
+            "-s",
+            "-B",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/frozen/tests/kafka_oauth_k8s.py",
+            "--image",
+            "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+            "--context",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/context",
+            "--acceptance-report",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/bound/admission.json",
+            "--kubectl",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+            "--kubeconfig",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/bound/kubeconfig",
+            "--kind-node",
+            "adhd-event-qual-control-plane",
+            "--cluster-image",
+            "adhd-hub:qa40-compiled05",
+            "--namespace",
+            "adhd-oauth-compiled05",
+            "--issuer-bind",
+            "172.21.0.1",
+            "--broker-image",
+            "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+            "--proxy-image",
+            "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+            "--port",
+            "18950",
+            "--hub-port",
+            "18951",
+            "--work",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/oauth-work",
+            "--report",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-compiled05-prepare01/result.json"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "model",
+      "plan_path": "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/plan.json",
+      "plan_sha256": "c026688bc775429f4af100beb675af4cc76da2d6a6416e60624ca76842fa2127",
+      "driver_sha256": "888bf0600db65dccd7ea6a00dbcdc1559ef7b7d67372bec601add170d23e542c",
+      "frozen_files": 376,
+      "bound_files": 9,
+      "context_files": 5,
+      "host_dependencies_sha256": "692cd20c66e529377cce8272f36b5d6c75e58b0026e0c0970331c4127d1fad44",
+      "bound_inputs": {
+        "admission.json": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec",
+        "cache-manifest.json": "99a63d06ea1f899838a4a4fd637f2b5b77d778809b2cc873a114390115e57512",
+        "cache-metadata.json": "7cb82f1c1f03704f64e56a2c4657ec5eb84d4020c2b00be4623161a6dea69c59",
+        "docker-config/cli-plugins/docker-compose": "9c0f3f21b463fbdd42afed3be203c1a65f0cd440c9b59c68785f35e78d2ebf6a",
+        "docker-config/config.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "host-dependencies.json": "692cd20c66e529377cce8272f36b5d6c75e58b0026e0c0970331c4127d1fad44",
+        "kubeconfig": "e570f2a06eac21824720146d0855a6d9a1f0d3d8ef8c0b13e2c3cb4ded7a2858",
+        "original-kubeconfig.yaml": "e145d22bab7475bf8b25d5e40bfbbc40337c5ecf35c81cef9377bfe62b75fec2",
+        "original-plan.json": "cdfe237f760b18b46680579e88a92f40945f20482cab498f568a319327d4d821"
+      },
+      "context_inputs": {
+        "Dockerfile": "9ded107e56e6d142c629632d9eae514fb15c34aca689de73a07eeeddec5f9efa",
+        "compiler-inputs.json": "b987a58d1479af63c9470336104699e21fac184339d940df54defb65a96b381d",
+        "manifest.json": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+        "packaging.tar": "4332fbceea1725bf5ceb27061ab88aaf9b4fd92ecbeb387e2daa791fa6969308",
+        "payload.tar": "f8b6bf6b66c2a98b640f316c6568757f6f4e6dc25f15e9f13af48e3c75dd42d8"
+      },
+      "tools": {
+        "python": {
+          "path": "/home/horde/src/adhd/.venv/bin/python",
+          "realpath": "/usr/bin/python3.12",
+          "links": {
+            "/home/horde/src/adhd/.venv/bin/python": "python3"
+          },
+          "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+          "mode": 493
+        },
+        "docker": {
+          "path": "/usr/bin/docker",
+          "realpath": "/usr/bin/docker",
+          "links": {},
+          "sha256": "6d1ac33d27f9f73d1feb0184e7c0847c1b6051dd60b7a6ec7b3ad9a2f7ca01ea",
+          "mode": 493
+        },
+        "compose-plugin": {
+          "path": "/usr/libexec/docker/cli-plugins/docker-compose",
+          "realpath": "/usr/libexec/docker/cli-plugins/docker-compose",
+          "links": {},
+          "sha256": "9c0f3f21b463fbdd42afed3be203c1a65f0cd440c9b59c68785f35e78d2ebf6a",
+          "mode": 493
+        },
+        "kubectl": {
+          "path": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+          "realpath": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+          "links": {},
+          "sha256": "a2e984a18a0c063279d692533031c1eff93a262afcc0afdc517375432d060989",
+          "mode": 509
+        },
+        "kind": {
+          "path": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+          "realpath": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+          "links": {},
+          "sha256": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d",
+          "mode": 509
+        }
+      },
+      "facts": {
+        "node": {
+          "name": "adhd-event-qual-control-plane",
+          "id": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+          "image": "sha256:a9f00b2666c3e111d51e6cab9b122e2c96cc539f22ffbf0612169bfafdb9818b",
+          "pid": 3063947,
+          "cluster": "adhd-event-qual",
+          "api_port_binding": {
+            "HostIp": "127.0.0.1",
+            "HostPort": "34113"
+          }
+        },
+        "kind_network_id": "26b3643d8a75a1d90eaea327bae0c609aa0672f07079e36dff40dd47e68d171c",
+        "issuer_bind": "172.21.0.1",
+        "selected_images": {
+          "hub": {
+            "requested": "docker.io/library/adhd-hub:qa40-compiled05",
+            "id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+          },
+          "broker": {
+            "requested": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+            "id": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+            "manifest_sha256": "5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+            "all_layer_equivalence": {
+              "imported_manifest": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+              "original_image": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+              "image_config_digest": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+              "layer_count": 22,
+              "layers": [
+                "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+                "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+                "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+                "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+                "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+                "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+                "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+                "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+                "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+                "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+                "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+                "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+                "sha256:f979e67ba1208050c85a3485b0d429b5ca87583cf1566ef6a15eaba4c02499e1",
+                "sha256:2d8f2b230ab77e2efb8d1e7bbc65049ab19a05768d9811b47317d0b4b5a95ca1",
+                "sha256:952c3a6c3e4ff8f812ad68a5947af3fb37b3a6690367bceec271a91dfe19721a",
+                "sha256:f67820dc57daf56286bb2eddc3518fa16be67f27c7aa2c53f39dbf8b3c4f72ac",
+                "sha256:425f9b8265db8983b191558a5953ed26ae5f2f5f59deeb376b204f2b2e4702e2",
+                "sha256:2fb2a7ac681c37c9af30e9db6c34a01ad57e017dcadbc3ecff4c3c5c90dda524",
+                "sha256:d52b14794d0ebc0d1f1e7def5e96717d159b1fa6b8cc1d53e8585a247d67e413",
+                "sha256:73f59716dd0e95ace0ee203daa77d45d4a880e3d4f775631469592e975b2c0c8",
+                "sha256:319f09fb8cd32006e7faad0f82752764ec389922b88adacf459ad373243921e6",
+                "sha256:9c1edfb7fff9f7880fc12d8f5d20d0e1440c529f61298da526e524e6a8d19ff6"
+              ],
+              "uncompressed_layer_digest_list_sha256": "481d0fcbda54d7289fdd92ce5406d09f9bd616a99a85ef4094e42ca54c03b52c"
+            }
+          },
+          "proxy": {
+            "requested": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+            "id": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+            "manifest_sha256": "ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+            "all_layer_equivalence": {
+              "imported_manifest": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a",
+              "original_image": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+              "image_config_digest": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+              "layer_count": 21,
+              "layers": [
+                "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+                "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+                "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+                "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+                "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+                "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+                "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+                "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+                "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+                "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+                "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+                "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+                "sha256:93305fce7f6f1ab883ed9cf9b58e0a1fac03baaaf5d5bba9981cb1cf4b5bfc50",
+                "sha256:22ab5fc18b6a59305a0c5033e8f34c62f26ed7f74cd8237ce5d9d4509bd3a5ee",
+                "sha256:f735e6662a42494a17c8ad08f3dff5a607119ab58c68090dff02f823638643c6",
+                "sha256:0a7fb11cc683df97273da479350cc40759bc37684cb9cb0a320f3fc4ffabbbb1",
+                "sha256:1d3bc9ce3ba8ea5eea02b9d40e1c3ec0b61d9613c124be2023bb57da2f397f99",
+                "sha256:0ff6b159dc64ac764bf9d17a95eb39e805bf4d1ab68a4590d1e6a1761183ef80",
+                "sha256:b5e61d2385100132cf568c8e0ce3f1a7e4dc9717e47b5863920dc4085ae8e54f",
+                "sha256:50606b71697a4724b171f7d6fc4c7b539cb52f4ad075039102abeba19eba4c3c",
+                "sha256:da167bb6c267aaa48b16a27d2badcbe38da807ecaf4a61dda2e319e34c4ba55f"
+              ],
+              "uncompressed_layer_digest_list_sha256": "44f2518c181a40f78556c0c33654fd07b78152fd78cab6ba81ec07be967daebb"
+            }
+          }
+        },
+        "host_image_equivalence": {
+          "hub": {
+            "config_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+            "layers": [
+              "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+              "sha256:db0221faf1729dc0e407fdcc3b594e2c5c37e6acf2d8a775f5fc3bea9b56e238",
+              "sha256:51e8a231d221671ee8e45962158d7a15d1a8a8cba9919d40abf375e74b8f8b08",
+              "sha256:8a43a134cefac7eb43055273a134ecdfa9014fa20bb7160e5cd3e5594ebdab8e",
+              "sha256:b38503284860bba153d64743b6907c3b54b73d5d0f319219d4d746b274667166",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "proxy": {
+            "config_id": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+            "layers": [
+              "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+              "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+              "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+              "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+              "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+              "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+              "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+              "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+              "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+              "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+              "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+              "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+              "sha256:93305fce7f6f1ab883ed9cf9b58e0a1fac03baaaf5d5bba9981cb1cf4b5bfc50",
+              "sha256:22ab5fc18b6a59305a0c5033e8f34c62f26ed7f74cd8237ce5d9d4509bd3a5ee",
+              "sha256:f735e6662a42494a17c8ad08f3dff5a607119ab58c68090dff02f823638643c6",
+              "sha256:0a7fb11cc683df97273da479350cc40759bc37684cb9cb0a320f3fc4ffabbbb1",
+              "sha256:1d3bc9ce3ba8ea5eea02b9d40e1c3ec0b61d9613c124be2023bb57da2f397f99",
+              "sha256:0ff6b159dc64ac764bf9d17a95eb39e805bf4d1ab68a4590d1e6a1761183ef80",
+              "sha256:b5e61d2385100132cf568c8e0ce3f1a7e4dc9717e47b5863920dc4085ae8e54f",
+              "sha256:50606b71697a4724b171f7d6fc4c7b539cb52f4ad075039102abeba19eba4c3c",
+              "sha256:da167bb6c267aaa48b16a27d2badcbe38da807ecaf4a61dda2e319e34c4ba55f"
+            ]
+          },
+          "broker": {
+            "config_id": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+            "layers": [
+              "sha256:49d88c5f8e857b7f1f820fe9d675e242502575a82be998cf9e18f6ef83f00e0d",
+              "sha256:d94576616f0d4aafd6fd57298e1e9db141fcd75eac7a25f055c8525a349da825",
+              "sha256:6518a7da287936ad40624174b338ecb185fb0ec8fdc800bd4ea5dd1d2b7caf8a",
+              "sha256:718372cf089a9ad0f1b3ee2c94080baeff034b4fc988986dd7befd5bfc0a8611",
+              "sha256:faa4b8b515c939b709919184b871f13c12319712d781cc75f03013cefe8e8dd6",
+              "sha256:f5197b933561d5ac26b7ddfc5079729c39a1e5c9bc3e006b177cbcf790a5e25c",
+              "sha256:3c84fc801feadf7dda2b75e3d0a797a57a39e2a1328faad9bf44301a4ff8b223",
+              "sha256:9f18dfc61baff332293d61da717da84fef85aa91f6b3798a9798d46d577a66e9",
+              "sha256:c44794599a515ce6dbab26457aec28acee979013917f3ebd2de106d695b0a552",
+              "sha256:1d44cd704754daf740249a9c5f9ea723e365f13f473e9bc435dccc39f27d307c",
+              "sha256:7f45233697e6145a4bf438d5a2681b9bbfaa5b518b9fdfeb0dd2641b9af2b93a",
+              "sha256:1efd9ab948e0c744a6cb92db9fb742d515cda130692c6050a9aa20efe068c975",
+              "sha256:f979e67ba1208050c85a3485b0d429b5ca87583cf1566ef6a15eaba4c02499e1",
+              "sha256:2d8f2b230ab77e2efb8d1e7bbc65049ab19a05768d9811b47317d0b4b5a95ca1",
+              "sha256:952c3a6c3e4ff8f812ad68a5947af3fb37b3a6690367bceec271a91dfe19721a",
+              "sha256:f67820dc57daf56286bb2eddc3518fa16be67f27c7aa2c53f39dbf8b3c4f72ac",
+              "sha256:425f9b8265db8983b191558a5953ed26ae5f2f5f59deeb376b204f2b2e4702e2",
+              "sha256:2fb2a7ac681c37c9af30e9db6c34a01ad57e017dcadbc3ecff4c3c5c90dda524",
+              "sha256:d52b14794d0ebc0d1f1e7def5e96717d159b1fa6b8cc1d53e8585a247d67e413",
+              "sha256:73f59716dd0e95ace0ee203daa77d45d4a880e3d4f775631469592e975b2c0c8",
+              "sha256:319f09fb8cd32006e7faad0f82752764ec389922b88adacf459ad373243921e6",
+              "sha256:9c1edfb7fff9f7880fc12d8f5d20d0e1440c529f61298da526e524e6a8d19ff6"
+            ]
+          }
+        }
+      },
+      "pre_main_review": {
+        "passed": true,
+        "python_flags": [
+          "-I",
+          "-S",
+          "-B",
+          "-X",
+          "pycache_prefix=/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/parent-cache"
+        ],
+        "full_inputs_and_actual_readonly_preflight": true,
+        "once_marker_present": false,
+        "resources_apps_models_compilers_started": false
+      },
+      "execute_argv": [
+        "/home/horde/src/adhd/.venv/bin/python",
+        "-I",
+        "-S",
+        "-B",
+        "-X",
+        "pycache_prefix=/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/parent-cache",
+        "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/driver.py",
+        "--execute",
+        "--work",
+        "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01",
+        "--plan-sha256",
+        "c026688bc775429f4af100beb675af4cc76da2d6a6416e60624ca76842fa2127"
+      ],
+      "planned_jobs": [
+        {
+          "name": "compose",
+          "owned_name": "adhd-final-c05-model-compose",
+          "port": 18970,
+          "relay_port": 18972,
+          "argv": [
+            "/home/horde/src/adhd/.venv/bin/python",
+            "-s",
+            "-B",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/frozen/tests/kafka_final_platform.py",
+            "--platform",
+            "compose",
+            "--name",
+            "adhd-final-c05-model-compose",
+            "--image",
+            "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+            "--context",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/context",
+            "--acceptance-report",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/bound/admission.json",
+            "--work",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/compose-work",
+            "--report",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/compose.json",
+            "--port",
+            "18970",
+            "--model-only",
+            "--model-relay-port",
+            "18972"
+          ]
+        },
+        {
+          "name": "k8s",
+          "owned_name": "adhd-final-c05-model-kind",
+          "port": 18971,
+          "relay_port": 18973,
+          "argv": [
+            "/home/horde/src/adhd/.venv/bin/python",
+            "-s",
+            "-B",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/frozen/tests/kafka_final_platform.py",
+            "--platform",
+            "k8s",
+            "--name",
+            "adhd-final-c05-model-kind",
+            "--image",
+            "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+            "--context",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/context",
+            "--acceptance-report",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/bound/admission.json",
+            "--work",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/k8s-work",
+            "--report",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/k8s.json",
+            "--port",
+            "18971",
+            "--model-only",
+            "--model-relay-port",
+            "18973",
+            "--kubectl",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+            "--kubeconfig",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/deployed-model40-compiled05-prepare01/bound/kubeconfig",
+            "--kind-node",
+            "adhd-event-qual-control-plane",
+            "--cluster-image",
+            "adhd-hub:qa40-compiled05",
+            "--broker-image",
+            "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+            "--proxy-image",
+            "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a"
+          ]
+        }
+      ]
+    }
+  ],
+  "shared_model_lease": "/home/horde/src/adhd/_build/roadmap/model18770.lane.lock",
+  "scope": "Read-only metadata capture, full host/helper/deploy/context/kube/tool closures and isolated pre-main checks only. Root performed prior tag import. No security or model workload executed. Model gate requires separate all-agent release/handoff and cooperative lock; <=12POST/platform, serialComposeKind. Secured gate optionalEnterprise/permittedtrial only, noNetworkPolicyenforcement/SASL_SSL claim. Existing baseline and historical false plans retained."
+}

@@ -1,0 +1,118 @@
+{
+  "suite": "project-recovery-incoming-peer-jobs",
+  "started_at": "2026-10-22T01:09:32.670940+00:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "actual-source-and-discovery-incoming-jobs-backed-up-with-original-bindings-and-deadlines",
+      "passed": true,
+      "scenario": "source",
+      "incoming_query_ids": {
+        "source": "sourcequery_68394028b4d6e88feda65b8c5fa96d85_2",
+        "discovery": "query_68394028b4d6e88feda65b8c5fa96d85_3"
+      },
+      "backup_manifest_sha256": "aed59f7673945fff2c9b9f9857eb35716bb3e44e9959691226a6a5126316bbab",
+      "provider_posts": 0
+    },
+    {
+      "name": "old-incoming-model-success-cannot-cross-peer-project-recovery-epoch",
+      "passed": true,
+      "scenario": "source",
+      "loss_witness": {
+        "nonce": "993546e74184460c8ccc1493bfb3fa72",
+        "project_id": "project-red",
+        "reason": "killed",
+        "store_pid": "#PID<0.320.0>",
+        "vm_pid": "2811506"
+      },
+      "accepted_command_evidence_and_binding_preserved": true,
+      "original_deadlines_unchanged": true
+    },
+    {
+      "name": "fresh-incoming-evaluation-keeps-original-wire-identities-and-survives-peer-cold-restart",
+      "passed": true,
+      "scenario": "source",
+      "fresh_publication_id": "publication_cb82352bf4babe4620b00cae87f1dd17_1",
+      "allocation_epoch": "cb82352bf4babe4620b00cae87f1dd17",
+      "provider_posts": 0
+    },
+    {
+      "name": "actual-source-and-discovery-incoming-jobs-backed-up-with-original-bindings-and-deadlines",
+      "passed": true,
+      "scenario": "discovery",
+      "incoming_query_ids": {
+        "source": "sourcequery_68394028b4d6e88feda65b8c5fa96d85_4",
+        "discovery": "query_68394028b4d6e88feda65b8c5fa96d85_5"
+      },
+      "backup_manifest_sha256": "d42545edd48631c820dc7fdc76d2c25836d232a426c9a8e1c8e1514d7a6fd769",
+      "provider_posts": 0
+    },
+    {
+      "name": "old-incoming-model-success-cannot-cross-peer-project-recovery-epoch",
+      "passed": true,
+      "scenario": "discovery",
+      "loss_witness": {
+        "nonce": "1f48d62e9ce64c268a403de30e18a4e3",
+        "project_id": "project-red",
+        "reason": "killed",
+        "store_pid": "#PID<0.320.0>",
+        "vm_pid": "2830572"
+      },
+      "accepted_command_evidence_and_binding_preserved": true,
+      "original_deadlines_unchanged": true
+    },
+    {
+      "name": "fresh-incoming-evaluation-keeps-original-wire-identities-and-survives-peer-cold-restart",
+      "passed": true,
+      "scenario": "discovery",
+      "fresh_publication_id": "publication_2497a673952da968f02b25cb0c4031c7_1",
+      "allocation_epoch": "2497a673952da968f02b25cb0c4031c7",
+      "provider_posts": 0
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "harness_sha256": "0a97ff32ff3673c6545c1df3f61f43c3c84564db85f22aa780d4018f91c80321",
+  "scope": "Native incoming accepted source/discovery snapshot preservation, actual model callback epochs and current peer authorization; local controlled typed model only, not provider quality, Docker or release admission.",
+  "limits": {
+    "native_startup_seconds": 150,
+    "original_query_deadline_ms": 120000,
+    "model_hold_seconds": 30,
+    "model_slots": 8,
+    "model_inventory": 1024
+  },
+  "dependency_sha256": {
+    "/home/horde/src/adhd/tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "/home/horde/src/adhd/components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+    "/home/horde/src/adhd/.worktrees/acceptance/tests/project_recovery_queries.py": "a729671df0900779d48bb9f2ebf9a69e96d79479b9231a2c26793e293cf05e08",
+    "/home/horde/src/adhd/.worktrees/acceptance/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "/home/horde/src/adhd/.worktrees/acceptance/tests/multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c"
+  },
+  "broker_cluster_ids": [
+    "MkU3OEVBNTcwNTJENDM2Qk",
+    "NEiAAXk0v1xqZFCdSDoQjA"
+  ],
+  "model_relay_errors": [],
+  "controlled_model_requests": 16,
+  "provider_posts": 0,
+  "finished_at": "2026-10-22T01:12:11.769138+00:00",
+  "failure_type": "AssertionError",
+  "raw_report_sha256": "0cb711130248a6ebfc2cb1ea1764eecc65a72e0a9644f923d72a23059efa7994",
+  "terminal_log_sha256": "b0a72beb0d64339cec8b24edd54ea9e6b8db47b0040a167e5634d97f475b2d14",
+  "model_summary": {
+    "observations": 16,
+    "held": 4,
+    "errors": []
+  },
+  "failure_observation": {
+    "stage": "config_update for final current peer-grant revocation",
+    "http_status": 400,
+    "code": "INVALID_PARAMS",
+    "fixture_input": "project_pairs:[]",
+    "interpretation": "Unsupported fixture revocation shape; six incoming restoration/callback/restart groups passed beforehand. Final current-authorization witness unproven in this run; original remains failed."
+  },
+  "qualification": "Scoped native unadmitted development evidence; no complete-suite PASS, semantic quality, image or release admission claim."
+}

@@ -1,0 +1,105 @@
+{
+  "schema": "adhd/storage-rebind-native-check@1",
+  "passed": true,
+  "scope": "Actual native CLI/full-server moved restore and real metadata fsync+kernel-kill boundaries; no image claim",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "f29504d7411a73e6bec07d929024e9f0d0d216c07b0ba03e313d71d32a4ba106",
+  "fault_hook_sha256": "214336e720e505aa0da8e2cfd6049fe9fc821220e9b8e9df7727b3702c694b08",
+  "checks": [
+    {
+      "id": "initial-complete-three-project-rebind",
+      "passed": true,
+      "projects": [
+        "project-blue",
+        "project-red"
+      ]
+    },
+    {
+      "id": "real-two-project-publication-private-delivery-ack-fixture",
+      "passed": true
+    },
+    {
+      "id": "portable-bytes-identities-epochs-preserved-exact-receipt",
+      "passed": true,
+      "product_hashes_before": {
+        "project-blue": {
+          "checkpoint": "b07524b264d0a84de181d80a9df5d5ba68c9c81270166840cb426720a482a737",
+          "snapshot": "e1f2d333913c42a8177e41d72f72d296a8bfe6d9cba3e95a1f87d3b50534e61e"
+        },
+        "project-red": {
+          "checkpoint": "65bf4eea9240bbec772beb35a7baa969756756714d5b5223fa9bb35e59d69a2d",
+          "snapshot": "7be42456b74474667ab272804d24ed98fa8c1f1e97042097eafec4f7598796f2"
+        }
+      },
+      "product_hashes_after": {
+        "project-blue": {
+          "checkpoint": "b07524b264d0a84de181d80a9df5d5ba68c9c81270166840cb426720a482a737",
+          "snapshot": "e1f2d333913c42a8177e41d72f72d296a8bfe6d9cba3e95a1f87d3b50534e61e"
+        },
+        "project-red": {
+          "checkpoint": "65bf4eea9240bbec772beb35a7baa969756756714d5b5223fa9bb35e59d69a2d",
+          "snapshot": "7be42456b74474667ab272804d24ed98fa8c1f1e97042097eafec4f7598796f2"
+        }
+      }
+    },
+    {
+      "id": "actual-moved-cold-start-facts-source-mid-retries-and-acks",
+      "passed": true,
+      "old_anchor_parent_absent": true
+    },
+    {
+      "id": "missing-mapping-before-decision-unchanged",
+      "passed": true
+    },
+    {
+      "id": "wrong-snapshot-before-decision-unchanged",
+      "passed": true
+    },
+    {
+      "id": "foreign-server-before-decision-unchanged",
+      "passed": true
+    },
+    {
+      "id": "invalid-checkpoint-before-decision-unchanged",
+      "passed": true
+    },
+    {
+      "id": "actual-retained-recovery-history-receipts-preserved-ready-plans-stale",
+      "passed": true,
+      "plans_staled": 3
+    },
+    {
+      "id": "decision-durable-kernel-kill-exact-recovery",
+      "passed": true,
+      "witness": {
+        "stage": "decision-durable",
+        "pid": 1430968,
+        "directory_fsync_result": 0
+      },
+      "exit_code": -9,
+      "product_bytes_unchanged": true
+    },
+    {
+      "id": "registry-durable-kernel-kill-exact-recovery",
+      "passed": true,
+      "witness": {
+        "stage": "registry-durable",
+        "pid": 1439733,
+        "directory_fsync_result": 0
+      },
+      "exit_code": -9,
+      "product_bytes_unchanged": true
+    },
+    {
+      "id": "receipt-durable-kernel-kill-exact-recovery",
+      "passed": true,
+      "witness": {
+        "stage": "receipt-durable",
+        "pid": 1449306,
+        "directory_fsync_result": 0
+      },
+      "exit_code": -9,
+      "product_bytes_unchanged": true
+    }
+  ]
+}

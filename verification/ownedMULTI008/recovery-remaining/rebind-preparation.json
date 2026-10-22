@@ -1,0 +1,47 @@
+{
+  "schema": "adhd/image-public-rebind-preparation@1",
+  "passed": true,
+  "runtime_ready": false,
+  "actual_image_cli_qualified": false,
+  "compiler_apps_loaders_brokers_providers_started": 0,
+  "pure_runtime_adapter_checks": 10,
+  "existing_generic_fault_checks": 11,
+  "source_assertions": {
+    "storage_rebind.py": {
+      "original_assertions": 34,
+      "all_preserved": true,
+      "baseline_sha256": "f29504d7411a73e6bec07d929024e9f0d0d216c07b0ba03e313d71d32a4ba106",
+      "candidate_sha256": "e6f4811a6f87aca224eced85aa4d8720f7b6068fa81a32bcb32dc057400531c0"
+    },
+    "storage_rebind_hostile.py": {
+      "original_assertions": 4,
+      "all_preserved": true,
+      "baseline_sha256": "0803326cbb0d404a2afae8d80fb669da686e7a0976c5468914324901dc631b8d",
+      "candidate_sha256": "1ec9c98822ca3da93eba3ee64e2fca6d401a6d0eef4571b3525f65af30c45149"
+    }
+  },
+  "files": {
+    "tests/image_rebind_runtime.py": "59c12495fa46fce99a714711def060911f958182d82318a985f6af70ba872df5",
+    "tests/image_rebind_runtime_unit.py": "33dbff28678109677fe0f7804153e5c95dc0bbbc9faffeb3b1ecd47cf31d922b",
+    "tests/image_filesystem_fault.py": "ba9ae1d855756572ddc83446c1036d3c6c5a39cb167d54479d4e2091bf8cc23e",
+    "tests/storage_rebind.py": "e6f4811a6f87aca224eced85aa4d8720f7b6068fa81a32bcb32dc057400531c0",
+    "tests/storage_rebind_hostile.py": "1ec9c98822ca3da93eba3ee64e2fca6d401a6d0eef4571b3525f65af30c45149"
+  },
+  "seam": [
+    "Original native CLI branch/assertions/bounds retained; image paths use actual immutable-image /app/hub.exs public argv and same-absolute own work bind, hostUID/GID, readonly root/capdrop. No product/metadata rewriting by adapter.",
+    "Offline CLI networknone; actual serving fixture uses original hostnetwork for public A2A/health checks. Observes actual BEAM executable/cmdline/private PID namespace and exact image+User+hostVM PID before accepting CLI completion.",
+    "Exact artifact/manifest and optional source-specific qualified rebind library/proof validated before starts. Original3 fsync stages use generic observed actual BEAM pidfdSTOP/T/KILL137/wait/absence; retry uses clean ordinary CLI.",
+    "CLI150s, serving100s and fsync140s bounds unchanged; returned stdout/stderr/exit preserved; primary errors retained across cleanup failures and unknown cleanup blocks replacements.",
+    "Hostile6 original mutated COPY bytes/explicit hashes/no decision/all-copy-byte-equality assertions unchanged; fixtures and accepted original products untouched."
+  ],
+  "unqualified_until_parent_GO": [
+    "Actual image CLI loader/UID/absolute path behavior",
+    "Ordinary moved whole-set+history cold scenario",
+    "All3 actual fsync kills/retries",
+    "All6 actual hostile rejected CLI cases"
+  ],
+  "pure_reports": {
+    "rebind-pure.log": "8281743bea3451f56a29ecbb1480e82a9b50cefcb94da96d3b9a412b2daa0058",
+    "generic-fault-pure.log": "e323c6148d70dbd1a9c9435dbc004eccf6875b88d60548cf45fbe417c1a7d125"
+  }
+}

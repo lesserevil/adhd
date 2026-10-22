@@ -1,0 +1,30 @@
+{
+  "suite": "recovery-developer-agent-admission",
+  "started_at": "2026-10-22T00:01:09.031982+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "developer-can-create-fresh-agent-with-explicitly-uninitialized-unadmitted-projects-without-opening-them",
+      "passed": true
+    },
+    {
+      "name": "known-initialized-missing-foreign-project-fails-developer-identity-creation-closed",
+      "passed": true,
+      "http_status": 400,
+      "error_code": "INVALID_PARAMS",
+      "configuration_unchanged": true,
+      "new_token_denied": true
+    },
+    {
+      "name": "exact-evidence-restoration-allows-same-unaccepted-command-and-preserves-foreign-private-delivery",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "harness_sha256": "b23e3c289e34e937e209665e7d0e6309a013008a1237fc2f33303198736b5365",
+  "artifact_sha256": "2c700cd6b9306df79492d4f4b509cdbddacbd730460cc4f79406a5f0ccb49d39",
+  "finished_at": "2026-10-22T00:02:15.379761+00:00"
+}

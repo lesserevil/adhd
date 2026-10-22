@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/kafka_network_policy_oci.py", line 171, in <module>
+    args = p.parse_args(); print(json.dumps(prepare(args.images, args.manifests, args.work)))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/kafka_network_policy_oci.py", line 151, in prepare
+    else: blob_rows.append(download(image['repository'], item, path, deadline))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/kafka_network_policy_oci.py", line 90, in download
+    response.fp.raw._sock.settimeout(min(40, remaining))
+    ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'raw'

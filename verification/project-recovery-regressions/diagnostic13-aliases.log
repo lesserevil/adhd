@@ -1,0 +1,29 @@
+Traceback (most recent call last):
+  File "ROOT/tests/multi_aliases.py", line 116, in <module>
+    asyncio.run(main(parser.parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "ROOT/tests/multi_aliases.py", line 49, in main
+    await f.start()
+  File "ROOT/tests/multi_support.py", line 158, in start
+    await self.initialize_unknown_projects()
+  File "ROOT/tests/multi_support.py", line 179, in initialize_unknown_projects
+    admin = self.admin()
+            ^^^^^^^^^^^^
+  File "ROOT/tests/multi_support.py", line 236, in admin
+    text = (self.root / "initial-admin-password.txt").read_text()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'WORKTREE/_build/kafka/regression13/aliases/initial-admin-password.txt'

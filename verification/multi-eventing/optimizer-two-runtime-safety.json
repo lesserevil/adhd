@@ -1,0 +1,75 @@
+{
+  "schema": "adhd/two-runtime-optimizer-safety-preparation@1",
+  "status": "PREPARATION_PASS_NO_RUNTIME_OR_QUALITY_QUALIFICATION",
+  "qualification": "none",
+  "hubs_started": 0,
+  "image_containers_started": 0,
+  "real_provider_posts": 0,
+  "cohort_originals_published_or_replaced": 0,
+  "final_targets_bound": false,
+  "final22_session": 98571,
+  "final22_exit_code": 0,
+  "preparation_tests_passed": 22,
+  "owned_loopback_transport_tests_passed": 11,
+  "process_policy": "Preparation tests patch subprocess.Popen/run to reject startup; two closed-gate relay construction tests use owned loopback listeners only. Transport11 uses only owned loopback fixtures, not18770.",
+  "authored_files_sha256": {
+    "tests/optimization_neutral_pair.py": "4d4b53dfee3c1ddf9aeed10446a3c64547e8cc7a19ffe2af1164413a974da4a7",
+    "tests/optimization_neutral_runtime.py": "b5197f1a764a6b28bdeff8ad3a8beb741a04c113d9fce1b17fe6f61b4838cd18",
+    "tests/optimization_neutral_witness.py": "b188bd280f43cb9e71183d436de428ea6d92f65a7425bf8694065e48009d5412",
+    "tests/optimization_neutral_preparation_test.py": "5f8a7dc7dcb56b278137953a7c5b1829c7036b5ba64d6bc8341c0e60a2f25c44",
+    "tests/fixtures/optimizer-neutral-two-runtime-safety.json": "4750e40bd89e3705e7c84f4ce4209d8f7f49b4c5f474a1e1f86071194b621e3e"
+  },
+  "proof_files_sha256": {
+    "transport11.json": "da684a3f0c6b2f5720288257e56f7946897f11f3b0e5ded1e4b3cc0bf4b6fa4a",
+    "transport11.log": "c844a69b8836ab7a36ca10676e0dca5f552154d10aec6ae2e0dc2c38f02e133b",
+    "final22.log": "9ddde580566ee2cbdb9eb5d62befe8f7a84a8902243b4c2508597ad37a6449eb",
+    "initial21of22.log": "4c4d3788e1581a16590f4dac29eba883b39c74095df1eded3753f0a21066d031"
+  },
+  "review": {
+    "independent": "Contracts reviewed all four safety diffs: safe held-FD append, final log inode checks, partial startup/relay cleanup and typed post-cleanup continuation address identified defects.",
+    "root": "Read all code and test changes, refreshed only stale prospective pair pin after final code change, then reran22 preparations successfully and pure check-plan. Verified actual11transport code hashes. No provider execution approved by this record.",
+    "fresh_safety_manifest_sha256": "4750e40bd89e3705e7c84f4ce4209d8f7f49b4c5f474a1e1f86071194b621e3e",
+    "driver_sha256": "4d4b53dfee3c1ddf9aeed10446a3c64547e8cc7a19ffe2af1164413a974da4a7"
+  },
+  "initial_failure_preserved": {
+    "passed": 21,
+    "failed": 1,
+    "classification": "Owned relay-log inode could be reused after unlink/recreate while its descriptor was not retained.",
+    "repair": "Keep the exclusive owned descriptor open through relay lifetime, append through it after binding validation, verify final pathname binding, close on all constructor/cleanup paths.",
+    "cohort_or_model_outcome": false
+  },
+  "historical_proofs_unchanged": {
+    "old_prospective_manifest_sha256": "a9771b97a9dd62f776e6a08e1ecbcf6f8c41658aa10019d83a0ec8869663f1e2",
+    "old15check_proof": "verification/multi-eventing/optimizer-two-runtime-preparation.json",
+    "semantic_plan_unchanged": true
+  },
+  "safety_policy": {
+    "allowed_failed_classes": [
+      "experiment_failed",
+      "provider_unavailable",
+      "runtime_unavailable"
+    ],
+    "stop_classes": [
+      "custody_violation",
+      "budget_scope_violation",
+      "cleanup_failed",
+      "harness_error"
+    ],
+    "required_proof": [
+      "owned_runtime_closed",
+      "relay_closed",
+      "no_budget_scope_violation",
+      "current_custody_valid",
+      "pins_intact",
+      "unrun_seals_intact"
+    ],
+    "unknown_assertion": "harness_error; stop",
+    "outcome_based_input_changes": false
+  },
+  "limits": [
+    "Preparation-only checks do not establish positive learned-winner quality or current38 runtime/image behavior.",
+    "Prior30 QUALITY_REGRESSION and34 MIN_EVIDENCE remain failed.",
+    "Final actual receipt/artifact/staged-payload binding review, both model-free six-original closed seals, and final exact plan/code review remain required before any real inference.",
+    "Same seven semantic cases run independently on two runtime profiles, not14 independent cases;106POST/900seconds perruntime and212/1800aggregate remain unchanged."
+  ]
+}

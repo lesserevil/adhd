@@ -1,0 +1,73 @@
+{
+  "schema": "adhd/physical-retention@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "publish-and-publish-record-preserve-new-acceptance-message-source-retry-and-disabled-legacy-receipts",
+      "passed": true
+    },
+    {
+      "name": "actual-delete-records-log-start-advancement-reconstructs-missing-originals-with-search-and-ack-preservation",
+      "passed": true,
+      "physical_operation": "Kafka Admin DeleteRecords via kafka-delete-records",
+      "previous_checkpoint": 2,
+      "log_start_before": 0,
+      "log_start_after": 4,
+      "reconstructed_originals": 2
+    }
+  ],
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "harness_sha256": "ac7e184d23ed2d86f386d4e3e218d1781e0357c04340439a4ed3ae39a320533f",
+  "limitations": [
+    "DeleteRecords advances actual Kafka log start; this does not claim a wall-clock retention expiry wait.",
+    "One real broker; no replicated durability or semantic model claim."
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "network_mode": "host",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "09d493c456fef21434ab9c86ae251b12ef3e0c62fd54f0363b8d96bb6919440e",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "09d493c456fef21434ab9c86ae251b12ef3e0c62fd54f0363b8d96bb6919440e",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "0c9fd2ea9a0dbfc06aa0694567205fa4d292353e462b002f3886e95de5b05a9a",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "0c9fd2ea9a0dbfc06aa0694567205fa4d292353e462b002f3886e95de5b05a9a",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "95349e1faa2b24d6f466782beec971e16c6e206424271ce4e7d8a531a7f5a082",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "stopped",
+        "container_id": "95349e1faa2b24d6f466782beec971e16c6e206424271ce4e7d8a531a7f5a082",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ]
+  }
+}

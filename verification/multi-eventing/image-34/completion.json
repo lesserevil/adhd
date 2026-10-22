@@ -1,0 +1,32 @@
+{
+  "schema": "adhd/image-eventing-completion@1",
+  "passed": true,
+  "checks": 74,
+  "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+  "reports": [
+    {
+      "path": "qualified.json",
+      "checks": 69,
+      "sha256": "6a8e6ce96f50b0f2c11a2acac8a5e3b22a4b68db0176c86179576791db3c91e1"
+    },
+    {
+      "path": "../rebalance-34/image.json",
+      "checks": 5,
+      "sha256": "ea438a50603ab387e589db31c501e1079ec86be96e511cd2a64ea82e790f2335"
+    }
+  ],
+  "retained_failures": [
+    "matrix.json: first image rebalance failed diagnostic deleted-consumer observation; all other jobs passed.",
+    "../rebalance-34/image-attempt-01.json",
+    "../rebalance-34/attempt-01.json"
+  ],
+  "scope": "Actual immutable-image feature matrix, physical Kafka log truncation, broker outage, three independent Kafka/hub services, actual managed observer rebalances alongside manual bridge, Docker KILL/replacement with durable checkpoint/ack recovery.",
+  "limitations": [
+    "Explicit assignment bridge does not implement coordinator-managed ownership transfer, multiple hub writers or HA.",
+    "Native C fsync/Config-transition fault proofs remain native; no such image syscall claim.",
+    "Controlled model fixtures do not prove semantic quality or optimizer promotion.",
+    "Single-broker services do not qualify replicated Kafka durability."
+  ]
+}

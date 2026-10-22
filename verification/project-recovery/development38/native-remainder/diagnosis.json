@@ -1,0 +1,22 @@
+{
+  "schema": "adhd/primitive-epoch-readonly-diagnosis@1",
+  "classification": "missing_fixture_module_dependency",
+  "app_defect_established": false,
+  "fixture_sha256": "f04c8b0ec2ad7f8076429301dfa2a06a8046a7f0d4bd889e79fb340355a8f38b",
+  "store_module_sha256": "9025429a9aed41aec1e3d135bb9bd5974ff79ee326c247708a657a510cffcc8a",
+  "storage_module_sha256": "2ff6f2ac7d6191b346c502c81d1030bcf02f9ca132e95358689f47d132ec889b",
+  "observed": "Three ExUnit tests:two passed; current-origin positive Store callback at fixture line68 returned INTERNAL instead of ok; stale-origin gate already passed.",
+  "loaded_modules": [
+    "domain",
+    "projects",
+    "directory",
+    "project_backup",
+    "storage_registry",
+    "config",
+    "resources",
+    "store"
+  ],
+  "read_only_path": "Store transaction lines223-227 computes missing x.digest through ADHD.Storage.bytes(state). Fixture omits storage.exs, sole definition of ADHD.Storage; UndefinedFunctionError is rescued as INTERNAL.",
+  "limitation": "No diagnostic runtime or retry performed; this identifies a missing dependency seam from exact frozen bytes, not a new app behavior proof.",
+  "approved_next_preparation": "Load actual storage.exs, preserving all assertions/state/callback/deadlines; new18-row failed+unrun plan requires root review before execution."
+}

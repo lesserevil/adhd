@@ -1,0 +1,1265 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 9170acb..32321cd 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -2,6 +2,11 @@
+ 
+ ## Unreleased
+ 
++- Add development accepted-cache-only export for qualified retained source without
++  the original input path, coding agent or model transport. Preserve exact current
++  review bindings, reject stale/retired/ambiguous membership and rerun independent
++  acceptance before export; ordinary source-admission worker checks remain intact.
++
+ - Admit native FreeBSD x86-64/aarch64 targets in pinned repository child lifecycle
+   declarations. Preserve read-only planning, exact host-target execution matching
+   and refusal of unsupported targets. Native and installed renewal is in progress.
+diff --git a/PROJECT.md b/PROJECT.md
+index 1207250..1cb4e02 100644
+--- a/PROJECT.md
++++ b/PROJECT.md
+@@ -72,6 +72,14 @@ development (2026-09-10):
+ 
+ ## Current work
+ 
++RETAINED-EXPORT-001 addresses Goals 1 and 4 with a local, path-free retained-source
++lookup for accepted-cache-only artifact export. Fifteen focused checks pass,
++including actual export without the original input, current acceptance refusal
++and preserved retirement. Functional regression repair completes with 1,740 passed
++and 100 explicit skips; repository review checks pass. This local implementation
++retains a pending clean full release qualification/publication gate and does not
++claim an upstream merge, release or downstream distribution upgrade.
++
+ RETAINED-CATALOG-001 (issue #74) extends Goals 1, 4 and 6 with complete
+ retained-input ownership by exact canonical Components. Coverage must use the
+ real authored catalog, preserve target-specific lock and source authority
+diff --git a/docs/architecture/component-execution-plans.md b/docs/architecture/component-execution-plans.md
+index d8ac0f5..1d4209e 100644
+--- a/docs/architecture/component-execution-plans.md
++++ b/docs/architecture/component-execution-plans.md
+@@ -1240,6 +1240,21 @@ the invocation, execution plan and stage request without claiming model output,
+ route execution or provider evidence. Standard uses this proof path for retained
+ remote generation.
+ 
++Accepted-source-only rebuilds reconstruct retained selection from admitted cache
++membership, without the original private input path or an executable provider.
++The current component lock, validated project authority, exact target and admitted
++source tree reconstruct the retained review identity. Both cache request and source
++semantics identities must equal that review, with the retained no-model selector
++and exact canonical retained selection binding. Discovery ignores historical
++locks and reviews but rejects ambiguous current bindings; retired memberships
++cannot become candidates again. A miss never invokes generation. Restored source
++still undergoes current independent acceptance before artifact export. A full
++Standard accepted retained-source entry is sufficient for this path: its exact
++review binds the current project, lock and target, and its planned generation key
++is rechecked on restoration. It retains its full-cache type and prior provenance;
++it never impersonates source-only admission or supplies current acceptance.
++Ordinary source-only continuations retain their worker admission checks.
++
+ The configured GENERATE receiver and supervised operation fetch retained file
+ references before allocating a generation workspace or constructing the private
+ runtime. Only missing CAS blobs may use the explicit transfer source; corrupt
+diff --git a/docs/architecture/design-traceability.md b/docs/architecture/design-traceability.md
+index 3db397e..cd1a812 100644
+--- a/docs/architecture/design-traceability.md
++++ b/docs/architecture/design-traceability.md
+@@ -1,6 +1,6 @@
+ # Design traceability
+ 
+-<!-- literate-ai:authority-reviewed sha256:bbcf31204663fedb7df32f4c31aedbc390a393af4952ed33a4574040e2bd1b67 -->
++<!-- literate-ai:authority-reviewed sha256:5e81ffd66ef9e5bbda8aad1678713e65cd2c50ff407ad829cb8572658f0e0f50 -->
+ 
+ This matrix is the short map from product concepts to code and proof. Start here; read a
+ deeper document only for the row being changed.
+@@ -44,6 +44,7 @@ delivery.
+ | Clean major rebuild and generated checks | invariant boundary; case-count limits are current policy | current base/Flavor specifications, exact skill closure, and exact bytes of generated `source/tests/manifest.json` | new empty output, derived suite content identity, generated-suite validator, and provider-neutral `test-generated` port between build and acceptance | missing/stale/malformed or substituted suite, runner drift, authorization-evidence, ordering, and failed-suite/no-commit tests |
+ | Source-only per-Component generation | invariant authority boundary; scheduling bounds are policy | exact prepared node, generation key/context/budget/prompt/recipe/workspace identities, and optional exact direct-resume candidate | typed `GeneratedSourceCandidate`/run output/provenance/checkpoint plus `schedule_source_generation`; canonical bounded layers, exact direct reuse, dependent cancellation, and no build/cache/publication authority | closed-schema round trips, identity substitution, over-budget observation, reuse/invalidation, deterministic parallel order, and failed-provider cancellation tests |
+ | Authenticated inherited IDE-session generation | authenticated provider handoff with untrusted candidate output; no nested coding CLI | exact provider/session/key IDs; prepared request/plan/context/prompt/workspace/lock/recipe/model/output identities; authenticated ephemeral exact prompt bundle and workspace locator; nonce/deadline; source payload/tree, transcript, and provider evidence | `InheritedSessionSourceGenerator` plus create-once private directory transport/coordinator and generic Cursor `stop.followup_message` hook adapter; HMAC-authenticated request/context/response, current conversation/model/workspace verification, `require_live_cursor_hook` fail-closed when no stop-hook is present, single-owner terminal custody, source-only collection, no generated-source cache reuse, retained public handoff evidence, and verifier-owned Standard admission | API/CLI selection, exact context availability/tamper, Cursor conversation/model/workspace/transcript binding, missing-hook `inherited_session.current_session_unavailable`, output confinement, IDE/coordinator roundtrip, authentication/session/request/source/evidence mismatch, unsafe/replayed channel, disconnect, timeout, cancellation, cleanup, stale/late/duplicate response, and successful source admission |
++| Qualified retained-source cache export | exact current retained review and live verified membership; no executable/model or prior-acceptance claim | current project authority, Component lock, target, source tree and canonical retained review/binding; RETAINED-EXPORT-001 | distinct lookup-only retained selection, scoped provider discovery, exact retained cache namespace and unchanged current lifecycle gates | portable admission/export with original input removed, forbidden generation, current-oracle refusal preserving prior receipt/export, and retirement/stale/ambiguity checks |
+ | Standard generated-source admission and worker continuation | verifier-owned invariant boundary distinct from downstream artifact acceptance | exact generated source manifest/tree/BOM/test suite; Component lock/plan/key/recipe; distinct component-orchestration and per-node planned coding-CLI request identities; Flavor and skill closures; coding-CLI tool/transcript; selectors; installed framework distribution; verifier test plan/results; exact attempt-scoped directory-custody identity | `StandardSourceAdmissionEvidence` and immutable source-only membership; bounded disposable source-test copies retain exact original membership and copied source bytes/modes while excluding test outputs; candidate/provenance bind both request identities while `SourceDerivationCacheKey` uses only the planned coding-CLI request; `litai generate --admit` executes source tests and publishes only matching membership; `litai rebuild --from-accepted-source` requires every planned member, carries explicit short-root custody through the worker CLI and Standard execution request without cwd/environment rediscovery, starts at indexing/object work, carries admission identity into downstream results, and has no generation fallback | twelve-node shared orchestration with distinct planned requests; swapped-node, changed-orchestration, failed/changed tests and source, lock/plan/Flavor/framework/selector/provenance mismatch, transcript/schema/cache tamper, missing-member `source_cache.runtime_absent`, zero-generator worker continuation, greater-than-260-character checkout lookup exclusion, success/failure cleanup, and Linux/Windows wheel fanout |
+ | Standard lifecycle restart | non-authoritative recovery optimization with append-only evidence | exact execution plan, Component/generation/recipe identities, source-generation custody, immutable source blobs, stage subject, outcome, attempt, sequence, and predecessor | versioned Standard stage/checkpoint contracts plus filesystem CAS/head store; a restarted process rebinds source to its new workspace but must re-index, re-authorize, rebuild, retest, execute, and reaccept | schema/identity/status rejection, cross-store materialization and retry lineage, per-stage pass/failure ordering, zero-generator source resume, and real three-Component Bazel restart with build-cache hits |
+ | Concurrent target matrices | exact same-host cell isolation plus fail-closed aggregate evidence | deterministic Component/target/ordered-Flavor cell identity, cell-scoped lock and resolution audit, accepted source admission, lifecycle receipt, and exact aggregate cell set | each cell atomically materializes or validates its scoped lock before rebuild with the same selectors; rebuild must consume that exact lock identity; per-cell `plan → lock → source-admission → lifecycle` evidence and the aggregate reject missing, stale, mismatched, foreign, partial, or failed state | fresh Linux/Windows/macOS lock-before-rebuild, same-Component isolation, deterministic concurrent creation, mismatched/unconsumed lock rejection, mixed-result aggregate rejection, and reduced large-declaration ordering regressions |
+diff --git a/docs/roadmap/active-work.md b/docs/roadmap/active-work.md
+index 39e0a15..c735f55 100644
+--- a/docs/roadmap/active-work.md
++++ b/docs/roadmap/active-work.md
+@@ -29150,3 +29150,34 @@ separate context. Lint/format, layout/export and strict specifications pass;
+ all 121 documentation diagrams render. Native/installed renewal remains open.
+ **Next action in progress:** qualify this exact implementation through the full
+ suite and native execution before exposing it to the operator workstation.
++
++### [x] RETAINED-EXPORT-001 — Export qualified retained-source cache artifacts without a coding CLI
++
++- **GitHub issue:** [#97](https://github.com/jordanhubbard/literate-ai/issues/97)
++- **Priority:** P1
++- **Owner:** accepted-source reconstruction and Standard artifact export
++- **Direction:** Permit admitted retained-source cache entries to be rebuilt and exported with current independent acceptance.
++- **Conclusion:** Issue #97 identifies a lookup-only selection reconstruction failure. Preserve retained origin, exact reviewed binding and fail-closed current acceptance; never invoke a model or invent an executable identity.
++- **Depends on:** none
++- **Implementation:**
++  - [x] Reconstruct a distinct lookup-only retained selection preserving the accepted tool binding and retained-origin schema.
++  - [x] Keep unknown providers and changed or unadmitted inputs rejected; preserve ordinary coding-CLI cache semantics.
++- **Evidence:**
++  - [x] Run a portable retained admission, accepted-cache-only build and current-acceptance artifact export round trip.
++  - [x] Prove lookup misses cannot spawn a model and unknown or stale bindings remain rejected.
++  - [x] Complete framework functional regression repair and repository review checks for the local patch.
++
++Local focused acceptance: `make python-check PYTHON_TEST_PATTERN=test_retained_source_*.py`
++passes all 15 checks. The portable export fixture removes the original input tree,
++forbids agent discovery/generation, exports accepted source and checks its digest.
++A deliberately failing current oracle preserves the prior receipt/export; actual
++membership retirement remains effective. Metadata tests reject stale authority,
++target and lock, inconsistent review/binding and genuinely ambiguous current trees.
++The fresh focused rerun passes 15 checks in 65.182 seconds. Full functional
++regression repair finishes with 1,740 passed and 100 explicit skips. The checkpoint
++runner deliberately returns its repair-complete code and resets the checkpoint;
++this is not a clean full release-gate attestation. Lint, format, layout and public
++export checks pass. The changed contract and traceability have a current CLI-recorded
++documentation authority review. This is a reviewable local patch. Clean full release
++qualification and upstream publication remain future publication gates; issue #97
++stays open and no downstream distribution upgrade is claimed.
+diff --git a/src/literate_ai/adapters/cache/generated_source.py b/src/literate_ai/adapters/cache/generated_source.py
+index 3f25bfa..c596fa8 100644
+--- a/src/literate_ai/adapters/cache/generated_source.py
++++ b/src/literate_ai/adapters/cache/generated_source.py
+@@ -16,6 +16,7 @@ import tempfile
+ import threading
+ import time
+ from collections.abc import Iterator, Mapping
++from dataclasses import replace
+ from pathlib import Path
+ 
+ from literate_ai._cache_lock import (
+@@ -354,6 +355,12 @@ class CachedCodingCliSourceGenerator:
+                 bounded_prompt=bounded_prompt,
+             ),
+         )
++        if self.selection.name == RETAINED_SOURCE_PROVIDER:
++            key = replace(
++                key,
++                request_identity=self.selection.review_identity,
++                source_semantics_identity=self.selection.review_identity,
++            )
+         return key, prompt
+ 
+     def _publish(
+diff --git a/src/literate_ai/adapters/models/coding_cli.py b/src/literate_ai/adapters/models/coding_cli.py
+index 8bb2218..f93bee8 100644
+--- a/src/literate_ai/adapters/models/coding_cli.py
++++ b/src/literate_ai/adapters/models/coding_cli.py
+@@ -2165,6 +2165,10 @@ class RetainedSourceSelection:
+ 
+     retained_source: RetainedSourceInput
+ 
++    @property
++    def review_identity(self) -> ContentIdentity:
++        return self.retained_source.identity
++
+     def __post_init__(self) -> None:
+         from literate_ai.adapters.retained_source import RetainedSourceInput
+ 
+@@ -2198,6 +2202,47 @@ class RetainedSourceSelection:
+         self.retained_source.require_unchanged()
+ 
+ 
++@dataclass(frozen=True, slots=True)
++class AcceptedRetainedSourceSelection:
++    """Lookup authority only; no original path, executable or model claim."""
++
++    review_identity: ContentIdentity
++    accepted_tool_binding_identity: ContentIdentity
++
++    def __post_init__(self) -> None:
++        if not isinstance(self.review_identity, ContentIdentity) or not isinstance(
++            self.accepted_tool_binding_identity, ContentIdentity
++        ):
++            raise TypeError(
++                "retained lookup requires typed review and binding identities"
++            )
++        self.require_unchanged()
++
++    @property
++    def name(self) -> str:
++        return RETAINED_SOURCE_PROVIDER
++
++    @property
++    def identity(self) -> str:
++        return canonical_identity(self.to_dict()).uri
++
++    @property
++    def tool_binding_identity(self) -> str:
++        return self.accepted_tool_binding_identity.uri
++
++    def to_dict(self) -> dict[str, object]:
++        return {
++            "schema": "literate-ai/retained-source-selection@1",
++            "origin": self.name,
++            "review_identity": self.review_identity.uri,
++            "generation_provider": None,
++        }
++
++    def require_unchanged(self) -> None:
++        if self.identity != self.accepted_tool_binding_identity.uri:
++            raise ValueError("accepted retained binding differs from reviewed input")
++
++
+ @dataclass(frozen=True, slots=True)
+ class AcceptedSourceCodingCliSelection:
+     """Portable lookup-only selection reconstructed from accepted cache authority."""
+@@ -2922,14 +2967,25 @@ class CodingCliSourceGenerator:
+         cls,
+         provider_id: str,
+         tool_binding_identity: ContentIdentity,
++        *,
++        retained_review_identity: ContentIdentity | None = None,
+     ) -> CodingCliSourceGenerator:
+         """Reconstruct cache-key semantics without an executable generator."""
+ 
+         runtime = cls.__new__(cls)
+         runtime.environment = {}
+-        runtime.selection = AcceptedSourceCodingCliSelection(
+-            provider_id, tool_binding_identity
+-        )
++        if provider_id == RETAINED_SOURCE_PROVIDER:
++            runtime.selection = AcceptedRetainedSourceSelection(
++                retained_review_identity, tool_binding_identity
++            )
++        else:
++            if retained_review_identity is not None:
++                raise ValueError(
++                    "ordinary providers cannot carry retained review authority"
++                )
++            runtime.selection = AcceptedSourceCodingCliSelection(
++                provider_id, tool_binding_identity
++            )
+         runtime.source_intelligence_mode = "off"
+         runtime.source_intelligence_provider = None
+         runtime._accepted_source_lookup_only = True
+@@ -4455,11 +4511,13 @@ def _coding_cli_binding_prompt(
+     *,
+     prompt_override: str | None = None,
+ ) -> str:
+-    if isinstance(selection, RetainedSourceSelection):
++    if isinstance(
++        selection, (RetainedSourceSelection, AcceptedRetainedSourceSelection)
++    ):
+         selection.require_unchanged()
+         return (
+             "# Exact retained-source input binding\n\n"
+-            f"Review identity: `{selection.retained_source.identity.uri}`\n"
++            f"Review identity: `{selection.review_identity.uri}`\n"
+             "No coding agent, executable or model is selected or invoked.\n"
+             "Retained input remains untrusted until current lifecycle admission.\n\n"
+             + (recipe.prompt() if prompt_override is None else prompt_override)
+@@ -4525,12 +4583,14 @@ def _planned_generation_prompt(
+             "coding_cli.stage_unavailable",
+             "coding CLI stage request is absent from the exact execution plan",
+         )
+-    if isinstance(selection, RetainedSourceSelection):
++    if isinstance(
++        selection, (RetainedSourceSelection, AcceptedRetainedSourceSelection)
++    ):
+         selection.require_unchanged()
+         return canonical_json_bytes(
+             {
+                 "schema": "literate-ai/retained-source-invocation@1",
+-                "review_identity": selection.retained_source.identity.uri,
++                "review_identity": selection.review_identity.uri,
+                 "recipe_identity": recipe.identity,
+                 "execution_plan_identity": execution_plan.identity.uri,
+                 "stage_request": stage_request,
+diff --git a/src/literate_ai/adapters/source_materialization.py b/src/literate_ai/adapters/source_materialization.py
+index cf1bb7a..5d9911d 100644
+--- a/src/literate_ai/adapters/source_materialization.py
++++ b/src/literate_ai/adapters/source_materialization.py
+@@ -5,6 +5,7 @@ from __future__ import annotations
+ import gzip
+ import hashlib
+ import io
++import json
+ import os
+ import shutil
+ import stat
+@@ -28,6 +29,7 @@ from literate_ai.contracts import (
+     ExecutionSourceMaterialization,
+     ExecutionSourceMaterializationKind,
+     HashAlgorithm,
++    canonical_identity,
+ )
+ from literate_ai.remote_source_guard import source_paths_identity, source_tree_identity
+ 
+@@ -60,46 +62,160 @@ class CapturedSourceArchive:
+     accepted_source_cache_path: Path | None = None
+ 
+ 
+-def discover_accepted_source_provider_binding(
+-    project_root: Path,
+-) -> tuple[str, ContentIdentity] | None:
+-    """Recover one portable provider binding from valid transported membership."""
+-
+-    from literate_ai.cache_directories import resolve_cache_directories
++def current_accepted_source_bindings(
++    cache_root: Path,
++    *,
++    component_lock_identity: ContentIdentity,
++    project_authority_identity: ContentIdentity,
++    target: str,
++) -> tuple[tuple[str, ContentIdentity, ContentIdentity | None], ...]:
++    """Resolve current, verified memberships without reviving retired entries."""
++    from literate_ai.contracts import SourceGenerationProvenance
++    from literate_ai.contracts.model_scopes import (
++        RETAINED_SOURCE_NO_MODEL_SELECTOR,
++        RETAINED_SOURCE_PROVIDER,
++    )
+ 
+-    root = Path(project_root).resolve(strict=True)
+-    cache_root = resolve_cache_directories(root).build_dir / "accepted-source-cache"
+-    if not cache_root.is_dir() or cache_root.is_symlink():
+-        return None
++    if not isinstance(component_lock_identity, ContentIdentity) or not isinstance(
++        project_authority_identity, ContentIdentity
++    ):
++        raise TypeError("current accepted source requires typed authority identities")
++    if not isinstance(target, str) or not target:
++        raise ValueError("current accepted source requires an exact target")
++    if not cache_root.is_dir():
++        return ()
++    bindings: set[tuple[str, ContentIdentity, ContentIdentity | None]] = set()
+     try:
+         cache = FileSystemSourceCache(
+             "dispatch-provider-discovery", cache_root, writable=False
+         )
+-        entries = cache.verified_published_entries()
+-    except (OSError, SourceCacheError) as exc:
++        for entry in cache.published_entries():
++            authority = (
++                entry.derivation
++                if isinstance(entry, AcceptedSourceCacheEntry)
++                else entry.membership.evidence
++            )
++            if authority.component_lock_identity != component_lock_identity:
++                continue
++            key = (
++                entry.derivation.cache_key
++                if isinstance(entry, AcceptedSourceCacheEntry)
++                else entry.cache_key
++            )
++            # Published manifests survive explicit retirement. Only live verified
++            # membership permits reconstruction; do not treat enumeration as admission.
++            if entry not in cache.candidates(
++                key, component_lock_identity=component_lock_identity
++            ):
++                continue
++            review = None
++            if key.model_binding.provider_id == RETAINED_SOURCE_PROVIDER:
++                provenance = SourceGenerationProvenance.from_dict(
++                    json.loads(cache.cas.get_bytes(entry.provenance_evidence))
++                )
++                if (
++                    key.model_binding.model_selector
++                    != RETAINED_SOURCE_NO_MODEL_SELECTOR
++                    or key.model_binding.exact_revision_identity is not None
++                    or provenance.component_lock_identity != component_lock_identity
++                    or key.request_identity != key.source_semantics_identity
++                    or key.request_identity != provenance.retained_source_identity
++                ):
++                    raise ValueError(
++                        "retained accepted source has inconsistent review namespace"
++                    )
++                review = canonical_identity(
++                    {
++                        "schema": "literate-ai/retained-source-input@1",
++                        "origin": RETAINED_SOURCE_PROVIDER,
++                        "tree_identity": authority.source_tree_identity.to_dict(),
++                        "component_lock_identity": component_lock_identity.to_dict(),
++                        "project_authority_identity": (
++                            project_authority_identity.to_dict()
++                        ),
++                        "target": target,
++                    }
++                )
++                if review != key.request_identity:
++                    continue
++                from literate_ai.adapters.models.coding_cli import (
++                    AcceptedRetainedSourceSelection,
++                )
++
++                AcceptedRetainedSourceSelection(
++                    review, key.coding_cli_tool_binding_identity
++                )
++            bindings.add(
++                (
++                    key.model_binding.provider_id,
++                    key.coding_cli_tool_binding_identity,
++                    review,
++                )
++            )
++    except (OSError, SourceCacheError, ValueError) as exc:
+         raise SourceMaterializationError(
+             "execution.accepted_source_cache_invalid",
+-            "accepted-source provider binding requires valid cache membership",
++            "accepted-source provider binding requires valid current cache membership",
+         ) from exc
+-    bindings: set[tuple[str, ContentIdentity]] = set()
+-    for entry in entries:
+-        cache_key = (
+-            entry.derivation.cache_key
+-            if isinstance(entry, AcceptedSourceCacheEntry)
+-            else entry.cache_key
+-        )
+-        bindings.add(
+-            (
+-                cache_key.model_binding.provider_id,
+-                cache_key.coding_cli_tool_binding_identity,
++    return tuple(sorted(bindings, key=lambda item: (item[0], item[1].uri)))
++
++
++def discover_accepted_source_provider_binding(
++    project_root: Path,
++    *,
++    component_lock_identity: ContentIdentity | None = None,
++    project_authority_identity: ContentIdentity | None = None,
++    target: str | None = None,
++) -> tuple[str, ContentIdentity] | None:
++    """Recover one portable provider binding from valid transported membership."""
++    from literate_ai.cache_directories import resolve_cache_directories
++
++    root = Path(project_root).resolve(strict=True)
++    cache_root = resolve_cache_directories(root).build_dir / "accepted-source-cache"
++    scoped = (component_lock_identity, project_authority_identity, target)
++    if any(value is not None for value in scoped):
++        if any(value is None for value in scoped):
++            raise TypeError(
++                "accepted source discovery requires complete current authority"
++            )
++        bindings = {
++            (provider, binding)
++            for provider, binding, _ in current_accepted_source_bindings(
++                cache_root,
++                component_lock_identity=component_lock_identity,
++                project_authority_identity=project_authority_identity,
++                target=target,
++            )
++        }
++    else:
++        if not cache_root.is_dir() or cache_root.is_symlink():
++            return None
++        try:
++            cache = FileSystemSourceCache(
++                "dispatch-provider-discovery", cache_root, writable=False
++            )
++            entries = cache.verified_published_entries()
++        except (OSError, SourceCacheError) as exc:
++            raise SourceMaterializationError(
++                "execution.accepted_source_cache_invalid",
++                "accepted-source provider binding requires valid cache membership",
++            ) from exc
++        bindings = set()
++        for entry in entries:
++            key = (
++                entry.derivation.cache_key
++                if isinstance(entry, AcceptedSourceCacheEntry)
++                else entry.cache_key
++            )
++            bindings.add(
++                (key.model_binding.provider_id, key.coding_cli_tool_binding_identity)
+             )
+-        )
+     if not bindings:
+         return None
+     if len(bindings) != 1:
+         raise SourceMaterializationError(
+             "execution.accepted_source_provider_ambiguous",
+-            "accepted-source cache contains more than one provider/tool binding",
++            "accepted-source cache contains multiple current provider/tool bindings",
+         )
+     return next(iter(bindings))
+ 
+diff --git a/src/literate_ai/adapters/standard_project.py b/src/literate_ai/adapters/standard_project.py
+index 82cc04b..395cb6e 100644
+--- a/src/literate_ai/adapters/standard_project.py
++++ b/src/literate_ai/adapters/standard_project.py
+@@ -3264,11 +3264,27 @@ class FilesystemStandardProjectRuntime:
+                 if restored is not None:
+                     cache_memberships[uri] = restored
+         if request.accepted_source_only:
++            from literate_ai.adapters.models.coding_cli import (
++                AcceptedRetainedSourceSelection,
++            )
++
++            def qualified_retained(membership):
++                selection = request.planned.coding_cli
++                return (
++                    isinstance(selection, AcceptedRetainedSourceSelection)
++                    and isinstance(membership, StandardSourceCacheMembership)
++                    and membership.generation.output.provenance.retained_source_identity
++                    == selection.review_identity
++                    and membership.generation.output.provenance.component_lock_identity
++                    == request.planned.execution_plan.component_lock_identity
++                )
++
+             required = set(prepared.nodes_by_revision)
+             admitted = {
+                 uri
+                 for uri, membership in cache_memberships.items()
+                 if isinstance(membership, StandardSourceAdmissionMembership)
++                or qualified_retained(membership)
+             }
+             if admitted != required:
+                 missing = sorted(required - admitted)
+@@ -3283,6 +3299,11 @@ class FilesystemStandardProjectRuntime:
+             for uri in sorted(required):
+                 node = prepared.nodes_by_revision[uri]
+                 membership = cache_memberships[uri]
++                if qualified_retained(membership):
++                    # The exact current review binds project authority, lock and
++                    # target. Keep its full-cache type; never invent a source-only
++                    # admission or reuse its prior acceptance as current evidence.
++                    continue
+                 assert isinstance(membership, StandardSourceAdmissionMembership)
+                 try:
+                     require_source_admission_for_worker(
+@@ -3929,6 +3950,7 @@ class FilesystemStandardSourceGenerationAdapter:
+         pipeline_model: str | None = None,
+         accepted_source_provider_id: str | None = None,
+         accepted_source_provider_identity: ContentIdentity | None = None,
++        accepted_source_retained_review_identity: ContentIdentity | None = None,
+         project_authority_identity: ContentIdentity | None = None,
+         native_sdk_inputs=None,
+         retained_source=None,
+@@ -3960,6 +3982,7 @@ class FilesystemStandardSourceGenerationAdapter:
+                 CodingCliSourceGenerator.for_accepted_source_lookup(
+                     accepted_source_provider_id,
+                     accepted_source_provider_identity,
++                    retained_review_identity=accepted_source_retained_review_identity,
+                 )
+                 if accepted_source_provider_identity is not None
+                 else (
+diff --git a/src/literate_ai/adapters/standard_rebuild.py b/src/literate_ai/adapters/standard_rebuild.py
+index a0d339a..af135fb 100644
+--- a/src/literate_ai/adapters/standard_rebuild.py
++++ b/src/literate_ai/adapters/standard_rebuild.py
+@@ -792,6 +792,29 @@ def assemble_filesystem_standard_rebuild_adapter(
+                 "GENERATE/BUILD/TEST/EXECUTE/ACCEPT/LINK/PACKAGE/FINALIZE requires "
+                 "explicit worker result transport",
+             )
++    retained_review_identity = None
++    from literate_ai.contracts.model_scopes import RETAINED_SOURCE_PROVIDER
++
++    if accepted_source_provider_id == RETAINED_SOURCE_PROVIDER:
++        from .source_materialization import current_accepted_source_bindings
++
++        bindings = current_accepted_source_bindings(
++            source_cache_root,
++            component_lock_identity=prepared.locked_authority_snapshot.authority.lock.identity,
++            project_authority_identity=project_authority_identity,
++            target=prepared.locked_authority_snapshot.authority.lock.target_name,
++        )
++        reviews = {
++            review
++            for provider, binding, review in bindings
++            if provider == accepted_source_provider_id
++            and binding == accepted_source_provider_identity
++        }
++        if len(reviews) != 1 or None in reviews:
++            raise ValueError(
++                "accepted retained source requires one exact current admitted review"
++            )
++        retained_review_identity = next(iter(reviews))
+     source_generation = FilesystemStandardSourceGenerationAdapter.from_environment(
+         project_root=project.root,
+         cache_root=generated_source_cache_root,
+@@ -799,6 +822,7 @@ def assemble_filesystem_standard_rebuild_adapter(
+         pipeline_model=pipeline_model,
+         accepted_source_provider_id=accepted_source_provider_id,
+         accepted_source_provider_identity=accepted_source_provider_identity,
++        accepted_source_retained_review_identity=retained_review_identity,
+         project_authority_identity=project_authority_identity,
+         native_sdk_inputs=prepared.native_sdk_inputs,
+         **({"retained_source": retained_source} if retained_source is not None else {}),
+diff --git a/src/literate_ai/cli/execution_workers.py b/src/literate_ai/cli/execution_workers.py
+index 2fcac20..2814f79 100644
+--- a/src/literate_ai/cli/execution_workers.py
++++ b/src/literate_ai/cli/execution_workers.py
+@@ -13,6 +13,7 @@ from literate_ai.adapters.execution_dispatch import (
+     ExecutionDispatchAdapterError,
+     load_execution_worker_catalog,
+ )
++from literate_ai.adapters.project_validation import validated_project_authority_identity
+ from literate_ai.adapters.source_materialization import (
+     SourceMaterializationError,
+     discover_accepted_source_provider_binding,
+@@ -432,6 +433,7 @@ def create_execution_dispatch_request(
+         Namespace(
+             specification=str(component_root),
+             recipe_id=None,
++            from_accepted_source=bool(getattr(args, "from_accepted_source", False)),
+             target=target_profile,
+             flavor=list(getattr(args, "flavor", ()) or ()),
+             flavor_root=[],
+@@ -496,10 +498,24 @@ def create_execution_dispatch_request(
+         )
+         accepted_source_only = bool(getattr(args, "from_accepted_source", False))
+         accepted_source_provider_binding = (
+-            discover_accepted_source_provider_binding(project.root)
++            discover_accepted_source_provider_binding(
++                project.root,
++                component_lock_identity=ContentIdentity.parse_uri(
++                    str(resolution["component_lock_identity"])
++                ),
++                project_authority_identity=validated_project_authority_identity(
++                    project.root
++                ),
++                target=target_profile,
++            )
+             if accepted_source_only
+             else None
+         )
++        if accepted_source_only and accepted_source_provider_binding is None:
++            raise CliFailure(
++                "source_cache.runtime_absent",
++                "no current admitted source binding is available",
++            )
+         return ExecutionDispatchRequest(
+             action=action,
+             component=str(component_report["coordinate"]),
+diff --git a/src/literate_ai/cli/generation.py b/src/literate_ai/cli/generation.py
+index ca13e28..df32a58 100644
+--- a/src/literate_ai/cli/generation.py
++++ b/src/literate_ai/cli/generation.py
+@@ -210,17 +210,62 @@ def _plan_from_args_body(args) -> dict[str, Any]:
+     locked_authority = prepared.locked_authority_snapshot
+     component_lock = locked_authority.authority.lock
+     pipeline_model = getattr(args, "model", None)
+-    try:
+-        provider_kind = selected_coding_provider()
+-        inherited_selection = (
+-            InheritedSessionSelection(
+-                InheritedSessionProviderConfig.from_environment().provider_identity
+-            )
+-            if provider_kind == "inherited-session"
+-            else None
++    accepted_only = bool(getattr(args, "from_accepted_source", False))
++    if accepted_only:
++        from literate_ai.adapters.models.coding_cli import CodingCliSourceGenerator
++        from literate_ai.adapters.project_validation import (
++            validated_project_authority_identity,
+         )
+-    except InheritedSessionError as exc:
+-        raise CliFailure(exc.code, exc.message) from exc
++        from literate_ai.adapters.source_materialization import (
++            SourceMaterializationError,
++            current_accepted_source_bindings,
++        )
++
++        if project is None:
++            raise CliFailure(
++                "source_cache.runtime_absent",
++                "accepted-source planning requires a project",
++            )
++        try:
++            bindings = current_accepted_source_bindings(
++                resolve_cache_directories(project.root).build_dir
++                / "accepted-source-cache",
++                component_lock_identity=component_lock.identity,
++                project_authority_identity=validated_project_authority_identity(
++                    project.root
++                ),
++                target=component_lock.target_name,
++            )
++        except SourceMaterializationError as exc:
++            raise CliFailure(exc.code, exc.message) from exc
++        if not bindings:
++            raise CliFailure(
++                "source_cache.runtime_absent",
++                "no current admitted source binding is available",
++            )
++        if len(bindings) != 1:
++            raise CliFailure(
++                "execution.accepted_source_provider_ambiguous",
++                "multiple current admitted source bindings require exact selection",
++            )
++        provider, binding, review = bindings[0]
++        inherited_selection = CodingCliSourceGenerator.for_accepted_source_lookup(
++            provider,
++            binding,
++            retained_review_identity=review,
++        ).selection
++    else:
++        try:
++            provider_kind = selected_coding_provider()
++            inherited_selection = (
++                InheritedSessionSelection(
++                    InheritedSessionProviderConfig.from_environment().provider_identity
++                )
++                if provider_kind == "inherited-session"
++                else None
++            )
++        except InheritedSessionError as exc:
++            raise CliFailure(exc.code, exc.message) from exc
+     planner = FilesystemStandardProjectPlanningAdapter(
+         coding_cli_selector=(
+             (lambda: inherited_selection)
+@@ -255,7 +300,9 @@ def _plan_from_args_body(args) -> dict[str, Any]:
+             **standard.coding_cli.to_dict(),
+             "selection_identity": standard.coding_cli.identity,
+             "tool_binding_identity": standard.coding_cli.tool_binding_identity,
+-            "binding_state": "exact-host-binding",
++            "binding_state": "exact-accepted-source-binding"
++            if accepted_only
++            else "exact-host-binding",
+         }
+     return {
+         "schema": GENERATION_PLAN_SCHEMA,
+diff --git a/src/literate_ai/cli/rebuild.py b/src/literate_ai/cli/rebuild.py
+index 0bcb507..fe0b673 100644
+--- a/src/literate_ai/cli/rebuild.py
++++ b/src/literate_ai/cli/rebuild.py
+@@ -775,6 +775,41 @@ def _standard_rebuild_one_component(
+     try:
+         with lock_context:
+             try:
++                accepted_provider = getattr(args, "accepted_source_provider_id", None)
++                accepted_binding = getattr(
++                    args, "accepted_source_provider_identity", None
++                )
++                if (
++                    getattr(args, "from_accepted_source", False)
++                    and accepted_provider is None
++                ):
++                    from literate_ai.adapters.source_materialization import (
++                        SourceMaterializationError,
++                        current_accepted_source_bindings,
++                    )
++
++                    try:
++                        bindings = current_accepted_source_bindings(
++                            directories.build_dir / "accepted-source-cache",
++                            component_lock_identity=prepared.locked_authority_snapshot.authority.lock.identity,
++                            project_authority_identity=validated_project_authority_identity(
++                                project.root
++                            ),
++                            target=prepared.locked_authority_snapshot.authority.lock.target_name,
++                        )
++                    except SourceMaterializationError as exc:
++                        raise CliFailure(exc.code, exc.message) from exc
++                    if not bindings:
++                        raise CliFailure(
++                            "source_cache.runtime_absent",
++                            "no current admitted source binding is available",
++                        )
++                    if len(bindings) != 1:
++                        raise CliFailure(
++                            "execution.accepted_source_provider_ambiguous",
++                            "multiple current source bindings require exact selection",
++                        )
++                    accepted_provider, accepted_binding, _ = bindings[0]
+                 adapter = assemble_filesystem_standard_rebuild_adapter(
+                     project=project,
+                     prepared=prepared,
+@@ -793,12 +828,8 @@ def _standard_rebuild_one_component(
+                         prepared.locked_authority_snapshot.authority.lock,
+                     ),
+                     pipeline_model=getattr(args, "model", None),
+-                    accepted_source_provider_id=getattr(
+-                        args, "accepted_source_provider_id", None
+-                    ),
+-                    accepted_source_provider_identity=getattr(
+-                        args, "accepted_source_provider_identity", None
+-                    ),
++                    accepted_source_provider_id=accepted_provider,
++                    accepted_source_provider_identity=accepted_binding,
+                     **(
+                         {
+                             "retained_source": retained_source,
+diff --git a/tests/critical/test_retained_source_lookup.py b/tests/critical/test_retained_source_lookup.py
+new file mode 100644
+index 0000000..ba7f519
+--- /dev/null
++++ b/tests/critical/test_retained_source_lookup.py
+@@ -0,0 +1,294 @@
++"""Retained lookup preserves reviewed namespaces without executable authority."""
++
++from __future__ import annotations
++
++import tempfile
++import unittest
++from pathlib import Path
++from unittest.mock import patch
++
++from literate_ai.adapters.cache.generated_source import CachedCodingCliSourceGenerator
++from literate_ai.adapters.models.coding_cli import (
++    AcceptedRetainedSourceSelection,
++    CodingCliError,
++    CodingCliSourceGenerator,
++)
++from literate_ai.adapters.retained_source import RetainedSourceInput
++from literate_ai.contracts import canonical_identity
++from literate_ai.contracts.model_scopes import (
++    RETAINED_SOURCE_NO_MODEL_SELECTOR,
++    RETAINED_SOURCE_PROVIDER,
++)
++from tests.support import (
++    fixtures_test_cached_coding_cli_source_generation_runner as fixture,
++)
++
++
++class RetainedLookupTests(unittest.TestCase):
++    def setUp(self):
++        temporary = tempfile.TemporaryDirectory()
++        self.addCleanup(temporary.cleanup)
++        self.root = Path(temporary.name).resolve()
++        source = self.root / "source"
++        source.mkdir()
++        (source / "main.py").write_text("pass\n")
++        self.retained = RetainedSourceInput.capture(
++            source,
++            component_lock_identity=canonical_identity("lock"),
++            project_authority_identity=canonical_identity("project"),
++            target="host",
++        )
++        self.live = CodingCliSourceGenerator.for_retained_source(self.retained)
++        self.binding = canonical_identity(self.live.selection.to_dict())
++
++    def lookup(self):
++        return CodingCliSourceGenerator.for_accepted_source_lookup(
++            RETAINED_SOURCE_PROVIDER,
++            self.binding,
++            retained_review_identity=self.retained.identity,
++        )
++
++    def test_exact_selection_has_no_model_executable_or_input_path(self):
++        with patch(
++            "literate_ai.adapters.models.coding_cli.select_coding_cli",
++            side_effect=AssertionError("provider discovery forbidden"),
++        ):
++            lookup = self.lookup()
++        self.assertEqual(lookup.selection.to_dict(), self.live.selection.to_dict())
++        self.assertEqual(lookup.selection.tool_binding_identity, self.binding.uri)
++        self.assertFalse(hasattr(lookup.selection, "executable"))
++        self.assertFalse(hasattr(lookup.selection, "retained_source"))
++        with self.assertRaises(CodingCliError) as refused:
++            lookup.generate(None, output_root=self.root / "output")
++        self.assertEqual(refused.exception.code, "coding_cli.accepted_source_only")
++        self.assertFalse((self.root / "output").exists())
++
++    def test_missing_changed_and_foreign_bindings_are_rejected(self):
++        for review, binding in [
++            (None, self.binding),
++            (self.retained.identity, canonical_identity("wrong-binding")),
++            (canonical_identity("wrong-review"), self.binding),
++        ]:
++            with (
++                self.subTest(review=review),
++                self.assertRaises((TypeError, ValueError)),
++            ):
++                AcceptedRetainedSourceSelection(review, binding)
++        with self.assertRaises(ValueError):
++            CodingCliSourceGenerator.for_accepted_source_lookup("unknown", self.binding)
++        with self.assertRaises(ValueError):
++            CodingCliSourceGenerator.for_accepted_source_lookup(
++                "claude", self.binding, retained_review_identity=self.retained.identity
++            )
++        ordinary = CodingCliSourceGenerator.for_accepted_source_lookup(
++            "claude", self.binding
++        )
++        self.assertEqual(ordinary.selection.tool_binding_identity, self.binding.uri)
++
++    def test_live_and_lookup_have_identical_retained_prompt_and_cache_key(self):
++        setup = fixture.CachedCodingCliSourceGenerationRunnerTests()
++        setup.setUp()
++        self.addCleanup(setup.tearDown)
++        keys = []
++        for delegate in (self.live, self.lookup()):
++            cached = CachedCodingCliSourceGenerator.__new__(
++                CachedCodingCliSourceGenerator
++            )
++            cached.selection = delegate.selection
++            cached.delegate = delegate
++            keys.append(
++                cached._key(
++                    setup.node.recipe, setup.execution_plan, setup.stage_request
++                )
++            )
++        self.assertEqual(keys[0], keys[1])
++        key, prompt = keys[0]
++        self.assertEqual(key.request_identity, self.retained.identity)
++        self.assertEqual(key.source_semantics_identity, self.retained.identity)
++        self.assertEqual(
++            key.model_binding.model_selector, RETAINED_SOURCE_NO_MODEL_SELECTOR
++        )
++        self.assertIn('"model_invocations":[]', prompt)
++
++
++class CurrentRetainedBindingTests(unittest.TestCase):
++    """Metadata resolution tests; the export fixture exercises actual CAS trust."""
++
++    def setUp(self):
++        from types import SimpleNamespace
++        from unittest.mock import Mock
++
++        self.temporary = tempfile.TemporaryDirectory()
++        self.addCleanup(self.temporary.cleanup)
++        self.root = Path(self.temporary.name).resolve()
++        self.cache_root = self.root / "accepted-source-cache"
++        self.cache_root.mkdir()
++        self.lock = canonical_identity("current-lock")
++        self.authority = canonical_identity("current-authority")
++        self.cache = Mock()
++        self.cache.cas.get_bytes.side_effect = lambda reference: self.documents[
++            reference
++        ]
++        self.cache.published_entries.return_value = ()
++        self.cache.candidates.side_effect = lambda key, **kw: tuple(
++            entry for entry in self.live if entry.cache_key == key
++        )
++        self.documents = {}
++        self.live = []
++        self.ns = SimpleNamespace
++        self.patch = patch(
++            "literate_ai.adapters.source_materialization.FileSystemSourceCache",
++            return_value=self.cache,
++        )
++        self.patch.start()
++        self.addCleanup(self.patch.stop)
++
++    def entry(
++        self, name="current", *, authority=None, lock=None, target="host", retired=False
++    ):
++        from dataclasses import replace
++
++        from literate_ai.contracts import SourceCacheModelBinding, canonical_json_bytes
++        from tests.support.fixtures_test_source_cache import _cache_key
++        from tests.support.fixtures_test_standard_source_admission import generation
++
++        lock = lock or self.lock
++        authority = authority or self.authority
++        tree = canonical_identity({"tree": name})
++        review = canonical_identity(
++            {
++                "schema": "literate-ai/retained-source-input@1",
++                "origin": RETAINED_SOURCE_PROVIDER,
++                "tree_identity": tree.to_dict(),
++                "component_lock_identity": lock.to_dict(),
++                "project_authority_identity": authority.to_dict(),
++                "target": target,
++            }
++        )
++        selection = {
++            "schema": "literate-ai/retained-source-selection@1",
++            "origin": RETAINED_SOURCE_PROVIDER,
++            "review_identity": review.uri,
++            "generation_provider": None,
++        }
++        key = replace(
++            _cache_key(),
++            request_identity=review,
++            source_semantics_identity=review,
++            coding_cli_tool_binding_identity=canonical_identity(selection),
++            model_binding=SourceCacheModelBinding(
++                RETAINED_SOURCE_PROVIDER, RETAINED_SOURCE_NO_MODEL_SELECTOR
++            ),
++        )
++        provenance = replace(
++            generation().output.provenance,
++            retained_source_identity=review,
++            component_lock_identity=lock,
++            route_decision_identities=(),
++            model_stage_output_identities=(),
++        )
++        reference = name + str(len(self.documents))
++        self.documents[reference] = canonical_json_bytes(provenance.to_dict())
++        entry = self.ns(
++            cache_key=key,
++            provenance_evidence=reference,
++            membership=self.ns(
++                evidence=self.ns(
++                    component_lock_identity=lock, source_tree_identity=tree
++                )
++            ),
++        )
++        self.cache.published_entries.return_value += (entry,)
++        if not retired:
++            self.live.append(entry)
++        return entry
++
++    def resolve(self, **changes):
++        from literate_ai.adapters.source_materialization import (
++            current_accepted_source_bindings,
++        )
++
++        return current_accepted_source_bindings(
++            self.cache_root,
++            **{
++                "component_lock_identity": self.lock,
++                "project_authority_identity": self.authority,
++                "target": "host",
++                **changes,
++            },
++        )
++
++    def test_history_other_target_authority_and_retirement_do_not_choose_a_binding(
++        self,
++    ):
++        self.entry("old-lock", lock=canonical_identity("old-lock"))
++        self.entry("old-authority", authority=canonical_identity("old-authority"))
++        self.entry("other-target", target="other")
++        self.entry("retired", retired=True)
++        current = self.entry()
++        self.assertEqual(
++            self.resolve(),
++            (
++                (
++                    RETAINED_SOURCE_PROVIDER,
++                    current.cache_key.coding_cli_tool_binding_identity,
++                    current.cache_key.request_identity,
++                ),
++            ),
++        )
++        self.assertEqual(self.resolve(target="missing"), ())
++        self.assertEqual(
++            self.resolve(component_lock_identity=canonical_identity("absent")), ()
++        )
++        self.assertEqual(
++            self.resolve(project_authority_identity=canonical_identity("absent")), ()
++        )
++        self.assertTrue(
++            all(
++                call.kwargs["component_lock_identity"] == self.lock
++                for call in self.cache.candidates.call_args_list
++            )
++        )
++
++    def test_ambiguous_current_trees_fail_without_newest_selection(self):
++        from literate_ai.adapters.source_materialization import (
++            SourceMaterializationError,
++            discover_accepted_source_provider_binding,
++        )
++
++        self.entry("one")
++        self.entry("two")
++        with patch(
++            "literate_ai.cache_directories.resolve_cache_directories",
++            return_value=self.ns(build_dir=self.root),
++        ):
++            with self.assertRaises(SourceMaterializationError) as refused:
++                discover_accepted_source_provider_binding(
++                    self.root,
++                    component_lock_identity=self.lock,
++                    project_authority_identity=self.authority,
++                    target="host",
++                )
++        self.assertEqual(
++            refused.exception.code, "execution.accepted_source_provider_ambiguous"
++        )
++
++    def test_inconsistent_namespace_and_changed_binding_fail_closed(self):
++        from dataclasses import replace
++
++        from literate_ai.adapters.source_materialization import (
++            SourceMaterializationError,
++        )
++
++        entry = self.entry()
++        original = entry.cache_key
++        for changes in (
++            {"request_identity": canonical_identity("wrong-review")},
++            {"coding_cli_tool_binding_identity": canonical_identity("wrong-binding")},
++        ):
++            entry.cache_key = replace(original, **changes)
++            with (
++                self.subTest(changes=changes),
++                self.assertRaises(SourceMaterializationError),
++            ):
++                self.resolve()
+diff --git a/tests/e2e/test_retained_source_export.py b/tests/e2e/test_retained_source_export.py
+new file mode 100644
+index 0000000..f1d3b27
+--- /dev/null
++++ b/tests/e2e/test_retained_source_export.py
+@@ -0,0 +1,185 @@
++"""Portable retained cache rebuild and artifact export without a coding agent."""
++
++from __future__ import annotations
++
++import contextlib
++import hashlib
++import io
++import json
++import os
++import shutil
++import unittest
++from pathlib import Path
++from unittest.mock import patch
++
++from literate_ai.adapters.standard_lifecycle_binding import (
++    resolve_standard_project_lifecycle_driver,
++)
++from literate_ai.cli import main
++from literate_ai.contracts import canonical_identity
++from tests.e2e import test_cli_model_free_rebuild as fixture
++from tests.support.fixtures_retained_native import author_retained_native_fixture
++
++
++@unittest.skipUnless(shutil.which("make") and os.name == "posix", "requires POSIX make")
++class RetainedSourceExportTests(unittest.TestCase):
++    setUp = fixture.ModelFreeRebuildTests.setUp
++    rebuild = fixture.ModelFreeRebuildTests.rebuild
++
++    def build(self):
++        output = io.StringIO()
++        with (
++            patch.dict(os.environ, self.environment),
++            patch(
++                "literate_ai.cli.rebuild.resolve_standard_project_lifecycle_driver",
++                lambda driver: resolve_standard_project_lifecycle_driver(
++                    driver, distribution_observer=lambda: self.distribution
++                ),
++            ),
++            contextlib.redirect_stdout(output),
++            contextlib.redirect_stderr(output),
++        ):
++            status = main(
++                [
++                    "--json",
++                    "build",
++                    "samples/hello-component",
++                    "--project",
++                    str(self.project),
++                    "--from-accepted-source",
++                    "--update-receipt",
++                ]
++            )
++        return status, json.loads(output.getvalue())
++
++    def test_current_retained_membership_exports_with_original_path_unavailable(self):
++        source = self.root / "retained"
++        author_retained_native_fixture(self.project, source)
++        (self.root / "tools/claude").unlink()
++        self.environment["CODING_CLI"] = "unavailable-generation-provider"
++        with patch(
++            "literate_ai.adapters.models.coding_cli.select_coding_cli",
++            side_effect=AssertionError("agent discovery forbidden"),
++        ):
++            status, plan = self.rebuild(
++                "--retained-source", str(source), "--retained-source-plan"
++            )
++            self.assertEqual(status, 0, plan)
++            status, admitted = self.rebuild(
++                "--retained-source",
++                str(source),
++                "--authorize-retained-source",
++                plan["result"]["authorization_identity"],
++            )
++            self.assertEqual(status, 0, admitted)
++            shutil.rmtree(source)
++            with patch(
++                "literate_ai.adapters.models.coding_cli.CodingCliSourceGenerator.generate",
++                side_effect=AssertionError("cache-only export invoked generation"),
++            ):
++                status, exported = self.build()
++            self.assertEqual(status, 0, exported)
++            self.assertTrue(exported["result"]["passed"])
++            artifact = Path(exported["result"]["artifact"])
++            self.assertTrue(artifact.is_file())
++            artifact_digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
++            from literate_ai.adapters.artifact_exports import load_artifact_export
++
++            export = load_artifact_export(
++                self.project,
++                "samples/hello-component",
++            )
++            self.assertEqual(export.artifact_reference.identity.digest, artifact_digest)
++            self.assertTrue(export.accepted_source_only)
++
++            from literate_ai.adapters.cache.filesystem import FileSystemSourceCache
++            from literate_ai.adapters.project_validation import (
++                validated_project_authority_identity,
++            )
++            from literate_ai.adapters.source_materialization import (
++                current_accepted_source_bindings,
++            )
++
++            cache_root = Path(self.environment["BUILD_DIR"]) / "accepted-source-cache"
++            cache = FileSystemSourceCache("export-fixture", cache_root)
++            entries = cache.published_entries()
++            lock = entries[-1].derivation.component_lock_identity
++            authority = validated_project_authority_identity(self.project)
++            context = {
++                "component_lock_identity": lock,
++                "project_authority_identity": authority,
++                "target": "host",
++            }
++            self.assertEqual(
++                len(current_accepted_source_bindings(cache_root, **context)), 1
++            )
++            for changes in (
++                {"target": "other"},
++                {"project_authority_identity": canonical_identity("stale")},
++                {"component_lock_identity": canonical_identity("stale")},
++            ):
++                self.assertEqual(
++                    current_accepted_source_bindings(
++                        cache_root, **{**context, **changes}
++                    ),
++                    (),
++                )
++
++            # The restored source must still face the CURRENT independent oracle.
++            from literate_ai.adapters.component_acceptance import (
++                FilesystemComponentAcceptanceOracle,
++            )
++            from literate_ai.adapters.lifecycle import LocalIndependentAcceptanceCase
++
++            original = FilesystemComponentAcceptanceOracle.cases
++            observed = []
++
++            def reject_current(oracle, component_lock):
++                cases = original(oracle, component_lock)
++                observed.append(True)
++                first = cases[0]
++                return (
++                    LocalIndependentAcceptanceCase.create(
++                        first.case_id,
++                        json.loads(first.arguments_document),
++                        {"deliberate": "independent refusal"},
++                    ),
++                    *cases[1:],
++                )
++
++            receipt = self.project / "verification/current.json"
++            previous = receipt.read_bytes()
++            with patch.object(
++                FilesystemComponentAcceptanceOracle, "cases", reject_current
++            ):
++                status, refused = self.build()
++            self.assertTrue(observed)
++            self.assertNotEqual(status, 0, refused)
++            self.assertIn("accept", refused["error"]["message"])
++            self.assertEqual(receipt.read_bytes(), previous)
++            self.assertEqual(
++                hashlib.sha256(artifact.read_bytes()).hexdigest(), artifact_digest
++            )
++
++            # Retirement is a membership operation; immutable manifests remain.
++            for entry in cache.published_entries():
++                cache.retire_other_memberships(
++                    entry.derivation.cache_key,
++                    keep=canonical_identity("no-surviving-fixture-membership"),
++                )
++            self.assertTrue(cache.published_entries())
++            self.assertEqual(
++                current_accepted_source_bindings(cache_root, **context), ()
++            )
++            status, missed = self.build()
++            self.assertNotEqual(status, 0, missed)
++            self.assertEqual(missed["error"]["code"], "source_cache.runtime_absent")
++
++    def test_cache_only_miss_never_discovers_provider(self):
++        with patch(
++            "literate_ai.adapters.models.coding_cli.select_coding_cli",
++            side_effect=AssertionError("agent discovery forbidden"),
++        ):
++            status, result = self.build()
++        self.assertNotEqual(status, 0, result)
++        self.assertEqual(result["error"]["code"], "source_cache.runtime_absent")

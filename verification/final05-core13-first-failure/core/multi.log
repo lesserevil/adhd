@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-compiled05-core01/frozen/tests/multi_acceptance.py", line 164, in <module>
+    asyncio.run(execute(args, "adhd/multi-project-acceptance@1", checks))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-compiled05-core01/frozen/tests/multi_support.py", line 341, in execute
+    await checks(fixture, evidence)
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-compiled05-core01/frozen/tests/multi_acceptance.py", line 154, in checks
+    await f.start()
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-compiled05-core01/frozen/tests/multi_support.py", line 158, in start
+    await self.initialize_unknown_projects()
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-compiled05-core01/frozen/tests/multi_support.py", line 196, in initialize_unknown_projects
+    operation = await self.wait_recovery(project_id, apply_receipt["operation_id"], {"complete"})
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-compiled05-core01/frozen/tests/multi_support.py", line 210, in wait_recovery
+    assert state not in {"failed", "blocked", "expired", "stale"}, "Recovery operation stopped before its required state"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Recovery operation stopped before its required state

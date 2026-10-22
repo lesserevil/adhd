@@ -1,0 +1,119 @@
+{
+  "schema": "adhd/eventing-readiness-authority-proposal@1",
+  "status": "REVIEW ONLY: canonical text/runtime/build not changed; no runtime or compiler calls",
+  "evidence": {
+    "failure_proof": "verification/final05-recovery16-prefix13-first-failure/manifest.json",
+    "manifest_sha256": "9d5c9564b140703f52845bcf663ddeacef9de9a88268f1c2cffe520e0dd87fb8",
+    "facts": [
+      "Fresh selected epoch topic metadata404 at11:46:31.644; collection create201 at31.682; exact selected-topic configs404 at31.691; apply RESTORE_IO_ERROR/io at31.701.",
+      "The collection create URL does not identify its body topic; attribution to this provision call follows source sequence/timing, not a captured POST body.",
+      "Observed selected-topic configs call is after filesystem/checkpoint staging in prepare_apply. No selected-topic offsets request was observed in this window."
+    ],
+    "not_claimed": [
+      "Original first no-default failure shares this cause until separately correlated.",
+      "No proof offsets were negative/nonzero; the empty-log guard remains mandatory."
+    ]
+  },
+  "owning_authorities": [
+    {
+      "path": "components/hub/eventing/spec.md",
+      "lines": "210-214 and404-426",
+      "responsibility": "Provisioning/hot preflight and existing-retention side effects. Add readiness semantics here, preserving later no-existing-retention-write-before-decision rule."
+    },
+    {
+      "path": "components/hub/project-recovery/spec.md",
+      "lines": "286-302 and321-333",
+      "responsibility": "Required enabled fresh-topic preflight before decision, current effective policy, no old-topic consumption, fresh epochs. Reference the Eventing readiness rule and pass accepted absolute recovery deadline."
+    },
+    {
+      "path": "components/hub/resources/spec.md",
+      "lines": "55-65",
+      "responsibility": "Unchanged binding constraint: queue residence and eventual HTTP share one monotonic budget; owned HTTP cancellation/ticket lifetime remain enforced."
+    },
+    {
+      "path": "components/hub/project-recovery/interface.md",
+      "lines": "118-126",
+      "responsibility": "Unchanged closed public failure envelope. Transport failure may be retryable before decision; after decision remains blocked/RECOVERY_REQUIRED."
+    }
+  ],
+  "proposed_canonical_wording": [
+    "Topic creation acknowledgment is not proof of metadata visibility. Following successful topic creation, or the supported duplicate-creator response40002, read back the exact expected topic metadata and configuration before provisioning succeeds. Both paths and an already-existing topic use the same partition-count, delete-only cleanup and effective-retention validation;40002 must never bypass these checks.",
+    "Only a404 from the exact expected topic metadata/configuration read, after successful creation or40002, is classified as transient creation visibility. Retry those read-only readiness checks at a fixed bounded50ms delay. Do not repeat creation merely because a read is not yet visible. Authentication/authorization errors, other non2xx responses including500, malformed metadata, wrong topology or cleanup/configuration mismatch retain failure behavior; never retry a mismatch into acceptance.",
+    "Establish one absolute monotonic provisioning deadline before its first resource admission, bounded by the effective eventing timeout and any already-accepted owning operation deadline. Cluster discovery, existence/create requests, resource queue waits, readiness reads and delay all consume that same budget. Before every admission compute positive remaining time and pass only that remaining budget through the resource scheduler to the HTTP operation. A404 cannot reset it. A delay holds no active HTTP ticket, and no request starts after expiration.",
+    "On expiration or nontransient failure, preserve existing typed failure/cancellation semantics. Recovery must not record a durable decision, select a route, alter old-topic retention or admit staged data. Any created unused topic is an external predecision side effect, as already documented. Do not reopen the owning accepted deadline.",
+    "Fresh recovery still verifies beginning_offset==0 and end_offset==0 after metadata readiness. A200 with nonempty, negative, missing or malformed offsets must fail; metadata readiness is not permission to consume an old tail. No widened retry of offsets or weaker emptiness validation is proposed."
+  ],
+  "minimal_runtime_design": [
+    "Refactor the duplicate existing/new branches in Eventing.provision into one metadata/config validator. Classify create success,40002 and existing success explicitly; preserve existing apply_retention=false predecision behavior and true postdecision/normal-worker semantics.",
+    "For new/duplicate creation, an await_topic_ready helper reads metadata/configs and retries only the specified404. Validate positive successful bodies immediately; do not route mismatch through the transient branch. Keep create response topology validation too.",
+    "Add a private request-until helper accepting the absolute deadline. Compute remaining before Resources.run(:eventing,remaining,...); callback receives scheduler-reduced remaining and request_now uses no more than that remainder for connect/response/cancellation. Existing ordinary request API can delegate with its existing single-request deadline.",
+    "Use one provisioning deadline for discovery through readiness, not a fresh timeout per physical request/retry. Pass the immutable accepted job.limits.deadline_ms from ProjectRestore.prepare_apply to Eventing fresh-topic preflight (via explicit argument/private helper); Config preflight/worker callers use their existing available operation bound, otherwise effective eventing timeout.",
+    "Preserve existing scope/configuration revision fences, HTTP request registration and resource cleanup. This is a product authority/runtime successor, not a fixture retry, timeout extension, health warmup or source patch under final05 identity."
+  ],
+  "acceptance_plan": [
+    {
+      "case": "Real create201 plus delayed configs visibility",
+      "method": "Transparent bounded proxy to real isolated Kafka REST: forward actual create, replace only first two own-topic configs responses with declared404 visibility fault, then forward genuine valid metadata. Independently record sanitized status/timestamps/request counts.",
+      "assertions": [
+        "One create, multiple bounded read-only checks, same provisioning deadline.",
+        "Actual real-broker topology/delete-only policy validated and exact empty offsets retained.",
+        "Explicit authenticated initialize/restore completes once; original accepted IDs/acks/Blue current state unchanged; no provider calls."
+      ]
+    },
+    {
+      "case": "Duplicate creator40002",
+      "method": "Forward actual create then return the supported40002 race response; subsequently forward real metadata/configs. Separate wrong-topology/cleanup variant.",
+      "assertions": [
+        "No early success on40002; metadata/config readback observed.",
+        "Valid real topic qualifies; wrong topology/delete-only mismatch rejects before decision, even when offsets would be empty."
+      ]
+    },
+    {
+      "case": "Visibility never becomes ready",
+      "method": "Return only own-topic read404 throughout existing small supported eventing timeout; do not stop shared broker.",
+      "assertions": [
+        "Monotonic elapsed bound includes actual queue residence, physical requests and50ms delays; no per404 reset.",
+        "Typed predecision failure, no coordinator decision/route/admission/config mutation; old store and other project unchanged.",
+        "Any owned HTTP is canceled/completed before resource release; no leaked active/queued ticket."
+      ]
+    },
+    {
+      "case": "Queue wait consumes retry budget",
+      "method": "Controlled existing eventing HTTP occupies required resource capacity for a known part of the same request budget; observe public resource_status and proxy timestamps.",
+      "assertions": [
+        "Reduced positive remaining budget reaches subsequent HTTP; total does not grow by one timeout per retry.",
+        "Deadline exhaustion while queued does not dispatch a late network request or commit."
+      ]
+    },
+    {
+      "case": "Nontransient responses and malformed configuration",
+      "method": "Fixed403 and500, malformed200, partitions_count!=1, cleanup.policy!=delete; separately verify predecision retention is not altered.",
+      "assertions": [
+        "Immediate failure, no visibility-retry loop for those responses.",
+        "No accepted policy mismatch, no old-topic mutation, correct current revision and authentication retained."
+      ]
+    },
+    {
+      "case": "Fresh-offset guard remains strict",
+      "method": "After valid readiness, return each preregistered nonzero/negative/missing/wrong-type offset map from bounded proxy; also genuine empty real-broker positive.",
+      "assertions": [
+        "Every invalid/nonempty map fails before decision; no old-tail consumption or implicit rewind.",
+        "Valid exactly-zero offsets succeed without relaxing original recovery assertions."
+      ]
+    },
+    {
+      "case": "Required successor regression scope",
+      "method": "Run corrected native and newly admitted compiled-image readiness faults plus original affected default-entrypoint recovery/hot-config/worker real-broker contracts. Preserve old final05 failures/prefix positives.",
+      "assertions": [
+        "Original crash-after-cleanup, rebind and hostile-rebind remain required; no diagnostic-only result substituted for default boot.",
+        "Determine changed modules and rerun/rebind remaining evidence by actual bytes and authority; no historical final05-to-successor relabel.",
+        "Use proper specification/lock/generation/verification/build/stage/admission lifecycle and exact new source/cache/image bindings."
+      ]
+    }
+  ],
+  "non_goals": [
+    "No added configuration knob, public command/schema change, provider use or Kafka deployment change.",
+    "No automatic endless retries, duplicate POST creation on every404, broad500 retry or weaker metadata/offset guard.",
+    "No further random ordinary retry under the old final05 tag to declare the defect fixed."
+  ]
+}

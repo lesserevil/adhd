@@ -1,0 +1,199 @@
+{
+  "suite": "adhd/project-recovery-process-kill@1",
+  "started_at": "2026-10-22T11:37:20.029702+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-stopped-backup-missing-target-current-blue-and-reviewed-plan",
+      "passed": true,
+      "old_generation": 1,
+      "selected_generation": 2
+    },
+    {
+      "name": "real-libc-boundary-kernel-stopped-before-whole-owner-sigkill",
+      "passed": true,
+      "stage": "after-decision",
+      "signal": "SIGKILL",
+      "observed_state": "T",
+      "decision_selected": true
+    },
+    {
+      "name": "decided-kill-completes-original-plan-on-cold-start-with-original-ack-and-no-old-tail",
+      "passed": true
+    },
+    {
+      "name": "later-accepted-write-survives-another-cold-start-without-baseline-rollback",
+      "passed": true
+    },
+    {
+      "name": "global-security-current-config-and-unrelated-newer-facts-private-delivery-and-ack-preserved",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "harness_sha256": "020d5e210ae405eb67d684651f243e70b1c4a88d2c7de001a50a2c8dcfcc8813",
+  "fault_source_sha256": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+  "fault_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+  "recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+  "crash_at": "after-decision",
+  "no_default": false,
+  "archived": false,
+  "damaged_stage": false,
+  "provider_calls": 0,
+  "full_recovery_qualified": false,
+  "finished_at": "2026-10-22T11:38:23.407725+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "68be8b6251abc6c8aeb2e52856b3d56629838d56857f7b3b594965043bd97555",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "68be8b6251abc6c8aeb2e52856b3d56629838d56857f7b3b594965043bd97555",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "c2824494fb656175e88ddee6aed9a1dfc98be5997fbbcd93ab703be62e0c8a8a",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "c2824494fb656175e88ddee6aed9a1dfc98be5997fbbcd93ab703be62e0c8a8a",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "11663648af7a5dd2c5bd40b032f764661ded1b97d5d1cc2594081b273b734ea4",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "11663648af7a5dd2c5bd40b032f764661ded1b97d5d1cc2594081b273b734ea4",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "bb85731446ae9af4ca502f813ecf32d7f06409408dbd879d9f0ceb445d558ac8",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "bb85731446ae9af4ca502f813ecf32d7f06409408dbd879d9f0ceb445d558ac8",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "6868bada429017159075fd382b47fed246b065763c9fd9ab1546281f8c095c7d",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "6868bada429017159075fd382b47fed246b065763c9fd9ab1546281f8c095c7d",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-5e2002d2f6f24794",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-12f0748f78804906",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-ff74b91dac0e4a21",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-eed94234ea734575",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "observer_source": "project_recovery_fault.c",
+    "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+    "observer_loader_proof_sha256": "5359f5f3aaec1c540892f5da17312040dc97c074b05cf8606f7e486d97a30c54",
+    "actual_beam_kernel_custody": [
+      {
+        "container_id": "11663648af7a5dd2c5bd40b032f764661ded1b97d5d1cc2594081b273b734ea4",
+        "source": "project_recovery_fault.c",
+        "stage": "after-decision",
+        "observer_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+        "host_process_pid": 215976,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "89371e9fd037e80a74719271dda9781db3512cf019b47340961161913889d7ac",
+        "process_maps_sha256": "e0101a6009ce9607f1544299b09e017570814dfcd365ee0a005f599d7f560743",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "cf5691c18e3109d2bd236f8144d8550fff46de146d4ba14ffa1e8b00f1120d24",
+        "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+        "kernel_state": "stopped"
+      }
+    ],
+    "observer_disarmed_after_kill": true,
+    "observer_rearms": [
+      {
+        "after_closed_container_id": "c2824494fb656175e88ddee6aed9a1dfc98be5997fbbcd93ab703be62e0c8a8a",
+        "exit_code": 137,
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+}

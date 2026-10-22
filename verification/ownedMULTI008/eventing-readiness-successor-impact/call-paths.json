@@ -1,0 +1,46 @@
+{
+  "baseline_source_sha256": {
+    "eventing.exs": "879566cb1dfc3dc571d147a888407bb073cdb920f0167dea1a0d696421110b9e",
+    "config.exs": "b0ad348140abe1a3a7512ad2dc5128eeaee6c38d14168c8acf52d93257c32499",
+    "project_restore.exs": "7406b8913b78105f545ba129db26cf8dd21f25dbd6442511965bc76fd057431b",
+    "resources.exs": "210506f2d1275c9beda61aa4e11450bab40979f8c77408a783d0bed531be803f",
+    "projects.exs": "9077c961b1c5eed000ae5c16b570327cb5de3018206bb7167a6b019b5254723a",
+    "store.exs": "9025429a9aed41aec1e3d135bb9bd5974ff79ee326c247708a657a510cffcc8a"
+  },
+  "paths": [
+    {
+      "entry": "Admin hot config transaction",
+      "call_chain": [
+        "Config update/transaction",
+        "Eventing.preflight(c,old)",
+        "provision(view,state,false)"
+      ],
+      "source_callsite": "config.exs: Eventing.preflight(c, x.config)",
+      "risk": "New project, enabled adapter or endpoint/policy transition can block or falsely fail before the configuration decision. Preserve no commit on failed readiness and unchanged current project/global state."
+    },
+    {
+      "entry": "Admin initialize/selective restore",
+      "call_chain": [
+        "ProjectRestore bounded staging worker",
+        "Eventing.preflight_restore(pc,state)",
+        "provision(c,state)",
+        "fresh topic beginning/end offset==0"
+      ],
+      "source_callsite": "project_restore.exs: Eventing.preflight_restore(pc, state)",
+      "risk": "The actual R16 failure occurs on fresh physical generation before decision. Keep original deadline, empty-topic proof, epoch/ownership isolation, and no restore commit on timeout/invalid metadata."
+    },
+    {
+      "entry": "Eventing worker start/rebind/restart",
+      "call_chain": [
+        "ensure_topic(c,s)",
+        "provision(c,s)",
+        "guarded Store.call binding commit",
+        "consumer creation/publication/consume"
+      ],
+      "source_callsite": "eventing.exs: ensure_topic/2",
+      "risk": "Worker retries share project resources and epoch fences. A delayed readiness request must not adopt a retired topic, create duplicate delivery, starve Blue or publish a binding before checks pass."
+    }
+  ],
+  "changed_function_assumption": "Planning assumes only Eventing.provision/readiness helpers and its owning normative specification/tests change. Recompute impact if request semantics, Eventing worker/filter/materialization, transport schemas, Scope/Resources or storage code also change.",
+  "not_new_code_or_qualified_repair": true
+}

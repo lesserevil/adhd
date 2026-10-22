@@ -1,0 +1,49 @@
+{
+  "schema": "adhd/image38-prepared-qualification@1",
+  "passed": true,
+  "scope": "Preparation and pure test-only guards; no application qualification or admission claim",
+  "application_or_service_starts": 0,
+  "provider_calls": 0,
+  "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "prepared_work": "/home/horde/src/adhd/.worktrees/deployment/_build/image38-reviewed-preparation",
+  "files": {
+    "core-plan.json": "a00e9fc61d042b58c2cfd1fa6e9e00ce9e03ae4e1bf05be5d733008f5512b0f8",
+    "eventing-plan.json": "2237066a598ba7a2136c4517e9f0da3901e05688e426a7a7512e72844242005a"
+  },
+  "pure_checks": {
+    "passed": 30,
+    "harnesses": {
+      "image_frozen_inputs_unit.py": "0d399e0c512560fdb8c590e4bc8d28c7dad8d9ffdb247756400156d361bf50a3",
+      "image_qualification_inputs_unit.py": "3ccdc23136712e083d7692eb1c4953ee5415471eda1a4290e70700f35f409db3",
+      "multi_image_core_unit.py": "181e4af092eede5afce5d5cae1c410069ab50383bc587f4118e2639a6124ad42",
+      "multi_eventing_scheduler.py": "b6fdcf34119439bed487568f7541a89dc5166e758141831b4349a72247b37f68",
+      "workflow_provider_isolation_unit.py": "a41ff59c3cf27963ea0c7fd73640f9d5fe760c32e3a42ac5543caded40c93c39",
+      "image_eventing_runtime_unit.py": "a00f3e39e020194f863dd89d175257314e897df28bb399625c0151d1e3d3fc3a"
+    },
+    "interpreter": "/home/horde/src/adhd/.venv/bin/python",
+    "setup_diagnostic": "Initial system python3 provider-isolation import lacked httpx; unchanged check passed with project virtualenv. No application started."
+  },
+  "input_policy": "Exact current-root authored helper snapshot with explicitly listed reviewed test-only overlay; all 33 canonical specs frozen from admitted38 payload. Live-root presentation drift recorded in each plan. Mutable cwd/cache outside immutable tree.",
+  "timeout_policy": "Authored harness bounds only; no additional child timeout. Incomplete children cannot produce successful matrix.",
+  "required_before_execution": [
+    "Root review and explicit GO with lane capacity",
+    "Fresh owned adhd-qa38-image-events service; verify labels/distinct cluster IDs before private destructive phases",
+    "Actual BEAM image crash custody remains unexecuted; standalone probe only qualified loader/PID mechanism"
+  ],
+  "overlay": {
+    "tests/eventing_cutover.py": "66e9cc66d434c19fb085b767791c913879c586004de9bbcefd53688ee8a44802",
+    "tests/image_eventing_fault.py": "ee20feeb9126761f6c09557f6c992ae0ce0a67e4910cf67335f2d30decef832d",
+    "tests/image_eventing_runtime.py": "8723250adb58c9479b2d4ca24499f5d339d4e97b21f56b9880a4c32a21c57272",
+    "tests/image_eventing_runtime_unit.py": "a00f3e39e020194f863dd89d175257314e897df28bb399625c0151d1e3d3fc3a",
+    "tests/image_frozen_inputs_unit.py": "0d399e0c512560fdb8c590e4bc8d28c7dad8d9ffdb247756400156d361bf50a3",
+    "tests/image_qualification_inputs.py": "0e4205827374838ca05d20e77723093d90bc2f862dbaab4638e0bc972fb3c8d6",
+    "tests/image_qualification_inputs_unit.py": "3ccdc23136712e083d7692eb1c4953ee5415471eda1a4290e70700f35f409db3",
+    "tests/multi_eventing_matrix.py": "98902325f1c3a4e9b5528dec593fe00a001f8c3d4ad43fe063c1f326c5d2a783",
+    "tests/multi_image_core_matrix.py": "2174bd9b45dcf17a55b260c9e1b4eddffb079ce25381ef6595ea5cd0e7d265e1",
+    "tests/multi_image_core_unit.py": "181e4af092eede5afce5d5cae1c410069ab50383bc587f4118e2639a6124ad42",
+    "tests/multi_workflow_upgrade.py": "5806852536be89190140aedbc7912de232f39193ab50326d71711da1eaf47b1e",
+    "tests/workflow_provider_isolation.py": "1a2ebe3f637e7be13494a4940f0d46ef990b28996b2fa43d2d62e11d565a2aff",
+    "tests/workflow_provider_isolation_unit.py": "a41ff59c3cf27963ea0c7fd73640f9d5fe760c32e3a42ac5543caded40c93c39"
+  }
+}

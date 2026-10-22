@@ -1,0 +1,239 @@
+defmodule Hub.HTTP do
+  alias Hub.V
+  def start(store, cfg) do
+    {:ok, listener} = :gen_tcp.listen(cfg["port"], [:binary, packet: :raw, active: false, reuseaddr: true, ip: {127, 0, 0, 1}, backlog: 128, buffer: 8192, send_timeout: 5000, send_timeout_close: true])
+    spawn_link(fn -> accept(listener, store, cfg) end)
+    listener
+  end
+  def accept(listener, store, cfg) do
+    case :gen_tcp.accept(listener) do
+      {:ok, socket} ->
+        pid = spawn(fn -> receive do :go -> handle(socket, store, cfg) end end)
+        :ok = :gen_tcp.controlling_process(socket, pid)
+        send(pid, :go)
+        accept(listener, store, cfg)
+      {:error, :closed} -> :ok
+      _ -> Process.sleep(20); accept(listener, store, cfg)
+    end
+  end
+  def handle(socket, store, cfg) do
+    try do
+      deadline = System.monotonic_time(:millisecond) + 5000
+      {method, path, headers, body} = read(socket, deadline)
+      {code, type, data, extra} = route(method, path, headers, body, store, cfg)
+      respond(socket, code, type, data, extra)
+    rescue
+      _ -> respond(socket, 400, "application/json", %{"error" => "invalid request"}, [])
+    catch
+      :throw, {:http, status} -> respond(socket, status, "application/json", %{"error" => "invalid request"}, [])
+      _, _ -> respond(socket, 500, "application/json", %{"error" => "request failed"}, [])
+    after
+      :gen_tcp.close(socket)
+    end
+  end
+  def recv(socket, deadline, size \\ 0) do
+    remaining = deadline - System.monotonic_time(:millisecond)
+    if remaining <= 0, do: throw({:http, 408})
+    case :gen_tcp.recv(socket, size, remaining) do
+      {:ok, bytes} -> bytes
+      _ -> throw({:http, 408})
+    end
+  end
+  def head(socket, deadline, buffer) do
+    case :binary.match(buffer, "\r\n\r\n") do
+      {pos, 4} ->
+        if pos + 4 > 16384, do: throw({:http, 431})
+        {binary_part(buffer, 0, pos), binary_part(buffer, pos + 4, byte_size(buffer) - pos - 4)}
+      :nomatch ->
+        if byte_size(buffer) > 16384, do: throw({:http, 431})
+        head(socket, deadline, buffer <> recv(socket, deadline))
+    end
+  end
+  def read(socket, deadline) do
+    {header, partial} = head(socket, deadline, "")
+    [request | lines] = String.split(header, "\r\n")
+    [method, path, version] = String.split(request, " ")
+    V.check(version in ["HTTP/1.1", "HTTP/1.0"] and String.starts_with?(path, "/") and byte_size(path) <= 4096)
+    fields = Enum.map(lines, fn line ->
+      case String.split(line, ":", parts: 2) do
+        [key, value] ->
+          V.check(Regex.match?(~r/\A[!#$%&'*+.^_`|~0-9A-Za-z-]+\z/, key))
+          V.check(not String.contains?(value, ["\r", "\n", <<0>>]))
+          {String.downcase(key), value |> String.trim_leading(" ") |> trim_ows()}
+        _ -> V.fail()
+      end
+    end)
+    protected = ["content-length", "host", "authorization", "transfer-encoding", "content-type", "origin", "a2a-version"]
+    for key <- protected, do: V.check(Enum.count(fields, &(elem(&1, 0) == key)) <= 1)
+    headers = Enum.reduce(fields, %{}, fn {key, value}, acc -> Map.update(acc, key, value, &(&1 <> ", " <> value)) end)
+    if Map.has_key?(headers, "transfer-encoding"), do: throw({:http, 400})
+    if version == "HTTP/1.1", do: V.check(is_binary(headers["host"]) and headers["host"] != "")
+    length = case headers["content-length"] do
+      nil -> 0
+      s ->
+        V.check(Regex.match?(~r/\A[0-9]+\z/, s) and byte_size(s) <= 10)
+        String.to_integer(s)
+    end
+    if length > 1048576, do: throw({:http, 413})
+    body = body(socket, deadline, partial, length)
+    {method, path, headers, body}
+  end
+  def trim_ows(x), do: Regex.replace(~r/\A[ \t]+|[ \t]+\z/, x, "")
+  def body(_socket, _deadline, bytes, length) when byte_size(bytes) >= length, do: binary_part(bytes, 0, length)
+  def body(socket, deadline, bytes, length), do: body(socket, deadline, bytes <> recv(socket, deadline, length - byte_size(bytes)), length)
+  def json(code, data, extra \\ []), do: {code, "application/json", data, extra}
+  def media(headers) do
+    type = headers |> Map.get("content-type", "") |> String.split(";", parts: 2) |> hd() |> String.trim() |> String.downcase()
+    if type != "application/json", do: throw({:http, 415})
+  end
+  def bearer(headers) do
+    case headers["authorization"] do
+      "Bearer " <> token -> token
+      _ -> nil
+    end
+  end
+  def authenticate(headers, credentials) do
+    t = bearer(headers)
+    Enum.find_value(credentials, fn {id, secret} -> if Hub.Util.constant(t, secret), do: id end)
+  end
+  def unauthorized(extra \\ []), do: json(401, %{"error" => %{"code" => "UNAUTHORIZED", "message" => "authentication required"}}, [{"WWW-Authenticate", "Bearer"} | extra])
+  def secure_headers do
+    [{"Cache-Control", "no-store"}, {"X-Content-Type-Options", "nosniff"}, {"Referrer-Policy", "no-referrer"}, {"Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"}]
+  end
+  def route("GET", "/health", _, _, _, _), do: json(200, %{"status" => "ready"})
+  def route("GET", "/.well-known/agent-card.json", _, _, _, cfg), do: json(200, card(cfg))
+  def route("GET", path, _, _, _, _) when path in ["/", "/admin", "/admin/"] do
+    {200, "text/html; charset=utf-8", Hub.Assets.html(), secure_headers()}
+  end
+  def route("GET", "/admin/assets/app.js", _, _, _, _), do: {200, "text/javascript; charset=utf-8", Hub.Assets.js(), secure_headers()}
+  def route("GET", "/admin/assets/app.css", _, _, _, _), do: {200, "text/css; charset=utf-8", Hub.Assets.css(), secure_headers()}
+  def route("POST", "/a2a", headers, bytes, store, cfg) do
+    media(headers)
+    actor = authenticate(headers, cfg["agents"])
+    if actor, do: a2a(bytes, headers, store, cfg, actor), else: unauthorized()
+  end
+  def route("POST", "/admin/api", headers, bytes, store, cfg) do
+    extra = secure_headers()
+    cond do
+      is_nil(cfg["admin_token"]) -> json(404, admin_error("NOT_FOUND"), extra)
+      not Hub.Util.constant(bearer(headers), cfg["admin_token"]) -> unauthorized(extra)
+      not valid_origin?(headers, cfg) -> json(403, admin_error("FORBIDDEN"), extra)
+      true ->
+        try do
+          media(headers)
+          c = bytes |> JSON.decode!() |> V.admin()
+          case Hub.Store.call(store, {:admin, c}) do
+            {:ok, r} -> json(200, r, extra)
+            {:domain, code} -> json(if(code == "IDEMPOTENCY_CONFLICT", do: 409, else: 404), admin_error(code), extra)
+            {:invalid, _} -> json(400, admin_error("INVALID_PARAMS"), extra)
+            _ -> json(500, admin_error("INTERNAL"), extra)
+          end
+        rescue
+          _ -> json(400, admin_error("INVALID_PARAMS"), extra)
+        catch
+          :throw, {:http, 415} -> json(415, admin_error("INVALID_PARAMS"), extra)
+        end
+    end
+  end
+  def route("POST", "/federation", headers, bytes, store, cfg) do
+    if is_nil(cfg["federation"]) do
+      json(404, %{"error" => "not found"})
+    else
+      media(headers)
+      credentials = Map.new(Hub.Federation.peers(cfg), &{&1["project_id"], &1["inbound_token"]})
+      peer = authenticate(headers, credentials)
+      if peer do
+        try do
+          c = JSON.decode!(bytes)
+          case Hub.Store.call(store, {:wire, peer, c}) do
+            {:ok, {code, r}} -> json(code, r)
+            {:domain, code} -> json(Map.get(%{"FORBIDDEN" => 403, "NOT_FOUND" => 404, "IDEMPOTENCY_CONFLICT" => 409, "RESOURCE_EXHAUSTED" => 429}, code, 400), %{"error" => code})
+            {:invalid, _} -> json(400, %{"error" => "invalid parameters"})
+            _ -> json(500, %{"error" => "request failed"})
+          end
+        rescue
+          _ -> json(400, %{"error" => "invalid parameters"})
+        end
+      else
+        unauthorized()
+      end
+    end
+  end
+  def route(_, path, _, _, _, _) do
+    json(404, %{"error" => "not found"}, if(String.starts_with?(path, "/admin"), do: secure_headers(), else: []))
+  end
+  def origin(url) do
+    u = URI.parse(url)
+    {u.scheme, u.host, u.port}
+  end
+  def valid_origin?(headers, cfg) do
+    case headers["origin"] do
+      nil -> true
+      value ->
+        u = URI.parse(value)
+        u.path in [nil, ""] and is_nil(u.userinfo) and is_nil(u.query) and is_nil(u.fragment) and
+          origin(value) in [origin("http://" <> Map.get(headers, "host", "")), origin(cfg["public_url"])]
+    end
+  end
+  def admin_error(code), do: %{"error" => %{"code" => code, "message" => "request could not be completed"}}
+  def rpc(id, code, message, domain \\ nil) do
+    e = %{"code" => code, "message" => message}
+    e = if domain do
+      Map.put(e, "data", [%{"@type" => "type.googleapis.com/google.rpc.ErrorInfo", "reason" => domain, "domain" => "adhd.hub", "metadata" => %{"code" => domain}}])
+    else
+      e
+    end
+    json(200, %{"jsonrpc" => "2.0", "id" => id, "error" => e})
+  end
+  def a2a(bytes, headers, store, cfg, actor) do
+    decoded = try do {:ok, JSON.decode!(bytes)} rescue _ -> :error end
+    case decoded do
+      :error -> rpc(nil, -32700, "Parse error")
+      {:ok, e} ->
+        id = if is_map(e) and (is_binary(e["id"]) or is_integer(e["id"])), do: e["id"], else: nil
+        cond do
+          not is_map(e) or e["jsonrpc"] != "2.0" or is_nil(id) or not is_binary(e["method"]) -> rpc(nil, -32600, "Invalid request")
+          Map.get(headers, "a2a-version", "1.0") != "1.0" -> rpc(id, -32602, "Unsupported A2A version")
+          e["method"] != "SendMessage" -> rpc(id, -32601, "Method not found")
+          true ->
+            try do
+              V.keys(e, ["jsonrpc", "id", "method", "params"], ["jsonrpc", "id", "method", "params"])
+              params = e["params"]
+              V.keys(params, ["message", "configuration", "metadata"], ["message"])
+              m = params["message"]
+              V.keys(m, ["messageId", "contextId", "role", "parts", "metadata", "referenceTaskIds"], ["messageId", "role", "parts"])
+              V.string(m["messageId"], 128, true)
+              V.check(m["role"] == "ROLE_USER")
+              V.optional(m, "contextId", &V.string(&1, 1048576, true))
+              V.check(is_list(m["parts"]) and length(m["parts"]) == 1)
+              [part] = m["parts"]
+              V.keys(part, ["data", "text", "mediaType"], [])
+              V.optional(part, "mediaType", &V.string(&1, 256))
+              V.check(Map.has_key?(part, "data") != Map.has_key?(part, "text"))
+              c = if Map.has_key?(part, "data"), do: part["data"], else: JSON.decode!(part["text"])
+              V.command(c)
+              case Hub.Store.call(store, {:agent, actor, m["messageId"], c}) do
+                {:ok, r} ->
+                  message = %{"messageId" => "response-" <> Base.encode16(:crypto.strong_rand_bytes(16), case: :lower), "contextId" => Map.get(m, "contextId", cfg["project_id"]), "role" => "ROLE_AGENT", "parts" => [%{"data" => r}]}
+                  json(200, %{"jsonrpc" => "2.0", "id" => id, "result" => %{"message" => message}})
+                {:domain, code} -> rpc(id, -32000, "Domain error", code)
+                {:invalid, _} -> rpc(id, -32602, "Invalid params")
+                _ -> rpc(id, -32603, "Internal error")
+              end
+            rescue
+              _ -> rpc(id, -32602, "Invalid params")
+            end
+        end
+    end
+  end
+  def card(cfg) do
+    %{"name" => "ADHD", "description" => "Agentic Distributed Harness Depot (ADHD): a private A2A information hub for agent coordination.", "version" => "0.1.0", "supportedInterfaces" => [%{"url" => String.trim_trailing(cfg["public_url"], "/") <> "/a2a", "protocolBinding" => "JSONRPC", "protocolVersion" => "1.0"}], "capabilities" => %{"streaming" => false, "pushNotifications" => false, "extendedAgentCard" => false}, "defaultInputModes" => ["application/json"], "defaultOutputModes" => ["application/json"], "securitySchemes" => %{"bearerAuth" => %{"httpAuthSecurityScheme" => %{"scheme" => "Bearer"}}}, "securityRequirements" => [%{"schemes" => %{"bearerAuth" => %{"list" => []}}}], "skills" => [%{"id" => "project-coordination", "name" => "Project coordination", "description" => "Publish information, subscribe, exchange addressed messages and discover trusted projects.", "tags" => ["coordination", "information"]}]}
+  end
+  def respond(socket, code, type, data, extra) do
+    bytes = if is_binary(data), do: data, else: JSON.encode!(data)
+    reason = Map.get(%{200 => "OK", 202 => "Accepted", 400 => "Bad Request", 401 => "Unauthorized", 403 => "Forbidden", 404 => "Not Found", 408 => "Request Timeout", 409 => "Conflict", 413 => "Payload Too Large", 415 => "Unsupported Media Type", 429 => "Too Many Requests", 431 => "Request Header Fields Too Large", 500 => "Internal Server Error"}, code, "Error")
+    fields = [{"Content-Type", type}, {"Content-Length", Integer.to_string(byte_size(bytes))}, {"Connection", "close"} | extra]
+    head = ["HTTP/1.1 ", Integer.to_string(code), " ", reason, "\r\n", Enum.map(fields, fn {k, v} -> [k, ": ", v, "\r\n"] end), "\r\n"]
+    :gen_tcp.send(socket, [head, bytes])
+  end
+end

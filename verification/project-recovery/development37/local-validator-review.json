@@ -1,0 +1,36 @@
+{
+  "schema": "adhd/local-validator-review@1",
+  "passed": true,
+  "candidate_validator_sha256": "021afad3d25533a407f72140d1cf460ffb3ceee786c30ab1c9f4a44998377903",
+  "baseline_validator_sha256": "8658f9d90868ef8e546c315f6cf0b0945c9e00bb686be7e14bef8e930cd6d5df",
+  "change_scope": "Only additive validate_local/5; existing backup and staged validation methods unchanged byte-for-byte",
+  "baseline_methods_unchanged": true,
+  "checks": {
+    "local_full_graph": 15,
+    "existing_backup_ownership_and_staged": 33,
+    "existing_genuine_query_and_schema": 14
+  },
+  "api": {
+    "function": "validate_local(raw,current_config,target,limits,progress)",
+    "accepted_source_schemas": [
+      1,
+      2,
+      3
+    ],
+    "returns": [
+      "state",
+      "references",
+      "records",
+      "aliases"
+    ],
+    "limits": [
+      "max_records",
+      "scan_batch_records",
+      "deadline_ms"
+    ],
+    "source_identity": "Filesystem identity/mode/link/permission proof remains caller responsibility; current_config is verified local provenance and supplies bound server_id",
+    "errors": "Existing {:recovery,code,reason}; schema invalid, ownership conflict, timeout",
+    "side_effects": "No filesystem, native opener, Config lookup, Store.upgrade, network or grant mutation in additive seam; reused full backup validator has zero traced forbidden calls in33 regression"
+  },
+  "scope": "Pure additive local graph validator only, before lossy Store.upgrade; no filesystem compatibility or full startup/SDK/admission claim"
+}

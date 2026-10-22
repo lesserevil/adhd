@@ -1,0 +1,26 @@
+import asyncio, json, sys
+from pathlib import Path
+sys.path.insert(0,str(Path('tests').resolve()))
+from multi_support import Fixture, Evidence, arguments
+from project_recovery_acceptance import Recovery, RED, BLUE
+from project_recovery_state import read_json, route, snapshot, exact, digest
+async def main():
+ root=Path('_build/kafka/recovery-crash05-after-install-snapshot-02').resolve()
+ folder=Path('_build/roadmap/final/recovery-crash-fix01')
+ args=arguments('Resume actual stopped partial restore after Coordinator repair').parse_args(['--hub','_build/roadmap/multi/hub-recovery-crash-fix01.exs','--keep-work',str(root),'--report',str(folder/'report.json'),'--deadline','35'])
+ f=Fixture(args,initialize_projects=False);cfg=read_json(f.file);f.config=cfg;f.tokens=cfg['agents'];f.base='http://127.0.0.1:'+str(cfg['port'])
+ e=Evidence(args.report,'adhd/recovery-partial-install-repair@1');e.value.update(artifact_sha256=digest(args.hub.read_bytes()),driver_sha256=digest(Path(__file__).read_bytes()),provider_calls=0,full_recovery_qualified=False)
+ decision=read_json(str(f.file)+'.transaction');old_config=f.file.read_bytes();blue=snapshot(str(route(f.file,BLUE)[1])+'.snapshot');red=snapshot(root/'backups/crash-backup/project.snapshot')
+ try:
+  await f.start();r=Recovery(f,Path('components/hub/project-recovery/interface.schema.json'))
+  status=r.status(RED,decision['operation_id']);assert status['availability']=='ready' and status['operation']['state']=='complete'
+  assert status['route']['project_epoch']==decision['plan']['selected']['project_epoch'];assert not Path(str(f.file)+'.transaction').exists();e.record('actual-partial-installed-snapshot-completes-same-decided-generation-on-startup')
+  for project,want in [(RED,red),(BLUE,blue)]:
+   after=snapshot(str(route(f.file,project)[1])+'.snapshot')
+   for family in ['publications','subscriptions','deliveries','sources','idempotency']:
+    assert exact(after[family])==exact(want[family]),(project,family)
+  assert f.file.read_bytes()==old_config;e.record('original-target-acks-private-data-and-current-blue-facts-acks-receipts-and-config-preserved')
+  f.hard_stop();await f.start();assert r.status(RED)['availability']=='ready';e.record('completed-generation-reopens-after-another-hard-restart');e.finish()
+ except BaseException as error:e.finish(error);raise
+ finally:await f.close()
+asyncio.run(main())

@@ -1,0 +1,745 @@
+{
+  "suite": "adhd/real-coordinator-interference@1",
+  "started_at": "2026-10-21T22:30:15.415847+00:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "actual-manual-bridge-has-zero-managed-members-and-independent-out-of-order-acks",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "harness_sha256": "96db6886ec88a4b6c6a3c6461752a1b5d63bae852bb25ede4f2fc1e5ce3e91fa",
+  "predeclared_limits": {
+    "observers": 2,
+    "publications": 12,
+    "hub_hard_restarts": 1,
+    "phase_seconds": 45,
+    "overall_seconds": 360,
+    "cli_calls": 40,
+    "http_observations": 400
+  },
+  "scope": "Actual managed observer membership/assignment changes alongside manually assigned bridge; no bridge-managed ownership transfer or HA claim",
+  "coordinator_snapshots": [
+    {
+      "expected_members": 0,
+      "observed_state": {
+        "name": "Empty",
+        "members": 0
+      },
+      "members": [],
+      "cli": {
+        "state": {
+          "returncode": 0,
+          "stdout": "\nGROUP                                                   COORDINATOR (ID)          ASSIGNMENT-STRATEGY  STATE                #MEMBERS\nadhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout kafka:9092  (1)           -                    Empty                0\n",
+          "stderr": "\nConsumer group 'adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout' has no active members.\n"
+        },
+        "members": {
+          "returncode": 0,
+          "stdout": "\nGROUP           CONSUMER-ID     HOST            CLIENT-ID       #PARTITIONS     CURRENT-EPOCH   CURRENT-ASSIGNMENT   TARGET-EPOCH    TARGET-ASSIGNMENT   \n",
+          "stderr": "\nConsumer group 'adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout' has no active members.\n"
+        }
+      }
+    }
+  ],
+  "publications": 2,
+  "hub_hard_restarts": 0,
+  "topic": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1",
+  "group": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout",
+  "broker_container": "adhd-imagefinal-a31f2c-kafka-1",
+  "finished_at": "2026-10-21T22:30:55.191598+00:00",
+  "failure_type": "AssertionError",
+  "http_observations": [
+    {
+      "method": "GET",
+      "path": "/v3/clusters",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1",
+      "status": 404,
+      "error": {
+        "error_code": 40403,
+        "message": "This server does not host this topic-partition."
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1",
+      "status": 404,
+      "error": {
+        "error_code": 40403,
+        "message": "This server does not host this topic-partition."
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1",
+      "status": 404,
+      "error": {
+        "error_code": 40403,
+        "message": "This server does not host this topic-partition."
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/configs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/configs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v3/clusters/fjeg-3qUTXeBAowpk82ixg/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/configs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout",
+      "status": 200,
+      "request": {
+        "auto.commit.enable": "false",
+        "auto.offset.reset": "earliest",
+        "format": "json",
+        "name": "adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm"
+      },
+      "instance_path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm"
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout",
+      "status": 200,
+      "request": {
+        "auto.commit.enable": "false",
+        "auto.offset.reset": "earliest",
+        "format": "json",
+        "name": "adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1"
+      },
+      "instance_path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1"
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout",
+      "status": 200,
+      "request": {
+        "auto.commit.enable": "false",
+        "auto.offset.reset": "earliest",
+        "format": "json",
+        "name": "adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L"
+      },
+      "instance_path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L"
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/assignments",
+      "status": 204,
+      "request": {
+        "partitions": [
+          {
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/positions",
+      "status": 204,
+      "request": {
+        "offsets": [
+          {
+            "offset": 0,
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/assignments",
+      "status": 204,
+      "request": {
+        "partitions": [
+          {
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/assignments",
+      "status": 204,
+      "request": {
+        "partitions": [
+          {
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/positions",
+      "status": 204,
+      "request": {
+        "offsets": [
+          {
+            "offset": 0,
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/positions",
+      "status": 204,
+      "request": {
+        "offsets": [
+          {
+            "offset": 0,
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1",
+      "status": 200,
+      "publication_ids": [
+        "publication-82f2aa3f237b-3"
+      ],
+      "topic": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1"
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/offsets",
+      "status": 200,
+      "request": {
+        "offsets": [
+          {
+            "offset": 0,
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1",
+      "status": 200,
+      "publication_ids": [
+        "publication-82f2aa3f237b-6"
+      ],
+      "topic": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1"
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/offsets",
+      "status": 200,
+      "request": {
+        "offsets": [
+          {
+            "offset": 1,
+            "partition": 0,
+            "topic": "adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/topics/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1/partitions/0/offsets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.ae7c6bb726db28af.events.v1.fanout/instances/adhd-QLyDJGJdpUnk1jR1-QclmK2g2m1nQn-L/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.73786e979410fe19.events.v1.fanout/instances/adhd-Mka_Q30uXhI7u60vVc-4XVVMMVrIevqm/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/consumers/adhd.81d581ab1f36d2ca.379b3ff9384a797a.events.v1.fanout/instances/adhd-w1-XhqFh2GSYcb6uXW7fBnWiXzfOOCd1/records?timeout=1000&max_bytes=262144",
+      "status": 200
+    }
+  ],
+  "http_observation_overflow": false,
+  "cli_calls": 4
+}

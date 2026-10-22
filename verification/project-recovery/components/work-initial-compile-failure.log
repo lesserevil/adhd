@@ -1,0 +1,27 @@
+    warning: variable "c" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 32 │   def availability(c,id) do
+    │                    ~
+    │
+    └─ _build/roadmap/multi/source36-recovery/storage_registry.exs:32:20: ADHD.StorageRegistry.availability/2
+
+    warning: unused alias H
+    │
+  4 │   alias ADHD.History,as: H
+    │   ~
+    │
+    └─ _build/roadmap/multi/source36-recovery/archive_policy.exs:4:3
+
+    error: nested captures are not allowed. You cannot define a function using the capture operator & inside another function defined via &. Got invalid nested capture: &ADHD.History.recover_inflight/1
+    │
+ 11 │       state=state |> Map.update!(:history_queries,&settle(&1,&ADHD.History.recover_inflight/1))
+    │                                                              ^
+    │
+    └─ _build/roadmap/multi/source36-recovery/recovery_work.exs:11:62: ADHD.RecoveryWork.prepare/3
+
+** (CompileError) _build/roadmap/multi/source36-recovery/recovery_work.exs: cannot compile module ADHD.RecoveryWork (errors have been logged)
+    (stdlib 6.2.2.5) lists.erl:2343: :lists.mapfoldl_1/3
+    (stdlib 6.2.2.5) lists.erl:2344: :lists.mapfoldl_1/3
+    (elixir 1.18.4) src/elixir_fn.erl:153: :elixir_fn.escape/3
+    (elixir 1.18.4) src/elixir_fn.erl:112: :elixir_fn.capture_expr/6
+    (elixir 1.18.4) expanding macro: Kernel.|>/2

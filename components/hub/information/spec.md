@@ -32,10 +32,6 @@ or other server-owned fields. A publication is immutable, retained regardless of
 whether anyone subscribes or acknowledges it. It remains retrievable/searchable
 until an explicitly designed future retention mechanism removes it. Status is
 an append-only event history; a newer status does not overwrite an older one.
-The intended current-fact projection and natural-language query behavior are
-specified separately in [current facts](current-facts.md), tracked by INFO-003.
-Supersession changes which assertion is current without changing stored history;
-the currently accepted runtime still exposes archive retrieval/search only.
 Binary attachments and live external connectors are outside this iteration;
 structured JSON can carry descriptions and references to other content.
 

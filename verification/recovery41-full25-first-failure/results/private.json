@@ -1,0 +1,162 @@
+{
+  "suite": "private-target-restore",
+  "started_at": "2026-10-22T14:34:11.999821+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "known-missing-does-not-initialize-on-cold-start",
+      "passed": true
+    },
+    {
+      "name": "hash-bound-source-and-target-plan-with-fresh-epochs",
+      "passed": true
+    },
+    {
+      "name": "durable-apply-completes-with-private-records-and-ack-count",
+      "passed": true
+    },
+    {
+      "name": "other-current-project-and-global-config-preserved-original-private-visible-ack-hidden",
+      "passed": true
+    },
+    {
+      "name": "restored-generation-opens-after-cold-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "scope": "NoKafka/noModel: private deliveries and acknowledged-state target-only restore plus cold restart",
+  "lifecycle_admitted": false,
+  "result": {
+    "allocation_epoch": "5236199e8b4b6d3c25606c6a0991f01c",
+    "initialized": false,
+    "project_epoch": "1f30edcb438c5530da253d95a7b6eb73",
+    "project_id": "project-red",
+    "restored": {
+      "acknowledged_deliveries": 1,
+      "deliveries": 2,
+      "pending_jobs": 0,
+      "publications": 0,
+      "retained_records": 74,
+      "subscriptions": 0
+    },
+    "route_generation": 2,
+    "sequence": 2,
+    "storage_generation": 8,
+    "topic": null,
+    "transport_discontinuity": true
+  },
+  "finished_at": "2026-10-22T14:34:55.739664+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "0c85cb6a818acf482a156cced0acdb5b5a57154bd200d84a7e66661d5060e65f",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "0c85cb6a818acf482a156cced0acdb5b5a57154bd200d84a7e66661d5060e65f",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "64b8111c7ca9dc1f1b06ced4c2d65b93728a65c4bec5ec0d842be06babf88de9",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "64b8111c7ca9dc1f1b06ced4c2d65b93728a65c4bec5ec0d842be06babf88de9",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "004fe019057e04d0aa7056c68357f80f917357dd9320643ffce6e9dcaa80d44b",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "004fe019057e04d0aa7056c68357f80f917357dd9320643ffce6e9dcaa80d44b",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "90277385172b15d536a0cc9a6f88034eb02a8418a94e8fcaf2171ced5a7d52a7",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "90277385172b15d536a0cc9a6f88034eb02a8418a94e8fcaf2171ced5a7d52a7",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-cd2f95a6a94544c7",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-c74f5ccb1d404b73",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-4f19ffe4c7e1417d",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-d97aa4836c78406e",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+}

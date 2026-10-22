@@ -1,0 +1,19 @@
+{
+  "schema": "adhd/pending-kafka-callback-qualification@1",
+  "passed": true,
+  "checks": 5,
+  "artifact_sha256": "0afb6140ece4809315bdbc275f429b55bacc1d6d0d7eac25e1229503efd5ece8",
+  "plan": "verification/project-recovery-pending-kafka/netfix01-plan.json",
+  "report": "verification/project-recovery-pending-kafka/netfix01.json",
+  "report_sha256": "36273ff56f6b5030ba664199b97e6e9fc5077db62c7729e47af45d9e9d4b7f90",
+  "harness_sha256": "f16b241173ec144febf86beaa12ff1cbe249651c196e4de273339e4391da4ee1",
+  "scope": "Exact frozen13 with only Resources and Eventing modules replaced. Actual real broker old consumer reply released after live restore cannot materialize or advance the fresh topic; fresh real reply materializes preserved original exactly once and ack survives another cold start. Both replies held independently; no broker success/record/offset invented.",
+  "original_failure": "verification/project-recovery-pending-kafka/dev13-diagnostic.json",
+  "provider_calls": 0,
+  "limits": [
+    "Single broker; no replicated broker durability claim",
+    "Test-only exact-module runner with one nondefault Store loss",
+    "Not full combined14, image/platform or formal admission qualification"
+  ],
+  "full_recovery_qualified": false
+}

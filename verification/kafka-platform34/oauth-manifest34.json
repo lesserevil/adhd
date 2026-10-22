@@ -1,0 +1,44 @@
+{
+  "schema": "adhd/accepted34-kafka-security@1",
+  "passed": true,
+  "accepted_image_qualified": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "image_config_digest": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "staging_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+  "report": {
+    "path": "verification/kafka-platform34/oauth-image34.json",
+    "sha256": "56ee3743666cda5e2dd9ddaa6a7e8420c419d4fa80003691f24d73e0f2bafac8",
+    "checks": 7
+  },
+  "inputs_sha256": {
+    "tests/kafka_oauth_k8s.py": "360181193bbfd71fe975a5651009053b76311e3a211c4964ce0c2cb50886b96d",
+    "tests/kafka_oauth_provider.py": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0",
+    "deploy/k8s/oauth.patch.yaml": "c291143a5a673a1a390b737506dcfc9f3dd581ad811c1de80ed9a162ada13d36",
+    "deploy/security/kafka-rest.oauth.properties.example": "005b04820782f090b0aca23653c24d1c018057d961f7a5a11d9b8b9882edfe88",
+    "deploy/kafka-bootstrap.py": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f"
+  },
+  "harness_dependencies_sha256": {
+    "multi_support.py": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa",
+    "foundation_acceptance.py": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+    "hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e"
+  },
+  "scope": "Actual admitted34 OTP29 image in disposable Kind namespace; native Confluent Enterprise/permitted-trial authentication handler. Positive/missing/invalid/expired/retired credentials, real HTTPS trust and hot customCA rejection/rotation, Kubernetes Secret certificate/password rotation and REST pod replacement, persistent broker cursor and stable hub PID/starttime.",
+  "limits": [
+    "Actual admitted deployment image verified against staging and independent artifact acceptance; full release lifecycle remains a separate gate.",
+    "Single broker, private plaintext proxy-to-broker lane; no SASL_SSL qualification.",
+    "NetworkPolicy enforcement is not qualified by this probe."
+  ],
+  "license_scope": "Confluent Enterprise or documented permitted trial",
+  "production_entitlement_qualified": false,
+  "owned_resources": "Harness completed exit0 and removed its namespace/PVCs/processes. Existing model and unrelated brokers untouched.",
+  "historical_dependencies": {
+    "tests/foundation_acceptance.py": {
+      "sha256": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+      "snapshot": "verification/kafka-platform/platform-foundation-dependency.py.source",
+      "scope": "Imported Client helper; current root differences are foundation main-suite coverage, not the imported Client class. Restore exact snapshot for byte-identical reproduction."
+    }
+  }
+}

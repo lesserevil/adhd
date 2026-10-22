@@ -1,0 +1,231 @@
+{
+  "schema": "adhd-optimization-quality-report@1",
+  "passed": true,
+  "model": "Nemotron-Deciffusion-8B-v2.1",
+  "cases": [
+    {
+      "case": "independent-training-freezes-one-winner-before-any-held-out-source-exists",
+      "passed": true,
+      "winner": "6af064438fe9182832508c2190cb4ecdd4c2df321d9c26f76e7767640633f747",
+      "training": [
+        "attempt-a246eadc8cf36297c77dea5a2c615debe56c9e7c62ab356d3dbb572690be45af",
+        "attempt-d0d48b880b89c08e3152a1f8094e68a0673d1c97ab9ae8e26c26722ba6c462dd"
+      ],
+      "freeze_watermark": 9,
+      "usage": {
+        "bytes": 358211,
+        "calls": 82,
+        "cumulative_bytes": 358211,
+        "cumulative_calls": 82,
+        "cumulative_records": 88,
+        "cumulative_time_ms": 33493,
+        "cumulative_uncertain_calls": 0,
+        "records": 88,
+        "time_ms": 33493,
+        "uncertain_calls": 0
+      }
+    },
+    {
+      "case": "fresh-held-out-positives-nonempty-negative-and-negation-correction-controls-pass",
+      "passed": true,
+      "evaluation": {
+        "answer_failures": 0,
+        "answer_regressions": 0,
+        "baseline_native_bytes": 196379,
+        "candidate_native_bytes": 247377,
+        "cases": 6,
+        "correction_groups": 1,
+        "eligible": true,
+        "false_supports": 0,
+        "groups": 6,
+        "mean_recall_gain_ppm": 833333,
+        "negation_groups": 1,
+        "no_evidence_groups": 1,
+        "passed": true,
+        "positive_groups": 5,
+        "reason": null,
+        "total_bytes_delta": -24189,
+        "total_calls_delta": -4,
+        "total_time_ms_delta": -1183
+      },
+      "actual_usage": {
+        "bytes": 493178,
+        "calls": 114,
+        "cumulative_bytes": 493178,
+        "cumulative_calls": 114,
+        "cumulative_records": 161,
+        "cumulative_time_ms": 45858,
+        "cumulative_uncertain_calls": 0,
+        "records": 161,
+        "time_ms": 45858,
+        "uncertain_calls": 0
+      },
+      "held_out": [
+        "attempt-e73698b6158d6a07651f24d44bc5483e468d3f87cdff2f0f76912408ce9d38a7",
+        "attempt-0197671c8995eea846d625e79750afb4757c9dbcff30d586afddb6431af22559",
+        "attempt-42a43bb6a2fd64f9211f217f529e57cb288d4f1b039acc936106c4fe911a07fa",
+        "attempt-ebe29accb384848d012e55eadb97089a8c26e81d00ddc3998a4e0b41c30e3d1c"
+      ],
+      "regression": [
+        "attempt-31e655267e2ade3ab1ad5b1b4bb9181e4490421a0371217389e261e18e540ced",
+        "attempt-b5fb31268624adde33ca9ce102692c98f9d55e52e63272d3e8e7e14b33bfb554"
+      ]
+    },
+    {
+      "case": "promotion-atomically-switches-complete-index-and-override-without-changing-operator-base",
+      "passed": true,
+      "selection": {
+        "applied": true,
+        "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+        "base_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "current_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+        "effective_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 2,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "previous": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": null,
+          "qualification_identity": null,
+          "qualification_runtime": null,
+          "qualification_watermark": 0,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 1,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:11:25.996Z"
+        },
+        "qualification_current": true,
+        "revision": 1,
+        "rollback_available": true,
+        "selected": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": "index-proposal-13",
+          "qualification_identity": "3e6cb439c220e1db6cebafd5a18ec786aa2b8aeee0c9b50e96324040971812c5",
+          "qualification_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+          "qualification_watermark": 86,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 2,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:11:25.996Z"
+        }
+      }
+    },
+    {
+      "case": "ordinary-matching-and-publication-catchup-preserve-effective-selection-and-protected-rollback",
+      "passed": true
+    },
+    {
+      "case": "disabled-optimizer-allows-asynchronous-caught-up-atomic-rollback",
+      "passed": true,
+      "selection": {
+        "applied": true,
+        "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+        "base_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "current_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+        "effective_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "previous": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": "index-proposal-13",
+          "qualification_identity": "3e6cb439c220e1db6cebafd5a18ec786aa2b8aeee0c9b50e96324040971812c5",
+          "qualification_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+          "qualification_watermark": 86,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 2,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:11:25.996Z"
+        },
+        "qualification_current": false,
+        "revision": 2,
+        "rollback_available": true,
+        "selected": {
+          "activation_watermark": 104,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": null,
+          "qualification_identity": null,
+          "qualification_runtime": null,
+          "qualification_watermark": 0,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 1,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:11:29.213Z"
+        }
+      }
+    }
+  ],
+  "artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+  "image": null,
+  "automatic": false,
+  "workdir": "_build/roadmap/optimization-quality/run-16wtmtom"
+}

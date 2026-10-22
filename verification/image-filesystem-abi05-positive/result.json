@@ -1,0 +1,810 @@
+{
+  "schema": "adhd/image-filesystem-abi-run@1",
+  "passed": true,
+  "plan_sha256": "4a02c9e6c73fec6d283b9804961510ab0112f9960fd640e960012a94dda27120",
+  "rows": [
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "ffe90b052eb39d4362af6418438258418a263183eb9520a95b14d3486d2b3399",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1237041,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "38440ca8e210757dc6247d9074313007a9eb61bc68936070966ba1d148e072e0",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "renameat"
+      },
+      "passed": true,
+      "container_id": "3644cd9b1c91a21411873266ebb53cbd04e51c7afa6d61ece0f0509ce319d59d",
+      "exit_code": 137,
+      "caller": {
+        "op": "renameat",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "renameat",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1237612,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "2a82139f2104bb954e8714f2263051305e8c1ff377fb1452d5e8a63fe680c212",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "renameat2"
+      },
+      "passed": true,
+      "container_id": "f47814a5c3ed41e2e3a12a644de6d8bf4638f1944381b42e9ea9de4f769330a2",
+      "exit_code": 137,
+      "caller": {
+        "op": "renameat2",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": false,
+        "direct_syscall": true,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "syscall:renameat2",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1238223,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "98ef1f8fe089ba52565d9ef89d09138e5d0d886f2c68dbbb6d73f7b20ea0c6df",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "link"
+      },
+      "passed": true,
+      "container_id": "f8f9aed43bfaad13df2db2fe7e9b959634a68f8d55aa64915ac602c998f9db6a",
+      "exit_code": 137,
+      "caller": {
+        "op": "link",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "link",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1238663,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "7a6d2a3ccefa15349d84bed4baccda22a39e5f4ad63be6290f89f9407b7c71ea",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "linkat"
+      },
+      "passed": true,
+      "container_id": "3cd50a40b911d83cb73bb3a9a275207e8b6ca7dcd17cc828641137023f9837a4",
+      "exit_code": 137,
+      "caller": {
+        "op": "linkat",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "linkat",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1239120,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "b231df4f866411e5523fa927915016b4b88ba74ca0bad896cf9746ea5ea82499",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "store_move_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "82147d48a1953f1981c4eaacd98629b4013ff65cf01e469680bb0918732c3ff7",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-decision",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1239557,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "a2875d551241cae2f6160972cb3ac39a748b61f7406d28d6c290276604b1d5ab",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "store_move_fault.c",
+        "op": "link"
+      },
+      "passed": true,
+      "container_id": "d1b7d3653b8fc26c4e1ca7c367990c3acb865baa6db913f960f0213658723b2a",
+      "exit_code": 137,
+      "caller": {
+        "op": "link",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "link",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-first-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1240130,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "7d31330349bce72cf1b97a75c33074612216d07ca6279f26cc734c4717d8cc8f",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "store_move_fault.c",
+        "op": "unlink"
+      },
+      "passed": true,
+      "container_id": "c3b1c2189fb482e7acdcea7630d14ca81790829c9efe16321a7793624651cd13",
+      "exit_code": 137,
+      "caller": {
+        "op": "unlink",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "unlink",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "before-cleanup",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "before-unlink",
+        "verified": true,
+        "target_bytes": 23,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1240573,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "6e9125e93a2f074693a0faf0fa0fd1543bdcfe120e7b1425fb90aabc02924ec1",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "storage_write_fault.c",
+        "op": "fsync"
+      },
+      "passed": true,
+      "container_id": "c30ee72629ac74e66289cf82a8b700359e1541a73305bf505cd912b20ac1f7f9",
+      "exit_code": 137,
+      "caller": {
+        "op": "fsync",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "fsync",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "snapshot-data-sync",
+        "pid": 1,
+        "syscall": "fsync"
+      },
+      "physical": {
+        "effect": "synced-bytes",
+        "verified": true,
+        "target_bytes": 37,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1241210,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "2630b04809e0a67c9100c6d833ed14fb1f19b1e33aabbe7795a992f693af197b",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "storage_write_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "8233ddbbab065ec50c71771b25ee7407b99f41ac1ce6c67bd9f48bba6e6f35d5",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "snapshot-install",
+        "pid": 1,
+        "syscall": "rename"
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 37,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1241621,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "7466673b969017cf99fc70a0fc3edf090baae53634515f6cffd62900f54f5dda",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "storage_write_fault.c",
+        "op": "pwrite"
+      },
+      "passed": true,
+      "container_id": "fe1592132f48d1fe3738960532dfb555e632f5ffb82328bc601d17e27c3d71b7",
+      "exit_code": 137,
+      "caller": {
+        "op": "pwrite",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "pwrite",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 4294967313
+      },
+      "observer_trace": {
+        "stage": "checkpoint-write",
+        "pid": 1,
+        "syscall": "pwrite"
+      },
+      "physical": {
+        "effect": "sparse-write",
+        "verified": true,
+        "target_bytes": 4294967337,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1242149,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "15e7027de3e4b053a425c5c0e646e135829821b87793992573ddb80e8ffc13dd",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "storage_write_fault.c",
+        "op": "pwrite64"
+      },
+      "passed": true,
+      "container_id": "4819e462d658ed033ee930efe3d83b533b783729f65c41e957df84afa61ef275",
+      "exit_code": 137,
+      "caller": {
+        "op": "pwrite64",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "pwrite",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 4294967313
+      },
+      "observer_trace": {
+        "stage": "checkpoint-write",
+        "pid": 1,
+        "syscall": "pwrite64"
+      },
+      "physical": {
+        "effect": "sparse-write",
+        "verified": true,
+        "target_bytes": 4294967337,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1242702,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "6a06ad694eb4249ca7ffea769ffece9fbbcbdb5e890263d689fc454a98eed1f8",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "project_recovery_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "768cee88107f2bfca56a8215313ad17be5a7473fbeef71a77674eccb372ec8bd",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-stage-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1243155,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "9f510fc7742636b607ba44b00f6592b6e35b508a8bd676c8e20dccf455a79def",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "project_recovery_fault.c",
+        "op": "fsync"
+      },
+      "passed": true,
+      "container_id": "2e8bbe23525dec546dfc07de35ff0b344df270288e8177cf24fa4de7cb45fc65",
+      "exit_code": 137,
+      "caller": {
+        "op": "fsync",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "fsync",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-decision-sync",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "directory-synced-rename",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1243677,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "82c13877e3ffc5c0b86253617c6ef82ece9fd520924c9deca305ac2d3a450a9a",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "project_recovery_fault.c",
+        "op": "link"
+      },
+      "passed": true,
+      "container_id": "9e215aba38bd91cd6de47599e4d24bcb68b4454eb28d774312c23e99e342edf7",
+      "exit_code": 137,
+      "caller": {
+        "op": "link",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "link",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-install-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1244298,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "75a28f6c5b98c9cc31ccbcc96fbfca836b44ccdb1081f774bbc596a35c965b3c",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "project_recovery_fault.c",
+        "op": "unlink"
+      },
+      "passed": true,
+      "container_id": "e92600aaa6406ad5968d8bb1685dfd699d65b1e90de76411275f0de402c816af",
+      "exit_code": 137,
+      "caller": {
+        "op": "unlink",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "unlink",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "before-cleanup",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "before-unlink",
+        "verified": true,
+        "target_bytes": 23,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1244819,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "b012e78c5f7a19494c2a0c7ccdc5b4e4c18ba43ea44b553a1c84f05169920c27",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "rebind_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "e17d25c82efb1527b74c88a159769454c2d04ca1386ea28c797f350d93c5ef74",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "decision-durable",
+        "pid": 1,
+        "directory_fsync_result": 0
+      },
+      "physical": {
+        "effect": "rename-then-directory-sync",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1245388,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "ccf23dccf4962108586382debc50c7171fb204d9f4071c4e4ee774074dc10cce",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "080140d6e41bdadfa312db77320a5e8e3153d942bbf53f63e3a326aa945f5387",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "rebind_fault.c",
+        "op": "fsync"
+      },
+      "passed": true,
+      "container_id": "7d41b61517f174b175303240107ca4b8cce4806630c02ce0b4df084b3bd47129",
+      "exit_code": 137,
+      "caller": {
+        "op": "fsync",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "fsync",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "decision-durable",
+        "pid": 1,
+        "directory_fsync_result": 0
+      },
+      "physical": {
+        "effect": "directory-synced-rename",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1245810,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "0dace180d2625da629ba45e50823a64a79148b9a8836fea547eef9c3bbf19a6d",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "080140d6e41bdadfa312db77320a5e8e3153d942bbf53f63e3a326aa945f5387",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    }
+  ],
+  "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "application_started": false,
+  "provider_calls": 0,
+  "broker_calls": 0
+}

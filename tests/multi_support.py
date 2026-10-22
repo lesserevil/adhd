@@ -1,0 +1,362 @@
+"""Independent public-interface fixture for project and Kafka acceptance.
+
+No generated modules or internal store structures are imported. An external
+server must use the separately supplied credential file; reports never copy it.
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import signal
+import subprocess
+import tempfile
+import time
+from uuid import uuid4
+
+import httpx
+from a2a.client import ClientConfig, create_client
+
+from foundation_acceptance import Client
+from hub_acceptance import Agent, ModelFixture, free_port
+
+
+PROJECTS = [
+    {"id": name, "name": "Shared project label", "description": "Acceptance isolation fixture",
+     "status": "active", "settings": {}}
+    for name in ("project-red", "project-blue", "project-hidden")
+]
+MEMBERSHIPS = {
+    "red-a": ["project-red"], "red-b": ["project-red"],
+    "blue-a": ["project-blue"], "blue-b": ["project-blue"],
+    "bridge": ["project-red", "project-blue"], "hidden-a": ["project-hidden"],
+}
+
+
+def arguments(description):
+    parser = argparse.ArgumentParser(description=description)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--hub", type=Path, help="Generated standalone hub .exs")
+    mode.add_argument("--command", help="JSON executable argv, before serve payload")
+    mode.add_argument("--image", help="Owned exact Docker image integration target")
+    parser.add_argument("--image-manifest", type=Path, help="Reviewed staged canonical manifest.json")
+    mode.add_argument("--rest-url", help="An isolated already running hub's HTTP origin")
+    parser.add_argument("--credentials", type=Path,
+                        help="Private JSON {agents:{id:token}, admin:{username,password}, config_file?}")
+    parser.add_argument("--eventing-rest-url", default="http://127.0.0.1:18082",
+                        help="Real per-server Kafka REST bridge; never a broker success mock")
+    parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--keep-work", type=Path, help="Private persistent fixture directory")
+    parser.add_argument("--deadline", type=float, default=20)
+    parser.add_argument("--with-model", action="store_true", help="Controlled decision fault fixture")
+    parser.add_argument("--initialize-projects", action="store_true",
+                        help="Explicitly initialize unknown projects on an isolated external profile2.1 target")
+    return parser
+
+
+class Evidence:
+    def __init__(self, path, suite):
+        self.path = path
+        self.value = {"suite": suite, "started_at": datetime.now(timezone.utc).isoformat(),
+                      "passed": False, "checks": [], "limitations": [
+                          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+                          "A single broker does not qualify replicated Kafka durability."]}
+
+    def record(self, name, **details):
+        self.value["checks"].append({"name": name, "passed": True, **details})
+        self.write()
+
+    def write(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(json.dumps(self.value, indent=2) + "\n")
+
+    def finish(self, error=None):
+        self.value["passed"] = error is None
+        self.value["finished_at"] = datetime.now(timezone.utc).isoformat()
+        if error is not None:
+            # Exceptions may contain HTTP requests, so record only their type.
+            self.value["failure_type"] = type(error).__name__
+        self.write()
+
+
+class Fixture:
+    def __init__(self, args, *, initialize_projects=True):
+        self.args = args
+        self.initialize_projects = initialize_projects
+        self.protocol_profile = None
+        self.initializations = []
+        self.bootstrap_project_ids = None
+        self.temp = None
+        self.root = args.keep_work.resolve() if args.keep_work else None
+        if self.root is None:
+            self.temp = tempfile.TemporaryDirectory(prefix="adhd-multi-")
+            self.root = Path(self.temp.name)
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.root.chmod(0o700)
+        self.file = self.root / "hub.json"
+        self.config_file = self.file
+        self.process = None
+        self.image_runtime = None
+        if getattr(args, "image", None):
+            from container_fixture import OwnedImage
+            self.image_runtime = OwnedImage(args.image, args.image_manifest, self.root)
+        self.logs = []
+        self.clients = []
+        self.model = ModelFixture() if args.with_model else None
+        self.admin_credentials = None
+        self.admin_client = None
+        if args.rest_url:
+            if not args.credentials:
+                raise ValueError("--rest-url requires a private --credentials file")
+            cred = json.loads(args.credentials.read_text())
+            self.base = args.rest_url.rstrip("/")
+            self.tokens = cred["agents"]
+            self.admin_credentials = cred.get("admin")
+            self.config_file = Path(cred["config_file"]) if cred.get("config_file") else None
+        else:
+            self.tokens = {name: secrets.token_urlsafe(32) for name in MEMBERSHIPS}
+            self.base = "http://127.0.0.1:" + str(free_port())
+            self.config = {
+                "project_id": "project-red", "projects": PROJECTS,
+                "host": "127.0.0.1", "port": int(self.base.rsplit(":", 1)[1]),
+                "store_path": str(self.root / "hub.dets"), "agents": self.tokens,
+                "agent_projects": MEMBERSHIPS,
+                "matcher": None if self.model is None else {
+                    "url": self.model.url, "model": "Nemotron-Deciffusion-8B-v2.1",
+                    "timeout_ms": 400, "retry_ms": 100},
+                "eventing": {"enabled": True, "rest_url": args.eventing_rest_url,
+                             "timeout_ms": 3000, "retry_ms": 100},
+            }
+
+    async def start(self):
+        if not self.args.rest_url:
+            if not self.file.exists():
+                self.file.write_text(json.dumps(self.config))
+                self.file.chmod(0o600)
+            command = self.image_runtime.argv(self.file) if self.image_runtime else (
+                json.loads(self.args.command) if self.args.command else ["elixir", str(self.args.hub.resolve())])
+            self.logs = [(self.root / name).open("ab") for name in ("stdout.log", "stderr.log")]
+            self.process = subprocess.Popen(command + [json.dumps(["serve", str(self.file)])],
+                                            stdout=self.logs[0], stderr=self.logs[1], start_new_session=True)
+        deadline = time.monotonic() + 45
+        async with httpx.AsyncClient() as http:
+            while time.monotonic() < deadline:
+                if self.process and self.process.poll() is not None:
+                    raise AssertionError("Hub exited during startup; inspect private fixture logs")
+                try:
+                    response = await http.get(self.base + "/health", timeout=1)
+                except httpx.HTTPError:
+                    response = None
+                if response is not None and response.status_code == 200:
+                    if self.image_runtime:
+                        self.image_runtime.observe()
+                    await self.initialize_unknown_projects()
+                    return
+                await asyncio.sleep(.1)
+        raise AssertionError("Hub readiness deadline exceeded")
+
+    async def initialize_unknown_projects(self):
+        """Explicit fixture-owned Admin admission, never a runtime fallback.
+
+        Actual profile2.0 gets no recovery calls. External installations require
+        explicit CLI consent; negative/recovery fixtures opt out in the constructor.
+        A known missing initialized store must remain unavailable for verified
+        restore rather than being silently recreated by test infrastructure.
+        """
+        if not self.initialize_projects or (self.args.rest_url and not getattr(self.args, "initialize_projects", False)):
+            return
+        async with httpx.AsyncClient(trust_env=False) as http:
+            response = await http.get(self.base + "/protocol/schema", timeout=5)
+            response.raise_for_status()
+            self.protocol_profile = response.json().get("$id")
+        if self.protocol_profile != "urn:adhd:protocol:2.1":
+            return
+        admin = self.admin()
+        projects = admin.call({"op": "list_projects"})["projects"]
+        # The first admitted inventory is the fixture's bootstrap scope. A
+        # restart must not implicitly initialize projects created later by a
+        # scenario: those require that scenario's explicit Admin action.
+        if self.bootstrap_project_ids is None:
+            self.bootstrap_project_ids = frozenset(project["id"] for project in projects)
+        for project in projects:
+            project_id = project["id"]
+            if project_id not in self.bootstrap_project_ids:
+                continue
+            status = admin.call(scoped(project_id, "project_restore_status"))
+            availability = status["availability"]
+            if availability == "ready":
+                continue
+            assert availability == "uninitialized", "Fixture cannot initialize an existing unavailable project"
+            revision = admin.call({"op": "config_get"})["config_revision"]
+            receipt = admin.call(scoped(project_id, "project_restore_plan", mode="initialize",
+                expected_revision=revision, confirm=True, message_id=uuid4().hex))
+            plan_operation = await self.wait_recovery(project_id, receipt["operation_id"], {"ready"})
+            plan = plan_operation["plan"]
+            assert plan["mode"] == "initialize" and plan["project_id"] == project_id
+            apply_receipt = admin.call(scoped(project_id, "project_restore_apply", plan_id=plan["plan_id"],
+                plan_sha256=plan["plan_sha256"], expected_revision=revision, confirm=True, message_id=uuid4().hex))
+            operation = await self.wait_recovery(project_id, apply_receipt["operation_id"], {"complete"})
+            assert operation["result"]["initialized"] is True
+            assert admin.call(scoped(project_id, "project_restore_status"))["availability"] == "ready"
+            assert admin.call({"op": "config_get"})["config_revision"] == revision
+            self.initializations.append({"project_id": project_id, "plan_id": plan["plan_id"],
+                "operation_id": operation["operation_id"], "mode": "initialize", "completed": True})
+
+    async def wait_recovery(self, project_id, operation_id, desired, timeout=None):
+        deadline = time.monotonic() + (timeout or self.args.deadline)
+        while time.monotonic() < deadline:
+            operation = self.admin().call(scoped(project_id, "project_restore_status", operation_id=operation_id))["operation"]
+            state = operation["state"]
+            if state in desired:
+                return operation
+            assert state not in {"failed", "blocked", "expired", "stale"}, "Recovery operation stopped before its required state"
+            await asyncio.sleep(.05)
+        raise AssertionError("Recovery operation did not reach its required state before the fixture deadline")
+
+    async def agent(self, name):
+        http = httpx.AsyncClient(headers={"Authorization": "Bearer " + self.tokens[name],
+                                         "A2A-Version": "1.0"}, timeout=10)
+        client = await create_client(agent=self.base, client_config=ClientConfig(
+            streaming=False, httpx_client=http, supported_protocol_bindings=["JSONRPC"]))
+        agent = Agent(client, http)
+        self.clients.append(agent)
+        return agent
+
+    async def raw(self, name, command, mid=None):
+        envelope = {"jsonrpc": "2.0", "id": uuid4().hex, "method": "SendMessage", "params": {
+            "message": {"messageId": mid or uuid4().hex, "role": "ROLE_USER", "parts": [{"data": command}]}}}
+        async with httpx.AsyncClient() as http:
+            return await http.post(self.base + "/a2a", json=envelope, timeout=10,
+                                   headers={"Authorization": "Bearer " + self.tokens[name], "A2A-Version": "1.0"})
+
+    def admin(self):
+        if self.admin_client is not None:
+            return self.admin_client
+        if not self.admin_credentials and not self.args.rest_url:
+            existing = json.loads(self.file.read_text())
+            if existing.get('admin_token'):
+                self.admin_client = Admin(Client(self, existing['admin_token']), self)
+                return self.admin_client
+        if self.admin_credentials:
+            cred = self.admin_credentials
+        else:
+            text = (self.root / "initial-admin-password.txt").read_text()
+            cred = {"username": "admin", "password": re.search(r"^Password: (.+)$", text, re.M)[1]}
+        client = Client(self)
+        client.login(cred["username"], cred["password"])
+        self.admin_client = Admin(client, self)
+        return self.admin_client
+
+    def hard_stop(self):
+        self.admin_client = None
+        if not self.process:
+            raise ValueError("Process fault tests require a locally owned --hub, --command or --image")
+        if self.image_runtime:
+            self.image_runtime.stop(hard=True)
+            self.process.wait(timeout=15)
+        elif self.process.poll() is None:
+            os.killpg(self.process.pid, signal.SIGKILL)
+            self.process.wait(timeout=10)
+        for log in self.logs:
+            log.close()
+        self.logs = []
+
+    def bind_evidence(self, evidence, key="runtime"):
+        if self.initializations:
+            evidence.value["explicit_fixture_initializations"] = self.initializations
+        if self.image_runtime and self.image_runtime.verified:
+            evidence.value[key] = self.image_runtime.identity()
+            evidence.value[key]["fixture_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+            if key == "runtime":
+                evidence.value["image_id"] = evidence.value[key]["image_config_identity"]
+                evidence.value["artifact_sha256"] = evidence.value[key]["artifact_sha256"]
+
+    async def close(self):
+        for client in self.clients:
+            await client.close()
+        if self.image_runtime:
+            self.image_runtime.stop()
+            if self.process:
+                self.process.wait(timeout=15)
+        elif self.process and self.process.poll() is None:
+            os.killpg(self.process.pid, signal.SIGTERM)
+            try:
+                self.process.wait(timeout=8)
+            except subprocess.TimeoutExpired:
+                self.hard_stop()
+        for log in self.logs:
+            log.close()
+        if self.model:
+            self.model.close()
+        if self.temp:
+            self.temp.cleanup()
+
+
+class Admin:
+    def __init__(self, client, fixture, revision_source=None):
+        self.client, self.fixture = client, fixture
+        self.revision_source = revision_source or client
+
+    def call(self, command, mutation=False, expected=200):
+        if mutation:
+            current = self.revision_source.api({"op": "config_get"})
+            config = current["config"]
+            revision = config.get("config_revision", current.get("config_revision", current.get("revision")))
+            assert type(revision) is int, "config_get must report the current configuration revision"
+            command = {**command, "expected_revision": revision, "confirm": True, "message_id": uuid4().hex}
+        return self.client.api(command, expected=expected)
+
+
+def scoped(project, op, **fields):
+    return {"op": op, "project_id": project, **fields}
+
+
+def reject(response, *, code=None):
+    assert response.status_code in (200, 400, 401, 403, 404, 409), response.status_code
+    value = response.json()
+    assert "error" in value, "Unauthorized/invalid request succeeded"
+    if code:
+        metadata = value["error"].get("data", [])
+        assert any(item.get("metadata", {}).get("code") == code for item in metadata), value["error"]
+    return value["error"]
+
+
+async def poll_until(agent, project, publications, deadline=20):
+    end = time.monotonic() + deadline
+    while time.monotonic() < end:
+        deliveries = (await agent.call(scoped(project, "poll")))["deliveries"]
+        if publications <= {d.get("publication_id") for d in deliveries}:
+            return deliveries
+        await asyncio.sleep(.1)
+    raise AssertionError("Expected project deliveries did not arrive before deadline")
+
+
+async def execute(args, suite, checks):
+    evidence = Evidence(args.report, suite)
+    fixture = Fixture(args)
+    if args.hub:
+        evidence.value["artifact_sha256"] = hashlib.sha256(args.hub.read_bytes()).hexdigest()
+    evidence.value["transport"] = "official-a2a-sdk-1.1.0-jsonrpc"
+    try:
+        await fixture.start()
+        fixture.bind_evidence(evidence)
+        await checks(fixture, evidence)
+    except BaseException as exc:
+        evidence.finish(exc)
+        raise
+    else:
+        evidence.finish()
+    finally:
+        try:
+            await fixture.close()
+        except BaseException as exc:
+            evidence.finish(exc)
+            raise
+        fixture.bind_evidence(evidence)
+        evidence.write()

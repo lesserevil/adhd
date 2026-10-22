@@ -1,0 +1,37 @@
+START controls
+DONE controls True
+START caps
+DONE caps True
+START dormant
+DONE dormant True
+START admin
+DONE admin True
+START policy
+DONE policy True
+START lostreply
+DONE lostreply True
+START fairness
+DONE fairness True
+START cutover
+DONE cutover True
+START cutover-decision
+DONE cutover-decision True
+START cutover-project
+DONE cutover-project True
+START retention
+DONE retention True
+START outage
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-kafka-current02/driver.py", line 301, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-kafka-current02/driver.py", line 298, in main
+    else:assert _STAGED;sys.exit(execute(args.work.absolute(),args.plan_sha256))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-kafka-current02/driver.py", line 270, in execute
+    ids,names=qualify(json.loads(report.read_text()),job,plan)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image40-kafka-current02/driver.py", line 194, in qualify
+    assert len(rows)==job['expected_check_count'] and all(row['passed'] for row in rows)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

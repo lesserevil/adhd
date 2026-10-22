@@ -1,0 +1,1460 @@
+{
+  "schema": "adhd/enforcing-cni-kind-result@1",
+  "passed": false,
+  "plan_sha256": "423969b00d4bf6aecab9d62c26378a6f8a7cc75292fc32832b1211873b59f8b9",
+  "image": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "scope": "Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.",
+  "failure_type": "AssertionError",
+  "cleanup_failure_types": [],
+  "cleanup": [
+    {
+      "kind": "node",
+      "known_id": "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+      "issued_name": "adhd-netpol-qa40-control-plane",
+      "observed_absent": true,
+      "exit_code": 137,
+      "foreign_object_not_removed": false,
+      "failure_types": []
+    },
+    {
+      "kind": "network",
+      "known_id": "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971",
+      "issued_name": "adhd-netpol-qa40-net",
+      "observed_absent": true,
+      "exit_code": null,
+      "foreign_object_not_removed": false,
+      "failure_types": []
+    },
+    {
+      "kind": "anonymous-volume",
+      "name": "177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518",
+      "observed_absent": true
+    }
+  ],
+  "owned_anonymous_volumes": [
+    {
+      "name": "177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518",
+      "destination": "/var",
+      "driver": "local",
+      "scope": "local",
+      "created_at": "2026-10-22T11:15:48Z",
+      "mountpoint": "/var/lib/docker/volumes/177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518/_data"
+    }
+  ],
+  "anonymous_volume_candidates": [
+    "177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518"
+  ],
+  "events": [
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "kind"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 40501,
+      "log_sha256": "8fd6b380e6bc7bbcf8e602b837febc200c23bf09a0ed3d10130738e6a48ab0bb"
+    },
+    {
+      "name": "protected-cluster",
+      "argv": [
+        "/usr/bin/docker",
+        "ps",
+        "-a",
+        "--no-trunc",
+        "--filter",
+        "label=io.x-k8s.kind.cluster=adhd-event-qual",
+        "--format",
+        "{{.ID}}"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 40851,
+      "log_sha256": "048842502e26c8f1c1778bc001af77fa53af03e1bca0fbafd9d017d2fa9e7b79"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "adhd-netpol-qa40-control-plane"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 41345,
+      "log_sha256": "6b56a8ee586aa6a8f7affe3bbcc6cc2c7fd6e3a276f58412907ecedf87a9bc27"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 41627,
+      "log_sha256": "4c2551f330a9036103297daf1456c087adb1cc5200582c7a4e8da8388cc284f5"
+    },
+    {
+      "name": "networks",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "ls",
+        "-q"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 41988,
+      "log_sha256": "2f5d7b0ae8fd23830125533b3099f758d934078513e63ecbeff3355cc1aa7561"
+    },
+    {
+      "name": "network-subnets",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "6d7a5cf94b8e",
+        "3b8e5cbd616e",
+        "a01e0e064157",
+        "373eeec8bac8",
+        "43358bab6379",
+        "d321f9e34ff2",
+        "687d5140b5be",
+        "cc74dd977182",
+        "2908ae5f4a3f",
+        "05ce5f74532d",
+        "987ecdf2bc1f",
+        "52cbe8c44e21",
+        "05fb3b88c4a0",
+        "eea9a47007d0",
+        "86b090a5e853",
+        "26b3643d8a75",
+        "92446e1efdbe"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 42177,
+      "log_sha256": "861eec9d76fd934083bcc10f9754ae8acf722eb414fde2516a32b8fc78ecf695"
+    },
+    {
+      "name": "host-routes",
+      "argv": [
+        "/usr/sbin/ip",
+        "-j",
+        "-4",
+        "route",
+        "show",
+        "table",
+        "main"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 42646,
+      "log_sha256": "ac43b768726c2d35f5a9520c440582ceaecb99c15c37bd545fcfd003bfdb0e0f"
+    },
+    {
+      "name": "qa40-image",
+      "argv": [
+        "/usr/bin/docker",
+        "image",
+        "inspect",
+        "adhd-hub:qa40"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 42903,
+      "log_sha256": "9f27c9759cbcf486510afb6a15bb624524d6618129190b48cd8f44d463bcb725"
+    },
+    {
+      "name": "pull-node",
+      "argv": [
+        "/usr/bin/docker",
+        "pull",
+        "--platform",
+        "linux/amd64",
+        "kindest/node@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 43223,
+      "log_sha256": "78e716a86e8a2e31d4a6bd237432de21f4b1da31fc2b82a31bad8d0e10712d2c"
+    },
+    {
+      "name": "node-image",
+      "argv": [
+        "/usr/bin/docker",
+        "image",
+        "inspect",
+        "kindest/node@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 43684,
+      "log_sha256": "9ec9d355e40c2dfa8649114e45ff34b3221639f1f63852874de8c696890f0c76"
+    },
+    {
+      "name": "create-network",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "create",
+        "--driver",
+        "bridge",
+        "--subnet",
+        "10.240.240.0/24",
+        "--label",
+        "adhd-policy-owner=de8f13c0f092886f240d8b7465e4a1bb",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 44027,
+      "log_sha256": "7fd2fd0bfd932ddea0b5942fd0e9a040aecf6794aefa479f119ecd537a5ef08b"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 44397,
+      "log_sha256": "6e15d98be35de65d9d8ca3a577c25c7a49b4502594782e978bd454fa8637d24e"
+    },
+    {
+      "name": "volumes-before-create",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "ls",
+        "--format",
+        "{{.Name}}"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 44640,
+      "log_sha256": "ad61d14c1f40929cd8f06e715542909ca58fadb61070813936c0b5ea8b451630"
+    },
+    {
+      "name": "create-kind",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+        "create",
+        "cluster",
+        "--name",
+        "adhd-netpol-qa40",
+        "--config",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/bound/kind.yaml",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "--wait",
+        "0s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 45105,
+      "log_sha256": "ae88a6ab6114c3aa933fd0655b84225f24170faa72d3267b14567989aff4d762"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "adhd-netpol-qa40-control-plane"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 49825,
+      "log_sha256": "8dd6cc5ebf555aed6e0af9140e9d4a7c56010dd1f07e36f848d6bbe3b4234bde"
+    },
+    {
+      "name": "inspect-owned-volume",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "inspect",
+        "177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 50283,
+      "log_sha256": "f036f31656d6f034f81695b4fc0858b6ed1a8ff224deb0773b451f6de458ef80"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 50546,
+      "log_sha256": "8dd6cc5ebf555aed6e0af9140e9d4a7c56010dd1f07e36f848d6bbe3b4234bde"
+    },
+    {
+      "name": "node-containerd-version",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "version"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 50952,
+      "log_sha256": "d77a2ee49dd6eb12207b55b5d669a0c2c370f8a73f21583d154cf57303bb52df"
+    },
+    {
+      "name": "create-cni-private-directory",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "sh",
+        "-eu",
+        "-c",
+        "umask 077; mkdir /var/lib/adhd-policy-oci"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 51201,
+      "log_sha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+    },
+    {
+      "name": "stream-cni-archive0",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "-i",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "sh",
+        "-eu",
+        "-c",
+        "case \"$1\" in /var/lib/adhd-policy-oci/0.oci.tar|/var/lib/adhd-policy-oci/1.oci.tar|/var/lib/adhd-policy-oci/2.oci.tar) ;; *) exit 72;; esac; umask 077; set -C; cat > \"$1\"; chmod 0444 \"$1\"",
+        "adhd-cni-archive",
+        "/var/lib/adhd-policy-oci/0.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "input_bytes": 94187520,
+      "input_sha256": "1c1e83c09861126a191aad5cd216d3e64d53f414543cb5346eef651cc765a710",
+      "input_observation": "intended stdin; completion proven only by subsequent in-node digest",
+      "host_client_pid": 51741,
+      "log_sha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+    },
+    {
+      "name": "archive-cni0",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "sha256sum",
+        "/var/lib/adhd-policy-oci/0.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 52008,
+      "log_sha256": "d5db355341aa8abd453cf0b9d635a08f495fbc4e265f413b9540f574dd5481b8"
+    },
+    {
+      "name": "import-cni0",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "images",
+        "import",
+        "--local",
+        "--digests",
+        "--base-name",
+        "quay.io/calico/calico",
+        "--platform",
+        "linux/amd64",
+        "/var/lib/adhd-policy-oci/0.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 52534,
+      "log_sha256": "b022e48d832a0d62a8be6f0e0ab0e61a0fd691fe3637070b5e3b851273da0204"
+    },
+    {
+      "name": "target-cni0",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "images",
+        "list"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 53213,
+      "log_sha256": "0cbdca77934c6e0919463bd833ce3e47062bc3812452e188d3b7767b308b85e3"
+    },
+    {
+      "name": "manifest-cni0",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "content",
+        "get",
+        "sha256:3eba6eb95b51b337bf255ecaf5c669b4b2ba04f9f813aa89785aa6853ecf9817"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 53482,
+      "log_sha256": "f1d04d419755ce3a68bf3913f1721193e0c662a695bcd123060da8ac4d6318b2"
+    },
+    {
+      "name": "inspect-cni0",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "crictl",
+        "inspecti",
+        "quay.io/calico/calico@sha256:3eba6eb95b51b337bf255ecaf5c669b4b2ba04f9f813aa89785aa6853ecf9817"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 54093,
+      "log_sha256": "3e2c0962e3abe97023c8a87c079910a4000807444fb918159953f7d8aa7af20d"
+    },
+    {
+      "name": "stream-cni-archive1",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "-i",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "sh",
+        "-eu",
+        "-c",
+        "case \"$1\" in /var/lib/adhd-policy-oci/0.oci.tar|/var/lib/adhd-policy-oci/1.oci.tar|/var/lib/adhd-policy-oci/2.oci.tar) ;; *) exit 72;; esac; umask 077; set -C; cat > \"$1\"; chmod 0444 \"$1\"",
+        "adhd-cni-archive",
+        "/var/lib/adhd-policy-oci/1.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "input_bytes": 18001920,
+      "input_sha256": "d178e1db4852386a21ccd1cbb27bba072e9d89218c5ae83801ab9d6edf298d10",
+      "input_observation": "intended stdin; completion proven only by subsequent in-node digest",
+      "host_client_pid": 54323,
+      "log_sha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+    },
+    {
+      "name": "archive-cni1",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "sha256sum",
+        "/var/lib/adhd-policy-oci/1.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 54664,
+      "log_sha256": "4dc920586bc488d41c9173e61d3943a793fef28e398412529f04e6a7fe13ef98"
+    },
+    {
+      "name": "import-cni1",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "images",
+        "import",
+        "--local",
+        "--digests",
+        "--base-name",
+        "quay.io/calico/third-party-cni-plugins",
+        "--platform",
+        "linux/amd64",
+        "/var/lib/adhd-policy-oci/1.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 55054,
+      "log_sha256": "26b89669f63cc42cfdd1f170487f8801b5dae69fd4c1d6b4e2ad467c0465d1e0"
+    },
+    {
+      "name": "target-cni1",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "images",
+        "list"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 55747,
+      "log_sha256": "8ff78efffb4842f82b691a8681075d29ee3026143d6bc3aaaaebabb0b357bf76"
+    },
+    {
+      "name": "manifest-cni1",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "content",
+        "get",
+        "sha256:ae6464c7d8ffae03f2f26ed411a5b69e91baf31d8d538923645459f4f301a917"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 56125,
+      "log_sha256": "3ff537542b18ce3418c6651f8fdb8119c7d9f7c9c30acf23d665aa331e9661f7"
+    },
+    {
+      "name": "inspect-cni1",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "crictl",
+        "inspecti",
+        "quay.io/calico/third-party-cni-plugins@sha256:ae6464c7d8ffae03f2f26ed411a5b69e91baf31d8d538923645459f4f301a917"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 56473,
+      "log_sha256": "f62620851a09ba4533b05e4e3cb949d1ebf21c04086f9ed5af2c9bd5082decc4"
+    },
+    {
+      "name": "stream-cni-archive2",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "-i",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "sh",
+        "-eu",
+        "-c",
+        "case \"$1\" in /var/lib/adhd-policy-oci/0.oci.tar|/var/lib/adhd-policy-oci/1.oci.tar|/var/lib/adhd-policy-oci/2.oci.tar) ;; *) exit 72;; esac; umask 077; set -C; cat > \"$1\"; chmod 0444 \"$1\"",
+        "adhd-cni-archive",
+        "/var/lib/adhd-policy-oci/2.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "input_bytes": 140892160,
+      "input_sha256": "e4481b238088d7cbdc3d7a7824b1256c773538a78c0b42fea619983962699b88",
+      "input_observation": "intended stdin; completion proven only by subsequent in-node digest",
+      "host_client_pid": 56945,
+      "log_sha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+    },
+    {
+      "name": "archive-cni2",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "sha256sum",
+        "/var/lib/adhd-policy-oci/2.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 57300,
+      "log_sha256": "20e81c0b4a2504ba8bfe5d8743f2f23315241f8bd12ad3bb29455cb000b3a87c"
+    },
+    {
+      "name": "import-cni2",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "images",
+        "import",
+        "--local",
+        "--digests",
+        "--base-name",
+        "quay.io/calico/node",
+        "--platform",
+        "linux/amd64",
+        "/var/lib/adhd-policy-oci/2.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 57656,
+      "log_sha256": "56760c80d919c3a5fd335c9bfa7cb6c851085bb720f4bf7fe97cd7c68a0cfcac"
+    },
+    {
+      "name": "target-cni2",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "images",
+        "list"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 58520,
+      "log_sha256": "4bf4e1bb1a64ed53236232df2233325e61a4975320df6aaf11ba6ff6560fc7db"
+    },
+    {
+      "name": "manifest-cni2",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "ctr",
+        "--namespace=k8s.io",
+        "content",
+        "get",
+        "sha256:224903e17a8d0588a6b9781331bd64935b0ef741a4208043f7dd9fcc834fc7cd"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 58828,
+      "log_sha256": "2f37a6f7ce6ea0003d9881919ae955e3ad26a516c344aa61319b8db1294f8541"
+    },
+    {
+      "name": "inspect-cni2",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "crictl",
+        "inspecti",
+        "quay.io/calico/node@sha256:224903e17a8d0588a6b9781331bd64935b0ef741a4208043f7dd9fcc834fc7cd"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 59118,
+      "log_sha256": "2242ce925036579c30f749bea72bc283956e038b36f05f756d60d9dbf77620b2"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 59715,
+      "log_sha256": "8dd6cc5ebf555aed6e0af9140e9d4a7c56010dd1f07e36f848d6bbe3b4234bde"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 59960,
+      "log_sha256": "602e3a2cc04ca5bbdfade879c3ebb59f27b6b5197432cbb9ef5eadfd9351c007"
+    },
+    {
+      "name": "endpoint-namespace",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "get",
+        "namespace",
+        "kube-system",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 60160,
+      "log_sha256": "24430fc56f7567c65599ec0faad23dc0c9aedb64104c6af2d1f09ae2500f0d4d"
+    },
+    {
+      "name": "endpoint-node",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "get",
+        "node",
+        "adhd-netpol-qa40-control-plane",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 60442,
+      "log_sha256": "de8a4a5d99274fdca86ef638df1a0dd5fbf77e61edf9e241b5e981595337eaaf"
+    },
+    {
+      "name": "endpoint-direct-namespace",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "--server=https://10.240.240.2:6443",
+        "get",
+        "namespace",
+        "kube-system",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 61007,
+      "log_sha256": "24430fc56f7567c65599ec0faad23dc0c9aedb64104c6af2d1f09ae2500f0d4d"
+    },
+    {
+      "name": "endpoint-direct-node",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "--server=https://10.240.240.2:6443",
+        "get",
+        "node",
+        "adhd-netpol-qa40-control-plane",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 61262,
+      "log_sha256": "de8a4a5d99274fdca86ef638df1a0dd5fbf77e61edf9e241b5e981595337eaaf"
+    },
+    {
+      "name": "endpoint-inside-node",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+        "kubectl",
+        "--kubeconfig=/etc/kubernetes/admin.conf",
+        "--server=https://10.240.240.2:6443",
+        "get",
+        "namespace",
+        "kube-system",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 61503,
+      "log_sha256": "24430fc56f7567c65599ec0faad23dc0c9aedb64104c6af2d1f09ae2500f0d4d"
+    },
+    {
+      "name": "create-direct-api-configmap",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "create",
+        "-f",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/direct-api-configmap.json"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 62192,
+      "log_sha256": "305d78c49c6ae57687c7aa2de13e8c4895852d9324b563d9a545f0184acab43c"
+    },
+    {
+      "name": "verify-direct-api-configmap",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "get",
+        "configmap",
+        "kubernetes-services-endpoint",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 62415,
+      "log_sha256": "302d2c7502f155369413c084667c1110687828c9f6e15e80b25685cf4a33cb1a"
+    },
+    {
+      "name": "endpoint-namespace-after",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "get",
+        "namespace",
+        "kube-system",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 62621,
+      "log_sha256": "24430fc56f7567c65599ec0faad23dc0c9aedb64104c6af2d1f09ae2500f0d4d"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 62987,
+      "log_sha256": "8dd6cc5ebf555aed6e0af9140e9d4a7c56010dd1f07e36f848d6bbe3b4234bde"
+    },
+    {
+      "name": "install-calico",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "create",
+        "-f",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/bound/calico-pinned.yaml"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 63491,
+      "log_sha256": "6623ff60bbc4eac7fc880f41b777045fc48452f7ef402d80fe3480187cc86224"
+    },
+    {
+      "name": "controller-namespace-before",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "get",
+        "namespace",
+        "kube-system",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 64004,
+      "log_sha256": "24430fc56f7567c65599ec0faad23dc0c9aedb64104c6af2d1f09ae2500f0d4d"
+    },
+    {
+      "name": "controller-node-before",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "get",
+        "node",
+        "adhd-netpol-qa40-control-plane",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 64396,
+      "log_sha256": "de8a4a5d99274fdca86ef638df1a0dd5fbf77e61edf9e241b5e981595337eaaf"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 64820,
+      "log_sha256": "8dd6cc5ebf555aed6e0af9140e9d4a7c56010dd1f07e36f848d6bbe3b4234bde"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 66102,
+      "log_sha256": "602e3a2cc04ca5bbdfade879c3ebb59f27b6b5197432cbb9ef5eadfd9351c007"
+    },
+    {
+      "name": "controller-configmap-before",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "get",
+        "configmap",
+        "kubernetes-services-endpoint",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 66511,
+      "log_sha256": "302d2c7502f155369413c084667c1110687828c9f6e15e80b25685cf4a33cb1a"
+    },
+    {
+      "name": "controller-before-overlay",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "get",
+        "deployment",
+        "calico-kube-controllers",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 66911,
+      "log_sha256": "77177045a429650d0068ab163449e6c0094ff9c5e6eb48617ba6723e5679163f"
+    },
+    {
+      "name": "controller-endpoint-overlay",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "patch",
+        "deployment",
+        "calico-kube-controllers",
+        "--type=json",
+        "--patch-file",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/controller-endpoint-overlay.json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 67659,
+      "log_sha256": "73fd54a17e668916cb6cb12c9a6d4c73fcf413a0554ddf4f1175f04a2fa9eaa6"
+    },
+    {
+      "name": "controller-after-overlay",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "get",
+        "deployment",
+        "calico-kube-controllers",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 68455,
+      "log_sha256": "aceeed3aee622834759764613cffe01e5afb360026a6a3ef41822e2bcd3f2bda"
+    },
+    {
+      "name": "controller-namespace-after",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "get",
+        "namespace",
+        "kube-system",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 68787,
+      "log_sha256": "24430fc56f7567c65599ec0faad23dc0c9aedb64104c6af2d1f09ae2500f0d4d"
+    },
+    {
+      "name": "controller-node-after",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "get",
+        "node",
+        "adhd-netpol-qa40-control-plane",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 69139,
+      "log_sha256": "50088250703b9bb4ccf6987abc05b088e32a53c32a6c51e73b14f82901abf126"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 69682,
+      "log_sha256": "8dd6cc5ebf555aed6e0af9140e9d4a7c56010dd1f07e36f848d6bbe3b4234bde"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 70041,
+      "log_sha256": "602e3a2cc04ca5bbdfade879c3ebb59f27b6b5197432cbb9ef5eadfd9351c007"
+    },
+    {
+      "name": "controller-configmap-after",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "get",
+        "configmap",
+        "kubernetes-services-endpoint",
+        "-o",
+        "json",
+        "--request-timeout=10s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 70306,
+      "log_sha256": "302d2c7502f155369413c084667c1110687828c9f6e15e80b25685cf4a33cb1a"
+    },
+    {
+      "name": "ready-calico",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "rollout",
+        "status",
+        "daemonset/calico-node",
+        "--timeout=300s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 70561,
+      "log_sha256": "3fb5195d51e5ae0ef86b18f63b0e38c35102b835031d5d19fb180d165b591523"
+    },
+    {
+      "name": "ready-controller",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "-n",
+        "kube-system",
+        "rollout",
+        "status",
+        "deployment/calico-kube-controllers",
+        "--timeout=300s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 71226,
+      "log_sha256": "c2d94e4ffb2d5a00aef5639ecbbe8315a279c6f66a99f38b2582909d0e6df216"
+    },
+    {
+      "name": "ready-node",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "wait",
+        "--for=condition=Ready",
+        "node/adhd-netpol-qa40-control-plane",
+        "--timeout=300s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 71550,
+      "log_sha256": "87e9438bbc3dc4c4d038d67ff7c8ceff2642b58e1437acf64e01cbefa4586173"
+    },
+    {
+      "name": "qa40-image-before-load",
+      "argv": [
+        "/usr/bin/docker",
+        "image",
+        "inspect",
+        "adhd-hub:qa40"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 71793,
+      "log_sha256": "9f27c9759cbcf486510afb6a15bb624524d6618129190b48cd8f44d463bcb725"
+    },
+    {
+      "name": "load-qa40",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+        "load",
+        "docker-image",
+        "adhd-hub:qa40",
+        "--name",
+        "adhd-netpol-qa40"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 72310,
+      "log_sha256": "044746ed363fba78820b7bda15f53a65363bccc91f21c86cd40d4076b0ce2ff3"
+    },
+    {
+      "name": "qa40-image-after-load",
+      "argv": [
+        "/usr/bin/docker",
+        "image",
+        "inspect",
+        "adhd-hub:qa40"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 73812,
+      "log_sha256": "9f27c9759cbcf486510afb6a15bb624524d6618129190b48cd8f44d463bcb725"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 74298,
+      "log_sha256": "8dd6cc5ebf555aed6e0af9140e9d4a7c56010dd1f07e36f848d6bbe3b4234bde"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 74692,
+      "log_sha256": "602e3a2cc04ca5bbdfade879c3ebb59f27b6b5197432cbb9ef5eadfd9351c007"
+    },
+    {
+      "name": "network-gate",
+      "argv": [
+        "/home/horde/src/adhd/.venv/bin/python",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/frozen/tests/kafka_network_policy.py",
+        "--kubectl",
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/owned.kubeconfig",
+        "--context",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/bound/context",
+        "--admission-manifest",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/bound/admission.json",
+        "--admission-sha256",
+        "a78519154311d105ed84ed2e0887490b47d22807141eb2371163fc2c1a0b0f03",
+        "--image",
+        "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "--cluster-image",
+        "adhd-hub:qa40",
+        "--kind-cluster",
+        "adhd-netpol-qa40",
+        "--kind-node",
+        "adhd-netpol-qa40-control-plane",
+        "--namespace",
+        "adhd-netpol-gate40",
+        "--policy",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/frozen/deploy/k8s/private.yaml",
+        "--work",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/runtime/gate",
+        "--report",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-route17-cri-final/gate-report.json"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 75022,
+      "error_type": "AssertionError",
+      "owned_client_joined_after_failure": true,
+      "log_sha256": "1d2f8f6054bfe25b3d5a8089ccf004279055c382b249ad2b158b9ba21d8b92a6"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 85189,
+      "log_sha256": "7e02fb06d921da4089386752a9d6a8f4fe71cd6387633ed38f665455aac327aa"
+    },
+    {
+      "name": "inspect-owned-volume",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "inspect",
+        "177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 85507,
+      "log_sha256": "f036f31656d6f034f81695b4fc0858b6ed1a8ff224deb0773b451f6de458ef80"
+    },
+    {
+      "name": "kill-owned-node",
+      "argv": [
+        "/usr/bin/docker",
+        "kill",
+        "--signal",
+        "KILL",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 85820,
+      "log_sha256": "6e871e7a6b073261e55c57f96f2b005c374f55dcb57dbb907d3ec30d7b7f00ee"
+    },
+    {
+      "name": "wait-owned-node",
+      "argv": [
+        "/usr/bin/docker",
+        "wait",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 86253,
+      "log_sha256": "d02a7e4abf9cb8423bdadc7f0909e9121e9de22e70b5faf8ac04b29e5f8a0212"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 86672,
+      "log_sha256": "5e1218e5939326490be5224ef1bd097419ff53cfbd7e150adbd3257b8701d87f"
+    },
+    {
+      "name": "remove-owned-node",
+      "argv": [
+        "/usr/bin/docker",
+        "rm",
+        "--volumes",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 86965,
+      "log_sha256": "6e871e7a6b073261e55c57f96f2b005c374f55dcb57dbb907d3ec30d7b7f00ee"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 87384,
+      "log_sha256": "7f6d9c82b89ade6e6210bccd7d341388651f4ec35168bf863ed1a40580078fa0"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "adhd-netpol-qa40-control-plane"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 87601,
+      "log_sha256": "6b56a8ee586aa6a8f7affe3bbcc6cc2c7fd6e3a276f58412907ecedf87a9bc27"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 88091,
+      "log_sha256": "6e15d98be35de65d9d8ca3a577c25c7a49b4502594782e978bd454fa8637d24e"
+    },
+    {
+      "name": "remove-owned-network",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "rm",
+        "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 88438,
+      "log_sha256": "7fd2fd0bfd932ddea0b5942fd0e9a040aecf6794aefa479f119ecd537a5ef08b"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 88704,
+      "log_sha256": "fd795beb7ff70490b5b0f4beb835dfa5d3975b2286f4b927ebbd86eb943b9bb1"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 88934,
+      "log_sha256": "4c2551f330a9036103297daf1456c087adb1cc5200582c7a4e8da8388cc284f5"
+    },
+    {
+      "name": "verify-volume-absence",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "inspect",
+        "177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 89381,
+      "log_sha256": "130cffafc68d0710624c75c6ebdaafad5796f15dbacccf87db8d9a145d0f01e7"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "kind"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 89701,
+      "log_sha256": "8fd6b380e6bc7bbcf8e602b837febc200c23bf09a0ed3d10130738e6a48ab0bb"
+    },
+    {
+      "name": "protected-cluster",
+      "argv": [
+        "/usr/bin/docker",
+        "ps",
+        "-a",
+        "--no-trunc",
+        "--filter",
+        "label=io.x-k8s.kind.cluster=adhd-event-qual",
+        "--format",
+        "{{.ID}}"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 89894,
+      "log_sha256": "048842502e26c8f1c1778bc001af77fa53af03e1bca0fbafd9d017d2fa9e7b79"
+    }
+  ],
+  "inputs_unchanged": true,
+  "direct_api_endpoint_proof": {
+    "address": "10.240.240.2",
+    "port": 6443,
+    "namespace_uid": "4a72f17c-2d53-4320-a21c-8d687a0e6bad",
+    "node_uid": "694fcf5b-640c-44d5-bd3f-3f5445167f85",
+    "configmap_uid": "a6b848c9-5459-417c-9863-7cfe40cb2129",
+    "owner_nonce": "de8f13c0f092886f240d8b7465e4a1bb",
+    "tls": {
+      "authority_sha256": "0e0eec8f2d4ed03234527c0e02dc9a76ad185b958d425689b80b418bfe4472a1",
+      "server_certificate_sha256": "e2a8805b51a87e649d3bad65864234eb1e4c6cdee799bb73aac66424eb78152b",
+      "verify_peer": true,
+      "hostname_checked": "10.240.240.2",
+      "port": 6443,
+      "timeout_seconds": 5
+    },
+    "inside_own_node_verified": true,
+    "host_direct_API_verified": true,
+    "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+    "separate_configmap_sha256": "95bf18157a480e2f8d0527381bb6f545ea29f0dbaa4f144b695f383e049383bc",
+    "controller_overlay": {
+      "deployment_uid": "264530bf-5db8-4883-a117-e3463144067b",
+      "configmap_uid": "a6b848c9-5459-417c-9863-7cfe40cb2129",
+      "patch_sha256": "79ec327d85fb0dba57393fee3047e893abb904e8fc76f8034d442c8914db952b",
+      "guarded_json_patch": true,
+      "container": "calico-kube-controllers",
+      "pinned_manifest_unchanged": true
+    }
+  }
+}

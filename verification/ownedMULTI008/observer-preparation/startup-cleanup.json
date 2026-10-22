@@ -1,0 +1,35 @@
+{
+  "schema": "adhd/image-startup-cleanup-preparation@1",
+  "passed": true,
+  "scope": "Mocked Docker classification/cleanup/retained lifecycle only; no runtime or image loader qualification",
+  "review": {
+    "reviewer": "/root/contracts",
+    "result": "approved",
+    "method": "Independent read-only review of full patch and pure scenarios; no runtime starts"
+  },
+  "pure_checks": {
+    "startup_cleanup_scenarios": 11,
+    "generic_observer_guards": 11,
+    "existing_eventing_argv_guards": 3,
+    "all_passed": true,
+    "new_guard_process_attempts": 0
+  },
+  "files": {
+    "tests/image_eventing_runtime.py": "35cf00ffc01b08839e423c2a2c45972fd0021e6bd079d84079084868187c6a65",
+    "tests/image_filesystem_fault.py": "377815766213709224c8b220a44b07892843dad1e7bd904e4b11ca2c38c78deb",
+    "tests/image_filesystem_fault_unit.py": "1c55ba5e52f4f8a8184e376c189a249f99029e6c2651e42e7b2d2b8fd57160d6",
+    "tests/image_startup_cleanup_unit.py": "463843b9b3d7fabcba0c717dff02b9de58781a4dd6f624cc76523355f1d745c9"
+  },
+  "policy": [
+    "Known container ID preferred over name. Exact sole rc1 NoSuchObject/Container response proves absence; daemon errors, mixed text, wrong ID, generic nonzero do not.",
+    "Initial inspect is inside cleanup/reset guard; independent own-name/ID cleanup and final classified inspect run after errors. Original failure propagates even if cleanup later proves absence.",
+    "Known foreign inspected objects are not removed. Unknown cleanup remains recorded and blocks repeated stop and replacement argv; handles reset.",
+    "Actual successful image hardkill path still requires live exact owned image/container, KILL/wait137/nonrunning137/removal/independent absence; cold replacement disarms observer."
+  ],
+  "active_frozen_plans_mutated": false,
+  "image_probes": 0,
+  "application_starts": 0,
+  "offline_cli_starts": 0,
+  "broker_starts": 0,
+  "provider_calls": 0
+}

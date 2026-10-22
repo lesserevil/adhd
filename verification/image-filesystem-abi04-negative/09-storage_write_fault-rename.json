@@ -1,0 +1,42 @@
+{
+  "case": {
+    "source": "storage_write_fault.c",
+    "op": "rename"
+  },
+  "passed": true,
+  "container_id": "02bb2f5875c5e377f47155faef8c29adf1513d7fa33f49c1667681afde16c0ca",
+  "exit_code": 137,
+  "caller": {
+    "op": "rename",
+    "namespace_pid": 1,
+    "wrapper_resolved": true,
+    "next_resolved_distinct": true,
+    "direct_syscall": false,
+    "unarmed_success": true,
+    "sparse_offset": 0
+  },
+  "observer_trace": {
+    "stage": "snapshot-install",
+    "pid": 1,
+    "syscall": "rename"
+  },
+  "physical": {
+    "effect": "target-bytes",
+    "verified": true,
+    "target_bytes": 37,
+    "target_allocated_bytes": 4096
+  },
+  "process_custody": {
+    "host_process_pid": 1181731,
+    "namespace_pid": 1,
+    "signal_method": "ancestor-pidfd-SIGSTOP",
+    "pid_namespace": "pid:[4026533600]",
+    "executable_basename": "busybox",
+    "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+    "process_maps_sha256": "fc10f584230a9d52a7d585d7551c2e5882ff0dd1f938181bca4b154dc94eea71",
+    "kernel_state": "stopped"
+  },
+  "observer_library_sha256": "4a24d957eae2823a15acfbbf18e405e86dcbec87ed558793907251d7d07a679b",
+  "caller_library_sha256": "69de99ea311feace6ba064704bebc0f41ba5195c89791d02ced7eb074673da05",
+  "owned_container_absent": true
+}

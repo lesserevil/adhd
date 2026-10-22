@@ -1,0 +1,31 @@
+{
+  "schema": "adhd/observed-kind-kubelet-slice-grammar-review@1",
+  "review_only_preparation": true,
+  "runtime_resource_starts": 0,
+  "old_plan17_unchanged": true,
+  "old_module_sha256": "73cab8e33f691259b16520c336f1df533b3c8555a0a9c4a4a0be1ed7efb69b70",
+  "new_module_sha256": "9b8a67f8343ae453edac51390ebd03d7ec5e2f51417940696cab4cb43c382ae0",
+  "new_unit_sha256": "af6d1d6c8fbfae47c4559882b4ea1ea3a6918178694ed5a2b3b2400f12d101cd",
+  "observed_safe_metadata": {
+    "pod_uid": "88e9a64a-e762-401c-8ac7-a7f008d67c72",
+    "container_id": "899ca1f20d1166ec8d5ed37792eb3702f546eceb890053458917c515c67dac1a",
+    "CRI_cgroupsPath": "kubelet-kubepods-burstable-pod88e9a64a_e762_401c_8ac7_a7f008d67c72.slice:cri-containerd:899ca1f20d1166ec8d5ed37792eb3702f546eceb890053458917c515c67dac1a"
+  },
+  "extension": "Only exact kubelet-kubepods-burstable-pod<verifiedUIDunderscores>.slice:cri-containerd:<verified64hexCID>, or exact expanded absoluteform. No arbitraryprefix/root/UID/CID or filesystem scan.",
+  "parent": "/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-burstable.slice/kubelet-kubepods-burstable-pod<verifiedUIDunderscores>.slice",
+  "child": "Exact parent plus /cri-containerd-<verifiedCID>.scope; independent parent-first read survives destroyed child.",
+  "primary_source": {
+    "url": "https://www.freedesktop.org/software/systemd/man/latest/systemd.slice.html",
+    "observed_document_version": "systemd262",
+    "relevant_rule": "Dash-separated slice names encode the hierarchy, each accumulated prefix is a parent slice. Uses this stable naming rule only, no claim of Kind runtime version262/new features."
+  },
+  "pure_tests": 79,
+  "meaningful_guards": [
+    "Exact actual observedUID/CID expands to expected fourlevel hierarchy",
+    "Absoluteexpanded form maps to same pair",
+    "Foreignprefix,QoS,UID,CID,trailingtraversal/extra component rejects",
+    "Full six-command observer mock retains parentoom_kill counter and childUNAVAILABLE with observedkubelet path",
+    "All old unknownlayout/no scan/foreign identity/bounds tests remain"
+  ],
+  "scope": "Parser preparation only. No cgroup counter read from actual deleted17Pod; no OOM cause or18route qualification inferred."
+}

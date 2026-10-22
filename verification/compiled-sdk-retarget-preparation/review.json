@@ -1,0 +1,133 @@
+{
+  "schema": "adhd/compiled-sdk-retarget-preparation@1",
+  "executed": false,
+  "runtime_container_provider_starts": 0,
+  "original_cases_and_order": {
+    "feedback_sdk": 5,
+    "archive_sdk": 4,
+    "history_sdk": 4,
+    "retrieval_sdk": 4
+  },
+  "original_hub_readiness_seconds": 30,
+  "original_harnesses": {
+    "feedback_sdk.py": {
+      "sha256": "4b9ab9b191dae2438e51e3f2363a6d3d56719e88293ca5ebacb8fb9226363c47",
+      "changed": false
+    },
+    "archive_sdk.py": {
+      "sha256": "ac61aaede03e38b3320fdff8a184f61f88ac51bc8b687eaba62b77f8da6c7137",
+      "changed": false
+    },
+    "history_sdk.py": {
+      "sha256": "6e58cc002176958940a308dcfefee78b26e45021d2a5e405f9043d9c10b1f0c3",
+      "changed": false
+    },
+    "retrieval_sdk.py": {
+      "sha256": "93516be2a55d502670b7d508ca856f862de4a673758d7bb5f35afe07dbeb7b4c",
+      "changed": false
+    }
+  },
+  "changed_preparation_helpers": {
+    "controlled_sdk_matrix.py": "4fd7c34f839f22d67bfce5e32ff26f7d7db96272641bc7f1d77d1628cc782a5b",
+    "controlled_sdk_runtime.py": "1937b3cc12308a06849233db1104b8ba03f58b6fc37d484eb4eb0f5e42dc8f85",
+    "controlled_sdk_static.py": "c36794a025d61c8940d774053730768db9532dc2a02a695f8a8cd134d6b119d0"
+  },
+  "pure_guards": {
+    "passed": true,
+    "tests": 12,
+    "all_actual_process_starts_blocked": true,
+    "invocation": "/home/horde/src/adhd/.venv/bin/python -I -B -c \"import sys,runpy;sys.path.insert(0,\"tests\");runpy.run_path(\"tests/controlled_sdk_static.py\",run_name=\"__main__\")\""
+  },
+  "future_target": {
+    "admission_path": "verification/container-precompile-image40/compiled03-admission/manifest.json",
+    "actual_image_context_and_admission_identity": "PENDING actual03 build/offline audit; no placeholder constitutes admission",
+    "required_generic_fields": [
+      "passed",
+      "image_config_identity",
+      "artifact_sha256",
+      "canonical_manifest_sha256",
+      "component_lock_identity",
+      "payload_audit",
+      "files.receipt.json",
+      "files.rebuild.json"
+    ],
+    "required_new_fields": [
+      "files.cache-manifest.json",
+      "files.cache-metadata.json",
+      "compiled_runtime_audit.passed",
+      "compiled_runtime_audit.image_id",
+      "compiled_runtime_audit.artifact_sha256",
+      "compiled_runtime_audit.canonical_manifest_sha256",
+      "compiled_runtime_audit.cache_manifest_sha256",
+      "compiled_runtime_audit.cache_metadata_sha256",
+      "compiled_runtime_audit.compiler_inputs_sha256",
+      "compiled_runtime_audit.entrypoint"
+    ],
+    "required_sibling_files": [
+      "receipt.json",
+      "rebuild.json",
+      "cache-manifest.json",
+      "cache-metadata.json"
+    ],
+    "source_receipt_chain": "Original actual native source40 receipt/rebuild bytes retained and hash-bound; new image packaging proof must identify its distinct image/context. No claim compiled02 diagnostic is formaladmission."
+  },
+  "new_optional_argument": "--compiled-cache-manifest ABSOLUTE_ADMISSION_DIRECTORY/cache-manifest.json",
+  "runtime_proof": "SDKCustody first executes unchanged source59/actualVM custody after original Hub.start health returns; then reads exact cache manifest, sha256s boot/build/inputs+59BEAMs+5toolchain anchors (VM anchor remapped /proc/self/exe to actual/proc/1/exe), and verifies same inspected container/VM +entrypoint. No extra health/warmup or original readiness measurement change.",
+  "metadata_proof_scope": "Modes/timestamps/reproducibility are bound to reviewed compiled_runtime_audit/cache-metadata; runtime custody rechecks files/toolchain/manifest. No runtime reproducibility benchmark claim.",
+  "historical_parent_candidates": [
+    {
+      "path": "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38h/plan.json",
+      "sha256": "43e30e760e9830fdca97e08e2b162b192404c3ecb0edfaffc0ec13f722bb4b5f"
+    },
+    {
+      "path": "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38h/matrix.json",
+      "sha256": "ec1cc062a248557543a3e8e90cb8f3898ad05ac6867591a587bb4783c00d6487"
+    }
+  ],
+  "prepare_command_template": [
+    "/home/horde/src/adhd/.venv/bin/python",
+    "-B",
+    "tests/controlled_sdk_matrix.py",
+    "--prepare",
+    "--repo",
+    "/home/horde/src/adhd",
+    "--work",
+    "NEW_ABSOLUTE_FRESH_WORK",
+    "--context",
+    "ACTUAL_COMPILED03_CONTEXT",
+    "--admission",
+    "ACTUAL_COMPILED03_ADMISSION",
+    "--admission-sha256",
+    "ACTUAL_REVIEWED03_ADMISSION_SHA",
+    "--compiled-cache-manifest",
+    "ACTUAL_ADMISSION_SIBLING_CACHE_MANIFEST",
+    "--parent-plan",
+    "ORIGINAL_REVIEWED_IMAGE38_15_PLAN",
+    "--parent-matrix",
+    "ORIGINAL_FALSE_IMAGE38_15_MATRIX"
+  ],
+  "next_gate": "Fill only actual target bindings after03 admission. Prepare/frozen pure checks using -I -B; independently full fileSET/hash/tool/producer/receipt/cache verification; no runtime GO implied.",
+  "original_historical_producer_artifacts": [
+    {
+      "path": "/home/horde/src/adhd/_build/standard-artifacts/673e93e599bb554e82f24a754bf2e2592bf38fb229e34dd527469fa8494862b5/artifact-c5d1e7d19106d2507a5c",
+      "sha256": "96b7bda8cd17962a8c82251fbc99ae22f312fc097ea4bf35bd2a306b8188e2ac"
+    },
+    {
+      "path": "/home/horde/src/adhd/_build/standard-artifacts/a4f2ccf8b548a9b54d9fcf5d8361d44d5d1fe05c7d9be22e9d2d32c9d9cffc31/artifact-b30a66a2aa960d0759c3",
+      "sha256": "21fde681809ce0cccdb42dc8336e771d7994c50e60cadec7b7dd12a4b5b65ebc"
+    },
+    {
+      "path": "/home/horde/src/adhd/_build/standard-artifacts/d57c8b6745906cb7cb39ecd10acb29d0bd179bbeda012fc768d8ee9786a44444/artifact-61fbd0257d5043c6dcfc",
+      "sha256": "b34659b630e8d911a43817b725857032b6ade422f49807247fb6206c553469a1"
+    }
+  ],
+  "required_provisional_names_superseded": {
+    "compiled_runtime_audit.image_config_identity": "compiled_runtime_audit.image_id",
+    "compiled_runtime_audit.inputs_sha256": "compiled_runtime_audit.compiler_inputs_sha256"
+  },
+  "actual03_field_alignment_only": true,
+  "tool_closure_scope": "Exact declared inputs and top executables; no recursive tool-library closure claim",
+  "actual03_prepared_plan": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sdk40-compiled03-02/plan.json",
+  "actual03_prepared_plan_sha256": "2e1551d1caaccb1d48291f53fb8f7b484f688be202d1ebdcb8f82ac5d589f2bf",
+  "actual03_execution_authorized": false
+}

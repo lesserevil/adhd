@@ -1,0 +1,391 @@
+{
+  "schema": "adhd/federation-v2-stale-canonical-owner@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "three-real-hubs-explicit-v2-project-pairs-minimal-identities-and-independent-server-roles",
+      "passed": true
+    },
+    {
+      "name": "warm-query-pins-canonical-server-project-and-observed-v2-source-wire-only-to-owner",
+      "passed": true
+    },
+    {
+      "name": "actual-owner-stopped-catalog-ten-second-ttl-expired-partial-unavailable-never-noncanonical-fallback",
+      "passed": true,
+      "catalog_ttl_ms": 10000,
+      "expiry_observed": true,
+      "owner_process_stopped": true,
+      "last_catalog_generated_at": "2026-10-22T10:53:43.052Z",
+      "owner_catalog_expiry_ms": 1792666433052,
+      "directory_observation": {
+        "catalog": {
+          "items": [],
+          "revision": "018cbb115ab44ce56992e3a4bc44383df2994fc8891c20671ebf9ad30169df5f",
+          "visible": true
+        },
+        "peers": [
+          {
+            "catalog": [],
+            "expires_at": null,
+            "project_id": "other",
+            "revision": null,
+            "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+            "status": "unavailable"
+          },
+          {
+            "catalog": [
+              {
+                "aliases": [
+                  "canonical-fixture"
+                ],
+                "canonical": false,
+                "description": "Noncanonical image decoders copy.",
+                "relationship": "contained",
+                "scope": {
+                  "host": "github.com",
+                  "provider": "github",
+                  "resource": "canonical",
+                  "tenant": "fixture"
+                }
+              }
+            ],
+            "expires_at": "2026-10-22T10:54:01.878Z",
+            "project_id": "other",
+            "revision": "c59a8cee2a95079d050cd88ea99b8acc7825e75783a44497788c2299026bcb86",
+            "server_id": "429cedf1e50e4f9482f3650fb20d6ad7",
+            "status": "ready"
+          }
+        ],
+        "project_id": "shared",
+        "server_id": "73afc461e7054fdbb0e1e8b490f7e9dc"
+      },
+      "no_outage_inference": true,
+      "query": {
+        "coverage": [
+          {
+            "project_id": "shared",
+            "server_id": "73afc461e7054fdbb0e1e8b490f7e9dc",
+            "status": "ready"
+          },
+          {
+            "project_id": "other",
+            "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+            "status": "unavailable"
+          },
+          {
+            "project_id": "other",
+            "server_id": "429cedf1e50e4f9482f3650fb20d6ad7",
+            "status": "ready"
+          }
+        ],
+        "created_at": "2026-10-22T10:53:53.310Z",
+        "deadline_at": "2026-10-22T10:53:56.310Z",
+        "id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_3",
+        "owner_id": "alice",
+        "project_id": "shared",
+        "question": "Expired owner must never use the reachable noncanonical copy",
+        "results": [
+          {
+            "owner_project_id": "other",
+            "owner_server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+            "requested": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "fixture"
+            },
+            "response": null,
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "fixture"
+            },
+            "status": "unavailable"
+          }
+        ],
+        "status": "partial"
+      }
+    },
+    {
+      "name": "recovered-fresh-owner-routing-retains-v2-provenance-hidden-project-denial-and-local-roles",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model; no semantic quality or external model use.",
+    "Eventing explicitly disabled; Kafka, deployment and lifecycle admission are separate gates."
+  ],
+  "harness_sha256": "4f6ae96fe8c25d9270bddc4327602e9e69c55ef44f5e6d77b16cd08edd941999",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "network_mode": "host",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "4225c781b072bc6e88b58161b97e7ddc3f9ddbeb6c6f13c6d816f7938fae14e4",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+      },
+      {
+        "action": "started",
+        "container_id": "8a6ca6f288c8ffeda18e8a9b43618a7d98ae75c13428d8657b1c08fd94629d71",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+      },
+      {
+        "action": "started",
+        "container_id": "f8e1bbe5b5c49826b1afb159b6f3b2ce330f97734e4731edf69e31debc3c76b6",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+      },
+      {
+        "action": "stopped",
+        "container_id": "8a6ca6f288c8ffeda18e8a9b43618a7d98ae75c13428d8657b1c08fd94629d71",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "81457da5cc6d4f5862f0aa962fa794d3ba2683a971fe81214e567360e7be26c8",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+      },
+      {
+        "action": "stopped",
+        "container_id": "4225c781b072bc6e88b58161b97e7ddc3f9ddbeb6c6f13c6d816f7938fae14e4",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "stopped",
+        "container_id": "81457da5cc6d4f5862f0aa962fa794d3ba2683a971fe81214e567360e7be26c8",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "stopped",
+        "container_id": "f8e1bbe5b5c49826b1afb159b6f3b2ce330f97734e4731edf69e31debc3c76b6",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ]
+  },
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "dependency_sha256": {
+    "eventing_target.py": "eb8a991b05aac299d1f499741bb3a2d383cbca65ac9d029a3107826ade10d331",
+    "federation_acceptance.py": "7fbeb4fb2965977c0a469ae5e704caba2e6e4a75203e798ce02f5fe4aea9be73",
+    "federation_multi.py": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104"
+  },
+  "source_wire": {
+    "canonical": [
+      {
+        "request": {
+          "catalog_revision": "19a444bc09e24b9a09900f466ff28c0000c72019bb8dd4d4ce60bce5842b6c3e",
+          "deadline_at": "2026-10-22T10:53:46.108Z",
+          "destination_project_id": "other",
+          "op": "source_submit",
+          "origin_project_id": "shared",
+          "origin_server_id": "73afc461e7054fdbb0e1e8b490f7e9dc",
+          "owner_server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_2",
+          "question": "Warm canonical image decoders owner routing",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          }
+        },
+        "status": 202,
+        "response": {
+          "project_id": "other",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_2",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          },
+          "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "status": "pending"
+        },
+        "bearer_present": true
+      },
+      {
+        "request": {
+          "destination_project_id": "other",
+          "op": "source_status",
+          "origin_project_id": "shared",
+          "origin_server_id": "73afc461e7054fdbb0e1e8b490f7e9dc",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_2",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          }
+        },
+        "status": 200,
+        "response": {
+          "project_id": "other",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_2",
+          "response": {
+            "description": "Canonical image decoders.",
+            "matched": true,
+            "model": "Nemotron-Deciffusion-8B-v2.1",
+            "probability_ppm": 990000,
+            "project_id": "other",
+            "publications": [],
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "fixture"
+            },
+            "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d"
+          },
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          },
+          "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "status": "completed"
+        },
+        "bearer_present": true
+      },
+      {
+        "request": {
+          "catalog_revision": "19a444bc09e24b9a09900f466ff28c0000c72019bb8dd4d4ce60bce5842b6c3e",
+          "deadline_at": "2026-10-22T10:54:05.859Z",
+          "destination_project_id": "other",
+          "op": "source_submit",
+          "origin_project_id": "shared",
+          "origin_server_id": "73afc461e7054fdbb0e1e8b490f7e9dc",
+          "owner_server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_4",
+          "question": "Fresh recovered canonical image decoders owner routing",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          }
+        },
+        "status": 202,
+        "response": {
+          "project_id": "other",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_4",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          },
+          "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "status": "pending"
+        },
+        "bearer_present": true
+      },
+      {
+        "request": {
+          "destination_project_id": "other",
+          "op": "source_status",
+          "origin_project_id": "shared",
+          "origin_server_id": "73afc461e7054fdbb0e1e8b490f7e9dc",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_4",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          }
+        },
+        "status": 200,
+        "response": {
+          "project_id": "other",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_4",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          },
+          "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "status": "pending"
+        },
+        "bearer_present": true
+      },
+      {
+        "request": {
+          "catalog_revision": "19a444bc09e24b9a09900f466ff28c0000c72019bb8dd4d4ce60bce5842b6c3e",
+          "deadline_at": "2026-10-22T10:54:05.859Z",
+          "destination_project_id": "other",
+          "op": "source_submit",
+          "origin_project_id": "shared",
+          "origin_server_id": "73afc461e7054fdbb0e1e8b490f7e9dc",
+          "owner_server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_4",
+          "question": "Fresh recovered canonical image decoders owner routing",
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          }
+        },
+        "status": 202,
+        "response": {
+          "project_id": "other",
+          "protocol_version": 2,
+          "query_id": "sourcequery_dfab5265dc963146f93d36adca2a03d3_4",
+          "response": {
+            "description": "Canonical image decoders.",
+            "matched": true,
+            "model": "Nemotron-Deciffusion-8B-v2.1",
+            "probability_ppm": 990000,
+            "project_id": "other",
+            "publications": [],
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "fixture"
+            },
+            "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d"
+          },
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "fixture"
+          },
+          "server_id": "b97ce8537bdc40f8a8d9f9d4ec772a3d",
+          "status": "completed"
+        },
+        "bearer_present": true
+      }
+    ],
+    "noncanonical": []
+  },
+  "model_requests": 2
+}

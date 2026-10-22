@@ -1,0 +1,24 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "checks": 5,
+  "lifecycle_admitted": false,
+  "artifact_sha256": "e1613307b2bb7c59499e16353fce1720cbf0bb516c0f41dac15084e6e300b85e",
+  "scope": "Actual previous qualified single-project producer accepted records/private deliveries/acks/pending filters; SIGSTOP+SIGKILL after successful decision-bound new-generation snapshot link; current15 recovery, Kafka cutover, retained identities and repeated cold restart. Controlled local model only, no semantic quality or image claim.",
+  "harness": {
+    "path": "tests/multi_migration.py",
+    "sha256": "f5d64ac70583fcc7a8f27bbd6439af48b7509b67ea9eb1727fe573114fdc5e55"
+  },
+  "inputs": {
+    "tests/multi_fault.c": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+    "tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "tests/foundation_acceptance.py": "b2b3448b89f46e4dc2745f0526f14f5d8121e1d2d7f75ea6db520b133f988448",
+    "tests/hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e"
+  },
+  "fault_library_sha256": "e83c092987747acf9b5ef729dc32fedd63a9b4897e563bc93f55e21871fbd247",
+  "report": {
+    "path": "verification/project-recovery-migration/native15-link.json",
+    "sha256": "9e257b988c6f3b30d5d51baf5c3942e06c44615654178e0c9c4f98c621e1b2f5"
+  },
+  "command": "python tests/multi_migration.py --hub HUB --legacy-hub LEGACY_HUB --eventing-rest-url REAL_BROKER --with-model --crash-at after-snapshot --keep-work PRIVATE_DIR --report REPORT"
+}

@@ -1,0 +1,191 @@
+{
+  "schema": "adhd/image-filesystem-observer-probe@1",
+  "passed": true,
+  "application_started": false,
+  "owned_container_absent": true,
+  "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+  "exit_code": 137,
+  "actual_musl_loader": "/lib/ld-musl-x86_64.so.1",
+  "observer": {
+    "schema": "adhd/image-filesystem-observer-elf@1",
+    "passed": true,
+    "scope": "Host compiler/readelf only; object never loaded",
+    "source": "config_rename_fault.c",
+    "source_sha256": "bc3c16ecf630dd401f9b4b5314e26c04a4f161dca9f30f9d2fdbb2e4a34238e5",
+    "library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+    "compile_argv": [
+      "cc",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-shared",
+      "-fPIC",
+      "-nostdlib",
+      "-fno-stack-protector",
+      "-U_FORTIFY_SOURCE",
+      "-D_FORTIFY_SOURCE=0",
+      "-O2",
+      "/home/horde/src/adhd/_build/abi41-compiled01/inputs/config_rename_fault.c",
+      "-o",
+      "/home/horde/src/adhd/_build/abi41-compiled01/build/config_rename_fault/observer.so"
+    ],
+    "elf_machine": "x86_64",
+    "elf_class": "ELF64",
+    "undefined_scalar_symbols": [
+      "_exit",
+      "access",
+      "close",
+      "dlsym",
+      "fsync",
+      "getenv",
+      "getpid",
+      "kill",
+      "open",
+      "pause",
+      "snprintf",
+      "strcmp",
+      "write"
+    ],
+    "exported_symbols": [
+      "rename"
+    ],
+    "needed_libraries": [],
+    "glibc_symbol_versions": [],
+    "section_sha256": {
+      "dynamic": "56d306c029dec65413345ffc1e55529126180f6ada6e9bbac097c19159a5e65e",
+      "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+      "header": "1f43e798ac574d6dec8ed389ee5a0ae17aa80bf18d85d535f0ec33412bcc15a2",
+      "symbols": "2bbd6e3af7c713f27c5fbf2173213fa4e5853bd3aed6db6f8f7bed55ddc8a6de"
+    },
+    "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "actual_image_loader_qualified": false,
+    "application_started": false,
+    "required_actual_image_abi_cases": [
+      "rename"
+    ]
+  },
+  "successful_abi_cases": [
+    "rename"
+  ],
+  "process_custody": {
+    "host_process_pid": 1340962,
+    "namespace_pid": 1,
+    "signal_method": "ancestor-pidfd-SIGSTOP",
+    "pid_namespace": "pid:[4026533600]",
+    "executable_basename": "busybox",
+    "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+    "process_maps_sha256": "79ff45c1343cd8a7221872f3a7d58cfd18326468747dddd876d960120bf5a547",
+    "process_maps_witness_phase": "kernel-stopped",
+    "observer_mapping_sha256": "27c6e13293c8393932a7b14f61e4863c4dd1ce95faa794700b3c6fc8a800d842",
+    "observer_library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+    "kernel_state": "stopped"
+  },
+  "cases": [
+    {
+      "case": {
+        "source": "config_rename_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "bb2eceffcbd686c2a3e87e4de63f8655a7ca9847fd536c76c3c796bf972ba5a8",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "journal",
+        "pid": 1,
+        "rename_result": 0
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1340962,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "79ff45c1343cd8a7221872f3a7d58cfd18326468747dddd876d960120bf5a547",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "27c6e13293c8393932a7b14f61e4863c4dd1ce95faa794700b3c6fc8a800d842",
+        "observer_library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    }
+  ],
+  "caller": {
+    "source_sha256": "51e0616a8018f020bc51124f3d5ca5a11102347b0847d27957a5afa4a7fcea62",
+    "library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+    "undefined_scalar_symbols": [
+      "_exit",
+      "access",
+      "close",
+      "dlopen",
+      "dlsym",
+      "fsync",
+      "getenv",
+      "getpid",
+      "lseek",
+      "memcmp",
+      "open",
+      "pread",
+      "read",
+      "setenv",
+      "snprintf",
+      "strcmp",
+      "strlen",
+      "unsetenv",
+      "write"
+    ],
+    "needed_libraries": [],
+    "glibc_symbol_versions": [],
+    "compile_argv": [
+      "cc",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-shared",
+      "-fPIC",
+      "-nostdlib",
+      "-fno-builtin",
+      "-fno-stack-protector",
+      "-U_FORTIFY_SOURCE",
+      "-D_FORTIFY_SOURCE=0",
+      "-O2",
+      "/home/horde/src/adhd/_build/abi41-compiled01/inputs/image_filesystem_abi_caller.c",
+      "-o",
+      "/home/horde/src/adhd/_build/abi41-compiled01/build/caller.so"
+    ],
+    "elf_machine": "x86_64",
+    "sections_sha256": {
+      "dynamic": "148bab214794772c0124a60eb7eae5d9652939ccf27a96c5245bf5bfdf7337ca",
+      "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+      "header": "19dca1a79787217fd8b2b9ff7e9b2d2ff94d61b5a1c2cc7494420d6a54c71948",
+      "symbols": "479b3799a5c9d24ec6df96551918361f396f3fe2ec576e22d8c7b191dcf43d31"
+    },
+    "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "actual_image_loaded": false
+  },
+  "scope": "Standalone real forwarding/boundary/custody only; no application qualification"
+}

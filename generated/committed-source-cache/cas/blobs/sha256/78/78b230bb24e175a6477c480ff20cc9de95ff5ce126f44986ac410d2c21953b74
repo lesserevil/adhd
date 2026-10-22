@@ -1,0 +1,6 @@
+unless Code.ensure_loaded?(Hub.CLI) do
+  for file <- ["validation.ex", "domain.ex", "federation.ex", "store.ex", "assets.ex", "http.ex", "cli.ex", "tests/litai_test.exs"] do
+    Code.require_file(file, __DIR__)
+  end
+end
+Hub.CLI.main(System.argv())

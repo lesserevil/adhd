@@ -1,0 +1,13 @@
+python3: can't open file '/home/horde/src/adhd/_build/core41-compiled02/runtime/scripts/configure_hub.py': [Errno 2] No such file or directory
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/_build/core41-compiled02/frozen/tests/auth_lifecycle.py", line 87, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/_build/core41-compiled02/frozen/tests/auth_lifecycle.py", line 25, in main
+    r,c,initial=setup(stage,stage);r.start();text=(r.root/'initial-admin-password.txt').read_text();password=text.split('Password: ')[1].strip();client=Client(r);u=client.login('admin',password)
+                ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/core41-compiled02/frozen/tests/auth_lifecycle.py", line 15, in setup
+    subprocess.run(['python3','scripts/configure_hub.py','--directory',str(template),'--port',str(port),'--store-path',str(r.root/'state.dets')],check=True,stdout=subprocess.DEVNULL)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', 'scripts/configure_hub.py', '--directory', '/home/horde/src/adhd/_build/core41-compiled02/runtime/_build/roadmap/auth-faults/run-j4j65vrc/before-password-seed', '--port', '56073', '--store-path', '/home/horde/src/adhd/_build/core41-compiled02/runtime/_build/roadmap/auth-faults/run-j4j65vrc/before-password/state.dets']' returned non-zero exit status 2.

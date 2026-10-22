@@ -1,0 +1,48 @@
+{
+  "schema": "adhd/eventing-controls-acceptance@1",
+  "passed": true,
+  "harness_sha256": "79b4ee52f30ecbccf88e97a092506bf5d6a397cf8ca5aca58312200bfae3db9f",
+  "checks": [
+    {
+      "name": "retained-pre-cutover-original-replays-with-original-identity-and-no-automatic-history",
+      "passed": true
+    },
+    {
+      "name": "blocked-real-kafka-publication-keeps-accepted-threshold-model-and-endpoint",
+      "passed": true,
+      "threshold": 5000
+    },
+    {
+      "name": "bounded-explicit-replay-preserves-activation-idempotency-and-acknowledgements",
+      "passed": true
+    },
+    {
+      "name": "physical-corruption-repair-republishes-linked-accepted-original-with-stable-envelope",
+      "passed": true
+    },
+    {
+      "name": "replay-range-admission-is-atomic-and-obeys-current-durable-backpressure",
+      "passed": true
+    },
+    {
+      "name": "exact-digest-retry-and-audited-reconcile-recover-real-foreign-kafka-record",
+      "passed": true
+    },
+    {
+      "name": "repair-replay-audit-and-acknowledgements-survive-hard-restart",
+      "passed": true
+    },
+    {
+      "name": "archived-project-rejects-new-replay-and-preserves-accepted-control-idempotency",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled typed model proves frozen-policy use, not model semantic quality.",
+    "Single-partition actual Kafka; no claim about replicated durability."
+  ],
+  "input_sha256": {
+    "elixir": "53bb7030df56920b2bb965ac26a82319d5f894f07c898f500170103996072df8",
+    "hub-controls-13.exs": "aabfcf968501260d912b27109c31819c69f4eaf74fe6fc755040a87bc6734ca1"
+  }
+}

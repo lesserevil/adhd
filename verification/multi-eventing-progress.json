@@ -1,0 +1,597 @@
+{
+  "schema": "adhd/multi-eventing-progress@1",
+  "status": "partial-development-evidence",
+  "implementation_complete": false,
+  "lifecycle_qualified": false,
+  "released": false,
+  "baseline_commit": "a8f7de8",
+  "branches": [
+    "roadmap/integration",
+    "roadmap/contracts",
+    "roadmap/deployment",
+    "roadmap/acceptance"
+  ],
+  "artifacts": {
+    "first": {
+      "path": "_build/roadmap/multi/hub.exs",
+      "sha256": "13e6b296b6e1a499ac1e4a7b3e88fd4ac63a11fe800d9213edae7273dfcd1c76",
+      "admitted": false
+    },
+    "second": {
+      "path": "_build/roadmap/multi/hub-02.exs",
+      "sha256": "3d43189fd382de767bb292aa138f896f41d7c4df5d1e89b8bef540681a9ab891",
+      "admitted": false
+    },
+    "third": {
+      "path": "_build/roadmap/multi/hub-03.exs",
+      "sha256": "eafb266182693c4f8e32ea3ad8982f3f97d147e538bda5046f4b4307faf4c338",
+      "admitted": false
+    },
+    "fourth": {
+      "path": "_build/roadmap/multi/hub-04.exs",
+      "sha256": "7ba7ea249404e4ec26b7871a74574b2bc324d556196a6ea94324ebbf105c27ec",
+      "admitted": false
+    },
+    "fifth": {
+      "path": "_build/roadmap/multi/hub-05.exs",
+      "sha256": "65f98a49a0f23ea259a24cec432246d270d552a316c60cc138f6c8da2eeb920a",
+      "admitted": false
+    },
+    "sixth": {
+      "path": "_build/roadmap/multi/hub-06.exs",
+      "sha256": "2bfdc1826848a0b5dec80ff5c3c6af8bc516205ac098bb4f1252c4b19a7dbb55",
+      "admitted": false
+    },
+    "tenth": {
+      "path": "_build/roadmap/multi/hub-10.exs",
+      "sha256": "8862790b407b91ac900b4e5212316c94f10459eb58c515ad630cb9b31d5a9d0e",
+      "admitted": false
+    },
+    "eleventh": {
+      "path": "_build/roadmap/multi/hub-11.exs",
+      "sha256": "15dedcddcac73e1467b49c0218efc4eb95eb5675abec6c2e5c3aa25a6178bafd",
+      "admitted": false
+    },
+    "thirteenth": {
+      "path": "_build/roadmap/multi/hub-13.exs",
+      "sha256": "9f37f1addb2eb98b113639c01c4b00d996167cd22ed138e0f748ba93166a4d05",
+      "admitted": false
+    },
+    "fourteenth": {
+      "path": "_build/roadmap/multi/hub-resources-14.exs",
+      "sha256": "d48cfd4d10728d08ba249afbb49f283637af03d8ee1efa605ac8bb4f25f731e2",
+      "admitted": false
+    },
+    "busy-eighteenth": {
+      "path": "_build/roadmap/multi/hub-busy-18.exs",
+      "sha256": "f792597662591ad1153c9002b5777d8c840399859df03dec58e015f7df8166a2",
+      "admitted": false
+    },
+    "wire-nineteenth": {
+      "path": "_build/roadmap/multi/hub-wire-19.exs",
+      "sha256": "f6fc4d13f417d3a894505247fa1b63923cdd11f367fc588f9ce5a7ca69aecf11",
+      "admitted": false
+    },
+    "controls-thirteenth": {
+      "path": "_build/roadmap/multi/hub-controls-13.exs",
+      "sha256": "aabfcf968501260d912b27109c31819c69f4eaf74fe6fc755040a87bc6734ca1",
+      "admitted": false
+    },
+    "integration-twenty-third": {
+      "path": "_build/roadmap/multi/hub-integration-23.exs",
+      "sha256": "c302658e7f98755f2626bd4b211aac957397dc29b60d8b852720415691537e0a",
+      "admitted": false
+    },
+    "integration-thirtieth": {
+      "path": "_build/roadmap/multi/hub-filter-30.exs",
+      "sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+      "admitted": true
+    }
+  },
+  "reports": {
+    "initial-multi": {
+      "path": "verification/multi-eventing/initial-multi.json",
+      "sha256": "dba04bb265df17c595a1c1d89e6e547c8b7c6efbc47df8cb04682489cc4da3ac",
+      "checks": 9
+    },
+    "current-multi": {
+      "path": "verification/multi-eventing/current-multi.json",
+      "sha256": "c1e5fa4e59b16d8851148b2381066d8a36ba0b557b340b300b5f331c98e09882",
+      "checks": 9
+    },
+    "raw-eventing": {
+      "path": "verification/multi-eventing/raw-eventing.json",
+      "sha256": "2bc60006142b1e6391ba590ca5732419d492462df6a60419062055e423538125",
+      "checks": 6
+    },
+    "controlled-filters": {
+      "path": "verification/multi-eventing/controlled-filters.json",
+      "sha256": "baa4d75d230f00d689a90dd54b25417c7660a2615652cbca22b4e92374a5de89",
+      "checks": 8
+    },
+    "lost-produce-reply": {
+      "path": "verification/multi-eventing/lost-produce-reply.json",
+      "sha256": "6a8225910107671bcfc89f6c3fa2216c9ed9396a6a28b28935cb94bec0464975",
+      "checks": 2,
+      "artifact_sha256": "3d43189fd382de767bb292aa138f896f41d7c4df5d1e89b8bef540681a9ab891"
+    },
+    "wire-vectors": {
+      "path": "verification/multi-eventing/wire-vectors.json",
+      "sha256": "8bb185a67183427f7c84d09bc1e467a8eeefa4095c15bd3f33a2d63d960ddcf2",
+      "checks": 3
+    },
+    "native-regression": {
+      "path": "verification/multi-eventing/native-regression.json",
+      "sha256": "8050b5a9b9e441ff9270589e559e677d69733a70d8b43073324ce38940d7f6e3",
+      "checks": 18,
+      "artifact_sha256": "65f98a49a0f23ea259a24cec432246d270d552a316c60cc138f6c8da2eeb920a",
+      "scope": "Inherited native behavior regressions; new feature evidence is separate"
+    },
+    "migration-preservation-06": {
+      "path": "verification/multi-eventing/migration-preservation-06.json",
+      "sha256": "4b60c8a3d7bfdb37bd963e616413d7d66409a9ec3a96b46c6fd8ec710de79d4e",
+      "checks": 4
+    },
+    "desktop-mobile-model-free-06": {
+      "path": "verification/multi-eventing/desktop-mobile-model-free-06.json",
+      "sha256": "bf21eff1b30496a60d2cc2501cef9756c8891fbcc004a26dfc934f38ef831b6a",
+      "checks": 16
+    },
+    "desktop-mobile-filtered-06": {
+      "path": "verification/multi-eventing/desktop-mobile-filtered-06.json",
+      "sha256": "e2c53ef45b776cce4ad26afcb74e8c6cf77d7137ec5b28e9d3fcf217dbcd87f3",
+      "checks": 16
+    },
+    "multi-with-resources-10": {
+      "path": "verification/multi-eventing/multi-with-resources-10.json",
+      "sha256": "afb230aab89585b33d32c4d16e433c25a09c2fca3c3ea5808c63c174e13a90cc",
+      "checks": 9
+    },
+    "raw-with-resources-10": {
+      "path": "verification/multi-eventing/raw-with-resources-10.json",
+      "sha256": "da3b0f5f959093b439eaa560e7ad8ca78b50b0cc1e2e49128baee7197101b80c",
+      "checks": 6
+    },
+    "hot-broker-cutover-10": {
+      "path": "verification/multi-eventing/hot-broker-cutover-10.json",
+      "sha256": "1b76ced7c75bfc22c5bbc6a3847f3bff4098e17221f125ffd9acef96bbfee6f2",
+      "checks": 3
+    },
+    "three-server-federation-08": {
+      "path": "verification/multi-eventing/three-server-federation-08.json",
+      "sha256": "daac820e224ce4f67f349165565967cfb775944e927897a2802a50472d09f7eb",
+      "checks": 10
+    },
+    "native-with-resources-10": {
+      "path": "verification/multi-eventing/native-with-resources-10.json",
+      "sha256": "052a9ced9f952e72595e476d8c253c13e2236be0655614ede8524671c6378d0f",
+      "checks": 18,
+      "artifact_sha256": "8862790b407b91ac900b4e5212316c94f10459eb58c515ad630cb9b31d5a9d0e"
+    },
+    "migration-crash-prepared-11": {
+      "path": "verification/multi-eventing/migration-crash-prepared-11.json",
+      "sha256": "0d7a2445708c3127d2257b4075c643296a2451c09eb117ba204d48bf55920f4b",
+      "checks": 5
+    },
+    "migration-crash-completed-11": {
+      "path": "verification/multi-eventing/migration-crash-completed-11.json",
+      "sha256": "97c762cc4df5932b77c37fc5eb4b60af6009b70eae43bdb0383017e90b0a715b",
+      "checks": 5
+    },
+    "migration-damaged-config-11": {
+      "path": "verification/multi-eventing/migration-damaged-config-11.json",
+      "sha256": "07fe771bca8655e686c04655118aa30b38a383edf6d55f00cc9cbf98d0a081ef",
+      "checks": 6
+    },
+    "migration-damaged-backend-11": {
+      "path": "verification/multi-eventing/migration-damaged-backend-11.json",
+      "sha256": "45042397f04cd5293aeafb752f4582919c3c34585209ae774db79f66d67377f5",
+      "checks": 6
+    },
+    "migration-damaged-snapshot-11": {
+      "path": "verification/multi-eventing/migration-damaged-snapshot-11.json",
+      "sha256": "841e6973781b16260584ec2bb3096431ab3590d8be4e3e9d6cc3d5a83a6bba7a",
+      "checks": 6
+    },
+    "hot-11b": {
+      "path": "verification/multi-eventing/hot-11b.json",
+      "sha256": "a14289ae0e50639eb1fc960e26b37784a189441af80eca1c18b2519621254e7a",
+      "checks": 4
+    },
+    "federation-09": {
+      "path": "verification/multi-eventing/federation-09.json",
+      "sha256": "b99c62e29f1beccac6dd90fbe40d5b8c43f6c5d864738ee41261693898b92de1",
+      "checks": 12
+    },
+    "browser-13": {
+      "path": "verification/multi-eventing/browser-13.json",
+      "sha256": "6142e916912c5b274bd577d6bac91c350804e5ffcd9feca259cdefee90258ada",
+      "checks": 16
+    },
+    "cutover-decision-crash-11": {
+      "path": "verification/multi-eventing/cutover-decision-crash-11.json",
+      "sha256": "bbf38bae1b57d6be84ad18f60f89cbdbfbbfefea85dd0f80e2b7d4e44eb93b29",
+      "checks": 5
+    },
+    "cutover-project-crash-11": {
+      "path": "verification/multi-eventing/cutover-project-crash-11.json",
+      "sha256": "914b06cad187f4409ae5010ca9548022294628b7a14db45318a92d4aa14d8ab3",
+      "checks": 5
+    },
+    "native-with-tracking-14": {
+      "path": "verification/multi-eventing/native-with-tracking-14.json",
+      "sha256": "052a9ced9f952e72595e476d8c253c13e2236be0655614ede8524671c6378d0f",
+      "checks": 18,
+      "artifact_sha256": "d48cfd4d10728d08ba249afbb49f283637af03d8ee1efa605ac8bb4f25f731e2"
+    },
+    "browser-peer-auth-14b": {
+      "path": "verification/multi-eventing/browser-peer-auth-14b.json",
+      "sha256": "5e8f129a401855b94a876ae1d2e9e81e56a442d6bc04e5d521a870ac84e4b903",
+      "checks": 22
+    },
+    "store-busy-wire-18": {
+      "path": "verification/multi-eventing/store-busy-wire-18.json",
+      "sha256": "bbcbe05d0ae6ef1ae91e925739d008cd833cc78262c6775a62e20f584c45f1f0",
+      "checks": 3
+    },
+    "store-busy-wire-19": {
+      "path": "verification/multi-eventing/store-busy-wire-19.json",
+      "sha256": "9ae196926c6b963d1dad0a281bd894943249515b2cfabd3827f031a9c05bc3f2",
+      "checks": 5,
+      "artifact_sha256": "f6fc4d13f417d3a894505247fa1b63923cdd11f367fc588f9ce5a7ca69aecf11"
+    },
+    "controls-13": {
+      "path": "verification/multi-eventing/controls-13.json",
+      "sha256": "98acbfe0b80f7f843d6e22a051baaa78274cf1b8f0898d40399f006f7d417a8d",
+      "checks": 8,
+      "artifact_sha256": "aabfcf968501260d912b27109c31819c69f4eaf74fe6fc755040a87bc6734ca1"
+    },
+    "federation-13": {
+      "path": "verification/multi-eventing/federation-13.json",
+      "sha256": "75d64a368a3148e2e7e99e63cb82b9ec7c332e8b1ae63af1a04933ab42607b4d",
+      "checks": 14,
+      "artifact_sha256": "aabfcf968501260d912b27109c31819c69f4eaf74fe6fc755040a87bc6734ca1"
+    },
+    "openrig-17d": {
+      "path": "verification/multi-eventing/openrig-17d.json",
+      "sha256": "7a9aa00f3b5045587b200aa651fc9d8e344c9b25527c56623288c687ed0b58be",
+      "checks": 11,
+      "artifact_sha256": "f9e53b8a9298af748ca9607f3785819f5f9ba3e5d0aec0122b377f1e4fe0856d"
+    },
+    "protocol-integration-23": {
+      "path": "verification/multi-eventing/protocol-integration-23.json",
+      "sha256": "3e9fbeae3f200d95183f4f40be311ba62b3349ec0e4962f69b0caca70834b192",
+      "checks": 3,
+      "artifact_sha256": "c302658e7f98755f2626bd4b211aac957397dc29b60d8b852720415691537e0a"
+    },
+    "models-integration-23": {
+      "path": "verification/multi-eventing/models-integration-23.json",
+      "sha256": "e0bc31088be31e681a5a428ab9b270ff78d2c6d77f4fa95b7f4c1ca1541d42e7",
+      "checks": 4,
+      "artifact_sha256": "c302658e7f98755f2626bd4b211aac957397dc29b60d8b852720415691537e0a"
+    },
+    "wire-integration-23": {
+      "path": "verification/multi-eventing/wire-integration-23.json",
+      "sha256": "d97374ba5634596ffb69f9e7e0e77077e04129896b6c0c4531e3a1f846b43d10",
+      "checks": 5,
+      "artifact_sha256": "c302658e7f98755f2626bd4b211aac957397dc29b60d8b852720415691537e0a"
+    },
+    "auth-integration-23": {
+      "path": "verification/multi-eventing/auth-integration-23.json",
+      "sha256": "7bb2bb962682fa871fdc896fdfa9d95a9259ff541c3f49b8655fccf7ad658619",
+      "checks": 9,
+      "artifact_sha256": "c302658e7f98755f2626bd4b211aac957397dc29b60d8b852720415691537e0a"
+    },
+    "native-integration-23": {
+      "path": "verification/multi-eventing/native-integration-23.json",
+      "sha256": "1a87a024b4d5acb786b174034a4e3e54a74dc575f1520895f4b7ac00adfd8560",
+      "checks": 18,
+      "artifact_sha256": "c302658e7f98755f2626bd4b211aac957397dc29b60d8b852720415691537e0a"
+    },
+    "foundation-integration-23": {
+      "path": "verification/multi-eventing/foundation-integration-23.json",
+      "sha256": "9844c866d8c6587dc558fcc4e5071bb4cc65ea91cb234357e371d02feaaf0cee",
+      "checks": 20,
+      "artifact_sha256": "c302658e7f98755f2626bd4b211aac957397dc29b60d8b852720415691537e0a"
+    },
+    "recovery-browser-02": {
+      "path": "docs/validation/eventing-browser-02.json",
+      "sha256": "aaccf296e5795fe5ebaa089e533b44e81ab97f6d84523f748f1ca9f8b22211f2",
+      "scope": "Artifact-bound desktop/mobile candidate evidence; final lifecycle rerun pending"
+    },
+    "admin-browser-04": {
+      "path": "docs/validation/admin-browser-04.json",
+      "sha256": "4d18a77363e1446fb7be8a1e477d80db3565f66467f8f157b6b23da7867c284b",
+      "scope": "Artifact-bound desktop/mobile candidate evidence; final lifecycle rerun pending"
+    },
+    "live-model-26": {
+      "path": "verification/multi-eventing/live-model-26.json",
+      "sha256": "185d903816d483258a54311f45829141879cbe0e98e66a373fd2d28ff186eeac",
+      "artifact_sha256": "b6c17ba3121cd1f6b8a7adaef82b44c736bfd1d4010d8938aacb4c961f2f282a",
+      "scope": "Actual existing Nemotron; two filter fixtures and semantic history; two projects; final retained artifact rerun pending"
+    },
+    "audit-27-admin-edit": {
+      "path": "verification/multi-eventing/audit-27-admin-edit.json",
+      "sha256": "aafb9dcc1f2b95a3feb5ff051b3d3c177609b3557849f1966f8c4feddd5ea0d8",
+      "scope": "Candidate conformance; exact artifact/harness binding inside report; final retained rerun pending"
+    },
+    "audit-27-project-policy": {
+      "path": "verification/multi-eventing/audit-27-project-policy.json",
+      "sha256": "0e1e3f76de0b0ee04bb65bdfddf1e19ef1c5151d352fc211dbc6a076f5604423",
+      "scope": "Candidate conformance; exact artifact/harness binding inside report; final retained rerun pending"
+    },
+    "audit-26-full-protocol": {
+      "path": "verification/multi-eventing/audit-26-full-protocol.json",
+      "sha256": "0339ce712af77b1cf8912669211cd10ec05662345866f64961c5e72aa87bcd0d",
+      "scope": "Candidate conformance; exact artifact/harness binding inside report; final retained rerun pending"
+    },
+    "audit-26-eventing-protocol": {
+      "path": "verification/multi-eventing/audit-26-eventing-protocol.json",
+      "sha256": "4d0a446cfb922d7bd269280dd62b47d26c953c5c4c4dffee2eda28f1eb4f3021",
+      "scope": "Candidate conformance; exact artifact/harness binding inside report; final retained rerun pending"
+    },
+    "live-model-28": {
+      "path": "verification/multi-eventing/live-model-28.json",
+      "sha256": "c7d9dde7a78df359fa64dfac93289c70d881db7a956540932716cac441cf5946",
+      "artifact_sha256": "31f33131ba3b6cf0f0ad30c2df0560e2175e8a4e78804017a236da91bb345615",
+      "scope": "Actual existing Nemotron, including accepted filtered event during model pause then one delivery after reenable; final admitted artifact rerun pending"
+    },
+    "multi-evidence-04": {
+      "path": "docs/validation/multi-evidence-04.json",
+      "sha256": "40a0ee9c4b9a03469ce63d1c44cc63d0cd2f95fd87c4c87695d1451582db68d0",
+      "scope": "Ten candidate namespace groups; actual optimizer evaluation extension pending"
+    },
+    "final-foundation-28": {
+      "path": "verification/multi-eventing/final-foundation-28.json",
+      "sha256": "97479f659186a6f9f97fd7d2f9dcd2c4039c3530f42fe97e3314d0dee6afa6b3",
+      "checks": 20
+    },
+    "final-multi-28": {
+      "path": "verification/multi-eventing/final-multi-28.json",
+      "sha256": "0eec4906b5f5cb1be45ed0243fe584b23144ffd3a996297f7ad34e706342e617",
+      "checks": 9
+    },
+    "final-store-move-28": {
+      "path": "verification/multi-eventing/final-store-move-28.json",
+      "sha256": "97c0bd2741f3b9f7e54c5af7e9a34e35765dad8f452691ef6e78fb4b5dac851b",
+      "checks": 6
+    },
+    "final-extra-28-hot": {
+      "path": "verification/multi-eventing/final-extra-28-hot.json",
+      "sha256": "777d2341c872d19d9b627aba37eac8f83db597993c9f9d6244d39dd21c9ac2db",
+      "checks": 4
+    },
+    "final-extra-28-aliases": {
+      "path": "verification/multi-eventing/final-extra-28-aliases.json",
+      "sha256": "d2ce1fb102c909006346cf1f55fc97628df5132aa8380804802720bff29548c8",
+      "checks": 6
+    },
+    "final-extra-28-backend-models": {
+      "path": "verification/multi-eventing/final-extra-28-backend-models.json",
+      "sha256": "00532a0bfbb7bb49d774d1f4373ca50bf7e654e738e97a423a964052b90182a0",
+      "checks": 4
+    },
+    "final-wire-30": {
+      "path": "verification/multi-eventing/final-wire-30.json",
+      "sha256": "08c465fb1fa8de0e525d45536dc0a7ec87f777fa47c71b18b1bab4494dcb6404",
+      "checks": 8
+    },
+    "final-config-crash-30": {
+      "path": "verification/multi-eventing/final-config-crash-30.json",
+      "sha256": "680cc245350fc7664ca7326b1244919ad11b5dc7dd23485861dcb89a9a784908",
+      "checks": 3
+    },
+    "live-filter-30": {
+      "path": "verification/multi-eventing/live-filter-30.json",
+      "sha256": "01b7df651b72f99833c5bad1ae30410811bd5a82aec4b9d96fdf3f1401c30c83",
+      "checks": 0
+    },
+    "final-root-30-foundation": {
+      "path": "verification/multi-eventing/final-root-30-foundation.json",
+      "sha256": "1d53abba7d808312de21cf7cf550a8fe39f1ed758b76900e802ffecb3b527d28",
+      "checks": 20
+    },
+    "final-root-30-multi": {
+      "path": "verification/multi-eventing/final-root-30-multi.json",
+      "sha256": "4ba7e2d60c00101fd8832c3b1d1019bbd15e48894736928a79cdd825df93c602",
+      "checks": 9
+    },
+    "final-root-30-store-move": {
+      "path": "verification/multi-eventing/final-root-30-store-move.json",
+      "sha256": "266a891cc008b261e22c58307db97572f76b8f9a2f9ac29737a08986fd60e965",
+      "checks": 7
+    },
+    "final-root-30-move-no-default": {
+      "path": "verification/multi-eventing/final-root-30-move-no-default.json",
+      "sha256": "232033d2ebad3102914c76d4aee99eebf83def7792461e185d2db7c03e9a5123",
+      "checks": 7
+    },
+    "final-root-30-hot": {
+      "path": "verification/multi-eventing/final-root-30-hot.json",
+      "sha256": "eb793f2ce9ab3a686588304a8e5a0a83e52e9d00d73258ccef3f36f558481830",
+      "checks": 4
+    },
+    "final-root-30-aliases": {
+      "path": "verification/multi-eventing/final-root-30-aliases.json",
+      "sha256": "b1827e3c4a1b9076895457a9caa008714fff994b82fb0b5b8c82a8edf41a520b",
+      "checks": 6
+    },
+    "final-root-30-backend-models": {
+      "path": "verification/multi-eventing/final-root-30-backend-models.json",
+      "sha256": "220552db7274a4535dee9bc7fc10c04b2031317149011cf14d5c1057cbed2e6a",
+      "checks": 4
+    },
+    "final-root-30-auth": {
+      "path": "verification/multi-eventing/final-root-30-auth.json",
+      "sha256": "bf258f5438e771c019f3040a7390e72811545f703f28284e29919ef012874e3d",
+      "checks": 9
+    },
+    "final-root-30-storage-crash": {
+      "path": "verification/multi-eventing/final-root-30-storage-crash.json",
+      "sha256": "6fb56adb78fb6cd31501284f6df27fc0374650586a71abee0bc0d6c8acadc737",
+      "checks": 10
+    },
+    "final-root-30-movefault-before-decision": {
+      "path": "verification/multi-eventing/final-root-30-movefault-before-decision.json",
+      "sha256": "51dcbb7b20359a934ca5d616cdd57e9a51c5bcdb1ebbef4c3d1dc5040d980645",
+      "checks": 4
+    },
+    "final-root-30-movefault-after-decision": {
+      "path": "verification/multi-eventing/final-root-30-movefault-after-decision.json",
+      "sha256": "644fad5fea799b832be35b67409cf1ac70b731de876cf8b0e5c5f3c9a7bda371",
+      "checks": 4
+    },
+    "final-root-30-movefault-after-first-snapshot": {
+      "path": "verification/multi-eventing/final-root-30-movefault-after-first-snapshot.json",
+      "sha256": "bfe51bf3d04465806b12a72346e49f377cd805b9cf2d035eb91608ca1e7cabb5",
+      "checks": 4
+    },
+    "final-root-30-movefault-after-first-checkpoint": {
+      "path": "verification/multi-eventing/final-root-30-movefault-after-first-checkpoint.json",
+      "sha256": "4a25431854a86b65f8d358d82e6451541d55b3bb72f736051649dc4660e1df2c",
+      "checks": 4
+    },
+    "final-root-30-movefault-before-config": {
+      "path": "verification/multi-eventing/final-root-30-movefault-before-config.json",
+      "sha256": "46fa40a247dfc9a5ba3e6ed5ace3b71612546786aee5d592457d7484defd4ddc",
+      "checks": 4
+    },
+    "final-root-30-movefault-after-config": {
+      "path": "verification/multi-eventing/final-root-30-movefault-after-config.json",
+      "sha256": "9f200d27ee51d0de22ca9438a302510653097f1e99637b23377aed29d69da4d0",
+      "checks": 4
+    },
+    "final-root-30-movefault-before-cleanup": {
+      "path": "verification/multi-eventing/final-root-30-movefault-before-cleanup.json",
+      "sha256": "7e51efe8d978e928431d61bdf6226d83d1cf29ce0568cf4df6678688e2c98e5c",
+      "checks": 4
+    },
+    "final-root-30-migration-ordinary": {
+      "path": "verification/multi-eventing/final-root-30-migration-ordinary.json",
+      "sha256": "3589b3f090b45e40b69eb07657d6f3afbc2ea53c86005f1ec48fc0a03d7b4203",
+      "checks": 4
+    },
+    "final-root-30-migration-before-prepared": {
+      "path": "verification/multi-eventing/final-root-30-migration-before-prepared.json",
+      "sha256": "77000e5c3018ed2b319bc3f8df6d6bb9e49bfeba09015a01cb82812194d85b40",
+      "checks": 5
+    },
+    "final-root-30-migration-before-decided": {
+      "path": "verification/multi-eventing/final-root-30-migration-before-decided.json",
+      "sha256": "23d8158e04f2c471b3d4a20a2e7d9484b0d0ad2efec351bb08b6aec65b2c4cf5",
+      "checks": 5
+    },
+    "final-root-30-migration-before-config": {
+      "path": "verification/multi-eventing/final-root-30-migration-before-config.json",
+      "sha256": "1744957b0e863942297e943ee3aa3b3b51fe9fcb4b63a48cab7e1ec4e9ec96a2",
+      "checks": 5
+    },
+    "final-root-30-migration-after-snapshot": {
+      "path": "verification/multi-eventing/final-root-30-migration-after-snapshot.json",
+      "sha256": "0a862679a68ddb90752d2895559c40444b940d989e60a02bc36ea403860c4cf2",
+      "checks": 5
+    },
+    "final-root-30-migration-before-completed": {
+      "path": "verification/multi-eventing/final-root-30-migration-before-completed.json",
+      "sha256": "b72b1239d9c9968ce63b21b42f51a87b66cc1d6b5ea7c3d2de2048ef26a9c6cb",
+      "checks": 5
+    },
+    "final-root-30-migration-damage-config": {
+      "path": "verification/multi-eventing/final-root-30-migration-damage-config.json",
+      "sha256": "d0f59cd77044f7e8996af14121d64acd1fb0dd2c1c98a139a2d24a4b28655673",
+      "checks": 6
+    },
+    "final-root-30-migration-damage-backend": {
+      "path": "verification/multi-eventing/final-root-30-migration-damage-backend.json",
+      "sha256": "0d04889b348829d165957b8061c872de71c4f45eed48590de7aab39144ceff0f",
+      "checks": 6
+    },
+    "final-root-30-migration-damage-snapshot": {
+      "path": "verification/multi-eventing/final-root-30-migration-damage-snapshot.json",
+      "sha256": "e6b220b364e43f37c449b5fa95a94c4b16e3dacfbc195ac5e32f9e5864b59d31",
+      "checks": 6
+    }
+  },
+  "remaining": [
+    "Qualify candidate31 first-time OIDC connection testing before initial provider save; only Web source differs from admitted30.",
+    "Finish current inherited native/container SDK and regression matrix, image cap/federation/broker recovery checks, and investigate the preserved real-model optimizer quality rejection without weakening labels or gates.",
+    "Resolve the selective project-restore scope question; proven full-server recovery does not attest selective restore.",
+    "Admit and qualify the final corrected artifact/image, complete requirement-by-requirement runtime audit and closure, then refresh authority review/lifecycle verification. Publication remains separately governed."
+  ],
+  "development_findings": [
+    "Official A2A SDK uses Protobuf Struct, converting response integers to doubles; tests validate integer JSON tokens on raw HTTP before SDK conversion.",
+    "Native harness schema identity moved from protocol1 to protocol2; later source fixes remain under test.",
+    "First eventing harness run revealed missing explicit publication author_id in new deliveries; normative contract and candidate corrected.",
+    "Real Kafka hot cutover now passes failed-preflight rollback, exact pending-event reconstruction, acknowledgement preservation and hard restart on candidate10; interruption boundaries and operator quarantine repair remain open.",
+    "Native18 and independent multi9/raw6/cutover3 groups pass with shared resource admission integrated on candidate10. Later source changes need current-artifact acceptance.",
+    "Real three-server federation candidate08 passes10 groups with8 controlled model calls; per-server independent Kafka federation acceptance remains in progress.",
+    "Crash injection exposed decided migration recovery accepting a damaged backup on candidate06. Candidate11 verifies backup hashes before recovery/completion; fault requalification is in progress.",
+    "Candidate11 now passes all5 native Linux migration crash/corrupt-backup cases (28 groups) plus no-default-project hot host binding/all-project recipe reset/restart (4 groups). Candidate federation09 passes12groups on3servers and3distinct real Kafka clusters with237independently schema-validated messages; exact artifact and service evidence remain separate from final lifecycle qualification.",
+    "Candidate13 browser16 desktop/mobile checks pass with console/request-failure instrumentation. Newly added peer-grant/agent-membership/broker-secret/resource-status controls still require dedicated interaction tests. An initial root browser run hit legitimate login rate limiting because the cached Admin fixture helper had not been integrated; helper corrected and complete fresh run passes.",
+    "Candidate11 passes two real kernel-stop/SIGKILL hot transport transition faults (10 groups across3projects), completing decided transition recovery after first-project snapshot and preserving pending IDs/source retries/acknowledgements through another restart.",
+    "Candidate14 passes18inheritednative checks plus separately bound native10/resourceHTTP4 checks with tracked local HTTP cancellation on owner death. No claim of remote-provider computation cancellation.",
+    "Read-only retained-source intake plan succeeds after CLI refresh/check of host Component lock and current documentation review. No authorization/apply or receipt update performed while implementation changes continue.",
+    "All-project relocation/historical-alias/independent-backend-model source integrated from deployment6025f61. Its artifact17 reports49checks; artifact16 separately covers7real crashboundaries/28groups. Current Server HTTP/A2A freeze-error mapping is independently exercised in a later artifact18 and does not retroactively qualify17."
+  ],
+  "service_qualification": "verification/kafka-service-qualified.json",
+  "documentation_validation": {
+    "passed": false,
+    "scope": "Initial lifecycle admission passed. Newly retained qualification documentation and completed contract tasks need final authority review and receipt refresh.",
+    "accepted_test_receipt": "sha256:8022cded2e90575ae28fa810b68ff69c803fbe3681594e18a29082f2182cf995",
+    "current_receipt_covers_latest_documentation": false
+  },
+  "resource_qualification": "verification/resource-progress/manifest.json",
+  "store_relocation": "verification/store-relocation/manifest.json",
+  "initial_lifecycle_admission": {
+    "path": "verification/multi-eventing/lifecycle-admission-30.json",
+    "receipt_identity": "sha256:8022cded2e90575ae28fa810b68ff69c803fbe3681594e18a29082f2182cf995"
+  },
+  "image_candidate": {
+    "image_id": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+    "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+    "payload_audit": "verification/multi-eventing/image-payload-30.json",
+    "platform_qualified": false,
+    "project_qualification": "verification/multi-eventing/image-project-30.json",
+    "security_qualification": "verification/kafka-platform/oauth-accepted-manifest.json",
+    "compose_qualification": "verification/kafka-platform/compose-accepted-manifest.json",
+    "kubernetes_qualification": "verification/kafka-platform/kind-accepted-manifest.json",
+    "eventing_browser": "verification/kafka-platform/eventing-browser-manifest.json"
+  },
+  "current_native_qualification": {
+    "project_migration": "verification/multi-eventing/native-project-migration-30.json",
+    "eventing_federation": "docs/verification/native-eventing.json",
+    "browser": "docs/validation/admin-browser-30.json",
+    "workflow_isolation": "docs/validation/multi-evidence-30.json",
+    "actual_legacy_workflow_upgrade": "docs/validation/multi-workflow-upgrade-30.json",
+    "openrig": "docs/validation/openrig-30.json",
+    "role_lifecycle_browser": "verification/multi-eventing/role-browser-30.json"
+  },
+  "correction_candidate": {
+    "artifact_sha256": "41541b995a1584bfadffa2b8a221631dec725f74617fe029522e952dc5da0496",
+    "admitted": true,
+    "changed_source": [
+      "web.exs"
+    ],
+    "reason": "Expose test_oidc for first-time proposed provider configuration before initial save. Existing provider discovery API and all non-Web generated source remain identical.",
+    "native_browser_report": "verification/multi-eventing/oidc-first-setup-31.json",
+    "admission": "verification/multi-eventing/intermediate-admission-31.json",
+    "superseded_for_final_qualification": true
+  },
+  "identity_registry_correction": {
+    "candidate": "34",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "admitted": false,
+    "image_qualified": false,
+    "scope": [
+      "Block Developer claims on retained agent identities across all projects",
+      "Read only verified snapshots without a legacy checkpoint opener",
+      "Reject removal of admitted project registry/identities in dry validation and apply"
+    ],
+    "native_retirement_prior_candidate": "docs/validation/agent-retirement-manifest.json",
+    "native_guard_review": "verification/multi-eventing/identity-guard-review-32.json",
+    "candidate33_source": "verification/multi-eventing/identity-guard-33-source.json",
+    "native32_browser": "verification/multi-eventing/oidc-first-setup-32.json",
+    "native32_roles": "verification/multi-eventing/role-browser-32-native.json",
+    "current_regressions": "in progress"
+  }
+}

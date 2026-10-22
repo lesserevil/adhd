@@ -1,0 +1,19 @@
+{
+  "schema": "adhd/image-core-execute-shadow-failure@1",
+  "initial_attempt_passed": false,
+  "scope": "Actual reviewed driver failed before execution marker, Docker custody or applications",
+  "initial_plan_sha256": "a00e9fc61d042b58c2cfd1fa6e9e00ce9e03ae4e1bf05be5d733008f5512b0f8",
+  "initial_driver_sha256": "2174bd9b45dcf17a55b260c9e1b4eddffb079ce25381ef6595ea5cd0e7d265e1",
+  "log_sha256": "b4e52a083365365203c968f36f5e9143c0cbfeaef6916b05792458cf83392b98",
+  "diagnosis": "A prepare-branch local verifier import shadowed the top-level binding across main, causing UnboundLocalError in execute. Remove the duplicate local verifier import only.",
+  "original_plan_and_driver_unchanged": true,
+  "initial_execution_marker_exists": false,
+  "application_starts": 0,
+  "image_probe_starts": 0,
+  "regression": "Actual main --execute passes parsing, complete tree/bound inputs and exclusive once marker to mocked custody constructor; all process launch methods forbidden.",
+  "pure_checks_passed": 5,
+  "fixed_harnesses": {
+    "tests/multi_image_core_matrix.py": "a11f57679a5c3892dba50c1da007c4062cfcdc3131fdef4ed2e56d26fd1a2171",
+    "tests/multi_image_core_unit.py": "8ffb44fd9a672729155c1616c72b6257e4397c22ff0ddc5f300cb9b368b740bf"
+  }
+}

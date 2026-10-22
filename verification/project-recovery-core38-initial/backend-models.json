@@ -1,0 +1,54 @@
+{
+  "suite": "adhd/independent-backend-models@1",
+  "started_at": "2026-10-22T02:51:26.780280+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "raw-kafka-works-and-filtered-mode-rejects-missing-matcher-with-backend-models-configured",
+      "passed": true
+    },
+    {
+      "name": "history-retrieval-and-archive-use-own-effective-model-without-subscription-matcher",
+      "passed": true,
+      "actual_provider_attempts_observed": true
+    },
+    {
+      "name": "removing-history-endpoint-does-not-disable-explicit-retrieval-or-archive",
+      "passed": true
+    },
+    {
+      "name": "replay-checks-both-retrieval-and-effective-archive-and-archive-inherits-history-independently",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "b86bd726f0e8d7f8f85c2d0ac102d8f987f7f294333a6a2503cea12d2f2a4f35",
+  "finished_at": "2026-10-22T02:52:10.929264+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_8a61e774bb038a335c38169a2b7472a8_1",
+      "operation_id": "restore_8a61e774bb038a335c38169a2b7472a8_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_8a61e774bb038a335c38169a2b7472a8_3",
+      "operation_id": "restore_8a61e774bb038a335c38169a2b7472a8_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_8a61e774bb038a335c38169a2b7472a8_5",
+      "operation_id": "restore_8a61e774bb038a335c38169a2b7472a8_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ]
+}

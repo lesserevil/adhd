@@ -1,0 +1,210 @@
+{
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+  "runs_per_suite": 1,
+  "parallelism": 2,
+  "jobs": [
+    {
+      "name": "foundation",
+      "script": "tests/foundation_acceptance.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--protocol-version",
+        "2"
+      ],
+      "harness_sha256": "ab358cbbf0e9449bee3c2d1c9406e35790ba7076f84011b8eaeb6692a646aea2"
+    },
+    {
+      "name": "wire",
+      "script": "tests/protocol_acceptance.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--command",
+        "[]",
+        "--profile-version",
+        "2.0.0"
+      ],
+      "harness_sha256": "bc80390d7eff2203029ae49a3e38763f2b37db915cbd07d428bef7088b36c054"
+    },
+    {
+      "name": "multi",
+      "script": "tests/multi_acceptance.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/multi-work"
+      ],
+      "harness_sha256": "2ee3ebe3df229b39a3680d688ada8feb1e35aa9dc2ba0c6ec9ceba5ae0267d8d"
+    },
+    {
+      "name": "store-move",
+      "script": "tests/multi_store_move.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/store-move-work"
+      ],
+      "harness_sha256": "20ead2101b285cc126713eb6c831ce53a48790122cf60a11ab00db3e7c9cc4cc"
+    },
+    {
+      "name": "move-no-default",
+      "script": "tests/multi_store_move.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--no-default",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/move-no-default-work"
+      ],
+      "harness_sha256": "20ead2101b285cc126713eb6c831ce53a48790122cf60a11ab00db3e7c9cc4cc"
+    },
+    {
+      "name": "hot",
+      "script": "tests/multi_hot.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/hot-work"
+      ],
+      "harness_sha256": "bf78bb55158ed0c8a96888e192c782fbb356b5478ed6a1f53643347ff0521f82"
+    },
+    {
+      "name": "backend-models",
+      "script": "tests/multi_model_capabilities.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/backend-models-work"
+      ],
+      "harness_sha256": "b86bd726f0e8d7f8f85c2d0ac102d8f987f7f294333a6a2503cea12d2f2a4f35"
+    },
+    {
+      "name": "aliases",
+      "script": "tests/multi_aliases.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--legacy-hub",
+        "/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/aliases-work"
+      ],
+      "harness_sha256": "65f91426b7a83feecbe0ab5b5279984b84f64be17c44f55611d94a82427f5507"
+    },
+    {
+      "name": "retirement",
+      "script": "tests/multi_agent_retirement.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/retirement-work"
+      ],
+      "harness_sha256": "462873283d77907ef6ed6646efe74b45f842d3d0b0ebe02b97c64f4d17f1293f"
+    },
+    {
+      "name": "retirement-faults",
+      "script": "tests/multi_agent_retirement_faults.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/retirement-faults-work"
+      ],
+      "harness_sha256": "8e0abf369f93130553b81d3faf37f4b1ce85703f161b5cbfafe2b09ab47456fc"
+    },
+    {
+      "name": "registry",
+      "script": "tests/multi_registry_guard.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--with-model",
+        "--keep-work",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/registry-work"
+      ],
+      "harness_sha256": "672e39899f42126c822e85b981fb6b4cf40faf4fff20f6b959397433d37b4e58"
+    },
+    {
+      "name": "auth",
+      "script": "tests/auth_lifecycle.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json"
+      ],
+      "harness_sha256": "528d47cdac769e208e7255490c24e5a8da1666d7cf3dc73430a40017dac621b4"
+    },
+    {
+      "name": "workflow-upgrade",
+      "script": "tests/multi_workflow_upgrade.py",
+      "argv": [
+        "--image",
+        "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+        "--image-manifest",
+        "/home/horde/src/adhd/_build/roadmap/final/container-context-34/manifest.json",
+        "--producer-report",
+        "/home/horde/src/adhd/verification/optimization-optimizer-quality.json",
+        "--producer-root",
+        "/home/horde/src/adhd",
+        "--producer-command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd\"]",
+        "--work-root",
+        "/home/horde/src/adhd/_build/roadmap/final/root-image34/workflow-work"
+      ],
+      "harness_sha256": "def7e5e89ce4ee383ec53722c8936fe50635294f1cb5b48d3e2c6d1f110a77d9"
+    }
+  ]
+}

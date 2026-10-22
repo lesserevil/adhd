@@ -1,0 +1,51 @@
+{
+  "schema": "adhd/cni15-isolated-preflight-repair@1",
+  "prepared": true,
+  "executed": false,
+  "resource_starts": 0,
+  "provider_calls": 0,
+  "plan_sha256": "2f9c18618e005158fbb7a594985bd5e291cdabe624fa0fb3bf415b4655bf20d6",
+  "driver_sha256": "1bb0cae591d8e47b3a202e22736da3b2acd2f02cc0b47a401b7e5422b2d8763a",
+  "frozen_files": 399,
+  "bound_files": 33,
+  "external_inputs": 14,
+  "tool_files": 6403,
+  "prior_negative": {
+    "path": "verification/network-policy-kind40-route14-preflight-negative/review.json",
+    "sha256": "c8d86eb77f776461dbea29136e90a46409b9a93ec517f1b0a8513fad0c8caf78",
+    "source_commit": "39d3c7f",
+    "observed_by": "root71115",
+    "claim": "Failed isolated import preflight only; original14 unstarted"
+  },
+  "correction": "After exact full frozen/bound/tool/external/socket verification, prepend actual verified frozen/tests before importing bootstrap helper. No ambient preparer path required.",
+  "isolated_invocation": [
+    "/home/horde/src/adhd/.venv/bin/python",
+    "-I",
+    "-B",
+    "driver.py",
+    "--verify-only",
+    "--work",
+    "WORK",
+    "--plan-sha256",
+    "2f9c18618e005158fbb7a594985bd5e291cdabe624fa0fb3bf415b4655bf20d6"
+  ],
+  "isolated_cwd": "/tmp",
+  "isolated_exit_code": 0,
+  "stdout_sha256": "1b7dc200a5c6d3f7bd9b72b9c8b2b2f1f2224c5e50793a307e8aafec5d0a5c7e",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "pure_tests": 68,
+  "verify_only_semantics": "Validates plan digest and full verify then prints concise JSON; no Executor construction, execute call, timer reset, once marker, result file, runtime writes or resource starts. Pure regression asserts no Executor/execute/once/result.",
+  "runtime_empty": true,
+  "once_absent": true,
+  "bounds_assertions_observer_unchanged_from14": true,
+  "fixture_pods": 9,
+  "routes": 18,
+  "original_bounds_seconds": [
+    30,
+    40,
+    60,
+    300
+  ],
+  "review_required_before_GO": true
+}

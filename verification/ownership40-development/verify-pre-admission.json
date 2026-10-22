@@ -1,0 +1,43 @@
+{
+  "command": "verify",
+  "ok": true,
+  "result": {
+    "counts": {
+      "fail": 1,
+      "pass": 2,
+      "skipped": 2
+    },
+    "gates": [
+      {
+        "detail": "project authority and documentation review",
+        "gate": "authority",
+        "state": "pass"
+      },
+      {
+        "detail": "2 committed lock(s) current",
+        "gate": "locks",
+        "state": "pass"
+      },
+      {
+        "detail": "project selects provider 'none'",
+        "gate": "source-intelligence",
+        "state": "skipped"
+      },
+      {
+        "artifacts": [],
+        "detail": "no declared HTML artifacts to verify",
+        "gate": "html-observability",
+        "state": "skipped"
+      },
+      {
+        "detail": "project.test_receipt_stale: configured project test receipt does not bind the current project authority revision",
+        "gate": "receipt",
+        "state": "fail"
+      }
+    ],
+    "ok": false,
+    "project": ".",
+    "schema": "literate-ai/project-verify@1"
+  },
+  "schema": "literate-ai/cli-result@1"
+}

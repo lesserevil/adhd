@@ -1,0 +1,45 @@
+{
+  "case": {
+    "source": "rebind_fault.c",
+    "op": "fsync"
+  },
+  "passed": true,
+  "container_id": "7d41b61517f174b175303240107ca4b8cce4806630c02ce0b4df084b3bd47129",
+  "exit_code": 137,
+  "caller": {
+    "op": "fsync",
+    "namespace_pid": 1,
+    "wrapper_resolved": true,
+    "next_resolved_distinct": true,
+    "direct_syscall": false,
+    "unarmed_success": true,
+    "real_forwarding_symbol": "fsync",
+    "off_t_bytes": 8,
+    "off64_t_bytes": 8,
+    "sparse_offset": 0
+  },
+  "observer_trace": {
+    "stage": "decision-durable",
+    "pid": 1,
+    "directory_fsync_result": 0
+  },
+  "physical": {
+    "effect": "directory-synced-rename",
+    "verified": true,
+    "target_bytes": 24,
+    "target_allocated_bytes": 4096
+  },
+  "process_custody": {
+    "host_process_pid": 1245810,
+    "namespace_pid": 1,
+    "signal_method": "ancestor-pidfd-SIGSTOP",
+    "pid_namespace": "pid:[4026533600]",
+    "executable_basename": "busybox",
+    "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+    "process_maps_sha256": "0dace180d2625da629ba45e50823a64a79148b9a8836fea547eef9c3bbf19a6d",
+    "kernel_state": "stopped"
+  },
+  "observer_library_sha256": "080140d6e41bdadfa312db77320a5e8e3153d942bbf53f63e3a326aa945f5387",
+  "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+  "owned_container_absent": true
+}

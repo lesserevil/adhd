@@ -1,0 +1,232 @@
+{
+  "schema": "adhd-optimization-quality-report@1",
+  "passed": true,
+  "model": "Nemotron-Deciffusion-8B-v2.1",
+  "cases": [
+    {
+      "case": "independent-training-freezes-one-winner-before-any-held-out-source-exists",
+      "passed": true,
+      "winner": "6af064438fe9182832508c2190cb4ecdd4c2df321d9c26f76e7767640633f747",
+      "training": [
+        "attempt-c51feedb01d2fa13668845fdf704ec2a26c437e451e63ee916a5b6498a6ed71b",
+        "attempt-252e72dec822214bd3e08a132390bcc64a5119f188a848e82458941568b122a4"
+      ],
+      "freeze_watermark": 9,
+      "usage": {
+        "bytes": 358211,
+        "calls": 82,
+        "cumulative_bytes": 358211,
+        "cumulative_calls": 82,
+        "cumulative_records": 88,
+        "cumulative_time_ms": 36223,
+        "cumulative_uncertain_calls": 0,
+        "records": 88,
+        "time_ms": 36223,
+        "uncertain_calls": 0
+      }
+    },
+    {
+      "case": "fresh-held-out-positives-nonempty-negative-and-negation-correction-controls-pass",
+      "passed": true,
+      "evaluation": {
+        "answer_failures": 0,
+        "answer_regressions": 0,
+        "baseline_native_bytes": 196460,
+        "candidate_native_bytes": 247431,
+        "cases": 6,
+        "correction_groups": 1,
+        "eligible": true,
+        "false_supports": 0,
+        "groups": 6,
+        "mean_recall_gain_ppm": 833333,
+        "negation_groups": 1,
+        "no_evidence_groups": 1,
+        "passed": true,
+        "positive_groups": 5,
+        "reason": null,
+        "total_bytes_delta": -24189,
+        "total_calls_delta": -4,
+        "total_time_ms_delta": -2028
+      },
+      "actual_usage": {
+        "bytes": 493178,
+        "calls": 114,
+        "cumulative_bytes": 493178,
+        "cumulative_calls": 114,
+        "cumulative_records": 161,
+        "cumulative_time_ms": 47588,
+        "cumulative_uncertain_calls": 0,
+        "records": 161,
+        "time_ms": 47588,
+        "uncertain_calls": 0
+      },
+      "held_out": [
+        "attempt-c4b50d1fc0cbaa444f413acfc8c7fca544f4b7f6b55763edb0c75ee757c6b631",
+        "attempt-9c516a4e03f171c1119526a932185b2bccb041fe91c8d6cb34ed484c842b28fb",
+        "attempt-6f4aeb578f0a103ac3656ec06ef737ca26eb67c0bd5e619cde6c346f1a7bb389",
+        "attempt-d32d40ccb08d13eb0aa7e056b6b1c090c8b0303efc3df15ac8e732a0ff8acc55"
+      ],
+      "regression": [
+        "attempt-79724fe5bd9762b9479ca4ba73d9d24607314734fef49a5d47464ba60cdc8a0d",
+        "attempt-32bd2cdc46ff4544f43171abe1d321ce1ead6f244dea6995acd7646ed08b1347"
+      ]
+    },
+    {
+      "case": "promotion-atomically-switches-complete-index-and-override-without-changing-operator-base",
+      "passed": true,
+      "selection": {
+        "applied": true,
+        "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+        "base_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "current_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+        "effective_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 2,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "previous": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": null,
+          "qualification_identity": null,
+          "qualification_runtime": null,
+          "qualification_watermark": 0,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 1,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:12:44.254Z"
+        },
+        "qualification_current": true,
+        "revision": 1,
+        "rollback_available": true,
+        "selected": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": "index-proposal-13",
+          "qualification_identity": "3371c215efffd9ac3522fde9ae93992e01d0629e8a23d224b1e89da0c620e491",
+          "qualification_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+          "qualification_watermark": 86,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 2,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:12:44.254Z"
+        }
+      }
+    },
+    {
+      "case": "ordinary-matching-and-publication-catchup-preserve-effective-selection-and-protected-rollback",
+      "passed": true
+    },
+    {
+      "case": "disabled-optimizer-allows-asynchronous-caught-up-atomic-rollback",
+      "passed": true,
+      "selection": {
+        "applied": true,
+        "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+        "base_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "current_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+        "effective_recipe": {
+          "chunk_bytes": 1024,
+          "context_depth": 1,
+          "context_limit": 8,
+          "include_context": true,
+          "lexical_weight": 1,
+          "semantic": true,
+          "semantic_weight": 2,
+          "semantic_window": 32,
+          "tokenizer": "words"
+        },
+        "previous": {
+          "activation_watermark": 86,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": "index-proposal-13",
+          "qualification_identity": "3371c215efffd9ac3522fde9ae93992e01d0629e8a23d224b1e89da0c620e491",
+          "qualification_runtime": "1.18.4/OTP-27/ERTS-15.2.7.14",
+          "qualification_watermark": 86,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 2,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:12:44.254Z"
+        },
+        "qualification_current": false,
+        "revision": 2,
+        "rollback_available": true,
+        "selected": {
+          "activation_watermark": 104,
+          "base_identity": "ce0e9f222c40f98d1775ec4a20fd4dfa4e0ae781ba3e6eee20fc1f2206352cfd",
+          "proposal_id": null,
+          "qualification_identity": null,
+          "qualification_runtime": null,
+          "qualification_watermark": 0,
+          "recipe": {
+            "chunk_bytes": 1024,
+            "context_depth": 1,
+            "context_limit": 8,
+            "include_context": true,
+            "lexical_weight": 1,
+            "semantic": true,
+            "semantic_weight": 2,
+            "semantic_window": 32,
+            "tokenizer": "words"
+          },
+          "selected_at": "2026-10-21T07:12:47.285Z"
+        }
+      }
+    }
+  ],
+  "artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+  "image": null,
+  "automatic": false,
+  "browser": true,
+  "workdir": "_build/roadmap/optimization-quality/run-h8h3mip1"
+}

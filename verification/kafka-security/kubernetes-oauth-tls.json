@@ -1,0 +1,63 @@
+{
+  "suite": "adhd/kafka-kubernetes-native-oauth@1",
+  "started_at": "2026-10-21T19:51:06.868828+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "live-secret-mounted-native-https-oauth-protects-real-kubernetes-broker",
+      "passed": true
+    },
+    {
+      "name": "hot-admin-token-rotation-and-retired-jwks-key-denial-preserve-hub-pid-and-committed-cursor",
+      "passed": true,
+      "broker_next_offset": 1
+    },
+    {
+      "name": "live-secret-keystore-password-and-certificate-rotation-plus-rest-pod-replacement-preserve-data-and-cursor",
+      "passed": true
+    },
+    {
+      "name": "broker-pod-replacement-retains-pvc-cluster-original-ack-and-group-checkpoint-with-new-a2a-progress",
+      "passed": true,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "name": "owned-namespace-pvcs-pvs-and-forward-cleaned-and-runtime-logs-redact-all-credentials",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Diagnostic native hub; final retained image lifecycle is a separate gate.",
+    "Single broker, private plaintext proxy-to-broker lane; no SASL_SSL qualification.",
+    "NetworkPolicy enforcement is not qualified by this probe."
+  ],
+  "lifecycle_qualified": false,
+  "production_entitlement_qualified": false,
+  "license_scope": "Confluent Enterprise or documented permitted trial",
+  "requested_images": {
+    "kafka": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+    "kafka-rest": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a"
+  },
+  "artifact_sha256": "4b6b444dc5c10f573632335d5c7565590d6f6bcc060a11619dd92193c2fa0025",
+  "input_sha256": {
+    "tests/kafka_oauth_k8s.py": "45d129d5724e99fb34daef216673509398d7ac7056ef19b54795ea8e298cb44a",
+    "tests/kafka_oauth_provider.py": "f21700b511d923a8cf950f8061495c7d7a2e70d904d9ff1b5f19d3330301fbdb",
+    "deploy/k8s/events.yaml": "83ce33a019619ddea5b03146dfac4078d0f69e7ddf6878d7b320068d627f8aac",
+    "deploy/k8s/oauth.patch.yaml": "c291143a5a673a1a390b737506dcfc9f3dd581ad811c1de80ed9a162ada13d36",
+    "deploy/security/kafka-rest.oauth.properties.example": "005b04820782f090b0aca23653c24d1c018057d961f7a5a11d9b8b9882edfe88"
+  },
+  "harness_dependencies_sha256": {
+    "multi_support.py": "9c7f266cf6956cec65a4d86d3fee6b059f23c89b77dc4463b0e6a7d6de452689",
+    "foundation_acceptance.py": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+    "hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e"
+  },
+  "rendered_sha256": "68b58eaf38fd28acb597320bb24877d6f772c86b39cff88a8acafcd1591657f1",
+  "persistent_volume_reclaim_policy": "Delete",
+  "runtime_image_ids": {
+    "kafka": "docker.io/library/adhd-kafka@sha256:5207fc833a00220b4e1e8c2d46a567a94ce08bc07ad35ea54e3422717a876837",
+    "kafka-rest": "docker.io/library/adhd-kafka-rest@sha256:ddef67aaad28e79e1bc486212ce3c4810647bdd5073ca987d7631a6f5f48607a"
+  },
+  "jwks_fetches": 33,
+  "finished_at": "2026-10-21T19:53:30.229237+00:00"
+}

@@ -1,0 +1,140 @@
+{
+  "suite": "private-target-restore",
+  "started_at": "2026-10-22T06:31:10.443989+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "known-missing-does-not-initialize-on-cold-start",
+      "passed": true
+    },
+    {
+      "name": "hash-bound-source-and-target-plan-with-fresh-epochs",
+      "passed": true
+    },
+    {
+      "name": "durable-apply-completes-with-private-records-and-ack-count",
+      "passed": true
+    },
+    {
+      "name": "other-current-project-and-global-config-preserved-original-private-visible-ack-hidden",
+      "passed": true
+    },
+    {
+      "name": "restored-generation-opens-after-cold-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "scope": "NoKafka/noModel: private deliveries and acknowledged-state target-only restore plus cold restart",
+  "lifecycle_admitted": false,
+  "result": {
+    "allocation_epoch": "43ed6f286b977634e3bd925b4f7a2d99",
+    "initialized": false,
+    "project_epoch": "c6ef11aa233abd120d430caa338c6009",
+    "project_id": "project-red",
+    "restored": {
+      "acknowledged_deliveries": 1,
+      "deliveries": 2,
+      "pending_jobs": 0,
+      "publications": 0,
+      "retained_records": 74,
+      "subscriptions": 0
+    },
+    "route_generation": 2,
+    "sequence": 2,
+    "storage_generation": 8,
+    "topic": null,
+    "transport_discontinuity": true
+  },
+  "finished_at": "2026-10-22T06:33:34.172707+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "a76ed4a7df9e6a6019b0966d2953ccd362e7caf5c344ac0ee0d8fbdbe7832cdf",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "a76ed4a7df9e6a6019b0966d2953ccd362e7caf5c344ac0ee0d8fbdbe7832cdf",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "9ea8e6f7c1c21bfb275ec4dbcd185f5b7de7395cba396941842e68598c272866",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "9ea8e6f7c1c21bfb275ec4dbcd185f5b7de7395cba396941842e68598c272866",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "047a409cee55545b43e088ea7246a3a7d9febd9e33cdc769cf8692f69677913e",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "047a409cee55545b43e088ea7246a3a7d9febd9e33cdc769cf8692f69677913e",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "af16e2735503571b4a41e9f8fad17dcd27f01f5db4345f7a40056ed917590911",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "stopped",
+        "container_id": "af16e2735503571b4a41e9f8fad17dcd27f01f5db4345f7a40056ed917590911",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-948d3d83a946410b",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-4560229fc2094f74",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+}

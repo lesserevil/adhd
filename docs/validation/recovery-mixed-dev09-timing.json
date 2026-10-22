@@ -1,0 +1,45 @@
+{
+  "qualification": "Failed mixed-state development fixture; target restore and complete allocator qualification were not reached. No observed data loss or throughput resolution claimed.",
+  "raw_report_sha256": "88b27d0684a9b3c91da890f9fb0387c6bf7014235cf3d2b34cf098229c90671c",
+  "report": {
+    "suite": "target-only-project-restore",
+    "started_at": "2026-10-22T00:00:58.544312+00:00",
+    "passed": false,
+    "checks": [],
+    "limitations": [
+      "Controlled model responses prove transport/failure isolation, not semantic quality.",
+      "A single broker does not qualify replicated Kafka durability."
+    ],
+    "fixture_phase_wait_seconds": {
+      "optimizer_training": 300,
+      "optimizer_evaluation": 300,
+      "kafka_replay_materialization": 300,
+      "kafka_drain": 300
+    },
+    "timing_scope": "Bounded complete-state lifecycle fixture, not throughput qualification; all original cases, gold and quality gates retained.",
+    "artifact_sha256": "2c700cd6b9306df79492d4f4b509cdbddacbd730460cc4f79406a5f0ccb49d39",
+    "authored_recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+    "finished_at": "2026-10-22T00:10:30.770888+00:00",
+    "failure_type": "AssertionError"
+  },
+  "accepted_state": {
+    "checkpoint_sha256": "30b8b1e4f89dc8a390533c231236efb1af3f985e1c0e8314f6c2d712330b1c96",
+    "snapshot_sha256": "6f6c2fe2abc0ca0d06e111bba4cc2ba5c1fe162ef4c2a7df7702e10f9c262362",
+    "publications": 50,
+    "proposal_statuses": [
+      "rejected",
+      "rejected"
+    ],
+    "next_offset": 85,
+    "replay_statuses": [
+      "materialized",
+      "pending"
+    ]
+  },
+  "diagnosis": {
+    "stage": "Lost-phase explicit replay fullrange1..50; expected first eligible lost publication at logicalsequence26. Existing poll_until delivery deadline30seconds expired before reaching the separately configured300second materialization wait.",
+    "outcome": "All50 original publications and both actual controlled optimizer proposals accepted; both proposals preserved their final rejected quality result. No target loss or restore followed this failure.",
+    "correction": "Align only mixed-fixture real replay delivery/quarantine/retry waits to same finite300second lifecycle profile, preserving fullrange/data/cases/quality assertions.",
+    "coverage_limit": "This09 harness also recursively filtered IDs by already-valid newformat; it did not yet explicitly require each public family to use the new format. It does not close complete allocation coverage."
+  }
+}

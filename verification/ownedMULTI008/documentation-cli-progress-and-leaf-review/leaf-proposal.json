@@ -1,0 +1,207 @@
+{
+  "schema": "adhd/kafka007009-independent-leaf-proposal@1",
+  "proposal_only": true,
+  "root_roadmap_edited": false,
+  "source_artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "compiled05_image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "roadmap_before_sha256": "a5ec5ee857e56dc006e2726272b63cca8bbded3686d19505cee4374d4574cca0",
+  "eligible_exact_line_changes": [
+    {
+      "item": "KAFKA-007",
+      "ordinal": 1,
+      "exact_before": "  - [ ] Select pinned Kafka/KRaft images and client compatibility; declare dependencies, persistent volumes, private listeners, secrets, resource limits and readiness/startup/shutdown ordering. Generate and retain a distinct installation cluster ID, preserving existing volume metadata rather than assigning the tutorial cluster ID to every deployment.",
+      "exact_after": "  - [x] Select pinned Kafka/KRaft images and client compatibility; declare dependencies, persistent volumes, private listeners, secrets, resource limits and readiness/startup/shutdown ordering. Generate and retain a distinct installation cluster ID, preserving existing volume metadata rather than assigning the tutorial cluster ID to every deployment.",
+      "evidence": [
+        "baseline21",
+        "secured51",
+        "Kafka68",
+        "hub_inventory"
+      ]
+    },
+    {
+      "item": "KAFKA-007",
+      "ordinal": 2,
+      "exact_before": "  - [ ] Provide Compose and Kubernetes packaging with model-free baseline and optional existing model/GPU service or configured remote model; choose and document Kubernetes manifest/chart ownership.",
+      "exact_after": "  - [x] Provide Compose and Kubernetes packaging with model-free baseline and optional existing model/GPU service or configured remote model; choose and document Kubernetes manifest/chart ownership.",
+      "evidence": [
+        "baseline21",
+        "model12",
+        "optional_model_inventory"
+      ]
+    },
+    {
+      "item": "KAFKA-007",
+      "ordinal": 4,
+      "exact_before": "  - [ ] Document single-node versus replicated broker durability, single-writer hub replica limits, backup/restore, rolling broker upgrades and hot hub configuration propagation.",
+      "exact_after": "  - [x] Document single-node versus replicated broker durability, single-writer hub replica limits, backup/restore, rolling broker upgrades and hot hub configuration propagation.",
+      "evidence": [
+        "guide_review",
+        "baseline21",
+        "secured51",
+        "config3"
+      ]
+    },
+    {
+      "item": "KAFKA-007",
+      "ordinal": 5,
+      "exact_before": "  - [ ] Boot clean Compose and disposable Kubernetes deployments with real Kafka and no model; run A2A pub/sub and backend search smoke tests.",
+      "exact_after": "  - [x] Boot clean Compose and disposable Kubernetes deployments with real Kafka and no model; run A2A pub/sub and backend search smoke tests.",
+      "evidence": [
+        "baseline21",
+        "model12"
+      ]
+    },
+    {
+      "item": "KAFKA-007",
+      "ordinal": 6,
+      "exact_before": "  - [ ] Exercise replacement/restart, PVC or volume reuse, broker failure/upgrade, secret rotation and optional-model enablement; validate manifests and image/dependency/license inventories.",
+      "exact_after": "  - [x] Exercise replacement/restart, PVC or volume reuse, broker failure/upgrade, secret rotation and optional-model enablement; validate manifests and image/dependency/license inventories.",
+      "evidence": [
+        "baseline21",
+        "secured51",
+        "model12",
+        "hub_inventory",
+        "optional_model_inventory"
+      ]
+    },
+    {
+      "item": "KAFKA-009",
+      "ordinal": 1,
+      "exact_before": "  - [ ] Update normative Component contracts, schemas/OpenAPI/examples, client onboarding, traceability, deployment and troubleshooting guides together.",
+      "exact_after": "  - [x] Update normative Component contracts, schemas/OpenAPI/examples, client onboarding, traceability, deployment and troubleshooting guides together.",
+      "evidence": [
+        "guide_review"
+      ]
+    },
+    {
+      "item": "KAFKA-009",
+      "ordinal": 2,
+      "exact_before": "  - [ ] Run zero-model raw-subscription/search acceptance and separate live-model filtered/semantic-query acceptance plus multi-project and federated regressions.",
+      "exact_after": "  - [x] Run zero-model raw-subscription/search acceptance and separate live-model filtered/semantic-query acceptance plus multi-project and federated regressions.",
+      "evidence": [
+        "baseline21",
+        "model12",
+        "core94",
+        "Kafka68",
+        "nativeUI86",
+        "stale4"
+      ]
+    },
+    {
+      "item": "KAFKA-009",
+      "ordinal": 3,
+      "exact_before": "  - [ ] Verify durable handoffs, fanout, fairness, retention/replay gaps and fault recovery at documented limits; record exact artifact/image/broker/client identities.",
+      "exact_after": "  - [x] Verify durable handoffs, fanout, fairness, retention/replay gaps and fault recovery at documented limits; record exact artifact/image/broker/client identities.",
+      "evidence": [
+        "Kafka68",
+        "filesystem85",
+        "config3",
+        "baseline21",
+        "secured51"
+      ]
+    },
+    {
+      "item": "KAFKA-009",
+      "ordinal": 4,
+      "exact_before": "  - [ ] Demonstrate two projects with multiple publishers and independent raw/filtered subscribers, an unauthorized project and a federated peer using its own Kafka.",
+      "exact_after": "  - [x] Demonstrate two projects with multiple publishers and independent raw/filtered subscribers, an unauthorized project and a federated peer using its own Kafka.",
+      "evidence": [
+        "Kafka68",
+        "core94",
+        "model12"
+      ]
+    }
+  ],
+  "held_exact_lines": [
+    {
+      "item": "KAFKA-007",
+      "ordinal": 3,
+      "exact_before": "  - [ ] Compile the exact admitted hub modules during the pinned OCI build and verify the source/toolchain/module closure before loading it at startup. Preserve the exported source, original CLI behavior and runtime fault-observer interfaces; do not rerun application compilation on each container start. The [public compiler diagnostic](../../verification/project-recovery/development40/compiler-diagnostic-preparation/root-start.json) retains the original30-second SDK failure and observes module compilation callbacks beyond30seconds after container start. Bind the actual trace and cleanup evidence, then qualify the packaging repair against the unchanged SDK readiness deadline and complete required runtime/deployment regressions; traced timing is diagnostic, not an untraced CPU benchmark. The first [actual compiled-image offline audit](../../verification/container-precompile-image40/admission/manifest.json) confirms unchanged59-file application payload,33 canonical specifications and59 hash-bound compiled modules. It also records a final-stage COPY parent timestamp that prevents a reproducibility claim. The [corrected compiled03 admission](../../verification/container-precompile-image40/compiled03-admission/manifest.json) now binds the actual59-file payload,33 specifications,59 compiled modules and normalized final metadata. Its [complete cache qualification](../../verification/container-cache40-compiled03-positive/audit.json) covers original18 built-in tests, three CLI exports, the copy control and all12 rejection cases, preserving the first false fixture aggregate. The [unchanged original SDK17](../../verification/compiled-sdk-retarget-preparation/whole17-03-positive/manifest.json) now passes all Feedback5/Archive4/History4/Retrieval4 cases against this exact admitted image, retaining the original30-second readiness deadline and actual source/cache/VM custody. A [sequential independent rebuild](../../verification/container-precompile-image40/reproducibility-first-negative/manifest.json) reproduces every final cache byte and metadata entry but yields different intermediate layer identities; bitwise image reproducibility remains open. The corrected compiler-only deterministic option and explicit runtime-directory copy now produce [identical image identities from two independent sequential builds](../../verification/container-precompile-image40/reproducibility05-positive/manifest.json); [compiled05 admission](../../verification/container-precompile-image40/compiled05-admission/manifest.json) retains the unchanged application/specification bytes and actual cache audit. The final image now passes [all17 cache/CLI groups](../../verification/container-cache40-compiled05-positive/audit.json), including18 built-in checks and12 rejection cases, and [all19 ABI probes across six observer families](../../verification/image40-compiled05-abi19-positive/audit.json). All owned cache and ABI container IDs are independently absent. The [fixed live-model quality69](../../verification/quality40-compiled05-positive/audit.json) also passes all22 history,21 retrieval,23 archive and3 feedback cases with actual source/cache/VM custody,174 bounded POSTs and unchanged model identity. The final image also passes [all17 original SDK cases](../../verification/final05-sdk-whole17-positive/manifest.json) under the original30-second readiness deadline and [nine browser programs /86 assertions](../../verification/final05-ui-whole86-positive/manifest.json), including the two actual OpenRig rigs, OIDC accounts and session-response fencing. Root retained [manual continuation capture review](../../verification/final05-preparations/ui/manual-continuation-review.json) alongside the earlier five-capture review; raw images remain private. The [final compiled-image filesystem gate](../../verification/final05-filesystem-whole85-positive/manifest.json) now passes all17 original suites /85 checks; independent audit verifies the complete declared input/tool closure, all67 recorded container IDs,47 probe/codec names and19 recorded kernel PIDs absent, with historical name/start-tick recording limits stated explicitly. Next: finish deployment, remaining recovery and runtime gates, then refresh operator documentation through the final lifecycle review. [Deployed filtering/search evidence](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json) now qualifies all six original cases on each of actual Compose and Kind: twelve bounded provider POSTs total, raw Blue progress, privacy, cited fact queries and same-VM hot disable/resume. Both platform children exited0 and their required qualifiers, complete input closure, model identity, lease release and resource absence are independently verified. The external launcher returned143 for an unknown reason; that outer result remains false and does not replace the two complete child suites. No provider retry was performed. Earlier image evidence remains scoped to its original image.",
+      "reason": "Literal complete-required-runtime/deployment-regressions clause remains pending full R25 and integrated bridge."
+    },
+    {
+      "item": "KAFKA-009",
+      "ordinal": 5,
+      "exact_before": "  - [ ] Pass declared verification and independent wire/privacy/fault/migration/deployment suites; document remaining limits and publication gates before closure. Qualify the shipped `deploy/k8s/private.yaml` on a disposable enforcing CNI separately: prove each route is reachable before policy, then verify allowed same-namespace hub-to-REST and REST/broker-to-broker traffic and denied unrelated/cross-namespace traffic at the declared ports. A default Kind cluster or successful policy apply alone does not prove enforcement. This network-layer fixture must remain distinct from actual Kafka/hub deployment qualification.",
+      "reason": "Complete declared independent runtime qualification, full R25, enforcing-CNI18, current proper CLI receipt and unchanged context/image bridge remain required."
+    }
+  ],
+  "headers_remain_open": [
+    "KAFKA-007",
+    "KAFKA-009"
+  ],
+  "evidence": {
+    "baseline21": {
+      "path": "verification/ownedMULTI008/compiled05-baseline-platform-positive/manifest.json",
+      "sha256": "416482a68fe0685a9123fc8d9cb83be0d588dbacf9925147df438e0222b8e882"
+    },
+    "secured51": {
+      "path": "verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json",
+      "sha256": "9f9ddb63c8b93f803b0908d626334701c2e69bf5e1e69b5a09530dda45f76baa"
+    },
+    "model12": {
+      "path": "verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json",
+      "sha256": "19897106b2cb75c6d481ab95490f2966e7a7393a2abefccf9766d395a120768b"
+    },
+    "core94": {
+      "path": "verification/final05-core13-composed94-positive/manifest.json",
+      "sha256": "6d9cc78b713a16b3414259f26bc28dd3c3c15912601753fcc90bdcfbbaa4c8a7"
+    },
+    "Kafka68": {
+      "path": "verification/final05-kafka-whole68-positive/manifest.json",
+      "sha256": "2c13ff8ae463110927c1b30e88769a08c707ef8c0bc5b0006420ced877f1016c"
+    },
+    "nativeUI86": {
+      "path": "verification/native40-ui-whole86-positive/manifest.json",
+      "sha256": "862765822812eee5358426890c2b5a70d28177d0f5967311f22fb5abef221a7c"
+    },
+    "config3": {
+      "path": "verification/ownedMULTI008/compiled05-config-crash3-positive/manifest.json",
+      "sha256": "17f6df800e405b9c45a1a5e69c6b35a2697fac83d4e198b4ebf599a9ff0d18c1"
+    },
+    "stale4": {
+      "path": "verification/ownedMULTI008/compiled05-stale-canonical-owner-positive/manifest.json",
+      "sha256": "6ff216e65704bc77e872e6d5d61f4f69af953911d954cc8db23347255f70284b"
+    },
+    "guide_review": {
+      "path": "verification/ownedMULTI008/profile21-operating-guide-review/manifest.json",
+      "sha256": "1c7ad5069a6424b2716b405d8b0f5f177618d9eec9ea5b4fa8e70a24e4120ae8"
+    },
+    "hub_inventory": {
+      "path": "verification/compiled05-dependency-license-audit/audit.json",
+      "sha256": "39bfe90d6fee1581479936286dfc1b6c3a6df92dffb5babaa96d8b064de5b6aa"
+    },
+    "optional_model_inventory": {
+      "path": "verification/ownedMULTI008/optional-model-dependency-license/manifest.json",
+      "sha256": "f0bac0e0a68773b04a47058169e2211a2369f465368bb875d9cb1e92a604a944"
+    },
+    "cache17": {
+      "path": "verification/container-cache40-compiled05-positive/audit.json",
+      "sha256": "b1b088f4dd221729778723b4b2d505c3145e7dfc7efa8bedfde6e87ed9668013"
+    },
+    "repro05": {
+      "path": "verification/container-precompile-image40/reproducibility05-positive/manifest.json",
+      "sha256": "e5b90846e0b071eadf92c8f63c10b6e976713cde71a1af103f4b123bc83c67b6"
+    },
+    "SDK17": {
+      "path": "verification/final05-sdk-whole17-positive/manifest.json",
+      "sha256": "231bb2f6d935b3142576dd41ca2ad234da66620d77e3c2bf13baea1daea46a01"
+    },
+    "filesystem85": {
+      "path": "verification/final05-filesystem-whole85-positive/manifest.json",
+      "sha256": "c0cf1be85aa85f90fff342d58955e7de6b3f04df98611c81dc4461676a56b25c"
+    },
+    "R25_false": {
+      "path": "verification/final05-recovery25-prefix9-first-failure/manifest.json",
+      "sha256": "7a4d49ff1e0838e625e278ce09edcffac2ae526ae6c9c6886fc6de9728d95987"
+    }
+  },
+  "scope_rationale": [
+    "Completed independent packaging/doc/pubsub leaves do not acquire new whole-project receipt or CNI prerequisites merely from their parent.",
+    "KAFKA009 implementation3 covers its named Kafka/pubsub handoff/fanout/fairness/retention/replay/fault scopes: full current Kafka68, filesystem85, config3 and actual deployments qualify them. It does not claim the unfinished broader selective-recovery R25 family.",
+    "Compile-once implementation3 explicitly requires complete required runtime/deployment regressions; leave its compound clause open rather than weaken its wording.",
+    "KAFKA009 evidence2 explicitly covers complete declared independent suites and enforcing CNI routes; R25/CNI and global receipt/context bridge remain held.",
+    "Old aggregate failures, model launcher143 and scoped image/source custody limitations remain intact. No parent item or integrated-release gate is closed by these leaf changes."
+  ],
+  "new_license_HA_SASL_or_replication_gates_added": false
+}

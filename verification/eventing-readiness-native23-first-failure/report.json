@@ -1,0 +1,226 @@
+{
+  "suite": "adhd/eventing-readiness-faults@2",
+  "started_at": "2026-10-22T13:26:36.699466+00:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "lag",
+      "passed": true,
+      "operation_state": "complete",
+      "elapsed_seconds": 0.8110711649933364,
+      "eventing_timeout_ms": 1000,
+      "recovery_timeout_ms": null,
+      "statuses": [
+        {
+          "at": 233526.949801479,
+          "method": "GET",
+          "category": "metadata",
+          "selected_create": false,
+          "status": 404,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233526.998488859,
+          "method": "POST",
+          "category": null,
+          "selected_create": true,
+          "status": 201,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.014924827,
+          "method": "GET",
+          "category": "metadata",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.026194311,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 404,
+          "injected": true,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "604800000"
+            ]
+          },
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.114346295,
+          "method": "GET",
+          "category": "metadata",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.125154199,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 404,
+          "injected": true,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "604800000"
+            ]
+          },
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.184529543,
+          "method": "GET",
+          "category": "metadata",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.195318859,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "604800000"
+            ]
+          },
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.275276004,
+          "method": "GET",
+          "category": "offsets",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.537729413,
+          "method": "GET",
+          "category": "metadata",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": null
+        },
+        {
+          "at": 233527.548770874,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "604800000"
+            ]
+          },
+          "durable_transaction_present": null
+        }
+      ],
+      "created_requests": 1,
+      "real_blue_record_and_ack_preserved": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "provider_calls": 0,
+  "planned_cases": [
+    "lag",
+    "queue-control",
+    "duplicate",
+    "duplicate-bad-topology",
+    "never",
+    "queue",
+    "forbidden",
+    "server-error",
+    "malformed",
+    "bad-cleanup",
+    "partitions-float",
+    "retention-missing",
+    "retention-float",
+    "retention-negative",
+    "retention-duplicate",
+    "existing-retention",
+    "offset-nonzero",
+    "offset-negative",
+    "offset-missing",
+    "offset-float",
+    "offset-string",
+    "metadata-lag",
+    "offset-end-float"
+  ],
+  "original_case_prefix_count": 21,
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "harness_sha256": "3e5d45d2c1595f4cd85171442514d7357de0cb452796c0bc5875f1a7d790b3fe",
+  "proxy_sha256": "6638df8db3db463707e3feb5ff1b48c5fa1eced376d65593328eaed1bb04ffc6",
+  "scope": "Real Kafka creation/metadata/delivery plus declared selected-topic faults; no replicated durability or inference claim",
+  "native_runtime_cases": {
+    "lag": {
+      "pid": 909678,
+      "start_ticks": 23349501,
+      "command_sha256": "8f1ccb731d4fda7bce0ceccfe08a3c49e1ac0543eeae2b07a7c2421d4304be3c",
+      "reaped": true
+    },
+    "queue-control": {
+      "pid": 914993,
+      "start_ticks": 23353125,
+      "command_sha256": "e6025bbff0f679829ddca2765de8c1660c6f76f0768b5c5d23594309d6311cd8",
+      "reaped": true
+    }
+  },
+  "proxy_cleanup": [
+    {
+      "case": "lag",
+      "constructed": true,
+      "handlers": 0,
+      "thread_alive": false,
+      "failures": [],
+      "cleanup_failure_types": []
+    },
+    {
+      "case": "queue-control",
+      "constructed": true,
+      "handlers": 0,
+      "thread_alive": false,
+      "failures": [],
+      "cleanup_failure_types": []
+    }
+  ],
+  "finished_at": "2026-10-22T13:27:46.165339+00:00",
+  "failure_type": "AssertionError"
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "adhd/cni-direct-endpoint-preparation@1",
+  "passed": true,
+  "executed": false,
+  "root_GO_required": true,
+  "plan_sha256": "e26d154c37131254c629ea686b1e52ae79878ec20918b0b45767687def0bb82c",
+  "driver_sha256": "c83b688a2bf20ea6dbfe859e1d04c25f9f0ed072637d1f3c16c7ac39482e5a2e",
+  "endpoint_helper_sha256": "a8a1a3a3bbb1dcdb2b533734bcffb2c4de8e7c372cbf6fc06d62297b440e0dcf",
+  "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+  "original_three_OCI_inputs_and_limits_unchanged": true,
+  "original_rollout_seconds": 300,
+  "direct_endpoint_mode": {
+    "mode": "owned-node-InternalIP",
+    "port": 6443,
+    "require_peer_hostname_tls": true,
+    "read_preflight_only_before_configmap": true
+  },
+  "identity_preconditions": [
+    "Running exact owned Kind node ID/image/control-plane labels/privatebridge ID",
+    "Actual API InternalIP equals exact node bridgeIP inside bound subnet",
+    "Strict TLS peer+IP hostname validation against inline owncluster CA; record only CA/leafSHA",
+    "Host direct GET and inside-ownnode admin.conf GET return same kube-system namespaceUID as originalpublishedAPI; directnodeUID matches",
+    "Exclusive ConfigMap create with ownernonce+namespace/nodeUID annotations; exactdata/UID/nonce verified; no overwrite",
+    "All prerequisites before unchanged pinnedCalico create; no host/kernel/DNSchanges; noqa40load/routes"
+  ],
+  "private_raw_credential_policy": "Only existing ownnode admin.conf used in-place for GET; no file contents returned. API/log output remains privateignored.",
+  "pure_tests": {
+    "endpoint": 6,
+    "cluster": 22,
+    "diagnostics": 16
+  },
+  "full_closure": {
+    "frozen": 389,
+    "bound": 29,
+    "external": 14,
+    "tools": 6403
+  },
+  "actual_direct_reachability_already_proven": false,
+  "previous_actual_endpoint_fact": "Saved CNI10 InternalIP and bridgeIP10.240.240.2 match; originalpublishedloopbackAPI reachable; direct path still requires futureGO preflight."
+}

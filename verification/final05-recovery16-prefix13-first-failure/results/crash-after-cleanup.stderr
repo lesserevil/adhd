@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/recovery16-image05-01/frozen/tests/image_recovery_entry.py", line 142, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/recovery16-image05-01/frozen/tests/image_recovery_entry.py", line 139, in main
+    run_script(args.script,argv,args.timeout,args.cleanup_report,compiled)
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/recovery16-image05-01/frozen/tests/image_recovery_entry.py", line 87, in run_script
+    try:runpy.run_path(str(script),run_name='__main__')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/recovery16-image05-01/frozen/tests/project_recovery_crash.py", line 261, in <module>
+    asyncio.run(main(parser.parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/recovery16-image05-01/frozen/tests/project_recovery_crash.py", line 155, in main
+    observed = await stopped(f, sentinel, pending, args.deadline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/recovery16-image05-01/frozen/tests/project_recovery_crash.py", line 42, in stopped
+    assert sentinel.exists(), 'Requested actual filesystem boundary was not observed'
+           ^^^^^^^^^^^^^^^^^
+AssertionError: Requested actual filesystem boundary was not observed

@@ -11,10 +11,11 @@ bounded logs. Do not include bearer tokens or private project content in reports
 | Symptom | Checks and recovery |
 | --- | --- |
 | Docker command missing or permission denied | Run container commands on the Linux Docker host as an account with Docker access. No local Docker installation is required on the authoring Mac. |
-| Staging refuses output or reports hash drift | Use a new output directory; rerun `litai build components/hub --update-receipt` and `litai verify` before staging. Never edit an artifact or manifest to force a hash match. |
+| Staging refuses output or reports hash drift | Use a new output directory; follow the [qualified build/staging procedure](operations.md#build-and-transfer) with a current passing receipt and `litai verify`. Retained source uses its reviewed authorization and BUILD-001 fallback. Never edit an artifact or manifest to force a hash match. |
 | Container name already exists | Inspect the existing container. If it is the intended stopped hub, start it; for an upgrade, stop/remove it after backup and recreate it. Never remove an unfamiliar container. |
-| Startup exits or reports invalid configuration | Check `docker logs --tail 100 adhd-hub`. Validate JSON, distinct tokens of at least 24 characters, model fields, numeric bounds, and loopback host. Do not paste the config into a ticket. |
-| Address already in use | Another process owns the configured port. Select a free port in server config, set `public_url` accordingly, recreate the container, and update client access. Host mode does not use Docker port publishing. |
+| Startup exits or reports invalid configuration | Check `docker logs --tail 100 adhd-hub`. Validate JSON, distinct tokens of at least 24 characters, model fields, numeric bounds, and the intended private listener boundary. Do not paste the config into a ticket. |
+| Address already in use | Another process owns the configured port. Select a free port and update listener/public URL through hot Admin settings while reachable; update client access. Container port mappings/ingress are separate infrastructure settings. Host mode does not use Docker port publishing. |
+| Global health is ready but project work returns `RECOVERY_REQUIRED` | Admin checks Recovery for that project. Only `uninitialized` with verified empty history can use [Review empty initialization / Apply reviewed plan](web-console.md#first-use-project-initialization). Known missing/corrupt initialized targets require verified recovery; never delete files or reinitialize to make work succeed. Check the configured Kafka REST origin before apply. |
 | Store file cannot be opened | Confirm the host data directory exists, is writable by the runner's UID/GID, and is mounted at `/data`. The configured path should be `/data/hub.dets`. Use an absolute config path when running outside the container. |
 | Corrupt store or another process has it open | Stop all writers and preserve the original files. Recover from a verified offline backup. Never delete the store to make startup succeed or run two containers against it. |
 | Connection refused or discovery URL unreachable | Check container state and `/health` on the Docker host, then the tunnel/proxy and `public_url` in the Agent Card. Loopback on the agent's machine is not the server's loopback without a tunnel. |
@@ -27,7 +28,7 @@ bounded logs. Do not include bearer tokens or private project content in reports
 | New subscription misses earlier information | Subscriptions apply only to subsequent publications. Search older published information; adding a subscription does not replay history. |
 | Published update has no delivery | Check that the intended subscription existed at publication time, its description, the threshold, and model connectivity. Delivery is asynchronous. The model may judge the update irrelevant; published data remains searchable. |
 | Hub healthy but matching delayed | Health excludes model availability. Check the separate model `/health` and network/tunnel from the Docker host. Pending jobs retry durably; do not republish repeatedly. |
-| Search misses a direct message or paraphrase | Direct messages are not searchable. The `search` command is literal substring matching. Use `retrieve` or durable `query` for semantic evidence; configure the separate generative evaluator for answers. |
+| Search misses a direct message or paraphrase | Direct messages are not searchable. Search is literal case-insensitive substring matching over publication text/JSON, without semantic ranking. |
 | Old publication retry lacks provenance fields | Preserved schema-1 idempotency results are returned verbatim. Retrieve the publication with `get` or `search` to see its normalized message type, agent source, and occurrence time. |
 | Container is unhealthy or exits under load | Check logs, `docker stats`, and `docker inspect adhd-hub --format '{{.State.OOMKilled}}'`. Check host disk space and data permissions. An unhealthy health check alone does not trigger a Docker restart. Adjust limits only with workload evidence. |
 | Restored data differs from the latest state | Restore returns to the backup point, including then-pending deliveries and acknowledgements. Preserve the pre-restore directory and use the rollback procedure if the wrong backup was chosen. |
@@ -64,7 +65,9 @@ resolve that condition before changing durable data.
 ## Web console
 
 See [Web management console](web-console.md) for setup. A 404 from /admin/api means
-admin_token is absent; add it to the private server configuration and restart. A
+the legacy admin_token and human authentication are both absent. Use an existing
+Admin credential to enable account sign-in, or atomically edit the private file
+with a valid recovery method; changes are watched without restart. A
 401 means the administrator credential is missing, wrong or rotated; agent tokens
 are intentionally rejected. Reload and sign in with the current private token.
 A 403 indicates a mismatched Origin: open the console and API through the same

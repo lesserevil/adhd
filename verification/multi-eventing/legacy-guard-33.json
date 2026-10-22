@@ -1,0 +1,52 @@
+{
+  "schema": "adhd/legacy-retired-agent-guard-unit@1",
+  "passed": true,
+  "artifact_sha256": "338db41ef00df149779ff3b294f521349e7776e9e934212e1e6eea785af45c24",
+  "checks": [
+    {
+      "name": "healthy-unused",
+      "passed": true,
+      "guard_dets_calls": 0,
+      "positive_control_dets_calls": 1,
+      "result": {
+        "value": false
+      }
+    },
+    {
+      "name": "healthy-retained",
+      "passed": true,
+      "guard_dets_calls": 0,
+      "positive_control_dets_calls": 1,
+      "result": {
+        "value": true
+      }
+    },
+    {
+      "name": "missing-snapshot",
+      "passed": true,
+      "guard_dets_calls": 0,
+      "positive_control_dets_calls": 1,
+      "result": {
+        "error": "CONFIG_WRITE_FAILED"
+      }
+    },
+    {
+      "name": "corrupt-snapshot",
+      "passed": true,
+      "guard_dets_calls": 0,
+      "positive_control_dets_calls": 1,
+      "result": {
+        "error": "MatchError"
+      }
+    }
+  ],
+  "limitations": [
+    "Loads actual artifact modules for targeted guard unit calls; not a public legacy lifecycle or Admin create_agent fallback qualification.",
+    "Actual snapshots come from public API writes; zero guard DETS calls are contrasted with an actual isolated opener positive control.",
+    "Traces open_file/2, the exact writable opener used by the removed bootstrap fallback; no public legacy startup bypass is claimed."
+  ],
+  "harness_sha256": "37c5e7ea4f7dbaa3a7be2ca503e66da95424cb116fcbf2b8cc593700146a7eda",
+  "probe_sha256": "49c6ba51fb16835b88b644407c5c9583c4efcfee4fc4cf5740d4e8684c587fe4",
+  "raw_report_sha256": "c22f0f4d63d0546f45ddb3b11bffc67a2c9173cf9c73ea100b4a06487abf8d2f",
+  "raw_report": "_build/roadmap/multi/legacy-guard-33.json"
+}

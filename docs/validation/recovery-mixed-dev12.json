@@ -1,0 +1,118 @@
+{
+  "suite": "target-only-project-restore",
+  "started_at": "2026-10-22T00:34:37.537311+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "target-only-restore-keeps-originals-private-acks-current-security-and-other-project-newer-position",
+      "passed": true,
+      "retained_ids": 127,
+      "lost_post_backup_ids": 103,
+      "new_ids": 103,
+      "families": [
+        "publication",
+        "subscription",
+        "delivery",
+        "history",
+        "retrieval",
+        "archive",
+        "feedback",
+        "replay",
+        "optimizer-proposal",
+        "optimizer-child",
+        "optimizer-evaluation",
+        "selection-reset",
+        "event-replay",
+        "repair",
+        "audit"
+      ],
+      "complete_accepted_subtrees_compared": [
+        "publications",
+        "subscriptions",
+        "deliveries",
+        "contexts",
+        "idempotency",
+        "sources",
+        "admin_idempotency",
+        "history_queries",
+        "retrieval_queries",
+        "archive_queries",
+        "feedback",
+        "replay_queries"
+      ],
+      "explicit_public_allocated_family_counts": {
+        "publication": 25,
+        "subscription": 2,
+        "delivery": 2,
+        "event-replay-delivery": 1,
+        "history": 1,
+        "retrieval": 1,
+        "archive": 1,
+        "archive-plan": 1,
+        "replay": 1,
+        "proposal": 1,
+        "proposal-child-replay": 8,
+        "event-replay": 1,
+        "event-audit": 2,
+        "index-rebuild": 1,
+        "public-history": 21,
+        "public-retrieval": 10,
+        "public-archive": 9,
+        "public-archive-plan": 9,
+        "public-replay": 9,
+        "public-optimization": 1,
+        "public-index-generation": 2
+      },
+      "unseeded_families": [
+        "source-query",
+        "federated-query"
+      ],
+      "optimizer_quality_results": {
+        "retained": "rejected",
+        "lost": "rejected",
+        "recovered": "rejected"
+      },
+      "transport_discontinuity": true
+    },
+    {
+      "name": "apply-retry-and-cold-start-preserve-newer-activated-generation-without-reinstalling-older-backup",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "fixture_phase_wait_seconds": {
+    "optimizer_training": 300,
+    "optimizer_evaluation": 300,
+    "kafka_replay_materialization": 300,
+    "kafka_drain": 300,
+    "replay_delivery": 300,
+    "quarantine": 300,
+    "repair_retry": 300,
+    "index_rebuild": 300
+  },
+  "timing_scope": "Bounded complete-state lifecycle fixture, not throughput qualification; all original cases, gold and quality gates retained.",
+  "artifact_sha256": "9b09eee676fb8ac2e95cba38cd29144c09f6e4a03acc0d84fb30747e745b7d71",
+  "authored_recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+  "scope": "Target restore and public original/query/feedback/replay/optimizer/selection and actual Kafka repair/replay/audit allocator families using controlled typed replies. Deterministic lineage hashes remain stable. SourceQuery/FederatedQuery allocation and federation/crash/browser gates remain separate; no full allocator or live semantic model qualification claim.",
+  "finished_at": "2026-10-22T00:52:44.353171+00:00",
+  "raw_report_sha256": "27c967b687b126110073d2430da5da453d8d0380710d45fef58b65fafc41e319",
+  "harnesses_sha256": {
+    "tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "tests/project_recovery_workflows.py": "79c43aa9d287225abf1de35662b3885d357a78cf75d6c7ec3916e8f8903d11e6",
+    "tests/project_recovery_allocators.py": "63991138084c14f2c192d4da6c1fd9ae7a94c8012af189b69c6709c42daa73ed",
+    "tests/project_recovery_acceptance.py": "3d07ea75423399449717ab5244a739de4e0e69b966024743c8cbe100933c36ab",
+    "tests/project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa",
+    "tests/multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c"
+  },
+  "qualification": "Unadmitted development12 native complete mixed-state lifecycle fixture with real Kafka and controlled local typed replies. No provider calls, live semantic quality, source/federated allocation, crash, Docker or release qualification.",
+  "enumeration_scope": "Explicit public query listing completeness flags checked, using bounded fixture-author partitions if truncated. Explicit actual acknowledged replay-delivery identities checked, alongside publication/subscription/private delivery/query/plan/proposal/child/replay/audit/index generations. This is coverage of the enumerated seeded families, not a claim that unseeded families passed.",
+  "preserved_prior_observations": [
+    "Development05 materialization90-second timing observation",
+    "Development06 optimizer90-second timing observation",
+    "Development09 replay-delivery30-second timing observation",
+    "Development10 scoped positive result and disclosed listing-completeness limitation"
+  ]
+}

@@ -1,0 +1,11 @@
+--- sourceC/project_restore.exs
++++ candidate01/project_restore.exs
+@@ -1559,7 +1559,7 @@
+         "storage_generation" => proof["generation"]
+       })
+ 
+-    :ok = ADHD.Eventing.preflight_restore(pc, state)
++    :ok = ADHD.Eventing.preflight_restore(pc, state, job["limits"]["deadline_ms"])
+ 
+     counts = %{
+       "publications" => map_size(state.publications),

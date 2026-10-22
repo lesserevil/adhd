@@ -1,0 +1,76 @@
+[
+    {
+        "Id": "sha256:184d16bf19d292da7f741338eee68d2b61f657eed8fd32f774a1ad1bc2b46a59",
+        "RepoTags": [
+            "adhd-hub:qa40-compiled04"
+        ],
+        "RepoDigests": [],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "1970-01-01T00:00:00Z",
+        "Config": {
+            "User": "10001:10001",
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "OTP_VERSION=29.1.2",
+                "REBAR3_VERSION=3.27.0",
+                "ELIXIR_VERSION=v1.20.4",
+                "LANG=C.UTF-8",
+                "ERL_FLAGS=+S 2:2",
+                "HOME=/tmp"
+            ],
+            "Entrypoint": [
+                "elixir",
+                "/runtime/adhd/boot.exs",
+                "/app/hub.exs"
+            ],
+            "Cmd": [
+                "[\"serve\",\"/config/hub.json\"]"
+            ],
+            "WorkingDir": "/app",
+            "Labels": {
+                "org.opencontainers.image.licenses": "Apache-2.0",
+                "org.opencontainers.image.title": "ADHD coordination hub",
+                "org.opencontainers.image.version": "29.1.2"
+            },
+            "StopSignal": "SIGTERM",
+            "ArgsEscaped": true,
+            "Healthcheck": {
+                "Test": [
+                    "CMD",
+                    "elixir",
+                    "/app/health.exs"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 10000000000,
+                "StartPeriod": 15000000000,
+                "Retries": 3
+            }
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 115465030,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/ehbldkndxnga12u9tklz5kabl/diff:/var/lib/docker/overlay2/k3nvwwzzdaukmtt1rwbsi62m3/diff:/var/lib/docker/overlay2/a77140360e74e301752c13d26dbeab94e403afa7ad36f10fd7e885ac5f1a0678/diff:/var/lib/docker/overlay2/ca7eb32947889a195ce68226963dbaaf424a3e6c92db60fe3caa3158db11d1f9/diff:/var/lib/docker/overlay2/7ca6d431e7debe27896a53374afd9b480bb34790737556b4ce5229bb9c75a0f3/diff",
+                "MergedDir": "/var/lib/docker/overlay2/unavuc8v12ihunlkswssd0si3/merged",
+                "UpperDir": "/var/lib/docker/overlay2/unavuc8v12ihunlkswssd0si3/diff",
+                "WorkDir": "/var/lib/docker/overlay2/unavuc8v12ihunlkswssd0si3/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:74d97c428c51a828f9051a7a40a53ff1fc99e54fc30323ce36760701b0b7f711",
+                "sha256:db0221faf1729dc0e407fdcc3b594e2c5c37e6acf2d8a775f5fc3bea9b56e238",
+                "sha256:51e8a231d221671ee8e45962158d7a15d1a8a8cba9919d40abf375e74b8f8b08",
+                "sha256:0faec3302c964fd6c016dd0ee3943601ec788beba40d2558cf7e2d7d8da5a32a",
+                "sha256:286d6acd47daa011c7750a8317ad09960b235eccf3df670dc5f0dc92e6ad66bf",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-22T08:19:14.182675048Z"
+        }
+    }
+]

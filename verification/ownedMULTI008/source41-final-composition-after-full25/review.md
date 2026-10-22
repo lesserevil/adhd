@@ -1,0 +1,13 @@
+The fresh source41/image207 full25 run is terminal positive: all25 original programs and128 serialized checks passed, without borrowing the earlier23-program prefix or focused rebind result. The actual groups are seven HTTP programs/37 checks, one learned workflow/2, fifteen crash programs/71 and two rebind programs/18.
+
+This additive review preserves the earlier property draft as an explicit previous snapshot. It verifies all54 safe retained files and each fresh report/cleanup hash, named check, source identity and closed-runtime conditions. All128 old recovery case references are promoted to the fresh reports by exact ordered case name and JSON pointer. Other current core/Kafka/callback/SDK/UI/deployment checks retain their original report references and units.
+
+The final property map now uses actual fresh results for Admin admission, backup/principal rejection, missing/empty target preservation, allocation families, learned-state compatibility, Kafka epoch isolation, all fifteen crash boundaries and portable/hostile rebind. The semantic addendum still supplies precise owner/reference/schema/checkpoint vectors, actual historical coordinator-interference and microboundary evidence, exact unchanged module/function fragments, and OpenRig/policy conservation.
+
+Actual cleanup evidence records123 known container IDs,232 recorded names and176 host-process observations absent, with an empty scoped process scan. The51 image-object static cache attestations and123 launch records preserve source59/cache59 modules/62 files plus4 static anchors. They are not per-VM dynamic67 custody; separate SDK/readiness/browser/deployment programs retain that scope. Historical missing names/start ticks are not fabricated.
+
+All original failed core, Kafka and rebind aggregates remain false. The earlier timeout and missing argv cause remain unknown. Current whole25 success does not retroactively diagnose them.
+
+All runtime predicates in the seven-leaf/six-parent composition now have the reviewed original evidence. No extra runtime family is identified. Root's proper receipt bridge02 is running as handle56196 after the phase1 guide edits and successful record02, with unchanged58 source files and lock. No new receipt or current currency is claimed before terminal verification. The last completed post-record verify14186 had authority/locks pass and receipt stale; the earlier3-pass/2-skip verification is historical.
+
+The remaining hold is the proper final CLI/receipt/artifact/context verification and root's dependency-ordered closure review. This evidence changes no checkbox, parent, runtime resource, provider, marker or receipt.

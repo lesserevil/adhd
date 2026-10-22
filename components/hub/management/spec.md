@@ -14,6 +14,15 @@ archive, persistence, CLI and matcher contract.
 
 ## Administrator boundary
 
+configuration/spec.md and identity/spec.md explicitly extend this legacy contract
+with Settings/Users/Agents views, live settings, local/OIDC human sessions, cookies,
+CSRF and server-side per-user roles. The no-cookie rule below applies to the legacy
+bearer-token login only. Their role matrix governs human access; this document
+continues to govern unchanged metadata-only legacy list responses. The explicit
+Admin-only private_delivery operation is the exception permitting requested full
+Admin data access without adding private bodies to existing list responses.
+
+
 Configuration optionally accepts admin_token: a nonblank string 32–65536 UTF-8
 bytes, different from every agent token. Invalid values fail startup without
 printing secrets. Absent admin_token leaves existing configurations valid and
@@ -139,10 +148,20 @@ health with observation time. Information provides recent information, text sear
 exact type/source filters, results and a full detail panel for provenance/content.
 Subscriptions shows owners/descriptions, creates a subscription for a selected agent,
 and removes one only after a confirmation identifying its owner and description.
-Cancellation must perform no mutation. Activity shows delivery metadata and matching
+Cancellation must perform no mutation. The multi-project/Kafka subscription profile
+also provides Admin editing of mode, plain-text filter, exact selectors and paused
+state. Show the current subscription revision; submit that revision with explicit
+confirmation. Raw mode disables the filter field. A stale edit shows a conflict
+and requires refreshing the current subscription before resubmission. Pause/resume
+changes future activation without erasing queued deliveries or acknowledgements.
+Activity shows delivery metadata and matching
 jobs with status and offers confirmed retry of pending jobs. Neither page nor detail
 panels reveal private addressed content. Manual Refresh updates the active view and
-shows last checked time. No automatic refresh is required. List truncation is visible.
+shows last checked time. Refresh reloads current project admission and display names
+before querying project data. If the selected project is no longer admitted, clear
+its pending actions and select another admitted project explicitly in the selector,
+or show the no-project state. A stale project response must not restore revoked
+context. No automatic refresh is required. List truncation is visible.
 At 390px mobile width no document overflow; wide tables can scroll within labeled
 regions. Desktop and mobile all primary actions remain reachable. No page, console,
 uncaught script, missing asset or unexpected network errors on normal paths.
@@ -160,3 +179,13 @@ and 390px rendering in an instrumented browser, including login/logout/reload,
 search/empty results, details, management confirmations, outage and overflow checks.
 Document credential provisioning/rotation, access through the private tunnel, private
 visibility boundary, actions and limits, troubleshooting and durable backup/upgrade.
+
+## Selective project recovery extension
+
+project-recovery/spec.md and interface.md add Admin-only asynchronous plan/apply/
+status, effective hot recovery limits and explicit unknown-target initialization
+through the same console/session/CSRF boundary. Controls remain usable while a
+target store is unavailable; neither an agent nor Developer/Viewer may invoke
+recovery. Review exact plan/digest/revision before Apply. Recovery metadata and
+mutation receipts live outside the replaced target. Existing list/read envelopes
+remain unchanged; the new status operation reports progress and availability.

@@ -1,0 +1,16 @@
+START storage-crash
+DONE storage-crash True
+START movefault-before-decision
+DONE movefault-before-decision True
+START movefault-after-decision
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image38-filesystem-plan03/driver.py", line 256, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image38-filesystem-plan03/driver.py", line 253, in main
+    else:assert _STAGED;sys.exit(execute(args.work.absolute(),args.plan_sha256))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image38-filesystem-plan03/driver.py", line 225, in execute
+    assert child.returncode==0 and report.is_file(),'Actual child failed or no report; no retry'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Actual child failed or no report; no retry

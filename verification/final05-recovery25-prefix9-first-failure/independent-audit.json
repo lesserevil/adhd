@@ -1,0 +1,567 @@
+{
+  "schema": "adhd/independent-recovery-terminal-audit@1",
+  "plan_sha256": "947ac3e42c5f0b2e32d27e98400b9763f7ed59867f1ee9f0ae3165930c03a3fe",
+  "driver_sha256": "1e7fced77087d3ab07dbefa2b7dde0488aa10cd3a99e353190b053090e74fc05",
+  "full_verify": true,
+  "input_counts": {
+    "frozen_inputs": 533,
+    "component_inputs": 464,
+    "bound_inputs": 21,
+    "external_inputs": 17,
+    "context_inputs": 5
+  },
+  "whole_prefix": [
+    {
+      "name": "admission",
+      "whole_passed": true,
+      "observed_checks": 5,
+      "checks_counted_toward_whole_qualification": 5
+    },
+    {
+      "name": "rejections",
+      "whole_passed": true,
+      "observed_checks": 11,
+      "checks_counted_toward_whole_qualification": 11
+    },
+    {
+      "name": "private",
+      "whole_passed": true,
+      "observed_checks": 5,
+      "checks_counted_toward_whole_qualification": 5
+    },
+    {
+      "name": "agent-admission",
+      "whole_passed": true,
+      "observed_checks": 3,
+      "checks_counted_toward_whole_qualification": 3
+    },
+    {
+      "name": "uninitialized-move",
+      "whole_passed": true,
+      "observed_checks": 5,
+      "checks_counted_toward_whole_qualification": 5
+    },
+    {
+      "name": "mixed",
+      "whole_passed": true,
+      "observed_checks": 2,
+      "checks_counted_toward_whole_qualification": 2
+    },
+    {
+      "name": "federation-errors",
+      "whole_passed": true,
+      "observed_checks": 6,
+      "checks_counted_toward_whole_qualification": 6
+    },
+    {
+      "name": "learned",
+      "whole_passed": true,
+      "observed_checks": 2,
+      "checks_counted_toward_whole_qualification": 2
+    },
+    {
+      "name": "crash-damaged-after-install-snapshot",
+      "whole_passed": true,
+      "observed_checks": 5,
+      "checks_counted_toward_whole_qualification": 5
+    }
+  ],
+  "failed_partial_excluded": {
+    "name": "crash-no-default-after-install-snapshot",
+    "whole_passed": false,
+    "observed_checks": 1,
+    "checks_counted_toward_whole_qualification": 0
+  },
+  "unrun": [
+    "crash-archived-before-cleanup",
+    "crash-after-install-snapshot",
+    "crash-before-stage-snapshot",
+    "crash-after-stage-snapshot",
+    "crash-before-decision",
+    "crash-after-decision",
+    "crash-after-decision-sync",
+    "crash-after-install-checkpoint",
+    "crash-after-route-selected",
+    "crash-after-route-ready",
+    "crash-after-completion",
+    "crash-before-cleanup",
+    "crash-after-cleanup",
+    "rebind",
+    "rebind-hostile"
+  ],
+  "strict_absence": [
+    {
+      "identifier": "03ac18566ef1254fb280bb710669e3e113f47edeb18accf47995146762c0a774",
+      "exit_code": 1,
+      "stderr_sha256": "3fff08deb4f85642f72506345a77bb7a6f548f09fce61ff8b5c866afc1a2b884",
+      "absent": true
+    },
+    {
+      "identifier": "0b37a5226558c9659b5cdd3373b366fe6456e3749af3e8cbac841224ea47f839",
+      "exit_code": 1,
+      "stderr_sha256": "fb554213b82de4ded0ae99d10f7f7d1750069e30ba7a8ebe66c9abf648ad109a",
+      "absent": true
+    },
+    {
+      "identifier": "1095ee666a820520e745ff1f7afa1623188ce6c2de46688649d6a2752c2baafe",
+      "exit_code": 1,
+      "stderr_sha256": "d2e26ce79df2ca018c62bdc51483fdcf3ed66c43533dd6e82d3ae062dcd1073f",
+      "absent": true
+    },
+    {
+      "identifier": "1cff883a1e51bd1b9e728f3ad33f9ada56b391a74424b88953f680c9a7da6021",
+      "exit_code": 1,
+      "stderr_sha256": "53bc51d9cf554d39f6792339744de9c45c8ac23a7ca1568653783c89e12e6aea",
+      "absent": true
+    },
+    {
+      "identifier": "21f7c4cabe99e46f6ee6608438b7f455421d7cb868eb2ca11a2c8ad2cecbdb9c",
+      "exit_code": 1,
+      "stderr_sha256": "7eb5e92454487ed837d92adc85bd79771c9b44e2c26f9a4ddbd8d04cbf54beee",
+      "absent": true
+    },
+    {
+      "identifier": "2290bae44e3812604426b8e79e5ceb6f0dcf3049276ae2b82697ac9bf901892a",
+      "exit_code": 1,
+      "stderr_sha256": "8fc53e890e4211fd3a236b8eef32cd495ab659c39b8a29b42a4674d0be76d1ca",
+      "absent": true
+    },
+    {
+      "identifier": "2dd87cd0eaeb1fd181aeffa0da25bcb8506ddaffedb2d40e897f27257acb0b86",
+      "exit_code": 1,
+      "stderr_sha256": "63e075c95e4744389c3b5aa53ec6985c14adfcdda4f7f6c0140323b3533e0c34",
+      "absent": true
+    },
+    {
+      "identifier": "2e93364e3d5fe0063a41aef186cf062bc5db279d5c9ba86b04465f39276f944a",
+      "exit_code": 1,
+      "stderr_sha256": "36c5e17ffaea233d47ad32e853ce3756a2022bf17c1af812edcafe9474e8d803",
+      "absent": true
+    },
+    {
+      "identifier": "3bd2090d9b33f9b46b6790ae067dec921f965dc289dca70a3dff84fdc4a6a016",
+      "exit_code": 1,
+      "stderr_sha256": "6538e6b6a38ec991de58482e932594c9162a2eab47a36c2f2892f5ca77346cfc",
+      "absent": true
+    },
+    {
+      "identifier": "43a8691e60d9d0c9564be36315c27f3ac781ecf09a057e9da8683a26fb1f1dba",
+      "exit_code": 1,
+      "stderr_sha256": "e71cba02f0b71c3b22f91ddcd645693d1f3437034b13e6068b10ee1cc5b7b698",
+      "absent": true
+    },
+    {
+      "identifier": "503125d877aadfccb491db64d5d94933e60466d455abf31204e3bf5d235eed80",
+      "exit_code": 1,
+      "stderr_sha256": "8f57aedf6c84a0a02d1f6c10720288bf9f18800b546c9e56c00d91b1c0e3bcea",
+      "absent": true
+    },
+    {
+      "identifier": "5fe78c3724ed8d1296f83a7dc70f72c34688701147e13b64ead9d725f4b24f86",
+      "exit_code": 1,
+      "stderr_sha256": "68d9a550f1bcfca5c874b14e7f73f4da13622acb1c0ae8034e966084ec9720d2",
+      "absent": true
+    },
+    {
+      "identifier": "636dfe28fece1ccdfd7068d5d194a6b7c68bc29c1891005feead36191aacf023",
+      "exit_code": 1,
+      "stderr_sha256": "1e87a693266939f821183e9686db0de719bf00aaf0ad6e0fba5f1849e18214a6",
+      "absent": true
+    },
+    {
+      "identifier": "6f7871247b62bdaf9718939637be4ceb2d20ab6324f19cc691ce5b176d0daf57",
+      "exit_code": 1,
+      "stderr_sha256": "e37f826f46508b70632414bb420de6f169a6b3b50aa8072a8d79dbc665ec4fe8",
+      "absent": true
+    },
+    {
+      "identifier": "74320b810a405f3082950c26ba0d599d4c69c2b649fb2b71abf0c67824db214a",
+      "exit_code": 1,
+      "stderr_sha256": "704c39a295ac3d8641ac58bf0e7862a23897f2b60b18ecfebaa1be0384301b19",
+      "absent": true
+    },
+    {
+      "identifier": "7be7880724f59963b37a302cdbd1ab6f93917fdaac14316affca9122886afa69",
+      "exit_code": 1,
+      "stderr_sha256": "e279bfc285c1c6e876ec6d8eacc3cb5eae658f9309c52cdbe592a46858ff5f84",
+      "absent": true
+    },
+    {
+      "identifier": "7c2f31f83bb9d3d1509517ebeca9b9a007373c645fa038eac5771ae569c652fa",
+      "exit_code": 1,
+      "stderr_sha256": "4d2ffff600975991217adcd83f90621fd68d3abb17baa17d400eef1fc60282e0",
+      "absent": true
+    },
+    {
+      "identifier": "806f67c63eecdcbada7c378c3a94aad0f73c0ca5ea22f48e26837aa9c36aaf9e",
+      "exit_code": 1,
+      "stderr_sha256": "f881a4568068b4f929cab0ca6e1e0fe2bbea5db9344163bdcc2bee1238b1aa70",
+      "absent": true
+    },
+    {
+      "identifier": "a62425d4897ac697e44a0138cb6f0e5676c33d3e3ae70c0a4cf3918b33ed1226",
+      "exit_code": 1,
+      "stderr_sha256": "f0142120e3c86752377c4481e6f2f86ff2a8390254bd61d1faf68a4aa7ef36e2",
+      "absent": true
+    },
+    {
+      "identifier": "a698bf658df2637ebcb1342018c7b7d0905a1bdfa16c2a9d07ab75645f04782a",
+      "exit_code": 1,
+      "stderr_sha256": "7037faac80e30bcfb5d666af17f149634f14283e36966ac42e8fd1c882c17b1d",
+      "absent": true
+    },
+    {
+      "identifier": "acac2493dad5499a2d590aa1d5739e030029615e6dd84e0ebd228d839462a736",
+      "exit_code": 1,
+      "stderr_sha256": "d464801a2380dc20cfeae2387bfdca90ad35e39dab1597d9856a7e00ff9ed28d",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-01b5242c17964c8e",
+      "exit_code": 1,
+      "stderr_sha256": "8b99c277a5af0fa80cc386940a4e3aef38495c0d16fc7e51f5bccd40a7ddbb9b",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-0ab5b9c69e3840e5",
+      "exit_code": 1,
+      "stderr_sha256": "7568e4f2b9638aa192cd953419bbf7cdd6b841b54926ce11113bb362aa439167",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-1190c9e895694b1a",
+      "exit_code": 1,
+      "stderr_sha256": "299317b69ce3482259354f3183188303aa207a6af7497f97d570eebfc9cb9881",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-152903fb031e4916",
+      "exit_code": 1,
+      "stderr_sha256": "1e24db95311ea5be8565b16f9142d0f7cea4adc27e68226adc676be4589180ec",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-23c4141c338a4f66",
+      "exit_code": 1,
+      "stderr_sha256": "d16de6f1802a952d2e07fd0aeaff961ddf6d1e559346f97f931ec9cec08bc53a",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-26e92c84768a4ec4",
+      "exit_code": 1,
+      "stderr_sha256": "420bc4dd451e167fd43eeb3f9983b1013780ef2a51de2eaccc204a2dd4ba5623",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-2ce5bcafe6ee4f8e",
+      "exit_code": 1,
+      "stderr_sha256": "f814c1c9fa5053e49a1178c87e12ed0825ea180ae2cb47deb14432520dd104c4",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-37fd12d3aced4206",
+      "exit_code": 1,
+      "stderr_sha256": "c9fc1c819469f76c99a7bcdccc7bda64f079106a0613d79cb1f6f285d649b383",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-44c1df48932945d5",
+      "exit_code": 1,
+      "stderr_sha256": "51511da7a6486e4cd05e7afebd5972a81431d5e98d27b44139b57fd0fda208db",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-4e1797887ca54cfd",
+      "exit_code": 1,
+      "stderr_sha256": "4fc0b6a5c9ba64ea30e375e02c1a280514408ae59b2aa8ced825cabbac67c220",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-500aece1cb404076",
+      "exit_code": 1,
+      "stderr_sha256": "4108fc3b542dc6db548ee88a01742b922d63ae878321b4084a6219e08eba0a7c",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-5db304410bba4f20",
+      "exit_code": 1,
+      "stderr_sha256": "5ad5b799a6a0b17b7f8c2ecfe701ee1be80d9eee11eae4d676f92fdefefc5d9e",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-5e59aea5c9d24973",
+      "exit_code": 1,
+      "stderr_sha256": "b26e756393230730ef54d6ba9e1b05ad02b33478cde66d63894fa24f864cf106",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-6afd7dbdd47a4d90",
+      "exit_code": 1,
+      "stderr_sha256": "404a26cc37659c2ee638506e6aceb67006971480b632143c3339afa07a150c84",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-6b9178f84a5d4caf",
+      "exit_code": 1,
+      "stderr_sha256": "2f211273ae3ef3745adcbfbdccdc17a82b1397bd5ee705484a271afde4bc4e4a",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-6d62dd1fd32740b6",
+      "exit_code": 1,
+      "stderr_sha256": "19b5497a534666406b29ed5d9d4d6bfa6c433a8cbe02361cd6d39f06fb2b90f9",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-6df61686f48b4744",
+      "exit_code": 1,
+      "stderr_sha256": "2645292b67e964a553597b1646cabce2a5e5ff1c56d7b2eed06090776b06ae2e",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-6f17f8fc83ce49ae",
+      "exit_code": 1,
+      "stderr_sha256": "9301ad6cb4c1e966ed9f2bee1a6a5e2dd5432eded67a8228cca4d6024aeb184c",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-73d962357bde459e",
+      "exit_code": 1,
+      "stderr_sha256": "f4bd93942c7db7604d9c23375455aeb974442498c463bb221ed17e2612b926cf",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-7bcf7ea1b8ed4872",
+      "exit_code": 1,
+      "stderr_sha256": "d7272ff19f703b563ed6e75658f76fefee9a0c9cfd841c83c1d998e5f52dd7a8",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-88820369c9fd49de",
+      "exit_code": 1,
+      "stderr_sha256": "d3abb31457a19a489115d20f615d61ff1ca5b514a3548aa451c75c3aec6bc469",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-891615a051cd4ecb",
+      "exit_code": 1,
+      "stderr_sha256": "f9bd462f6bdc4f1a54ed6c76ebf476997f8a7f5c6639fd5bc8a7e2505f80504c",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-8997e746372646ea",
+      "exit_code": 1,
+      "stderr_sha256": "162d69c60c220155509af3973ae9dd54729f148e6ae64e2f54de1f946ccbcc03",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-8a35845fb05d4062",
+      "exit_code": 1,
+      "stderr_sha256": "34033c4fd0ecba356da284e8a257b0ea04d38ce8ebd95370226ece8c82149c5f",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-8baed912ec2e49dc",
+      "exit_code": 1,
+      "stderr_sha256": "0c502efa814e1454840c08b29faf1d705e3f031a0eb90230cc8b793f2d291c1e",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-8d2c2637e7f54113",
+      "exit_code": 1,
+      "stderr_sha256": "35c8903974550c341b7f37e3d02d842ed0ecfb43b324ad4e9cbf9d2ad9dae31c",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-9af6f7685b8b427b",
+      "exit_code": 1,
+      "stderr_sha256": "08cdfc46b7e52a957d006c4e272332215fbdc06bbf4e2ae1a27e45603978a0aa",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-9da7f712368a44f6",
+      "exit_code": 1,
+      "stderr_sha256": "d94b57f97c45bb77a9a1985fc4f693a60496cea33ebf9b0094e45872a77a03aa",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-ab64554c1c1d4734",
+      "exit_code": 1,
+      "stderr_sha256": "90c0321d978b45fe9aafc167b615fa6fa42becac04426a41908063f9a726e159",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-ae9370c6dc974c92",
+      "exit_code": 1,
+      "stderr_sha256": "eae6fa33cd598608283784df3d14bb9b927c7c5108bf3a1c9c218af2599c446e",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-bb0b83493c944516",
+      "exit_code": 1,
+      "stderr_sha256": "3cb694ea41a044257cf8aef500ce23567baca5f66b858fb9550bc6bcf98206e2",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-c8471930bc9c43d1",
+      "exit_code": 1,
+      "stderr_sha256": "92cd6dd4c007c31772d5f2426b1be66281b81868d9e174fec73b68b036765175",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-d0d72c76a65643a9",
+      "exit_code": 1,
+      "stderr_sha256": "febdd24bf39414af422bc0115b5d7fe8f67d1214740fcf9594bf4c0693d787b9",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-d7c7421efb5249f5",
+      "exit_code": 1,
+      "stderr_sha256": "4151ffcbdce140a693d14d69589ad3416ec70ad81fdd1af69a6ba3beb2a2060a",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-df6617f52398423f",
+      "exit_code": 1,
+      "stderr_sha256": "3060f94ba280a05b3b2cba553cd1b2c0a4d0f817a0dda9eb5ada66dcb48cd905",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-f2d34f9d84694d44",
+      "exit_code": 1,
+      "stderr_sha256": "faedc972104c8563764b14bac908fa32431903a8721dc8fe9a029ae4a37405a6",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-f786f9e9464745c7",
+      "exit_code": 1,
+      "stderr_sha256": "779e051b6cf7e1c9e751b171cc487f5283b6eafd7d4c30d46e09f91ee97435c3",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-fb287517789a4dc7",
+      "exit_code": 1,
+      "stderr_sha256": "d6164014b7cdbceac011de8c1ac62fe7c28096d8c3b0493f1dfe88fcecf3ceda",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-fd93de56948c427e",
+      "exit_code": 1,
+      "stderr_sha256": "24a5048cd37ffa988ebaafed6089905df38ee80b3022ce0e3f258a100c4b0f0c",
+      "absent": true
+    },
+    {
+      "identifier": "adhd-accept-probe-fdff9c0cb8a043b6",
+      "exit_code": 1,
+      "stderr_sha256": "6ce8bd11b9ff99a01b7de153ab33e0e296921f555dded1527a1c6c373236e1d4",
+      "absent": true
+    },
+    {
+      "identifier": "b65674c92724bd8a12c412eedd248cb2373cc3a1dd26c5644bf5c210277704ff",
+      "exit_code": 1,
+      "stderr_sha256": "13ec24faba3db05a5665681e6fbd1dc2322b40a955f10ee6ef0a08426b1f9167",
+      "absent": true
+    },
+    {
+      "identifier": "b77d4ba91d80e91cd4e05408b908bfa0b20596d5f925f558a8403c5c0ca6db87",
+      "exit_code": 1,
+      "stderr_sha256": "ec3d73842a776c98c88b11fa083dffb07375fdb7f5c777d90921e1f5c7bcd93a",
+      "absent": true
+    },
+    {
+      "identifier": "bc7c38f0c4858352ea17a2ff586f45eb1f6d58dc20546bf9c29e6e2a0d000f0b",
+      "exit_code": 1,
+      "stderr_sha256": "36f7370f65e6f990cdc4a8a4acfdaee67fd33f4a0ef414f02c5e7e399b804ed6",
+      "absent": true
+    },
+    {
+      "identifier": "be161751e1e5bdcd14d2729ed419d4407faac5c520046f3bcf182c751da21777",
+      "exit_code": 1,
+      "stderr_sha256": "2a3c4559fd13a2ad5ce1c9eb8f1f61ff77a0642c66577e018d58861f99036af3",
+      "absent": true
+    },
+    {
+      "identifier": "c39f4b8b73b2f64f346352f660d9e29124095d361a846834338d315fc128f44a",
+      "exit_code": 1,
+      "stderr_sha256": "7e68771c54a6c40114ef2b6f577c12443ed048da9d72694325b9666524a785f8",
+      "absent": true
+    },
+    {
+      "identifier": "c925fd3b7c1835f26941a41f208512826fdc5e45cce855d52603aeadac0099e0",
+      "exit_code": 1,
+      "stderr_sha256": "991aade71626bc526c7e2c18e019422a5c04132afba91b3604cae6d7cd340fe2",
+      "absent": true
+    },
+    {
+      "identifier": "da868156a04760c26b9d83f54bcaaa0daac36f4d6dd9bd42ccbc5380117a5037",
+      "exit_code": 1,
+      "stderr_sha256": "c46d1352f2957f3f81b66eaaf3b65a6e3c47d03078f7360f2e3e713160df8f03",
+      "absent": true
+    },
+    {
+      "identifier": "e079c74113ab48aeb1285d56297046dd1c99e85c854aba2614c1ed6850b3a64d",
+      "exit_code": 1,
+      "stderr_sha256": "ee3f9232cbaea25579ae0101f0bcee80d8c33ab9d31223d604fe7c2bf216d480",
+      "absent": true
+    },
+    {
+      "identifier": "e47a19ebd8409e8fcb79803a2cc03e50f4e500bd612c2339dc50c6867fda1434",
+      "exit_code": 1,
+      "stderr_sha256": "58b9044301c0d500be9bd57717d176adafde38bede809272cd278521265fff43",
+      "absent": true
+    },
+    {
+      "identifier": "eb77bc3cbf1c7ee2e42a259fcc67006e1df45039a73cf07f59c41137df74c380",
+      "exit_code": 1,
+      "stderr_sha256": "4a5a4a17d08d274eb7f397756ca4811a258724d35a105b2b150364847e2d36ea",
+      "absent": true
+    },
+    {
+      "identifier": "fb3abdbbc1e40c9844e29469e5eb5029d6265f8d75b344341672235515b9c889",
+      "exit_code": 1,
+      "stderr_sha256": "48cbd8377f110ab114930b55d375ef592d1c829cc1beb22bfed8b99240409aa0",
+      "absent": true
+    }
+  ],
+  "recorded_full_container_ids": 32,
+  "recorded_probe_names": 40,
+  "recorded_host_pids_currently_absent": [
+    3875492,
+    3878331,
+    3879617,
+    3883058,
+    3884647,
+    3886145,
+    3889677,
+    3891342,
+    3892697,
+    3894161,
+    3897116,
+    3899055,
+    3900310,
+    3903725,
+    3905564,
+    3908738,
+    3931015,
+    3982093,
+    4034990,
+    4038446,
+    4039976,
+    4046618,
+    4049518,
+    4051462,
+    4053979,
+    4058980,
+    4061470,
+    4064483,
+    4066118,
+    4070925,
+    4072933,
+    4074676
+  ],
+  "owned_results_path_process_scan": [],
+  "limits": [
+    "No extra historical issuance/starttick ledger existed. No historical PID identity is invented. Persistent brokers and other QA lanes remain untouched.",
+    "Current numeric PID absence and recorded full container/probe identity absence are distinct observations."
+  ]
+}

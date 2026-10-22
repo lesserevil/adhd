@@ -1,0 +1,42 @@
+{
+  "schema": "adhd/cni10-sanitized-install-failure@1",
+  "diagnosis_supported_by_logs": true,
+  "runtime_passed": false,
+  "policy_routes_qualified": 0,
+  "failure": "install-cni token creation POST to Kubernetes service VIP10.96.0.1:443 timed out, followed by FATAL exit.",
+  "underlying_service_vip_cause": "Not established; no claim of specific kube-proxy/kernel/host bug.",
+  "proof": {
+    "log_file": "17-container-log-3.stdout",
+    "log_sha256": "f0b4bfd13b5a282da3ef04720470ced45081c46f108b413e129767922d191132",
+    "safe_error_fields": {
+      "component": "cni-installer",
+      "operation": "create CNI kubeconfig token",
+      "transport": "TCP",
+      "destination": "10.96.0.1:443",
+      "error": "i/o timeout",
+      "severity": [
+        "ERROR",
+        "FATAL"
+      ]
+    }
+  },
+  "owned_endpoint_facts": {
+    "node_name": "adhd-netpol-qa40-control-plane",
+    "actual_node_internal_ip": "10.240.240.2",
+    "docker_bridge_ip_matches_api_internal_ip": true,
+    "control_plane_container_port": 6443,
+    "actual_host_published_api_mapping": [
+      {
+        "HostIp": "127.0.0.1",
+        "HostPort": "35221"
+      }
+    ],
+    "calico_node_host_network": true,
+    "api_node_status_sha256": "b1010ae3fff14ea44ae264a97b9cedb02d3c1959f1df5b0a76f2ddb9c3cbde28",
+    "running_node_inspect_sha256": "92c51af06d4560ae6b09f0c9329fb6d79e621dc23cfb8a2e7b7423af5c9c6b41"
+  },
+  "read_only_reachability_scope": "Original host-loopback published API kubectl commands succeeded. No direct-node-IP TLS/API read was performed/recorded by this audit; readiness of nodeIP:6443 inside owned node is not yet proven. No ephemeral reads after cleanup.",
+  "proposed_correction": "Before unchanged pinned Calico manifest, create explicit owned kube-system/kubernetes-services-endpoint ConfigMap using actual verified ownednode InternalIP:6443. Bind CA/hostname/leafTLS and matching namespace/nodeUID via bounded direct read-only preflight first. No host/DNS/kernel changes.",
+  "primary_reference": "https://docs.tigera.io/calico/latest/operations/ebpf/enabling-ebpf",
+  "raw_api_or_log_content_committed": false
+}

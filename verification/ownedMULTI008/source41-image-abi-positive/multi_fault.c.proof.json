@@ -1,0 +1,399 @@
+{
+  "schema": "adhd/image-filesystem-observer-probe@1",
+  "passed": true,
+  "application_started": false,
+  "owned_container_absent": true,
+  "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+  "exit_code": 137,
+  "actual_musl_loader": "/lib/ld-musl-x86_64.so.1",
+  "observer": {
+    "schema": "adhd/image-filesystem-observer-elf@1",
+    "passed": true,
+    "scope": "Host compiler/readelf only; object never loaded",
+    "source": "multi_fault.c",
+    "source_sha256": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+    "library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+    "compile_argv": [
+      "cc",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-shared",
+      "-fPIC",
+      "-nostdlib",
+      "-fno-stack-protector",
+      "-U_FORTIFY_SOURCE",
+      "-D_FORTIFY_SOURCE=0",
+      "-O2",
+      "/home/horde/src/adhd/_build/abi41-compiled01/inputs/multi_fault.c",
+      "-o",
+      "/home/horde/src/adhd/_build/abi41-compiled01/build/multi_fault/observer.so"
+    ],
+    "elf_machine": "x86_64",
+    "elf_class": "ELF64",
+    "undefined_scalar_symbols": [
+      "_exit",
+      "close",
+      "dlsym",
+      "free",
+      "fsync",
+      "getenv",
+      "getpid",
+      "kill",
+      "malloc",
+      "memcpy",
+      "memmem",
+      "open",
+      "pause",
+      "read",
+      "snprintf",
+      "strchr",
+      "strcmp",
+      "strlen",
+      "strncmp",
+      "strstr",
+      "syscall",
+      "write"
+    ],
+    "exported_symbols": [
+      "link",
+      "linkat",
+      "rename",
+      "renameat",
+      "renameat2"
+    ],
+    "needed_libraries": [],
+    "glibc_symbol_versions": [],
+    "section_sha256": {
+      "dynamic": "2121bdbee6b08b21f4cc318f77b3f590a9c1edcb357005c96e0d50e22a590cd9",
+      "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+      "header": "e0dc52a00ceb1cc773ec3a16f2b94c90d6ee238028948bb0e051e41d2179d87b",
+      "symbols": "edbd39d5730805a10cd25bdc12fcdadddbfb5990d272ec4cb8d77919f8b57b91"
+    },
+    "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "actual_image_loader_qualified": false,
+    "application_started": false,
+    "required_actual_image_abi_cases": [
+      "link",
+      "linkat",
+      "rename",
+      "renameat",
+      "renameat2"
+    ]
+  },
+  "successful_abi_cases": [
+    "link",
+    "linkat",
+    "rename",
+    "renameat",
+    "renameat2"
+  ],
+  "process_custody": {
+    "host_process_pid": 1330451,
+    "namespace_pid": 1,
+    "signal_method": "ancestor-pidfd-SIGSTOP",
+    "pid_namespace": "pid:[4026533600]",
+    "executable_basename": "busybox",
+    "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+    "process_maps_sha256": "aff2c5a21ac3e917cf0ca23eb33c7b0bec40b1ff10f5bb3e906f3e925f1d0009",
+    "process_maps_witness_phase": "kernel-stopped",
+    "observer_mapping_sha256": "c7b57c0bfe34cbc53e94c52c14e1e8230754659305a914f2904eb18625477760",
+    "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+    "kernel_state": "stopped"
+  },
+  "cases": [
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "rename"
+      },
+      "passed": true,
+      "container_id": "bccfdea089335d12a744c1294dcd9a5bf4915153f512735e7ced2af5b232a9b3",
+      "exit_code": 137,
+      "caller": {
+        "op": "rename",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "rename",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1330451,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "aff2c5a21ac3e917cf0ca23eb33c7b0bec40b1ff10f5bb3e906f3e925f1d0009",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "c7b57c0bfe34cbc53e94c52c14e1e8230754659305a914f2904eb18625477760",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "renameat"
+      },
+      "passed": true,
+      "container_id": "5225855fff98d829f920b6143eb67744d82195fe8513ae8ffbdf80a152843790",
+      "exit_code": 137,
+      "caller": {
+        "op": "renameat",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "renameat",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1331145,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "af7f0b48a49658137a45d980a354fa7ab510621851f5059dc1f27d83fe539aa9",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "4dcaac85fcaba31de3d168ca92614bec893cc7624b16fa0078b079791ef33738",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "renameat2"
+      },
+      "passed": true,
+      "container_id": "0ba2dcfaae229562aaccaafde09423d29a44a8da3e25722ccb54044923f6e79e",
+      "exit_code": 137,
+      "caller": {
+        "op": "renameat2",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": false,
+        "direct_syscall": true,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "syscall:renameat2",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1331607,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "25d149bdea9a19440b0742726feabe8fc379fc09362080fd7d4c37282c8d0d67",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "20e50737a7b3cdcb8d5b09a8729542b4eb248a11a51d36d82252318710cfa788",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "link"
+      },
+      "passed": true,
+      "container_id": "905b476e21c78d3aada5f659abe0c4208514c111be07bc056ef89089facb0abf",
+      "exit_code": 137,
+      "caller": {
+        "op": "link",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "link",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1332043,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "d7494d186262f6854cf130d61c8c15ad707cfae3024bb0eb1a4b2bec9d3ebcfb",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "558c20dc41e77ad383b5b928fc1af9cea41f3d74fb0ed13a128148657578d447",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    },
+    {
+      "case": {
+        "source": "multi_fault.c",
+        "op": "linkat"
+      },
+      "passed": true,
+      "container_id": "ad7bbc6bc63c9bb0868be2695298482767f469f87ddb4982a7cb08f4c56fc028",
+      "exit_code": 137,
+      "caller": {
+        "op": "linkat",
+        "namespace_pid": 1,
+        "wrapper_resolved": true,
+        "next_resolved_distinct": true,
+        "direct_syscall": false,
+        "unarmed_success": true,
+        "real_forwarding_symbol": "linkat",
+        "off_t_bytes": 8,
+        "off64_t_bytes": 8,
+        "sparse_offset": 0
+      },
+      "observer_trace": {
+        "stage": "after-snapshot",
+        "pid": 1
+      },
+      "physical": {
+        "effect": "target-bytes",
+        "verified": true,
+        "target_bytes": 24,
+        "target_allocated_bytes": 4096
+      },
+      "process_custody": {
+        "host_process_pid": 1332680,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "busybox",
+        "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+        "process_maps_sha256": "df9a7330dfc6c4ec8465c0fff49151b23564e85a7905ea5d4e36ed1db1621af5",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "785238a947f50c1f16f32d8783ffb7498025d0eda0d187245dc388c96f068a50",
+        "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+        "kernel_state": "stopped"
+      },
+      "observer_library_sha256": "7fcf8a09dc7b0d74387f49a43b6d054615374eeec60ba94de4ff4816aff55dbf",
+      "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "owned_container_absent": true
+    }
+  ],
+  "caller": {
+    "source_sha256": "51e0616a8018f020bc51124f3d5ca5a11102347b0847d27957a5afa4a7fcea62",
+    "library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+    "undefined_scalar_symbols": [
+      "_exit",
+      "access",
+      "close",
+      "dlopen",
+      "dlsym",
+      "fsync",
+      "getenv",
+      "getpid",
+      "lseek",
+      "memcmp",
+      "open",
+      "pread",
+      "read",
+      "setenv",
+      "snprintf",
+      "strcmp",
+      "strlen",
+      "unsetenv",
+      "write"
+    ],
+    "needed_libraries": [],
+    "glibc_symbol_versions": [],
+    "compile_argv": [
+      "cc",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-shared",
+      "-fPIC",
+      "-nostdlib",
+      "-fno-builtin",
+      "-fno-stack-protector",
+      "-U_FORTIFY_SOURCE",
+      "-D_FORTIFY_SOURCE=0",
+      "-O2",
+      "/home/horde/src/adhd/_build/abi41-compiled01/inputs/image_filesystem_abi_caller.c",
+      "-o",
+      "/home/horde/src/adhd/_build/abi41-compiled01/build/caller.so"
+    ],
+    "elf_machine": "x86_64",
+    "sections_sha256": {
+      "dynamic": "148bab214794772c0124a60eb7eae5d9652939ccf27a96c5245bf5bfdf7337ca",
+      "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+      "header": "19dca1a79787217fd8b2b9ff7e9b2d2ff94d61b5a1c2cc7494420d6a54c71948",
+      "symbols": "479b3799a5c9d24ec6df96551918361f396f3fe2ec576e22d8c7b191dcf43d31"
+    },
+    "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "actual_image_loaded": false
+  },
+  "scope": "Standalone real forwarding/boundary/custody only; no application qualification"
+}

@@ -1,0 +1,158 @@
+{
+  "schema": "adhd/recovery-deadline-audit@1",
+  "passed": true,
+  "runtime_ready": false,
+  "execution_started": false,
+  "actual_image_qualified": false,
+  "pure_checks": 9,
+  "compilers_apps_loaders_providers_processes_real_alarms_started": 0,
+  "change": "QualificationDeadline derives from KeyboardInterrupt (still BaseException, outside Exception). asyncio.Handle._run rethrows it rather than logging and swallowing callback failure.",
+  "test_scope": "Real runpy and actual asyncio eventloop bare callback raises mocked alarm; actual coroutine and outer script finally run; no actual signal timer/subprocess/Docker/provider. Original outer budget and primary/error identity unchanged.",
+  "handlers": {
+    "tests/project_recovery_acceptance.py": {
+      "sha256": "8ccd66fedabeb1fe19f47ebdf286db159fb34261726f2cf59a31eb22dd0ab4d9",
+      "handlers": [
+        {
+          "line": 255,
+          "handler": "except BaseException as error:\n        evidence.finish(error)\n        raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_rejections.py": {
+      "sha256": "5f52d1994395a776ea8dbcd9dee8c9dc5a4488fd7e8c394f98cf61dda53635a6",
+      "handlers": [
+        {
+          "line": 159,
+          "handler": "except BaseException as error:\n        evidence.finish(error); raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_private.py": {
+      "sha256": "c9bd73b04e826c757ce514c8f3e46ec223edef10f85c276880a6c5506ac02081",
+      "handlers": [
+        {
+          "line": 41,
+          "handler": "except BaseException as error:e.finish(error);raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_agent_admission.py": {
+      "sha256": "8733e136adab0904ee455199f954a9f4191816696a98bd52c1ddd550be488b78",
+      "handlers": [
+        {
+          "line": 97,
+          "handler": "except BaseException as error:evidence.finish(error);raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_uninitialized_move.py": {
+      "sha256": "fd4f0828d4fb77f2e083af9a3285d907a7b2789d3629396e88e0dc43d905a9d0",
+      "handlers": [
+        {
+          "line": 52,
+          "handler": "except BaseException as error:e.finish(error);raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_restore.py": {
+      "sha256": "36a0af88b5a72b67d5bf1c5b28582d9007be8eba09089080a133e9ea3b537b8e",
+      "handlers": [
+        {
+          "line": 261,
+          "handler": "except BaseException as error:\n        evidence.finish(error)\n        raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_federation.py": {
+      "sha256": "5301b02dd25a384b920dbfa88ba71c510b3123bad090cdb8885df6163536aaf2",
+      "handlers": [
+        {
+          "line": 64,
+          "handler": "except BaseException as error:\n        evidence.finish(error)\n        raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_learned.py": {
+      "sha256": "93241a8f60fd5138b658d30067cb47f78ae1a45a56bbe3fe1bb232bb04b90214",
+      "handlers": [
+        {
+          "line": 276,
+          "handler": "except BaseException as error:\n        evidence.finish(error); raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/project_recovery_crash.py": {
+      "sha256": "47e1148eb073cdc397d75b44388c1558d8740edbd25bc9567a0d5e29e3ef9fdf",
+      "handlers": [
+        {
+          "line": 232,
+          "handler": "except BaseException as exc:\n        evidence.finish(exc)\n        raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/storage_rebind.py": {
+      "sha256": "e6f4811a6f87aca224eced85aa4d8720f7b6068fa81a32bcb32dc057400531c0",
+      "handlers": [
+        {
+          "line": 59,
+          "handler": "except BaseException:\n  if process and hasattr(process,'_adhd_image_rebind'):stop_image_process(process,hard=True)\n  elif process and process.poll() is None:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=10)\n  out.close();err.close();raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        }
+      ]
+    },
+    "tests/storage_rebind_hostile.py": {
+      "sha256": "1ec9c98822ca3da93eba3ee64e2fca6d401a6d0eef4571b3525f65af30c45149",
+      "handlers": []
+    },
+    "tests/image_recovery_component.py": {
+      "sha256": "7be450708bb4cbb0513081e6899c99a8591dbca3750f4618ebd86429fa9a5fbf",
+      "handlers": [
+        {
+          "line": 124,
+          "handler": "except BaseException as error:\n        if primary is not None:primary.add_note('Component report failure: '+type(error).__name__)\n        else:raise",
+          "assessment": "Preserves already failing primary and adds cleanup/report note; otherwise re-raises."
+        },
+        {
+          "line": 143,
+          "handler": "except BaseException as error:primary=error;raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        },
+        {
+          "line": 92,
+          "handler": "except BaseException as error:primary=error;raise",
+          "assessment": "Unconditionally re-raises after bounded evidence/owned cleanup."
+        },
+        {
+          "line": 97,
+          "handler": "except BaseException as cleanup:\n                if primary is not None:primary.add_note('Component image cleanup failure: '+type(cleanup).__name__)\n                else:raise",
+          "assessment": "Preserves already failing primary and adds cleanup/report note; otherwise re-raises."
+        }
+      ]
+    }
+  },
+  "shared_cleanup_review": {
+    "tests/recovery_image_support.py": "Finite failure collectors preserve active primary; otherwise raise first cleanup error. No retry loop catches BaseException.",
+    "tests/image_rebind_runtime.py": "Startup/run re-raise primary, finite cleanup collector re-raises error; observe loop catches FileNotFoundError only.",
+    "tests/image_eventing_runtime.py": "Cleanup catches failure for independent closure then unconditional raise.",
+    "tests/image_recovery_entry.py": "Original failure re-raised; finite outer cleanup records errors; explicit returned-after-swallow check retained."
+  },
+  "limitation": "Does not bound arbitrary unknown scripts or malicious/infinite loops that deliberately catch KeyboardInterrupt/BaseException and keep running. Audited known42 harness flow only; final runtime closure still requires reviewed exact snapshot and rootGO.",
+  "stdlib_callback_source": {
+    "path": "/usr/lib/python3.12/asyncio/events.py",
+    "method_sha256": "53f60446b88369033fae298e3b5ef505d35f18169df301eb646338d2c01382e8"
+  },
+  "files": {
+    "tests/image_recovery_entry.py": "de2c075174743e54f33cf5c03113efed39ea0be9229b3abe08a055baad1dd956",
+    "tests/image_recovery_entry_unit.py": "4f52c6a05f5a48cd4d3c67482326ec35335aa5646b66209a10412a2ebf29f2c3",
+    "verification/ownedMULTI008/recovery-remaining/deadline-asyncio-pure.log": "9486236ff5e2c42065ffc71d6d79ecf62df3f8747bee40b170a52500721ab78d"
+  }
+}

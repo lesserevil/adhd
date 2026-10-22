@@ -1,0 +1,27 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "checks": 6,
+  "lifecycle_admitted": false,
+  "scope": "Real v2 HTTP authentication, authorized unknown/missing project retryable503+Retry-After1, hidden-project403, peer-auth401, ready and unaffected project404; actual coldrestart. No Kafka/model/crash/image claim.",
+  "artifact_sha256": "c5d684b9e9580170a3012fb369f4376cc1fbd7ec2f183124dbed12fea76667f1",
+  "harness": {
+    "path": "tests/project_recovery_federation.py",
+    "sha256": "0258aa0a244991b1e55274d7754f57cfa90b45399e88302169022070b56b0066"
+  },
+  "inputs": {
+    "tests/multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c",
+    "tests/project_recovery_acceptance.py": "3d07ea75423399449717ab5244a739de4e0e69b966024743c8cbe100933c36ab",
+    "tests/project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa",
+    "tests/foundation_acceptance.py": "ab358cbbf0e9449bee3c2d1c9406e35790ba7076f84011b8eaeb6692a646aea2",
+    "tests/hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e",
+    "tests/archive_support.py": "d17dc84f0c9f49a8b4cd4634654372b730681a2db15e052f5dff4b86284b6b45",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "report": {
+    "path": "verification/project-recovery-federation/native36-dev13.json",
+    "sha256": "b83e230f278b2576306792dfc4442436dce5a7ce44710fba4721958802f9cf03"
+  },
+  "command": "PYTHONPATH=ROOT/tests python tests/project_recovery_federation.py --hub HUB --recovery-schema SCHEMA --report REPORT --keep-work PRIVATE_DIR --deadline 30",
+  "runtime": "retained Elixir1.18.4 / OTP27"
+}

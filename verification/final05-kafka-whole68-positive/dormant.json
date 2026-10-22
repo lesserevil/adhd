@@ -1,0 +1,51 @@
+{
+  "schema": "adhd/dormant-policy@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "held-worker-rapid-adapter-change-and-disable-persists-B-before-ack-and-hard-restart",
+      "passed": true
+    },
+    {
+      "name": "project-effective-adapter-provenance-is-independent-of-root-changes",
+      "passed": true
+    }
+  ],
+  "harness_sha256": "1e5ca90b59723e2f800f4817e87e83ec595f0cfb58c6ad3a0d9d6b0db548798c",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "network_mode": "host",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "a8ecc25a387d0a744b18ed48ba62af9d15bba07015c722a8d6efc5d1717a6ad5",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "a8ecc25a387d0a744b18ed48ba62af9d15bba07015c722a8d6efc5d1717a6ad5",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "2ca86ec3d5bf69cead2914dc67993dd809993fee5e3538ecbd756ef15ff2e9f7",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+      },
+      {
+        "action": "stopped",
+        "container_id": "2ca86ec3d5bf69cead2914dc67993dd809993fee5e3538ecbd756ef15ff2e9f7",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ]
+  },
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+}

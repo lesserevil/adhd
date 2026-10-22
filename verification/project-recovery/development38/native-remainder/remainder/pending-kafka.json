@@ -1,0 +1,250 @@
+{
+  "suite": "adhd/project-recovery-pending-kafka@1",
+  "started_at": "2026-10-22T04:21:03.067392+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-accepted-pending-event-backed-up-and-old-topic-consumer-response-held",
+      "passed": true
+    },
+    {
+      "name": "same-accepted-event-republished-to-fresh-topic-while-both-real-consumer-replies-are-held",
+      "passed": true,
+      "old_topic": "adhd.44e45985ef292f7f.73786e979410fe19.r7c75e6bac37abaab170931eba23ccbdb.events.v1",
+      "new_topic": "adhd.44e45985ef292f7f.73786e979410fe19.r11655b157ee76a1daac5ec37eb370556.events.v1"
+    },
+    {
+      "name": "released-old-topic-response-cannot-materialize-or-attach-offset-to-restored-target",
+      "passed": true,
+      "response_transport": "retired_connection"
+    },
+    {
+      "name": "fresh-topic-response-materializes-original-event-once-with-original-publication-identity",
+      "passed": true
+    },
+    {
+      "name": "acknowledgement-and-current-blue-survive-real-cold-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "e2d8fd52dda867f8e0a491f43cf5e9e4054874d3990960784961cf966d96cfcc",
+  "runner_sha256": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+  "provider_calls": 0,
+  "scope": "Actual real Kafka consumer reply across same-VM target-only restore; explicit project eventing cap2 overlap fixture, not default cap1 restore latency or image/platform qualification",
+  "resource_profile": {
+    "eventing_concurrency": 16,
+    "project_eventing_concurrency": 2,
+    "reason": "One held old actual HTTP callback and mandatory pre-decision fresh-topic preflight must overlap; no scheduler bypass or deadline change."
+  },
+  "original_failed_attempt": "Original native52 pending-kafka cap1/20s attempt retained separately; image cap1 failure is verification/project-recovery/development38/image-recovery-serial38/manifest.json",
+  "resource_observations": [
+    {
+      "phase": "old-consumer-held-before-target-loss",
+      "status": {
+        "ingress_tickets": 2,
+        "lanes": {
+          "eventing": {
+            "active": 2,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 18,
+            "ingress_rejections": 0,
+            "projects": {
+              "project-blue": {
+                "active": 1,
+                "queued": 0
+              },
+              "project-red": {
+                "active": 1,
+                "queued": 0
+              }
+            },
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "model": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "network": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          }
+        },
+        "limits": {
+          "eventing_concurrency": 16,
+          "max_waiters": 1024,
+          "model_concurrency": 4,
+          "network_concurrency": 16,
+          "project_eventing_concurrency": 2,
+          "project_model_concurrency": 1,
+          "project_network_concurrency": 4
+        },
+        "started": true,
+        "waiting": 0
+      },
+      "held_actual_consumer_response": true
+    },
+    {
+      "phase": "fresh-consumer-held-after-restoration",
+      "status": {
+        "ingress_tickets": 2,
+        "lanes": {
+          "eventing": {
+            "active": 2,
+            "caller_deaths": 0,
+            "fenced": 1,
+            "grants": 39,
+            "ingress_rejections": 0,
+            "projects": {
+              "project-blue": {
+                "active": 1,
+                "queued": 0
+              },
+              "project-red": {
+                "active": 1,
+                "queued": 0
+              }
+            },
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "model": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "network": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          }
+        },
+        "limits": {
+          "eventing_concurrency": 16,
+          "max_waiters": 1024,
+          "model_concurrency": 4,
+          "network_concurrency": 16,
+          "project_eventing_concurrency": 2,
+          "project_model_concurrency": 1,
+          "project_network_concurrency": 4
+        },
+        "started": true,
+        "waiting": 0
+      },
+      "held_actual_consumer_response": true
+    }
+  ],
+  "actual_old_response": {
+    "path": "/consumers/adhd.44e45985ef292f7f.73786e979410fe19.r7c75e6bac37abaab170931eba23ccbdb.events.v1.fanout/instances/adhd-gEOZTHtaeREjxhaSnjWJByDk5Tmmv8XC/records?timeout=1000&max_bytes=262144",
+    "rows": [
+      {
+        "topic": "adhd.44e45985ef292f7f.73786e979410fe19.r7c75e6bac37abaab170931eba23ccbdb.events.v1",
+        "key": "project-red",
+        "value": {
+          "author_id": "bridge",
+          "created_at": "2026-10-22T04:21:34.472Z",
+          "event_id": "publication_0af88c732909ee6eacc6220630d443dc_3",
+          "project_id": "project-red",
+          "project_sequence": 2,
+          "publication": {
+            "author_id": "bridge",
+            "created_at": "2026-10-22T04:21:34.472Z",
+            "data": {},
+            "id": "publication_0af88c732909ee6eacc6220630d443dc_3",
+            "information_type": "message",
+            "occurred_at": "2026-10-22T04:21:34.472Z",
+            "project_id": "project-red",
+            "source": {
+              "id": "bridge",
+              "kind": "agent"
+            },
+            "text": "One accepted event survives physical transport reset."
+          },
+          "publication_id": "publication_0af88c732909ee6eacc6220630d443dc_3",
+          "schema_version": 1,
+          "server_id": "c4aa5ea43f510578a0da30d418cc49d6"
+        },
+        "partition": 0,
+        "offset": 0
+      }
+    ],
+    "status": 200,
+    "received_at": 200823.622619405,
+    "released_at": 200827.56464861,
+    "transport": "retired_connection"
+  },
+  "actual_new_response": {
+    "path": "/consumers/adhd.44e45985ef292f7f.73786e979410fe19.r11655b157ee76a1daac5ec37eb370556.events.v1.fanout/instances/adhd-UgZ1M9JuQJ1NgsMrZ2o-Hw-8WFp-uwmG/records?timeout=1000&max_bytes=262144",
+    "rows": [
+      {
+        "topic": "adhd.44e45985ef292f7f.73786e979410fe19.r11655b157ee76a1daac5ec37eb370556.events.v1",
+        "key": "project-red",
+        "value": {
+          "author_id": "bridge",
+          "created_at": "2026-10-22T04:21:34.472Z",
+          "event_id": "publication_0af88c732909ee6eacc6220630d443dc_3",
+          "project_id": "project-red",
+          "project_sequence": 2,
+          "publication": {
+            "author_id": "bridge",
+            "created_at": "2026-10-22T04:21:34.472Z",
+            "data": {},
+            "id": "publication_0af88c732909ee6eacc6220630d443dc_3",
+            "information_type": "message",
+            "occurred_at": "2026-10-22T04:21:34.472Z",
+            "project_id": "project-red",
+            "source": {
+              "id": "bridge",
+              "kind": "agent"
+            },
+            "text": "One accepted event survives physical transport reset."
+          },
+          "publication_id": "publication_0af88c732909ee6eacc6220630d443dc_3",
+          "schema_version": 1,
+          "server_id": "c4aa5ea43f510578a0da30d418cc49d6"
+        },
+        "partition": 0,
+        "offset": 0
+      }
+    ],
+    "status": 200,
+    "received_at": 200827.551698819,
+    "released_at": 200827.911794709,
+    "transport": "written"
+  },
+  "finished_at": "2026-10-22T04:22:35.931348+00:00"
+}

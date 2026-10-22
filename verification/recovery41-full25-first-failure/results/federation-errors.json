@@ -1,0 +1,152 @@
+{
+  "suite": "federation-v2-recovery-http",
+  "started_at": "2026-10-22T14:54:48.912220+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "authorized-uninitialized-target-is-retryable",
+      "passed": true,
+      "response": {
+        "http_status": 503,
+        "code": "RECOVERY_REQUIRED",
+        "retry_after": "1"
+      }
+    },
+    {
+      "name": "unauthorized-project-pair-remains-hidden",
+      "passed": true,
+      "response": {
+        "http_status": 403,
+        "code": "FORBIDDEN",
+        "retry_after": null
+      }
+    },
+    {
+      "name": "agent-token-cannot-authenticate-as-peer",
+      "passed": true,
+      "response": {
+        "http_status": 401,
+        "code": "UNAUTHORIZED",
+        "retry_after": null
+      }
+    },
+    {
+      "name": "initialized-target-retains-ordinary-not-found",
+      "passed": true,
+      "response": {
+        "http_status": 404,
+        "code": "NOT_FOUND",
+        "retry_after": null
+      }
+    },
+    {
+      "name": "authorized-known-missing-target-is-retryable-after-cold-start",
+      "passed": true,
+      "response": {
+        "http_status": 503,
+        "code": "RECOVERY_REQUIRED",
+        "retry_after": "1"
+      }
+    },
+    {
+      "name": "healthy-other-project-and-global-control-remain-available",
+      "passed": true,
+      "response": {
+        "http_status": 404,
+        "code": "NOT_FOUND",
+        "retry_after": null
+      }
+    }
+  ],
+  "limitations": [
+    "No semantic, Kafka or crash qualification; lifecycle admission is independently bound by the parent plan."
+  ],
+  "lifecycle_admitted": false,
+  "scope": "Real authenticated v2 HTTP; no Kafka or model; owned unknown and missing targets with healthy peer project",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "ea1509de110f464084743c62995c692772d353dc11780f69379e07b7abaf3044",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "ea1509de110f464084743c62995c692772d353dc11780f69379e07b7abaf3044",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "c452e65a3d49856472895c9d29e9db70e99dce7c3a1da3b9946ec425dca7840b",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "c452e65a3d49856472895c9d29e9db70e99dce7c3a1da3b9946ec425dca7840b",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-c270664206154129",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-b7c05d5c73d84f35",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-383a98e714594ca4",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-31585b818d794672",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "finished_at": "2026-10-22T14:55:13.760630+00:00"
+}

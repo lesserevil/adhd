@@ -1,0 +1,66 @@
+{
+  "schema": "adhd/ui38-qualification-preparation-review@1",
+  "passed": true,
+  "execution_started": false,
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "source_integration": "43d25a1d615a0e8f82bacf0a20af70442c95788b",
+  "prepared_inputs": {
+    "plan.json": "e1bd7dfaf579aecf615b9361c2972c7104f172de44b36b12c818cd4e4e8ba67c",
+    "run.py": "20fbf6223c27962f9fe80b0198dceb96847963fac3a6316eb7277c24e11ce3f5",
+    "inputs.json": "c6ed7b188111b90508f5323d8e516a5e3399fd4834f241bb28aa46aa5b971a0d",
+    "check-input-roots.py": "7e38680c95b5805a8dabc1ba7121741ad7ad37443bad7147572e8ba5fc75a141",
+    "input-root-check.json": "55d95b845536c70da21c19a657219fd3592d162013cf44b0f940d398319ddf4b"
+  },
+  "frozen_regular_files": 247,
+  "external_inventory_entries": 8950,
+  "full_inventory_verified_by_root": true,
+  "serial_suites": [
+    "admin",
+    "evidence",
+    "eventing",
+    "roles",
+    "recovery",
+    "index-epoch",
+    "openrig",
+    "accounts-oidc",
+    "session-fence"
+  ],
+  "filesystem_checks": [
+    {
+      "case": "unchanged",
+      "passed": true,
+      "rejected": false
+    },
+    {
+      "case": "added-directory-symlink",
+      "passed": true,
+      "rejected": true
+    },
+    {
+      "case": "redirected-tree-root",
+      "passed": true,
+      "rejected": true
+    },
+    {
+      "case": "redirected-frozen-root",
+      "passed": true,
+      "rejected": true
+    },
+    {
+      "case": "redirected-frozen-ancestor",
+      "passed": true,
+      "rejected": true
+    }
+  ],
+  "required_execution_gate": "Terminal official38 admission and root review of actual receipt/artifact binding; preparation is not execution authorization.",
+  "browser_observer_commit": "43d25a1",
+  "reviewed_behavior": [
+    "Reject added directory symlinks before skipping directories; reject redirected frozen/tree roots and ancestors.",
+    "Verify frozen application test inputs, tooling and artifact before each serial suite.",
+    "Stop on first failure, retain reports and logs; never retry a failed suite automatically.",
+    "Bound runner process-group cleanup; require independent inspection of detached app fixtures after timeout/failure.",
+    "Require exact reviewed plan hash and explicit execution flag.",
+    "Inspect desktop/mobile PNG and accessibility captures and unexpected browser/network errors after execution."
+  ],
+  "scope": "Five pure filesystem checks and complete input-byte verification only. No hub/browser/provider starts; no claim of UI, current-image, semantic-model or integrated roadmap qualification."
+}

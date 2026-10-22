@@ -1,0 +1,45 @@
+{
+  "case": {
+    "source": "storage_write_fault.c",
+    "op": "pwrite"
+  },
+  "passed": true,
+  "container_id": "fe1592132f48d1fe3738960532dfb555e632f5ffb82328bc601d17e27c3d71b7",
+  "exit_code": 137,
+  "caller": {
+    "op": "pwrite",
+    "namespace_pid": 1,
+    "wrapper_resolved": true,
+    "next_resolved_distinct": true,
+    "direct_syscall": false,
+    "unarmed_success": true,
+    "real_forwarding_symbol": "pwrite",
+    "off_t_bytes": 8,
+    "off64_t_bytes": 8,
+    "sparse_offset": 4294967313
+  },
+  "observer_trace": {
+    "stage": "checkpoint-write",
+    "pid": 1,
+    "syscall": "pwrite"
+  },
+  "physical": {
+    "effect": "sparse-write",
+    "verified": true,
+    "target_bytes": 4294967337,
+    "target_allocated_bytes": 4096
+  },
+  "process_custody": {
+    "host_process_pid": 1242149,
+    "namespace_pid": 1,
+    "signal_method": "ancestor-pidfd-SIGSTOP",
+    "pid_namespace": "pid:[4026533600]",
+    "executable_basename": "busybox",
+    "cmdline_sha256": "9e44697a1718b7986fd04a1af01205543efa0e1988c32ba2131bb27a69398251",
+    "process_maps_sha256": "15e7027de3e4b053a425c5c0e646e135829821b87793992573ddb80e8ffc13dd",
+    "kernel_state": "stopped"
+  },
+  "observer_library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+  "caller_library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+  "owned_container_absent": true
+}

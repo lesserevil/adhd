@@ -1,0 +1,52 @@
+name: adhd-model
+services:
+  model:
+    image: ghcr.io/pst2154/nemotron-deciffusion@sha256:494aac2d7af43b7a70234792623a510bf29045a45b3aa893bc3170108ded9cea
+    command: ["--enforce-eager"]
+    user: "${MODEL_UID:-10001}:${MODEL_GID:-10001}"
+    devices:
+      - "nvidia.com/gpu=${MODEL_GPU:-0}"
+    ports:
+      - "127.0.0.1:${MODEL_PORT:-18770}:8770"
+    volumes:
+      - type: bind
+        source: ${MODEL_CHECKPOINT:?Set MODEL_CHECKPOINT to the verified BF16 checkpoint directory}
+        target: /models/checkpoint
+        read_only: true
+        bind:
+          create_host_path: false
+    environment:
+      PORT: "8770"
+      DOWNLOAD_CHECKPOINT: "0"
+      MODEL_ID: Nemotron-Deciffusion-8B-v2.1
+      SERVED_MODEL_NAME: Nemotron-Deciffusion-8B-v2.1
+      QUANTIZATION: "none"
+      GPU_MEMORY_UTILIZATION: "0.60"
+      MAX_MODEL_LEN: "8192"
+      MAX_BATCHED_TOKENS: "8192"
+      MAX_NUM_SEQS: "4"
+      FLASHINFER_AUTOTUNE: "0"
+      COMPACT_OVER: "0"
+      HOME: /tmp/home
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    shm_size: 2gb
+    tmpfs:
+      # Triton imports compiled kernels from its scratch cache.
+      - /tmp:rw,nosuid,exec,size=4g
+    mem_limit: 32g
+    cpus: 8
+    pids_limit: 1024
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8770/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      start_period: 10m
+      retries: 4

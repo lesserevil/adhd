@@ -1,0 +1,8 @@
+[hub,config,output]=System.argv()
+[prefix,_]=String.split(File.read!(hub),"\nunless Code.ensure_loaded?(ADHD.CLI) do",parts: 2)
+Code.compile_string(prefix,hub)
+c=ADHD.JSON.decode!(File.read!(config))
+p=ADHD.Storage.local_legacy_state(c["store_path"],c["project_id"],c["server_id"],ADHD.LocalLegacy.limits(c))
+b=ADHD.Storage.bytes(p.state)
+File.write!(output,<<"ADHDSTATE",1,(:crypto.hash(:sha256,b))::binary,b::binary>>)
+File.chmod!(output,0o600)

@@ -1,0 +1,371 @@
+{
+  "schema": "adhd/cni18-independent-utility-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "scope": "Single original192Mi/+S1:1 Pod/namespace diagnostic failed originalReady30; completedcapture is separate and cannot make readiness orroutes pass. BothCalicorollouts passed. Zero18route/hubapp/Kafka/model qualification.",
+  "root_authoritative_exit_code": 1,
+  "plan_sha256": "bc90678ece97addca6c5b390749b33c3517ccffff3986198e72c8d094a942b59",
+  "result_sha256": "3cc37a64de8691b67e861394535fcdae2f9b62f134caf18d13e82a13209c97a1",
+  "driver_sha256": "2a77b8c417dc078ff6b7b413619f6a9c7b597158687bbe8d466c2d6bf1e4a038",
+  "full_input_closure_unchanged": true,
+  "original_rollout_seconds": 300,
+  "both_calico_rollouts_passed": true,
+  "controller_overlay_guard_passed": true,
+  "direct_api_endpoint_proof": {
+    "address": "10.240.240.2",
+    "port": 6443,
+    "namespace_uid": "2a71afd5-c01a-4a6d-aed9-2ac5d274b20d",
+    "node_uid": "4d820bed-6d4b-478a-8080-b0bd4aa9114c",
+    "configmap_uid": "dd897f44-e925-4fe8-b71d-b6bd53093b5f",
+    "owner_nonce": "ae7b46a0e24c7693b82262a823d97cd3",
+    "tls": {
+      "authority_sha256": "dfd87054406335e8f89b3e29d8ea592df0abe66fd123d9ebac12bdf2ac7652bf",
+      "server_certificate_sha256": "e1afad48f07785f9728a8b13a81cbcc3af39b6f9905056ed27d3c26fe11f11e8",
+      "verify_peer": true,
+      "hostname_checked": "10.240.240.2",
+      "port": 6443,
+      "timeout_seconds": 5
+    },
+    "inside_own_node_verified": true,
+    "host_direct_API_verified": true,
+    "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+    "separate_configmap_sha256": "456f8c35377d7c1f0433b88afa1e1775740bb7411474e5408f7c5aab725e58f9",
+    "controller_overlay": {
+      "deployment_uid": "ab7efeee-e7f3-4026-be6a-33d07b236ee9",
+      "configmap_uid": "dd897f44-e925-4fe8-b71d-b6bd53093b5f",
+      "patch_sha256": "dea212c6249b978866d97c29c38f1afa5f33b4b61b19e044fe1bac941d2c4fd7",
+      "guarded_json_patch": true,
+      "container": "calico-kube-controllers",
+      "pinned_manifest_unchanged": true
+    }
+  },
+  "rollout_log_sha256": {
+    "ready-calico": "3fb5195d51e5ae0ef86b18f63b0e38c35102b835031d5d19fb180d165b591523",
+    "ready-controller": "c2d94e4ffb2d5a00aef5639ecbbe8315a279c6f66a99f38b2582909d0e6df216"
+  },
+  "current_strict_absence": [
+    {
+      "kind": "container",
+      "identifier": "6add155bb9532475109ad2e063221a77d3e258e9efa761419a4794b2f853e69a",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "027b6f0b4ccce6bc5ff7eeec588c1473c4c2d769451634986344f602a87cd16b",
+      "observed_absent": true
+    },
+    {
+      "kind": "container",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "10c65dbff792d16ce2df29e4d7922b03ca6b03fc8856925e845460c9912f2366",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "a19f686f2c6da597aeb454abd19f6bac9157f76a2be7cfbac216217c8bab0126",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "f63079698608668164a136deeaf4dfd129fbd5b403ad47e567be67a49875397a",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "31e2083bb8a1588362a3c4bede5ec23c35f9165fb21b7dfadbfca9e94f59b6c9",
+      "observed_absent": true
+    },
+    {
+      "kind": "volume",
+      "identifier": "9844b6b2748e8ea73c1c76dcb324ec7e24f2f17c9f331f05be412e758f438d62",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "f1872d27f661b0d182218a84523ca364c5e66fffd6ceca1254c15b43e6ad5a08",
+      "observed_absent": true
+    }
+  ],
+  "protected_cluster_before_after_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "protected_cluster_currently_running_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "policy_routes_qualified": 0,
+  "audit_resource_or_provider_starts": 0,
+  "files": {
+    "plan.json": "bc90678ece97addca6c5b390749b33c3517ccffff3986198e72c8d094a942b59",
+    "result.json": "3cc37a64de8691b67e861394535fcdae2f9b62f134caf18d13e82a13209c97a1"
+  },
+  "gate_report_sha256": "b831498a5fa91482c8c4e04d1abc8855599a7f9654796f681aa59d6f5bde6001",
+  "original_ready_seconds": 30,
+  "namespace_cleanup_original_UID_fenced": [
+    {
+      "namespace": "adhd-netpol-utility40",
+      "observed_absent": true,
+      "uid": "6204c32c-a211-4da7-a4be-0db26c48d54c"
+    }
+  ],
+  "original_ready_passed": false,
+  "diagnostic_completed": true,
+  "diagnostics": {
+    "capture_passed": true,
+    "commands": 27,
+    "bytes": 133139,
+    "raw_private_hashes": {
+      "cri-cgroup.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "cri-cgroup.stdout": {
+        "sha256": "1f465ded12da73ec267c25f39cd02e4fd311d105a4aae4503c2376d2c79070af",
+        "bytes": 442
+      },
+      "cri-container.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "cri-container.stdout": {
+        "sha256": "9d82f7e1e73b8432c9aac71c5ad88dbb69a428b192b65eaad56f42c6b8374e1b",
+        "bytes": 15595
+      },
+      "describe.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "describe.stdout": {
+        "sha256": "dfe76445b40b77f2cdb9d830ef3474d525b56d96f0105b37a7380365c022488b",
+        "bytes": 3267
+      },
+      "events.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "events.stdout": {
+        "sha256": "7286510a2e9fde5e1d7671c736ce82a1381aec67c44fb31d5c1aa39f9ec617c9",
+        "bytes": 5228
+      },
+      "index.json": {
+        "sha256": "6e865dcea6c7e44962c6bcd48bead1d41f7d5a16356f58db7c4e0d06abdb8049",
+        "bytes": 11414
+      },
+      "log-current.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "log-current.stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-cri-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-cri-after.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-cri-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-cri-before.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-describe-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-describe-after.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-describe-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-describe-before.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-events-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-events-after.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-events-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-events-before.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-initial.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-initial.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-log-current-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-log-current-after.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "namespace-log-current-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-log-current-before.stdout": {
+        "sha256": "b7b54f5c532d7125ffba60394b77634f69d084541c0cd7d623ae92a47b5b016b",
+        "bytes": 555
+      },
+      "network-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "network-after.stdout": {
+        "sha256": "5676b6782961226eea31df17ea9c1638110165bf323ea06101ec8b8b8377aec1",
+        "bytes": 1542
+      },
+      "network-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "network-before.stdout": {
+        "sha256": "5676b6782961226eea31df17ea9c1638110165bf323ea06101ec8b8b8377aec1",
+        "bytes": 1542
+      },
+      "node-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "node-after.stdout": {
+        "sha256": "be09366b6448cbe2e98dbceaa8fd31770ea3bbcbcc6045ee2a7099ff77c05d22",
+        "bytes": 8963
+      },
+      "node-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "node-before.stdout": {
+        "sha256": "be09366b6448cbe2e98dbceaa8fd31770ea3bbcbcc6045ee2a7099ff77c05d22",
+        "bytes": 8963
+      },
+      "pod-cri-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-cri-after.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-cri-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-cri-before.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-describe-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-describe-after.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-describe-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-describe-before.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-events-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-events-after.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-events-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-events-before.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-initial.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-initial.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-log-current-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-log-current-after.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      },
+      "pod-log-current-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-log-current-before.stdout": {
+        "sha256": "04ce849cf970eb661a8094d8e639714cf1e3c42edbabec7c7a221c87ca1b1690",
+        "bytes": 9178
+      }
+    },
+    "owned_node_observation": {
+      "enabled": true,
+      "available": true,
+      "container_id": "4b453e457895b178ebd5db1dba23d5b083b4f4fcce6518dbd105b3d8161be12a",
+      "pod_uid": "cbb713e4-3b8d-4f72-8bdc-236342dfe02c",
+      "cri_state": {
+        "state": "CONTAINER_EXITED",
+        "reason": "Error",
+        "exitCode": 137,
+        "createdAt": "2026-10-22T11:35:23.489461894Z",
+        "startedAt": "2026-10-22T11:35:23.672146587Z",
+        "finishedAt": "2026-10-22T11:35:23.889322116Z"
+      },
+      "cgroup_layout_supported": true,
+      "cgroup_paths": [
+        "/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-burstable.slice/kubelet-kubepods-burstable-podcbb713e4_3b8d_4f72_8bdc_236342dfe02c.slice",
+        "/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-burstable.slice/kubelet-kubepods-burstable-podcbb713e4_3b8d_4f72_8bdc_236342dfe02c.slice/cri-containerd-4b453e457895b178ebd5db1dba23d5b083b4f4fcce6518dbd105b3d8161be12a.scope"
+      ],
+      "container_parent_order": "Exact Pod parent first; preserve its counters even if container cgroup is destroyed.",
+      "runtime_process_args": [
+        "elixir",
+        "-e",
+        "\nfor port <- [8082, 9092, 9093] do\n  spawn_link(fn ->\n    {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])\n    Stream.repeatedly(fn ->\n      {:ok, client} = :gen_tcp.accept(socket)\n      :gen_tcp.send(client, \"adhd-policy-v1\\n\")\n      :gen_tcp.close(client)\n    end) |> Stream.run()\n  end)\nend\nProcess.sleep(:infinity)\n"
+      ],
+      "runtime_ERL_FLAGS_entries": [
+        "+S 2:2",
+        "+S 1:1"
+      ],
+      "effective_ERL_FLAGS": "not inferred from duplicate entries",
+      "cgroup_read_returncode": 0
+    },
+    "actual_CRI_cgroupsPath": "kubelet-kubepods-burstable-podcbb713e4_3b8d_4f72_8bdc_236342dfe02c.slice:cri-containerd:4b453e457895b178ebd5db1dba23d5b083b4f4fcce6518dbd105b3d8161be12a",
+    "CRI_duration_seconds_rounded_microseconds": 0.217176,
+    "CRI_message_empty": true,
+    "cgroup_reads_attempted": true,
+    "parent_and_child_unavailable": true,
+    "cause": "UNKNOWN: exactCRI Error137/emptymessage/~0.217s, bothderivedparent/child paths unavailable afterReady30. Removed vs wrongmount/path not distinguished; no OOM/counter evidence and no larger cap justified."
+  }
+}

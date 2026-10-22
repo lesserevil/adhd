@@ -1,0 +1,70 @@
+{
+  "suite": "adhd/real-kafka-hot-cutover@1",
+  "started_at": "2026-10-22T01:23:00.641768+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+      "passed": true
+    },
+    {
+      "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+      "passed": true
+    },
+    {
+      "name": "actual-hot-transition-kill-recovers-durable-config-decision-before-readiness",
+      "passed": true,
+      "stage": "transition-project",
+      "transition_id": "jLZlnl7edGyToKv1kFCqU_t23u4Aqamg",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL"
+    },
+    {
+      "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+      "passed": true
+    },
+    {
+      "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "harness_sha256": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d",
+  "source_sha256": {
+    "Migration": "340e6d1e1cc2e7082ad30fe21f321b5c6500a8465f2898c461fe4df63f85ad91",
+    "Config": "b26e36fcff4dc7cc2ac0e9befdaf4cd6e2b5e15ac8598a4813df3e1d3aa6c962",
+    "Storage": "ff0ea8ea1cd3889e1a8585bf2905a5e03a2aa60856c8f31f85df82dfaad934c4",
+    "Store": "48196772e90ecdcf5c920c32f0e7942d0a8d775877d5578734bb021643f22919",
+    "CLI": "b40baf093964a0762d4266936b3c26bec617d8921b864388a431605df407d985"
+  },
+  "fault_source_sha256": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+  "fault_library_sha256": "e83c092987747acf9b5ef729dc32fedd63a9b4897e563bc93f55e21871fbd247",
+  "finished_at": "2026-10-22T01:24:20.837558+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_87bf420a42da13d5eed96855a21667e3_1",
+      "operation_id": "restore_87bf420a42da13d5eed96855a21667e3_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_87bf420a42da13d5eed96855a21667e3_3",
+      "operation_id": "restore_87bf420a42da13d5eed96855a21667e3_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_87bf420a42da13d5eed96855a21667e3_5",
+      "operation_id": "restore_87bf420a42da13d5eed96855a21667e3_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ]
+}

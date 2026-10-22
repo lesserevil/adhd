@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 194, in <module>
+    asyncio.run(main(parser.parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 150, in main
+    before=await status();assert await broker_offset()<=before['next_offset']
+                                 ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/tests/eventing_rebalance.py", line 128, in broker_offset
+    assert r.status_code==200;return r.json()['offsets'][0]['offset']
+           ^^^^^^^^^^^^^^^^^^
+AssertionError

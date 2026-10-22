@@ -1,0 +1,40 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/ui38-overflow-diagnostic02/frozen/tests/eventing_browser.py", line 293, in <module>
+    asyncio.run(main(arguments(__doc__).parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/ui38-overflow-diagnostic02/frozen/tests/eventing_browser.py", line 275, in main
+    await viewport(browser, f, evidence, name, size, password, certificates)
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/ui38-overflow-diagnostic02/frozen/tests/eventing_browser.py", line 220, in viewport
+    await ca_forms(page, f, evidence, name, expected_http, certificates)
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/ui38-overflow-diagnostic02/frozen/tests/eventing_browser.py", line 86, in ca_forms
+    await capture(page, f.root, name + "-custom-ca")
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/ui38-overflow-diagnostic02/frozen/tests/multi_browser.py", line 102, in capture
+    layout = await page.evaluate("""() => {
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.venv/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 16684, in evaluate
+    await self._impl_obj.evaluate(
+  File "/home/horde/src/adhd/.venv/lib/python3.12/site-packages/playwright/_impl/_page.py", line 476, in evaluate
+    return await self._main_frame.evaluate(expression, arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 346, in evaluate
+    await self._channel.send(
+  File "/home/horde/src/adhd/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 78, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 636, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.evaluate: TypeError: Cannot read properties of null (reading 'children')
+    at selector (eval at evaluate (:370:30), <anonymous>:3:221)
+    at item (eval at evaluate (:370:30), <anonymous>:5:69)
+    at ancestors (eval at evaluate (:370:30), <anonymous>:6:92)
+    at eval (eval at evaluate (:370:30), <anonymous>:9:400)
+    at UtilityScript.evaluate (<anonymous>:377:18)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)

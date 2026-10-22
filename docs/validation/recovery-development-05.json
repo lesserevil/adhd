@@ -1,0 +1,188 @@
+{
+  "suite": "recovery-development-05-checkpoint",
+  "qualification": "Development evidence only; full selective restore not reached by these runs. No release or complete roadmap qualification.",
+  "artifact_sha256": "3e8a3f0ac726a301a3e461799a3820290b806d1e397f1a8a04dd16b11ec3e2d9",
+  "results": {
+    "admission.json": {
+      "sha256": "b10bb93213d38e0595281bd01a5b140deed6d368de2e04850713baaf0a0998a5",
+      "report": {
+        "suite": "project-recovery-admission",
+        "started_at": "2026-10-21T23:46:11.737024+00:00",
+        "passed": true,
+        "checks": [
+          {
+            "name": "handwritten-config-global-auth-does-not-admit-unknown-project-stores",
+            "passed": true
+          },
+          {
+            "name": "developer-viewer-and-agent-cannot-obtain-or-create-server-owned-recovery-work",
+            "passed": true
+          },
+          {
+            "name": "explicit-reviewed-admin-initialization-creates-one-verified-route-without-config-or-other-project-change",
+            "passed": true
+          },
+          {
+            "name": "external-recovery-receipts-survive-hard-restart-and-cannot-cross-projects-or-invent-unauthorized-acceptance",
+            "passed": true
+          },
+          {
+            "name": "cold-known-missing-target-never-reinitializes-or-accepts-data-and-other-project-remains-writable",
+            "passed": true,
+            "target_route_generation": 1,
+            "original_pair_sha256": {
+              "state.dets": "bb410bce33b3c61acfb6f38f97515d4c63ca49b8d0243f94daa0b1f651ef20c3",
+              "state.dets.snapshot": "57f62a41204c1f01553c0e8d2c6341a858c7428e92b71361afa52e51700bd5ee"
+            }
+          }
+        ],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "artifact_sha256": "3e8a3f0ac726a301a3e461799a3820290b806d1e397f1a8a04dd16b11ec3e2d9",
+        "qualification": "admission-only; target-restore-and-allocator-matrix-separately-required",
+        "authored_recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+        "finished_at": "2026-10-21T23:47:31.660873+00:00"
+      }
+    },
+    "restore.json": {
+      "sha256": "eaa1e390508d2b18af4050fbb2d736b16428cb8444b1446ae03479b4c345f50e",
+      "report": {
+        "suite": "target-only-project-restore",
+        "started_at": "2026-10-21T23:46:18.000169+00:00",
+        "passed": false,
+        "checks": [],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "artifact_sha256": "3e8a3f0ac726a301a3e461799a3820290b806d1e397f1a8a04dd16b11ec3e2d9",
+        "authored_recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+        "finished_at": "2026-10-21T23:50:01.376553+00:00",
+        "failure_type": "AssertionError"
+      }
+    },
+    "learned.json": {
+      "sha256": "ddc049989df95f31e84a278e814394738ab81ef85935714be8fc3c76e112de92",
+      "report": {
+        "suite": "project-recovery-accepted-learned-selection",
+        "started_at": "2026-10-21T23:47:24.605144+00:00",
+        "passed": false,
+        "checks": [],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "harness_sha256": "91c4c889413dac0eac440a4341df605aec18fef788132c0454fbbe169695a153",
+        "artifact_sha256": "3e8a3f0ac726a301a3e461799a3820290b806d1e397f1a8a04dd16b11ec3e2d9",
+        "producer": {
+          "artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+          "report_sha256": "110f34a4e449b6a6bf83336f2cdedf5fe5023aa17929cfba17b5dd27784f2ecd",
+          "original_store_sha256": {
+            "hub.dets.snapshot": "7d3219eb69524312e3ee32c5b7cf32aac75f3a25a9cc16a7cc9d3f6e88453ecf",
+            "hub.dets": "9613b280792ec7a94df57dd6a22e522272b30f83d2f330514b7689caffcb70da"
+          },
+          "provider_fence_source_sha256": "91f5b528600a7eb27413ee9cd088273a29eb9da21431370a2877a41905fd1ff5",
+          "blocked_connects": 4,
+          "provider_posts": 0
+        },
+        "finished_at": "2026-10-21T23:48:20.511340+00:00",
+        "failure_type": "FileNotFoundError"
+      }
+    },
+    "learned-auth.json": {
+      "sha256": "9a30fc7ec760430cc79b7d0a1447f1c50b00f91f3aab8ea51d1a883713fa9435",
+      "report": {
+        "suite": "project-recovery-accepted-learned-selection",
+        "started_at": "2026-10-21T23:48:50.526720+00:00",
+        "passed": false,
+        "checks": [],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "harness_sha256": "7f2b7c46ffedb66bddf8fd94199268f23fae845de7b4e29674741e66b4f127c7",
+        "artifact_sha256": "3e8a3f0ac726a301a3e461799a3820290b806d1e397f1a8a04dd16b11ec3e2d9",
+        "producer": {
+          "artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+          "report_sha256": "110f34a4e449b6a6bf83336f2cdedf5fe5023aa17929cfba17b5dd27784f2ecd",
+          "original_store_sha256": {
+            "hub.dets.snapshot": "7d3219eb69524312e3ee32c5b7cf32aac75f3a25a9cc16a7cc9d3f6e88453ecf",
+            "hub.dets": "9613b280792ec7a94df57dd6a22e522272b30f83d2f330514b7689caffcb70da"
+          },
+          "provider_fence_source_sha256": "91f5b528600a7eb27413ee9cd088273a29eb9da21431370a2877a41905fd1ff5",
+          "blocked_connects": 4,
+          "provider_posts": 0
+        },
+        "finished_at": "2026-10-21T23:49:48.632458+00:00",
+        "failure_type": "AssertionError"
+      }
+    },
+    "rejections.json": {
+      "sha256": "0f963438a517aaf16ce6cfb0b57e3a681fa1f87fd386175270620e3d6f186f87",
+      "report": {
+        "suite": "project-recovery-rejections",
+        "started_at": "2026-10-21T23:47:45.545967+00:00",
+        "passed": false,
+        "checks": [
+          {
+            "name": "populated-target-cannot-be-merged-or-replaced-by-restore",
+            "passed": true
+          },
+          {
+            "name": "invalid-backup-wrong-hash-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "hash"
+          },
+          {
+            "name": "invalid-backup-wrong-length-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "hash"
+          },
+          {
+            "name": "invalid-backup-unknown-manifest-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "schema"
+          },
+          {
+            "name": "invalid-backup-duplicate-json-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "schema"
+          },
+          {
+            "name": "invalid-backup-symlink-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "path"
+          },
+          {
+            "name": "invalid-backup-hardlink-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "path"
+          }
+        ],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "artifact_sha256": "3e8a3f0ac726a301a3e461799a3820290b806d1e397f1a8a04dd16b11ec3e2d9",
+        "harness_sha256": "432cb7b61704f4d6719a137a9c34fb8526a1cebc235e422c922807a842635024",
+        "finished_at": "2026-10-21T23:49:05.521144+00:00",
+        "failure_type": "AssertionError"
+      }
+    }
+  },
+  "interpretation": {
+    "admission": "PASS5, exact valid A2A JSON-RPC failure transport plus retry header; explicit initialization and cold known missing refusal.",
+    "restore": "FAIL before backup: actual Kafka replay 25 originals did not fully materialize in fixed90second fixture window. Final accepted snapshot checkpoint45,23materialized/1published/1pending, no adapter last_error. No recovery/state-preservation pass.",
+    "learned": "Initial harness auth failure: accepted installation retains legacy Admin bearer, so no generated first-install password. Specialized public bearer fixture corrected separately.",
+    "learned-auth": "FAIL before backup: new unknown Blue registry initializedfalse/generation0 nevertheless availability recovery_required; explicit Admin initialization409. Backend owner identified availability heuristic bug. No selective restore pass.",
+    "rejections": "Seven completed groups then compressed ETF safely rejected RESTORE_INVALID_BACKUP/reasonlimits. Fixture expected schema only although closed contract does not mandate one of these reasons. Initial failure retained; not a backup acceptance bug."
+  },
+  "earlier_transport_diagnostics": {
+    "dev02_artifact_sha256": "bec9db73b4d82e8022d4353e024bea992002166ef55fce2ae1343fd9f78d0a8d",
+    "dev03_artifact_sha256": "7010e1e2e4134d01ec6e701fe5189177f26dccc2ed10bedb432583ef55fdc6a3",
+    "result": "Initial fixture incorrectly expected AdminHTTP503 on valid A2A domain error. ActualHTTP200/-32000/RECOVERY_REQUIRED conforms protocol; retry header absence repaired in05. Initial failures not relabeled as product transport regressions."
+  },
+  "provider_posts": 0
+}

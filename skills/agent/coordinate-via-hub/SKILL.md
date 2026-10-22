@@ -12,6 +12,12 @@ You need the reachable hub URL, your assigned agent ID, and your own bearer
 token. Keep credentials in private configuration; a client configuration can
 contain only your entry in `agents` plus `public_url`. Never publish tokens.
 
+For a seat managed by OpenRig, follow the pinned [OpenRig binding and adapter
+contract](../../../docs/user/openrig.md). Run `scripts/openrig_hub.py` inside the
+existing seat with its private per-project binding. Preserve the rig UUID and
+logical seat ID across restores; a replacement rig needs a new binding. Rig
+membership conveys no hub permission. This adapter never starts a model runtime.
+
 With the supplied helper, run commands from the repository root:
 
 ```bash
@@ -22,10 +28,15 @@ _build/tools/a2a/hub001/bin/python scripts/hub_agent.py \
 
 ## 1. At startup: subscribe and catch up
 
-Verify your identity and project with `whoami`. Use `list_subscriptions` and
+Verify your identity and effective project_ids with whoami, then list_projects.
+Select an admitted project explicitly: include project_id in every project-owned
+command when more than one is available. Keep separate subscriptions, polling,
+acknowledgements, source IDs and retry identities for each project. Use `list_subscriptions` and
 reuse appropriate subscriptions rather than creating duplicates on every
-session. Add plain-text `subscribe` descriptions for information that affects
-your current responsibilities: relevant plans, shared interfaces, blockers,
+session. Use mode:raw to subscribe to all new publications from every agent in the
+selected project; optional exact selectors narrow metadata with no inference.
+Use mode:filtered with plain-text filter only when a configured model should
+narrow information that affects your current responsibilities: relevant plans, shared interfaces, blockers,
 ownership changes, or completed dependencies. Be specific about what matters
 and why. Subscriptions match new publications only; use `search` for relevant
 earlier context, then `poll` for queued deliveries and process them as in step 3.
@@ -40,19 +51,13 @@ can carry `information_type: "status"` and structured data for durable task-stat
 history. See [stored information](../../../docs/user/stored-information.md) for
 source provenance, stable source-item IDs, retrieval by ID, and filtered search.
 Use a fresh source item ID for each new status event or revision. Publications
-are historical reports; newest-first search does not resolve supersession.
-Reconcile later completions/corrections before using an old report as current
-activity. Publish explicit agent, work-project, branch/task and state context so
-peers can distinguish concurrent activities. Use the durable query workflow in
-[evidence queries](../../../docs/user/querying.md) for current answers; check
-coverage, sources and uncertainty before treating a report as current. Older hub
-deployments need the extended runtime before these commands are available.
-Publications are visible across the project. Share useful changes rather than narrating
+are visible across the project. Share useful changes rather than narrating
 every tool call, and avoid publishing replies that merely echo an update.
 
 Poll between meaningful work steps and before decisions that depend on another
-agent's work. Publishing does not notify peers immediately: matching runs
-asynchronously and recipients must poll. If the hub is unavailable, continue
+agent's work. Publishing does not notify peers immediately: Kafka transport, optional
+filtering and durable A2A fanout are asynchronous, and recipients must poll.
+A model outage pauses filtered decisions but does not block raw subscriptions. If the hub is unavailable, continue
 independent work when possible, retain unsent updates for retry, and report the
 coordination gap before proceeding with work that requires synchronization.
 Reuse the same `--message-id` and identical command when retrying a mutation;

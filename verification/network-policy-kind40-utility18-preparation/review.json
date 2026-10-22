@@ -1,0 +1,73 @@
+{
+  "schema": "adhd/one-kind-utility18-preparation@1",
+  "prepared_only": true,
+  "executed": false,
+  "root_GO_required": true,
+  "runtime_provider_resource_starts": 0,
+  "plan_sha256": "bc90678ece97addca6c5b390749b33c3517ccffff3986198e72c8d094a942b59",
+  "driver_sha256": "2a77b8c417dc078ff6b7b413619f6a9c7b597158687bbe8d466c2d6bf1e4a038",
+  "frozen_files": 410,
+  "bound_files": 33,
+  "external_inputs": 14,
+  "tool_files": 6403,
+  "bootstrap12_dependency": {
+    "audit_sha256": "51b6d2cac357800d0806fc305068a826344a4f01489c3cdf357dddd88e70a62a",
+    "plan_sha256": "4a8c3a67c98c52bde02c60fc00a6f9c977e28feaa79590765f6a3c6bfdf513d2",
+    "result_sha256": "4fcb99463595dcd0ca5796d33f2c125ab013a954a5ba7787bb41a4ae52a02def"
+  },
+  "target_image": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "fixture_pods": 1,
+  "namespaces": 1,
+  "routes": 0,
+  "original_raw_18route_program_unchanged_sha256": "ffc486039d78b72e09cbc8feb2a327471d6101afb1591bf4606580f44f692d3d",
+  "original_policy_unchanged_sha256": "bb2c39acf279a30bfe9f21c0df1ff4672872e8403a52cf3176efacd3e661940a",
+  "original_Pod_container_and_scheduler_path": "Imports original pod()/SERVE exactly with no nodeName addition; one originalReady30. Keeps192Mi/CPU1/UID1000/readOnly/capdropALL and declared+S1:1; runtimeCRIenv may contain both image+S2:2 and Pod+S1:1.",
+  "actual_runtime_observations": "Records exact processargs and ERL_FLAGS entries from actualCRI processenv whitelist; duplicate entries preserved, effectiveflagoverride never inferred.",
+  "failure_semantics": "OriginalReadyfalse remains false/reporterror/exit1 even if capturecompleted; no18routepass. Success stilldiagnostic_only/routes0 and one liveCRI/cgroupcapture. UIDnonce-fenced namespace deletion happens aftercapture.",
+  "observer_limits": {
+    "docker_commands": 6,
+    "total_commands": 32,
+    "total_seconds": 60,
+    "total_bytes": 8388608,
+    "cgroup_files": [
+      "memory.events",
+      "memory.events.local",
+      "memory.current",
+      "memory.max",
+      "memory.peak",
+      "pids.current",
+      "pids.max",
+      "pids.events",
+      "cpu.max",
+      "cpu.stat",
+      "cgroup.events"
+    ],
+    "scope": "Only exact failed PodUID/containerID on issued Kind node; parent-before-child; unknown layout unsupported/no scan."
+  },
+  "utility_setup_cleanup_limits": {
+    "commands": 16,
+    "bytes": 4194304,
+    "original_ready_seconds": 30,
+    "per_command_seconds": 40
+  },
+  "private_capture": "RawKubeAPI/CRI/cgroup data ignored/private; safehashes and whitelisted counters/state for publicaudit only. NootherPod/nodeglobal/host/kernel/scans.",
+  "pure_tests": 81,
+  "meaningful_cases": [
+    "Exact originalonePod manifest equality including absentnodeName/schedulerpath",
+    "Readyfalse/true bothcapture BEFORE UIDfencednamespacecleanup",
+    "Readyfalse exit1 andneverpassed despite completedcapture",
+    "CapturemissingCRI/layout/readsuccesscannotreportdiagnosticcompleted",
+    "Actual duplicateERL_FLAGS retained withoutinferred effectiveoverride",
+    "Observed kubeletPodparent read before missingchild, foreigns/unsupported/limits stayfailclosed"
+  ],
+  "exact_isolated_preflight": {
+    "cwd": "/tmp",
+    "argv": "PinnedPython -I -B actualdriver.py --verify-only --work WORK --plan-sha256 bc90678e...",
+    "exit_code": 0,
+    "stdout": "verified:true, executed:false",
+    "stderr_bytes": 0
+  },
+  "once_absent": true,
+  "runtime_empty": true,
+  "scope": "Diagnostic-only ONE original192Mi/+S1:1 Pod/namespace, Ready30 plus private CRI/Podparent counters. No CNI18routes/app/Kafka/model qualification."
+}

@@ -1,0 +1,529 @@
+{
+  "suite": "adhd/eventing-retention-recovery@1",
+  "started_at": "2026-10-22T14:17:19.384702+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-postdecision-retention-failure-keeps-desired-policy-and-decision",
+      "passed": true,
+      "failure_type": {
+        "http_status": 500,
+        "domain_code": "INTERNAL"
+      },
+      "alters": [
+        {
+          "at": 236566.880665583,
+          "method": "POST",
+          "category": "alter",
+          "selected_create": false,
+          "status": 204,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": true
+        }
+      ],
+      "injected_readbacks": [
+        {
+          "at": 236566.913148659,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 503,
+          "injected": true,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "302400000"
+            ]
+          },
+          "durable_transaction_present": true
+        }
+      ]
+    },
+    {
+      "name": "unchanged-files-cold-start-replays-desired-retention-before-readiness",
+      "passed": true,
+      "actual_desired_readbacks": [
+        {
+          "at": 236594.226443842,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "302400000"
+            ]
+          },
+          "durable_transaction_present": true
+        }
+      ],
+      "first_healthy_headers_at": 236594.629987035,
+      "stable_route": true,
+      "stable_next_offset": 1,
+      "original_and_ack_preserved": true,
+      "mid_receipt_idempotent": true
+    },
+    {
+      "name": "second-cold-start-does-not-repeat-alter-reset-offset-or-replay-ack",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "provider_calls": 0,
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "harness_sha256": "389adbf182f3bf9658b97d4c64f2b85b85175dbe20de5447dd5639eee22eec9a",
+  "proxy_sha256": "7325d9b465a3d8172d77974f6c381276e6b766c5a14cd876f043d27d75e2f313",
+  "capacity_premise": {
+    "resources": {
+      "ingress_tickets": 0,
+      "lanes": {
+        "eventing": {
+          "active": 0,
+          "caller_deaths": 0,
+          "fenced": 0,
+          "grants": 18,
+          "ingress_rejections": 0,
+          "projects": {},
+          "queue_rejections": 0,
+          "queued": 0,
+          "queued_timeouts": 0
+        },
+        "model": {
+          "active": 0,
+          "caller_deaths": 0,
+          "fenced": 0,
+          "grants": 0,
+          "ingress_rejections": 0,
+          "projects": {},
+          "queue_rejections": 0,
+          "queued": 0,
+          "queued_timeouts": 0
+        },
+        "network": {
+          "active": 0,
+          "caller_deaths": 0,
+          "fenced": 0,
+          "grants": 0,
+          "ingress_rejections": 0,
+          "projects": {},
+          "queue_rejections": 0,
+          "queued": 0,
+          "queued_timeouts": 0
+        }
+      },
+      "limits": {
+        "eventing_concurrency": 16,
+        "max_waiters": 1024,
+        "model_concurrency": 4,
+        "network_concurrency": 16,
+        "project_eventing_concurrency": 2,
+        "project_model_concurrency": 1,
+        "project_network_concurrency": 4
+      },
+      "started": true,
+      "waiting": 0
+    },
+    "premise": {
+      "global_limit": 16,
+      "per_project_limit": 2,
+      "blue_active": 0,
+      "spare_global_tickets_at_observation": 16,
+      "spare_blue_tickets_at_observation": 2
+    }
+  },
+  "native_runtime_cases": [
+    {
+      "pid": 1259579,
+      "start_ticks": 23653769,
+      "command_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reaped": true
+    },
+    {
+      "pid": 1262768,
+      "start_ticks": 23656698,
+      "command_sha256": "46da85daf06c58e33ae02ca6e1d6e09940c5a8b6da365e51ab4c7a9f78debf55",
+      "reaped": true
+    },
+    {
+      "pid": 1265702,
+      "start_ticks": 23659624,
+      "command_sha256": "46da85daf06c58e33ae02ca6e1d6e09940c5a8b6da365e51ab4c7a9f78debf55",
+      "reaped": true
+    }
+  ],
+  "image_runtimes": [],
+  "proxy_cleanup": {
+    "handlers": 0,
+    "thread_alive": false,
+    "failures": []
+  },
+  "cleanup_failure_types": [],
+  "diagnostic": {
+    "case": "retention-recovery",
+    "selected_operation": null,
+    "elapsed_seconds": null,
+    "eventing_timeout_ms": 1000,
+    "recovery_timeout_ms": null,
+    "events": [
+      {
+        "at": 236566.57528692,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236566.585840461,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236566.599733715,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "604800000"
+          ]
+        },
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236566.642232706,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236566.74995085,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236566.769566128,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236566.780310946,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "604800000"
+          ]
+        },
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236566.880665583,
+        "method": "POST",
+        "category": "alter",
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236566.900888344,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236566.913148659,
+        "method": "GET",
+        "category": "configs",
+        "status": 503,
+        "selected_create": false,
+        "injected": true,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236567.56057803,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236594.197439975,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236594.215264423,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236594.226443842,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": true
+      },
+      {
+        "at": 236594.639424928,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236594.65212814,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236594.666916217,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236594.737192676,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236594.753485995,
+        "method": "POST",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236594.762956334,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236594.770793894,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236595.695810968,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236624.23521739,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236624.2616704,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236624.277157043,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236624.347177081,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236624.362203871,
+        "method": "POST",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236624.371076227,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236624.379139793,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 236625.302346492,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      }
+    ],
+    "events_available": true,
+    "event_count": 30,
+    "events_truncated": false,
+    "assertion_or_primary_type": null,
+    "cleanup_failure_types": [],
+    "cleanup_types_truncated": false
+  },
+  "finished_at": "2026-10-22T14:18:47.580739+00:00"
+}

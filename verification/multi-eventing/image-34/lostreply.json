@@ -1,0 +1,54 @@
+{
+  "suite": "adhd/real-kafka-lost-reply@1",
+  "started_at": "2026-10-21T22:38:17.342212+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "real-produce-ack-lost-physical-duplicates-logically-deduplicated",
+      "passed": true,
+      "actual_produce_acks": 2,
+      "distinct_offsets": 2
+    },
+    {
+      "name": "logical-delivery-and-source-retry-ack-survive-process-kill-and-broker-replay",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "finished_at": "2026-10-21T22:39:12.526249+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "912b3766b5fb15fa0be44b4e26211d84cf0899151086c53c2d533667674dc33e",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "912b3766b5fb15fa0be44b4e26211d84cf0899151086c53c2d533667674dc33e",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "0a2ceecb620f3b21918583cb871090edefdc87369f2af454db292fe1d9f03733",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "0a2ceecb620f3b21918583cb871090edefdc87369f2af454db292fe1d9f03733",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "image_id": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9"
+}

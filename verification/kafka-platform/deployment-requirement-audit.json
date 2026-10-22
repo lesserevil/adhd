@@ -1,0 +1,261 @@
+{
+  "schema": "adhd/final-deployment-requirement-audit@1",
+  "status": "KAFKA007-covered-MULTI007-project-restore-scope-pending",
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "image_config_digest": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+  "scope": "Read-only requirement and exact evidence provenance audit; new browser checks executed only for the identified native/image eventing Admin gap. No completed platform suite rerun, appsource change or external publication.",
+  "provenance_checks": [
+    {
+      "lane": "compose",
+      "passed": true,
+      "report_checks": 8,
+      "all_report_child_harness_dependency_deployment_acceptance_staging_hashes_match": true
+    },
+    {
+      "lane": "kind",
+      "passed": true,
+      "report_checks": 7,
+      "all_report_child_harness_dependency_deployment_acceptance_staging_hashes_match": true
+    },
+    {
+      "lane": "oauth",
+      "passed": true,
+      "report_checks": 7,
+      "all_report_deployment_and_exact_dependency_hashes_match": true
+    }
+  ],
+  "criteria": [
+    {
+      "id": "KAFKA-007/implementation/1",
+      "status": "covered",
+      "criterion": "Pinned Kafka/KRaft images and client compatibility; dependencies, volumes, private listeners, secrets, resources, readiness/startup/shutdown; distinct durable installation cluster IDs and legacy metadata preservation.",
+      "implementation": [
+        "deploy/events.compose.yaml",
+        "deploy/k8s/events.yaml",
+        "deploy/k8s/private.yaml",
+        "deploy/app.compose.yaml",
+        "deploy/k8s/hub.yaml",
+        "deploy/kafka-bootstrap.py",
+        "docs/admin/kafka-bootstrap.md",
+        "docs/admin/event-service.md"
+      ],
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json",
+        "verification/kafka-platform/oauth-accepted-manifest.json",
+        "verification/kafka-bootstrap/manifest.json",
+        "verification/kafka-bootstrap/kubernetes-manifest.json",
+        "verification/kafka-security/kubernetes-image-equivalence.json"
+      ],
+      "limits": [
+        "Kubernetes test CNI does not enforce NetworkPolicy. Production requires an enforcing CNI.",
+        "Private single-broker plaintext Kafka lane; authenticated REST overlay does not qualify broker SASL_SSL or ACLs."
+      ]
+    },
+    {
+      "id": "KAFKA-007/implementation/2",
+      "status": "covered",
+      "criterion": "Owned Compose and Kubernetes model-free applications with optional existing/GPU/remote model; explicit manifest/chart ownership.",
+      "implementation": [
+        "deploy/app.compose.yaml",
+        "deploy/app.model.compose.yaml",
+        "deploy/model.compose.yaml",
+        "deploy/k8s/kustomization.yaml",
+        "deploy/k8s/model.yaml",
+        "docs/admin/model-service.md",
+        "docs/admin/event-service.md"
+      ],
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json",
+        "verification/model-service.json"
+      ],
+      "limits": [
+        "Existing pinned model container was reused unchanged; optional GPU profiles additionally rendered/schema-validated but no second GPU service or model pod was started. Existing or remote endpoint alternative was exercised through actual accepted images."
+      ]
+    },
+    {
+      "id": "KAFKA-007/implementation/3",
+      "status": "covered",
+      "criterion": "Single-node versus replicated durability; single-writer hub; backups/restore; broker upgrades and hot hub propagation.",
+      "implementation": [
+        "docs/admin/event-service.md",
+        "docs/admin/operations.md",
+        "components/hub/resources/spec.md",
+        "components/hub/eventing/spec.md"
+      ],
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json",
+        "verification/kafka-platform/oauth-accepted-manifest.json"
+      ],
+      "limits": [
+        "Patch upgrade only8.3.1 to8.3.2; no cross-minor/application downgrade or HA guarantee."
+      ]
+    },
+    {
+      "id": "KAFKA-007/evidence/1",
+      "status": "covered",
+      "criterion": "Clean Compose and disposable Kubernetes with real Kafka and no model; actual A2A pub/sub and backend literal search.",
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json"
+      ]
+    },
+    {
+      "id": "KAFKA-007/evidence/2",
+      "status": "covered",
+      "criterion": "Replacement/restart; PVC/volume reuse; broker outage/actual version upgrade; secret rotation; optional model enablement; manifest/image/dependency/license inventories.",
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json",
+        "verification/kafka-platform/oauth-accepted-manifest.json",
+        "verification/kafka-bootstrap/manifest.json",
+        "verification/kafka-security/kubernetes-image-equivalence.json",
+        "verification/kafka-platform/eventing-browser-manifest.json"
+      ],
+      "inventory": "docs/admin/event-service.md",
+      "limits": [
+        "Optional native AuthenticationHandler requires Enterprise entitlement or permitted trial. Production entitlement is not attested."
+      ]
+    },
+    {
+      "id": "MULTI-007/implementation/3/deployment",
+      "status": "partial-scope-clarification",
+      "criterion": "Document full-server and project-level backup/restore semantics, collision handling and container recovery.",
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json",
+        "verification/multi-eventing/final-root-30-storage-crash.json",
+        "verification/multi-eventing/final-root-30-store-move.json"
+      ],
+      "covered": "Actual consistent full-server recovery across all project stores/config/Kafka, preserved credentials/membership/IDs/acks and exact recovery boundary.",
+      "open": "Selective project restore preserving other current projects is not implemented or qualified. Roadmap requires project-level semantics while normatively imposing conditions on any project restore. Parent has requested user scope clarification; do not silently narrow requirement or claim full-server restoration proves selective recovery."
+    },
+    {
+      "id": "MULTI-007/evidence/2/deployment",
+      "status": "covered-for-container-full-recovery",
+      "criterion": "Container replacement and backup/restore without leakage or duplicate committed results.",
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json"
+      ],
+      "limits": [
+        "Lifecycle/worker-crash/fairness evidence belongs to other exact-artifact suites; selective project restore remains separate open scope."
+      ]
+    },
+    {
+      "id": "KAFKA-009/implementation/1/deployment",
+      "status": "covered",
+      "criterion": "Deployment, model, backup/recovery and troubleshooting operating contracts updated alongside packaging.",
+      "implementation": [
+        "docs/admin/event-service.md",
+        "docs/admin/model-service.md",
+        "docs/admin/operations.md",
+        "docs/admin/kafka-bootstrap.md",
+        "docs/admin/troubleshooting.md"
+      ],
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json",
+        "verification/kafka-platform/oauth-accepted-manifest.json",
+        "verification/kafka-platform/eventing-browser-manifest.json"
+      ]
+    },
+    {
+      "id": "KAFKA-009/implementation/2/deployment",
+      "status": "covered",
+      "criterion": "Zero-model raw/literal-search and separate actual live-model filtering/semantic queries on accepted deployment images.",
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json"
+      ],
+      "limits": [
+        "Six actual provider POSTs per platform, counted across classification, semantic query and resumed subscription; no broad model calibration or latency claim."
+      ]
+    },
+    {
+      "id": "KAFKA-009/implementation/3-and-evidence/deployment",
+      "status": "covered-for-deployment",
+      "criterion": "Exact artifact/image/broker/client identities; independent container/Kubernetes recovery and Admin operating suites with remaining limits.",
+      "evidence": [
+        "verification/kafka-platform/compose-accepted-manifest.json",
+        "verification/kafka-platform/kind-accepted-manifest.json",
+        "verification/kafka-platform/oauth-accepted-manifest.json",
+        "verification/kafka-platform/eventing-browser-manifest.json",
+        "verification/multi-eventing/lifecycle-admission-30.json"
+      ],
+      "limits": [
+        "Other KAFKA009 federation, wire, fault, migration, fairness and overall lifecycle closure require parent-owned reports; this audit does not substitute platform checks for those gates."
+      ]
+    }
+  ],
+  "configuration_inventory": {
+    "hot_hub_settings": "All supported hub settings via Admin, including local/OIDC userauth, matcher/backend model bindings, KafkaURL/bearer/customCA/topic/retention/queue policy, shared resources and store location. Configuration-file location alone requires restart.",
+    "infrastructure_settings": "Broker/listener/staticquorum/image/volumes, model container/GPU and proxy keystores/OAuth server material belong to deployment tooling and may roll those services without restarting hub.",
+    "license_primary_sources": [
+      "https://docs.confluent.io/platform/8.3/release-notes/index.html",
+      "https://docs.confluent.io/platform/8.3/confluent-security-plugins/kafka-rest.html",
+      "https://docs.confluent.io/platform/8.3/installation/license.html"
+    ],
+    "installation_id": "Ten independent bootstrap cases plus exact-byte Kubernetes mirror and actual nonroot PVC runtime; initialtutorial metadata adopted, mismatch rejected beforeformat."
+  },
+  "read_only_validation": {
+    "compose": [
+      {
+        "flags": [
+          "-f",
+          "deploy/app.compose.yaml"
+        ],
+        "passed": true,
+        "services": [
+          "hub",
+          "kafka",
+          "kafka-rest"
+        ],
+        "rendered_sha256": "d4a23f0d9a317897299ea94cf0069724e2074518ca2f5157b03a2993e7e0b76c"
+      },
+      {
+        "flags": [
+          "-f",
+          "deploy/app.compose.yaml",
+          "-f",
+          "deploy/app.model.compose.yaml",
+          "--profile",
+          "model"
+        ],
+        "passed": true,
+        "services": [
+          "hub",
+          "kafka",
+          "kafka-rest",
+          "model"
+        ],
+        "rendered_sha256": "ffb5c513588ed63086dedbc0dbf9a9757bfb66bf82136719f920e1b87f42262b"
+      },
+      {
+        "flags": [
+          "-f",
+          "deploy/app.compose.yaml",
+          "-f",
+          "deploy/events.oauth.compose.yaml",
+          "--profile",
+          "enterprise-oauth"
+        ],
+        "passed": true,
+        "services": [
+          "hub",
+          "kafka",
+          "kafka-rest"
+        ],
+        "rendered_sha256": "c0f3958cab46c05e3af51bb5924b5c9b324329e81efb21b57c62b840895fdde2"
+      }
+    ],
+    "kubernetes_baseline_and_optional_model": "kubectl apply --dry-run=client succeeded for deploy/k8s and deploy/k8s/model.yaml; no resource writes."
+  },
+  "recommendation": {
+    "KAFKA-007": "All implementation and evidence checkboxes may close with documented single-broker, CNI, license and patch-version limits.",
+    "MULTI-007-deployment": "Full-server container recovery evidence complete; project-level selective restore semantics require explicit scope resolution before affected checkbox closes.",
+    "KAFKA-009-deployment": "Deployment clauses covered; global program closure remains parent-owned and includes unresolved project-restore scope."
+  }
+}

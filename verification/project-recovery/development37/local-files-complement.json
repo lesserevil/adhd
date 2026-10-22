@@ -1,0 +1,90 @@
+{
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "checks": [
+    {
+      "id": "derived-cp0-without-authoritative-snapshot",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"schema\"}"
+    },
+    {
+      "id": "derived-cp0-valid-independent-snapshot-fullgraph",
+      "passed": true,
+      "result": "{:ok, :ok}"
+    },
+    {
+      "id": "changed-content-after-proof",
+      "inputs_unchanged": true,
+      "metadata_identity_happened_to_match": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "replacement-inode-identical-content",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "allowed-mode-change-invalidates-prior-proof",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "special-mode-4664",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "special-mode-2664",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "special-mode-1664",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "symlink-ancestor-even-when-leaf-absent",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "schema4-never-takes0644-exception",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"path\"}"
+    },
+    {
+      "id": "fullgraph-record-budget-before-stage",
+      "inputs_unchanged": true,
+      "passed": true,
+      "result": "{:recovery, \"RESTORE_INVALID_BACKUP\", \"limits\"}"
+    },
+    {
+      "id": "foreign-owner",
+      "reason": "Host UID cannot construct foreign-owned valid checkpoint",
+      "status": "not-executed"
+    }
+  ],
+  "forbidden_calls": [],
+  "harness_sha256": "231c8e221a72158158cff800a526950430545f1730b62cee7459168bea831e6e",
+  "original_unchanged": true,
+  "passed": true,
+  "schema": "adhd/local-files-complement@1",
+  "scope": "Complement only; actualoldcheckpoint + explicitlyderived CP0/schema4 vectors; no startup, nativeoriginalopener, network, provider or crashqualification",
+  "source_hashes": {
+    "config.exs": "b0ad348140abe1a3a7512ad2dc5128eeaee6c38d14168c8acf52d93257c32499",
+    "migration.exs": "38e361c203d53785d94f4d126365be45f96505b3221aafbaf5c6a0bf35e11e2c",
+    "project_backup_validation.exs": "021afad3d25533a407f72140d1cf460ffb3ceee786c30ab1c9f4a44998377903",
+    "projects.exs": "f0310c97169432eba59b153586ee8e6322ec51fa73537d9c5bc8d7ee065ba15e",
+    "storage.exs": "aad00c4671e33ffd6386b39c5e56f7e7260c9345f0a12306346ee73f5a78055a",
+    "storage_registry.exs": "cf40509b01b4d2e7425aa5b1b7c8ff01718a7e0de9c58cc539e0f6587c101f94"
+  }
+}

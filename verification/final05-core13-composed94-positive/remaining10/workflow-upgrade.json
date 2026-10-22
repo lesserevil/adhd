@@ -1,0 +1,212 @@
+{
+  "suite": "adhd/multi-workflow-upgrade@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "genuine-accepted-producer-has-all-five-workflow-families-labeled-feedback-and-selected-learned-recipe",
+      "passed": true,
+      "counts": {
+        "history": 41,
+        "retrieval": 8,
+        "archive": 8,
+        "replay": 20,
+        "optimization": 3
+      },
+      "labels": 8
+    },
+    {
+      "name": "legacy-upgrade-preserves-exact-history-retrieval-archive-replay-optimizer-evidence-labels-cohorts-deliveries-and-selection",
+      "passed": true,
+      "changed_runtime": true,
+      "retired_global_generation_ids": [
+        "index-proposal-108"
+      ]
+    },
+    {
+      "name": "hard-restart-preserves-migrated-workflows-selected-control-and-unacknowledged-deliveries",
+      "passed": true
+    },
+    {
+      "name": "operator-reset-after-migration-preserves-originals-and-historical-evidence",
+      "passed": true,
+      "unavailable_global_generation_ids": [
+        "index-proposal-107"
+      ]
+    }
+  ],
+  "producer_artifact_sha256": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48",
+  "producer_report_sha256": "110f34a4e449b6a6bf83336f2cdedf5fe5023aa17929cfba17b5dd27784f2ecd",
+  "harness_sha256": "5806852536be89190140aedbc7912de232f39193ab50326d71711da1eaf47b1e",
+  "legacy_store_sha256": {
+    "hub.dets.snapshot": "7d3219eb69524312e3ee32c5b7cf32aac75f3a25a9cc16a7cc9d3f6e88453ecf",
+    "hub.dets": "9613b280792ec7a94df57dd6a22e522272b30f83d2f330514b7689caffcb70da"
+  },
+  "provider_export_fence": {
+    "source_sha256": "91f5b528600a7eb27413ee9cd088273a29eb9da21431370a2877a41905fd1ff5",
+    "library_sha256": "7158f342be00ca847e2c4c95306bf082d0495e344188bdd570fcc68c14beb767",
+    "denied_port": 18770,
+    "blocked_connects_including_probe": 4,
+    "observations": [
+      {
+        "vm_pid": 3974789,
+        "maps_sha256": "f0d2ccbf0abbf4c6f13b2760272d8fd1443d09553a32a4f82749230225aef726",
+        "cmdline_sha256": "83a634f9400987c8231c9706d9eeb25c69bfe5eeafc0965b6fc22326c27d4a31",
+        "fence_loaded": true
+      }
+    ],
+    "provider_exports": 0
+  },
+  "provider_isolation_helper_sha256": "3133cf201977a0db95cb8741ef0fac37595a3df3ae18be92411bd3938f757b65",
+  "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "evidence_projection_digest": "2b12bf5d0caeb3730467b12b46aea57e3036dc51f3eb1d35b02c02c1c6567531",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "11676bdbfe598e1ad98603d6efdbcc2e43815c071611fb7c5d716151d8eddcef",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "11676bdbfe598e1ad98603d6efdbcc2e43815c071611fb7c5d716151d8eddcef",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "c5724a3075a380e0abfa78769c1e794c76158feb7234a58ed537a8afd5cd08a1",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "c5724a3075a380e0abfa78769c1e794c76158feb7234a58ed537a8afd5cd08a1",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-c2ef2a94f3f440a4",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-8475941325474069",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "model_export_isolation": [
+      {
+        "container_id": "11676bdbfe598e1ad98603d6efdbcc2e43815c071611fb7c5d716151d8eddcef",
+        "host_vm_pid": 3978516,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "network_mode": "bridge",
+        "private_network_namespace": "net:[4026534015]",
+        "vm_cmdline_sha256": "07887d3bee2bf1ae5c17ea9f7a8a4e25b2147a92601963bf90f5cdde2a625f9e",
+        "localhost_published_app_port": 53511,
+        "model_endpoints_refused_inside_namespace": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "effective_current_model_endpoints": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "historical_provider_route_proof": false,
+        "provider_exports": 0
+      },
+      {
+        "container_id": "11676bdbfe598e1ad98603d6efdbcc2e43815c071611fb7c5d716151d8eddcef",
+        "host_vm_pid": 3978516,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "network_mode": "bridge",
+        "private_network_namespace": "net:[4026534015]",
+        "vm_cmdline_sha256": "07887d3bee2bf1ae5c17ea9f7a8a4e25b2147a92601963bf90f5cdde2a625f9e",
+        "localhost_published_app_port": 53511,
+        "model_endpoints_refused_inside_namespace": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "effective_current_model_endpoints": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "historical_provider_route_proof": false,
+        "provider_exports": 0
+      },
+      {
+        "container_id": "c5724a3075a380e0abfa78769c1e794c76158feb7234a58ed537a8afd5cd08a1",
+        "host_vm_pid": 3981447,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "network_mode": "bridge",
+        "private_network_namespace": "net:[4026534015]",
+        "vm_cmdline_sha256": "07887d3bee2bf1ae5c17ea9f7a8a4e25b2147a92601963bf90f5cdde2a625f9e",
+        "localhost_published_app_port": 53511,
+        "model_endpoints_refused_inside_namespace": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "effective_current_model_endpoints": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "historical_provider_route_proof": false,
+        "provider_exports": 0
+      },
+      {
+        "container_id": "c5724a3075a380e0abfa78769c1e794c76158feb7234a58ed537a8afd5cd08a1",
+        "host_vm_pid": 3981447,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "network_mode": "bridge",
+        "private_network_namespace": "net:[4026534015]",
+        "vm_cmdline_sha256": "07887d3bee2bf1ae5c17ea9f7a8a4e25b2147a92601963bf90f5cdde2a625f9e",
+        "localhost_published_app_port": 53511,
+        "model_endpoints_refused_inside_namespace": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "effective_current_model_endpoints": [
+          {
+            "host": "127.0.0.1",
+            "port": 18770
+          }
+        ],
+        "historical_provider_route_proof": false,
+        "provider_exports": 0
+      }
+    ]
+  }
+}

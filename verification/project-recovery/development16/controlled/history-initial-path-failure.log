@@ -1,0 +1,28 @@
+PASS owned-query-creation-idempotency-conflicts-and-independent-wire-result
+PASS strict-types-time-precision-unknown-fields-future-watermarks-and-empty-scope
+PASS intersected-source-event-time-microsecond-scope-and-labeled-public-context-expansion
+PASS frozen-membership-future-corrections-private-isolation-gaps-and-responsive-ingestion
+PASS record-call-byte-budgets-continuation-cumulative-cost-prior-runs-and-evidence-pagination
+PASS active-time-budget-bounds-network-wait-and-never-marks-failed-groups-examined
+PASS http-outage-malformed-typed-choices-distribution-errors-size-bounds-and-low-confidence
+PASS hot-evaluator-drift-discards-inflight-results-and-explicit-restart-preserves-prior-run
+PASS hot-request-bounds-url-model-inheritance-disable-and-explicit-resumption-without-hub-restart
+PASS admin-list-detail-run-pages-actor-scoped-cancel-retry-and-late-reply-isolation
+PASS real-hard-kill-recovers-reservation-originals-source-retries-private-queues-and-acknowledgements
+PASS project-rename-and-restart-preserve-frozen-query-label-snapshot-and-model-evidence
+PASS bounded-derived-history-state-raising-hot-limit-and-continuing-never-deletes-originals
+PASS active-job-and-run-count-bounds-cancellation-and-archived-runs-survive-restart
+Traceback (most recent call last):
+  File "<workspace>/_build/roadmap/final/controlled16/tests/history_acceptance.py", line 179, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "<workspace>/_build/roadmap/final/controlled16/tests/history_acceptance.py", line 171, in main
+    runtime_value.stop();data=Path(runtime_value.config['store_path']);content=data.read_bytes()+Path(str(data)+'.snapshot').read_bytes()
+                                                                               ^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1021, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '<workspace>/_build/roadmap/history-tests/run-25nwpi65/main/hub.dets'

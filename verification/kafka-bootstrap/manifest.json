@@ -1,0 +1,61 @@
+{
+  "schema": "adhd/kafka-installation-identity-evidence@1",
+  "passed": true,
+  "scope": "Pinned CP8.3.2 bootstrap identities and actual retained records on three wholly disposable Compose volumes; Kubernetes exact-byte ConfigMap rendering only at this checkpoint.",
+  "hub_runtime_qualified": false,
+  "release_qualified": false,
+  "kubernetes_runtime_qualified": false,
+  "images": {
+    "broker_manifest": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+    "broker_image_config": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+    "proxy_manifest": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+    "proxy_image_config": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56"
+  },
+  "runtime_inventory": {
+    "bootstrap_language": "Python3.9.25 stdlib already bundled in pinned broker image; no hub dependency/image/service added",
+    "broker_license": "Apache Kafka core Apache-2.0, bundled components retain their own licenses",
+    "proxy_license": "Confluent Community License baseline; no security plugin needed for this identity probe"
+  },
+  "inputs": [
+    {
+      "path": "deploy/kafka-bootstrap.py",
+      "sha256": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f"
+    },
+    {
+      "path": "docs/admin/kafka-bootstrap.md",
+      "sha256": "2371e7d4c6bd1318dddf7df7b89a38198d11bb00c11ba3a7bbe4b4953ff3a73f"
+    },
+    {
+      "path": "deploy/events.compose.yaml",
+      "sha256": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b"
+    },
+    {
+      "path": "deploy/k8s/events.yaml",
+      "sha256": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0"
+    },
+    {
+      "path": "tests/kafka_bootstrap.py",
+      "sha256": "d5dc36ca572a745555c9e1c13409c164b3db73537316db01aadf181af29a5e12"
+    }
+  ],
+  "report": {
+    "path": "verification/kafka-bootstrap/compose-installation-identity.json",
+    "sha256": "2edcc84490f921cfd515c936cd15ada4676cd49a15fd459a482523e2504c91b9"
+  },
+  "tested_cases": [
+    "Two independent fresh default installations generated distinct real broker cluster IDs.",
+    "Fresh Docker volume permissions allow provisioning as the selected broker user before upstream initialization.",
+    "Seeds private, exclusive and synced before upstream storage formatting; restart preserved each cluster ID.",
+    "A third fresh fixture first used the original upstream startup and old tutorial cluster ID, then the new bootstrap adopted its existing metadata.",
+    "Real topic record and offset0 retained across restart/adoption on all three volumes.",
+    "Wrong explicit cluster ID rejected before upstream formatting, with explicit mismatch error.",
+    "Local checks reject seed/meta/node disagreement, symlinks, path traversal, unidentified data and duplicate metadata.",
+    "Kubernetes ConfigMap exactly mirrors source and removes shared constant ID.",
+    "All owned containers, networks and volumes removed; no existing service changed."
+  ],
+  "limits": [
+    "Single-node identity/service proof; not an app lifecycle, backup/restore or production HA qualification.",
+    "Kubernetes fsGroup/runtime proof remains separate until executed on the exact final deployment.",
+    "Bootstrap lock fences seed provisioning only; one broker owns the volume and Kafka retains log-directory locking."
+  ]
+}

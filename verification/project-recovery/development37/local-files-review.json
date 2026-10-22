@@ -1,0 +1,28 @@
+{
+  "schema": "adhd/local-files-complement-review@1",
+  "passed": true,
+  "executed_checks": 11,
+  "not_executed_checks": [
+    {
+      "id": "foreign-owner",
+      "reason": "Unprivileged host cannot construct a foreign-owned valid checkpoint; chown returned EPERM"
+    }
+  ],
+  "first_attempt_failed_preserved": true,
+  "first_failure": "Stickybit setup used Elixir File.chmod; direct independent probe confirmed actual0664. Python os.chmod correctly produces1664. Corrected test uses chmod utility with observedmode assertion.",
+  "only_harness_changed": true,
+  "first_harness_sha256": "d21de96e1ea68b8edb5900e6a70cf6c5d1f26f537fb267aa02cd2aed506f5428",
+  "current_harness_sha256": "231c8e221a72158158cff800a526950430545f1730b62cee7459168bea831e6e",
+  "original_unchanged": true,
+  "forbidden_calls": [],
+  "trace_scope": "Each production read/validate/verify executes in independently traced worker with inheritedchildtrace; setup filesystem mutations are outside trace. Forbids nativeDETSopen, chmod, write, rename, HTTP, Configroot/get, Store.upgrade.",
+  "limits": "CP0 and schema4 inputs are explicit derived vectors from actualoldproducercheckpoint; this is not an actualkernelcrash, fullstartup or completeSDKupgrade qualification.",
+  "source_hashes": {
+    "config.exs": "b0ad348140abe1a3a7512ad2dc5128eeaee6c38d14168c8acf52d93257c32499",
+    "migration.exs": "38e361c203d53785d94f4d126365be45f96505b3221aafbaf5c6a0bf35e11e2c",
+    "project_backup_validation.exs": "021afad3d25533a407f72140d1cf460ffb3ceee786c30ab1c9f4a44998377903",
+    "projects.exs": "f0310c97169432eba59b153586ee8e6322ec51fa73537d9c5bc8d7ee065ba15e",
+    "storage.exs": "aad00c4671e33ffd6386b39c5e56f7e7260c9345f0a12306346ee73f5a78055a",
+    "storage_registry.exs": "cf40509b01b4d2e7425aa5b1b7c8ff01718a7e0de9c58cc539e0f6587c101f94"
+  }
+}

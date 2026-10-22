@@ -1,0 +1,95 @@
+{
+  "proposal_only": true,
+  "remaining_parents": [
+    {
+      "item": "MULTI-007",
+      "exact_header": "### [ ] MULTI-007 \u2014 Bound shared resources and operate project lifecycles",
+      "dependencies": [
+        "MULTI-002",
+        "MULTI-004",
+        "MULTI-005"
+      ],
+      "exact_close_condition": "After both own remaining leaves and fullR25 qualify; dependencies already closed. No CNI dependency is added."
+    },
+    {
+      "item": "MULTI-008",
+      "exact_header": "### [ ] MULTI-008 \u2014 Qualify and document the multiple-project upgrade",
+      "dependencies": [
+        "MULTI-001",
+        "MULTI-002",
+        "MULTI-003",
+        "MULTI-004",
+        "MULTI-005",
+        "MULTI-006",
+        "MULTI-007",
+        "KAFKA-009"
+      ],
+      "exact_close_condition": "Five independent R25-dependent leaves elsewhere may close first; own finalconsolidation compound leaf and declaredKAFKA009/MULTI007 dependencies must close before parent. Hostile-oldest leaf already independently closed."
+    },
+    {
+      "item": "KAFKA-007",
+      "exact_header": "### [ ] KAFKA-007 \u2014 Package per-server Kafka for containers and Kubernetes",
+      "dependencies": [
+        "KAFKA-002"
+      ],
+      "exact_close_condition": "After own complete compile/runtime regression clause and R25 qualify; existing cache/repro/defaultSDK/deployment proofs reused. No fresh build or CNI gate invented."
+    },
+    {
+      "item": "KAFKA-008",
+      "exact_header": "### [ ] KAFKA-008 \u2014 Migrate existing subscriptions and queues to Kafka safely",
+      "dependencies": [
+        "KAFKA-003",
+        "KAFKA-004",
+        "KAFKA-005",
+        "KAFKA-007"
+      ],
+      "exact_close_condition": "Own leaves already complete; wait only declaredKAFKA007 plus already closed003/004/005."
+    },
+    {
+      "item": "KAFKA-009",
+      "exact_header": "### [ ] KAFKA-009 \u2014 Qualify Kafka pubsub and update all operating contracts",
+      "dependencies": [
+        "KAFKA-001",
+        "KAFKA-002",
+        "KAFKA-003",
+        "KAFKA-004",
+        "KAFKA-005",
+        "KAFKA-006",
+        "KAFKA-007",
+        "KAFKA-008",
+        "MULTI-007"
+      ],
+      "exact_close_condition": "After fullR25+CNI18, integrated evidence leaf, and declaredKAFKA007/008/MULTI007 dependencies close."
+    },
+    {
+      "item": "INTEROP-001",
+      "exact_header": "### [ ] INTEROP-001 \u2014 Support OpenRig cross-rig communication through ADHD",
+      "dependencies": [
+        "MULTI-008",
+        "KAFKA-009",
+        "PROTO-001"
+      ],
+      "exact_close_condition": "Own six leaves complete; wait declaredMULTI008/KAFKA009/PROTO001. No LLMcoding-provider workload or extra rig test invented."
+    }
+  ],
+  "conditional_order": [
+    {
+      "when": "R25 fully terminal-qualified",
+      "actions": [
+        "Check the five R25-only leaves, without a new CNI condition on them.",
+        "ProperCLIcloseMULTI007 andKAFKA007 after own live guards.",
+        "ProperCLIcloseKAFKA008 once its existing dependencies are closed."
+      ]
+    },
+    {
+      "when": "CNI18 also terminal-qualified and actual final evidence consolidation complete",
+      "actions": [
+        "CompleteKAFKA009 remaining integrated evidence and properCLIcloseKAFKA009.",
+        "FinishMULTI008 identity/limits/dependency/detail-plan consolidation and properCLIcloseMULTI008.",
+        "ProperCLIcloseINTEROP001 after its explicit dependencies.",
+        "Mark both detailedplans completed at their existing paths with actual terminal evidence; update tacticalstatus/changelog only."
+      ]
+    }
+  ],
+  "actual_closures_by_this_review": false
+}

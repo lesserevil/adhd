@@ -1,0 +1,186 @@
+--- sourceC/eventing.exs
++++ candidate01/eventing.exs
+@@ -2,6 +2,7 @@
+   alias ADHD.Domain, as: D
+   @json "application/vnd.kafka.json.v2+json"
+   @plain "application/vnd.kafka.v2+json"
++  @admin "application/json"
+   def empty, do: %{version: 1,sequence: 0,events: %{},next_offset: 0,quarantine: %{},gap: nil,last_error: nil,binding: nil,control_revision: 0,audit: [],replays: %{},filter_schema: 1,filter_index: :gb_trees.empty(),filter_cursor: 0,filter_jobs: %{},filter_last_adapter: nil,filter_unavailable: 0,filter_ready: MapSet.new(),deferred_filters: 0}
+   def enabled?(c), do: is_map(c["eventing"]) and c["eventing"]["enabled"] == true
+   def normalize(c) do
+@@ -95,13 +96,14 @@
+       last_error: nil,binding: binding(c,state)}) |> Map.put(:restore_history,history)
+     %{state|eventing: eventing}
+   end
+-  def preflight_restore(c,state) do
++  def preflight_restore(c,state,owning_deadline \\ nil) do
+     D.check(state[:schema]==4 and c["topic_generation"]==state[:project_epoch])
+     if enabled?(c) do
+-      provision(c,state)
+-      offsets=request(c,:get,"/topics/"<>topic(c,state)<>"/partitions/0/offsets",nil) |> success()
++      deadline=provision_deadline(c,owning_deadline)
++      provision(c,state,true,deadline)
++      offsets=request_until(c,:get,"/topics/"<>topic(c,state)<>"/partitions/0/offsets",nil,@plain,@plain,deadline) |> success()
+       # A fresh namespace cannot adopt even a truncated/reused nonzero log.
+-      D.check(offsets["beginning_offset"]==0 and offsets["end_offset"]==0)
++      D.check(offsets["beginning_offset"]===0 and offsets["end_offset"]===0)
+     end
+     :ok
+   end
+@@ -187,11 +189,24 @@
+   end
+   defp headers(c,accept),do: [{"accept",accept}]++if(c["eventing"]["bearer_token"],do: [{"authorization","Bearer "<>c["eventing"]["bearer_token"]}],else: [])
+   defp request(c,method,path,body,content \\ @plain,accept \\ @plain) do
+-    ADHD.Resources.run(:eventing,c["eventing"]["timeout_ms"],fn remaining->
+-      request_now(c,method,path,body,content,accept,remaining)
+-    end)
+-  end
+-  defp request_now(c,method,path,body,content,accept,timeout) do
++    request_until(c,method,path,body,content,accept,provision_deadline(c,nil))
++  end
++  defp request_until(c,method,path,body,content,accept,deadline) do
++    ADHD.Resources.run(:eventing,remaining(deadline),fn granted->
++      timeout=min(granted,remaining(deadline))
++      request_now(c,method,path,body,content,accept,timeout,deadline)
++    end)
++  end
++  defp monotonic_ms,do: System.monotonic_time(:millisecond)
++  defp remaining(deadline) do
++    left=deadline-monotonic_ms()
++    if left<=0,do: throw({:eventing,"BROKER_TIMEOUT"})
++    left
++  end
++  defp provision_deadline(c,nil),do: monotonic_ms()+c["eventing"]["timeout_ms"]
++  defp provision_deadline(c,owner) when is_integer(owner),do: min(provision_deadline(c,nil),owner)
++  defp request_now(c,method,path,body,content,accept,timeout,deadline) do
++    timeout=min(timeout,remaining(deadline))
+     url=String.trim_trailing(c["eventing"]["rest_url"],"/")<>path
+     D.url(url)
+     hs=Enum.map(headers(c,accept),fn {k,v}->{String.to_charlist(k),String.to_charlist(v)} end)
+@@ -201,11 +216,12 @@
+     # in OTP's httpc manager. A project's long poll must not queue another's work.
+     {:ok,id}=:httpc.request(method,req,[timeout: timeout,connect_timeout: timeout,autoredirect: false,ssl: ssl],[sync: false,stream: :self,body_format: :binary,socket_opts: [keepalive: false]])
+     :ok=ADHD.Resources.track_http(id)
+-    response(id,D.ms()+timeout,[],0)
++    response(id,deadline,[],0)
+   end
+   defp decode(""),do: nil
+   defp decode(body),do: ADHD.JSON.decode!(body)
+   defp response(id,deadline,chunks,size) do
++    if monotonic_ms()>=deadline,do: (:httpc.cancel_request(id);throw({:eventing,"BROKER_TIMEOUT"}))
+     receive do
+       {:http,{^id,{{_,status,_},_,body}}}->
+         D.check(byte_size(body)<=262144)
+@@ -217,7 +233,7 @@
+         response(id,deadline,[bytes|chunks],size+byte_size(bytes))
+       {:http,{^id,:stream_end,_}}->{200,chunks |> Enum.reverse() |> IO.iodata_to_binary() |> decode()}
+       {:http,{^id,{:error,_}}}->throw({:eventing,"BROKER_UNAVAILABLE"})
+-    after max(0,deadline-D.ms())->:httpc.cancel_request(id);throw({:eventing,"BROKER_TIMEOUT"})
++    after max(0,deadline-monotonic_ms())->:httpc.cancel_request(id);throw({:eventing,"BROKER_TIMEOUT"})
+     end
+   end
+   defp success({status,body}) when status in 200..299,do: body
+@@ -264,41 +280,69 @@
+       %{s|eventing: Map.put(next,:transition_id,id)}
+     end
+   end
+-  defp provision(c,s,apply_retention \\ true) do
+-      # The REST v3 administration API uses application/json, unlike v2 records.
+-      data=request(c,:get,"/v3/clusters",nil,"application/json","application/json") |> success()
+-      clusters=data["data"];D.check(is_list(clusters) and length(clusters)==1)
+-      cluster=hd(clusters)["cluster_id"];D.check(is_binary(cluster))
+-      path="/v3/clusters/"<>URI.encode(cluster,&URI.char_unreserved?/1)<>"/topics"
+-      name=topic(c,s)
+-      case request(c,:get,path<>"/"<>URI.encode(name,&URI.char_unreserved?/1),nil,"application/json","application/json") do
+-        {status,metadata} when status in 200..299->
+-          D.check(metadata["partitions_count"]==1)
+-          configs=request(c,:get,path<>"/"<>URI.encode(name,&URI.char_unreserved?/1)<>"/configs",nil,"application/json","application/json") |> success()
+-          entries=configs["data"];D.check(is_list(entries))
+-          cleanup=Enum.find(entries,&(&1["name"]=="cleanup.policy"));D.check(is_map(cleanup) and cleanup["value"]=="delete")
+-          retention=Enum.find(entries,&(&1["name"]=="retention.ms"))
+-          if apply_retention and (not is_map(retention) or retention["value"]!=Integer.to_string(c["eventing"]["retention_ms"])) do
+-            request(c,:post,path<>"/"<>URI.encode(name,&URI.char_unreserved?/1)<>"/configs:alter",%{"data"=>[%{"name"=>"retention.ms","value"=>Integer.to_string(c["eventing"]["retention_ms"]),"operation"=>"SET"}]},"application/json","application/json") |> success()
+-          end
+-        {404,_}->
+-          body=%{"topic_name"=>name,"partitions_count"=>1,"replication_factor"=>1,"configs"=>[%{"name"=>"cleanup.policy","value"=>"delete"},%{"name"=>"retention.ms","value"=>Integer.to_string(c["eventing"]["retention_ms"])}]}
+-          case request(c,:post,path,body,"application/json","application/json") do
+-            {status,metadata} when status in 200..299->
+-          D.check(metadata["partitions_count"]==1)
+-          configs=request(c,:get,path<>"/"<>URI.encode(name,&URI.char_unreserved?/1)<>"/configs",nil,"application/json","application/json") |> success()
+-          entries=configs["data"];D.check(is_list(entries))
+-          cleanup=Enum.find(entries,&(&1["name"]=="cleanup.policy"));D.check(is_map(cleanup) and cleanup["value"]=="delete")
+-          retention=Enum.find(entries,&(&1["name"]=="retention.ms"))
+-          if apply_retention and (not is_map(retention) or retention["value"]!=Integer.to_string(c["eventing"]["retention_ms"])) do
+-            request(c,:post,path<>"/"<>URI.encode(name,&URI.char_unreserved?/1)<>"/configs:alter",%{"data"=>[%{"name"=>"retention.ms","value"=>Integer.to_string(c["eventing"]["retention_ms"]),"operation"=>"SET"}]},"application/json","application/json") |> success()
+-          end
+-            {400,%{"error_code"=>40002}}->:ok
+-            _->throw({:eventing,"TOPIC_CREATE_FAILED"})
+-          end
+-        _->throw({:eventing,"TOPIC_UNAVAILABLE"})
+-      end
++  defp provision(c,s,apply_retention \\ true,owning_deadline \\ nil) do
++    deadline=provision_deadline(c,owning_deadline)
++    data=request_until(c,:get,"/v3/clusters",nil,@admin,@admin,deadline) |> success()
++    clusters=data["data"];D.check(is_list(clusters) and length(clusters)==1)
++    cluster=hd(clusters)["cluster_id"];D.check(is_binary(cluster))
++    collection="/v3/clusters/"<>URI.encode(cluster,&URI.char_unreserved?/1)<>"/topics"
++    path=collection<>"/"<>URI.encode(topic(c,s),&URI.char_unreserved?/1)
++    {metadata,visibility}=case request_until(c,:get,path,nil,@admin,@admin,deadline) do
++      {status,metadata} when status in 200..299->{metadata,false}
++      {404,_}->
++        body=%{"topic_name"=>topic(c,s),"partitions_count"=>1,"replication_factor"=>1,"configs"=>[%{"name"=>"cleanup.policy","value"=>"delete"},%{"name"=>"retention.ms","value"=>Integer.to_string(c["eventing"]["retention_ms"])}]}
++        case request_until(c,:post,collection,body,@admin,@admin,deadline) do
++          {status,metadata} when status in 200..299->
++            D.check(is_map(metadata) and metadata["partitions_count"]===1)
++            {nil,true}
++          {400,%{"error_code"=>40002}}->{nil,true}
++          _->throw({:eventing,"TOPIC_CREATE_FAILED"})
++        end
++      _->throw({:eventing,"TOPIC_UNAVAILABLE"})
++    end
++    entries=ready_topic(c,path,metadata,visibility,deadline)
++    retention=Enum.find(entries,&(&1["name"]=="retention.ms"))
++    desired=Integer.to_string(c["eventing"]["retention_ms"])
++    if apply_retention and (not is_map(retention) or retention["value"]!=desired) do
++      request_until(c,:post,path<>"/configs:alter",%{"data"=>[%{"name"=>"retention.ms","value"=>desired,"operation"=>"SET"}]},@admin,@admin,deadline) |> success()
++      verified=ready_topic(c,path,nil,false,deadline)
++      current=Enum.find(verified,&(&1["name"]=="retention.ms"))
++      D.check(is_map(current) and current["value"]==desired)
++    end
+     :ok
++  end
++  defp ready_topic(c,path,metadata,visibility,deadline) do
++    response=if is_nil(metadata),do: request_until(c,:get,path,nil,@admin,@admin,deadline),else: {200,metadata}
++    case response do
++      {404,_} when visibility->wait_topic(c,path,deadline)
++      {status,metadata} when status in 200..299->
++        D.check(is_map(metadata) and metadata["partitions_count"]===1)
++        case request_until(c,:get,path<>"/configs",nil,@admin,@admin,deadline) do
++          {404,_} when visibility->wait_topic(c,path,deadline)
++          {status,configs} when status in 200..299->
++            D.check(is_map(configs));entries=configs["data"]
++            D.check(is_list(entries) and Enum.all?(entries,&is_map/1))
++            cleanup=Enum.filter(entries,&(&1["name"]=="cleanup.policy"))
++            retention=Enum.filter(entries,&(&1["name"]=="retention.ms"))
++            D.check(length(cleanup)==1 and hd(cleanup)["value"]=="delete")
++            D.check(length(retention)==1 and valid_retention?(hd(retention)["value"]))
++            entries
++          _->throw({:eventing,"BROKER_REQUEST_FAILED"})
++        end
++      _->throw({:eventing,"TOPIC_UNAVAILABLE"})
++    end
++  end
++  defp valid_retention?(value) when is_binary(value) do
++    case Integer.parse(value) do
++      {integer,""}->integer>= -1 and integer<=9223372036854775807 and Integer.to_string(integer)==value
++      _->false
++    end
++  end
++  defp valid_retention?(_),do: false
++  defp wait_topic(c,path,deadline) do
++    Process.sleep(min(50,remaining(deadline)))
++    # Each retry starts a new bounded admission; no HTTP ticket spans this wait.
++    ready_topic(c,path,nil,true,deadline)
+   end
+   defp ensure_topic(c,s) do
+     key=consumer_key(c,s)

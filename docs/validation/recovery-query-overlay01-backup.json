@@ -1,0 +1,280 @@
+{
+  "suite": "project-recovery-source-discovery-queries",
+  "started_at": "2026-10-22T00:51:21.495777+00:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "accepted-pending-source-and-discovery-queries-backed-up-with-real-pinned-remote-jobs",
+      "passed": true,
+      "scenario": "source",
+      "retained_ids": {
+        "source": "sourcequery_3fe5b9a5a92a37a92631678ccf7fde4c_2",
+        "discovery": "query_3fe5b9a5a92a37a92631678ccf7fde4c_3"
+      },
+      "lost_ids": {
+        "source": "sourcequery_3fe5b9a5a92a37a92631678ccf7fde4c_4",
+        "discovery": "query_3fe5b9a5a92a37a92631678ccf7fde4c_5"
+      },
+      "provider_posts": 0
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "6f2eb576e6a174c46506ffbdc27c07de72d17f8622af9c3868aea60ec38a350f",
+  "harness_sha256": "a729671df0900779d48bb9f2ebf9a69e96d79479b9231a2c26793e293cf05e08",
+  "dependency_sha256": {
+    "/home/horde/src/adhd/tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "/home/horde/src/adhd/components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+    "/home/horde/src/adhd/.worktrees/acceptance/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "/home/horde/src/adhd/.worktrees/acceptance/tests/multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c"
+  },
+  "limits": {
+    "relay_slots": 12,
+    "relay_requests": 512,
+    "held_response_seconds": 30,
+    "query_deadline_ms": 120000
+  },
+  "scope": "Native actual two-hub/two-broker pending source/discovery and callback fencing; local controlled model only, not semantic quality or release admission.",
+  "broker_cluster_ids": [
+    "MkU3OEVBNTcwNTJENDM2Qk",
+    "NEiAAXk0v1xqZFCdSDoQjA"
+  ],
+  "cold_restart_pending_queries": [
+    {
+      "scenario": "source",
+      "kind": "source",
+      "query_id": "sourcequery_3fe5b9a5a92a37a92631678ccf7fde4c_2",
+      "original_deadline_at": "2026-10-22T00:53:53.252Z",
+      "status": "pending",
+      "remaining_original_deadline_seconds": 95.698345,
+      "source_result_statuses": [
+        "pending"
+      ]
+    },
+    {
+      "scenario": "source",
+      "kind": "discovery",
+      "query_id": "query_3fe5b9a5a92a37a92631678ccf7fde4c_3",
+      "original_deadline_at": "2026-10-22T00:53:53.337Z",
+      "status": "pending",
+      "remaining_original_deadline_seconds": 95.773214,
+      "source_result_statuses": []
+    }
+  ],
+  "relay_errors": [],
+  "controlled_model_requests": 152,
+  "provider_posts": 0,
+  "finished_at": "2026-10-22T00:52:22.328206+00:00",
+  "failure_type": "AssertionError",
+  "qualification": "Single-module source-query resume overlay on development15. Failed actual restore planning; no callback fence/new epoch/release qualification. Native actual2hubs/2brokers and local typed model only.",
+  "raw_report_sha256": "70462737a201725fa14a2cb1409533b688054852031337b3bcd5df40178004a0",
+  "harness_git_commit": "c436330",
+  "restore_plan_failure": {
+    "code": "RESTORE_INVALID_BACKUP",
+    "conflicts": [],
+    "reason": "schema",
+    "retryable": false,
+    "truncated": false
+  },
+  "loss_witness": {
+    "nonce": "126f4861a9d24c5382c0dc8186603e1f",
+    "project_id": "project-red",
+    "reason": "killed",
+    "store_pid": "#PID<0.320.0>",
+    "vm_pid": "2534615"
+  },
+  "backup_files": {
+    "manifest.json": "f68b4d39df8f3cd752218c3a525099ab3af6f588968f13b9bd837180b7b42f92",
+    "project.snapshot": "23a2db32c1cad3b2512a931e4be1d0cd4d729f9f0ffb838cd21f57e371af82ff",
+    "server-config.json": "71bd1febfd3295f00c762c552289c454bfa2cf9000388f5adadd4579c18b46f0"
+  },
+  "backup_accepted_query_counts": {
+    "source": 1,
+    "discovery": 1
+  },
+  "backup_queries": {
+    "source": [
+      {
+        "coverage": [
+          {
+            "project_id": "project-red",
+            "server_id": "15ffa4008f6b42c5b7d7cb51a00ecb3b",
+            "status": "ready"
+          },
+          {
+            "project_id": "project-red",
+            "server_id": "a5bc572efb47425da730c2dfa64d211d",
+            "status": "ready"
+          }
+        ],
+        "created_at": "2026-10-22T00:51:53.252Z",
+        "deadline_at": "2026-10-22T00:53:53.252Z",
+        "id": "sourcequery_3fe5b9a5a92a37a92631678ccf7fde4c_2",
+        "owner_id": "bridge",
+        "project_id": "project-red",
+        "question": "retained-source Which source maintains image decoders?",
+        "results": [
+          {
+            "owner_project_id": "project-red",
+            "owner_server_id": "a5bc572efb47425da730c2dfa64d211d",
+            "requested": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            },
+            "response": null,
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "canonical",
+              "tenant": "query-recovery"
+            },
+            "status": "pending"
+          }
+        ],
+        "status": "pending"
+      }
+    ],
+    "discovery": [
+      {
+        "created_at": "2026-10-22T00:51:53.337Z",
+        "deadline_at": "2026-10-22T00:53:53.337Z",
+        "id": "query_3fe5b9a5a92a37a92631678ccf7fde4c_3",
+        "owner_id": "bridge",
+        "peers": [
+          {
+            "project_id": "project-red",
+            "server_id": "a5bc572efb47425da730c2dfa64d211d",
+            "status": "pending"
+          }
+        ],
+        "project_id": "project-red",
+        "question": "retained-source Which project maintains image decoders?",
+        "responses": [],
+        "status": "pending"
+      }
+    ]
+  },
+  "relay_summary": {
+    "requests": 48,
+    "counts": [
+      {
+        "op": "catalog",
+        "status": 200,
+        "query_status": null,
+        "count": 2
+      },
+      {
+        "op": "identities",
+        "status": 200,
+        "query_status": null,
+        "count": 2
+      },
+      {
+        "op": "source_submit",
+        "status": 202,
+        "query_status": "pending",
+        "count": 9
+      },
+      {
+        "op": "submit",
+        "status": 202,
+        "query_status": "pending",
+        "count": 13
+      },
+      {
+        "op": "source_status",
+        "status": 200,
+        "query_status": "pending",
+        "count": 8
+      },
+      {
+        "op": "status",
+        "status": 200,
+        "query_status": "pending",
+        "count": 13
+      },
+      {
+        "op": "source_submit",
+        "status": 202,
+        "query_status": "completed",
+        "count": 1
+      }
+    ]
+  },
+  "actual_held_response_observations": [
+    {
+      "request": {
+        "catalog_revision": "17689eb9b697253a99956d1ec4f0eb5f6733b88ec618394986c2af370af233cb",
+        "deadline_at": "2026-10-22T00:53:53.252Z",
+        "destination_project_id": "project-red",
+        "op": "source_submit",
+        "origin_project_id": "project-red",
+        "origin_server_id": "15ffa4008f6b42c5b7d7cb51a00ecb3b",
+        "owner_server_id": "a5bc572efb47425da730c2dfa64d211d",
+        "protocol_version": 2,
+        "query_id": "sourcequery_3fe5b9a5a92a37a92631678ccf7fde4c_2",
+        "question": "retained-source Which source maintains image decoders?",
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        }
+      },
+      "status": 202,
+      "response": {
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "query_id": "sourcequery_3fe5b9a5a92a37a92631678ccf7fde4c_2",
+        "response": {
+          "description": "Canonical image decoder project",
+          "matched": true,
+          "model": "controlled-peer",
+          "probability_ppm": 990000,
+          "project_id": "project-red",
+          "publications": [
+            {
+              "author_id": "bridge",
+              "created_at": "2026-10-22T00:51:52.605Z",
+              "data": {},
+              "id": "publication_8029ff88ac4d59fe84a846fc7ee151f0_2",
+              "information_type": "message",
+              "occurred_at": "2026-10-22T00:51:52.605Z",
+              "project_id": "project-red",
+              "source": {
+                "id": "bridge",
+                "kind": "agent"
+              },
+              "text": "Public image decoder evidence"
+            }
+          ],
+          "scope": {
+            "host": "github.com",
+            "provider": "github",
+            "resource": "canonical",
+            "tenant": "query-recovery"
+          },
+          "server_id": "a5bc572efb47425da730c2dfa64d211d"
+        },
+        "scope": {
+          "host": "github.com",
+          "provider": "github",
+          "resource": "canonical",
+          "tenant": "query-recovery"
+        },
+        "server_id": "a5bc572efb47425da730c2dfa64d211d",
+        "status": "completed"
+      },
+      "response_sha256": "93ff9df524c871381391579f7b4558d8ad94b3d99aaf89906ec690f0d2f08983",
+      "phase": "old",
+      "held": true,
+      "released": true,
+      "write_succeeded": true
+    }
+  ],
+  "assessment": "The prior cache-only restart gap is passed with both public query families still pending and original deadlines unchanged. The actual closed backup is unmodified runtime output. Planning rejected its accepted pending-state shape as schema; implementation/validator owner is diagnosing. No backup bytes, IDs, deadlines, labels or expectation changed to bypass validation."
+}

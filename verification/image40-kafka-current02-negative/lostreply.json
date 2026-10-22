@@ -1,0 +1,103 @@
+{
+  "suite": "adhd/real-kafka-lost-reply@1",
+  "started_at": "2026-10-22T06:20:25.679744+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "real-produce-ack-lost-physical-duplicates-logically-deduplicated",
+      "passed": true,
+      "actual_produce_acks": 2,
+      "distinct_offsets": 2
+    },
+    {
+      "name": "logical-delivery-and-source-retry-ack-survive-process-kill-and-broker-replay",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "finished_at": "2026-10-22T06:21:45.141282+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_c62a677c6f0406b6020b0a8d8af13443_1",
+      "operation_id": "restore_c62a677c6f0406b6020b0a8d8af13443_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_c62a677c6f0406b6020b0a8d8af13443_3",
+      "operation_id": "restore_c62a677c6f0406b6020b0a8d8af13443_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_c62a677c6f0406b6020b0a8d8af13443_5",
+      "operation_id": "restore_c62a677c6f0406b6020b0a8d8af13443_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "34a06411be55c18addd886efb486873c990ee08f31e99347fcc3fbe5c8e770a6",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "34a06411be55c18addd886efb486873c990ee08f31e99347fcc3fbe5c8e770a6",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "bfa6dc61a2571953a094bdc8f408ab0ebb9493b92278caf44020326b7f005217",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "stopped",
+        "container_id": "bfa6dc61a2571953a094bdc8f408ab0ebb9493b92278caf44020326b7f005217",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-9dde148214264b1c",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-9fc87745cd254792",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+}

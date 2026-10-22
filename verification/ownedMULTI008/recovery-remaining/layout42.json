@@ -1,0 +1,2612 @@
+{
+  "schema": "adhd/image-recovery-layout-only@1",
+  "execution_authorized": false,
+  "execution_implemented": false,
+  "runtime_ready": false,
+  "executed": false,
+  "planned_rows": 42,
+  "executed_rows": 0,
+  "unrun_rows": 42,
+  "families": {
+    "http": 7,
+    "learned": 1,
+    "crash": 15,
+    "component": 17,
+    "rebind": 2
+  },
+  "original_full52_rows": 52,
+  "selected_rows": [
+    {
+      "name": "admission",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_acceptance.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/admission-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/admission.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "admission",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/admission.json",
+        "scope": "Global auth/uninitialized admission/roles/external receipts/cold missing-target isolation"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/admission-cleanup.json"
+      },
+      "family": "http",
+      "harness": "${FROZEN}/tests/project_recovery_acceptance.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/admission-work",
+        "--report",
+        "${RESULTS}/admission.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json"
+      ]
+    },
+    {
+      "name": "rejections",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_rejections.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/rejections-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/rejections.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "rejections",
+        "outer_timeout_seconds": 1200,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/rejections.json",
+        "scope": "Complete malformed/current-principal/unsupported/conflict/replay authorization denial vectors"
+      },
+      "outer_timeout_seconds": 1200,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 1200,
+        "cleanup_report": "${RESULTS}/rejections-cleanup.json"
+      },
+      "family": "http",
+      "harness": "${FROZEN}/tests/project_recovery_rejections.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/rejections-work",
+        "--report",
+        "${RESULTS}/rejections.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json"
+      ]
+    },
+    {
+      "name": "private",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_private.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/private-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/private.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "private",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/private.json",
+        "scope": "Private recipient originals +ack/current access/disabled identities"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/private-cleanup.json"
+      },
+      "family": "http",
+      "harness": "${FROZEN}/tests/project_recovery_private.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/private-work",
+        "--report",
+        "${RESULTS}/private.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json"
+      ]
+    },
+    {
+      "name": "agent-admission",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_agent_admission.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/agent-admission-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/agent-admission.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "agent-admission",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/agent-admission.json",
+        "scope": "Fail-closed Developer agent creation while ownership evidence missing then exact restored admission"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/agent-admission-cleanup.json"
+      },
+      "family": "http",
+      "harness": "${FROZEN}/tests/project_recovery_agent_admission.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/agent-admission-work",
+        "--report",
+        "${RESULTS}/agent-admission.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json"
+      ]
+    },
+    {
+      "name": "uninitialized-move",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_uninitialized_move.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/uninitialized-move-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/uninitialized-move.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "uninitialized-move",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/uninitialized-move.json",
+        "scope": "Uninitialized registry route relocation with current healthy project intact"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/uninitialized-move-cleanup.json"
+      },
+      "family": "http",
+      "harness": "${FROZEN}/tests/project_recovery_uninitialized_move.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/uninitialized-move-work",
+        "--report",
+        "${RESULTS}/uninitialized-move.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json"
+      ]
+    },
+    {
+      "name": "mixed",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_restore.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/mixed-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/mixed.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "mixed",
+        "outer_timeout_seconds": 5400,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/mixed.json",
+        "scope": "Full12 accepted feature subtrees and public family scans;127retained/103lost/new historical witnesses; realKafka replay/quarantine/repair+audit and repeated restart"
+      },
+      "outer_timeout_seconds": 5400,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 5400,
+        "cleanup_report": "${RESULTS}/mixed-cleanup.json"
+      },
+      "family": "http",
+      "harness": "${FROZEN}/tests/project_recovery_restore.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/mixed-work",
+        "--report",
+        "${RESULTS}/mixed.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json"
+      ]
+    },
+    {
+      "name": "federation-errors",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_federation.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/federation-errors-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/federation-errors.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "federation-errors",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/federation-errors.json",
+        "scope": "Exact v2 unauthorized/halted/recovery503 and healthy peer-project behavior"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/federation-errors-cleanup.json"
+      },
+      "family": "http",
+      "harness": "${FROZEN}/tests/project_recovery_federation.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/federation-errors-work",
+        "--report",
+        "${RESULTS}/federation-errors.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json"
+      ]
+    },
+    {
+      "name": "learned",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_learned.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/learned-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/learned.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--producer-report",
+          "/home/horde/src/adhd/verification/optimization-optimizer-quality.json",
+          "--producer-root",
+          "/home/horde/src/adhd",
+          "--producer-command",
+          "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd\"]"
+        ],
+        "kind": "json-report",
+        "name": "learned",
+        "outer_timeout_seconds": 1800,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/learned.json",
+        "scope": "Actual accepted selected recipe/qualification/all5workflow families preserved under selective restore+cold;model-port kernel fence"
+      },
+      "outer_timeout_seconds": 1800,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 1800,
+        "cleanup_report": "${RESULTS}/learned-cleanup.json"
+      },
+      "family": "learned",
+      "harness": "${FROZEN}/tests/project_recovery_learned.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/learned-work",
+        "--report",
+        "${RESULTS}/learned.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--producer-report",
+        "/home/horde/src/adhd/verification/optimization-optimizer-quality.json",
+        "--producer-root",
+        "/home/horde/src/adhd",
+        "--producer-command",
+        "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/standard-artifacts/88503214d0f7a20d739a180515611d583d134cc17fe90be6e714db02cdddb2a4/artifact-8357c70f92037db433cd\"]"
+      ],
+      "requirements": [
+        "Actual accepted producer report/artifact and six retained source files remain hash-bound before/after; no fabricated selection.",
+        "Producer process-local deny fence plus loaded-map and denied-connect audit; all effective root/project routes checked.",
+        "Private image network and actual in-namespace refusal of historical loopback provider routes; no provider calls."
+      ]
+    },
+    {
+      "name": "crash-damaged-after-install-snapshot",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-damaged-after-install-snapshot-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-damaged-after-install-snapshot.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-install-snapshot",
+          "--deadline",
+          "60",
+          "--damage-stage"
+        ],
+        "kind": "json-report",
+        "name": "crash-damaged-after-install-snapshot",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-damaged-after-install-snapshot.json",
+        "scope": "Complete historical15 matrix:damaged-after-install-snapshot"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-damaged-after-install-snapshot-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-damaged-after-install-snapshot-work",
+        "--report",
+        "${RESULTS}/crash-damaged-after-install-snapshot.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-install-snapshot",
+        "--deadline",
+        "60",
+        "--damage-stage",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-no-default-after-install-snapshot",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-no-default-after-install-snapshot-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-no-default-after-install-snapshot.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-install-snapshot",
+          "--deadline",
+          "60",
+          "--no-default"
+        ],
+        "kind": "json-report",
+        "name": "crash-no-default-after-install-snapshot",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-no-default-after-install-snapshot.json",
+        "scope": "Complete historical15 matrix:no-default-after-install-snapshot"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-no-default-after-install-snapshot-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-no-default-after-install-snapshot-work",
+        "--report",
+        "${RESULTS}/crash-no-default-after-install-snapshot.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-install-snapshot",
+        "--deadline",
+        "60",
+        "--no-default",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-archived-before-cleanup",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-archived-before-cleanup-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-archived-before-cleanup.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "before-cleanup",
+          "--deadline",
+          "60",
+          "--archived"
+        ],
+        "kind": "json-report",
+        "name": "crash-archived-before-cleanup",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-archived-before-cleanup.json",
+        "scope": "Complete historical15 matrix:archived-before-cleanup"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-archived-before-cleanup-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-archived-before-cleanup-work",
+        "--report",
+        "${RESULTS}/crash-archived-before-cleanup.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "before-cleanup",
+        "--deadline",
+        "60",
+        "--archived",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-install-snapshot",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-install-snapshot-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-install-snapshot.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-install-snapshot",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-install-snapshot",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-install-snapshot.json",
+        "scope": "Complete historical15 matrix:after-install-snapshot"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-install-snapshot-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-install-snapshot-work",
+        "--report",
+        "${RESULTS}/crash-after-install-snapshot.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-install-snapshot",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-before-stage-snapshot",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-stage-snapshot-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-stage-snapshot.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "before-stage-snapshot",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-before-stage-snapshot",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-stage-snapshot.json",
+        "scope": "Complete historical15 matrix:before-stage-snapshot"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-before-stage-snapshot-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-before-stage-snapshot-work",
+        "--report",
+        "${RESULTS}/crash-before-stage-snapshot.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "before-stage-snapshot",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-stage-snapshot",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-stage-snapshot-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-stage-snapshot.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-stage-snapshot",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-stage-snapshot",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-stage-snapshot.json",
+        "scope": "Complete historical15 matrix:after-stage-snapshot"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-stage-snapshot-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-stage-snapshot-work",
+        "--report",
+        "${RESULTS}/crash-after-stage-snapshot.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-stage-snapshot",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-before-decision",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-decision-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-decision.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "before-decision",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-before-decision",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-decision.json",
+        "scope": "Complete historical15 matrix:before-decision"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-before-decision-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-before-decision-work",
+        "--report",
+        "${RESULTS}/crash-before-decision.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "before-decision",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-decision",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-decision-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-decision.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-decision",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-decision",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-decision.json",
+        "scope": "Complete historical15 matrix:after-decision"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-decision-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-decision-work",
+        "--report",
+        "${RESULTS}/crash-after-decision.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-decision",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-decision-sync",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-decision-sync-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-decision-sync.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-decision-sync",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-decision-sync",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-decision-sync.json",
+        "scope": "Complete historical15 matrix:after-decision-sync"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-decision-sync-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-decision-sync-work",
+        "--report",
+        "${RESULTS}/crash-after-decision-sync.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-decision-sync",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-install-checkpoint",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-install-checkpoint-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-install-checkpoint.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-install-checkpoint",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-install-checkpoint",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-install-checkpoint.json",
+        "scope": "Complete historical15 matrix:after-install-checkpoint"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-install-checkpoint-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-install-checkpoint-work",
+        "--report",
+        "${RESULTS}/crash-after-install-checkpoint.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-install-checkpoint",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-route-selected",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-route-selected-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-route-selected.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-route-selected",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-route-selected",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-route-selected.json",
+        "scope": "Complete historical15 matrix:after-route-selected"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-route-selected-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-route-selected-work",
+        "--report",
+        "${RESULTS}/crash-after-route-selected.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-route-selected",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-route-ready",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-route-ready-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-route-ready.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-route-ready",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-route-ready",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-route-ready.json",
+        "scope": "Complete historical15 matrix:after-route-ready"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-route-ready-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-route-ready-work",
+        "--report",
+        "${RESULTS}/crash-after-route-ready.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-route-ready",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-completion",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-completion-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-completion.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-completion",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-completion",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-completion.json",
+        "scope": "Complete historical15 matrix:after-completion"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-completion-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-completion-work",
+        "--report",
+        "${RESULTS}/crash-after-completion.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-completion",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-before-cleanup",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-cleanup-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-cleanup.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "before-cleanup",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-before-cleanup",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-before-cleanup.json",
+        "scope": "Complete historical15 matrix:before-cleanup"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-before-cleanup-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-before-cleanup-work",
+        "--report",
+        "${RESULTS}/crash-before-cleanup.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "before-cleanup",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "crash-after-cleanup",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_crash.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-cleanup-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-cleanup.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--crash-at",
+          "after-cleanup",
+          "--deadline",
+          "60"
+        ],
+        "kind": "json-report",
+        "name": "crash-after-cleanup",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/crash-after-cleanup.json",
+        "scope": "Complete historical15 matrix:after-cleanup"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/crash-after-cleanup-cleanup.json"
+      },
+      "family": "crash",
+      "harness": "${FROZEN}/tests/project_recovery_crash.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--eventing-rest-url",
+        "http://127.0.0.1:18082",
+        "--keep-work",
+        "${RESULTS}/crash-after-cleanup-work",
+        "--report",
+        "${RESULTS}/crash-after-cleanup.json",
+        "--recovery-schema",
+        "${FROZEN}/components/hub/project-recovery/interface.schema.json",
+        "--crash-at",
+        "after-cleanup",
+        "--deadline",
+        "60",
+        "--image-fault-library",
+        "${PROJECT_RECOVERY_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${PROJECT_RECOVERY_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "primitive-allocator",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_allocator.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "kind": "exunit",
+        "name": "primitive-allocator",
+        "outer_timeout_seconds": 600,
+        "scope": "Pure allocator namespace/counter boundaries"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-allocator-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-allocator",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_allocator.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-allocator-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-epoch",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_epoch_fences.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "kind": "exunit",
+        "name": "primitive-epoch",
+        "outer_timeout_seconds": 600,
+        "scope": "Store/worker epoch gates"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-epoch-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-epoch",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_epoch_fences.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-epoch-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-http-epoch",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_http_epoch.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "kind": "exunit",
+        "name": "primitive-http-epoch",
+        "outer_timeout_seconds": 600,
+        "scope": "Actual resource/network epoch cancellation component"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-http-epoch-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-http-epoch",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_http_epoch.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-http-epoch-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-transport",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_transport_restore.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "kind": "exunit",
+        "name": "primitive-transport",
+        "outer_timeout_seconds": 600,
+        "scope": "Pure restored transport metadata/history"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-transport-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-transport",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_transport_restore.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-transport-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-work",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_work.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "kind": "exunit",
+        "name": "primitive-work",
+        "outer_timeout_seconds": 600,
+        "scope": "Pure accepted work classification/deadline/pause preservation"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-work-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-work",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_work.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-work-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-registry",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_registry.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "kind": "exunit",
+        "name": "primitive-registry",
+        "outer_timeout_seconds": 600,
+        "scope": "Registry identity/loss/integrity"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-registry-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-registry",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_registry.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-registry-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-files",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_files.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "/home/horde/src/adhd/_build/recovery38-native-final/files-work"
+        ],
+        "kind": "exunit",
+        "name": "primitive-files",
+        "outer_timeout_seconds": 600,
+        "scope": "Bounded strict backup filesystem/ETF helpers"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-files-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-files",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_files.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "${RESULTS}/primitive-files-capsule-work/files-work"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-files-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-routes",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_routes.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "/home/horde/src/adhd/_build/recovery38-native-final/routes-work"
+        ],
+        "kind": "exunit",
+        "name": "primitive-routes",
+        "outer_timeout_seconds": 600,
+        "scope": "Durable registry route path resolution"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-routes-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-routes",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_routes.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "${RESULTS}/primitive-routes-capsule-work/routes-work"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-routes-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-install",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_install.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "/home/horde/src/adhd/_build/recovery38-native-final/install-work"
+        ],
+        "kind": "exunit",
+        "name": "primitive-install",
+        "outer_timeout_seconds": 600,
+        "scope": "Install graph/metadata boundaries"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-install-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-install",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_install.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "${RESULTS}/primitive-install-capsule-work/install-work"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-install-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-handoff",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_handoff.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "/home/horde/src/adhd/_build/recovery38-native-final/handoff-work"
+        ],
+        "kind": "exunit",
+        "name": "primitive-handoff",
+        "outer_timeout_seconds": 600,
+        "scope": "Checkpoint writer handoff"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-handoff-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-handoff",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_handoff.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "${RESULTS}/primitive-handoff-capsule-work/handoff-work"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-handoff-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-capacity",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_capacity.exs",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "/home/horde/src/adhd/_build/recovery38-native-final/capacity-work"
+        ],
+        "kind": "exunit",
+        "name": "primitive-capacity",
+        "outer_timeout_seconds": 600,
+        "scope": "Shared durable receipt/operation capacity"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-capacity-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-capacity",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_capacity.exs",
+        "arguments": [
+          "/app/hub.exs",
+          "${RESULTS}/primitive-capacity-capsule-work/capacity-work"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-capacity-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-backup-validator",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_backup_validation.exs",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38/project_backup_validation.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/validator/fixtures.json",
+          "/home/horde/src/adhd/_build/recovery38-native-final/backup-validator.json"
+        ],
+        "kind": "json-report",
+        "name": "primitive-backup-validator",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/backup-validator.json",
+        "scope": "Complete preserved accepted/principal/native feature validation33 vectors"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/primitive-backup-validator-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-backup-validator",
+        "kind": "json",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_backup_validation.exs",
+        "arguments": [
+          "/app/hub.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38/project_backup_validation.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/validator/fixtures.json",
+          "${RESULTS}/primitive-backup-validator-capsule-work/backup-validator.json"
+        ],
+        "outer_timeout_seconds": 900,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-backup-validator-capsule-work",
+        "report": "${RESULTS}/primitive-backup-validator-capsule-work/backup-validator.json"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-query-validator",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_backup_query_schema.exs",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38/project_backup_validation.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/pending-query",
+          "/home/horde/src/adhd/_build/recovery38-native-final/query-validator.json"
+        ],
+        "kind": "json-report",
+        "name": "primitive-query-validator",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/query-validator.json",
+        "scope": "Actual accepted pending source/discovery backup+14 strict JSONSchema negative vectors"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/primitive-query-validator-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-query-validator",
+        "kind": "json",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_backup_query_schema.exs",
+        "arguments": [
+          "/app/hub.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38/project_backup_validation.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/pending-query",
+          "${RESULTS}/primitive-query-validator-capsule-work/query-validator.json"
+        ],
+        "outer_timeout_seconds": 900,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-query-validator-capsule-work",
+        "report": "${RESULTS}/primitive-query-validator-capsule-work/query-validator.json"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-source-pin",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/source_query_pin_review.exs",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "/home/horde/src/adhd/_build/recovery38-native-final/source-pin.json"
+        ],
+        "kind": "json-report",
+        "name": "primitive-source-pin",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/source-pin.json",
+        "scope": "Pin wait/removal/conflict/no-retarget isolated exact artifact"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/primitive-source-pin-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-source-pin",
+        "kind": "json",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/source_query_pin_review.exs",
+        "arguments": [
+          "/app/hub.exs",
+          "${RESULTS}/primitive-source-pin-capsule-work/source-pin.json"
+        ],
+        "outer_timeout_seconds": 900,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-source-pin-capsule-work",
+        "report": "${RESULTS}/primitive-source-pin-capsule-work/source-pin.json"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-retirement",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_retirement_review.exs",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "/home/horde/src/adhd/_build/recovery38-native-final/retirement-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/retirement.json"
+        ],
+        "kind": "json-report",
+        "name": "primitive-retirement",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/retirement.json",
+        "scope": "Focused retirement and resource-loop recovery component"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/primitive-retirement-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-retirement",
+        "kind": "json",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_retirement_review.exs",
+        "arguments": [
+          "/app/hub.exs",
+          "${RESULTS}/primitive-retirement-capsule-work/retirement-work",
+          "${RESULTS}/primitive-retirement-capsule-work/retirement.json"
+        ],
+        "outer_timeout_seconds": 900,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-retirement-capsule-work",
+        "report": "${RESULTS}/primitive-retirement-capsule-work/retirement.json"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "primitive-checkpoint",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/recovery_checkpoint.exs",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38/recovery_checkpoint.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/otp29.dets",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/complete-product.dets",
+          "/home/horde/src/adhd/_build/recovery38-native-final/checkpoint-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/checkpoint.json",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/actual-checkpoints/list.json"
+        ],
+        "kind": "json-report",
+        "name": "primitive-checkpoint",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/checkpoint.json",
+        "scope": "Bounded rawDETSv9 +safeETF hostile vectors and actual OTP27 lookup equality; historical OTP29 producer file retained, no currentimage claim; all23 retained real checkpoint specimens from prior complete matrix preserved"
+      },
+      "outer_timeout_seconds": 900,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 900,
+        "cleanup_report": "${RESULTS}/primitive-checkpoint-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-checkpoint",
+        "kind": "json",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/recovery_checkpoint.exs",
+        "arguments": [
+          "/app/hub.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38/recovery_checkpoint.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/otp29.dets",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/complete-product.dets",
+          "${RESULTS}/primitive-checkpoint-capsule-work/checkpoint-work",
+          "${RESULTS}/primitive-checkpoint-capsule-work/checkpoint.json",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/actual-checkpoints/list.json"
+        ],
+        "outer_timeout_seconds": 900,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-checkpoint-capsule-work",
+        "report": "${RESULTS}/primitive-checkpoint-capsule-work/checkpoint.json"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    },
+    {
+      "name": "rebind",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/storage_rebind.py",
+          "--command",
+          "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs\"]",
+          "--artifact",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--source",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/rebind-source",
+          "--work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/rebind-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/rebind.json",
+          "--history-source",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/rebind-history"
+        ],
+        "kind": "json-report",
+        "name": "rebind",
+        "outer_timeout_seconds": 2400,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/rebind.json",
+        "scope": "Full stoppedserver3project copiedset+byte/ID/epoch preservation+cold+3actualfsync kills"
+      },
+      "outer_timeout_seconds": 2400,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 2400,
+        "cleanup_report": "${RESULTS}/rebind-cleanup.json"
+      },
+      "family": "rebind",
+      "harness": "${FROZEN}/tests/storage_rebind.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--artifact",
+        "${ARTIFACT}",
+        "--source",
+        "${FROZEN}/fixtures/rebind-source",
+        "--work",
+        "${RESULTS}/rebind-work",
+        "--report",
+        "${RESULTS}/rebind.json",
+        "--history-source",
+        "${FROZEN}/fixtures/rebind-history",
+        "--image-fault-library",
+        "${REBIND_FAULT_LIBRARY}",
+        "--image-fault-proof",
+        "${REBIND_FAULT_PROOF}"
+      ]
+    },
+    {
+      "name": "rebind-hostile",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/storage_rebind_hostile.py",
+          "--command",
+          "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs\"]",
+          "--artifact",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--source",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/rebind-source",
+          "--work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/rebind-hostile-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/rebind-hostile.json",
+          "--vectors",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/fixtures/hostile-checkpoints"
+        ],
+        "kind": "json-report",
+        "name": "rebind-hostile",
+        "outer_timeout_seconds": 2400,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/rebind-hostile.json",
+        "scope": "Actual hostile checkpoint CLI conflicts before decision, zero copiedbyte mutation"
+      },
+      "outer_timeout_seconds": 2400,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 2400,
+        "cleanup_report": "${RESULTS}/rebind-hostile-cleanup.json"
+      },
+      "family": "rebind",
+      "harness": "${FROZEN}/tests/storage_rebind_hostile.py",
+      "harness_arguments": [
+        "--image",
+        "${IMAGE}",
+        "--image-manifest",
+        "${MANIFEST}",
+        "--artifact",
+        "${ARTIFACT}",
+        "--source",
+        "${FROZEN}/fixtures/rebind-source",
+        "--work",
+        "${RESULTS}/rebind-hostile-work",
+        "--report",
+        "${RESULTS}/rebind-hostile.json",
+        "--vectors",
+        "${FROZEN}/fixtures/hostile-checkpoints"
+      ]
+    },
+    {
+      "name": "primitive-journal",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_journal.exs",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/recovery-private04b-fixture/hub.json"
+        ],
+        "kind": "exunit",
+        "name": "primitive-journal",
+        "outer_timeout_seconds": 600,
+        "scope": "Closed journal negative/integrity variants in memory only"
+      },
+      "outer_timeout_seconds": 600,
+      "executed": false,
+      "runtime_ready": false,
+      "entry_wrapper": {
+        "script": "${FROZEN}/tests/image_recovery_entry.py",
+        "harness_sha256": "${FROZEN_HARNESS_SHA256}",
+        "timeout": 600,
+        "cleanup_report": "${RESULTS}/primitive-journal-cleanup.json"
+      },
+      "family": "component",
+      "harness": "${FROZEN}/tests/image_recovery_component.py",
+      "component_job": {
+        "application_integration_claim": false,
+        "name": "primitive-journal",
+        "kind": "exunit",
+        "script": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_journal.exs",
+        "arguments": [
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/source38",
+          "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/recovery-private04b-fixture/hub.json"
+        ],
+        "outer_timeout_seconds": 600,
+        "cwd": "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen",
+        "readonly_mounts": [
+          [
+            "${COMPONENT_SNAPSHOT}",
+            "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen"
+          ],
+          [
+            "${JOURNAL_CONFIG_COPY}",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/recovery-private04b-fixture/hub.json"
+          ],
+          [
+            "${JOURNAL_RECOVERY_COPY}",
+            "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/recovery-private04b-fixture/hub.json.recovery"
+          ]
+        ],
+        "work": "${RESULTS}/primitive-journal-capsule-work"
+      },
+      "component_requirements": [
+        "Copy original frozen fixture tree byte-identically and bind read-only at original absolute cwd; no originals rewritten.",
+        "Replace only copied target source/spec bytes with exact selected admitted image authority; statically assemble full declared source list to actual /app/hub.exs SHA.",
+        "Actual PID1 BEAM/private namespace/immutable image and OTP29 runtime metadata barrier before unchanged vectors; network none; owned output only.",
+        "Use source-bound actual image component helper; preserve original timeout and ExUnit/JSON outcomes."
+      ]
+    }
+  ],
+  "separate_dependencies": [
+    {
+      "name": "schema-export",
+      "status": "separate-transport-gate",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "[\"protocol-schema\"]"
+        ],
+        "expected_id": "urn:adhd:protocol:2.1",
+        "export": "/home/horde/src/adhd/_build/recovery38-native-final/schema.json",
+        "kind": "export",
+        "name": "schema-export",
+        "outer_timeout_seconds": 900,
+        "scope": "Exact candidate schema export"
+      }
+    },
+    {
+      "name": "openapi-export",
+      "status": "separate-transport-gate",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "[\"protocol-openapi\"]"
+        ],
+        "expected_version": "2.1.0",
+        "export": "/home/horde/src/adhd/_build/recovery38-native-final/openapi.json",
+        "kind": "export",
+        "name": "openapi-export",
+        "outer_timeout_seconds": 900,
+        "scope": "Exact candidate OpenAPI export"
+      }
+    },
+    {
+      "name": "contract",
+      "status": "separate-transport-gate",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_contract.py",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/contract.json"
+        ],
+        "kind": "json-report",
+        "name": "contract",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/contract.json",
+        "scope": "All authored87 wire vectors+6examples"
+      }
+    },
+    {
+      "name": "combined-protocol",
+      "status": "separate-transport-gate",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_protocol.py",
+          "--schema",
+          "/home/horde/src/adhd/_build/recovery38-native-final/schema.json",
+          "--openapi",
+          "/home/horde/src/adhd/_build/recovery38-native-final/openapi.json",
+          "--baseline-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/docs/protocol/schema.json",
+          "--candidate",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--candidate-command",
+          "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs\"]",
+          "--baseline-candidate",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs",
+          "--baseline-command",
+          "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-34.exs\"]",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/combined-protocol.json"
+        ],
+        "kind": "json-report",
+        "name": "combined-protocol",
+        "outer_timeout_seconds": 900,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/combined-protocol.json",
+        "scope": "Exact current2.1 export bindings +actual accepted2.0 baseline; closed defs/errors/admin/unions"
+      }
+    },
+    {
+      "name": "wire",
+      "status": "separate-transport-gate",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/protocol_acceptance.py",
+          "--command",
+          "[\"/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir\", \"/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs\"]",
+          "--profile-version",
+          "2.1.0",
+          "--published-schema",
+          "/home/horde/src/adhd/_build/recovery38-native-final/schema.json",
+          "--published-openapi",
+          "/home/horde/src/adhd/_build/recovery38-native-final/openapi.json",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--port-lock",
+          "/home/horde/src/adhd/_build/roadmap/foundation-port.lock",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/wire.json"
+        ],
+        "kind": "json-report",
+        "name": "wire",
+        "outer_timeout_seconds": 1200,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/wire.json",
+        "scope": "Full existing8 HTTP/SDK/CLI wire predicates exact2.1 compared to actually bound exports +normative87 checker; export files are NOT claimed published2.1 docs"
+      }
+    },
+    {
+      "name": "pending-model",
+      "status": "completed-independent-image5/28",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_pending_model.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/pending-model-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/pending-model.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "pending-model",
+        "outer_timeout_seconds": 1200,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/pending-model.json",
+        "scope": "Actual held controlled HTTP callback fenced across live nondefault Store loss/target restore;original+currentepoch/Blue"
+      }
+    },
+    {
+      "name": "pending-kafka",
+      "status": "completed-independent-image5/28",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_pending_kafka.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/pending-kafka-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/pending-kafka.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json"
+        ],
+        "kind": "json-report",
+        "name": "pending-kafka",
+        "outer_timeout_seconds": 1200,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/pending-kafka.json",
+        "scope": "Actual held real Kafka POST/GET replies fenced across sameVM target restore and newepoch topic/Blue"
+      }
+    },
+    {
+      "name": "outgoing-queries",
+      "status": "completed-independent-image5/28",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_queries.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/outgoing-queries-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/outgoing-queries.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--loss-runner",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_live_loss.exs",
+          "--peer-eventing-rest-url",
+          "http://127.0.0.1:18085"
+        ],
+        "kind": "json-report",
+        "name": "outgoing-queries",
+        "outer_timeout_seconds": 1800,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/outgoing-queries.json",
+        "scope": "Source/discovery allocators+accepted pinned queries+same-ID retry/late callback/deadlines/currentowner cold resume"
+      }
+    },
+    {
+      "name": "incoming-queries",
+      "status": "completed-independent-image5/28",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_incoming.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/incoming-queries-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/incoming-queries.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--loss-runner",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_live_loss.exs",
+          "--peer-eventing-rest-url",
+          "http://127.0.0.1:18085"
+        ],
+        "kind": "json-report",
+        "name": "incoming-queries",
+        "outer_timeout_seconds": 1800,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/incoming-queries.json",
+        "scope": "ALL accepted incoming source/discovery queries, command/evidence pins/revocation/composition; no revocation-only subset"
+      }
+    },
+    {
+      "name": "peer-epoch",
+      "status": "completed-independent-image5/28",
+      "original": {
+        "argv": [
+          "/home/horde/src/adhd/.venv/bin/python",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_peer_epoch.py",
+          "--hub",
+          "/home/horde/src/adhd/_build/roadmap/multi/hub-filter-38-local-dev01.exs",
+          "--eventing-rest-url",
+          "http://127.0.0.1:18082",
+          "--keep-work",
+          "/home/horde/src/adhd/_build/recovery38-native-final/peer-epoch-work",
+          "--report",
+          "/home/horde/src/adhd/_build/recovery38-native-final/peer-epoch.json",
+          "--recovery-schema",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/components/hub/project-recovery/interface.schema.json",
+          "--loss-runner",
+          "/home/horde/src/adhd/.worktrees/contracts/_build/recovery38-plan/frozen/tests/project_recovery_live_loss.exs"
+        ],
+        "kind": "json-report",
+        "name": "peer-epoch",
+        "outer_timeout_seconds": 1200,
+        "report": "/home/horde/src/adhd/_build/recovery38-native-final/peer-epoch.json",
+        "scope": "Held actual directory/catalog reply cannot seed restored epoch; fresh refresh succeeds/Blue"
+      }
+    }
+  ],
+  "constraints": [
+    "Descriptor templates only; deliberately not an executable or final frozen plan.",
+    "Diagnostic admitted38 has known ownership defect; corrected successor requires fresh admitted image/input/ABI proof binding.",
+    "Wait for root custody/probe fixes and full helper review before final snapshot; then full SET/no symlinks/hash/root/input/tool bindings, actual driver hash, exclusive fsynced once gate.",
+    "Final execution serial fail-fast, explicit attempted/executed/unrun, no resampling; original bounds/scenarios/assertions unchanged.",
+    "Entry supervisor retains BaseException deadline+finally/owned cleanup; child success needs exit0 and report passedtrue and complete runtime custody after cleanup.",
+    "All17 component rows are component-runtime evidence, never additional deployed-hub integration or admission claims.",
+    "Completed callback5/28 and first5 transport rows remain separate evidence;42 does not relabel full52 closed.",
+    "No app/model/compiler/loader/broker services start during layout derivation."
+  ],
+  "original_plan_sha256": "cdfe237f760b18b46680579e88a92f40945f20482cab498f568a319327d4d821"
+}

@@ -1,0 +1,139 @@
+{
+  "admission_sha256": "a78519154311d105ed84ed2e0887490b47d22807141eb2371163fc2c1a0b0f03",
+  "bounds": {
+    "CPU": 1,
+    "containers": 2,
+    "memory": 201326592,
+    "output_each": 65536,
+    "output_total": 1048576,
+    "parallelism": 1,
+    "pids": 64,
+    "retries": 0,
+    "seconds_each": 30
+  },
+  "compiler_execution": {
+    "ELF_independently_parsed_no_interpreter_or_needed": true,
+    "compile_record_sha256": "ae7975bff9a020105636cb56427ac226c18871aea6f4d4f5a4f3652f084dfdfc",
+    "elf_bytes": 790848,
+    "elf_sha256": "315f55a2edb05d04a542772628c3ce2688ade29c291342e9ca9a81fe6868bda7",
+    "exit_code": 0,
+    "host_dependencies_sha256": "8446822fe0221f5bc2ff63d8547b1039b76b299055a45db30e246a4c828ba542",
+    "owner": "root",
+    "plan_sha256": "605e96e4bb7f67b4c776239e1c7dfed0427cfc3f1e1fe3d2a7a8be2561554217",
+    "session": 20247,
+    "source_sha256": "abad9ee2e4fd61ae9f0b881d9411387f9e9843bfe3e318450bbaac28c63f9e5c",
+    "stderr_empty": true,
+    "stdout_empty": true
+  },
+  "context_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+  "driver_sha256": "83ec2f5e0702ce2dd6986630b2a901d867cc55b394685b70f3cd51053ff33e0a",
+  "expected_qualification_observations": {
+    "declared_total": 25,
+    "fault_categories_native_and_original_Elixir": 14,
+    "native_invalid_argv_exit3": 5,
+    "static_three_ports_native_and_original_Elixir": 6
+  },
+  "fault_categories": [
+    [
+      "fragmented",
+      10001,
+      0,
+      "REACHABLE\n"
+    ],
+    [
+      "wrong",
+      10002,
+      2,
+      ""
+    ],
+    [
+      "short",
+      10003,
+      2,
+      ""
+    ],
+    [
+      "extra-suffix-prefix-semantics",
+      10004,
+      0,
+      "REACHABLE\n"
+    ],
+    [
+      "receive-timeout",
+      10005,
+      2,
+      ""
+    ],
+    [
+      "refused",
+      10006,
+      0,
+      "DENIED\n"
+    ],
+    [
+      "unroutable",
+      9092,
+      0,
+      "DENIED\n"
+    ]
+  ],
+  "frozen_actual_driver_isolated_verify_exit_code": 0,
+  "image": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "input_closure": {
+    "directories": [],
+    "files": {
+      "admission.json": "a78519154311d105ed84ed2e0887490b47d22807141eb2371163fc2c1a0b0f03",
+      "compile-proof.json": "ae7975bff9a020105636cb56427ac226c18871aea6f4d4f5a4f3652f084dfdfc",
+      "compiler-plan.json": "605e96e4bb7f67b4c776239e1c7dfed0427cfc3f1e1fe3d2a7a8be2561554217",
+      "context-manifest.json": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+      "driver.py": "83ec2f5e0702ce2dd6986630b2a901d867cc55b394685b70f3cd51053ff33e0a",
+      "fault-server.exs": "869706fb3eee5eca395a82128068e921aafc35c420cc51d2cdba42695793d846",
+      "original-probe.exs": "f781def0851bb177a152b22e5812a7c57e30e345be0c9e0194a067374a925ca0",
+      "policy.py": "b6e462cf5293e06e2ee2f419bb105db5f8bb2d145a85fe1f5323429aac4c0116",
+      "prepare.py": "bfbd46f31f6d878c7fc208f3bd105c37932b9c1932a1b646af35189cafc75619",
+      "runner.py": "44e260d548226907620123a725e04a69b4f6667f27dcac5c9b9f944290748f6f",
+      "tcp": "315f55a2edb05d04a542772628c3ce2688ade29c291342e9ca9a81fe6868bda7",
+      "tcp.c": "abad9ee2e4fd61ae9f0b881d9411387f9e9843bfe3e318450bbaac28c63f9e5c"
+    }
+  },
+  "once_marker_absent": true,
+  "plan_sha256": "c3109a9dbab108cfdca813e09a8d6166c37c3349ca28163e59899ca2c3078c35",
+  "preparation_passed": true,
+  "protocol": {
+    "DENIED_source_errno_mapping": [
+      "ETIMEDOUT",
+      "EHOSTUNREACH",
+      "ENETUNREACH",
+      "ECONNREFUSED"
+    ],
+    "actual_connect_error_cases": "Refused/unroutable only, no false all-four-errno runtime claim",
+    "banner_bytes": 15,
+    "correct_banner_hex": "616468642d706f6c6963792d76310a",
+    "extra_suffix": "Correct15-byte prefix accepted, exactly matching original recv15 semantics",
+    "infrastructure_failure": "Never interpreted as DENIED",
+    "original_probe_literal_sha256": "f781def0851bb177a152b22e5812a7c57e30e345be0c9e0194a067374a925ca0"
+  },
+  "pure_guard_cases": 13,
+  "pure_process_starts": 0,
+  "runtime_executed": false,
+  "schema": "adhd/network-policy-static-protocol-preparation-review@1",
+  "scope": "Preparation and root-owned compile evidence only. Native TCP helper/original Elixir protocol probes remain unstarted. e2 historical admitted image explicit per root correction; no compiled05/app/Kafka/CNI/routes or cause qualification. No provider/network service/cluster/compiler/native launches by preparation agent.",
+  "superseded_05_drafts": [
+    {
+      "name": "network-policy-static-protocol01",
+      "plan_sha256": "8ae6b346295574c9edbb1f76ff83d907ce87871476f7a0cd84080795b4466092",
+      "unstarted": true
+    },
+    {
+      "name": "network-policy-static-protocol02",
+      "plan_sha256": "63b58fc34324d9010680d217a609c1773b385ae8a8e5913bba01e72d5a1d38e6",
+      "unstarted": true
+    },
+    {
+      "name": "network-policy-static-protocol03",
+      "plan_sha256": "4a8152abfafb97230741f32d30662f1cccf65f191444076113a54a524e9a38dc",
+      "unstarted": true
+    }
+  ],
+  "test_sha256": "a645e9cb5b51b1efd60f5052f92cd8967ecd2d3333b0eaba8080ab2dc8413201"
+}

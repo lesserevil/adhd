@@ -1,0 +1,767 @@
+{
+  "suite": "adhd/eventing-retention-recovery@1",
+  "started_at": "2026-10-22T14:33:22.449915+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-postdecision-retention-failure-keeps-desired-policy-and-decision",
+      "passed": true,
+      "failure_type": {
+        "http_status": 500,
+        "domain_code": "INTERNAL"
+      },
+      "alters": [
+        {
+          "at": 237516.203249863,
+          "method": "POST",
+          "category": "alter",
+          "selected_create": false,
+          "status": 204,
+          "injected": false,
+          "actual_configuration": null,
+          "durable_transaction_present": true
+        }
+      ],
+      "injected_readbacks": [
+        {
+          "at": 237516.222521858,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 503,
+          "injected": true,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "302400000"
+            ]
+          },
+          "durable_transaction_present": true
+        }
+      ]
+    },
+    {
+      "name": "unchanged-files-cold-start-replays-desired-retention-before-readiness",
+      "passed": true,
+      "actual_desired_readbacks": [
+        {
+          "at": 237524.509892881,
+          "method": "GET",
+          "category": "configs",
+          "selected_create": false,
+          "status": 200,
+          "injected": false,
+          "actual_configuration": {
+            "cleanup_policy": [
+              "delete"
+            ],
+            "retention_ms": [
+              "302400000"
+            ]
+          },
+          "durable_transaction_present": true
+        }
+      ],
+      "first_healthy_headers_at": 237524.880567929,
+      "stable_route": true,
+      "stable_next_offset": 1,
+      "original_and_ack_preserved": true,
+      "mid_receipt_idempotent": true
+    },
+    {
+      "name": "second-cold-start-does-not-repeat-alter-reset-offset-or-replay-ack",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "provider_calls": 0,
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "harness_sha256": "389adbf182f3bf9658b97d4c64f2b85b85175dbe20de5447dd5639eee22eec9a",
+  "proxy_sha256": "7325d9b465a3d8172d77974f6c381276e6b766c5a14cd876f043d27d75e2f313",
+  "capacity_premise": {
+    "resources": {
+      "ingress_tickets": 0,
+      "lanes": {
+        "eventing": {
+          "active": 0,
+          "caller_deaths": 0,
+          "fenced": 0,
+          "grants": 18,
+          "ingress_rejections": 0,
+          "projects": {},
+          "queue_rejections": 0,
+          "queued": 0,
+          "queued_timeouts": 0
+        },
+        "model": {
+          "active": 0,
+          "caller_deaths": 0,
+          "fenced": 0,
+          "grants": 0,
+          "ingress_rejections": 0,
+          "projects": {},
+          "queue_rejections": 0,
+          "queued": 0,
+          "queued_timeouts": 0
+        },
+        "network": {
+          "active": 0,
+          "caller_deaths": 0,
+          "fenced": 0,
+          "grants": 0,
+          "ingress_rejections": 0,
+          "projects": {},
+          "queue_rejections": 0,
+          "queued": 0,
+          "queued_timeouts": 0
+        }
+      },
+      "limits": {
+        "eventing_concurrency": 16,
+        "max_waiters": 1024,
+        "model_concurrency": 4,
+        "network_concurrency": 16,
+        "project_eventing_concurrency": 2,
+        "project_model_concurrency": 1,
+        "project_network_concurrency": 4
+      },
+      "started": true,
+      "waiting": 0
+    },
+    "premise": {
+      "global_limit": 16,
+      "per_project_limit": 2,
+      "blue_active": 0,
+      "spare_global_tickets_at_observation": 16,
+      "spare_blue_tickets_at_observation": 2
+    }
+  },
+  "native_runtime_cases": [],
+  "image_runtimes": [
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+      "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "bccf9ef20501169acb39eac55727e0b1fd91d02911f72c0efc7807c432ef795d",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "bccf9ef20501169acb39eac55727e0b1fd91d02911f72c0efc7807c432ef795d",
+          "exit_code": 1,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "37475361343b09d81f775b939efe3fd2bd005710f27e3cf5bda35b0cba02def1",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "37475361343b09d81f775b939efe3fd2bd005710f27e3cf5bda35b0cba02def1",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "b0579256066631ad87d3ce31b838ea5f15bd67149b22136a122e1e7790129501",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "b0579256066631ad87d3ce31b838ea5f15bd67149b22136a122e1e7790129501",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-f071bc7fe7114f57",
+          "container_id": null,
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-8e0fe7c868134f72",
+          "container_id": null,
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false
+    },
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+      "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "bccf9ef20501169acb39eac55727e0b1fd91d02911f72c0efc7807c432ef795d",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "bccf9ef20501169acb39eac55727e0b1fd91d02911f72c0efc7807c432ef795d",
+          "exit_code": 1,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "37475361343b09d81f775b939efe3fd2bd005710f27e3cf5bda35b0cba02def1",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "37475361343b09d81f775b939efe3fd2bd005710f27e3cf5bda35b0cba02def1",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "b0579256066631ad87d3ce31b838ea5f15bd67149b22136a122e1e7790129501",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "b0579256066631ad87d3ce31b838ea5f15bd67149b22136a122e1e7790129501",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-f071bc7fe7114f57",
+          "container_id": null,
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-8e0fe7c868134f72",
+          "container_id": null,
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false
+    },
+    {
+      "kind": "docker",
+      "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+      "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+      "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "bccf9ef20501169acb39eac55727e0b1fd91d02911f72c0efc7807c432ef795d",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "bccf9ef20501169acb39eac55727e0b1fd91d02911f72c0efc7807c432ef795d",
+          "exit_code": 1,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "37475361343b09d81f775b939efe3fd2bd005710f27e3cf5bda35b0cba02def1",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "37475361343b09d81f775b939efe3fd2bd005710f27e3cf5bda35b0cba02def1",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        },
+        {
+          "action": "started",
+          "container_id": "b0579256066631ad87d3ce31b838ea5f15bd67149b22136a122e1e7790129501",
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+        },
+        {
+          "action": "stopped",
+          "container_id": "b0579256066631ad87d3ce31b838ea5f15bd67149b22136a122e1e7790129501",
+          "exit_code": 0,
+          "wait_observed": true,
+          "observed_absent": true
+        }
+      ],
+      "payload_verified": true,
+      "payload_probe_lifecycle": [
+        {
+          "owned_name": "adhd-accept-probe-f071bc7fe7114f57",
+          "container_id": null,
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-8e0fe7c868134f72",
+          "container_id": null,
+          "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false,
+      "cleanup_blocked": false
+    }
+  ],
+  "proxy_cleanup": {
+    "handlers": 0,
+    "thread_alive": false,
+    "failures": []
+  },
+  "cleanup_failure_types": [],
+  "diagnostic": {
+    "case": "retention-recovery",
+    "selected_operation": null,
+    "elapsed_seconds": null,
+    "eventing_timeout_ms": 1000,
+    "recovery_timeout_ms": null,
+    "events": [
+      {
+        "at": 237515.936192575,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237515.946571384,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237515.957440359,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "604800000"
+          ]
+        },
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237516.027657221,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237516.072719065,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237516.083569729,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237516.09372726,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "604800000"
+          ]
+        },
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237516.203249863,
+        "method": "POST",
+        "category": "alter",
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237516.211404631,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237516.222521858,
+        "method": "GET",
+        "category": "configs",
+        "status": 503,
+        "selected_create": false,
+        "injected": true,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237516.946235561,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237524.475513056,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237524.497328193,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237524.509892881,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": true
+      },
+      {
+        "at": 237524.889433622,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237524.899732976,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237524.9156693,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237524.975609505,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237524.992031492,
+        "method": "POST",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237524.997885083,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237525.002414283,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237525.920523352,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237526.032471337,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237526.947191376,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237535.418109243,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237535.43972271,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237535.451380993,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "302400000"
+          ]
+        },
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237535.537981448,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237535.575718691,
+        "method": "POST",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237535.584062446,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237535.591362362,
+        "method": "POST",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237536.516571344,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237536.674958465,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 237537.588514296,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      }
+    ],
+    "events_available": true,
+    "event_count": 34,
+    "events_truncated": false,
+    "assertion_or_primary_type": null,
+    "cleanup_failure_types": [],
+    "cleanup_types_truncated": false
+  },
+  "finished_at": "2026-10-22T14:33:59.375016+00:00"
+}

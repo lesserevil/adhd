@@ -60,3 +60,10 @@ Run `litai plan COMPONENT ...` to validate the exact corpus and inspect its
 deterministic context graph before generation. See the
 [mission-specification map](../architecture/mission-specification-composition.md) for
 the distinction between local node nesting and independently generatable Components.
+
+The [source34 independent oracle review](../validation/oracle-review-34.json)
+rechecks all 91 verifier-owned CLI vectors against the current contracts and
+published schemas. Only their specification-set binding changes; inputs and
+expected results remain byte-for-byte intact. Pure command validation does not
+replace stateful ownership or live registry-preflight checks, and this review
+does not attest lifecycle admission or native execution of the oracle vectors.

@@ -1,0 +1,32 @@
+{
+  "schema": "adhd/cache-qualification-driver-preparation@1",
+  "passed": true,
+  "pure_checks": 10,
+  "executed": false,
+  "application_or_Docker_processes": 0,
+  "frozen_plan_prepared": false,
+  "image_identity_pending_root_build": true,
+  "scope": "Cache/CLI qualification driver only; separate original SDK30 readiness and actual fault observer custody gates remain required",
+  "positive_scope": "Default image entrypoint; user10001, readonlyrootfs, networknone, capdropALL; original native18/describe/schema/OpenAPI",
+  "negative_scope": "RW filesystem only for offline Docker-cp modified copies; true missing file fixtures use fixed setup-only root shell allowlist then exact original boot and non-serving invalid CLI sentinel. No host mounts or CHOWN helper. Each missing entry independently verified after exit; other cache metadata unchanged. Other cases remain nonroot. No production-rootfs equivalence claim for negatives.",
+  "guards": [
+    "exclusive fsynced once before runner creation; retry denied",
+    "strict actual knownID and issuedname absence; daemon errors never absence",
+    "independent cleanup after inspect failure preserves original failure",
+    "known foreign object never removed",
+    "actual kill137/wait if process remains running, before removal",
+    "source and cache metadata inspected through Docker archive API before dispatch",
+    "exact precompiled cache rejection and no configuration/data writes",
+    "30-second per-command bound; original SDK30 gate remains unchanged/separate"
+  ],
+  "pending": [
+    "Root review of driver and case/deadline scope",
+    "Actual immutable compiled image/context binding and fresh prepared plan",
+    "Root GO before any actual create/start/compiler/build/runtime"
+  ],
+  "files": {
+    "tests/container_cache_acceptance.py": "ed9916a386bf8910e5bed28ea4c4461a92d7947751b65cb1b6c2c08c7a35e8ab",
+    "tests/container_cache_acceptance_unit.py": "2e442f28fbaa097fbceeeeba2aa00ad360afb71f57cc6f0ecd56eb2b3c54fa64",
+    "verification/container-cache-qualification-preparation/pure-tests.log": "f90205cbd4fdd781cd1743acb491bbf8107bba0a826706e16eea68607db679c8"
+  }
+}

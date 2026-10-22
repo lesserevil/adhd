@@ -1,0 +1,23 @@
+ba2c3efd31e2a1c8f541bd9e8c32c9e0ee416345a33ea4f2f28732b12ff39776
+PASS actual tar restored original owner/group, directory2770, file0600 and content
+Initialized /home/horde/src/adhd/_build/roadmap/final/platform40-plan02/k8s-work/config/hub.json; retain this server identity across replacements.
+namespace/adhd-final-40b-kind created
+secret/hub-seed created
+Warning: resource namespaces/adhd-final-40b-kind is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+namespace/adhd-final-40b-kind configured
+configmap/kafka-bootstrap created
+service/hub created
+service/kafka created
+service/kafka-rest created
+persistentvolumeclaim/hub-data created
+deployment.apps/hub created
+deployment.apps/kafka-rest created
+statefulset.apps/kafka created
+Waiting for statefulset spec update to be observed...
+Waiting for 1 pods to be ready...
+Waiting for 1 pods to be ready...
+error: timed out waiting for the condition
+[pod/hub-6cf8699d67-sp28k/hub] {"status":"ready","url":"http://127.0.0.1:18891"}
+Error from server (BadRequest): container "kafka" in pod "kafka-0" is waiting to start: trying and failing to pull image
+Error from server (BadRequest): container "kafka-rest" in pod "kafka-rest-7bcbcdf948-mr5bv" is waiting to start: trying and failing to pull image
+namespace "adhd-final-40b-kind" deleted

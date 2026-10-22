@@ -1,0 +1,45 @@
+"""One offline Chromium: no ADHD server, model, broker or network fetch."""
+import ast,asyncio,hashlib,json
+from pathlib import Path
+from playwright.async_api import async_playwright
+
+root=Path(__file__).resolve().parent
+source=root/'frozen/tests/multi_browser.py'
+module=ast.parse(source.read_text())
+collector=next(node.args[0].value for fn in module.body if isinstance(fn,ast.AsyncFunctionDef) and fn.name=='capture'
+    for node in ast.walk(fn) if isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr=='evaluate'
+    and node.args and isinstance(node.args[0],ast.Constant) and isinstance(node.args[0].value,str) and 'text_ranges:ranges' in node.args[0].value)
+async def main():
+    observations=[];requests=[]
+    async with async_playwright() as pw:
+        browser=await pw.chromium.launch(headless=True,args=['--no-sandbox'])
+        try:
+            page=await browser.new_page(viewport={'width':390,'height':844});page.on('request',lambda request:requests.append(request.url))
+            html='<style>body{margin:0}nav{width:200px;overflow-x:auto;white-space:nowrap}nav span{display:inline-block;width:220px}label{display:block;width:200px;overflow:visible}</style><nav id="nav"><span>first</span><span>'+'N'*60+'</span></nav>'
+            await page.set_content(html)
+            result=await page.evaluate(collector)
+            assert result['documentWidth']==390
+            assert any(any(a['selector']=='#nav' for a in row['clipping_ancestors']) for row in result['text_ranges'])
+            assert any(a['selector']=='html' for row in result['text_ranges'] for a in row['ancestors'])
+            observations.append({'case':'clipped-nav-html-root-and-text-ancestors','passed':True,'document':result['documentWidth']})
+            await page.set_content(html+'<label id="long-label">subscription_'+'X'*90+'</label>')
+            result=await page.evaluate(collector)
+            assert result['documentWidth']>390
+            painted=[row for row in result['text_ranges'] if row['parent']['selector']=='#long-label']
+            assert painted and any(rect['right']>390 for row in painted for rect in row['rects'])
+            node=next(row['node'] for row in result['offenders'] if row['node']['selector']=='#long-label')
+            assert node['rect']['right']<390 and node['scrollWidth']>node['clientWidth']
+            observations.append({'case':'text-overflows-in-bounds-label','passed':True,'document':result['documentWidth'],'label_border_right':node['rect']['right'],'painted_right':max(rect['right'] for row in painted for rect in row['rects'])})
+            await page.locator('#long-label').evaluate("n=>n.style.overflowWrap='anywhere'")
+            result=await page.evaluate(collector)
+            assert result['documentWidth']==390 and not any(row['parent']['selector']=='#long-label' for row in result['text_ranges'])
+            observations.append({'case':'offline-wrapped-control-removes-painted-overflow','passed':True,'document':390})
+            await page.set_content('B'*120)
+            result=await page.evaluate(collector)
+            assert result['documentWidth']>390 and any(row['parent']['selector']=='body' for row in result['text_ranges'])
+            observations.append({'case':'direct-body-text-and-html-selector','passed':True,'document':result['documentWidth']})
+            assert requests==[],requests
+        finally:await browser.close()
+    value={'schema':'adhd/ui38-offline-observer-check@1','passed':True,'observer_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'checks':observations,'requests':requests,'backend_starts':0,'broker_calls':0,'model_calls':0,'scope':'Collector mechanics only; no app CSS fix or product qualification'}
+    (root/'observer-check.json').write_text(json.dumps(value,indent=2)+'\n');print(json.dumps(value))
+asyncio.run(main())

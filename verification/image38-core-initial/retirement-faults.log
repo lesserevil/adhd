@@ -1,0 +1,43 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/multi_support.py", line 341, in execute
+    await checks(fixture, evidence)
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/multi_agent_retirement_faults.py", line 66, in checks
+    after = admin.call({"op": "config_get"})
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/multi_support.py", line 305, in call
+    return self.client.api(command, expected=expected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/foundation_acceptance.py", line 180, in api
+    assert status==expected,(body['op'],status,expected,value)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('config_get', 500, 200, {'error': {'code': 'INTERNAL', 'message': 'Request failed'}})
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/multi_agent_retirement_faults.py", line 91, in <module>
+    asyncio.run(execute(args, "multi-agent-retirement-snapshot-faults", checks))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/multi_support.py", line 349, in execute
+    await fixture.close()
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/multi_support.py", line 276, in close
+    self.image_runtime.stop()
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/container_fixture.py", line 98, in stop
+    self.observe()
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/container_fixture.py", line 66, in observe
+    row = json.loads(self.docker("inspect", self.name).stdout)[0]
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/image38-core-importguard-preparation/core/frozen/tests/container_fixture.py", line 31, in docker
+    return subprocess.run(["docker", *args], capture_output=True, check=check, timeout=30)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['docker', 'inspect', 'adhd-multi-accept-8c40155a2ace4e5e']' returned non-zero exit status 1.

@@ -1,0 +1,399 @@
+{
+  "schema": "adhd/cni17-independent-route-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "scope": "Both Calico rollouts passed but first broker Ready30s timed out before any baseline or policy route measurement; Bounded owned Pod diagnostics report Failed/Error/exit137 and empty logs; no OOMKilled reason or causal kernel witness. Cause remains unknown. No route/app/Kafka/model qualification.",
+  "root_authoritative_exit_code": 1,
+  "plan_sha256": "423969b00d4bf6aecab9d62c26378a6f8a7cc75292fc32832b1211873b59f8b9",
+  "result_sha256": "4d04f0b6a15084b602ac14d862f1cc8d8dfd1c9ffd9a0f2123a7350dd1854cb3",
+  "driver_sha256": "4687efaf7af96b5c2086d69fad340c2aa4d69d41498b60da2a500d85d16c4c50",
+  "full_input_closure_unchanged": true,
+  "original_rollout_seconds": 300,
+  "both_calico_rollouts_passed": true,
+  "controller_overlay_guard_passed": true,
+  "direct_api_endpoint_proof": {
+    "address": "10.240.240.2",
+    "port": 6443,
+    "namespace_uid": "4a72f17c-2d53-4320-a21c-8d687a0e6bad",
+    "node_uid": "694fcf5b-640c-44d5-bd3f-3f5445167f85",
+    "configmap_uid": "a6b848c9-5459-417c-9863-7cfe40cb2129",
+    "owner_nonce": "de8f13c0f092886f240d8b7465e4a1bb",
+    "tls": {
+      "authority_sha256": "0e0eec8f2d4ed03234527c0e02dc9a76ad185b958d425689b80b418bfe4472a1",
+      "server_certificate_sha256": "e2a8805b51a87e649d3bad65864234eb1e4c6cdee799bb73aac66424eb78152b",
+      "verify_peer": true,
+      "hostname_checked": "10.240.240.2",
+      "port": 6443,
+      "timeout_seconds": 5
+    },
+    "inside_own_node_verified": true,
+    "host_direct_API_verified": true,
+    "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+    "separate_configmap_sha256": "95bf18157a480e2f8d0527381bb6f545ea29f0dbaa4f144b695f383e049383bc",
+    "controller_overlay": {
+      "deployment_uid": "264530bf-5db8-4883-a117-e3463144067b",
+      "configmap_uid": "a6b848c9-5459-417c-9863-7cfe40cb2129",
+      "patch_sha256": "79ec327d85fb0dba57393fee3047e893abb904e8fc76f8034d442c8914db952b",
+      "guarded_json_patch": true,
+      "container": "calico-kube-controllers",
+      "pinned_manifest_unchanged": true
+    }
+  },
+  "rollout_log_sha256": {
+    "ready-calico": "3fb5195d51e5ae0ef86b18f63b0e38c35102b835031d5d19fb180d165b591523",
+    "ready-controller": "c2d94e4ffb2d5a00aef5639ecbbe8315a279c6f66a99f38b2582909d0e6df216"
+  },
+  "current_strict_absence": [
+    {
+      "kind": "container",
+      "identifier": "bc7ae9e246200fc6ae322823ad972cedbb1d09e9bb800e9c18b89ccba0950409",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "23f26df8b4309ab2a852e1d6ffdf51094633895c36a85cbc33ff0bf9b84576aa",
+      "observed_absent": true
+    },
+    {
+      "kind": "container",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "10c65dbff792d16ce2df29e4d7922b03ca6b03fc8856925e845460c9912f2366",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "b4e6ef946118c4f2adbcd732316e03491b4ea58dc57e2b8e1b4dc086097b8971",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "a4736c971bd8f3a298f637d35688eb2b09c6b734e3c30b35afe9a515968f4027",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "31e2083bb8a1588362a3c4bede5ec23c35f9165fb21b7dfadbfca9e94f59b6c9",
+      "observed_absent": true
+    },
+    {
+      "kind": "volume",
+      "identifier": "177cb78616b95d9cbeedd3eb733803d73d9d88035c3f79c2edf85d58d817f518",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "7152309167dc5e800f0f305e8c715339987cf4a3a125077e82b50de82178df25",
+      "observed_absent": true
+    }
+  ],
+  "protected_cluster_before_after_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "protected_cluster_currently_running_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "policy_routes_qualified": 0,
+  "audit_resource_or_provider_starts": 0,
+  "files": {
+    "plan.json": "423969b00d4bf6aecab9d62c26378a6f8a7cc75292fc32832b1211873b59f8b9",
+    "result.json": "4d04f0b6a15084b602ac14d862f1cc8d8dfd1c9ffd9a0f2123a7350dd1854cb3"
+  },
+  "gate_report_sha256": "b435eb11244779a9f2cb18b172b4939796b861d50e069e20068b3eed138c4fcc",
+  "raw_kubectl_log_sha256": "d0b69d10b48d919d0869d0336420b6f544944829a358d9fccd5fa04aa0bfee2e",
+  "original_ready_seconds": 30,
+  "pod_status_or_events_or_logs_survived": true,
+  "namespace_cleanup_original_UID_fenced": [
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "observed_absent": true,
+      "uid": "9107bb92-e2a4-4515-8cb0-6a2f3acbd14f"
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "observed_absent": true,
+      "uid": "9bbf4cd9-5a73-4b9b-98eb-77a4a219b788"
+    }
+  ],
+  "diagnostics": {
+    "capture_passed": true,
+    "commands": 26,
+    "bytes": 132572,
+    "logs": 1,
+    "namespace_uid": "9bbf4cd9-5a73-4b9b-98eb-77a4a219b788",
+    "pod_uid": "88e9a64a-e762-401c-8ac7-a7f008d67c72",
+    "phase": "Failed",
+    "container": {
+      "name": "fixture",
+      "exit_code": 137,
+      "reason": "Error",
+      "started_at": "2026-10-22T11:19:32Z",
+      "finished_at": "2026-10-22T11:19:32Z",
+      "restart_count": 0,
+      "current_log_stdout_bytes": 0,
+      "current_log_stderr_bytes": 0
+    },
+    "events": [
+      {
+        "reason": "Scheduled",
+        "type": "Normal",
+        "count": 1
+      },
+      {
+        "reason": "Pulled",
+        "type": "Normal",
+        "count": 1
+      },
+      {
+        "reason": "Created",
+        "type": "Normal",
+        "count": 1
+      },
+      {
+        "reason": "Started",
+        "type": "Normal",
+        "count": 1
+      }
+    ],
+    "resources": {
+      "limits": {
+        "cpu": "1",
+        "memory": "192Mi"
+      },
+      "requests": {
+        "cpu": "50m",
+        "memory": "48Mi"
+      }
+    },
+    "raw_private_hashes": {
+      "cri-container.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "cri-container.stdout": {
+        "sha256": "b2f24eae187168ccb8eea21cb378d161f215d90abb283de7ede446be2e6c8f9c",
+        "bytes": 15583
+      },
+      "describe.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "describe.stdout": {
+        "sha256": "abc472ab56ec36242a6678220a57c60dc76af39e8419c1ded191faa6c493dbbc",
+        "bytes": 3261
+      },
+      "events.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "events.stdout": {
+        "sha256": "3f06734f929d2c4ade46f68fc44185a3af5483ca1c1932d23a15ebc44a01354c",
+        "bytes": 5204
+      },
+      "index.json": {
+        "sha256": "29d3120e9fec956daabe1b57461a42a449d40895c174a0403c74e9313c8a92f2",
+        "bytes": 10126
+      },
+      "log-current.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "log-current.stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-cri-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-cri-after.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-cri-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-cri-before.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-describe-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-describe-after.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-describe-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-describe-before.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-events-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-events-after.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-events-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-events-before.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-initial.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-initial.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-log-current-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-log-current-after.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "namespace-log-current-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-log-current-before.stdout": {
+        "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+        "bytes": 549
+      },
+      "network-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "network-after.stdout": {
+        "sha256": "0edcec92c2c33d8159acfd406e7c16427f3414b75a7822c22b48bbef088236b0",
+        "bytes": 1542
+      },
+      "network-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "network-before.stdout": {
+        "sha256": "0edcec92c2c33d8159acfd406e7c16427f3414b75a7822c22b48bbef088236b0",
+        "bytes": 1542
+      },
+      "node-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "node-after.stdout": {
+        "sha256": "5f9cc1c770c796dbee6fc7e817ada91b637dfa1eade8466b283bdca617845ae4",
+        "bytes": 8962
+      },
+      "node-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "node-before.stdout": {
+        "sha256": "5f9cc1c770c796dbee6fc7e817ada91b637dfa1eade8466b283bdca617845ae4",
+        "bytes": 8962
+      },
+      "pod-cri-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-cri-after.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-cri-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-cri-before.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-describe-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-describe-after.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-describe-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-describe-before.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-events-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-events-after.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-events-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-events-before.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-initial.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-initial.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-log-current-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-log-current-after.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      },
+      "pod-log-current-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-log-current-before.stdout": {
+        "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+        "bytes": 9175
+      }
+    },
+    "cause": "UNKNOWN: exact CRI Error137/emptymessage/~0.162s; no cgroup/kernel/OOM counter read because strict knownlayout parser rejected kubelet-rooted prefix. No OOM inference.",
+    "owned_node_observation": {
+      "enabled": true,
+      "available": true,
+      "container_id": "899ca1f20d1166ec8d5ed37792eb3702f546eceb890053458917c515c67dac1a",
+      "pod_uid": "88e9a64a-e762-401c-8ac7-a7f008d67c72",
+      "cri_state": {
+        "state": "CONTAINER_EXITED",
+        "reason": "Error",
+        "exitCode": 137,
+        "createdAt": "2026-10-22T11:19:32.185137322Z",
+        "startedAt": "2026-10-22T11:19:32.359752769Z",
+        "finishedAt": "2026-10-22T11:19:32.521634301Z"
+      },
+      "cgroup_layout_supported": false,
+      "cgroup_paths": null,
+      "container_parent_order": "Exact Pod parent first; preserve its counters even if container cgroup is destroyed.",
+      "cgroup_unavailable": "unsupported-closed-layout; no scan attempted"
+    },
+    "actual_CRI_cgroupsPath": "kubelet-kubepods-burstable-pod88e9a64a_e762_401c_8ac7_a7f008d67c72.slice:cri-containerd:899ca1f20d1166ec8d5ed37792eb3702f546eceb890053458917c515c67dac1a",
+    "CRI_duration_seconds_rounded_microsecond_precision": 0.161882,
+    "CRI_message_empty": true
+  }
+}

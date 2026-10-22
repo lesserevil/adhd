@@ -1,0 +1,47 @@
+{
+  "suite": "adhd/real-kafka-hot-cutover@1",
+  "started_at": "2026-10-21T22:11:48.958438+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+      "passed": true
+    },
+    {
+      "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+      "passed": true
+    },
+    {
+      "name": "actual-hot-transition-kill-recovers-durable-config-decision-before-readiness",
+      "passed": true,
+      "stage": "transition-decision",
+      "transition_id": "xrXloOEnu4lGo4jFQeW_BS96QjwtQkOT",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL"
+    },
+    {
+      "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+      "passed": true
+    },
+    {
+      "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "harness_sha256": "bec9a7c1d6ae8e0fa06bba16b65b307a048998c012579751842bd2f82ce8f29d",
+  "source_sha256": {
+    "Migration": "abfd2e2326d99f31ef0614262c8cfa9032ffd38e4e99fbf575d304c9a8ec8314",
+    "Config": "6862e6ee5d1883fd0902c464f9f2c7f82983460894b209b76a0ebbb313ac4576",
+    "Storage": "809b339b7e29635f2d048c6ddfade42f31a1938b6280ef36ea8a67ad1beb828a",
+    "Store": "bf1e8146aad05099e17c2f726ebb5b2203f3f27bfd51a07db82f5c705bd60fa9",
+    "CLI": "a3abc68c2bdbe4b82ff844fb9c22d40e04e8b4cc4998dad468b54c21aa10edb2"
+  },
+  "fault_source_sha256": "05763fb46eec22d4f0c8133a4e62003b4ff2324d22bc82696311b73f19d11226",
+  "fault_library_sha256": "403d213f3c1e74bbf24f8d15c1705fa979761c0b73d77b75021e2228b2379b0e",
+  "finished_at": "2026-10-21T22:12:57.283983+00:00"
+}

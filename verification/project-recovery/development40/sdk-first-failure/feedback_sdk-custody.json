@@ -1,0 +1,159 @@
+{
+  "schema": "adhd/controlled-image-custody@1",
+  "passed": false,
+  "failure_type": "AssertionError",
+  "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+  "adapter_sha256": "c9e9f1cc1a096a9e29b6ad53d0b8c40a7151b328f7cbf90a040f5f634ae8c2b6",
+  "original_helpers_sha256": {
+    "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+    "hub_acceptance.py": "ddfb691f1d5a52a0b328613ac9db7617c3ebd732ca457e86a42b4febfa10e222",
+    "container_acceptance.py": "d78909efae902f679b42b985233f91ffd683a9cfbca0ba84ae92effd774ac904"
+  },
+  "controlled_endpoint_whitelist": {
+    "http://127.0.0.1:34023/v1/systemone": {
+      "class": "archive_support.ArchiveFixture",
+      "helper_sha256": "d17dc84f0c9f49a8b4cd4634654372b730681a2db15e052f5dff4b86284b6b45"
+    }
+  },
+  "runtime_events": [
+    {
+      "action": "start",
+      "kind": "native-producer",
+      "root": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/runtime/_build/roadmap/feedback-sdk/run-_0xmnned/hub-0",
+      "config_sha256": "116c0055eb4651bbd6f70eaab857067bef6477422b244220304d6ca7553f0a0b",
+      "completed": true,
+      "selected_models": [
+        {
+          "path": [
+            "matcher",
+            "url"
+          ],
+          "url": "http://127.0.0.1:34023/v1/systemone"
+        }
+      ],
+      "producer_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+      "native_vms": [
+        {
+          "pid": 1912802,
+          "starttime": "20856871",
+          "executable_sha256": "bcda8c7b99851d3486f04b86213d9570ba1fe90301f985747ef541224eddae2d",
+          "fence_mapped": true,
+          "maps_sha256": "93b342526b7ca2d192210439948ca61896a9f02b1757ac97f5ec1fd6cea021e7"
+        }
+      ],
+      "observed_absent": true,
+      "docker_client_exited": true
+    },
+    {
+      "action": "start",
+      "kind": "docker",
+      "root": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/runtime/_build/roadmap/feedback-sdk/run-_0xmnned/hub-0",
+      "config_sha256": "a02c25fd0eb380abf8afe09647396f7c24979fbbb7585f6cbc003f1852a1d1de",
+      "completed": false,
+      "selected_models": [
+        {
+          "path": [
+            "matcher",
+            "url"
+          ],
+          "url": "http://127.0.0.1:34023/v1/systemone"
+        }
+      ],
+      "startup_failure_diagnostics": {
+        "scope": "Read-only after original startup exception; no health retry or deadline extension",
+        "owned_identity_verified": true,
+        "collection_deadline_seconds": 15,
+        "maximum_client_reap_grace_seconds": 3,
+        "maximum_collection_and_reap_seconds": 18,
+        "observations": {
+          "container_logs": {
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "client_process": {
+              "pid": 1920484,
+              "starttime": "20862610",
+              "reaped": true,
+              "forced_kill": false,
+              "maximum_reap_grace_seconds": 3
+            }
+          },
+          "namespace_vm": {
+            "returncode": 0,
+            "stdout": "/usr/local/lib/erlang/erts-17.1.1/bin/beam.smp\nName:\tbeam.smp\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t1\nNgid:\t0\nPid:\t1\nPPid:\t0\nTracerPid:\t0\nUid:\t1003\t1003\t1003\t1003\nGid:\t1003\t1003\t1003\t1003\nFDSize:\t64\nGroups:\t1003 \nNStgid:\t1\nNSpid:\t1\nNSpgid:\t1\nNSsid:\t1\nKthread:\t0\nVmPeak:\t 1583116 kB\nVmSize:\t 1398796 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t  343144 kB\nVmRSS:\t  194484 kB\nRssAnon:\t  158672 kB\nRssFile:\t    8008 kB\nRssShmem:\t   27804 kB\nVmData:\t  216004 kB\nVmStk:\t     132 kB\nVmExe:\t    4636 kB\nVmLib:\t   67552 kB\nVmPTE:\t     580 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t20\nSigQ:\t0/256838\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000011080\nSigCgt:\t0000000008024206\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\nSeccomp:\t2\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tffff\nCpus_allowed_list:\t0-15\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t28\nnonvoluntary_ctxt_switches:\t131\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n/usr/local/lib/erlang/erts-17.1.1/bin/beam.smp\u0000-S\u00002:2\u0000--\u0000-root\u0000/usr/local/lib/erlang\u0000-bindir\u0000/usr/local/lib/erlang/erts-17.1.1/bin\u0000-progname\u0000erl\u0000--\u0000-home\u0000/tmp\u0000--\u0000-noshell\u0000-elixir_root\u0000/usr/local/lib/elixir/bin/../lib\u0000-pa\u0000/usr/local/lib/elixir/bin/../lib/elixir/ebin\u0000-s\u0000elixir\u0000start_cli\u0000--\u0000--\u0000--\u0000-extra\u0000/app/hub.exs\u0000[\"serve\", \"/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/runtime/_build/roadmap/feedback-sdk/run-_0xmnned/hub-0/config.json\"]\u0000",
+            "stderr": "",
+            "client_process": {
+              "pid": 1920511,
+              "starttime": "20862618",
+              "reaped": true,
+              "forced_kill": false,
+              "maximum_reap_grace_seconds": 3
+            }
+          },
+          "canonical_manifest": {
+            "returncode": 0,
+            "stdout": "{\n  \"schema\": \"adhd/container-inputs@1\",\n  \"files\": {\n    \"Dockerfile\": \"cf2d7340772016de9834b19f1f3eac279095e3f6b90b67a8d82fc753f0ed293d\",\n    \"LICENSE\": \"cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30\",\n    \"archive-interface.md\": \"e2e0a35891d2137b96c1367ab55befeafbd4cf3bad2fdc52a68fc0abb8410b87\",\n    \"archive-spec.md\": \"c6669a7ab69c6e9b354c175ac350df55011ade398d051c491ee92388add9fee0\",\n    \"component.md\": \"c590d0fbe781d2cc8069657e7cb1ff02a66475bc3fc4100a5d5a6d3f261b9f91\",\n    \"configuration-spec.md\": \"e974b98c16d809d6652b5ee9749e94b855c2b6c1d293c27ad0c1af3015ed8959\",\n    \"core-spec.md\": \"d87de2805dda282cf9f02e3fc8e545367d62c222e1ec0d3f1b4906a4e3ca038a\",\n    \"directory-queries.md\": \"b2f3b63c37ffe6d5c5bcf05341c652de75f66753319031460c8d6fbe3c717ff4\",\n    \"directory-spec.md\": \"d2e063ca5287ee28e4681b32f0ecbab8044544af0fdb7c4940eac533a94c5252\",\n    \"evidence-spec.md\": \"a074a78316958b6bde5582ac223e2f326859750d361c10e67f4d2cb18640eb10\",\n    \"federation-spec.md\": \"8f2b7ff165c7f417f325a16ed508fdeab472c7a9b20fe2018cbcab2a42ecf016\",\n    \"feedback-interface.md\": \"c04530967ec6eeb439f5accccb0ddd0e17bd1410ed6f113c32daa0cd3ed05bd4\",\n    \"feedback-replay.md\": \"e9da3b7ffad2b089822b3c0b6cda9e5634d1bba6a35e402f1bdaecd568e77236\",\n    \"feedback-spec.md\": \"1d32f968c0365c429991fda76b49e371e55ead326556436f2931ff5de2428723\",\n    \"health.exs\": \"d6eb28acde5711ae33058675355a54556bd23ae13ab644f89b4bd2d721f4304f\",\n    \"history-evaluator.md\": \"842e4d463b59cb7764c5375708fa1de674212f645b3d0af6f46d1f53fadda6be\",\n    \"history-interface.md\": \"7bab94eb58cf8aa465829173820bcfc7c67f4d3bfeda3672f3d9dc6c16e756e3\",\n    \"history-spec.md\": \"7ccc95046f4183ec468998957392ba48fede2d452b8a68a81a70bc7163479879\",\n    \"hub.exs\": \"c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3\",\n    \"identity-spec.md\": \"207bca439d103b68d75c3851e0b37a3e8737811c094d336a272ebea327dc80d6\",\n    \"information-spec.md\": \"889c83cf4e44972eadfab43ba5f33dfdf10ca9f1c4776eb228b3fb64b3729037\",\n    \"management-spec.md\": \"284323177f4750989265b576d51136c3849b385e67e7e8d495adbe603394433c\",\n    \"presentation-spec.md\": \"5bb95d0dc2462610ba59194a3d9450f75f6068bf236af02f78b774a4b96a7671\",\n    \"protocol-spec.md\": \"7555a26b42415a8f2f289e97557c7c6d707ae226cd69af4ea5efc380a46b7a62\",\n    \"retrieval-index.md\": \"cd2341468d2cef4ca4987d63eee3f8664623f3b05fcb575361562af5508bdc18\",\n    \"retrieval-interface.md\": \"501957c678fdabf396fab2a7ee647752a57470a97a9d142e40941048b5a17121\",\n    \"retrieval-spec.md\": \"ead989174290747fbd73d0fad10df6fa4cb1940940e84e91cdc1e07e51e25940\",\n    \"specification/archive/interface.md\": \"e2e0a35891d2137b96c1367ab55befeafbd4cf3bad2fdc52a68fc0abb8410b87\",\n    \"specification/archive/spec.md\": \"c6669a7ab69c6e9b354c175ac350df55011ade398d051c491ee92388add9fee0\",\n    \"specification/component.md\": \"c590d0fbe781d2cc8069657e7cb1ff02a66475bc3fc4100a5d5a6d3f261b9f91\",\n    \"specification/configuration/spec.md\": \"e974b98c16d809d6652b5ee9749e94b855c2b6c1d293c27ad0c1af3015ed8959\",\n    \"specification/core/spec.md\": \"d87de2805dda282cf9f02e3fc8e545367d62c222e1ec0d3f1b4906a4e3ca038a\",\n    \"specification/directory/queries.md\": \"b2f3b63c37ffe6d5c5bcf05341c652de75f66753319031460c8d6fbe3c717ff4\",\n    \"specification/directory/spec.md\": \"d2e063ca5287ee28e4681b32f0ecbab8044544af0fdb7c4940eac533a94c5252\",\n    \"specification/eventing/spec.md\": \"c3be8cfa5eaf0a61d72334d38f0805f4d8388c63e0cd60e1f2d1666340c4f66f\",\n    \"specification/evidence/spec.md\": \"a074a78316958b6bde5582ac223e2f326859750d361c10e67f4d2cb18640eb10\",\n    \"specification/federation/spec.md\": \"8f2b7ff165c7f417f325a16ed508fdeab472c7a9b20fe2018cbcab2a42ecf016\",\n    \"specification/feedback/interface.md\": \"c04530967ec6eeb439f5accccb0ddd0e17bd1410ed6f113c32daa0cd3ed05bd4\",\n    \"specification/feedback/replay.md\": \"e9da3b7ffad2b089822b3c0b6cda9e5634d1bba6a35e402f1bdaecd568e77236\",\n    \"specification/feedback/spec.md\": \"1d32f968c0365c429991fda76b49e371e55ead326556436f2931ff5de2428723\",\n    \"specification/history/evaluator.md\": \"842e4d463b59cb7764c5375708fa1de674212f645b3d0af6f46d1f53fadda6be\",\n    \"specification/history/interface.md\": \"7bab94eb58cf8aa465829173820bcfc7c67f4d3bfeda3672f3d9dc6c16e756e3\",\n    \"specification/history/spec.md\": \"7ccc95046f4183ec468998957392ba48fede2d452b8a68a81a70bc7163479879\",\n    \"specification/identity/spec.md\": \"207bca439d103b68d75c3851e0b37a3e8737811c094d336a272ebea327dc80d6\",\n    \"specification/information/spec.md\": \"889c83cf4e44972eadfab43ba5f33dfdf10ca9f1c4776eb228b3fb64b3729037\",\n    \"specification/management/spec.md\": \"284323177f4750989265b576d51136c3849b385e67e7e8d495adbe603394433c\",\n    \"specification/multi/spec.md\": \"124e94e8a3aa56291f8c179e41b6b9a3ac268d19e4b6646883c8748ed967588e\",\n    \"specification/optimization/interface.md\": \"8c8d4b225cdabc31add2c2ea4ac2f312c138b37b337af7a5598ed126e024f8fb\",\n    \"specification/optimization/selection.md\": \"b3c523a6c2ddc7fedcda36f84a357e07b55d599b2cbb1f9fdd7b09b863d2e949\",\n    \"specification/optimization/spec.md\": \"01526232cd88786f004c902e38c76860e371dee15279230331372033d48eef0f\",\n    \"specification/presentation/spec.md\": \"5bb95d0dc2462610ba59194a3d9450f75f6068bf236af02f78b774a4b96a7671\",\n    \"specification/project-recovery/interface.md\": \"24e6adb2a13968b14fe2692b81a5b0c8555e3be5c510ddc0a81cd5857f00c3a4\",\n    \"specification/project-recovery/interface.schema.json\": \"8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f\",\n    \"specification/project-recovery/spec.md\": \"0b281bc1fb64470cadbec109d85e2239d8357f38204c236c36631d97289c5d27\",\n    \"specification/protocol/spec.md\": \"7555a26b42415a8f2f289e97557c7c6d707ae226cd69af4ea5efc380a46b7a62\",\n    \"specification/resources/spec.md\": \"43136b7d22154f733621f1296062e95b4a6fea51645a09ffafee3cd6c4e45789\",\n    \"specification/retrieval/index.md\": \"cd2341468d2cef4ca4987d63eee3f8664623f3b05fcb575361562af5508bdc18\",\n    \"specification/retrieval/interface.md\": \"501957c678fdabf396fab2a7ee647752a57470a97a9d142e40941048b5a17121\",\n    \"specification/retrieval/spec.md\": \"ead989174290747fbd73d0fad10df6fa4cb1940940e84e91cdc1e07e51e25940\",\n    \"specification/storage-relocation/spec.md\": \"ebe50d3725a3e63f420eaf8f61bd589620ed6a385d6eb9658f4c05947f35fbb0\"\n  }\n}\n",
+            "stderr": "",
+            "client_process": {
+              "pid": 1920569,
+              "starttime": "20862634",
+              "reaped": true,
+              "forced_kill": false,
+              "maximum_reap_grace_seconds": 3
+            }
+          },
+          "actual_app_hashes": {
+            "returncode": 0,
+            "stdout": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30  /app/LICENSE\ne2e0a35891d2137b96c1367ab55befeafbd4cf3bad2fdc52a68fc0abb8410b87  /app/archive-interface.md\nc6669a7ab69c6e9b354c175ac350df55011ade398d051c491ee92388add9fee0  /app/archive-spec.md\nc590d0fbe781d2cc8069657e7cb1ff02a66475bc3fc4100a5d5a6d3f261b9f91  /app/component.md\ne974b98c16d809d6652b5ee9749e94b855c2b6c1d293c27ad0c1af3015ed8959  /app/configuration-spec.md\nd87de2805dda282cf9f02e3fc8e545367d62c222e1ec0d3f1b4906a4e3ca038a  /app/core-spec.md\nb2f3b63c37ffe6d5c5bcf05341c652de75f66753319031460c8d6fbe3c717ff4  /app/directory-queries.md\nd2e063ca5287ee28e4681b32f0ecbab8044544af0fdb7c4940eac533a94c5252  /app/directory-spec.md\na074a78316958b6bde5582ac223e2f326859750d361c10e67f4d2cb18640eb10  /app/evidence-spec.md\n8f2b7ff165c7f417f325a16ed508fdeab472c7a9b20fe2018cbcab2a42ecf016  /app/federation-spec.md\nc04530967ec6eeb439f5accccb0ddd0e17bd1410ed6f113c32daa0cd3ed05bd4  /app/feedback-interface.md\ne9da3b7ffad2b089822b3c0b6cda9e5634d1bba6a35e402f1bdaecd568e77236  /app/feedback-replay.md\n1d32f968c0365c429991fda76b49e371e55ead326556436f2931ff5de2428723  /app/feedback-spec.md\nd6eb28acde5711ae33058675355a54556bd23ae13ab644f89b4bd2d721f4304f  /app/health.exs\n842e4d463b59cb7764c5375708fa1de674212f645b3d0af6f46d1f53fadda6be  /app/history-evaluator.md\n7bab94eb58cf8aa465829173820bcfc7c67f4d3bfeda3672f3d9dc6c16e756e3  /app/history-interface.md\n7ccc95046f4183ec468998957392ba48fede2d452b8a68a81a70bc7163479879  /app/history-spec.md\nc635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3  /app/hub.exs\n207bca439d103b68d75c3851e0b37a3e8737811c094d336a272ebea327dc80d6  /app/identity-spec.md\n889c83cf4e44972eadfab43ba5f33dfdf10ca9f1c4776eb228b3fb64b3729037  /app/information-spec.md\n284323177f4750989265b576d51136c3849b385e67e7e8d495adbe603394433c  /app/management-spec.md\n5bb95d0dc2462610ba59194a3d9450f75f6068bf236af02f78b774a4b96a7671  /app/presentation-spec.md\n7555a26b42415a8f2f289e97557c7c6d707ae226cd69af4ea5efc380a46b7a62  /app/protocol-spec.md\ncd2341468d2cef4ca4987d63eee3f8664623f3b05fcb575361562af5508bdc18  /app/retrieval-index.md\n501957c678fdabf396fab2a7ee647752a57470a97a9d142e40941048b5a17121  /app/retrieval-interface.md\nead989174290747fbd73d0fad10df6fa4cb1940940e84e91cdc1e07e51e25940  /app/retrieval-spec.md\ne2e0a35891d2137b96c1367ab55befeafbd4cf3bad2fdc52a68fc0abb8410b87  /app/specification/archive/interface.md\nc6669a7ab69c6e9b354c175ac350df55011ade398d051c491ee92388add9fee0  /app/specification/archive/spec.md\nc590d0fbe781d2cc8069657e7cb1ff02a66475bc3fc4100a5d5a6d3f261b9f91  /app/specification/component.md\ne974b98c16d809d6652b5ee9749e94b855c2b6c1d293c27ad0c1af3015ed8959  /app/specification/configuration/spec.md\nd87de2805dda282cf9f02e3fc8e545367d62c222e1ec0d3f1b4906a4e3ca038a  /app/specification/core/spec.md\nb2f3b63c37ffe6d5c5bcf05341c652de75f66753319031460c8d6fbe3c717ff4  /app/specification/directory/queries.md\nd2e063ca5287ee28e4681b32f0ecbab8044544af0fdb7c4940eac533a94c5252  /app/specification/directory/spec.md\nc3be8cfa5eaf0a61d72334d38f0805f4d8388c63e0cd60e1f2d1666340c4f66f  /app/specification/eventing/spec.md\na074a78316958b6bde5582ac223e2f326859750d361c10e67f4d2cb18640eb10  /app/specification/evidence/spec.md\n8f2b7ff165c7f417f325a16ed508fdeab472c7a9b20fe2018cbcab2a42ecf016  /app/specification/federation/spec.md\nc04530967ec6eeb439f5accccb0ddd0e17bd1410ed6f113c32daa0cd3ed05bd4  /app/specification/feedback/interface.md\ne9da3b7ffad2b089822b3c0b6cda9e5634d1bba6a35e402f1bdaecd568e77236  /app/specification/feedback/replay.md\n1d32f968c0365c429991fda76b49e371e55ead326556436f2931ff5de2428723  /app/specification/feedback/spec.md\n842e4d463b59cb7764c5375708fa1de674212f645b3d0af6f46d1f53fadda6be  /app/specification/history/evaluator.md\n7bab94eb58cf8aa465829173820bcfc7c67f4d3bfeda3672f3d9dc6c16e756e3  /app/specification/history/interface.md\n7ccc95046f4183ec468998957392ba48fede2d452b8a68a81a70bc7163479879  /app/specification/history/spec.md\n207bca439d103b68d75c3851e0b37a3e8737811c094d336a272ebea327dc80d6  /app/specification/identity/spec.md\n889c83cf4e44972eadfab43ba5f33dfdf10ca9f1c4776eb228b3fb64b3729037  /app/specification/information/spec.md\n284323177f4750989265b576d51136c3849b385e67e7e8d495adbe603394433c  /app/specification/management/spec.md\n124e94e8a3aa56291f8c179e41b6b9a3ac268d19e4b6646883c8748ed967588e  /app/specification/multi/spec.md\n8c8d4b225cdabc31add2c2ea4ac2f312c138b37b337af7a5598ed126e024f8fb  /app/specification/optimization/interface.md\nb3c523a6c2ddc7fedcda36f84a357e07b55d599b2cbb1f9fdd7b09b863d2e949  /app/specification/optimization/selection.md\n01526232cd88786f004c902e38c76860e371dee15279230331372033d48eef0f  /app/specification/optimization/spec.md\n5bb95d0dc2462610ba59194a3d9450f75f6068bf236af02f78b774a4b96a7671  /app/specification/presentation/spec.md\n24e6adb2a13968b14fe2692b81a5b0c8555e3be5c510ddc0a81cd5857f00c3a4  /app/specification/project-recovery/interface.md\n8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f  /app/specification/project-recovery/interface.schema.json\n0b281bc1fb64470cadbec109d85e2239d8357f38204c236c36631d97289c5d27  /app/specification/project-recovery/spec.md\n7555a26b42415a8f2f289e97557c7c6d707ae226cd69af4ea5efc380a46b7a62  /app/specification/protocol/spec.md\n43136b7d22154f733621f1296062e95b4a6fea51645a09ffafee3cd6c4e45789  /app/specification/resources/spec.md\ncd2341468d2cef4ca4987d63eee3f8664623f3b05fcb575361562af5508bdc18  /app/specification/retrieval/index.md\n501957c678fdabf396fab2a7ee647752a57470a97a9d142e40941048b5a17121  /app/specification/retrieval/interface.md\nead989174290747fbd73d0fad10df6fa4cb1940940e84e91cdc1e07e51e25940  /app/specification/retrieval/spec.md\nebe50d3725a3e63f420eaf8f61bd589620ed6a385d6eb9658f4c05947f35fbb0  /app/specification/storage-relocation/spec.md\n",
+            "stderr": "",
+            "client_process": {
+              "pid": 1920629,
+              "starttime": "20862649",
+              "reaped": true,
+              "forced_kill": false,
+              "maximum_reap_grace_seconds": 3
+            }
+          }
+        },
+        "unavailable": [],
+        "container_id": "870af4fd1754128f76b364739810dca9960bc6ca0def97b438ddbaa72e0c022c",
+        "container_name": "adhd-test-74c2dd64534b",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "state": {
+          "Status": "running",
+          "Running": true,
+          "Pid": 1916786,
+          "ExitCode": 0,
+          "OOMKilled": false,
+          "Error": "",
+          "StartedAt": "2026-10-22T06:31:37.943666919Z",
+          "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "owned_inspection_client": {
+          "pid": 1920470,
+          "starttime": "20862604",
+          "reaped": true,
+          "forced_kill": false,
+          "maximum_reap_grace_seconds": 3
+        },
+        "pid_namespace_mode": "",
+        "actual_beam_pid1_observed": true,
+        "actual_canonical_manifest_matched": true,
+        "all59_actual_app_hashes_matched": true,
+        "elapsed_seconds": 0.5995294290187303
+      },
+      "failure_type": "AssertionError",
+      "cleanup_container_id": "870af4fd1754128f76b364739810dca9960bc6ca0def97b438ddbaa72e0c022c",
+      "known_container_id_used": false
+    }
+  ],
+  "cleanup_failure_types": [
+    "AssertionError"
+  ],
+  "native_fence_sha256": "7158f342be00ca847e2c4c95306bf082d0495e344188bdd570fcc68c14beb767",
+  "blocked_provider_connects": 0,
+  "provider_isolation_scope": "Native connect fence mapped; image exact typed-loopback config selection and no redirects. Docker host network has no physical egress firewall; no claim LD_PRELOAD fences image.",
+  "all_original_assertions_bounds_corpus": "Original frozen entrypoint run unchanged; wrapper observes custody and cleans owned startup failures only."
+}

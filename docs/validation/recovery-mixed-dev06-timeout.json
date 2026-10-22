@@ -1,0 +1,51 @@
+{
+  "qualification": "Failed development timing observation; full mixed-state target restore and allocator acceptance not reached. No semantic gate or case changed.",
+  "report_sha256": "56c24a547981fe060a55908edfdc2d0a8e554b45e820b2c1da2f5cbd783c3678",
+  "report": {
+    "suite": "target-only-project-restore",
+    "started_at": "2026-10-21T23:51:18.648117+00:00",
+    "passed": false,
+    "checks": [],
+    "limitations": [
+      "Controlled model responses prove transport/failure isolation, not semantic quality.",
+      "A single broker does not qualify replicated Kafka durability."
+    ],
+    "artifact_sha256": "7e9d087a345ea0f0344ad724e9ffdcf2dfa1fca5b4e4ff62d8f4ff7b48803e3c",
+    "authored_recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+    "finished_at": "2026-10-21T23:59:32.405185+00:00",
+    "failure_type": "AssertionError"
+  },
+  "accepted_state": {
+    "schema": 4,
+    "sequence": 206,
+    "publications": 50,
+    "checkpoint_sha256": "b3347c82b2ebb3c502489d4cf2ef884cf0698ebfac5292f04e2e1ebd4d187692",
+    "snapshot_sha256": "a89c98ca6b1227e79357499f1a311abcb97d846761e3bd56c18e0d63392c03e5",
+    "retained_backup_sha256": "b96987f48a481d950ccf7cceb9c2d0a647f2616c68b3aa1e62f402f55acfa236"
+  },
+  "diagnosis": {
+    "stage": "Lost-post-backup optimizer evaluation, before target loss/restore. Original25-publication replay fully materialized before accepted complete backup.",
+    "fixture_wait_seconds": 90,
+    "proposal_created_at": "2026-10-21T23:56:19.040Z",
+    "evaluation_started_at": "2026-10-21T23:58:01.651Z",
+    "proposal_budget": {
+      "bytes": 16777216,
+      "calls": 512,
+      "records": 16384,
+      "time_ms": 900000
+    },
+    "proposal_usage": {
+      "bytes": 230564,
+      "calls": 47,
+      "records": 68,
+      "time_ms": 2993,
+      "uncertain_calls": 0
+    },
+    "child_status_counts": {
+      "completed": 7,
+      "pending": 1
+    },
+    "last_pending_history_created_at": "2026-10-21T23:59:30.887Z",
+    "interpretation": "Actual child progress continued until less than2seconds before fixture shutdown. This does not establish an application deadlock or throughput regression; bounded lifecycle wait increased separately after review."
+  }
+}

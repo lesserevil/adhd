@@ -1,0 +1,58 @@
+{
+  "schema": "adhd/eventing-retention-companion-preparation@1",
+  "status": "PREPARATION_ONLY_ROOT_REVIEW_REQUIRED",
+  "runtime_started": false,
+  "provider_calls": 0,
+  "source_changed": false,
+  "authority_basis": "components/hub/eventing/spec.md existing committed-transition retention recovery; root recorded gap before implementation at6cfbceb",
+  "scenario": "Separate deterministic postdecision selected-topic readback503 after actualalter204 and durable transaction; sameproxy and unchangedfiles recover on firstcoldstart; secondcoldstart no repeatedalter/reset.",
+  "main23_scope": "Unchanged; companion never turns existing failed23 report into a pass.",
+  "fixed_policies": {
+    "eventing_timeout_ms": 1000,
+    "global_eventing_concurrency": 16,
+    "project_eventing_concurrency": 2,
+    "provider_calls": 0
+  },
+  "checks": [
+    "actual-postdecision-retention-failure-keeps-desired-policy-and-decision",
+    "unchanged-files-cold-start-replays-desired-retention-before-readiness",
+    "second-cold-start-does-not-repeat-alter-reset-offset-or-replay-ack"
+  ],
+  "pure_checks": {
+    "fault_selection": 4,
+    "closed_matrix_guards": 7,
+    "partial_native_launch_capture": 6,
+    "original_proxy_regressions": 11,
+    "total": 28,
+    "passed": true
+  },
+  "dependency_note": "Root current faults.py includes contracts-owned canonical diagnostic and capacity helper; that file is not edited by this change. Launch unit imports those root-current dependencies explicitly.",
+  "files": {
+    "tests/eventing_readiness_proxy.py": "7325d9b465a3d8172d77974f6c381276e6b766c5a14cd876f043d27d75e2f313",
+    "tests/eventing_retention_recovery.py": "389adbf182f3bf9658b97d4c64f2b85b85175dbe20de5447dd5639eee22eec9a",
+    "tests/eventing_retention_matrix.py": "fda4662bbed578d71734144a45a0bffe9742afb551365609be6cb4fbfe55e414",
+    "tests/eventing_retention_recovery_unit.py": "c2ce80683edba9322300c7682595926f224299dc24a9acdbcd990dc42f619ba6",
+    "tests/eventing_retention_matrix_unit.py": "3438b436a44287d146b9406d867c383deb80cc43d697bd6900f0a1bbd6c2dde0",
+    "tests/eventing_retention_launch_unit.py": "bcbe70a2d8726210e06215faab434c4e718354242865c800e8ecd8c3ca1eeb77"
+  },
+  "execution_gate": "Root review then fresh closed prepare/verify using actual finalized receipt/rebuild/export; no execution authorized by this record.",
+  "review_amendments": [
+    "Exact observed500 INTERNAL envelope or narrow socketdisconnect only; unexpected exceptions propagate",
+    "First actual health200 headers observed without extraHTTP calls; desired readback must precede it",
+    "Stdlib driver/base SHA bootstrap before frozen module import",
+    "Route identity includes storage_generation/topic_generation/initialized",
+    "PID/start-tick keys and fallback owned image/native cleanup; evidence failures preserve primary"
+  ],
+  "prospective_prepare": {
+    "repo": "/home/horde/src/adhd",
+    "work": "/home/horde/src/adhd/_build/eventing-retention-native-01",
+    "export": "/home/horde/src/adhd/_build/roadmap/final/eventing-ready41-03/objects/standard-artifacts/5a4bd669b40a0fb730b569b8ee82bbf711a9e221f70ac25f845c191059b8ca6a/artifact-7ca6da5537082c2c1c1e",
+    "rebuild": "/home/horde/src/adhd/_build/roadmap/final/eventing-ready41-03/rebuild.json",
+    "receipt": "/home/horde/src/adhd/verification/current.json",
+    "python": "/home/horde/src/adhd/.venv/bin/python",
+    "elixir": "/home/horde/src/adhd/_build/federation/native/elixir/bin/elixir",
+    "erl": "/home/horde/src/adhd/_build/federation/native/erlang/bin/erl",
+    "eventing_rest_url": "http://127.0.0.1:18082",
+    "note": "Metadata preparation only after root imports/reviews companion; no plan or marker created by this preparation proof. Three qualified tool roots and explicit native PATH remain required CLI arguments."
+  }
+}

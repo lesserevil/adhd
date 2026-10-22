@@ -1,0 +1,100 @@
+{
+  "suite": "adhd/multi-project-resource-fairness@1",
+  "started_at": "2026-10-21T18:51:14.864913+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "model-global-cap-and-real-raw-kafka-literal-search-progress-while-held",
+      "passed": true,
+      "actual_provider_calls": 1,
+      "observed_model_concurrency": 1,
+      "model_pool_active": 1,
+      "blue_model_queued": true
+    },
+    {
+      "name": "another-project-model-turn-precedes-hot-project-backlog-drain",
+      "passed": true,
+      "provider_project_order": [
+        "project-red",
+        "project-blue"
+      ],
+      "actual_provider_calls": 2,
+      "pool_grants": 2,
+      "grants_are_not_provider_call_count": true
+    },
+    {
+      "name": "slow-failing-peer-network-cap-independent-of-kafka-and-model-free-raw",
+      "passed": true,
+      "actual_peer_http_calls": 2,
+      "observed_peer_concurrency": 1,
+      "additional_model_calls": 0
+    },
+    {
+      "name": "bounded-redacted-server-diagnostics",
+      "passed": true,
+      "maximum_waiters": 8,
+      "observed_waiters": 1,
+      "finite_ingress_tickets": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "finished_at": "2026-10-21T18:51:49.247204+00:00",
+  "status": "development",
+  "lifecycle_qualified": false,
+  "phase": "http-cancellation-tracking",
+  "artifact_sha256": "d48cfd4d10728d08ba249afbb49f283637af03d8ee1efa605ac8bb4f25f731e2",
+  "pool_sha256": "bb68e856be953f468a43102937a00905bc2f6d6a468bb10030841d61214ed156",
+  "harness_path": "tests/multi_fairness.py",
+  "harness_sha256": "9656405e3d077421b42eab6abebe55282368cc0f198b9b2270415925316da38e",
+  "source_files": {
+    "domain.exs": "1e517cc57d78532625824347c64f0d4d04a0db60b37b4acbeee5ea3f07b8210f",
+    "projects.exs": "7365f108cb4858f44d5de5da4bee3dead6e696aa412db4eaeb501d8557f4cea4",
+    "resources.exs": "bb68e856be953f468a43102937a00905bc2f6d6a468bb10030841d61214ed156",
+    "records.exs": "c8b2417f23e3d75bb05b1bdfba1c3b2e5ee6a216a53d99a3baf7b555b1e02100",
+    "records_protocol.exs": "1ca3addbc5b20fd48e361468d52cf1d25887b34e4fbe6fe9a728763435df5b59",
+    "history_evaluator.exs": "5e4c8eb0e003b7706d3d7889f66f14bf9ec1ba001e994e529afabd1c223f74d1",
+    "history.exs": "e4feefda527d9fe364081160b9ca7dbc4cb4307b4d8cea28602d49c94f39f4ae",
+    "history_protocol.exs": "1c0f71b67b5e985e5701c7a4e4f3d0765a49b689635f099d6a713463ebbc13b2",
+    "retrieval.exs": "056ebdc0d773cdfbb339077dd9eff58a714c67ef5b844b6ad1bed23e11ce48c2",
+    "selection.exs": "d9c88eed41b8c9332ab49cd7fc4f7fe436a8bce021f123f70cc13454158bfee7",
+    "retrieval_index.exs": "2d43eb7f2c9fb2352283a38cdaccd39977657caeeb2b4fbe971b08de5cfb231f",
+    "retrieval_jobs.exs": "9f9bc3b65b8d4ac38abd8579daf20be1249bd841bf1d180bf5d0dcc61d1137a9",
+    "retrieval_protocol.exs": "c6b4dc0d2e690c96955666b7e8ef0fa388802b18332fa860b9ee7ccab23411c4",
+    "archive_policy.exs": "d91c46defca8df0e407955cd735b4cf46cb01ad873e7607cf274222f77f473a1",
+    "archive.exs": "11b3a65da16822274060542ff52daddc59a3cd5382813ca31f85a15b5c3a8181",
+    "archive_worker.exs": "58d7a45a053e6dbe4b980b5683a7281e263008a798f2a202080aa938c13865f9",
+    "archive_protocol.exs": "bc32240410083616409236db46da86a9a372d7c2159eabc2ddebde524bf9ba15",
+    "feedback_groups.exs": "e597f0c1191326927d40a63d3b22d72394113694bab0399473bfed45bf047afb",
+    "feedback.exs": "0b82ef754e301514898b08360abe2bf5444c3f464544d1538741d63fef13b217",
+    "replay.exs": "c087b6293587e9b13692d5500a45504b59de1093c47afb6870562812836e99d9",
+    "replay_worker.exs": "ac9429f7884bc596da436585bf2d2bd45f4811e4a3b65a7cb63b3eb5e1be3ef6",
+    "feedback_protocol.exs": "d9ae6bf94bf457c88aa7f1a2603eba6d04075fd617a17e915b43bc5364e91ba9",
+    "optimization.exs": "199ce0b140cb8dc8115cfe2cd76b2f73bc9f406fe2a9bad50ef565aaaf8a5891",
+    "optimization_worker.exs": "41fab6bb82cc45e91245dfc24e467e68411355b770150f3109ae0b3b16e1db63",
+    "optimization_protocol.exs": "68d7ff4aa303470474718658e52b34f598931f0769fa0b71237d5ddbad373f6d",
+    "storage.exs": "42e7b689d65458ea466a50ebac0f5101bd35b8e7b8c0eb28041cddc897a9ce57",
+    "directory.exs": "af8a93619b50db3dbe57366fcb8998adb83514a776c86619a8cc7e0778ef5c57",
+    "source_queries.exs": "449dda1a1d422a4b2abf9038215b7df1e7b6bce4612f54f24e57010b928dea1f",
+    "directory_protocol.exs": "7472830ceb6cda14160f55bb120c74bc8fe913baf632271628b9d72ac5466296",
+    "multi_protocol.exs": "6b12c73a962ce5ec3e6d8cbc56337f2b4ddcab3e23421eb1e97a18b1cd81bb5e",
+    "protocol.exs": "aaf6815cc820177e3f4b3e7cc7549321cdba3a6e6fbf5e06675b4dc057b52d3f",
+    "eventing.exs": "7ba009e66ec202f0ef432e4a973c5b3387913270cafff8d99f31a869bf8b1619",
+    "federation_v2.exs": "3a062e116926a777ae37a68cd1ad3ac2408d37d280845ce69732f669a16e6b09",
+    "migration.exs": "ef775c950b48acc85122a38c113e87f1f5a965ad557b8a0ba7c6867e2cdf0840",
+    "store.exs": "8408db78db61335b536c1ab83a900ee2e08c155d7223222007df2ebeae02416a",
+    "config.exs": "c734c3d0017f3d65bfb213f842344f735be23a9ee84d9fe5a19730c55aaca28e",
+    "identity.exs": "6133d854c67f07369a0786e3fc9d3c4546155a062918b98aa5b017513fdbccfb",
+    "workers.exs": "4512c04cdb02b941ccd305063800f7dc6d1d696d3763f32d3372644e6015c227",
+    "web.exs": "d9183b9d927ef3133945203222732acf5e2334449afd4dc20bd93b1cd23c3a28",
+    "server.exs": "93f07f81ed7e5c0436bfa4c14040a8f9c5bd3ef08bd2b8ccb758aeba88a644bc",
+    "cli.exs": "f163b3e9016491ea096b60e3b9c4ecc38eca50fb14af6bce4cf546eb899bc1f6",
+    "tests/litai_test.exs": "0f36267570d1fec1322ccbc1c673723119b0c0c027b8e3e33cf95640fc759b5a",
+    "main.exs": "e141860c587bf537b5f0d5a9d736b7e407b3155859e2d3e82cd41849be68b551"
+  },
+  "broker_rest_versions": "Confluent8.3.2; realKafka single-node",
+  "runtime": "Elixir1.20.4/OTP29Linuxamd64Docker via selected wrapper"
+}

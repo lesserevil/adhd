@@ -1,0 +1,40 @@
+{
+  "schema": "adhd/recovery-failure-causal-observation-proposal@1",
+  "status": "REVIEW ONLY; no runtime or rerun authorized",
+  "preserved_failure": "matrix.json remains false; nine whole suites/44 checks retained, failed partial excluded, fifteen unrun",
+  "observed_interval": {
+    "source": "component/source38/project_restore.exs:1523-1562, exact bound immutable sourceC",
+    "after": "GenServer job_private owned_stage_dir assignment",
+    "before": "durable coordinator decision",
+    "calls": [
+      "RecoveryFiles.mkdir_private/2",
+      "Storage.write_closed/2 (DETS open/persist/close/read_snapshot)",
+      "RecoveryFiles.read/3",
+      "RecoveryCheckpoint.preflight/2",
+      "RecoveryFiles.fingerprint/2",
+      "Eventing.preflight_restore/2 (provision and offsets HTTP)"
+    ],
+    "transport_enabled": true,
+    "stage_directory_currently_absent": "Failure cleanup can remove owned staging; absence does not establish where it failed."
+  },
+  "smallest_next_step": {
+    "scenario": "Separate diagnostic of ONLY original crash-no-default-after-install-snapshot, unchanged fixtures, callback/boundary assertions and sixty-second sentinel deadline. Not a qualification retry. Root must review and authorize first.",
+    "startup": "Test-only observer precedes guarded compiled boot. Wait for exact modules already loaded via code.is_loaded; never ensure_loaded, recompile or replace product functions. Retain exact source/image/cache proof.",
+    "trace": "Use Erlang call trace with local match specs containing return_trace and exception_trace for only the whitelisted restore-stage MFAs. Trace the prepare_apply worker PID selected from a prepare_apply call event, and its descendants only if necessary. Do not retain call arguments, return values or full exception terms.",
+    "records": [
+      "monotonic timestamp",
+      "whitelisted module/function/arity",
+      "call/return/exception phase",
+      "exception class and whitelisted domain code or POSIX errno only",
+      "bounded hash of exception reason if no safe scalar category",
+      "worker PID correlation local to fixture"
+    ],
+    "limits": "Private owned regular0600 file; max512 records/max65536 bytes; on overflow mark diagnostic incomplete; no headers, HTTP body, config, source records or arbitrary path data. Bound observer shutdown and prove VM/container/probe absence.",
+    "interpretation": "First failing return/exception boundary distinguishes storage/checkpoint from Eventing without guessing from generic RESTORE_IO_ERROR. If trace setup cannot be verified before original apply, stop diagnostic; never modify case or extend deadline."
+  },
+  "not_proven": [
+    "No exact underlying exception/syscall/broker error captured by original runtime.",
+    "No shared causal claim with ancillary project-new failure.",
+    "No scheduler, CPU, compilation or throughput conclusion."
+  ]
+}

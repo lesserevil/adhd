@@ -1,0 +1,149 @@
+{
+  "suite": "multi-agent-retirement",
+  "started_at": "2026-10-21T22:37:20.197652+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "independent-retained-private-ack-subscription-query-receipt-and-foreign-project-identities-created",
+      "passed": true,
+      "retained_kinds": [
+        "queued",
+        "acked",
+        "subscription",
+        "query",
+        "receipt",
+        "cross-project",
+        "legacy-unowned"
+      ]
+    },
+    {
+      "name": "all-retired-tokens-denied-after-atomic-credential-owner-admission-removal",
+      "passed": true
+    },
+    {
+      "name": "retirement-durable-across-hard-restart-before-any-identity-recreation",
+      "passed": true
+    },
+    {
+      "name": "developer-can-still-create-fresh-owned-identity",
+      "passed": true
+    },
+    {
+      "name": "explicit-admin-recovery-retains-all-identities-private-state-acknowledgements-and-owned-resources",
+      "passed": true
+    },
+    {
+      "name": "hard-restart-preserves-explicit-admin-recovery-without-acknowledged-redelivery",
+      "passed": true
+    },
+    {
+      "name": "developer-reuse-denied-for-every-retained-state-kind-across-all-project-snapshots",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled typed model fixture is not semantic model quality evidence."
+  ],
+  "harness_sha256": "462873283d77907ef6ed6646efe74b45f842d3d0b0ebe02b97c64f4d17f1293f",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "canonical_manifest_sha256": "313602f9ae928acea10c543e4a661ead19c156ad592535b98855856272736586",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "e138ceaaa57c8ef9888c8e8f32ab8183b16832d9b559a3db6f4f0b6a48b10f10",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "e138ceaaa57c8ef9888c8e8f32ab8183b16832d9b559a3db6f4f0b6a48b10f10",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "690ecebf13131b541529c4e99e5e04dd659358853d83449a8b67d77241b33785",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "690ecebf13131b541529c4e99e5e04dd659358853d83449a8b67d77241b33785",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "a00cad2095f68190c3d643294338f194bbd341314c3fc3a6e0ede7c5d5792cfa",
+        "image_config_identity": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b"
+      },
+      {
+        "action": "stopped",
+        "container_id": "a00cad2095f68190c3d643294338f194bbd341314c3fc3a6e0ede7c5d5792cfa",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "d1f906a03592d7ea93cfbdc7740c3c52f72a62e14f6f7ea32917003c9f3a10aa"
+  },
+  "image_id": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "artifact_sha256": "7cc2f584c73ac869baf08fed763627361488b3e71aecc82911157f083d6234a9",
+  "developer_reuse_attempts": [
+    {
+      "kind": "queued",
+      "http_status": 409,
+      "denied": true,
+      "configuration_unchanged": true,
+      "replacement_token_denied": true,
+      "error_code": "IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "kind": "acked",
+      "http_status": 409,
+      "denied": true,
+      "configuration_unchanged": true,
+      "replacement_token_denied": true,
+      "error_code": "IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "kind": "subscription",
+      "http_status": 409,
+      "denied": true,
+      "configuration_unchanged": true,
+      "replacement_token_denied": true,
+      "error_code": "IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "kind": "query",
+      "http_status": 409,
+      "denied": true,
+      "configuration_unchanged": true,
+      "replacement_token_denied": true,
+      "error_code": "IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "kind": "receipt",
+      "http_status": 409,
+      "denied": true,
+      "configuration_unchanged": true,
+      "replacement_token_denied": true,
+      "error_code": "IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "kind": "cross-project",
+      "http_status": 409,
+      "denied": true,
+      "configuration_unchanged": true,
+      "replacement_token_denied": true,
+      "error_code": "IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "kind": "legacy-unowned",
+      "http_status": 409,
+      "denied": true,
+      "configuration_unchanged": true,
+      "replacement_token_denied": true,
+      "error_code": "IDEMPOTENCY_CONFLICT"
+    }
+  ],
+  "finished_at": "2026-10-21T22:38:41.725161+00:00"
+}

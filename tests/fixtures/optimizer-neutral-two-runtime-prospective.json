@@ -1,0 +1,595 @@
+{
+  "schema": "adhd/neutral-optimizer-two-runtime@1",
+  "status": "PROSPECTIVE_NO_EXECUTION",
+  "execution_hold": "Accepted final targets, zero-model seals, code and separate execution approvals required.",
+  "historical_parent_sha256": "b069fdf8f7bf4ff5e85754850cedc42deb6ef28dd7c5c876b3869df8a1f6724f",
+  "semantics_sha256": "e9058c90de26827784c21101f1cdf06d288c047d8c7119da52164c318621d0d9",
+  "native_originals_sha256": {
+    "train01:0": "6551ef7ba5eda21619a3bd074c838c811d1b87594dd1dae149539fd491481805",
+    "train01:1": "58150d31572f09ca2bd805e8fdf4e37bbd84791583687d741e252f13faf687e6",
+    "train01:2": "beeffa33de9156d658e3fc88d7fb039ddf1fc2f0f0672b7cc59562b49c673b6b",
+    "train02:0": "ed231ce9f09cfa243543a80d86fd09dc36fd8cad2db49bc1b358e5921a679fac",
+    "train02:1": "3edf80a7c460b5b69df9d68f55a276f3e6ff0c8b56ebae81f5b474c17498baa0",
+    "train02:2": "f9e666e731fa1646f466f3936f1d7ddee4645ba56553572e628f325f0cf45b02"
+  },
+  "semantic_plan": {
+    "preregistration": {
+      "schema": "adhd/neutral-optimizer-preregistration@1",
+      "status": "fixed-before-model-free-preflight",
+      "execution_authorization": "model-free structural preflight only; provider phase requires separate review",
+      "target": {
+        "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+        "server_id": "20e2672c4cc09de5ff5e4379478d000a",
+        "project_id": "project-red",
+        "agent_id": "bridge"
+      },
+      "recipe": {
+        "tokenizer": "words",
+        "chunk_bytes": 1024,
+        "context_depth": 1,
+        "context_limit": 8,
+        "include_context": true,
+        "semantic": false,
+        "semantic_window": 32,
+        "lexical_weight": 1,
+        "semantic_weight": 2
+      },
+      "history": {
+        "context_depth": 2,
+        "context_limit": 32,
+        "request_bytes": 8192,
+        "min_confidence_ppm": 500000
+      },
+      "archive": {
+        "audit_rate_ppm": 0
+      },
+      "optimizer_gates": "unchanged defaults; no proposal or provider calls authorized by this manifest",
+      "limits": {
+        "preflight_provider_posts": 0,
+        "proposed_later_total_posts": 106,
+        "proposed_later_total_seconds": 900,
+        "retries": 0
+      },
+      "cases": [
+        {
+          "id": "train01",
+          "cohort": "training",
+          "question": "Was parcel Larch delivered to the loading bay?",
+          "records": [
+            {
+              "key": "0",
+              "text": "Was parcel Larch delivered to the loading bay?",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q01",
+                "item_id": "0"
+              },
+              "occurred_at": "2026-10-20T00:01:00Z",
+              "reply_to": null
+            },
+            {
+              "key": "1",
+              "text": "Acknowledged.",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q01",
+                "item_id": "1"
+              },
+              "occurred_at": "2026-10-20T00:01:01Z",
+              "reply_to": "0"
+            },
+            {
+              "key": "2",
+              "text": "Yes",
+              "information_type": "c01",
+              "source": {
+                "kind": "fixture",
+                "id": "q01",
+                "item_id": "2"
+              },
+              "occurred_at": "2026-10-20T00:01:02Z",
+              "reply_to": "1"
+            }
+          ],
+          "scope": {
+            "information_type": "c01"
+          },
+          "complete": false,
+          "limit": 8,
+          "gold": {
+            "expectation": "supported",
+            "support_keys": [
+              "0",
+              "2"
+            ],
+            "confirmed": true,
+            "tags": []
+          }
+        },
+        {
+          "id": "train02",
+          "cohort": "training",
+          "question": "Was parcel Juniper delivered to the loading bay?",
+          "records": [
+            {
+              "key": "0",
+              "text": "Was parcel Juniper delivered to the loading bay?",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q02",
+                "item_id": "0"
+              },
+              "occurred_at": "2026-10-20T00:02:00Z",
+              "reply_to": null
+            },
+            {
+              "key": "1",
+              "text": "Acknowledged.",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q02",
+                "item_id": "1"
+              },
+              "occurred_at": "2026-10-20T00:02:01Z",
+              "reply_to": "0"
+            },
+            {
+              "key": "2",
+              "text": "Yes",
+              "information_type": "c02",
+              "source": {
+                "kind": "fixture",
+                "id": "q02",
+                "item_id": "2"
+              },
+              "occurred_at": "2026-10-20T00:02:02Z",
+              "reply_to": "1"
+            }
+          ],
+          "scope": {
+            "information_type": "c02"
+          },
+          "complete": false,
+          "limit": 8,
+          "gold": {
+            "expectation": "supported",
+            "support_keys": [
+              "0",
+              "2"
+            ],
+            "confirmed": true,
+            "tags": []
+          }
+        },
+        {
+          "id": "held01",
+          "cohort": "held_out",
+          "question": "Was parcel Aspen delivered to the loading bay?",
+          "records": [
+            {
+              "key": "0",
+              "text": "Was parcel Aspen delivered to the loading bay?",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q03",
+                "item_id": "0"
+              },
+              "occurred_at": "2026-10-20T00:03:00Z",
+              "reply_to": null
+            },
+            {
+              "key": "1",
+              "text": "Acknowledged.",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q03",
+                "item_id": "1"
+              },
+              "occurred_at": "2026-10-20T00:03:01Z",
+              "reply_to": "0"
+            },
+            {
+              "key": "2",
+              "text": "Yes",
+              "information_type": "c03",
+              "source": {
+                "kind": "fixture",
+                "id": "q03",
+                "item_id": "2"
+              },
+              "occurred_at": "2026-10-20T00:03:02Z",
+              "reply_to": "1"
+            }
+          ],
+          "scope": {
+            "information_type": "c03"
+          },
+          "complete": false,
+          "limit": 8,
+          "gold": {
+            "expectation": "supported",
+            "support_keys": [
+              "0",
+              "2"
+            ],
+            "confirmed": true,
+            "tags": []
+          }
+        },
+        {
+          "id": "held02",
+          "cohort": "held_out",
+          "question": "Was parcel Cedar delivered to the loading bay?",
+          "records": [
+            {
+              "key": "0",
+              "text": "Was parcel Cedar delivered to the loading bay?",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q04",
+                "item_id": "0"
+              },
+              "occurred_at": "2026-10-20T00:04:00Z",
+              "reply_to": null
+            },
+            {
+              "key": "1",
+              "text": "Acknowledged.",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q04",
+                "item_id": "1"
+              },
+              "occurred_at": "2026-10-20T00:04:01Z",
+              "reply_to": "0"
+            },
+            {
+              "key": "2",
+              "text": "Yes",
+              "information_type": "c04",
+              "source": {
+                "kind": "fixture",
+                "id": "q04",
+                "item_id": "2"
+              },
+              "occurred_at": "2026-10-20T00:04:02Z",
+              "reply_to": "1"
+            }
+          ],
+          "scope": {
+            "information_type": "c04"
+          },
+          "complete": false,
+          "limit": 8,
+          "gold": {
+            "expectation": "supported",
+            "support_keys": [
+              "0",
+              "2"
+            ],
+            "confirmed": true,
+            "tags": []
+          }
+        },
+        {
+          "id": "held03",
+          "cohort": "held_out",
+          "question": "Was parcel Maple delivered to the loading bay?",
+          "records": [
+            {
+              "key": "0",
+              "text": "Was parcel Willow delivered to the loading bay?",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q05",
+                "item_id": "0"
+              },
+              "occurred_at": "2026-10-20T00:05:00Z",
+              "reply_to": null
+            },
+            {
+              "key": "1",
+              "text": "Acknowledged.",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q05",
+                "item_id": "1"
+              },
+              "occurred_at": "2026-10-20T00:05:01Z",
+              "reply_to": "0"
+            },
+            {
+              "key": "2",
+              "text": "Yes",
+              "information_type": "c05",
+              "source": {
+                "kind": "fixture",
+                "id": "q05",
+                "item_id": "2"
+              },
+              "occurred_at": "2026-10-20T00:05:02Z",
+              "reply_to": "1"
+            }
+          ],
+          "scope": {
+            "information_type": "c05"
+          },
+          "complete": false,
+          "limit": 8,
+          "gold": {
+            "expectation": "no_evidence",
+            "support_keys": [],
+            "confirmed": true,
+            "tags": []
+          }
+        },
+        {
+          "id": "reg01",
+          "cohort": "regression",
+          "question": "Was parcel Birch delivered to the loading bay?",
+          "records": [
+            {
+              "key": "0",
+              "text": "Was parcel Birch delivered to the loading bay?",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q06",
+                "item_id": "0"
+              },
+              "occurred_at": "2026-10-20T00:06:00Z",
+              "reply_to": null
+            },
+            {
+              "key": "1",
+              "text": "Acknowledged.",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q06",
+                "item_id": "1"
+              },
+              "occurred_at": "2026-10-20T00:06:01Z",
+              "reply_to": "0"
+            },
+            {
+              "key": "2",
+              "text": "No",
+              "information_type": "c06",
+              "source": {
+                "kind": "fixture",
+                "id": "q06",
+                "item_id": "2"
+              },
+              "occurred_at": "2026-10-20T00:06:02Z",
+              "reply_to": "1"
+            }
+          ],
+          "scope": {
+            "information_type": "c06"
+          },
+          "complete": false,
+          "limit": 8,
+          "gold": {
+            "expectation": "supported",
+            "support_keys": [
+              "0",
+              "2"
+            ],
+            "confirmed": true,
+            "tags": [
+              "negation"
+            ]
+          }
+        },
+        {
+          "id": "reg02",
+          "cohort": "regression",
+          "question": "What was reported about whether parcel Spruce was delivered to the loading bay?",
+          "records": [
+            {
+              "key": "0",
+              "text": "Was parcel Spruce delivered to the loading bay?",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q07",
+                "item_id": "0"
+              },
+              "occurred_at": "2026-10-20T00:07:00Z",
+              "reply_to": null
+            },
+            {
+              "key": "1",
+              "text": "Yes",
+              "information_type": "r00",
+              "source": {
+                "kind": "fixture",
+                "id": "q07",
+                "item_id": "1"
+              },
+              "occurred_at": "2026-10-20T00:07:01Z",
+              "reply_to": "0"
+            },
+            {
+              "key": "2",
+              "text": "Correction: No",
+              "information_type": "c07",
+              "source": {
+                "kind": "fixture",
+                "id": "q07",
+                "item_id": "2"
+              },
+              "occurred_at": "2026-10-20T00:07:02Z",
+              "reply_to": "1"
+            }
+          ],
+          "scope": {
+            "information_type": "c07"
+          },
+          "complete": false,
+          "limit": 8,
+          "gold": {
+            "expectation": "conflicting",
+            "support_keys": [
+              "0",
+              "1",
+              "2"
+            ],
+            "confirmed": true,
+            "tags": [
+              "correction"
+            ]
+          }
+        }
+      ],
+      "publication_order": [
+        "train01:0",
+        "train01:1",
+        "train01:2",
+        "train02:0",
+        "train02:1",
+        "train02:2",
+        "held01:0",
+        "held01:1",
+        "held01:2",
+        "held02:0",
+        "held02:1",
+        "held02:2",
+        "held03:0",
+        "held03:1",
+        "held03:2",
+        "reg01:0",
+        "reg01:1",
+        "reg01:2",
+        "reg02:0",
+        "reg02:1",
+        "reg02:2"
+      ],
+      "spec_sha256": {
+        "components/hub/optimization/spec.md": "01526232cd88786f004c902e38c76860e371dee15279230331372033d48eef0f",
+        "components/hub/retrieval/spec.md": "ead989174290747fbd73d0fad10df6fa4cb1940940e84e91cdc1e07e51e25940",
+        "components/hub/retrieval/index.md": "cd2341468d2cef4ca4987d63eee3f8664623f3b05fcb575361562af5508bdc18",
+        "components/hub/archive/spec.md": "c6669a7ab69c6e9b354c175ac350df55011ade398d051c491ee92388add9fee0",
+        "components/hub/feedback/replay.md": "e9da3b7ffad2b089822b3c0b6cda9e5634d1bba6a35e402f1bdaecd568e77236"
+      },
+      "failure_policy": "Any failed mechanical prerequisite stops this fixed cohort with zero provider forwarding, no metadata/IDs/content/gold/policy reselection. Actual assigned IDs/timestamps captured once before inference. Existing30/34 optimizer failures remain failed."
+    },
+    "provider_budget": {
+      "maximum_upstream_http_posts": 106,
+      "maximum_wall_clock_seconds": 900,
+      "relay_retries": 0
+    },
+    "provider": {
+      "model": "Nemotron-Deciffusion-8B-v2.1",
+      "url": "http://127.0.0.1:18770/v1/systemone"
+    },
+    "original_attempt": {
+      "mode": "search_then_scan",
+      "complete": false,
+      "limit": 8
+    },
+    "optimization": {
+      "enabled": true,
+      "mode": "review",
+      "max_variants": 8,
+      "recurrence_groups": 2,
+      "min_training_groups": 2,
+      "min_held_out_groups": 2,
+      "min_regression_groups": 2,
+      "min_positive_training": 1,
+      "min_positive_held_out": 1,
+      "min_no_evidence_controls": 1,
+      "min_negation_controls": 1,
+      "min_correction_controls": 1,
+      "min_recall_gain_ppm": 1,
+      "max_total_calls_delta": 0,
+      "max_total_bytes_delta": 0,
+      "max_native_growth_ppm": 2000000
+    }
+  },
+  "target_release": "final38",
+  "targets": {
+    "native": {
+      "kind": "native",
+      "fixture_root": "/home/horde/src/adhd/.worktrees/acceptance/_build/optimizer-neutral-preflight/run-c",
+      "server_id": "20e2672c4cc09de5ff5e4379478d000a",
+      "broker_rest_url": "http://127.0.0.1:18082",
+      "broker_cluster_id": null,
+      "artifact_sha256": null,
+      "artifact_path": null,
+      "admission_evidence": null
+    },
+    "image": {
+      "kind": "image",
+      "fixture_root": "/home/horde/src/adhd/_build/oq37i",
+      "server_id": "1a7bee386af8a0ce3b7e151994796108",
+      "broker_rest_url": "http://127.0.0.1:18085",
+      "broker_cluster_id": null,
+      "artifact_sha256": null,
+      "artifact_path": null,
+      "admission_evidence": null,
+      "image_config_identity": null,
+      "image_manifest": null,
+      "canonical_manifest_sha256": null
+    }
+  },
+  "budgets": {
+    "per_runtime": {
+      "maximum_upstream_http_posts": 106,
+      "maximum_wall_clock_seconds": 900,
+      "relay_retries": 0
+    },
+    "aggregate_posts": 212,
+    "aggregate_provider_seconds": 1800,
+    "retries": 0,
+    "borrow_unused_allowance": false
+  },
+  "order": [
+    "native",
+    "image"
+  ],
+  "one_proposal_per_runtime": true,
+  "adapt_to_other_result": false,
+  "sealed_inputs": null,
+  "python_dependency_sha256": {
+    "admin_cases.py": "de5f1f532aae3d21e93c324310d6e85c88647db61d111fd1b11e52edcbed2afc",
+    "archive_support.py": "d17dc84f0c9f49a8b4cd4634654372b730681a2db15e052f5dff4b86284b6b45",
+    "container_fixture.py": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "foundation_acceptance.py": "046fe681bfe4387207a40d9fadac9867fda355d7bc093f3fd6af76bc2bfda5d2",
+    "history_support.py": "33315ee005d9db6fc7211a378449f0ec0a7787793b2d648e48ae9d8d85bad037",
+    "hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e",
+    "information_cases.py": "8ae62c6a085a002575bdb14b777989eaf83158f7cc0f55bf0be00c549b4b575e",
+    "multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c",
+    "optimization_neutral_pair.py": "83f91ce5e117fba05ecd40d36c2863f2b6794e5ddfc06b763da7cbb4d30f48d0",
+    "optimization_neutral_runtime.py": "4ea6633662b8b8a94c374bb1798a1e68a4ce6fb45ad9a54585b500efab092645",
+    "optimization_neutral_witness.py": "565e815f64254d93b766f7732e47ae36398d5e8002bd5d4c902a89036ae441db",
+    "optimization_positive_witness.py": "5e5db66377685faae57f200924ca8ed4dc39595f50c08cccfb11856513497751",
+    "optimization_provider_io.py": "a6251bf9d9203038f69074746eb5a22fcb9f47c78425aa46f6af07783e417d46",
+    "optimization_validation.py": "ff945cf14369d4f52931d3d3a54370becbd3fab16eb749576bc8a8aa406ce9a6",
+    "project_recovery_acceptance.py": "3d07ea75423399449717ab5244a739de4e0e69b966024743c8cbe100933c36ab",
+    "project_recovery_allocators.py": "63991138084c14f2c192d4da6c1fd9ae7a94c8012af189b69c6709c42daa73ed",
+    "project_recovery_queries.py": "a729671df0900779d48bb9f2ebf9a69e96d79479b9231a2c26793e293cf05e08",
+    "project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa",
+    "project_recovery_workflows.py": "79c43aa9d287225abf1de35662b3885d357a78cf75d6c7ec3916e8f8903d11e6",
+    "protocol_acceptance.py": "d12178405308297ee67e995228c5b86cd7c52e6f8582bec58b4ffb05c7d0e152",
+    "retrieval_support.py": "5c7346f6534a848b82e2416d7affbd5b8cc00dda1df75780672435195058e229",
+    "upgrade_cases.py": "9517e207cd074e76e42f31debb168d9f67dc70d88ba227f31fb099f4e5ae8b97"
+  },
+  "assertion_clarification": {
+    "training": "Require actual completed empty search, recorded baseline recipe, confirmed gap and independent current owned groups.",
+    "held_out_and_regression": "Original scan-only Archive planning is allowed only with completed expected gold answer, full nontruncated History and unchanged actual paired current-baseline/candidate answer/recall/cost/native gates.",
+    "all_seven": "Require model-free empty lexical baseline and exact complete depth2 original gold closure before each original attempt."
+  }
+}

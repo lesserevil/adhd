@@ -1,0 +1,155 @@
+{
+  "suite": "project-recovery-peer-catalog-epoch",
+  "started_at": "2026-10-22T00:33:48.245650+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-authenticated-v2-peer-catalog-success-held-before-target-loss",
+      "passed": true,
+      "response_sha256": "21a93b949506b0ce9beaf5d2b49f379ee3cc9820e51de0c9c06ccc3fb85ba78d"
+    },
+    {
+      "name": "same-vm-target-restored-to-new-epoch-while-blue-remains-current",
+      "passed": true,
+      "loss_witness": {
+        "nonce": "221d631a793b485f8beb4eaa3f422617",
+        "project_id": "project-red",
+        "reason": "killed",
+        "store_pid": "#PID<0.320.0>",
+        "vm_pid": "2373214"
+      },
+      "old_epoch": "08396d1fd76da4f691b9d676ceb65fda",
+      "new_epoch": "6c001170307baa5b329ac2b933215833"
+    },
+    {
+      "name": "released-old-real-peer-response-does-not-populate-restored-directory",
+      "passed": true,
+      "peer_status": "pending"
+    },
+    {
+      "name": "fresh-epoch-real-peer-refresh-succeeds-and-blue-originals-remain-usable",
+      "passed": true,
+      "fresh_response_sha256": "83228b687c1ea1d34924a7c7357c6f35ceb7f2184308d1905032ff079123c9dc",
+      "peer_catalog_revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782"
+    }
+  ],
+  "limitations": [
+    "Native model-free/eventing-disabled two-hub cache/epoch case; no Kafka, semantic provider, container or lifecycle admission claim."
+  ],
+  "prior_attempts": [
+    {
+      "report": "recovery-peer13.json",
+      "report_sha256": "f10ec12f9c0d2885090c6b82c336f876f083ebf99fc0c3ed5c45c903cd51fdf3",
+      "result": "Harness waited for fresh request before releasing old synchronous worker request; failure retained, corrected ordering does not change old-result rejection expectation."
+    },
+    {
+      "report": "recovery-peer13b.json",
+      "report_sha256": "445de0d95b8dbcb822aff25579ed8cc132205bf54c367701a55ec54d1d3885af",
+      "result": "Harness fresh-refresh3s deadline shorter than configured10s network timeout; corrected to10s+2s scheduling, immediate old-directory-empty assertion preserved."
+    }
+  ],
+  "artifact_sha256": "c5d684b9e9580170a3012fb369f4376cc1fbd7ec2f183124dbed12fea76667f1",
+  "harness_sha256": "018698cdd7ed7de734d632b3fe1f11f3a7adb39c036d67170a8a903537c7f1ac",
+  "scope": "Actual native v2 peer HTTP catalog refresh across live target writer loss/restore; no Kafka/model/provider or container claim",
+  "limits": {
+    "startup_seconds": 150,
+    "relay_slots": 4,
+    "relay_requests": 128,
+    "hold_seconds": 10,
+    "epoch_transition_seconds": 8,
+    "fresh_refresh_seconds": 12
+  },
+  "dependency_sha256": {
+    "tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "/home/horde/src/adhd/tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "/home/horde/src/adhd/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "relay_observations": [
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T00:34:37.796Z",
+        "items": [
+          {
+            "aliases": [
+              "held-catalog"
+            ],
+            "canonical": true,
+            "description": "Actual peer canonical catalog marker",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "held-catalog",
+              "tenant": "fixture"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782",
+        "server_id": "032865978e7648acbdae59639c17f994",
+        "visible": true
+      },
+      "response_sha256": "21a93b949506b0ce9beaf5d2b49f379ee3cc9820e51de0c9c06ccc3fb85ba78d",
+      "held_index": 0,
+      "released": true,
+      "write_succeeded": false
+    },
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T00:34:48.006Z",
+        "items": [
+          {
+            "aliases": [
+              "held-catalog"
+            ],
+            "canonical": true,
+            "description": "Actual peer canonical catalog marker",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "held-catalog",
+              "tenant": "fixture"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782",
+        "server_id": "032865978e7648acbdae59639c17f994",
+        "visible": true
+      },
+      "response_sha256": "83228b687c1ea1d34924a7c7357c6f35ceb7f2184308d1905032ff079123c9dc",
+      "held_index": 1,
+      "released": true,
+      "write_succeeded": true
+    },
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T00:34:48.039Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "032865978e7648acbdae59639c17f994",
+        "visible": false
+      },
+      "response_sha256": "34c75b12fbab03ac1a7af09f1a9bbfcc129c9c5082d7429c655add7b86fed1d6",
+      "held_index": null,
+      "released": false,
+      "write_succeeded": true
+    }
+  ],
+  "finished_at": "2026-10-22T00:34:48.104510+00:00"
+}

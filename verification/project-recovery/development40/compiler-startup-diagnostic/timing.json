@@ -1,0 +1,21 @@
+{
+  "source_container_started_at": "2026-10-22T07:30:51.68815718Z",
+  "source_trace_installed_wall_microseconds": "1792654257901502",
+  "trace_install_seconds_after_container_start": "6.21334482",
+  "selected_events": [
+    {
+      "event": "on_module",
+      "module": "ADHD.Web",
+      "trace_elapsed_seconds": "24.341571",
+      "seconds_after_container_start": "30.55491582"
+    },
+    {
+      "event": "defmodule",
+      "module": "ADHD.Server",
+      "trace_elapsed_seconds": "24.342686",
+      "seconds_after_container_start": "30.55603082"
+    }
+  ],
+  "interpretation": "Observed Web completion and Server compile start occur after30s from actual container start; the original health deadline is30s from the original host launch loop. This supports compilation continuing beyond the original readiness window. Tracer preload overhead, async delivery and wallclock alignment prevent treating this as an untraced benchmark or CPU-cause proof.",
+  "sdk_qualified": false
+}

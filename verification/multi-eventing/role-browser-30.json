@@ -1,0 +1,43 @@
+{
+  "schema": "adhd/project-role-browser-qualification@1",
+  "passed": true,
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "image_config_digest": "sha256:b99978ef6889453cda69d1591af5098c33876926c9aaa5fe6253bf8ba1cb4190",
+  "harness_sha256": "d60453b42ce0b3337925e0363b025c707e1415346dc2a320d4a859758f5ac744",
+  "groups": 44,
+  "reports": [
+    {
+      "mode": "native",
+      "path": "verification/multi-eventing/role-browser-30-native.json",
+      "sha256": "78e06c322fd2c5d8be1387f5259a7684cd17429cbe8b90ce7ecd62acff2fe3a8",
+      "groups": 22
+    },
+    {
+      "mode": "image",
+      "path": "verification/multi-eventing/role-browser-30-image.json",
+      "sha256": "1a9063d1acf01e292638d7debb3193270ce85c6b506594cf9eb84f4d89e652db",
+      "groups": 22
+    }
+  ],
+  "manual_review": {
+    "inspected": [
+      "image desktop-projects",
+      "image mobile-projects",
+      "image mobile-developer-agent",
+      "image mobile-viewer",
+      "native desktop-project-switch",
+      "native mobile-project-overrides"
+    ],
+    "findings": [
+      "Project forms retain stable IDs and editable labels/state with creation controls.",
+      "Mobile project forms remain in a single column; Developer can create within current admission and Viewer has no creation controls.",
+      "Project switch shows only selected-project originals; overrides and inheritance controls are present.",
+      "The project-form screenshots retain the expected stale-action message after test-driven view changes; screenshots do not substitute for successful interaction assertions."
+    ]
+  },
+  "limits": [
+    "Controlled model fixtures; no semantic quality claim.",
+    "Role/project/lifecycle UI qualification complements the focused subscription/policy/OIDC Admin suite; it does not replace it.",
+    "Screenshots stay in ignored private fixture storage."
+  ]
+}

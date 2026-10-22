@@ -1,0 +1,24 @@
+{
+  "schema": "adhd/kubernetes-ingress-policy@1",
+  "passed": false,
+  "scope": "TCP fixtures qualify exact shipped NetworkPolicy enforcement only; no Kafka, hub, OAuth, HA or application qualification.",
+  "policy_sha256": "bb2c39acf279a30bfe9f21c0df1ff4672872e8403a52cf3176efacd3e661940a",
+  "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "cluster_endpoint": "https://127.0.0.1:33319",
+  "before": [],
+  "after": [],
+  "fixture_runtime_images": [],
+  "owned_namespace_cleanup": [
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "observed_absent": true,
+      "uid": "53c4a3ec-ba5b-417f-a26f-24947a3f0a69"
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "observed_absent": true,
+      "uid": "a179c793-2d19-4434-9a98-5d78cab96416"
+    }
+  ],
+  "error_type": "AssertionError"
+}

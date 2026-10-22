@@ -1,0 +1,828 @@
+{
+  "schema": "adhd/image38-filesystem-terminal-audit@1",
+  "aggregate_passed": false,
+  "audit_passed": true,
+  "plan_sha256": "8824dbf4a3719930ffe3ed8f79d1c5c770f3b9ec9a4fdc69db7863eab194f6ef",
+  "driver_sha256": "53bd9b3311d2dffa2aa02147f870ebdf8e654c529c7701a1275684f151136419",
+  "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "completed_whole_suites": {
+    "storage-crash": 10,
+    "movefault-before-decision": 4
+  },
+  "whole_checks_passed": 14,
+  "failed_suite": "movefault-after-decision",
+  "failed_partial_checks": 1,
+  "failed_partial_excluded_from_whole_pass_count": true,
+  "unrun_suites": [
+    "movefault-after-first-snapshot",
+    "movefault-after-first-checkpoint",
+    "movefault-before-config",
+    "movefault-after-config",
+    "movefault-before-cleanup",
+    "migration-ordinary",
+    "migration-before-prepared",
+    "migration-before-decided",
+    "migration-before-config",
+    "migration-after-snapshot",
+    "migration-before-completed",
+    "migration-damage-config",
+    "migration-damage-backend",
+    "migration-damage-snapshot"
+  ],
+  "input_closure_unchanged": true,
+  "immutable_input_counts": {
+    "frozen_files": 276,
+    "frozen_directories": 28,
+    "bound_files": 16,
+    "bound_directories": 7,
+    "externals": 20
+  },
+  "failure_classification": "Actual process custody identity tuple changed before pidfd STOP; exact field not recorded and cannot be identified. Whole process maps hash is a plausible mutable field, not a proven cause. No application failure established.",
+  "failed_cleanup_witness": [
+    {
+      "action": "started",
+      "container_id": "2f6bb04ed068da0a57c427f4fafd8b9af682a3e19d9778bd83783f6e3b29e9db",
+      "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+    },
+    {
+      "action": "hard-killed",
+      "container_id": "2f6bb04ed068da0a57c427f4fafd8b9af682a3e19d9778bd83783f6e3b29e9db",
+      "exit_code": 137,
+      "wait_observed": true,
+      "observed_absent": true
+    }
+  ],
+  "daemon_event_count": 253,
+  "observed_containers": [
+    {
+      "container_id": "9b1352a83461676f869d350cbaea9761a5d76749a006909b5699dfd9baec45de",
+      "name": "adhd-multi-accept-641ff9addbef4a61",
+      "actions": [
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646478347594894,
+      "last_event_ns": 1792646493322383338
+    },
+    {
+      "container_id": "6b7cf25d00ee5e97ec3eb081372abdf47e1290f91c1d56bfc8f5c954b80a56c1",
+      "name": "adhd-accept-probe-be129106ce044f76",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646494082959496,
+      "last_event_ns": 1792646495502341759
+    },
+    {
+      "container_id": "ebc6f998fcc98e5dfeaac3d5c16862b8fccb2c3ed530add6b73fb7f3dc8ad614",
+      "name": "adhd-accept-probe-3b7e4b6c34ad4b03",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646496242588645,
+      "last_event_ns": 1792646497669607427
+    },
+    {
+      "container_id": "9dffe60b8c031c217acfde1bcad945117574b3120f951f18ddd4bc315e8fa338",
+      "name": "adhd-multi-accept-cec3d3a2c0804833",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646498249349843,
+      "last_event_ns": 1792646538005677829
+    },
+    {
+      "container_id": "c635c939722fff8fb009bd5e683f48945618456d44ef10d7813f031d857cf7da",
+      "name": "adhd-fs-codec-667d2660e3144d6b",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646538602420159,
+      "last_event_ns": 1792646545817646486
+    },
+    {
+      "container_id": "c6f5a107c5780be167d0b6e60c6af0250272e29d466a0d74f5f6ef19680994f9",
+      "name": "adhd-multi-accept-c8ac4e029e8442b3",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646546608361597,
+      "last_event_ns": 1792646580477365544
+    },
+    {
+      "container_id": "e03ea4ac14317532ea462b02ac88e7c11c060a0cad360e2b743d69a2b0f2a729",
+      "name": "adhd-accept-probe-9d2bbaf588bd4c27",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646581068005186,
+      "last_event_ns": 1792646581782484516
+    },
+    {
+      "container_id": "513e5811f0847879536546257115457374d95517ff431823e51ba6e6b5ccdd85",
+      "name": "adhd-accept-probe-8afd3230ceb348f3",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646582222672886,
+      "last_event_ns": 1792646583113900146
+    },
+    {
+      "container_id": "0f4ebb8a5267f12f3abb5d51faefa2b0e49c0f084664a79dfa6391da221bc899",
+      "name": "adhd-multi-accept-7a739f645ac84a07",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646583684233161,
+      "last_event_ns": 1792646620738875416
+    },
+    {
+      "container_id": "2d2c98b3d6e58667d44eff4951384e469a924f67dfc5fb07306fb4df16df09bf",
+      "name": "adhd-multi-accept-09286d9ae9ac4656",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646621223875355,
+      "last_event_ns": 1792646656794588658
+    },
+    {
+      "container_id": "76999e13b910069fa5ee8edf9c538b2c3f231d6a56e1d88bead0cb6d8373cfce",
+      "name": "adhd-multi-accept-3f617363d7b742de",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646657170868760,
+      "last_event_ns": 1792646693759493272
+    },
+    {
+      "container_id": "cbd5b0e9120cb782e4f0db8d2a21bfbe52ad0865bd498e578a3c3bebf12e89f5",
+      "name": "adhd-multi-accept-84286754017a4de1",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646694331835011,
+      "last_event_ns": 1792646727937947091
+    },
+    {
+      "container_id": "fcfd09e54d387b9bf82802f019edb91250962ef5b01f2d1488fb99ab300e6ddd",
+      "name": "adhd-multi-accept-a8d4d88440054d46",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646728433321820,
+      "last_event_ns": 1792646763682721375
+    },
+    {
+      "container_id": "ec9e7434fdb8b940df3d07503b9890fb9c971a88a7596c6dec07b5d5d17f70dd",
+      "name": "adhd-multi-accept-077909f8de0e4351",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646764278514310,
+      "last_event_ns": 1792646801746532215
+    },
+    {
+      "container_id": "c8aa3a828975f0ed0083ec094812593744da23a4e47e8c8a6603a6f53e588b5d",
+      "name": "adhd-fs-codec-dcabd9d0a8344433",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646802288760349,
+      "last_event_ns": 1792646809573115576
+    },
+    {
+      "container_id": "119e710c41f2e30f830ce64980998cdcfe688ae129f505d4bb653fd51ca4d020",
+      "name": "adhd-multi-accept-977970a7bb5d4c7f",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646810311271807,
+      "last_event_ns": 1792646846388554995
+    },
+    {
+      "container_id": "bebe719096cb9813c30d6568a571294dbd2b2cdbd62fffc5a74e5f3bea527bfe",
+      "name": "adhd-multi-accept-258268d6205544c5",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646846958879013,
+      "last_event_ns": 1792646883062743155
+    },
+    {
+      "container_id": "a25de011990ba032c6a56172713fe511088f1c7eb5ba3adc021b69a8d66d25d7",
+      "name": "adhd-multi-accept-015cd9a4ee984b7f",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646883566737787,
+      "last_event_ns": 1792646920416863727
+    },
+    {
+      "container_id": "d6aa64ccb96d75eab5a54c7057b6dc238be3e59c6f65222b7fece394a7ad3768",
+      "name": "adhd-multi-accept-b5b8acb188e143c3",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646920994835606,
+      "last_event_ns": 1792646957790126084
+    },
+    {
+      "container_id": "f7f2e7182fdc4ed0de4c95ef4f51ce21114a4ca3d2fd04536cadf2ed76b656a1",
+      "name": "adhd-accept-probe-03856ac4186f4dfa",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646961952352174,
+      "last_event_ns": 1792646962726916447
+    },
+    {
+      "container_id": "4ee1d3d9b007707e6eb761be645be9a35cec75789c7f4bd87dcc7d10f02ed42c",
+      "name": "adhd-accept-probe-429ea13f654a415d",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646963151685889,
+      "last_event_ns": 1792646963886697330
+    },
+    {
+      "container_id": "bdad0cc184032aa934602788e7ebca4485c8b414eef7896569cef676ecbdcc2a",
+      "name": "adhd-multi-accept-21cc8709d1c244f7",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792646964253037626,
+      "last_event_ns": 1792647013898350214
+    },
+    {
+      "container_id": "933d7855f6c8dd6fbc06a54dab1515efa37dab2c924ba2c7993170fa875bb0b3",
+      "name": "adhd-multi-accept-0c32747064274fc2",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "stop",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792647014359820198,
+      "last_event_ns": 1792647052808586387
+    },
+    {
+      "container_id": "0d57c70d3f3b0507fa813be023fca3dcada6d7ca46a8470a7e8acf440d35c052",
+      "name": "adhd-accept-probe-bb46fcc818ea43c5",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792647055439980996,
+      "last_event_ns": 1792647056458169230
+    },
+    {
+      "container_id": "95083b1364924b77b5f16af9d61cd8e8edaa84b912249facf50c55cbba0a63a2",
+      "name": "adhd-accept-probe-75a308a1ba0a456d",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792647056805825916,
+      "last_event_ns": 1792647057385427527
+    },
+    {
+      "container_id": "2f6bb04ed068da0a57c427f4fafd8b9af682a3e19d9778bd83783f6e3b29e9db",
+      "name": "adhd-multi-accept-719539bb808a4a8c",
+      "actions": [
+        "create",
+        "attach",
+        "start",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "exec_create: elixir /app/health.exs",
+        "exec_start: elixir /app/health.exs",
+        "exec_die",
+        "kill",
+        "die",
+        "destroy"
+      ],
+      "first_event_ns": 1792647057679901124,
+      "last_event_ns": 1792647104016902425
+    }
+  ],
+  "probe_history_limitation": {
+    "once_marker_time_ns": 1792646245094008257,
+    "earliest_available_event_ns": 1792646478347594894,
+    "early_issued_probe_ids": "Unavailable: daemon global retained event ring had already advanced when read-only stream attached; never fabricated",
+    "scope_exclusivity": "Parent confirms no concurrent image38 launch lane",
+    "closure_conclusion": "Known IDs/names all independently absent. Successful complete image38 ps-a enumeration is empty, so no lingering image38 probes/apps/codecs, including unknown early transient probe names."
+  },
+  "independent_absence": [
+    {
+      "identifier": "0d57c70d3f3b0507fa813be023fca3dcada6d7ca46a8470a7e8acf440d35c052",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 0d57c70d3f3b0507fa813be023fca3dcada6d7ca46a8470a7e8acf440d35c052\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "0f4ebb8a5267f12f3abb5d51faefa2b0e49c0f084664a79dfa6391da221bc899",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 0f4ebb8a5267f12f3abb5d51faefa2b0e49c0f084664a79dfa6391da221bc899\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "119e710c41f2e30f830ce64980998cdcfe688ae129f505d4bb653fd51ca4d020",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 119e710c41f2e30f830ce64980998cdcfe688ae129f505d4bb653fd51ca4d020\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "2d2c98b3d6e58667d44eff4951384e469a924f67dfc5fb07306fb4df16df09bf",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 2d2c98b3d6e58667d44eff4951384e469a924f67dfc5fb07306fb4df16df09bf\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "2e8fbe8de45018cec1dbb6b0e91d903caaa280b72f71be3cff28904eb59ff680",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 2e8fbe8de45018cec1dbb6b0e91d903caaa280b72f71be3cff28904eb59ff680\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "2f6bb04ed068da0a57c427f4fafd8b9af682a3e19d9778bd83783f6e3b29e9db",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 2f6bb04ed068da0a57c427f4fafd8b9af682a3e19d9778bd83783f6e3b29e9db\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "49226636e11b61188be65805e427a293bad05c7bef82a1f25cf20d898d96c641",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 49226636e11b61188be65805e427a293bad05c7bef82a1f25cf20d898d96c641\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "4ee1d3d9b007707e6eb761be645be9a35cec75789c7f4bd87dcc7d10f02ed42c",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 4ee1d3d9b007707e6eb761be645be9a35cec75789c7f4bd87dcc7d10f02ed42c\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "513e5811f0847879536546257115457374d95517ff431823e51ba6e6b5ccdd85",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 513e5811f0847879536546257115457374d95517ff431823e51ba6e6b5ccdd85\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "6b7cf25d00ee5e97ec3eb081372abdf47e1290f91c1d56bfc8f5c954b80a56c1",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 6b7cf25d00ee5e97ec3eb081372abdf47e1290f91c1d56bfc8f5c954b80a56c1\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "7377f9147e40191361bc2f1af35acc67455da1bd14fe51cd070cebfbc0aa8b85",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 7377f9147e40191361bc2f1af35acc67455da1bd14fe51cd070cebfbc0aa8b85\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "76999e13b910069fa5ee8edf9c538b2c3f231d6a56e1d88bead0cb6d8373cfce",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 76999e13b910069fa5ee8edf9c538b2c3f231d6a56e1d88bead0cb6d8373cfce\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "933d7855f6c8dd6fbc06a54dab1515efa37dab2c924ba2c7993170fa875bb0b3",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 933d7855f6c8dd6fbc06a54dab1515efa37dab2c924ba2c7993170fa875bb0b3\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "95083b1364924b77b5f16af9d61cd8e8edaa84b912249facf50c55cbba0a63a2",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 95083b1364924b77b5f16af9d61cd8e8edaa84b912249facf50c55cbba0a63a2\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "9b1352a83461676f869d350cbaea9761a5d76749a006909b5699dfd9baec45de",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 9b1352a83461676f869d350cbaea9761a5d76749a006909b5699dfd9baec45de\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "9dffe60b8c031c217acfde1bcad945117574b3120f951f18ddd4bc315e8fa338",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: 9dffe60b8c031c217acfde1bcad945117574b3120f951f18ddd4bc315e8fa338\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "a0ca467e92be6168457dd31b4086faaed773079f0121446d4345cbbf5f902c0e",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: a0ca467e92be6168457dd31b4086faaed773079f0121446d4345cbbf5f902c0e\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "a16592d2fd3bb895beb694cb27da3c850269c18c3d9810f4161ebdc82b9c9808",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: a16592d2fd3bb895beb694cb27da3c850269c18c3d9810f4161ebdc82b9c9808\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "a25de011990ba032c6a56172713fe511088f1c7eb5ba3adc021b69a8d66d25d7",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: a25de011990ba032c6a56172713fe511088f1c7eb5ba3adc021b69a8d66d25d7\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "adhd-fs-codec-0c1241bec4cf4805",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-fs-codec-0c1241bec4cf4805\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "adhd-fs-codec-2de41c63276445be",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-fs-codec-2de41c63276445be\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "adhd-fs-codec-667d2660e3144d6b",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-fs-codec-667d2660e3144d6b\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "adhd-fs-codec-dcabd9d0a8344433",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-fs-codec-dcabd9d0a8344433\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "adhd-fs-codec-e4a4ceaef6794c2c",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-fs-codec-e4a4ceaef6794c2c\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "bdad0cc184032aa934602788e7ebca4485c8b414eef7896569cef676ecbdcc2a",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: bdad0cc184032aa934602788e7ebca4485c8b414eef7896569cef676ecbdcc2a\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "bebe719096cb9813c30d6568a571294dbd2b2cdbd62fffc5a74e5f3bea527bfe",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: bebe719096cb9813c30d6568a571294dbd2b2cdbd62fffc5a74e5f3bea527bfe\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "c635c939722fff8fb009bd5e683f48945618456d44ef10d7813f031d857cf7da",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: c635c939722fff8fb009bd5e683f48945618456d44ef10d7813f031d857cf7da\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "c6f5a107c5780be167d0b6e60c6af0250272e29d466a0d74f5f6ef19680994f9",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: c6f5a107c5780be167d0b6e60c6af0250272e29d466a0d74f5f6ef19680994f9\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "c8aa3a828975f0ed0083ec094812593744da23a4e47e8c8a6603a6f53e588b5d",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: c8aa3a828975f0ed0083ec094812593744da23a4e47e8c8a6603a6f53e588b5d\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "cbd5b0e9120cb782e4f0db8d2a21bfbe52ad0865bd498e578a3c3bebf12e89f5",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: cbd5b0e9120cb782e4f0db8d2a21bfbe52ad0865bd498e578a3c3bebf12e89f5\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "d6aa64ccb96d75eab5a54c7057b6dc238be3e59c6f65222b7fece394a7ad3768",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: d6aa64ccb96d75eab5a54c7057b6dc238be3e59c6f65222b7fece394a7ad3768\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "e03ea4ac14317532ea462b02ac88e7c11c060a0cad360e2b743d69a2b0f2a729",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: e03ea4ac14317532ea462b02ac88e7c11c060a0cad360e2b743d69a2b0f2a729\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "ebc6f998fcc98e5dfeaac3d5c16862b8fccb2c3ed530add6b73fb7f3dc8ad614",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: ebc6f998fcc98e5dfeaac3d5c16862b8fccb2c3ed530add6b73fb7f3dc8ad614\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "ec9e7434fdb8b940df3d07503b9890fb9c971a88a7596c6dec07b5d5d17f70dd",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: ec9e7434fdb8b940df3d07503b9890fb9c971a88a7596c6dec07b5d5d17f70dd\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "f7f2e7182fdc4ed0de4c95ef4f51ce21114a4ca3d2fd04536cadf2ed76b656a1",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: f7f2e7182fdc4ed0de4c95ef4f51ce21114a4ca3d2fd04536cadf2ed76b656a1\n",
+      "authoritative_absent": true
+    },
+    {
+      "identifier": "fcfd09e54d387b9bf82802f019edb91250962ef5b01f2d1488fb99ab300e6ddd",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: fcfd09e54d387b9bf82802f019edb91250962ef5b01f2d1488fb99ab300e6ddd\n",
+      "authoritative_absent": true
+    }
+  ],
+  "complete_image_enumeration": {
+    "argv": [
+      "docker",
+      "ps",
+      "-a",
+      "--no-trunc",
+      "--filter",
+      "ancestor=sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+      "--format",
+      "{{json .}}"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "",
+    "empty": true
+  },
+  "owned_driver_harness_processes_remaining": [],
+  "event_stream_closed": true,
+  "retry_count": 0,
+  "scope": "Historical admitted38 image only; no source40/runtime successor, migration completion, full85 or release qualification",
+  "preserved_files": {
+    "matrix.json": "1349c4db372d37e17800d74a2435a3292fe1c6e51d2862be97dea30044981adc",
+    "storage-crash.log": "0b1ce87385852d4fed2d03711096de1301f4a64851f6cdffb33434b49f0ea408",
+    "movefault-before-decision.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "storage-crash.json": "7e9e438e5d7c2c4750f3f18a5a967394a511da4ca6cca863459a13a4c0696d15",
+    "driver.py": "53bd9b3311d2dffa2aa02147f870ebdf8e654c529c7701a1275684f151136419",
+    "daemon-events.jsonl": "d057f6ff47547de141a2475d13c544f6cd5866495d611aae76b739bdca03f747",
+    "movefault-after-decision.json": "1f507da010c7180ebed5e9d1a16a09af5e5e8529a7d111a3c67ee082fb37780b",
+    "movefault-after-decision.log": "21f61b7f7d3ea09ea66b115277f9aa8d3c09baae97a28c26cc2c17dbc89a0ed0",
+    "movefault-before-decision.json": "802ed32c10b21429438ca28a3982713678c78ba267726d176305c9d36864df29",
+    "execution.log": "224eb817a4e05f16e1c14d67cb3aba84486f49ce264c2dee39ca513ecf052d78",
+    "plan.json": "8824dbf4a3719930ffe3ed8f79d1c5c770f3b9ec9a4fdc69db7863eab194f6ef",
+    "execution.started": "d2f28ee91ecd5289baf940af810d5785f531ba41666db96d30e14944dcb8fd48",
+    "inputs/image_eventing_runtime.py": "35cf00ffc01b08839e423c2a2c45972fd0021e6bd079d84079084868187c6a65",
+    "inputs/multi_fault.c": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+    "inputs/project_recovery_fault.c": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+    "inputs/multi_migration.py": "1ebe62bc5c6daa98a0b11259f7aa598fa0a5838fac154bbc406069d7ccf58f70",
+    "inputs/image_filesystem_runtime.py": "cad99cb18e812bff58fef9883bccdf963b593cd97d665411da6690580e66b042",
+    "inputs/storage_recovery.py": "f372c230b4239a7f4b5317b3de1e918ecd20efa01a24f3380e7ff892f7999c16",
+    "inputs/storage_write_fault.c": "dcb19f03c9e7304eb80029ea5f8ef1af685960123a5a5f69e0ed1402d654e17d",
+    "inputs/image_filesystem_fault.py": "377815766213709224c8b220a44b07892843dad1e7bd904e4b11ca2c38c78deb",
+    "inputs/multi_store_move_fault.py": "665ff47e24c249ee84c2263013de34657a1a73d2a58746240f16f9d800843e72",
+    "inputs/container_fixture.py": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "inputs/image_eventing_fault.py": "ee20feeb9126761f6c09557f6c992ae0ce0a67e4910cf67335f2d30decef832d",
+    "inputs/rebind_fault.c": "214336e720e505aa0da8e2cfd6049fe9fc821220e9b8e9df7727b3702c694b08",
+    "inputs/store_move_fault.c": "9af736cb17ffc8faaca52a97ec5995e2ec75fc670cf325c1b1e0bcbf132cd366"
+  }
+}

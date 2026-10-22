@@ -1,0 +1,57 @@
+{
+  "operation": {
+    "operation_id": "restore_4c600ac3619dc40a569aa1af073012a6_6",
+    "created_at": "2026-10-22T11:46:31.369Z",
+    "updated_at": "2026-10-22T11:46:31.701Z",
+    "state": "failed",
+    "failure": {
+      "code": "RESTORE_IO_ERROR",
+      "conflicts": [],
+      "reason": "io",
+      "retryable": true,
+      "truncated": false
+    },
+    "progress": {
+      "bytes_read": 18747,
+      "maximum_bytes": 67108864,
+      "maximum_records": 100000,
+      "records_checked": 123
+    }
+  },
+  "owned_stage_assigned": true,
+  "transaction_exists": false,
+  "armed_exists": true,
+  "sentinel_exists": false,
+  "transport_enabled": true,
+  "root_eventing": {
+    "enabled": true,
+    "rest_url": "http://127.0.0.1:18082",
+    "timeout_ms": 3000
+  },
+  "private_inputs": {
+    "hub.json": "5fff396137f0108e3be26a4007d3799f0f59d4f752737893c3a986f094606778",
+    "hub.json.recovery": "1f93d6fe52e6cac10bf7fd51bc96b386128ebff781503de613fc534c1af128c2",
+    "hub.json.stores": "9bfb01f946986973fb327a165fed83bc368715ba0223f0cdbe1ca4286659f897",
+    "stdout.log": "ed8e4d96d08e236c3a4a11521b862507daa4ec50be8ae02d8d7c0413f5d490c2",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "broker_log": {
+    "private_path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/r25-negative-audit/rest-failure-window.log",
+    "sha256": "2f9e7aa1796d444c1f5902c3f93beb4f5a795385b5af966fa3926a80cb959185",
+    "bytes": 22082,
+    "window": "2026-10-22T11:46:30Z..11:46:33Z",
+    "matching_selected_topic_digest": "a99a27ddc5ecf3d15dcee4508e0d568430bd19a3151e4611880e762a2be366b2",
+    "whitelisted_exception_class": "org.apache.kafka.common.errors.UnknownTopicOrPartitionException"
+  },
+  "observations": [
+    "Exact selected fresh topic metadata GET404 at11:46:31.644 and its configs GET404 at11:46:31.691.",
+    "Generic topic collection POST201 occurred between at11:46:31.682; its body was not captured, so URL alone does not identify topic.",
+    "Apply failed11:46:31.701, before durable decision; no actual after-cleanup STOP occurred."
+  ],
+  "source_inference": "Given the exact fresh epoch topic known to this selected restore path, correlated configs404 localizes broker readiness failure after filesystem/checkpoint staging. Eventing.provision/3 immediately pipes post-create configs response into success/1; non2xx throws, normalized by generic prepare error into RESTORE_IO_ERROR/io. No original BEAM exception term was captured.",
+  "not_claimed": [
+    "No offsets failure observed for this selected topic.",
+    "Not a defect of after-cleanup scalar observer.",
+    "No source repair, new artifact or retry performed."
+  ]
+}

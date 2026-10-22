@@ -1,0 +1,213 @@
+{
+  "schema": "adhd/image-filesystem-abi-plan@1",
+  "scope": "Standalone compatibility probes only; no ADHD app or runtime durability claim",
+  "execution_authorized": false,
+  "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "work": "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02",
+  "driver_sha256": "66322daa24605d5d6849729d4c1f5ba033e6fc0d1b901f1ea2630e7ef22be2dd",
+  "inventory": {
+    "build/caller.so": {
+      "sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "bytes": 15056
+    },
+    "build/config_rename_fault/audit.json": {
+      "sha256": "8585e59ce24cd0770805fdb494b1b43db6b108f3bd322b9b4f8d0d6ab8b671e9",
+      "bytes": 1700
+    },
+    "build/config_rename_fault/observer.so": {
+      "sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+      "bytes": 14608
+    },
+    "inputs/config_rename_fault.c": {
+      "sha256": "bc3c16ecf630dd401f9b4b5314e26c04a4f161dca9f30f9d2fdbb2e4a34238e5",
+      "bytes": 1687
+    },
+    "inputs/container_fixture.py": {
+      "sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+      "bytes": 10542
+    },
+    "inputs/image_eventing_fault.py": {
+      "sha256": "7071da91850f8876b44e8ae0618008d6fe291640de08ff6ef5d2f4130f65e250",
+      "bytes": 13733
+    },
+    "inputs/image_eventing_runtime.py": {
+      "sha256": "24a9ee11a0a20f67ef40a50733b658a614b467a818cc83de746336f07369dde6",
+      "bytes": 8860
+    },
+    "inputs/image_filesystem_abi_caller.c": {
+      "sha256": "51e0616a8018f020bc51124f3d5ca5a11102347b0847d27957a5afa4a7fcea62",
+      "bytes": 6299
+    },
+    "inputs/image_filesystem_fault.py": {
+      "sha256": "0bf2c2d7302403858c4ef3847392c47d5a3616e981381a241dcec173ae0ce585",
+      "bytes": 11150
+    },
+    "inputs/manifest.json": {
+      "sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+      "bytes": 6162
+    },
+    "run.py": {
+      "sha256": "66322daa24605d5d6849729d4c1f5ba033e6fc0d1b901f1ea2630e7ef22be2dd",
+      "bytes": 24678
+    }
+  },
+  "directories": [
+    "build",
+    "build/config_rename_fault",
+    "inputs"
+  ],
+  "observer_builds": {
+    "config_rename_fault.c": {
+      "library": "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/build/config_rename_fault/observer.so",
+      "audit": {
+        "schema": "adhd/image-filesystem-observer-elf@1",
+        "passed": true,
+        "scope": "Host compiler/readelf only; object never loaded",
+        "source": "config_rename_fault.c",
+        "source_sha256": "bc3c16ecf630dd401f9b4b5314e26c04a4f161dca9f30f9d2fdbb2e4a34238e5",
+        "library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+        "compile_argv": [
+          "cc",
+          "-std=c11",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-shared",
+          "-fPIC",
+          "-nostdlib",
+          "-fno-stack-protector",
+          "-U_FORTIFY_SOURCE",
+          "-D_FORTIFY_SOURCE=0",
+          "-O2",
+          "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/inputs/config_rename_fault.c",
+          "-o",
+          "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/build/config_rename_fault/observer.so"
+        ],
+        "elf_machine": "x86_64",
+        "elf_class": "ELF64",
+        "undefined_scalar_symbols": [
+          "_exit",
+          "access",
+          "close",
+          "dlsym",
+          "fsync",
+          "getenv",
+          "getpid",
+          "kill",
+          "open",
+          "pause",
+          "snprintf",
+          "strcmp",
+          "write"
+        ],
+        "exported_symbols": [
+          "rename"
+        ],
+        "needed_libraries": [],
+        "glibc_symbol_versions": [],
+        "section_sha256": {
+          "dynamic": "56d306c029dec65413345ffc1e55529126180f6ada6e9bbac097c19159a5e65e",
+          "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+          "header": "1f43e798ac574d6dec8ed389ee5a0ae17aa80bf18d85d535f0ec33412bcc15a2",
+          "symbols": "2bbd6e3af7c713f27c5fbf2173213fa4e5853bd3aed6db6f8f7bed55ddc8a6de"
+        },
+        "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "actual_image_loader_qualified": false,
+        "application_started": false,
+        "required_actual_image_abi_cases": [
+          "rename"
+        ]
+      }
+    }
+  },
+  "caller": {
+    "library": "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/build/caller.so",
+    "audit": {
+      "source_sha256": "51e0616a8018f020bc51124f3d5ca5a11102347b0847d27957a5afa4a7fcea62",
+      "library_sha256": "706ec36593c814b1b94d2b2d7c5d11d373defe80da6952e53dd0c51fe5cefa73",
+      "undefined_scalar_symbols": [
+        "_exit",
+        "access",
+        "close",
+        "dlopen",
+        "dlsym",
+        "fsync",
+        "getenv",
+        "getpid",
+        "lseek",
+        "memcmp",
+        "open",
+        "pread",
+        "read",
+        "setenv",
+        "snprintf",
+        "strcmp",
+        "strlen",
+        "unsetenv",
+        "write"
+      ],
+      "needed_libraries": [],
+      "glibc_symbol_versions": [],
+      "compile_argv": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-shared",
+        "-fPIC",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-U_FORTIFY_SOURCE",
+        "-D_FORTIFY_SOURCE=0",
+        "-O2",
+        "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/inputs/image_filesystem_abi_caller.c",
+        "-o",
+        "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/build/caller.so"
+      ],
+      "elf_machine": "x86_64",
+      "sections_sha256": {
+        "dynamic": "148bab214794772c0124a60eb7eae5d9652939ccf27a96c5245bf5bfdf7337ca",
+        "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+        "header": "19dca1a79787217fd8b2b9ff7e9b2d2ff94d61b5a1c2cc7494420d6a54c71948",
+        "symbols": "479b3799a5c9d24ec6df96551918361f396f3fe2ec576e22d8c7b191dcf43d31"
+      },
+      "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "actual_image_loaded": false
+    }
+  },
+  "selected_families": [
+    "config_rename_fault.c"
+  ],
+  "cases": [
+    {
+      "source": "config_rename_fault.c",
+      "op": "rename"
+    }
+  ],
+  "limits": {
+    "cases": 1,
+    "serial_containers": 1,
+    "boundary_seconds": 10,
+    "kernel_stop_seconds": 2,
+    "docker_seconds": 30,
+    "network": "none",
+    "memory": "128m",
+    "cpus": 1,
+    "pids": 32,
+    "case_seconds": 120,
+    "cleanup_seconds": 45,
+    "provider_calls": 0,
+    "app_starts": 0,
+    "broker_calls": 0
+  },
+  "required_review": "Explicit root GO of this exact plan hash before --execute; first failure preserved, no retries",
+  "sparse_write": {
+    "offset": 4294967313,
+    "payload_hex": "61637475616c207363616c6172204142492062797465730a",
+    "maximum_allocated_bytes_per_file": 65536
+  }
+}

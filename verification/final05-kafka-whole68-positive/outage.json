@@ -1,0 +1,138 @@
+{
+  "suite": "adhd/eventing-acceptance@1",
+  "started_at": "2026-10-22T10:22:08.548324+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "raw-and-default-subscriptions-need-no-filter-or-model-and-start-after-activation",
+      "passed": true
+    },
+    {
+      "name": "all-publishers-including-self-independent-subscribers-and-overlap-dedup",
+      "passed": true,
+      "publications": 3,
+      "subscribers": 3,
+      "controlled_model_calls": 0
+    },
+    {
+      "name": "read-after-publish-and-post-ack-literal-search-retain-originals-with-zero-inference",
+      "passed": true
+    },
+    {
+      "name": "private-addressed-messages-are-never-public-events-or-searchable-facts",
+      "passed": true
+    },
+    {
+      "name": "blank-conflicting-and-unknown-filter-selector-inputs-fail-closed",
+      "passed": true
+    },
+    {
+      "name": "deterministic-selector-fields-intersect-values-union-without-inference",
+      "passed": true,
+      "cases": 6
+    },
+    {
+      "name": "real-broker-outage-outbox-hub-kill-recovery-and-acked-replay-dedup",
+      "passed": true,
+      "events": 3
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability.",
+    "Optional semantic filter fault phase requires a separate --with-model run."
+  ],
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_befedcfd51c28b40402e9f039e1d733e_1",
+      "operation_id": "restore_befedcfd51c28b40402e9f039e1d733e_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_befedcfd51c28b40402e9f039e1d733e_3",
+      "operation_id": "restore_befedcfd51c28b40402e9f039e1d733e_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_befedcfd51c28b40402e9f039e1d733e_5",
+      "operation_id": "restore_befedcfd51c28b40402e9f039e1d733e_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "8c3d6b843e7c5d31636ab9e93272fd598a5481dca0f62bd635757773dc438767",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "8c3d6b843e7c5d31636ab9e93272fd598a5481dca0f62bd635757773dc438767",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "1ecb4303edc033c02ae92b6d56684bbc79618dc5925b5179e2b25ed2501adeed",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "1ecb4303edc033c02ae92b6d56684bbc79618dc5925b5179e2b25ed2501adeed",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "1255da40e5e2e52a19a263f3aa0492b48f1789b4604efd7e289958d1ad317555",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "1255da40e5e2e52a19a263f3aa0492b48f1789b4604efd7e289958d1ad317555",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-7fd6a624bf9142f9",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-60464baac6914e56",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "finished_at": "2026-10-22T10:23:18.003129+00:00"
+}

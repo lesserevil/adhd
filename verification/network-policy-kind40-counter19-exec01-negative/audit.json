@@ -1,0 +1,218 @@
+{
+  "ENV_witness": {
+    "container_never_issued": true,
+    "not_qualified": true,
+    "unrun": true
+  },
+  "actual_failure": {
+    "captured_container_timens_offsets": false,
+    "class": "test-harness semantic assumption",
+    "clock_alignment_not_retroactively_claimed": true,
+    "facts_time_namespace_inode": 4026534066,
+    "host_time_namespace_inode": 4026531834,
+    "reason": "Different time namespace inodes were incorrectly required equal; inode difference alone does not imply clock offset."
+  },
+  "facts_container": {
+    "cleanup_removed": true,
+    "id": "ee1164c16b61ecd0dd0c7a29283a5a5bc96268dbb564f38e81a21e98b3ef145b",
+    "name": "adhd-counter19-d64cefc76e6608be09b33d491db2649f-facts",
+    "natural_wait_exit": 0,
+    "read_only_image_observations": [
+      {
+        "bytes": 6658,
+        "kind": "image-executable-fact",
+        "mode": 493,
+        "requested": "/usr/local/bin/elixir",
+        "resolved": "/usr/local/lib/elixir/bin/elixir",
+        "script_executed": false,
+        "sha256": "5cb23d89a78f75589b06fade3097e217b77e63416d61c1800f674579748c4307",
+        "uid": 0
+      },
+      {
+        "boottime_ns": 229834262252746,
+        "kind": "clock-fact",
+        "monotonic_ns": 229834262252303,
+        "time_for_children_namespace_inode": 4026534066,
+        "time_namespace_inode": 4026534066
+      }
+    ]
+  },
+  "independent_terminal_checks": {
+    "frozen_verify_only_exit_code": 0,
+    "input_files": 9,
+    "once_marker_preserved": true,
+    "strict_absence": [
+      {
+        "exit_code": 1,
+        "identifier": "ee1164c16b61ecd0dd0c7a29283a5a5bc96268dbb564f38e81a21e98b3ef145b",
+        "stderr_sha256": "8fa5e4515a38bdf18985c3bf2a70d80594713528f254ef7022aa4c8f4c3e0e54",
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "strict_absent": true
+      },
+      {
+        "exit_code": 1,
+        "identifier": "adhd-counter19-d64cefc76e6608be09b33d491db2649f-facts",
+        "stderr_sha256": "29f6aec0e7c24edddfcac4c07162f1332923f52916327ff6e0eea0468f6ec6a2",
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "strict_absent": true
+      }
+    ],
+    "tools_stdlib_socket_private_config_verified": true
+  },
+  "native_tests": {
+    "programs": [
+      "--selftest",
+      "--reject-leading-zero",
+      "--reject-overflow",
+      "--reject-number-tail",
+      "--reject-environment",
+      "--reject-path",
+      "--clock"
+    ],
+    "whole_passed": 7
+  },
+  "no_cause_inference": [
+    "No Kind utility outcome",
+    "No OOM cause",
+    "No ENV preservation claim",
+    "No cluster/routes/app execution"
+  ],
+  "original_result_preserved": true,
+  "parent_execution": {
+    "exit_code": 1,
+    "session": 91452
+  },
+  "passed": false,
+  "primary_semantics": [
+    {
+      "supports": "Offsets are relative to initial time namespace; namespace identity alone does not define clock offset.",
+      "url": "https://man7.org/linux/man-pages/man7/time_namespaces.7.html"
+    },
+    {
+      "supports": "proc_timens_show_offsets uses time_ns_for_children; successor must bind a process current and children namespace before using offsets as current-clock proof.",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/v6.12/kernel/time/namespace.c"
+    }
+  ],
+  "raw_commands": [
+    {
+      "command_kind": "--selftest",
+      "exit_code": 0,
+      "path": "raw/001.json",
+      "sha256": "bc2d323f12652756774d74ae232df20b643328cd66f0473ebcc6869da5121304"
+    },
+    {
+      "command_kind": "--reject-leading-zero",
+      "exit_code": 70,
+      "path": "raw/002.json",
+      "sha256": "46fd8e223176ef7eaf079308a6bcb6d2b96be4fb9a1c1f3e35571b2c0c96fb85"
+    },
+    {
+      "command_kind": "--reject-overflow",
+      "exit_code": 70,
+      "path": "raw/003.json",
+      "sha256": "c8ec11fed1b33da378a18afa313e5e15eeed1052dbc3d81ae26bc548935a3f1d"
+    },
+    {
+      "command_kind": "--reject-number-tail",
+      "exit_code": 70,
+      "path": "raw/004.json",
+      "sha256": "1181aa649b2c618e99ec9c076c569183c58c16b9a79afdabecfd4d05afe3ec3f"
+    },
+    {
+      "command_kind": "--reject-environment",
+      "exit_code": 70,
+      "path": "raw/005.json",
+      "sha256": "98ccc97dfd6540b126cf54bb8e52e84007dac4b63044bc5f8e9ebe7347a7a994"
+    },
+    {
+      "command_kind": "--reject-path",
+      "exit_code": 70,
+      "path": "raw/006.json",
+      "sha256": "8f6ce92a0313cc98e9422d1f54a49f4c9e320988ca576cb8924504a65c627cf1"
+    },
+    {
+      "command_kind": "--clock",
+      "exit_code": 0,
+      "path": "raw/007.json",
+      "sha256": "cd923c1ffd6f231310d67efc5e942d4ac9a2e7782c7e0fa17b1a2cb6caeeb78d"
+    },
+    {
+      "command_kind": "inspect",
+      "exit_code": 1,
+      "path": "raw/008.json",
+      "sha256": "715cb40b7b89619def93dabcdaccd0e43c26419ba11baa302067c30fecde1dc0"
+    },
+    {
+      "command_kind": "image",
+      "exit_code": 0,
+      "path": "raw/009.json",
+      "sha256": "289f4c70e3450b2ca96c1db078e7577d16f6c8cc90ed1570c9bd92087c077bb9"
+    },
+    {
+      "command_kind": "create",
+      "exit_code": 0,
+      "path": "raw/010.json",
+      "sha256": "e403bd2949e009163e799731492c9b01d9504159bd63b418f12def955b857123"
+    },
+    {
+      "command_kind": "inspect",
+      "exit_code": 0,
+      "path": "raw/011.json",
+      "sha256": "243808badc3745f35884b4ec9a10524cedc733178b098c97eae22b94d7417690"
+    },
+    {
+      "command_kind": "start",
+      "exit_code": 0,
+      "path": "raw/012.json",
+      "sha256": "a4fc77d5d0ec3575e5fc0d122542925c4a1babd7a70d81d46b3407a1cb5e88d7"
+    },
+    {
+      "command_kind": "wait",
+      "exit_code": 0,
+      "path": "raw/013.json",
+      "sha256": "7ecfc854e56436ee186a5d552f325f04fd05e1890eae5df2aa2aa3b05b941cfd"
+    },
+    {
+      "command_kind": "inspect",
+      "exit_code": 0,
+      "path": "raw/014.json",
+      "sha256": "f7f2f05e303c8f355f564e4e9432ed12ef1f8844f3cae3888ab9d662b1ce4d0b"
+    },
+    {
+      "command_kind": "logs",
+      "exit_code": 0,
+      "path": "raw/015.json",
+      "sha256": "fb28b7e684962e414b5414a1b0f593f6756920cf9f36d1e91b9f57c0cc2085dc"
+    },
+    {
+      "command_kind": "inspect",
+      "exit_code": 0,
+      "path": "raw/016.json",
+      "sha256": "f7f2f05e303c8f355f564e4e9432ed12ef1f8844f3cae3888ab9d662b1ce4d0b"
+    },
+    {
+      "command_kind": "rm",
+      "exit_code": 0,
+      "path": "raw/017.json",
+      "sha256": "43ebf3756c6125218d56966b4d89df2d614ded3105d9ca21b92d6b6386c7d567"
+    },
+    {
+      "command_kind": "inspect",
+      "exit_code": 1,
+      "path": "raw/018.json",
+      "sha256": "ed7af8b15f476597fd343191070e579e5f8e619d763c7e6058c26c59006c35f8"
+    },
+    {
+      "command_kind": "inspect",
+      "exit_code": 1,
+      "path": "raw/019.json",
+      "sha256": "715cb40b7b89619def93dabcdaccd0e43c26419ba11baa302067c30fecde1dc0"
+    }
+  ],
+  "raw_hashes": {
+    "EXECUTION_STARTED": "4c66dc7613ced2cbb0bb1b2710f9a605b5700ac86cc1a08a0ff0e9f296099206",
+    "plan.json": "f43b4d824bbf36bfafd96c5dcf19f268f7e3d703ec821b1cef44d6c0a2f83efd",
+    "result.json": "90cb34cd8f5f1299b9fc7c97c6dae7057e9c18639a89962ec9f76e8c7734b489"
+  },
+  "schema": "adhd/counter19-exec01-negative-independent-audit@1"
+}

@@ -1,0 +1,70 @@
+{
+  "actual_isolated_preflight": {
+    "argv": [
+      "pinned-python",
+      "-I",
+      "-S",
+      "-B",
+      "frozen/inputs/driver.py",
+      "--work",
+      "frozen-work",
+      "--plan-sha256",
+      "6deeef0b770d05c3a7fcd711d4434b3993016651275ff94baaddf80847269fd9",
+      "--verify-only"
+    ],
+    "exit_code": 0,
+    "stdout": {
+      "execution_ready": false,
+      "native_starts": 0,
+      "verified": true
+    }
+  },
+  "files": {
+    "tests/policy_kind_counter_probe2.c": "a1dcfecc1c6f45c358261d53813e864b5b493773f7438b60b40f0bc01e9c75bb",
+    "tests/policy_kind_counter_run.py": "a81eb3dc28ad9530edf658d711b7f1d23e32c637a8273a209d049e86304e2146",
+    "tests/policy_kind_counter_run_unit.py": "312ebf13fdfbfa987453070d42283130645430643c2b93ebecda4a795b6b5c19"
+  },
+  "future_sequence": [
+    "Parent reviews source and fresh compile argv frozen at source03; original source02/tool closure remains unchanged.",
+    "Parent may authorize static compile ONLY into source03/counter-probe; this branch ran no compiler.",
+    "After actual static ELF is audited, prepare FRESH execution plan using --prepare NEW_WORK --probe-elf source03/counter-probe. Source03 is intentionally never execution-ready and stays immutable.",
+    "Parent reviews actual frozen execution plan/ELF/source hashes and separately authorizes native/container probes.",
+    "Parent cluster executor/ConfigMap/CRI discovery/live memory capture remain future work after native proof."
+  ],
+  "ignored_plan": {
+    "Python_stdlib_files": 1213,
+    "execution_ready": false,
+    "frozen_directories": 0,
+    "frozen_files": 8,
+    "path": "_build/policy-kind-counter19-sameuid-source03/plan.json",
+    "sha256": "6deeef0b770d05c3a7fcd711d4434b3993016651275ff94baaddf80847269fd9"
+  },
+  "not_claimed": [
+    "Native parser/SHA or ENV witness outcome",
+    "Original image executable resolution/shebang semantics",
+    "Kind cause/OOM/18 routes",
+    "Application/model/Kafka qualification"
+  ],
+  "passed": true,
+  "preserved": {
+    "original_compiled_gate_sha256": "c25e866659905e60739d21d60d6f6fe8f1ab9676151b6e4c19c1d0193e7d13b8",
+    "original_gate_source_sha256": "61cb48e9c07837aaa4d371a17226a3ab9d542295f27269c02efa4a9d73d4e489",
+    "original_probe1_source_sha256": "6f4ba97ef064e568902d990ba3f5a672f50ef6efc1cf829e8fa5fbb6175c3b11",
+    "original_source02_plan_sha256": "a2b16b417f60a6efe3a4214cd1bf72eb42239e9bed94a8cd22b901f2129ec5e2"
+  },
+  "pure_groups": {
+    "all_counter19": 22,
+    "new_controller_mocked": 8
+  },
+  "same_UID_correction": [
+    "Host actor UID1003 and gateUID1000 differ. Controller NEVER reads target host /proc/exe/environ or uses sudo/extra privilege.",
+    "Docker exec uses exact already-owned fullCID and UID/GID1000:1000. Extra tiny native observer is explicitly INSIDE synthetic ENV fixture only; no memory-causal equivalence claim.",
+    "Native resume accepts PID1 only, validates stopped state/security/startticks/PID+mount+user namespaces/exact gateELF/nonce+argv/orderedENV before+after pidfd_open; only pidfd-SIGCONT.",
+    "Actual target+observer time namespace must match controller-bound inode; absolute original first10s release deadline and own2s observer deadline checked before CONT.",
+    "Controller checks fullCID/image/nonce/defaultnohealthcheck/192Mi+CPU1/pids64/readonly/no-network/capdrop/no-newprivs/no host namespaces/exactROmounts and exactcommand before+after resume.",
+    "Frozen executables0555 so UID1000 can execute hostUID1003-owned readonly mounts; private host directories remain0700.",
+    "Persistent fsynced once marker precedes native cases; strict ID/name case-sensitive authoritative absence and independent removal/verification even initial cleanupinspect errors. Positively foreign objects never removed."
+  ],
+  "schema": "adhd/counter19-same-UID-source-executor-preparation-review@1",
+  "scope": "Preparation/pure checks ONLY. No new compiler/native/container/cluster execution."
+}

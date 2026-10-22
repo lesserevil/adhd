@@ -1,0 +1,36 @@
+{
+  "schema": "adhd/local-legacy-startup-races@1",
+  "passed": true,
+  "lifecycle_admitted": false,
+  "artifact_sha256": "7f51d87e5fe66ee0000d473ca58cb8ec3275cb9a3f834e7e8861455e3ff1cc7f",
+  "harness_sha256": "7ae6518667c7cf6d10d5db0ece7e08ffd4de95ba08761ed8a5294ba7a607f45c",
+  "observer_sha256": "cd3c952488499c1498bb49dd91c7084322fac1f1cd2936fec556835f15be2696",
+  "snapshot_fixture_harness_sha256": "73dd117a735118777519a2faa4825e17599254a8a52d85e62fa195abcc7211cb",
+  "original_checkpoint_sha256": "e9a123cde4d4f3160b6322f71918a8fd1c6f634e9932abd64f38ffcfc4de0a00",
+  "original_checkpoint_unchanged": true,
+  "checks": [
+    {
+      "name": "actual-successful-backup-rename-stopped-before-prepared-marker-rejects-appearing-valid-snapshot-after-SIGCONT",
+      "passed": true,
+      "observer": {
+        "stage": "after-checkpoint-backup-rename",
+        "pid": 3565264
+      },
+      "kernel_state_before_injection": "stopped",
+      "exit_code": 1,
+      "decision_absent": true
+    },
+    {
+      "name": "actual-malformed-native-bytes-reject-before-any-config-or-store-backup-marker-decision-writer",
+      "passed": true,
+      "exit_code": 1,
+      "before_projects_backups_absent": true
+    }
+  ],
+  "limitations": [
+    "Diagnostic developmentnative proof, not formalartifact/imageadmission.",
+    "Observer onlystops afterreal successfulbackup rename; no I/O successbody fabricated.",
+    "Tests requireexclusive ownstorage fixture; no same-UIDadversary claim.",
+    "Nativeopenerzero provenseparately bycomponent+independentreview traces, notinstrumented inthis whole-service run."
+  ]
+}

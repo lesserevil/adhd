@@ -1,0 +1,235 @@
+{
+  "schema": "adhd/multi-federation-acceptance@1",
+  "passed": true,
+  "limitations": [
+    "Controlled model fixture qualifies transport and authority, not semantic quality.",
+    "Kafka is exercised as independent per-server services; this suite does not qualify Kubernetes or replicated broker durability."
+  ],
+  "checks": [
+    {
+      "name": "three-real-servers-with-identical-project-ids-and-display-labels",
+      "passed": true
+    },
+    {
+      "name": "catalog-cache-identity-is-server-project-pair-without-false-conflicts",
+      "passed": true
+    },
+    {
+      "name": "three-independent-kafka-services-feed-raw-a2a-streams-with-zero-inference",
+      "passed": true
+    },
+    {
+      "name": "asynchronous-discovery-retains-all-four-server-project-answers",
+      "passed": true
+    },
+    {
+      "name": "query-id-namespace-binds-origin-server-origin-project-and-destination-project",
+      "passed": true
+    },
+    {
+      "name": "bounded-server-catalog-pagination-with-complete-authorized-project-snapshot",
+      "passed": true
+    },
+    {
+      "name": "same-server-canonical-routing-requires-explicit-frozen-admitted-project-scope",
+      "passed": true
+    },
+    {
+      "name": "remote-canonical-source-query-uses-server-project-pair-and-v2-source-jobs",
+      "passed": true
+    },
+    {
+      "name": "duplicate-canonical-claims-across-local-projects-are-conflicts",
+      "passed": true
+    },
+    {
+      "name": "live-project-pair-revocation-keeps-other-origin-grants-without-restart",
+      "passed": true
+    },
+    {
+      "name": "hard-restart-preserves-project-pair-revocation-and-accepted-query-identity",
+      "passed": true
+    },
+    {
+      "name": "accepted-legacy-binary-and-multi-project-server-query-in-both-directions",
+      "passed": true
+    },
+    {
+      "name": "archived-default-project-legacy-routes-export-no-catalog-and-reject-work",
+      "passed": true
+    },
+    {
+      "name": "durable-project-peer-jobs-and-caches-exclude-transport-credentials",
+      "passed": true
+    }
+  ],
+  "admin_request_timings": {
+    "requests": [
+      {
+        "monotonic_start": 242282.446409063,
+        "server_ordinal": 1,
+        "op": "config_get",
+        "status": 200,
+        "duration_seconds": 0.0025385589979123324
+      },
+      {
+        "monotonic_start": 242282.4489909,
+        "server_ordinal": 1,
+        "op": "config_update",
+        "message_id_sha256": "2d188a89415d8494a2e06761635e6ed09911a5564f04ea0d4addfc5fb59c900a",
+        "patch_keys": [
+          "projects"
+        ],
+        "status": 200,
+        "duration_seconds": 1.1739823019888718
+      },
+      {
+        "monotonic_start": 242285.904466073,
+        "server_ordinal": 0,
+        "op": "config_get",
+        "status": 200,
+        "duration_seconds": 0.006031908997101709
+      },
+      {
+        "monotonic_start": 242285.910621301,
+        "server_ordinal": 0,
+        "op": "config_update",
+        "message_id_sha256": "282f54a0f6f8e7b218a870dbdc76ad6cdfc7dccaf9f25db1f120dacf52d54d2c",
+        "patch_keys": [
+          "projects"
+        ],
+        "status": 200,
+        "duration_seconds": 1.2579897469840944
+      },
+      {
+        "monotonic_start": 242288.160732529,
+        "server_ordinal": 1,
+        "op": "config_get",
+        "status": 200,
+        "duration_seconds": 0.00586330599617213
+      },
+      {
+        "monotonic_start": 242288.166684645,
+        "server_ordinal": 1,
+        "op": "config_update",
+        "message_id_sha256": "776d2e2cbf88c046d2f6efccfdcf2f2dfeca6764235d3264692e3a52bae878fe",
+        "patch_keys": [
+          "federation"
+        ],
+        "status": 200,
+        "duration_seconds": 0.9924136380141135
+      },
+      {
+        "monotonic_start": 242315.668229544,
+        "server_ordinal": 0,
+        "op": "config_get",
+        "status": 200,
+        "duration_seconds": 0.005396172986365855
+      },
+      {
+        "monotonic_start": 242315.673718573,
+        "server_ordinal": 0,
+        "op": "config_update",
+        "message_id_sha256": "3893f707b01351cc3db4cc5ab57a5f4564f28713d6c6cd84a174e7e34427cd74",
+        "patch_keys": [
+          "federation"
+        ],
+        "status": 200,
+        "duration_seconds": 0.374402496003313
+      },
+      {
+        "monotonic_start": 242320.367397706,
+        "server_ordinal": 0,
+        "op": "config_get",
+        "status": 200,
+        "duration_seconds": 0.006082275009248406
+      },
+      {
+        "monotonic_start": 242320.373549226,
+        "server_ordinal": 0,
+        "op": "config_update",
+        "message_id_sha256": "a6b8363ed2511994702caef6969a483d6a8b1fe9c3a00c4e66214f6f34082d89",
+        "patch_keys": [
+          "projects"
+        ],
+        "status": 200,
+        "duration_seconds": 0.8057916639954783
+      }
+    ],
+    "omitted_requests": 0
+  },
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "network_mode": "host",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "2afc0fbd80e57c51db88bf6464dd4dda405730d2309b7e4947611d4509ae9e5e",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "started",
+        "container_id": "e46b75ad6e9ed892d7df2179bc07c57f02081fc27c8e026b26f64930c5f4791d",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "started",
+        "container_id": "304104ce137a1b4d70b1ec5dca619e4a50056bcf15901a876ba23f17c573a5e3",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "e46b75ad6e9ed892d7df2179bc07c57f02081fc27c8e026b26f64930c5f4791d",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "3b374686d6daa15cc24440c805406e71a35b889edf1bb3be31adaef1b608dcbf",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "stopped",
+        "container_id": "2afc0fbd80e57c51db88bf6464dd4dda405730d2309b7e4947611d4509ae9e5e",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "stopped",
+        "container_id": "3b374686d6daa15cc24440c805406e71a35b889edf1bb3be31adaef1b608dcbf",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "stopped",
+        "container_id": "304104ce137a1b4d70b1ec5dca619e4a50056bcf15901a876ba23f17c573a5e3",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ]
+  },
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "broker_cluster_ids": [
+    "MkU3OEVBNTcwNTJENDM2Qk",
+    "NEiAAXk0v1xqZFCdSDoQjA",
+    "wsZIZZ5dRnOUYkFwgo0XRA"
+  ],
+  "legacy_input_sha256": {
+    "artifact-8357c70f92037db433cd": "1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48"
+  },
+  "input_sha256": {},
+  "model_requests": 15,
+  "validated_messages": 313,
+  "harness_sha256": "b5dab23d22cc2279ce2833c9ec468fa98d6ab4db3af35671aff15b42f0904af3"
+}

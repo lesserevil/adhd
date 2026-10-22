@@ -1,0 +1,72 @@
+{
+  "suite": "multi-agent-retirement-snapshot-faults",
+  "started_at": "2026-10-22T04:47:05.396307+00:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "fresh-developer-creation-succeeds-with-complete-snapshot-evidence",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-missing-snapshot-restoration",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "File faults qualify ownership evidence unavailability, not semantic model quality or replicated Kafka durability."
+  ],
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_c97e02e0697bda89e5eef1db5897f1f7_1",
+      "operation_id": "restore_c97e02e0697bda89e5eef1db5897f1f7_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_c97e02e0697bda89e5eef1db5897f1f7_3",
+      "operation_id": "restore_c97e02e0697bda89e5eef1db5897f1f7_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_c97e02e0697bda89e5eef1db5897f1f7_5",
+      "operation_id": "restore_c97e02e0697bda89e5eef1db5897f1f7_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "7da81f6459f21b576a569390cb38dcb75d22aa67e4ccf7bfeb39f98d9049f8ef",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      }
+    ],
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "9e993ec80fd2b9c39076b008836a506ee23e99c9fb9156cabc5fdbc8e2e7677a",
+  "fault_observations": [
+    {
+      "fault": "missing",
+      "http_status": 400,
+      "error_code": "INVALID_PARAMS",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "original_snapshot_sha256": "ff93ef9bba4afb4fe1fcd2a1a85381fa30a790d91bd490c570f6c7dda8c8fbab"
+    }
+  ],
+  "finished_at": "2026-10-22T04:47:46.005432+00:00",
+  "failure_type": "CalledProcessError"
+}

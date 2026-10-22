@@ -1,0 +1,125 @@
+{
+  "qualification": "Development-only negative checkpoint; neither suite completed full acceptance. No source changes or expectations relaxed for these observed product failures.",
+  "artifact_sha256": "7e9d087a345ea0f0344ad724e9ffdcf2dfa1fca5b4e4ff62d8f4ff7b48803e3c",
+  "cases": {
+    "rejections": {
+      "report_sha256": "1f4b2a42827d86ecad96235ddbe8af3b54ed62609f89ce42fe4b57161c6f0767",
+      "report": {
+        "suite": "project-recovery-rejections",
+        "started_at": "2026-10-21T23:51:30.797887+00:00",
+        "passed": false,
+        "checks": [
+          {
+            "name": "populated-target-cannot-be-merged-or-replaced-by-restore",
+            "passed": true
+          },
+          {
+            "name": "invalid-backup-wrong-hash-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "hash"
+          },
+          {
+            "name": "invalid-backup-wrong-length-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "hash"
+          },
+          {
+            "name": "invalid-backup-unknown-manifest-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "schema"
+          },
+          {
+            "name": "invalid-backup-duplicate-json-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "schema"
+          },
+          {
+            "name": "invalid-backup-symlink-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "path"
+          },
+          {
+            "name": "invalid-backup-hardlink-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "path"
+          },
+          {
+            "name": "invalid-backup-compressed-etf-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "limits"
+          },
+          {
+            "name": "invalid-backup-unknown-snapshot-fails-closed-without-target-writer-or-unrelated-project-change",
+            "passed": true,
+            "reason": "schema"
+          }
+        ],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "artifact_sha256": "7e9d087a345ea0f0344ad724e9ffdcf2dfa1fca5b4e4ff62d8f4ff7b48803e3c",
+        "harness_sha256": "919bd6da065a67aa8aac38ff344e69901d51612b3448f5851cea4917762fc6c1",
+        "finished_at": "2026-10-21T23:52:44.210191+00:00",
+        "failure_type": "ValidationError"
+      },
+      "diagnosis": {
+        "observed": "After nine completed safety groups, rotated unowned recipient credential returned plan failure RESTORE_CONFLICT/reason ownership.",
+        "contract": "ownership is outside the closed Reason enum; independent Status schema rejected it. Owner_changed/owner_unprovable and other declared categories remain required.",
+        "status_failure": {
+          "code": "RESTORE_CONFLICT",
+          "reason": "ownership",
+          "retryable": false,
+          "conflicts": [],
+          "truncated": false
+        }
+      }
+    },
+    "browser": {
+      "report_sha256": "ee9d6b16dbc4919c2099859bcfd6228629a351c5014513890af0ec62d570eb29",
+      "report": {
+        "suite": "project-recovery-browser",
+        "started_at": "2026-10-21T23:53:39.676282+00:00",
+        "passed": false,
+        "checks": [],
+        "limitations": [
+          "Controlled model responses prove transport/failure isolation, not semantic quality.",
+          "A single broker does not qualify replicated Kafka durability."
+        ],
+        "harness_sha256": "f36fcd7c7834090d0f991301f694f8bd4df2a19a977563a86b571937e5b5015a",
+        "artifact_sha256": "7e9d087a345ea0f0344ad724e9ffdcf2dfa1fca5b4e4ff62d8f4ff7b48803e3c",
+        "finished_at": "2026-10-21T23:55:10.031184+00:00",
+        "failure_type": "AssertionError"
+      },
+      "diagnosis": {
+        "observed": "Desktop completed real initialization, hot settings, target loss, restore, original/private-ack/other-project assertions, then failed delayed unchanged actual Red status response released after Blue switch. Blue content remained selected, but global alert was nonempty. Exact alert text was not captured in this first harness. Mobile and lower-role tail not executed.",
+        "inference": "The source api helper throws an ordinary view-change error and the generic button wrapper posts it globally; this likely explains the stale alert. This is source reasoning, not an observed alert string."
+      },
+      "captures": [
+        {
+          "name": "restored.png",
+          "sha256": "0d4e2eac9d119c84a8c805f985331a81c467f442e21e375ba15027cf6b4eb663",
+          "bytes": 126463
+        },
+        {
+          "name": "review-initialization.png",
+          "sha256": "d19f288cce39cb09976ee9049e59db058d49b7abafa46091ac10fef6e812f06f",
+          "bytes": 246532
+        },
+        {
+          "name": "review-restore.png",
+          "sha256": "643e210afefbcb08c460d20865995195f4b650e26126effa89f2af5463084bbd",
+          "bytes": 294052
+        },
+        {
+          "name": "uninitialized.png",
+          "sha256": "44a8c4d22be69155de4b949be2b435c3679155e90a2919823747a79e796f928b",
+          "bytes": 114832
+        }
+      ],
+      "direct_visual_inspection": [
+        "review-initialization.png"
+      ]
+    }
+  }
+}

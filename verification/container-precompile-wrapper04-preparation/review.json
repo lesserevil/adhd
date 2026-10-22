@@ -1,0 +1,22 @@
+{
+  "schema": "adhd/compiler-wrapper04-preparation@1",
+  "passed": true,
+  "pure_checks": 25,
+  "actual_builds_or_runs": 0,
+  "scope": "Future packaging04 only; existing compiled03 images and plans unchanged; sourceartifact c635 unchanged",
+  "evidence": "Separate compiled03 raw layer negative shows runtime directory mtime differs in COPY layer and etc directory mtime differs in RUN layer; final runtime cache tree bytes already identical",
+  "proposed_change": "Compiler creates /image-root/runtime/adhd, normalizes explicit wrapper/runtime/cache hierarchy; final stage COPY /image-root/ / contains explicit runtime ancestry and no final RUN. Runtime/cache path and original CLI/bootstrap unchanged. Existing wrapper causes build failclosed.",
+  "pending": [
+    "Root review",
+    "Actual independent sequential builds and raw layer/image comparison",
+    "Actual final payload/cache audit",
+    "Fresh exact image qualification with original bounds; no03evidence relabeled"
+  ],
+  "files": {
+    "deploy/Dockerfile": "ca5303aeae17946f473cf50d658c84983f41971a27e4a941a9e33a3766279d1f",
+    "deploy/runtime/build.exs": "84afbc5b1f16bc2d23f2d2abaf8a86b331df8a405016e148007b61b1896b0a21",
+    "tests/container_precompile_unit.py": "be4c7e141d172bfa42c4958d0b59685207d26e3d9d462ffb8d40399f50d127cb",
+    "verification/container-precompile-wrapper04-preparation/staging-pure.log": "1716b47a03188bc918a0e69af2d063dbf3f51ded577934827cd953a60bd6070d",
+    "verification/container-precompile-wrapper04-preparation/cache-pure.log": "bd39be70bbe6f872fa41f467482f6920c2f78894aaff1fd5efd2dbc13c45543d"
+  }
+}

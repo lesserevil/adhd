@@ -1,0 +1,47 @@
+{
+  "suite": "adhd/real-kafka-hot-cutover@1",
+  "started_at": "2026-10-21T18:51:16.110750+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+      "passed": true
+    },
+    {
+      "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+      "passed": true
+    },
+    {
+      "name": "actual-hot-transition-kill-recovers-durable-config-decision-before-readiness",
+      "passed": true,
+      "stage": "transition-project",
+      "transition_id": "qsHx2-D6yBUExRO-pa8NAzw_gVnQ2uqI",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL"
+    },
+    {
+      "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+      "passed": true
+    },
+    {
+      "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "15dedcddcac73e1467b49c0218efc4eb95eb5675abec6c2e5c3aa25a6178bafd",
+  "harness_sha256": "672408eb7c40cfc6e5863107f68f369682f10d476d5365132bd0af424d0ac761",
+  "source_sha256": {
+    "Migration": "abfd2e2326d99f31ef0614262c8cfa9032ffd38e4e99fbf575d304c9a8ec8314",
+    "Config": "218e0eeb958455326e981aa2ca99564692eb25c07e1eb7f10f361ab61774cf4e",
+    "Storage": "809b339b7e29635f2d048c6ddfade42f31a1938b6280ef36ea8a67ad1beb828a",
+    "Store": "1cb0589acc7c884d4323fa0ad9877d4209feeaa939dfce48a3e50fe2ae39ba92",
+    "CLI": "a3abc68c2bdbe4b82ff844fb9c22d40e04e8b4cc4998dad468b54c21aa10edb2"
+  },
+  "fault_source_sha256": "05763fb46eec22d4f0c8133a4e62003b4ff2324d22bc82696311b73f19d11226",
+  "fault_library_sha256": "403d213f3c1e74bbf24f8d15c1705fa979761c0b73d77b75021e2228b2379b0e",
+  "finished_at": "2026-10-21T18:52:34.361724+00:00"
+}

@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "WORKTREE/tests/foundation_acceptance.py", line 576, in <module>
+    main()
+  File "WORKTREE/tests/foundation_acceptance.py", line 269, in main
+    runtime.start();pid=runtime.pid
+    ^^^^^^^^^^^^^^^
+  File "WORKTREE/tests/foundation_acceptance.py", line 78, in start
+    self.initialize_unknown_projects()
+  File "WORKTREE/tests/foundation_acceptance.py", line 119, in initialize_unknown_projects
+    assert settle(applied, 'complete')['result']['initialized'] is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "WORKTREE/tests/foundation_acceptance.py", line 111, in settle
+    assert op['state'] not in ('failed', 'blocked', 'expired', 'stale'), op['failure']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'code': 'RESTORE_IO_ERROR', 'conflicts': [], 'reason': 'io', 'retryable': True, 'truncated': False}

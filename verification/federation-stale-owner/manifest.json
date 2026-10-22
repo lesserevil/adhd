@@ -1,0 +1,58 @@
+{
+  "schema": "adhd/federation-v2-stale-owner-proof@1",
+  "passed": true,
+  "lifecycle_qualified": false,
+  "release_qualified": false,
+  "accepted_image_qualified": false,
+  "artifact_sha256": "41541b995a1584bfadffa2b8a221631dec725f74617fe029522e952dc5da0496",
+  "scope": "Three real frozen31 native hubs with explicit source/destination project pairs, transparent bounded observers and a controlled model. Warm canonical ownership, physical owner stop, actual ten-second catalogue expiry with reachable noncanonical copy, unavailable source result and zero fallback source work, then fresh canonical owner recovery/provenance and unchanged role/project admission.",
+  "report": {
+    "path": "verification/federation-stale-owner/native31.json",
+    "sha256": "dc87bb54c3c54a208b1a456b067d1906ba21a3640bc4100350019ded583bc989"
+  },
+  "harness": {
+    "path": "tests/federation_stale_owner.py",
+    "sha256": "4f6ae96fe8c25d9270bddc4327602e9e69c55ef44f5e6d77b16cd08edd941999"
+  },
+  "dependency_sha256": {
+    "eventing_target.py": "256b0ce0bd6194429a33fec573a61125a907e36c0f1bb5061d2698cfe82968bf",
+    "federation_acceptance.py": "7b7750e64bb047b4adc3ee75cf1b0f9308a20409624f711d309ff28c7014dcfe",
+    "federation_multi.py": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104"
+  },
+  "historical_dependencies": {
+    "tests/federation_acceptance.py": {
+      "snapshot": "verification/federation-stale-owner/federation-helper.py.source",
+      "sha256": "7b7750e64bb047b4adc3ee75cf1b0f9308a20409624f711d309ff28c7014dcfe",
+      "difference_from_current_root": "Native startup readiness deadline30s rather than current60s; all real starts passed within that shorter bound. No request/model/authorization helper behavior differs.",
+      "reproduce": "Restore snapshot to its logical tests/federation_acceptance.py path when reproducing exact report inputs."
+    }
+  },
+  "normative_inputs": {
+    "components/hub/multi/spec.md": "8648392dbeab5ebbe17e386471dd2f3cf014053ed057c9cfc858b37abfb22e6d",
+    "components/hub/directory/spec.md": "d2e063ca5287ee28e4681b32f0ecbab8044544af0fdb7c4940eac533a94c5252",
+    "components/hub/directory/queries.md": "1e78458ebddbda722eecc5a3f070c90ae63603b6009c79ce77efa4031c87586d"
+  },
+  "expiry_evidence": {
+    "last_catalog_generated_at": "2026-10-21T21:36:41.331Z",
+    "max_age_ms": 10000,
+    "expires_ms": 1792618611331,
+    "source_query_created_at": "2026-10-21T21:36:51.589Z",
+    "owner_process_stopped": true
+  },
+  "wire_summary": {
+    "canonical_source_requests": 8,
+    "noncanonical_source_requests": 0,
+    "all_requests_v2_and_explicit_origin_project": true,
+    "destination_project": "other",
+    "credentials_recorded": false
+  },
+  "model_requests": 2,
+  "limits": [
+    "Controlled model; no semantic quality or external model use.",
+    "Eventing explicitly disabled; Kafka, deployment and lifecycle admission are separate gates.",
+    "No Kafka service was configured, started, stopped or mutated. This does not requalify independent per-server brokers or finalimage deployment.",
+    "Image mode is supported by the existing RuntimeTarget helper but not executed by this native proof; final31 image is pending.",
+    "Only corrected fresh04 is retained; earlier preparation attempts01/02 and timestamp-less successful03 are excluded.",
+    "Owned native hubs, transparent forwarding observers and controlled model server were stopped. Existing18770 model and all broker services remained unchanged."
+  ]
+}

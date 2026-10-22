@@ -1,0 +1,95 @@
+{
+  "schema": "adhd/cni12-independent-bootstrap-positive@1",
+  "passed": true,
+  "scope": "Pinned Calico bootstrap only, zero18route/app/Kafka/model qualification. Fresh cluster required for actualroutegate.",
+  "root_authoritative_exit_code": 0,
+  "plan_sha256": "4a8c3a67c98c52bde02c60fc00a6f9c977e28feaa79590765f6a3c6bfdf513d2",
+  "result_sha256": "4fcb99463595dcd0ca5796d33f2c125ab013a954a5ba7787bb41a4ae52a02def",
+  "driver_sha256": "c253f162a83a9e2f819dcb71455f42b73f11f31b8a47be67e4fa0ca050a41831",
+  "full_input_closure_unchanged": true,
+  "original_rollout_seconds": 300,
+  "both_calico_rollouts_passed": true,
+  "controller_overlay_guard_passed": true,
+  "direct_api_endpoint_proof": {
+    "address": "10.240.240.2",
+    "port": 6443,
+    "namespace_uid": "6e7f5a80-a2b4-4611-96a6-d893dfa2a786",
+    "node_uid": "bbd61374-6cf5-4ec6-a251-9b5199b6ace1",
+    "configmap_uid": "ae218222-bc88-4454-a918-1e4446c325d6",
+    "owner_nonce": "b201371ee916272400d38c703712a02e",
+    "tls": {
+      "authority_sha256": "81e4d2867caad55a5f612fc887479c464b8854e4191cf6bccdbc72b6b1b95958",
+      "server_certificate_sha256": "3b5bf9c2b81180ccc46d107aada5d103887132fddcf2dad35f0370073644d7a2",
+      "verify_peer": true,
+      "hostname_checked": "10.240.240.2",
+      "port": 6443,
+      "timeout_seconds": 5
+    },
+    "inside_own_node_verified": true,
+    "host_direct_API_verified": true,
+    "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+    "separate_configmap_sha256": "f7142a29dbed609b97c143ba11c0bb16ef2c7d1de159d3b854fa393adff1708f",
+    "controller_overlay": {
+      "deployment_uid": "37b87af7-d8c3-4a35-8f49-a047d053b8fa",
+      "configmap_uid": "ae218222-bc88-4454-a918-1e4446c325d6",
+      "patch_sha256": "ba12f2c70b63297c8ebe6511177db47d64a3f394489e51104cf592a960c39368",
+      "guarded_json_patch": true,
+      "container": "calico-kube-controllers",
+      "pinned_manifest_unchanged": true
+    }
+  },
+  "rollout_log_sha256": {
+    "ready-calico": "3fb5195d51e5ae0ef86b18f63b0e38c35102b835031d5d19fb180d165b591523",
+    "ready-controller": "c2d94e4ffb2d5a00aef5639ecbbe8315a279c6f66a99f38b2582909d0e6df216"
+  },
+  "current_strict_absence": [
+    {
+      "kind": "container",
+      "identifier": "54f837820339492e6768c2e69450502f7616e70b355165862a917347058ca752",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "21e6c1040131559c21d32d4ba3bd6e9051ee01e614498abc2fb0eacf6a282db1",
+      "observed_absent": true
+    },
+    {
+      "kind": "container",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "10c65dbff792d16ce2df29e4d7922b03ca6b03fc8856925e845460c9912f2366",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "0eb0b41ddae4d71f49604d65552b15164d446f25d78353a3d04aa6373d7891fb",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "d2086e3f0b1bf33e00441312b33f8112a4f6bb63e8a9efcf0032cd04013a8ff1",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "31e2083bb8a1588362a3c4bede5ec23c35f9165fb21b7dfadbfca9e94f59b6c9",
+      "observed_absent": true
+    },
+    {
+      "kind": "volume",
+      "identifier": "4f7a3a55a4acf05981322c7b605ef285f8c3483e0043415269775fdb73aac8cf",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "a341330e3f8d88b4279f3b489816334d38bac6d084681d57ebaa807ca39795dc",
+      "observed_absent": true
+    }
+  ],
+  "protected_cluster_before_after_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "protected_cluster_currently_running_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "policy_routes_qualified": 0,
+  "audit_resource_or_provider_starts": 0,
+  "files": {
+    "plan.json": "4a8c3a67c98c52bde02c60fc00a6f9c977e28feaa79590765f6a3c6bfdf513d2",
+    "result.json": "4fcb99463595dcd0ca5796d33f2c125ab013a954a5ba7787bb41a4ae52a02def"
+  }
+}

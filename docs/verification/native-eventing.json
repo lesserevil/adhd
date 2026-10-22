@@ -1,0 +1,543 @@
+{
+  "schema": "adhd/native-federation-eventing-qualification@1",
+  "artifact_sha256": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836",
+  "passed": true,
+  "suites": [
+    {
+      "name": "retention",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-retention.json",
+      "raw_report_sha256": "d37306ee7c2206c5ceb21c5e936a1a31cc1121c2b1415aa0eca0b2ab6e26e8eb",
+      "checks": [
+        {
+          "name": "publish-and-publish-record-preserve-new-acceptance-message-source-retry-and-disabled-legacy-receipts",
+          "passed": true
+        },
+        {
+          "name": "actual-delete-records-log-start-advancement-reconstructs-missing-originals-with-search-and-ack-preservation",
+          "passed": true,
+          "physical_operation": "Kafka Admin DeleteRecords via kafka-delete-records",
+          "previous_checkpoint": 2,
+          "log_start_before": 0,
+          "log_start_after": 4,
+          "reconstructed_originals": 2
+        }
+      ],
+      "harness_sha256": "340e8c4575fbab638493032ecb619a185265dd464e2dd4a77023adba19d04851"
+    },
+    {
+      "name": "controls",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-controls.json",
+      "raw_report_sha256": "de6d9a29b4bee94c3169fbed20de54533b0a22c1d2b24fe72ad1c0ca90586ba3",
+      "checks": [
+        {
+          "name": "retained-pre-cutover-original-replays-with-original-identity-and-no-automatic-history",
+          "passed": true
+        },
+        {
+          "name": "blocked-real-kafka-publication-keeps-accepted-threshold-model-and-endpoint",
+          "passed": true,
+          "threshold": 5000
+        },
+        {
+          "name": "bounded-explicit-replay-preserves-activation-idempotency-and-acknowledgements",
+          "passed": true
+        },
+        {
+          "name": "physical-corruption-repair-republishes-linked-accepted-original-with-stable-envelope",
+          "passed": true
+        },
+        {
+          "name": "replay-range-admission-is-atomic-and-obeys-current-durable-backpressure",
+          "passed": true
+        },
+        {
+          "name": "exact-digest-retry-and-audited-reconcile-recover-real-foreign-kafka-record",
+          "passed": true
+        },
+        {
+          "name": "repair-replay-audit-and-acknowledgements-survive-hard-restart",
+          "passed": true
+        },
+        {
+          "name": "archived-project-rejects-new-replay-and-preserves-accepted-control-idempotency",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "3146ee5cf63cacca7c7764d7de313b88fde7087decbb24e7699d32fcbcb490c2",
+      "input_sha256": {
+        "elixir": "53bb7030df56920b2bb965ac26a82319d5f894f07c898f500170103996072df8",
+        "hub-filter-30.exs": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+      }
+    },
+    {
+      "name": "dormant",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-dormant.json",
+      "raw_report_sha256": "109f96a00e546cfccfa2d9d3383e3a70047d26623397cd6c694a8ee380b70d4b",
+      "checks": [
+        {
+          "name": "held-worker-rapid-adapter-change-and-disable-persists-B-before-ack-and-hard-restart",
+          "passed": true
+        },
+        {
+          "name": "project-effective-adapter-provenance-is-independent-of-root-changes",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "51f26579f98115bb63043b83f30316f385a5b712706e0f51d73eab60231d08b4"
+    },
+    {
+      "name": "caps",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-caps.json",
+      "raw_report_sha256": "e414078bf8567557e3fe4d479f7232785c864f97652e99ca2fe506ae85fb5be3",
+      "checks": [
+        {
+          "name": "real-kafka-raw-stream-progresses-with-ready-project-and-subscription-caps-full",
+          "passed": true
+        },
+        {
+          "name": "hot-cap-reduction-retains-overcap-jobs-and-hard-restart-preserves-durable-deferred-intents",
+          "passed": true
+        },
+        {
+          "name": "off-state-publication-freezes-last-effective-adapter-and-threshold-across-reenable-and-restart",
+          "passed": true
+        },
+        {
+          "name": "replay-shares-bounded-ready-slots-and-distinguishes-deferred-intents-from-materialized-handoff",
+          "passed": true
+        },
+        {
+          "name": "project-overrides-bound-real-filter-jobs-and-unsubscribe-cancels-paused-deferred-intents",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "701006b92832e54a30067fd72b538ee2867d9af9ff80b786b06be487dcf40e84"
+    },
+    {
+      "name": "admin-edit",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-admin-edit.json",
+      "raw_report_sha256": "a5db6ef7e02c63e9f2912958ec9281de6c521054f87c04861d75e363c942dbf9",
+      "checks": [
+        {
+          "name": "revisioned-admin-edit-is-idempotent-and-preserves-pending-filter-work",
+          "passed": true
+        },
+        {
+          "name": "mode-selectors-pause-and-resume-affect-future-events-without-resurrecting-acks",
+          "passed": true
+        },
+        {
+          "name": "admin-subscription-pagination-enumerates-more-than-one-hundred-without-gaps-or-repeats",
+          "passed": true
+        },
+        {
+          "name": "only-admin-edits-currently-admitted-owner-and-archive-fences-new-edits",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "0e79d140ce09b9a456c81077eb120a98803bbcd666dd0290933fa41543e3b715"
+    },
+    {
+      "name": "eventing-model",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-eventing-model.json",
+      "raw_report_sha256": "0e33d39a00f7df1b572f7cbaab1ff5c46d4b56b59ebbe35d3963fffb749114f9",
+      "checks": [
+        {
+          "name": "raw-and-default-subscriptions-need-no-filter-or-model-and-start-after-activation",
+          "passed": true
+        },
+        {
+          "name": "all-publishers-including-self-independent-subscribers-and-overlap-dedup",
+          "passed": true,
+          "publications": 3,
+          "subscribers": 3,
+          "controlled_model_calls": 0
+        },
+        {
+          "name": "read-after-publish-and-post-ack-literal-search-retain-originals-with-zero-inference",
+          "passed": true
+        },
+        {
+          "name": "private-addressed-messages-are-never-public-events-or-searchable-facts",
+          "passed": true
+        },
+        {
+          "name": "blank-conflicting-and-unknown-filter-selector-inputs-fail-closed",
+          "passed": true
+        },
+        {
+          "name": "deterministic-selector-fields-intersect-values-union-without-inference",
+          "passed": true,
+          "cases": 6
+        },
+        {
+          "name": "optional-filter-error-and-invalid-result-preserve-raw-progress-and-search-retry-once",
+          "passed": true
+        },
+        {
+          "name": "revision-conflicts-frozen-filter-work-hot-raw-switch-and-pause-resume-watermarks",
+          "passed": true
+        }
+      ],
+      "transport": "official-a2a-sdk-1.1.0-jsonrpc"
+    },
+    {
+      "name": "eventing-broker-fixed",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-eventing-broker-fixed.json",
+      "raw_report_sha256": "f334fb93035c9ff5d4df37b5d62293bf8fab14375f2879ebdc01869278ce5833",
+      "checks": [
+        {
+          "name": "raw-and-default-subscriptions-need-no-filter-or-model-and-start-after-activation",
+          "passed": true
+        },
+        {
+          "name": "all-publishers-including-self-independent-subscribers-and-overlap-dedup",
+          "passed": true,
+          "publications": 3,
+          "subscribers": 3,
+          "controlled_model_calls": 0
+        },
+        {
+          "name": "read-after-publish-and-post-ack-literal-search-retain-originals-with-zero-inference",
+          "passed": true
+        },
+        {
+          "name": "private-addressed-messages-are-never-public-events-or-searchable-facts",
+          "passed": true
+        },
+        {
+          "name": "blank-conflicting-and-unknown-filter-selector-inputs-fail-closed",
+          "passed": true
+        },
+        {
+          "name": "deterministic-selector-fields-intersect-values-union-without-inference",
+          "passed": true,
+          "cases": 6
+        },
+        {
+          "name": "real-broker-outage-outbox-hub-kill-recovery-and-acked-replay-dedup",
+          "passed": true,
+          "events": 3
+        }
+      ],
+      "transport": "official-a2a-sdk-1.1.0-jsonrpc"
+    },
+    {
+      "name": "eventing-faults",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-eventing-faults.json",
+      "raw_report_sha256": "f0dbdcdef4a0df562850ba0f67a23936dce082aed8635ee069b9c678d82b2417",
+      "checks": [
+        {
+          "name": "real-produce-ack-lost-physical-duplicates-logically-deduplicated",
+          "passed": true,
+          "actual_produce_acks": 2,
+          "distinct_offsets": 2
+        },
+        {
+          "name": "logical-delivery-and-source-retry-ack-survive-process-kill-and-broker-replay",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "fairness",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-fairness.json",
+      "raw_report_sha256": "c60e89a4d9996a95c5ccb9f51b971df418558a20bf94a68567f0390971ee0ba0",
+      "checks": [
+        {
+          "name": "model-global-cap-and-real-raw-kafka-literal-search-progress-while-held",
+          "passed": true,
+          "actual_provider_calls": 1,
+          "observed_model_concurrency": 1,
+          "model_pool_active": 1,
+          "blue_model_queued": true
+        },
+        {
+          "name": "another-project-model-turn-precedes-hot-project-backlog-drain",
+          "passed": true,
+          "provider_project_order": [
+            "project-red",
+            "project-blue"
+          ],
+          "actual_provider_calls": 2,
+          "pool_grants": 2,
+          "grants_are_not_provider_call_count": true
+        },
+        {
+          "name": "slow-failing-peer-network-cap-independent-of-kafka-and-model-free-raw",
+          "passed": true,
+          "actual_peer_http_calls": 3,
+          "observed_peer_concurrency": 1,
+          "additional_model_calls": 0
+        },
+        {
+          "name": "bounded-redacted-server-diagnostics",
+          "passed": true,
+          "maximum_waiters": 8,
+          "observed_waiters": 1,
+          "finite_ingress_tickets": true
+        }
+      ],
+      "transport": "official-a2a-sdk-1.1.0-jsonrpc"
+    },
+    {
+      "name": "policy",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-policy.json",
+      "raw_report_sha256": "9841c1d7821dcfb8ec9973f03a875172f2dbbfb47b2ae3f9e95080167826d543",
+      "checks": [
+        {
+          "name": "failed-second-project-preflight-never-shrinks-first-project-broker-retention",
+          "passed": true
+        },
+        {
+          "name": "stale-fetched-batch-recreates-consumer-at-durable-position-after-hot-change",
+          "passed": true
+        },
+        {
+          "name": "project-retention-budget-and-topic-cutover-preserve-independent-project-progress-and-acks",
+          "passed": true
+        },
+        {
+          "name": "per-field-null-reset-inherits-root-and-new-project-preflight-needs-no-live-empty-writer",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "5bcaa5ceca422de222eb16d31de59c276eeeec9007e47951ffbb7c40b91119f2"
+    },
+    {
+      "name": "cutover-live",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-cutover-live.json",
+      "raw_report_sha256": "7be49a8670ca2943cb17c5b90017701040dee3945258506410a0201ce63c854f",
+      "checks": [
+        {
+          "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+          "passed": true
+        },
+        {
+          "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+          "passed": true
+        },
+        {
+          "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+          "passed": true
+        },
+        {
+          "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "672408eb7c40cfc6e5863107f68f369682f10d476d5365132bd0af424d0ac761",
+      "source_sha256": {
+        "Migration": "abfd2e2326d99f31ef0614262c8cfa9032ffd38e4e99fbf575d304c9a8ec8314",
+        "Config": "e596212d20ed0652c68b3ded672c86a2848d9ce9a2224dec6c7d4be5b8e3094f",
+        "Storage": "809b339b7e29635f2d048c6ddfade42f31a1938b6280ef36ea8a67ad1beb828a",
+        "Store": "bf1e8146aad05099e17c2f726ebb5b2203f3f27bfd51a07db82f5c705bd60fa9",
+        "CLI": "a3abc68c2bdbe4b82ff844fb9c22d40e04e8b4cc4998dad468b54c21aa10edb2"
+      }
+    },
+    {
+      "name": "cutover-decision",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-cutover-decision.json",
+      "raw_report_sha256": "cb334c8985dcb3b3ffc8f31fbc824a0bb214f7c430ffd9e14346091b4c724a86",
+      "checks": [
+        {
+          "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+          "passed": true
+        },
+        {
+          "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+          "passed": true
+        },
+        {
+          "name": "actual-hot-transition-kill-recovers-durable-config-decision-before-readiness",
+          "passed": true,
+          "stage": "transition-decision",
+          "transition_id": "Apx9d_lrySMrKLHU9c1IC-j_uS9yuijw",
+          "kernel_state_before_kill": "stopped",
+          "signal": "SIGKILL"
+        },
+        {
+          "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+          "passed": true
+        },
+        {
+          "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "672408eb7c40cfc6e5863107f68f369682f10d476d5365132bd0af424d0ac761",
+      "fault_source_sha256": "05763fb46eec22d4f0c8133a4e62003b4ff2324d22bc82696311b73f19d11226",
+      "source_sha256": {
+        "Migration": "abfd2e2326d99f31ef0614262c8cfa9032ffd38e4e99fbf575d304c9a8ec8314",
+        "Config": "e596212d20ed0652c68b3ded672c86a2848d9ce9a2224dec6c7d4be5b8e3094f",
+        "Storage": "809b339b7e29635f2d048c6ddfade42f31a1938b6280ef36ea8a67ad1beb828a",
+        "Store": "bf1e8146aad05099e17c2f726ebb5b2203f3f27bfd51a07db82f5c705bd60fa9",
+        "CLI": "a3abc68c2bdbe4b82ff844fb9c22d40e04e8b4cc4998dad468b54c21aa10edb2"
+      }
+    },
+    {
+      "name": "cutover-project",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-cutover-project.json",
+      "raw_report_sha256": "3b0288bf954a7cec1343d6604b451640b75141c8bb63748d988679c9f4a2bfeb",
+      "checks": [
+        {
+          "name": "three-real-project-streams-materialized-and-acknowledged-before-transition",
+          "passed": true
+        },
+        {
+          "name": "failed-preflight-retains-config-revision-checkpoint-and-acknowledgements",
+          "passed": true
+        },
+        {
+          "name": "actual-hot-transition-kill-recovers-durable-config-decision-before-readiness",
+          "passed": true,
+          "stage": "transition-project",
+          "transition_id": "URgeCYYlOM-xLbWyELTvi4-PHtk_j17p",
+          "kernel_state_before_kill": "stopped",
+          "signal": "SIGKILL"
+        },
+        {
+          "name": "all-three-projects-reconstruct-only-pending-events-preserving-source-retries-originals-and-acks",
+          "passed": true
+        },
+        {
+          "name": "restart-preserves-cutover-state-and-delivery-identities-with-zero-inference",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "672408eb7c40cfc6e5863107f68f369682f10d476d5365132bd0af424d0ac761",
+      "fault_source_sha256": "05763fb46eec22d4f0c8133a4e62003b4ff2324d22bc82696311b73f19d11226",
+      "source_sha256": {
+        "Migration": "abfd2e2326d99f31ef0614262c8cfa9032ffd38e4e99fbf575d304c9a8ec8314",
+        "Config": "e596212d20ed0652c68b3ded672c86a2848d9ce9a2224dec6c7d4be5b8e3094f",
+        "Storage": "809b339b7e29635f2d048c6ddfade42f31a1938b6280ef36ea8a67ad1beb828a",
+        "Store": "bf1e8146aad05099e17c2f726ebb5b2203f3f27bfd51a07db82f5c705bd60fa9",
+        "CLI": "a3abc68c2bdbe4b82ff844fb9c22d40e04e8b4cc4998dad468b54c21aa10edb2"
+      }
+    },
+    {
+      "name": "eventing-protocol",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-eventing-protocol.json",
+      "raw_report_sha256": "3f85a4866848e20511452fc9dbf37ba1248d0cb20370e13e6a3bcc53cac44bc2",
+      "checks": [
+        {
+          "name": "authored-valid-invalid-agent-peer-v2-and-reason-vectors-independently-validated",
+          "passed": true,
+          "valid": 24,
+          "invalid": 27,
+          "vectors_sha256": "dda0ddc201c0df5d398724899dc7727c1674763930100b694edf5c30eb251d6a",
+          "served_schema_sha256": "9ff14ec8ca68018ed0daf5b401f7221986e3931b7327b122021154c2495bed56"
+        },
+        {
+          "name": "invalid-agent-vectors-also-rejected-at-actual-a2a-runtime-boundary",
+          "passed": true
+        },
+        {
+          "name": "live-sdk-publication-subscription-raw-reason-poll-and-revisioned-edit-conformance",
+          "passed": true
+        }
+      ],
+      "transport": "official-a2a-sdk-1.1.0-jsonrpc"
+    },
+    {
+      "name": "federation",
+      "passed": true,
+      "raw_report": "_build/roadmap/multi/final30-federation.json",
+      "raw_report_sha256": "a28ab1b6524e4f732743ae890a57e3a98c46f49a178f735ac088ff7df96af543",
+      "checks": [
+        {
+          "name": "three-real-servers-with-identical-project-ids-and-display-labels",
+          "passed": true
+        },
+        {
+          "name": "catalog-cache-identity-is-server-project-pair-without-false-conflicts",
+          "passed": true
+        },
+        {
+          "name": "three-independent-kafka-services-feed-raw-a2a-streams-with-zero-inference",
+          "passed": true
+        },
+        {
+          "name": "asynchronous-discovery-retains-all-four-server-project-answers",
+          "passed": true
+        },
+        {
+          "name": "query-id-namespace-binds-origin-server-origin-project-and-destination-project",
+          "passed": true
+        },
+        {
+          "name": "bounded-server-catalog-pagination-with-complete-authorized-project-snapshot",
+          "passed": true
+        },
+        {
+          "name": "same-server-canonical-routing-requires-explicit-frozen-admitted-project-scope",
+          "passed": true
+        },
+        {
+          "name": "remote-canonical-source-query-uses-server-project-pair-and-v2-source-jobs",
+          "passed": true
+        },
+        {
+          "name": "duplicate-canonical-claims-across-local-projects-are-conflicts",
+          "passed": true
+        },
+        {
+          "name": "live-project-pair-revocation-keeps-other-origin-grants-without-restart",
+          "passed": true
+        },
+        {
+          "name": "hard-restart-preserves-project-pair-revocation-and-accepted-query-identity",
+          "passed": true
+        },
+        {
+          "name": "accepted-legacy-binary-and-multi-project-server-query-in-both-directions",
+          "passed": true
+        },
+        {
+          "name": "archived-default-project-legacy-routes-export-no-catalog-and-reject-work",
+          "passed": true
+        },
+        {
+          "name": "durable-project-peer-jobs-and-caches-exclude-transport-credentials",
+          "passed": true
+        }
+      ],
+      "harness_sha256": "4544718021de73f2ea36a79c8524fd6215109be3b338932d95a9465b896d1ba6",
+      "validated_messages": 251,
+      "broker_cluster_ids": [
+        "MkU3OEVBNTcwNTJENDM2Qk",
+        "NEiAAXk0v1xqZFCdSDoQjA",
+        "obKf6UZJR0eRc-dRmVfT4Q"
+      ],
+      "input_sha256": {
+        "elixir": "53bb7030df56920b2bb965ac26a82319d5f894f07c898f500170103996072df8",
+        "hub-filter-30.exs": "698496fe2939d843ac0c82ea685313e737c1720a1b3783293d09b6c95db9d836"
+      }
+    }
+  ],
+  "broker_images": {
+    "kafka": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+    "rest": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058"
+  },
+  "limitations": [
+    "Frozen native candidate evidence; retained-source admission and immutable image qualification remain separate gates.",
+    "Controlled typed models qualify protocol, authority and policy, not semantic quality.",
+    "Independent single-node Kafka services do not qualify replicated durability.",
+    "Physical loss uses actual Kafka Admin DeleteRecords advancing log start, not an elapsed wall-clock retention experiment."
+  ],
+  "checks_passed": 77
+}

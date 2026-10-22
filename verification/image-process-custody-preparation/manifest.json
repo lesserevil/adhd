@@ -1,0 +1,54 @@
+{
+  "schema": "adhd/image-process-custody-preparation@1",
+  "passed": true,
+  "scope": "Test-only helper and pure guard checks; no actual process/container/observer/app/provider invocation, no runtime requalification",
+  "actual_process_container_loader_provider_starts": 0,
+  "pure_groups": {
+    "new_custody_and_callsite_guards": 15,
+    "filesystem_observer_admission": 11,
+    "eventing_argv": 3,
+    "abi_driver": 10
+  },
+  "pure_total": 39,
+  "inputs": {
+    "image_eventing_fault.py": "7071da91850f8876b44e8ae0618008d6fe291640de08ff6ef5d2f4130f65e250",
+    "image_eventing_runtime.py": "24a9ee11a0a20f67ef40a50733b658a614b467a818cc83de746336f07369dde6",
+    "image_filesystem_fault.py": "0bf2c2d7302403858c4ef3847392c47d5a3616e981381a241dcec173ae0ce585",
+    "image_filesystem_abi.py": "66322daa24605d5d6849729d4c1f5ba033e6fc0d1b901f1ea2630e7ef22be2dd",
+    "image_process_custody_unit.py": "abb423bd5457a77a9e2b41b430d4bca8e528e921e4286d4265bfe6486485c1dc"
+  },
+  "unchanged_observer_sources": {
+    "multi_fault.c": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+    "store_move_fault.c": "9af736cb17ffc8faaca52a97ec5995e2ec75fc670cf325c1b1e0bcbf132cd366",
+    "storage_write_fault.c": "dcb19f03c9e7304eb80029ea5f8ef1af685960123a5a5f69e0ed1402d654e17d",
+    "project_recovery_fault.c": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+    "rebind_fault.c": "214336e720e505aa0da8e2cfd6049fe9fc821220e9b8e9df7727b3702c694b08"
+  },
+  "repair": [
+    "Exact stable start time/PID namespace/executable/command-line checked before pidfd signal",
+    "Expected source library hash required at every caller; exact read-only bind source checked with owned regular nlink1 no-follow fd and before/after/path identity",
+    "Observer exact mapped pathname/device/inode and executable segment checked; selected observer rows stable, unrelated heap/JIT maps may change",
+    "Same container/image/PID/source/mapping/process identity rechecked after actual kernel STOP; unchanged2s STOP deadline",
+    "Full process maps SHA records kernel-stopped witness only; no preSTOP whole-maps equality claim",
+    "Standalone rename-only probe gets explicit read-only library-file overlay for the same stricter guard; other app payload/assertion/deadline behavior unchanged"
+  ],
+  "negative_vectors": [
+    "start time",
+    "PID namespace",
+    "executable",
+    "command line",
+    "mapping inode",
+    "missing mapping",
+    "deleted mapping",
+    "afterSTOP start time",
+    "afterSTOP mapping",
+    "afterSTOP container image",
+    "afterSTOP host PID",
+    "read-write bind",
+    "wrong library bytes",
+    "all4call sites require expected hash"
+  ],
+  "historical_failure": "Original plan03 failure remains actual unspecified identity tuple change; mutable whole maps is plausible, never identified as proven field. No passing case retried.",
+  "development_diagnostic": "Initial pure start-time negative injected the changed value before first observation; corrected to second observation; no app/kernel boundary was invoked.",
+  "next_gate": "Root review and fresh bound plan/helper snapshots before any new actual fault or standalone probe run; original ABI05 and plan03 bytes immutable"
+}

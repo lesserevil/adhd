@@ -71,6 +71,26 @@ class ConsumerGateway:
         self.server.shutdown();self.server.server_close();self.thread.join(2)
 
 
+def observe_resources(f,e,phase,held=None):
+    """Public scheduler observations; this overlap fixture is explicitly cap2."""
+    value=f.admin().call({'op':'resource_status'})
+    assert value['started'] is True
+    limits=value['limits']
+    assert limits['eventing_concurrency']==16 and limits['project_eventing_concurrency']==2
+    lane=value['lanes']['eventing']
+    assert 0<=lane['active']<=16
+    for project,counts in lane['projects'].items():
+        assert 0<=counts['active']<=2 and counts['queued']>=0
+    if held is not None:
+        assert held.entered.is_set() and not held.release.is_set()
+        assert 1<=lane['projects'][RED]['active']<=2
+        assert time.monotonic()-held.observation['received_at']<30
+    e.value.setdefault('resource_observations',[]).append({'phase':phase,'status':value,
+        'held_actual_consumer_response':held is not None})
+    e.write()
+    return value
+
+
 async def main(args):
     assert (args.hub or args.image) and not args.with_model
     assert not args.command and not args.rest_url
@@ -82,13 +102,16 @@ async def main(args):
         runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
         f=RecoveryImageRuntime(local,runner) if args.image else Fixture(local,initialize_projects=False)
         f.config['project_id']=BLUE;f.config['eventing']['timeout_ms']=30000
+        f.config['resources']={'project_eventing_concurrency':2}
         backup=f.root/'backups';backup.mkdir(mode=0o700);f.config['recovery']={'backup_root':str(backup)}
         runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
         if not args.image:
             wrapped=copy.copy(local);wrapped.hub=None;wrapped.command=json.dumps(['elixir',str(runner),str(args.hub.resolve())]);f.args=wrapped
         r=Recovery(f,args.recovery_schema)
         e.value.update(artifact_sha256=f.image_runtime.manifest['files']['hub.exs'] if args.image else digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),runner_sha256=digest(runner.read_bytes()),provider_calls=0,
-            scope='Actual real Kafka consumer reply across same-VM target-only restore; runtime custody recorded separately, not full platform qualification')
+            scope='Actual real Kafka consumer reply across same-VM target-only restore; explicit project eventing cap2 overlap fixture, not default cap1 restore latency or full platform qualification',
+            resource_profile={'eventing_concurrency':16,'project_eventing_concurrency':2,'reason':'One held old actual HTTP callback and mandatory pre-decision fresh-topic preflight must overlap; no scheduler bypass or deadline change.'},
+            original_failed_attempt='verification/project-recovery/development38/image-recovery-serial38/manifest.json')
         await f.start();await r.initialize(RED);await r.initialize(BLUE)
         actor=await f.agent('bridge');reader=await f.agent('red-b')
         await reader.call(scoped(RED,'subscribe',mode='raw'))
@@ -107,6 +130,7 @@ async def main(args):
         await until(old.entered.is_set,args.deadline,'Actual old-topic row not observed after restart')
         assert {row['topic'] for row in old.observation['rows']}=={oldtopic}
         assert publication['id'] in json.dumps(old.observation['rows'])
+        observe_resources(f,e,'old-consumer-held-before-target-loss',old)
         e.record('actual-accepted-pending-event-backed-up-and-old-topic-consumer-response-held')
         actor=await f.agent('bridge');reader=await f.agent('red-b')
         blue=(await actor.call(scoped(BLUE,'publish_record',text='Blue advances while old Red broker response is held.')))['record']['publication']
@@ -128,6 +152,7 @@ async def main(args):
         else:assert f.process.pid==owner_pid and f.process.poll() is None
         await until(fresh.entered.is_set,args.deadline,'Actual fresh-topic consumer response not observed')
         assert publication['id'] in json.dumps(fresh.observation['rows'])
+        observe_resources(f,e,'fresh-consumer-held-after-restoration',fresh)
         e.record('same-accepted-event-republished-to-fresh-topic-while-both-real-consumer-replies-are-held',old_topic=oldtopic,new_topic=newtopic)
         old.release.set();await until(old.attempted.is_set,args.deadline,'Old real consumer response not attempted')
         await asyncio.sleep(.3)

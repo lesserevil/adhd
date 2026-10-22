@@ -67,7 +67,7 @@ def main():
                                           'published_openapi', 'producer_report', 'artifact_sha256', 'admission_manifest', 'admission_sha256'))
         assert re.fullmatch(r'sha256:[a-f0-9]{64}', a.image), 'Require immutable image configuration ID'
         manifest = a.image_manifest.resolve()
-        from image_qualification_inputs import reviewed_payload, freeze_inputs, verify_frozen_inputs, prepare_runtime_cwd
+        from image_qualification_inputs import reviewed_payload, freeze_inputs, prepare_runtime_cwd
         selected = reviewed_payload(manifest, a.admission_manifest, a.admission_sha256, a.image, a.artifact_sha256)
         audit = selected['audit']
         locked_specs = selected['specifications']

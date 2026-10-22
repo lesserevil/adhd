@@ -1,0 +1,145 @@
+{
+  "suite": "adhd/multi-store-move-crash@1",
+  "started_at": "2026-10-22T05:52:36.672405+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "all-project-public-originals-and-acknowledgements-created-before-move",
+      "passed": true
+    },
+    {
+      "name": "actual-runtime-stopped-and-sigkilled-at-requested-filesystem-boundary",
+      "passed": true,
+      "observed_stage": "after-first-checkpoint",
+      "kernel_state_before_kill": "stopped",
+      "signal": "SIGKILL"
+    },
+    {
+      "name": "startup-recovers-one-complete-generation-with-every-project-original-retry-and-ack-state",
+      "passed": true
+    },
+    {
+      "name": "recovered-project-writers-accept-new-publications-and-drain-real-kafka",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "665ff47e24c249ee84c2263013de34657a1a73d2a58746240f16f9d800843e72",
+  "fault_source_sha256": "9af736cb17ffc8faaca52a97ec5995e2ec75fc670cf325c1b1e0bcbf132cd366",
+  "fault_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+  "crash_at": "after-first-checkpoint",
+  "no_default": false,
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_24cbd62fab161b3f61f7f3b52d58656e_1",
+      "operation_id": "restore_24cbd62fab161b3f61f7f3b52d58656e_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_24cbd62fab161b3f61f7f3b52d58656e_3",
+      "operation_id": "restore_24cbd62fab161b3f61f7f3b52d58656e_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_24cbd62fab161b3f61f7f3b52d58656e_5",
+      "operation_id": "restore_24cbd62fab161b3f61f7f3b52d58656e_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "537bb25cc04229a2f08f0f5a8a4368665a3ede53b27175a44768b5e94ab63dc8",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "537bb25cc04229a2f08f0f5a8a4368665a3ede53b27175a44768b5e94ab63dc8",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "8d13cafa37ed56a41b01e334381044c99df63853bb3d19abe0260b89e3f78b48",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "stopped",
+        "container_id": "8d13cafa37ed56a41b01e334381044c99df63853bb3d19abe0260b89e3f78b48",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-76f57151d3764fcc",
+        "container_id": null,
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-f4696fa116a64971",
+        "container_id": null,
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "observer_source": "store_move_fault.c",
+    "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+    "observer_loader_proof_sha256": "095b5cc1f4b8d3f1e77e52ee80e955ed36ae2e0bc13049e67814ecd480bfd4b6",
+    "actual_beam_kernel_custody": [
+      {
+        "container_id": "537bb25cc04229a2f08f0f5a8a4368665a3ede53b27175a44768b5e94ab63dc8",
+        "source": "store_move_fault.c",
+        "stage": "after-first-checkpoint",
+        "observer_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+        "host_process_pid": 1600169,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533660]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "336a65debe2005d2356973446e2b4b41bea7c13e435ef831e37e2fb3d980e84a",
+        "process_maps_sha256": "2f5659dbba584d99d654805edd77dcfd831d8fc3c418b0837cea0509177585e5",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "0ebcc7b6d676d6b6f8410fa0f53c59eaa89a7bae8eb8c5bf8e2e8e4c04e5c81c",
+        "observer_library_sha256": "c26cfc8cf8f3c7b089b54c199a0e7c5d211ba03da253d2d7e4b543336ed534c4",
+        "kernel_state": "stopped"
+      }
+    ],
+    "observer_disarmed_after_kill": true,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "finished_at": "2026-10-22T05:54:06.629329+00:00"
+}

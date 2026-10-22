@@ -75,7 +75,10 @@ original invocation omitted the existing `--fixed-baseline` flag for the repaire
 artifact. A fresh final-seven batch is running with that flag; all466 frozen inputs,
 11 external bindings, remaining suite order and assertions are unchanged. The reviewed image filesystem/migration ladder
 is now running serially: 17 original jobs / 85 expected checks, with all five
-observers bound to the actual passing image ABI probes. Preparation and isolated
+observers bound to the actual passing image ABI probes. Its complete storage suite
+passes10 checks (four real write kills and six integrity predicates); root review
+independently confirms all18 owned application containers and five codec helpers
+are absent. The remaining16 jobs have no whole-matrix pass claim. Preparation and isolated
 guard checks for all 15 image recovery crash variants, private-network learned
 recovery and the actual-image offline rebind adapter have also passed; their
 application runs remain pending. The integrated platform driver and missing-target

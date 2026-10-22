@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import shutil
+import runpy
 import sys
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -73,7 +74,26 @@ def main():
                 else:raise AssertionError('Actual execute entrypoint missed custody boundary')
         finally:sys.path[:]=previous_path
         assert len(calls)==1 and starts==[] and (work/'execution-started.json').is_file()
-    print('PASS image core5: reviewed hash, actual driver, durable once admission, actual passed report, real execute entrypoint reaches mocked custody with process attempts0')
+    # The interpreter starts importing helpers before main(). A frozen helper
+    # import must never create __pycache__, even with the parent env flag absent.
+    with tempfile.TemporaryDirectory() as directory:
+        root=Path(directory).resolve();helper=root/'image_qualification_inputs.py'
+        helper.write_text('verify_frozen_inputs=None\nprepare_runtime_cwd=None\n')
+        previous_path=list(sys.path);previous_bytecode=sys.dont_write_bytecode
+        saved=sys.modules.get('image_qualification_inputs')
+        try:
+            sys.path.insert(0,str(root))
+            with patch('subprocess.run',forbidden),patch('subprocess.Popen',forbidden),patch('subprocess.check_output',forbidden):
+                for name in ('multi_image_core_matrix.py','multi_eventing_matrix.py'):
+                    sys.modules.pop('image_qualification_inputs',None);sys.dont_write_bytecode=False
+                    runpy.run_path(str(Path(__file__).with_name(name)),run_name='pure_import_fixture')
+                    assert not list(root.glob('__pycache__/*')), 'Runner imported frozen helper before disabling bytecode'
+        finally:
+            sys.path[:]=previous_path;sys.dont_write_bytecode=previous_bytecode
+            sys.modules.pop('image_qualification_inputs',None)
+            if saved is not None:sys.modules['image_qualification_inputs']=saved
+        assert starts==[]
+    print('PASS image core6: reviewed hash, actual driver, durable once admission, actual passed report, actual execute custody boundary, pre-main import cache denial; process attempts0')
 
 
 

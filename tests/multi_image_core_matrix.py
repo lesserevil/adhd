@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+sys.dont_write_bytecode = True
 from image_qualification_inputs import verify_frozen_inputs
 
 

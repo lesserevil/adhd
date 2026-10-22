@@ -1,6 +1,7 @@
 """Frozen complementary native eventing regression, controlled providers only."""
 import argparse,concurrent.futures,hashlib,json,os,shutil,subprocess,sys
 from pathlib import Path
+sys.dont_write_bytecode=True
 from image_qualification_inputs import verify_frozen_inputs, prepare_runtime_cwd
 
 

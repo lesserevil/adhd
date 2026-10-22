@@ -1,0 +1,48 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/controlled_sdk_runtime.py", line 135, in <module>
+    base.main()
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/controlled_image_runtime.py", line 301, in main
+    if failure:raise failure
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/controlled_image_runtime.py", line 283, in main
+    custody.install();sys.argv=job['test_argv'];runpy.run_path(job['test_argv'][0],run_name='__main__')
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/feedback_sdk.py", line 71, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/feedback_sdk.py", line 70, in main
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--image');p.add_argument('--legacy-command',action='append',default=[]);p.add_argument('--report',default='verification/feedback-sdk.json');asyncio.run(run(p.parse_args()))
+                                                                                                                                                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/feedback_sdk.py", line 64, in run
+    for i,producer in enumerate([command]+[json.loads(x) for x in args.legacy_command]):await flow(Hub(producer,root/('hub-'+str(i)),model.url),producer,i)
+                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/feedback_sdk.py", line 34, in flow
+    h.start();a=await h.agent('agent-a');b=await h.agent('agent-b')
+    ^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/controlled_image_runtime.py", line 259, in wrapped
+    def wrapped(obj,*a,_original=original,_wrapper=wrapper,**kw):return _wrapper(_original,obj,*a,**kw)
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/controlled_sdk_runtime.py", line 128, in start
+    return super().start(observed,obj,*args,**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/controlled_image_runtime.py", line 167, in start
+    result=original(obj,*args,**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/controlled_sdk_runtime.py", line 121, in observed
+    try:return original(instance,*a,**kw)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/sk40b/frozen/tests/hub_acceptance.py", line 150, in start
+    raise AssertionError("Hub did not become ready")
+AssertionError: Hub did not become ready

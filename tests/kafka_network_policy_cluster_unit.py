@@ -156,4 +156,36 @@ class Guards(unittest.TestCase):
   good=lambda name:subprocess.CompletedProcess([],1,b'[]',('Error response from daemon: get '+name+': no such volume').encode())
   self.assertTrue(g.volume_absent(good('Name'),'Name'));self.assertFalse(g.volume_absent(good('name'),'Name'))
   mixed=good('Name');mixed.stderr+=b'\ndaemon error';self.assertFalse(g.volume_absent(mixed,'Name'))
+class BootstrapDependencyGuards(unittest.TestCase):
+ def fixture(self,root,defect=None):
+  directory=root/'bootstrap12';directory.mkdir();(root/'calico-pinned.yaml').write_bytes(b'pinned')
+  plan={k:k for k in ['node_image','CNI_images','CNI_archives','image','artifact_sha256','admission_sha256','canonical_manifest_sha256','direct_api_endpoint']};plan['controller_direct_api_endpoint']={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
+  plan.update(frozen={'files':{'tests/kafka_network_policy.py':'same','deploy/k8s/private.yaml':'same'}},bound={'files':{'kind.yaml':'same','calico-pinned.yaml':'same','images.json':'same'}})
+  prior=dict(plan,diagnostic_only=True)
+  proof={'host_direct_API_verified':True,'inside_own_node_verified':True,'tls':{'verify_peer':True,'port':6443},'configmap_uid':'same','controller_overlay':{'guarded_json_patch':True,'configmap_uid':'same','pinned_manifest_unchanged':True},'pinned_calico_manifest_sha256':g.sha(root/'calico-pinned.yaml')}
+  result={'passed':True,'failure_type':None,'cleanup_failure_types':[],'inputs_unchanged':True,'direct_api_endpoint_proof':proof,'events':[{'name':n,'returncode':0}for n in ['ready-calico','ready-controller','controller-endpoint-overlay']]}
+  audit={'schema':'adhd/cni12-independent-bootstrap-positive@1','passed':True,'full_input_closure_unchanged':True,'both_calico_rollouts_passed':True,'controller_overlay_guard_passed':True,'policy_routes_qualified':0,'original_rollout_seconds':300,'current_strict_absence':[{'observed_absent':True}for _ in range(5)],'protected_cluster_before_after_same_ID':'protected','protected_cluster_currently_running_same_ID':'protected','direct_api_endpoint_proof':proof}
+  if defect=='false':result['passed']=False
+  elif defect=='routes':audit['policy_routes_qualified']=18
+  elif defect=='cleanup':audit['current_strict_absence'][0]['observed_absent']=False
+  elif defect=='wrong-node':prior['node_image']='foreign'
+  elif defect=='controller':proof['controller_overlay']['guarded_json_patch']=False
+  elif defect=='configmap':proof['controller_overlay']['configmap_uid']='foreign'
+  elif defect=='rollout':result['events'][1]['returncode']=1
+  elif defect=='diagnostic':prior['diagnostic_only']=False
+  elif defect=='pin':proof['pinned_calico_manifest_sha256']='foreign'
+  (directory/'plan.json').write_text(json.dumps(prior));ph=g.sha(directory/'plan.json');result['plan_sha256']=ph
+  (directory/'result.json').write_text(json.dumps(result));rh=g.sha(directory/'result.json');audit.update(plan_sha256=ph,result_sha256=rh)
+  (directory/'audit.json').write_text(json.dumps(audit));binding={'audit_sha256':g.sha(directory/'audit.json'),'plan_sha256':ph,'result_sha256':rh}
+  return directory,binding,plan
+ def test_positive_dependency_and_hash_tamper(self):
+  with tempfile.TemporaryDirectory()as value:
+   directory,binding,plan=self.fixture(Path(value));self.assertTrue(g.verify_bootstrap_dependency(directory,binding,plan));(directory/'result.json').write_text('{}')
+   with self.assertRaises(AssertionError):g.verify_bootstrap_dependency(directory,binding,plan)
+ def test_semantic_false_proofs_cannot_authorize_full_route_mode(self):
+  for defect in ['false','routes','cleanup','wrong-node','controller','configmap','rollout','diagnostic','pin']:
+   with tempfile.TemporaryDirectory()as value:
+    directory,binding,plan=self.fixture(Path(value),defect)
+    with self.assertRaises(AssertionError,msg=defect):g.verify_bootstrap_dependency(directory,binding,plan)
+
 if __name__=='__main__':unittest.main()

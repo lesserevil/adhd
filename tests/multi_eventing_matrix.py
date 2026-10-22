@@ -5,11 +5,28 @@ from pathlib import Path
 
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def bounded_jobs(jobs,run,parallelism,fail_fast):
+ if not fail_fast:
+  with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism)as pool:return list(pool.map(run,jobs))
+ results={};next_index=0;failed=False
+ with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism)as pool:
+  pending={}
+  while pending or (not failed and next_index<len(jobs)):
+   while not failed and len(pending)<parallelism and next_index<len(jobs):
+    pending[pool.submit(run,jobs[next_index])]=next_index;next_index+=1
+   done,_=concurrent.futures.wait(pending,return_when=concurrent.futures.FIRST_COMPLETED)
+   for future in done:
+    index=pending.pop(future);results[index]=future.result()
+    if results[index]['exit_code']!=0:failed=True
+ return [results[index]for index in sorted(results)]
+
+
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  for key in ('hub','legacy-hub','repo-root','work','report'):p.add_argument('--'+key,type=Path,required=True)
  for key in ('artifact-sha256','eventing-rest-url','federation-rest-url','private-rest-url','owned-broker-container','owned-compose-project'):p.add_argument('--'+key,required=True)
  p.add_argument('--phase',choices=('healthy','private'),required=True)
+ p.add_argument('--fail-fast',action='store_true',help='Stop admitting suites after an observed failure; already running suites finish')
  p.add_argument('--only',help='Explicit comma-separated healthy-phase subset for fixture-only reruns')
  a=p.parse_args();root=a.repo_root.resolve();hub=a.hub.resolve();legacy=a.legacy_hub.resolve();work=a.work.resolve();frozen=work/'frozen'
  assert sha(hub)==a.artifact_sha256
@@ -32,9 +49,10 @@ def main():
   jobs.append((name,file,['--hub',str(hub),'--eventing-rest-url',rest,'--deadline','90']+extra))
  serial=[('retention','eventing_retention.py',['--command',command,'--eventing-rest-url',private,'--owned-broker-container',a.owned_broker_container,'--work',str(work/'retention-work')]),('outage','eventing_acceptance.py',['--hub',str(hub),'--eventing-rest-url',private,'--broker-container',a.owned_broker_container,'--deadline','90']),('federation','federation_multi.py',['--command',command,'--legacy-command',old,'--eventing-rest-urls',json.dumps([rest,a.federation_rest_url,private]),'--work',str(work/'federation-work')])]
  if a.phase=='healthy':
-  plan={'schema':'adhd/native-eventing-plan@1','artifact_sha256':sha(hub),'legacy_sha256':sha(legacy),'runner_sha256':sha(Path(__file__)),'parallelism':2,'runs_per_suite':1,'no_live_provider':True,'frozen_inputs':inputs,'jobs':[{'name':n,'script':f,'arguments':v}for n,f,v in jobs+serial]};(work/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
+  plan={'schema':'adhd/native-eventing-plan@1','artifact_sha256':sha(hub),'legacy_sha256':sha(legacy),'runner_sha256':sha(Path(__file__)),'parallelism':2,'runs_per_suite':1,'fail_fast':a.fail_fast,'no_live_provider':True,'frozen_inputs':inputs,'jobs':[{'name':n,'script':f,'arguments':v}for n,f,v in jobs+serial]};(work/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
  else:
   plan=json.loads((work/'plan.json').read_text());assert plan['artifact_sha256']==sha(hub) and plan['legacy_sha256']==sha(legacy)
+  assert plan.get('fail_fast',False)==a.fail_fast
   assert plan['jobs']==[{'name':n,'script':f,'arguments':v}for n,f,v in jobs+serial]
   owned=subprocess.check_output(['docker','inspect','--format','{{index .Config.Labels "com.docker.compose.project"}}',a.owned_broker_container],text=True).strip();assert owned==a.owned_compose_project,'Disposable broker ownership mismatch'
  env=os.environ.copy();env['PYTHONPATH']=str(frozen/'tests')
@@ -48,10 +66,15 @@ def main():
   assert a.phase=='healthy','Subsets only apply to healthy phase'
   names=a.only.split(',');assert len(names)==len(set(names)) and set(names)<={j[0]for j in jobs}
   selected=[j for j in jobs if j[0]in names]
- if a.phase=='healthy':
-  with concurrent.futures.ThreadPoolExecutor(max_workers=2)as pool:results=list(pool.map(run,selected))
- else:results=[run(job)for job in serial]
- unchanged=all(sha(frozen/n)==h for n,h in inputs.items());value={'schema':'adhd/native-eventing-matrix@1','passed':unchanged and all(r['exit_code']==0 for r in results),'lifecycle_admitted':False,'artifact_sha256':sha(hub),'plan_sha256':sha(work/'plan.json'),'frozen_inputs_unchanged':unchanged,'phase':a.phase,'selected_suites':[r['name']for r in results],'results':results}
+ planned=selected if a.phase=='healthy' else serial
+ if a.phase=='healthy':results=bounded_jobs(planned,run,2,a.fail_fast)
+ else:
+  results=[]
+  for job in planned:
+   result=run(job);results.append(result)
+   if a.fail_fast and result['exit_code']!=0:break
+ unrun=[job[0]for job in planned if job[0]not in {row['name']for row in results}]
+ unchanged=all(sha(frozen/n)==h for n,h in inputs.items());value={'schema':'adhd/native-eventing-matrix@1','passed':unchanged and not unrun and all(r['exit_code']==0 for r in results),'lifecycle_admitted':False,'artifact_sha256':sha(hub),'plan_sha256':sha(work/'plan.json'),'frozen_inputs_unchanged':unchanged,'phase':a.phase,'selected_suites':[r['name']for r in results],'fail_fast':a.fail_fast,'planned_suites':[j[0]for j in planned],'executed_suites':[r['name']for r in results],'unrun_suites':unrun,'results':results}
  (work/(a.phase+'-matrix.json')).write_text(json.dumps(value,indent=2)+'\n');a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(value,indent=2)+'\n');sys.exit(0 if value['passed']else 1)
 
 if __name__=='__main__':main()

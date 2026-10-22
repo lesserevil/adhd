@@ -9,17 +9,29 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
 sys.dont_write_bytecode=True
-from controlled_sdk_matrix import tree
 
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def write(path,value):path.write_text(json.dumps(value,indent=2)+'\n')
 def load(path,name):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+
+
+def tree(root):
+ assert root.is_absolute() and root.resolve()==root and root.is_dir() and not root.is_symlink()
+ files={};directories=[]
+ for path in sorted(root.rglob('*')):
+  info=path.lstat();assert not stat.S_ISLNK(info.st_mode)
+  if stat.S_ISDIR(info.st_mode):directories.append(str(path.relative_to(root)))
+  else:
+   assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and info.st_uid==os.getuid()
+   files[str(path.relative_to(root))]=sha(path)
+ return {'files':files,'directories':directories}
 
 
 def prepare(a):

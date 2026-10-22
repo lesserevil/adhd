@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Eventing: tolerate transient Kafka metadata propagation after topic creation
+  within one shared deadline, while retaining strict topology, retention,
+  authorization and fresh-topic checks. Recover incomplete committed retention
+  changes before reporting healthy after restart.
+
 - Hub: support isolated projects, project-scoped agents and federation, Kafka-backed
   raw subscriptions and optional text filters, and hot Admin controls. Keep original
   facts and search independent of subscription filters and broker retention.

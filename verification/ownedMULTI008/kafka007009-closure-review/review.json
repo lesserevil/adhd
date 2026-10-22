@@ -1,0 +1,345 @@
+{
+  "schema": "adhd/kafka007009-requirement-closure-review@1",
+  "review_only": true,
+  "root_roadmap_not_edited": true,
+  "goal": "Close verified authored requirements; this is not a new test plan.",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "compiled05_image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "reference_authority": "sha256:6329055b9c4342f8cd2f26061acd1e923e20fbeed4192ded73dae546a86321aa",
+  "new_receipt_or_lifecycle_success_not_assigned": true,
+  "criteria": [
+    {
+      "item": "KAFKA-007",
+      "checkbox": "implementation1",
+      "requirement": "Pinned broker/client compatibility, durable/private/secrets/resources/ordering and distinct persistent installation cluster ID.",
+      "implementation": [
+        "deploy/events.compose.yaml",
+        "deploy/kafka-bootstrap.py",
+        "deploy/k8s/events.yaml",
+        "deploy/k8s/private.yaml",
+        "deploy/security/kafka-rest.oauth.properties.example"
+      ],
+      "evidence": [
+        "bootstrap_compose",
+        "bootstrap_k8s_service",
+        "baseline21",
+        "secured_kind51",
+        "hub_service_inventory"
+      ],
+      "finding": "Requirement implemented and item-specific evidence ready. Four original deployment/bootstrap/doc input hashes exactly match current files; final05 whole deployments confirm real fresh service startup/reuse. Enforcing-CNI traffic remains the explicit KAFKA009 network gate, not a claim from default Kind.",
+      "closure_recommendation": "Eligible once final current authority/unchanged-image bridge is recorded; do not invent new topology or security modes."
+    },
+    {
+      "item": "KAFKA-007",
+      "checkbox": "implementation2",
+      "requirement": "Compose and owned Kubernetes manifests; model-free baseline, optional existing GPU service or configured model endpoint.",
+      "implementation": [
+        "deploy/app.compose.yaml",
+        "deploy/app.model.compose.yaml",
+        "deploy/model.compose.yaml",
+        "deploy/k8s/hub.yaml",
+        "deploy/k8s/model.yaml"
+      ],
+      "evidence": [
+        "baseline21",
+        "model12",
+        "optional_model_inventory"
+      ],
+      "finding": "Whole actual Compose11/Kind10 boot without model/GPU. Separate actual packaged Compose6/Kind6 enable the configured existing service via bounded relay. Optional GPU templates pin existing service/verified mounted weights and are documented; the requirement permits configured existing endpoint, so a fresh GPU Kubernetes deployment is not an additional implied gate.",
+      "closure_recommendation": "Item-specific requirement satisfied; retain default model-free behavior and external checkpoint boundary."
+    },
+    {
+      "item": "KAFKA-007",
+      "checkbox": "implementation3",
+      "requirement": "Compile admitted modules once at image build, verify source/toolchain/complete module cache before startup loading, preserve original source/CLI/fault interfaces, unchanged SDK bounds and complete required regressions.",
+      "implementation": [
+        "deploy/Dockerfile",
+        "deploy/runtime/build.exs",
+        "deploy/runtime/boot.exs",
+        "scripts/stage_container.py"
+      ],
+      "evidence": [
+        "compiled05_admission",
+        "cache17",
+        "repro05",
+        "ABI19",
+        "sdk17",
+        "ui86",
+        "filesystem85",
+        "model_quality69",
+        "baseline21",
+        "secured_kind51",
+        "model12"
+      ],
+      "finding": "Actual59module cache,17cache/CLI groups (including18builtin/12reject), reproducible independent builds, original30secondSDK17,85filesystem checks and19observer ABI cases already positive. Packaging-specific behavior has no identified remaining implementation gap. The final full current core/Kafka/recovery/nativeUI runtime matrices are owned by root and must be composed from their actual terminal results before claiming the complete-regression phrase.",
+      "closure_recommendation": "Close after current remaining runtime gates and proper receipt/context bridge succeed; no source or image rebuild solely for changed operating docs."
+    },
+    {
+      "item": "KAFKA-007",
+      "checkbox": "implementation4",
+      "requirement": "Document single-node vs replicated durability, single-writer replicas, backup/restore, broker upgrades and hot settings.",
+      "implementation": [
+        "docs/admin/operations.md",
+        "docs/admin/event-service.md",
+        "docs/admin/model-service.md",
+        "docs/admin/kafka-bootstrap.md",
+        "docs/admin/web-console.md"
+      ],
+      "evidence": [
+        "guide_review",
+        "baseline21",
+        "secured_kind51"
+      ],
+      "finding": "Guides state one hub writer/Recreate, one-broker disk limits, multi-broker topology as an unqualified alternative, consistent complete config/all-project/Kafka recovery set, selected routes and explicit selective restore, infrastructure rollout vs hot app settings, and actual upgrades/rotations. Native private Kafka and public first-use initialization now documented.",
+      "closure_recommendation": "Documentation content complete; close after proper docs-authority receipt bridge, not another operator-test plan."
+    },
+    {
+      "item": "KAFKA-007",
+      "checkbox": "evidence1",
+      "requirement": "Clean real-Kafka Compose and disposable Kubernetes with no model; A2A pub/sub/backend search.",
+      "evidence": [
+        "baseline21"
+      ],
+      "finding": "Both whole current compiled05 programs pass:11Compose+10Kind,3explicitly initialized projects, raw durable A2A/source retries/acks, backend original lookup, current Blue/privacy and cleanup.",
+      "closure_recommendation": "Positive exact-image evidence satisfied; preserve all original84assertions in current115assertion program."
+    },
+    {
+      "item": "KAFKA-007",
+      "checkbox": "evidence2",
+      "requirement": "Replacement/restart, PVC/volume reuse, broker failure/upgrade, secret rotation, optional-model enablement, manifests and dependency/license inventory.",
+      "evidence": [
+        "baseline21",
+        "secured_kind51",
+        "model12",
+        "hub_service_inventory",
+        "hub_APK_inventory",
+        "optional_model_inventory"
+      ],
+      "finding": "Same-volume8.3.1\u21928.3.2 actual A2A outage/acks/cursor upgrade, full cold restores and selective restores both platforms, actual Secret/password/cert/token/key/pod rotation, same hub VM hot configuration, and exact identities/manifests are positive. All12 whole model child cases qualify although original outer launcher143/false remains unchanged. Scoped inventories disclose real source/weights/CUDA/base terms and absent text/version; they do not claim legal clearance or a full transitive scanner.",
+      "closure_recommendation": "Requirement satisfied within supplied single-node/configured-endpoint scope. No new full license text, HA or brokerSASL_SSL requirement is inferred."
+    },
+    {
+      "item": "KAFKA-009",
+      "checkbox": "implementation1",
+      "requirement": "Normative contracts/schema/OpenAPI/examples plus onboarding/traceability/deployment/troubleshooting updated together.",
+      "implementation": [
+        "components/hub/eventing/spec.md",
+        "components/hub/multi/spec.md",
+        "components/hub/project-recovery/interface.schema.json",
+        "docs/protocol/schema.json",
+        "docs/protocol/openapi.json",
+        "docs/protocol/multi-eventing-examples.json",
+        "docs/protocol/scopes.json"
+      ],
+      "evidence": [
+        "guide_review",
+        "retained_plan_review",
+        "cache17"
+      ],
+      "finding": "Current2.1 contract and published wire definitions, ten corrected operating guides, exact33packagednormative files and CLI exports are present. ProperCLI documentation review initially caught two out-of-root Markdownlinks, corrected; marker now properly recorded6329 and authority/locks pass. New source-retaining lifecycle is live; no new receipt assigned by this review.",
+      "closure_recommendation": "Close this checkbox only after actual properCLI lifecycle/verify/current receipt and exactcontext5/source/cache/image bridge; preserve oldf811 admission."
+    },
+    {
+      "item": "KAFKA-009",
+      "checkbox": "implementation2",
+      "requirement": "Zero-model raw/search; distinct live-model filter/query; multi-project/federated regressions.",
+      "evidence": [
+        "baseline21",
+        "model12",
+        "model_quality69",
+        "sdk17"
+      ],
+      "finding": "Actual deployed no-model21 and live-model12 satisfy their scoped gates. Larger independent subscribers/publishers, admission and own-per-server broker federation belong to the current full Kafka/runtime matrices; historical image34/e2/native results cannot replace final05 full scopes.",
+      "closure_recommendation": "Close once current root Kafka68/core/recovery/nativeUI terminal positive evidence covers the required multi-project/federated scope; do not rerun positive whole21/12."
+    },
+    {
+      "item": "KAFKA-009",
+      "checkbox": "implementation3",
+      "requirement": "Durable handoffs/fanout/fairness/retention/replay gaps/faults at limits; exact identities.",
+      "evidence": [
+        "filesystem85",
+        "ABI19",
+        "baseline21",
+        "secured_kind51"
+      ],
+      "finding": "Exact current compiled05 real-kernel filesystem85 and ABI19 plus deployment durability/upgrade/restore are positive. Eventing lost replies/offset fences/gaps/replay/budgets and fair multi-project progress require their current Kafka68 and recovery/runtime proof rows, not these deployment subsets alone.",
+      "closure_recommendation": "Close after the existing current matrices and source/image/receipt bridge; no additional invented failure scenario required."
+    },
+    {
+      "item": "KAFKA-009",
+      "checkbox": "evidence1",
+      "requirement": "Two projects, multiple publishers, independent raw/filtered subscribers, unauthorized project and federated peer with its own Kafka.",
+      "evidence": [
+        "baseline21",
+        "model12"
+      ],
+      "finding": "Current deployment programs establish project separation, model-free raw progress, filtered decisions/queryprivacy and denial subsets. Complete multi-publisher/fanout and separate Kafka federation is a combined criterion that must be linked to the matching current root Kafka/core families.",
+      "closure_recommendation": "Link actual complete current matrix reports; cannot close whole demonstration from baseline21/model12 alone."
+    },
+    {
+      "item": "KAFKA-009",
+      "checkbox": "evidence2",
+      "requirement": "Declared verification, independent wire/privacy/fault/migration/deployment; limits/publication gates; separate enforcing-CNI route reachability/allow/deny before and after shipped policy.",
+      "evidence": [
+        "source_admission",
+        "compiled05_admission",
+        "cache17",
+        "sdk17",
+        "ui86",
+        "filesystem85",
+        "baseline21",
+        "secured_kind51",
+        "model12",
+        "CNI_bootstrap_only"
+      ],
+      "finding": "Deployment/runtime components above are positive and limits explicit. Required final lifecycle receipt bridge and current broader matrices remain pending. Calico bootstrap12 explicitly qualifies installation only, zero18route cases; neither default Kind nor successful apply proves enforcement. Root currently owns the actual18route gate.",
+      "closure_recommendation": "KAFKA009 as a whole remains open until actual enforcing-route gate, current runtime/migration/wire/privacy/fairness/federation matrices, dependencies and receipt/context bridge pass. Preserve all failures and scoped whole successes without retrogreen."
+    }
+  ],
+  "evidence": {
+    "baseline21": {
+      "path": "verification/ownedMULTI008/compiled05-baseline-platform-positive/manifest.json",
+      "sha256": "416482a68fe0685a9123fc8d9cb83be0d588dbacf9925147df438e0222b8e882",
+      "schema": "adhd/compiled05-baseline-platform-positive@1",
+      "declared_passed": true
+    },
+    "secured_kind51": {
+      "path": "verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json",
+      "sha256": "9f9ddb63c8b93f803b0908d626334701c2e69bf5e1e69b5a09530dda45f76baa",
+      "schema": "adhd/compiled05-secured-kind-positive@1",
+      "declared_passed": true
+    },
+    "model12": {
+      "path": "verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json",
+      "sha256": "19897106b2cb75c6d481ab95490f2966e7a7393a2abefccf9766d395a120768b",
+      "schema": "adhd/compiled05-deployed-model-terminal-audit@1",
+      "declared_passed": false
+    },
+    "cache17": {
+      "path": "verification/container-cache40-compiled05-positive/audit.json",
+      "sha256": "b1b088f4dd221729778723b4b2d505c3145e7dfc7efa8bedfde6e87ed9668013",
+      "schema": "adhd/final05-cache17-root-audit@1",
+      "declared_passed": true
+    },
+    "repro05": {
+      "path": "verification/container-precompile-image40/reproducibility05-positive/manifest.json",
+      "sha256": "e5b90846e0b071eadf92c8f63c10b6e976713cde71a1af103f4b123bc83c67b6",
+      "schema": "adhd/compiled05-independent-image-reproducibility@1",
+      "declared_passed": true
+    },
+    "source_admission": {
+      "path": "verification/project-recovery/development40/admission/manifest.json",
+      "sha256": "a78519154311d105ed84ed2e0887490b47d22807141eb2371163fc2c1a0b0f03",
+      "schema": "adhd/current40-admission-and-image-binding@1",
+      "declared_passed": true
+    },
+    "compiled05_admission": {
+      "path": "verification/container-precompile-image40/compiled05-admission/manifest.json",
+      "sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec",
+      "schema": "adhd/compiled40-admission-and-image-binding@1",
+      "declared_passed": true
+    },
+    "hub_service_inventory": {
+      "path": "verification/compiled05-dependency-license-audit/audit.json",
+      "sha256": "39bfe90d6fee1581479936286dfc1b6c3a6df92dffb5babaa96d8b064de5b6aa",
+      "schema": "adhd/compiled05-dependency-license-completion-audit@1",
+      "declared_passed": true
+    },
+    "hub_APK_inventory": {
+      "path": "verification/compiled05-dependency-license-audit/actual-image-inventory.json",
+      "sha256": "766f71c04b73631128779ed954f89cef6bfc5d973511ee21a6079cf827344b29",
+      "schema": "adhd/offline-image-dependency-inventory@1",
+      "declared_passed": null
+    },
+    "optional_model_inventory": {
+      "path": "verification/ownedMULTI008/optional-model-dependency-license/manifest.json",
+      "sha256": "f0bac0e0a68773b04a47058169e2211a2369f465368bb875d9cb1e92a604a944",
+      "schema": "adhd/optional-model-top-level-dependency-license-inventory@1",
+      "declared_passed": true
+    },
+    "bootstrap_compose": {
+      "path": "verification/kafka-bootstrap/manifest.json",
+      "sha256": "c1f2aae1a7d70bf3f3a8d75f5d14238713828cebd87a654e83251136e5757c93",
+      "schema": "adhd/kafka-installation-identity-evidence@1",
+      "declared_passed": true
+    },
+    "bootstrap_k8s_service": {
+      "path": "verification/kafka-bootstrap/kubernetes-manifest.json",
+      "sha256": "17e164c055c6f40a94afc19d1fba3c526cfab9d6014ccf4d409583b1f33c0f41",
+      "schema": "adhd/kafka-kubernetes-bootstrap-diagnostic@1",
+      "declared_passed": true
+    },
+    "sdk17": {
+      "path": "verification/final05-sdk-whole17-positive/manifest.json",
+      "sha256": "231bb2f6d935b3142576dd41ca2ad234da66620d77e3c2bf13baea1daea46a01",
+      "schema": "adhd/compiled05-sdk-whole17-positive@1",
+      "declared_passed": true
+    },
+    "ui86": {
+      "path": "verification/final05-ui-whole86-positive/manifest.json",
+      "sha256": "2884e5fbe23c224f16c487a300b620948a476a0dfe015a508ed9419f9b7ffa27",
+      "schema": "adhd/compiled05-ui-whole86-composed-proof@1",
+      "declared_passed": true
+    },
+    "filesystem85": {
+      "path": "verification/final05-filesystem-whole85-positive/manifest.json",
+      "sha256": "c0cf1be85aa85f90fff342d58955e7de6b3f04df98611c81dc4461676a56b25c",
+      "schema": "adhd/final05-filesystem-terminal-independent-audit@1",
+      "declared_passed": true
+    },
+    "model_quality69": {
+      "path": "verification/quality40-compiled05-positive/audit.json",
+      "sha256": "cdf68c3a3cd863837923e80a9834f97af76e537a22909523248ece2fd0cce235",
+      "schema": "adhd/final05-quality69-independent-audit@1",
+      "declared_passed": true
+    },
+    "ABI19": {
+      "path": "verification/image40-compiled05-abi19-positive/audit.json",
+      "sha256": "143f06d58a7a4067a8d1355625acf6faf153850b55d1667c2f5e0c952acc885e",
+      "schema": "adhd/compiled05-abi19-independent-audit@1",
+      "declared_passed": true
+    },
+    "CNI_bootstrap_only": {
+      "path": "verification/network-policy-kind40-bootstrap12-positive/audit.json",
+      "sha256": "51b6d2cac357800d0806fc305068a826344a4f01489c3cdf357dddd88e70a62a",
+      "schema": "adhd/cni12-independent-bootstrap-positive@1",
+      "declared_passed": true
+    },
+    "retained_plan_review": {
+      "path": "verification/ownedMULTI008/final-documentation-retained-plan-review/manifest.json",
+      "sha256": "78d2dedb266e17687ca320e0547135d85340b4773e002d20fd749961ea699057",
+      "schema": "adhd/final-documentation-retained-plan-independent-review@1",
+      "declared_passed": true
+    },
+    "guide_review": {
+      "path": "verification/ownedMULTI008/profile21-operating-guide-review/manifest.json",
+      "sha256": "1c7ad5069a6424b2716b405d8b0f5f177618d9eec9ea5b4fa8e70a24e4120ae8",
+      "schema": "adhd/profile21-operating-guide-review@1",
+      "declared_passed": null
+    }
+  },
+  "current_bootstrap_implementation_bytes_match_original_service_proof": [
+    "deploy/kafka-bootstrap.py",
+    "docs/admin/kafka-bootstrap.md",
+    "deploy/events.compose.yaml",
+    "deploy/k8s/events.yaml"
+  ],
+  "inventory_scope_resolution": "The earlier hub audit audit_passed:true/all_license_deliverables_complete:false remains historical. Optional-model af1 supplemental inventory and current guide consolidation address the stated top-level operating inventory scope; no full text/version is invented for the pinned checkpoint. Neither full legal clearance, package redistribution clearance nor transitive scanner completeness is an authored acceptance gate here.",
+  "not_extra_requirements": [
+    "HA/replicated Kafka or multiple concurrent hub writers",
+    "proxy-to-brokerSASL_SSL, mTLS, RBAC/MDS, per-tokenKafkaACLs or production enterprise entitlement qualification",
+    "fresh deployment of GPU model pod when configured existing model endpoint option is already exercised",
+    "full transitive Java/npm/Python/CUDA/GPUdriver BOM or substitution of absent checkpoint license terms",
+    "new Docker rebuild or provider calls solely for documentation authority drift"
+  ],
+  "overall_recommendation": "After actual properCLI receipt and exact unchangedcontext5/image bridge, KAFKA007 non-regression clauses have all item-specific evidence. Close the complete-regression clause and KAFKA009 only when root terminal current runtime/CNI evidence and prerequisite items satisfy their exact scopes. No remaining packaging/license/guide implementation defect identified by this map.",
+  "runtime_or_provider_or_extra_CLI_starts": 0,
+  "inputs": {
+    "docs/roadmap/active-work.md": "af94889dc5d7dfaa91f21b901132c642cd52b6a98895f9ecd70786c91b671885",
+    "docs/roadmap/kafka-pubsub.md": "0303bdfdd4b52fad7d0dbb81ec049846e4621a95c9811091cf932e48260145e9",
+    "components/hub/eventing/spec.md": "c3be8cfa5eaf0a61d72334d38f0805f4d8388c63e0cd60e1f2d1666340c4f66f",
+    "docs/admin/event-service.md": "3f29f08c2731cfbc1b7ad151f1e9ff7f558e67d995c5cbd24f220508c4c292b7",
+    "docs/admin/operations.md": "f91cc191be9f183bc709b131c989b153e2c5045b9553c6469728814fc30cbd53",
+    "docs/admin/model-service.md": "3359447d39c5b01fddbdbe8e32433958d7d649f423ffb316a3d4756f18f44590"
+  }
+}

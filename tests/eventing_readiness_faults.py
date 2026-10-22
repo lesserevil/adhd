@@ -119,6 +119,22 @@ def assert_queue_control_capacity(status):
     return {'global_limit':2,'per_project_limit':1,'blue_active':blue['active'],'independent_red_slots_at_observation':2-lane['active']}
 
 
+def assert_retention_policy_capacity(status):
+    """Blue's ordinary long poll must leave its policy request a ticket."""
+    assert status['limits']['eventing_concurrency']==16
+    assert status['limits']['project_eventing_concurrency']==2
+    lane=status['lanes']['eventing'];projects=lane['projects']
+    blue=projects.get(BLUE,{'active':0,'queued':0})
+    assert blue['active']in (0,1)and blue['queued']==0
+    assert lane['active']==blue['active']and lane['queued']==0
+    assert all(v['active']==0 and v['queued']==0 for key,v in projects.items()if key!=BLUE)
+    assert status['limits']['eventing_concurrency']-lane['active']>=1
+    assert status['limits']['project_eventing_concurrency']-blue['active']>=1
+    return {'global_limit':16,'per_project_limit':2,'blue_active':blue['active'],
+        'spare_global_tickets_at_observation':16-lane['active'],
+        'spare_blue_tickets_at_observation':2-blue['active']}
+
+
 async def run_case(args,case,e):
     proxy=None;f=None;native_identity=None;primary=None;operation=None;started=None;elapsed=None
     try:
@@ -131,6 +147,8 @@ async def run_case(args,case,e):
             f.config['eventing']['timeout_ms']=QUEUE_EVENTING_TIMEOUT_MS
             f.config['recovery']={'timeout_ms':QUEUE_RECOVERY_TIMEOUT_MS}
             f.config['resources']={'eventing_concurrency':2 if case=='queue-control'else 1,'project_eventing_concurrency':1}
+        elif case=='existing-retention':
+            f.config['resources']={'project_eventing_concurrency':2}
         original=None
         await f.start()
         if not f.image_runtime:
@@ -149,6 +167,9 @@ async def run_case(args,case,e):
             assert not proxy.transaction.exists(),'Prior transaction must not falsely witness this decision'
             old_retention=before['config']['eventing']['retention_ms']
             desired=old_retention//2
+            capacity=f.admin().call({'op':'resource_status'})
+            premise=assert_retention_policy_capacity(capacity)
+            e.value.setdefault('retention_policy_capacity',{})[case]={'resources':capacity,'premise':premise}
             f.admin().call({'op':'config_update','patch':{'eventing':{**f.config['eventing'],'retention_ms':desired}},
                 'expected_revision':before['config_revision'],'message_id':uuid4().hex,'confirm':True},mutation=True)
             alters=[v for v in proxy.events if v['category']=='alter']

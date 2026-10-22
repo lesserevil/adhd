@@ -1,0 +1,117 @@
+{
+  "suite": "adhd/multi-project-resource-fairness@1",
+  "started_at": "2026-10-22T06:21:49.857507+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "model-global-cap-and-real-raw-kafka-literal-search-progress-while-held",
+      "passed": true,
+      "actual_provider_calls": 1,
+      "observed_model_concurrency": 1,
+      "model_pool_active": 1,
+      "blue_model_queued": true
+    },
+    {
+      "name": "another-project-model-turn-precedes-hot-project-backlog-drain",
+      "passed": true,
+      "provider_project_order": [
+        "project-red",
+        "project-blue"
+      ],
+      "actual_provider_calls": 2,
+      "pool_grants": 2,
+      "grants_are_not_provider_call_count": true
+    },
+    {
+      "name": "slow-failing-peer-network-cap-independent-of-kafka-and-model-free-raw",
+      "passed": true,
+      "actual_peer_http_calls": 2,
+      "observed_peer_concurrency": 1,
+      "additional_model_calls": 0
+    },
+    {
+      "name": "bounded-redacted-server-diagnostics",
+      "passed": true,
+      "maximum_waiters": 8,
+      "observed_waiters": 1,
+      "finite_ingress_tickets": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_b86db6bb94cf602af06656d0aac375a5_1",
+      "operation_id": "restore_b86db6bb94cf602af06656d0aac375a5_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_b86db6bb94cf602af06656d0aac375a5_3",
+      "operation_id": "restore_b86db6bb94cf602af06656d0aac375a5_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_b86db6bb94cf602af06656d0aac375a5_5",
+      "operation_id": "restore_b86db6bb94cf602af06656d0aac375a5_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+    "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "6f7517a304b9f0a1854099543c6779a9ae76fc41635d027bde3f805198b96b3e",
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21"
+      },
+      {
+        "action": "stopped",
+        "container_id": "6f7517a304b9f0a1854099543c6779a9ae76fc41635d027bde3f805198b96b3e",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-8fffc78930964de3",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-1d794dd868364516",
+        "container_id": null,
+        "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "finished_at": "2026-10-22T06:22:41.565574+00:00"
+}

@@ -1,0 +1,112 @@
+{
+  "schema": "adhd/cni13-independent-route-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "scope": "Both Calico rollouts passed but first broker Ready30s timed out before any baseline or policy route measurement; Pod reason unknown because status/events/logs were not retained. No route/app/Kafka/model qualification.",
+  "root_authoritative_exit_code": 1,
+  "plan_sha256": "46c1995b7685bacab4e2e7ab51d464df49b01e712f1be6439c6a08e97124019d",
+  "result_sha256": "6ddd303c1a93cd654cc1b4442bb239ae7d603c0a0d12b76964643997ef08417b",
+  "driver_sha256": "c1dfe7fced6c4a25b3d91fb20812470c2ea5c2c561adbecba5eb0eff185f5229",
+  "full_input_closure_unchanged": true,
+  "original_rollout_seconds": 300,
+  "both_calico_rollouts_passed": true,
+  "controller_overlay_guard_passed": true,
+  "direct_api_endpoint_proof": {
+    "address": "10.240.240.2",
+    "port": 6443,
+    "namespace_uid": "0abd893c-1e89-4916-8b12-8b125eeb7fec",
+    "node_uid": "09e6ed4a-8df1-47ca-906e-967cf8d31b53",
+    "configmap_uid": "1112de0f-7391-4ffc-9250-34b46bc0486f",
+    "owner_nonce": "8e25db50a97f1c28ceef6fffba16d764",
+    "tls": {
+      "authority_sha256": "314e59134d3a7f81847c46ad78400a819f89a686bdf1631c9a4b848f7467c99c",
+      "server_certificate_sha256": "561d8c67953b0b193d00ece0516f88d951b551fc6842dd2ad59e7e965da5c31b",
+      "verify_peer": true,
+      "hostname_checked": "10.240.240.2",
+      "port": 6443,
+      "timeout_seconds": 5
+    },
+    "inside_own_node_verified": true,
+    "host_direct_API_verified": true,
+    "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+    "separate_configmap_sha256": "2aacbd2a77e978f16954885697226642ede5d3bd05db3f8d2baa601eada224f0",
+    "controller_overlay": {
+      "deployment_uid": "f289cd82-2b99-40d5-a417-ee8dd1d7a4ee",
+      "configmap_uid": "1112de0f-7391-4ffc-9250-34b46bc0486f",
+      "patch_sha256": "e75315eb9d50c3799ff95349c834c84e5db3174243d110740ebb41f057855e35",
+      "guarded_json_patch": true,
+      "container": "calico-kube-controllers",
+      "pinned_manifest_unchanged": true
+    }
+  },
+  "rollout_log_sha256": {
+    "ready-calico": "3fb5195d51e5ae0ef86b18f63b0e38c35102b835031d5d19fb180d165b591523",
+    "ready-controller": "c2d94e4ffb2d5a00aef5639ecbbe8315a279c6f66a99f38b2582909d0e6df216"
+  },
+  "current_strict_absence": [
+    {
+      "kind": "container",
+      "identifier": "60fc7d67ed97c5a3a0b7c5483d577754eb22bbe570d6c43a5dad8a7cad1f9b12",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "da612cc08df0815475643976c55eb7f369ffb5ca1ab4ebcf2d66f5d4713d8c70",
+      "observed_absent": true
+    },
+    {
+      "kind": "container",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "10c65dbff792d16ce2df29e4d7922b03ca6b03fc8856925e845460c9912f2366",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "3724101a0b07aca195f3c54fd464d3a758dd0756e864d305ed9e7ef9a9daef77",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "62f372f9439f69e3b926102fbb096d11d5ac9b923730fec25985c3c0400a0329",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "31e2083bb8a1588362a3c4bede5ec23c35f9165fb21b7dfadbfca9e94f59b6c9",
+      "observed_absent": true
+    },
+    {
+      "kind": "volume",
+      "identifier": "b6ef2832a3831d6d68fee812d4aac95472854a1eadc1592b51554116c8ca81be",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "be03cdc38944bc7691c1a7dd5aedb25c050231235a923532c256fe7726c4b9a3",
+      "observed_absent": true
+    }
+  ],
+  "protected_cluster_before_after_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "protected_cluster_currently_running_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "policy_routes_qualified": 0,
+  "audit_resource_or_provider_starts": 0,
+  "files": {
+    "plan.json": "46c1995b7685bacab4e2e7ab51d464df49b01e712f1be6439c6a08e97124019d",
+    "result.json": "6ddd303c1a93cd654cc1b4442bb239ae7d603c0a0d12b76964643997ef08417b"
+  },
+  "gate_report_sha256": "628afd93c1933a3775cea9cf4d72587d57318209fb045128ccd578344f3ff318",
+  "raw_kubectl_log_sha256": "d0b69d10b48d919d0869d0336420b6f544944829a358d9fccd5fa04aa0bfee2e",
+  "original_ready_seconds": 30,
+  "pod_status_or_events_or_logs_survived": false,
+  "namespace_cleanup_original_UID_fenced": [
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "observed_absent": true,
+      "uid": "53c4a3ec-ba5b-417f-a26f-24947a3f0a69"
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "observed_absent": true,
+      "uid": "a179c793-2d19-4434-9a98-5d78cab96416"
+    }
+  ]
+}

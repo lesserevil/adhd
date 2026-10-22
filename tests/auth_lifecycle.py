@@ -12,7 +12,7 @@ def main():
  def record(name):cases.append({'case':name,'passed':True});print('PASS',name,flush=True)
  def setup(name,stage=None):
   r=UpgradeRuntime(root/name,command,args.image,args.image_manifest);r.initialize_projects=False;runtimes.append(r);template=root/(name+'-seed');port=free_port()
-  subprocess.run(['python3','scripts/configure_hub.py','--directory',str(template),'--port',str(port),'--store-path',str(r.root/'state.dets')],check=True,stdout=subprocess.DEVNULL)
+  subprocess.run(['python3',str(Path(__file__).resolve().parents[1]/'scripts/configure_hub.py'),'--directory',str(template),'--port',str(port),'--store-path',str(r.root/'state.dets')],check=True,stdout=subprocess.DEVNULL)
   c=json.loads((template/'hub.json').read_text());initial=(template/'initial-admin-password.txt').read_text();r.base='http://127.0.0.1:'+str(port)
   if stage:
    side=r.file.with_name('hub.json.provision');side.write_text(json.dumps({'config':c}));side.chmod(0o600)

@@ -67,6 +67,29 @@ def rig_processes(home,mux):
  return found
 
 
+def run_original(job,module=None,expected_rigs=None):
+ """Invoke the same original module whose Rigs class has been instrumented."""
+ sys.argv=job['test_argv']
+ if job['name']=='openrig':
+  assert module is not None and expected_rigs is not None
+  assert Path(module.__file__).absolute()==Path(sys.argv[0]).absolute()
+  assert module.Rigs is expected_rigs and module.main.__globals__['Rigs'] is expected_rigs
+  return module.main()
+ return runpy.run_path(sys.argv[0],run_name='__main__')
+
+
+def openrig_topology(images,rigs,launches,vm,root):
+ """Two hub roots, each with the original one hard restart, and two seats."""
+ root=Path(root);expected={str(root),str(root/'peer')}
+ assert len(rigs)==1 and rigs[0]['terminal_seat_count']==2
+ assert {str(obj.root) for obj in images}==expected
+ apps=[row for row in launches if row['kind']=='app']
+ assert len(apps)==4 and all(sum(row['private_root']==value for row in apps)==2 for value in expected)
+ ids=[row['container_id'] for row in apps]
+ assert len(set(ids))==4 and set(ids)=={row['container_id'] for row in vm}
+ return {'distinct_hub_roots':2,'actual_container_lifecycles':4,'origin_starts':2,'peer_starts':2,'terminal_seats':2}
+
+
 class Custody:
  def __init__(self,plan,job,work):
   self.plan,self.job,self.work=plan,job,work;self.images=[];self.launches=[];self.clients=[];self.chromium=[];self.rigs=[];self.vm=[];self.errors=[]
@@ -201,6 +224,7 @@ class Custody:
   SyncBrowserType.launch=launch_sync_browser
   if self.job['name']=='openrig':
    import openrig_acceptance
+   self.openrig_module=openrig_acceptance;self.openrig_class=openrig_acceptance.Rigs
    launch_rigs=openrig_acceptance.Rigs.launch;close_rigs=openrig_acceptance.Rigs.close
    def rigs_launch(obj,*a,**kw):
     obj.env.update(PYTHONDONTWRITEBYTECODE='1',NODE_DISABLE_COMPILE_CACHE='1')
@@ -241,7 +265,7 @@ class Custody:
     result=subprocess.run(['docker','inspect',key],capture_output=True,timeout=30);assert authoritative_absence(result,key)
     observations.append({'identifier':key,'observed_absent':True})
   assert self.vm,'No actual image VM custody'
-  if self.job['name']=='openrig':assert len(self.images)==2 and len(self.rigs)==1 and self.rigs[0]['terminal_seat_count']==2
+  if self.job['name']=='openrig':self.openrig_topology=openrig_topology(self.images,self.rigs,self.launches,self.vm,self.plan['openrig_root'])
   self.progress();assert not self.errors,self.errors
   return observations
 
@@ -251,7 +275,7 @@ def main():
  assert sha(a.plan)==a.reviewed_plan_sha256;plan=json.loads(a.plan.read_text());assert sha(__file__)==plan['frozen_inputs']['tests/image_ui_runtime.py']
  assert json.loads((a.plan.parent/'started.json').read_text())['plan_sha256']==a.reviewed_plan_sha256
  sys.path.insert(0,str(Path(plan['frozen'])/'tests'));job=next(v for v in plan['jobs'] if v['name']==a.job);custody=Custody(plan,job,a.plan.parent);error=None;cleanup=None;absence=[]
- try:custody.install();sys.argv=job['test_argv'];runpy.run_path(sys.argv[0],run_name='__main__')
+ try:custody.install();run_original(job,getattr(custody,'openrig_module',None),getattr(custody,'openrig_class',None))
  except BaseException as failure:error=failure
  finally:
   try:absence=custody.finish()
@@ -259,7 +283,7 @@ def main():
   Path(job['custody_report']).write_text(json.dumps({'schema':'adhd/image-ui-runtime-custody@1','passed':error is None and cleanup is None,
    'image_config_identity':plan['image_config_identity'],'artifact_sha256':plan['artifact_sha256'],'canonical_manifest_sha256':sha(plan['manifest']),
    'original_exception':type(error).__name__ if error else None,'cleanup_failure':type(cleanup).__name__ if cleanup else None,'cleanup_error_types':custody.errors,
-   'actual_vm_observations':custody.vm,'browser_processes':custody.chromium,'rigs':custody.rigs,'independent_absence':absence},indent=2)+'\n')
+   'actual_vm_observations':custody.vm,'browser_processes':custody.chromium,'rigs':custody.rigs,'openrig_topology':getattr(custody,'openrig_topology',None),'independent_absence':absence},indent=2)+'\n')
  if error:raise error
  if cleanup:raise cleanup
 

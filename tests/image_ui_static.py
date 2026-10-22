@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import types
 from types import SimpleNamespace
 import tempfile
 import unittest
@@ -11,6 +12,24 @@ import image_ui_matrix as matrix
 import image_ui_runtime as runtime
 
 class UIInputGuards(unittest.TestCase):
+ def test_openrig_runs_the_actual_patched_class_and_rejects_shadow_class(self):
+  module=types.ModuleType('original');module.__file__='/unchanged/openrig_acceptance.py'
+  exec('class Rigs: pass\ndef main(): return Rigs\n',module.__dict__)
+  job={'name':'openrig','test_argv':[module.__file__]};actual=module.Rigs
+  with patch.object(runtime.sys,'argv',[]),patch.object(runtime.runpy,'run_path',side_effect=AssertionError('Duplicate module forbidden')):
+   self.assertIs(runtime.run_original(job,module,actual),actual)
+   class Shadow:pass
+   with self.assertRaises(AssertionError):runtime.run_original(job,module,Shadow)
+   module.main=types.FunctionType(module.main.__code__,{'Rigs':Shadow})
+   with self.assertRaises(AssertionError):runtime.run_original(job,module,actual)
+ def test_openrig_topology_requires_two_roots_four_original_lifecycles_and_two_seats(self):
+  images=[SimpleNamespace(root=Path('/private')) for _ in range(2)]+[SimpleNamespace(root=Path('/private/peer'))for _ in range(2)]
+  launches=[{'kind':'app','private_root':str(obj.root),'container_id':str(i)}for i,obj in enumerate(images)]
+  vm=[{'container_id':str(i)}for i in range(4)];rigs=[{'terminal_seat_count':2}]
+  self.assertEqual(runtime.openrig_topology(images,rigs,launches,vm,'/private')['distinct_hub_roots'],2)
+  for altered in [(images,[],launches,vm),(images,[{'terminal_seat_count':1}],launches,vm),
+                  (images,rigs,launches[:2],vm),(images,rigs,launches,vm[:3])]:
+   with self.assertRaises(AssertionError):runtime.openrig_topology(*altered,'/private')
  def test_original_nine_suite_scope_is_explicit(self):
   self.assertEqual(list(matrix.CASES),['admin','evidence','eventing','roles','recovery','index-epoch','openrig','accounts-oidc','session-fence'])
   self.assertEqual(sum(matrix.CASES.values()),86)

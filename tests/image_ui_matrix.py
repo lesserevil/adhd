@@ -6,6 +6,7 @@ once-gated and fail-first; screenshots remain subject to actual visual review.
 """
 import argparse
 import base64
+import copy
 import fcntl
 import hashlib
 import importlib.util
@@ -135,6 +136,60 @@ def prepare(a):
  print(json.dumps({'plan':str(work/'plan.json'),'plan_sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],'frozen_files':len(plan['frozen_inputs']),'external_entries':len(externals),'tool_roots':len(tool_roots),'bound_inputs':len(bound)}))
 
 
+def resume_prefix(parent,matrix,work):
+ names=list(CASES);assert parent['planned_suites']==names and matrix['passed'] is False
+ assert matrix['image_config_identity']==parent['image_config_identity'] and matrix['artifact_sha256']==parent['artifact_sha256']
+ assert len(matrix['rows'])==7 and [v['suite'] for v in matrix['rows']]==names[:7]
+ assert all(row['passed'] and row['exit_code']==0 for row in matrix['rows'][:6])
+ assert matrix['rows'][6]['passed'] is False and matrix['rows'][6]['suite']=='openrig'
+ assert matrix['unrun_suites']==names[7:]
+ assert sum(row['units'] for row in matrix['rows'][:6])==71
+ for row in matrix['rows'][:6]:
+  name=row['suite'];report=work/('prefix-'+name+'.json');custody=work/('prefix-'+name+'-custody.json')
+  assert sha(report)==row['report_sha256'] and sha(custody)==row['custody_sha256']
+  value=json.loads(report.read_text());assert value['passed'] and unit_count(value,name)==CASES[name]
+  assert json.loads(custody.read_text())['passed']
+ return names[6:]
+
+
+def prepare_remainder(a):
+ work=a.work.absolute();origin=a.parent_plan.absolute().parent
+ assert not work.exists();parent=json.loads(a.parent_plan.read_text());matrix=json.loads((origin/'matrix.json').read_text())
+ old=load(origin/'run.py','unchanged_parent_ui_driver');assert old.verify(parent,origin)
+ work.mkdir(parents=True,mode=0o700);shutil.copytree(origin/'frozen',work/'frozen')
+ for name in parent['bound_inputs']:shutil.copyfile(origin/name,work/name)
+ bound=dict(parent['bound_inputs'])
+ prefix_sources={'parent-plan.json':a.parent_plan,'parent-matrix.json':origin/'matrix.json'}
+ for row in matrix['rows']:
+  for suffix in ['.json','-custody.json','-launches.json','.log']:
+   prefix_sources['prefix-'+row['suite']+suffix]=origin/(row['suite']+suffix)
+ for name,path in prefix_sources.items():shutil.copyfile(path,work/name);bound[name]=sha(work/name)
+ selected=resume_prefix(parent,matrix,work)
+ for name in ['image_ui_matrix.py','image_ui_runtime.py','image_ui_static.py']:
+  shutil.copyfile(Path(__file__).parent/name,work/'frozen/tests'/name)
+ for name,digest in parent['frozen_inputs'].items():
+  if name not in {'tests/image_ui_matrix.py','tests/image_ui_runtime.py','tests/image_ui_static.py'}:
+   assert sha(work/'frozen'/name)==digest
+ plan=copy.deepcopy(parent);plan['status']='UNSTARTED_ROOT_REVIEW_REQUIRED';plan['bound_inputs']=bound
+ plan['runtime_cwd']=str(work/'runtime');plan['openrig_root']=str(a.openrig_root.absolute())
+ assert not Path(plan['openrig_root']).exists()
+ def retarget(value):
+  if isinstance(value,str):return value.replace(parent['openrig_root'],plan['openrig_root']).replace(str(origin),str(work))
+  if isinstance(value,list):return [retarget(item) for item in value]
+  if isinstance(value,dict):return {key:retarget(item) for key,item in value.items()}
+  return value
+ plan['jobs']=[retarget(row) for row in parent['jobs'] if row['name'] in selected]
+ plan.update(frozen=str(work/'frozen'),manifest=str(work/'image-manifest.json'),staged_dockerfile=str(work/'staged-Dockerfile'),
+  planned_suites=selected,expected_units=15,resume_basis={'parent_plan_sha256':sha(work/'parent-plan.json'),
+   'parent_matrix_sha256':sha(work/'parent-matrix.json'),'whole_prefix_units':71,'whole_prefix_suites':list(CASES)[:6]})
+ plan['frozen_tree']=tree(work/'frozen');plan['frozen_inputs']={k:v['sha256'] for k,v in plan['frozen_tree']['files'].items()}
+ plan['scope']='Original failed OpenRig plus unrun accounts/session15 units on exact compiled05. Historical six whole71 prefix stays separately bound; original aggregate remains false. Root visual inspection still required.'
+ shutil.copyfile(__file__,work/'run.py');plan['driver_sha256']=sha(work/'run.py');write(work/'plan.json',plan)
+ assert load(work/'run.py','copied_remaining_ui_driver').verify(plan,work)
+ print(json.dumps({'plan':str(work/'plan.json'),'plan_sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],
+  'frozen_files':len(plan['frozen_inputs']),'bound_inputs':len(bound),'planned_suites':selected,'expected_units':15}))
+
+
 def verify(plan,work):
  driver=Path(__file__);assert driver.absolute()==work/'run.py' and driver.resolve()==driver.absolute() and not driver.is_symlink() and sha(driver)==plan['driver_sha256']
  assert tree(work/'frozen')==plan['frozen_tree'] and {k:v['sha256'] for k,v in plan['frozen_tree']['files'].items()}==plan['frozen_inputs']
@@ -151,10 +206,16 @@ def verify(plan,work):
   assert validator.compiled_cache_binding(work/'cache-manifest.json',json.loads((work/'admission.json').read_text()),plan['image_config_identity'],plan['artifact_sha256'],plan['canonical_manifest_sha256'])==plan['compiled_cache']
  if plan.get('entrypoint_amendments'):
   assert json.loads((work/'entrypoint-amendments.json').read_text())['entries']==plan['entrypoint_amendments']
- assert plan['planned_suites']==list(CASES) and [v['name'] for v in plan['jobs']]==list(CASES) and [v['expected_units'] for v in plan['jobs']]==list(CASES.values())
+ selected=list(CASES)
+ if plan.get('resume_basis'):
+  assert sha(work/'parent-plan.json')==plan['resume_basis']['parent_plan_sha256'] and sha(work/'parent-matrix.json')==plan['resume_basis']['parent_matrix_sha256']
+  parent=json.loads((work/'parent-plan.json').read_text());matrix=json.loads((work/'parent-matrix.json').read_text())
+  selected=resume_prefix(parent,matrix,work)
+  assert plan['image_config_identity']==parent['image_config_identity'] and plan['artifact_sha256']==parent['artifact_sha256']
+ assert plan['planned_suites']==selected and [v['name'] for v in plan['jobs']]==selected and [v['expected_units'] for v in plan['jobs']]==[CASES[n]for n in selected]
  assert plan['docker']['path']=='/usr/bin/docker' and sha(plan['docker']['path'])==plan['docker']['sha256']
  assert plan['env']['PATH']==plan['qualified_path'] and shutil.which('docker',path=plan['qualified_path'])==plan['docker']['path']
- assert plan['parallelism']==1 and plan['automatic_retries']==0 and plan['expected_units']==86
+ assert plan['parallelism']==1 and plan['automatic_retries']==0 and plan['expected_units']==sum(CASES[n]for n in selected)
  return True
 
 
@@ -257,15 +318,17 @@ def execute(work,expected):
   finally:
    try:verify(plan,work);unchanged=True
    except BaseException:unchanged=False
-   unrun=[name for name in CASES if name not in {row['suite'] for row in rows}];passed=not failure and unchanged and not unrun and all(row['passed'] for row in rows)
+   unrun=[name for name in plan['planned_suites'] if name not in {row['suite'] for row in rows}];passed=not failure and unchanged and not unrun and all(row['passed'] for row in rows)
    write(work/'matrix.json',{'schema':'adhd/image-ui-nine-result@1','passed':passed,'plan_sha256':expected,'driver_sha256':plan['driver_sha256'],'image_config_identity':plan['image_config_identity'],'artifact_sha256':plan['artifact_sha256'],'frozen_inputs_unchanged':unchanged,'failure_type':failure,'rows':rows,'unrun_suites':unrun,'manual_visual_review_required':True,'scope':plan['scope']})
  return 0 if passed else 1
 
 
 if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__);mode=parser.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
- parser.add_argument('--work',type=Path,required=True);parser.add_argument('--reviewed-plan-sha256')
+ mode.add_argument('--prepare-remainder',action='store_true')
+ parser.add_argument('--work',type=Path,required=True);parser.add_argument('--reviewed-plan-sha256');parser.add_argument('--parent-plan',type=Path)
  for name in ['repo','context','admission','openrig-root','compiled-cache-manifest','entrypoint-amendments']:parser.add_argument('--'+name,type=Path)
  parser.add_argument('--admission-sha256');a=parser.parse_args();work=a.work.absolute()
  if a.prepare:prepare(a)
+ elif a.prepare_remainder:prepare_remainder(a)
  else:sys.exit(execute(work,a.reviewed_plan_sha256))

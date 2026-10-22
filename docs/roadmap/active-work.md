@@ -95,11 +95,17 @@ historical runner's unretained issued-name limitation is stated explicitly.
 The [compiled retention companion](../../verification/eventing-retention-compiled41-positive/audit.json)
 passes all three recovery checks across three actual default-entrypoint VMs,
 verifying 59 application files and 67 cache/toolchain files in each VM and complete
-owned cleanup. Next: finish full recovery, compiled readiness and affected
-integration/deployment gates. Native evidence does not qualify the image's runtime
-behavior.
+owned cleanup. The [complete compiled readiness matrix](../../verification/eventing-readiness-compiled41-positive/audit.json)
+now passes all 23 cases on that image. [SDK compatibility and cold startup](../../verification/eventing-readiness-sdk17-positive/manifest.json)
+passes all 17 cases under the original 30-second readiness deadline. The
+[late-callback recovery gate](../../verification/recovery-callback41-positive/manifest.json)
+passes all five original programs /28 checks with actual compiled VM custody;
+that gate uses its original instrumented Store-loss entrypoint. Next: finish full
+recovery, core, Kafka and deployment/security/model/browser gates, then consolidate
+their exact scoped evidence and operating limits.
 
-The successor core13 attempt stopped in its first foundation program after 11
+The [successor core13 attempt](../../verification/eventing-readiness-core13-first-failure/manifest.json)
+stopped in its first foundation program after 11
 partial checks: enabling OIDC returned `CONFIG_CONFLICT` with live revision 19
 following the external-file reload exercise. No whole foundation result or later
 core program is qualified by that attempt. The fixture retains a full private

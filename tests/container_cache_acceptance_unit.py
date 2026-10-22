@@ -106,7 +106,8 @@ class Guards(unittest.TestCase):
         self.assertIn('rm -- "$1"', m.MISSING_HELPER)
         self.assertNotIn('eval ', m.MISSING_HELPER)
         self.assertIn('chmod "$mode" "$p"', m.MISSING_HELPER)
-        self.assertIn('/runtime/adhd) mode=755', m.MISSING_HELPER)
+        self.assertIn('/runtime/adhd) mode=$2', m.MISSING_HELPER)
+        self.assertIn('case "$2" in 555|755)', m.MISSING_HELPER)
         self.assertIn('/runtime/adhd/ebin) mode=555', m.MISSING_HELPER)
         with tempfile.TemporaryDirectory() as directory:
             runner = self.runner(directory); runner.allowed_missing = {'/runtime/adhd/manifest.json'}

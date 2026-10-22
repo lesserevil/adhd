@@ -105,7 +105,8 @@ class ForeignContainer(Exception): pass
 
 MISSING_HELPER = ('set -eu; case "$1" in /runtime/adhd/manifest.json|/runtime/adhd/build.exs|'
                   '/runtime/adhd/ebin/Elixir.*.beam) ;; *) exit 72;; esac; '
-                  'p=${1%/*}; case "$p" in /runtime/adhd) mode=755;; /runtime/adhd/ebin) mode=555;; *) exit 73;; esac; '
+                  'case "$2" in 555|755) ;; *) exit 74;; esac; '
+                  'p=${1%/*}; case "$p" in /runtime/adhd) mode=$2;; /runtime/adhd/ebin) mode=555;; *) exit 73;; esac; '
                   'chmod 755 "$p"; rm -- "$1"; chmod "$mode" "$p"; '
                   "exec elixir /runtime/adhd/boot.exs /app/hub.exs '[\"cache-guard-must-not-dispatch\"]'")
 
@@ -194,7 +195,8 @@ class Runner:
         if helper_target:
             assert negative and helper_target in self.allowed_missing
             args += ['--entrypoint', '/bin/sh']
-            argv = ['-c', MISSING_HELPER, 'cache-missing-setup', helper_target]
+            assert self.plan['cache_root_mode'] in (0o555, 0o755)
+            argv = ['-c', MISSING_HELPER, 'cache-missing-setup', helper_target, format(self.plan['cache_root_mode'], 'o')]
             row['fixed_setup_target'] = helper_target
         p = self.command([*args, self.plan['image'], *argv])
         assert p.returncode == 0
@@ -337,6 +339,7 @@ def prepare(args):
     work = args.work.absolute()
     assert not work.exists() and work.resolve() == work
     assert re.fullmatch('sha256:[0-9a-f]{64}', args.image)
+    assert args.cache_root_mode in (0o555, 0o755), 'Explicit actual image cache mode is required'
     context = args.context.absolute()
     files = {p.name: sha(read(p)) for p in sorted(context.iterdir())}
     manifest = json.loads(read(context / 'manifest.json'))
@@ -356,7 +359,7 @@ def prepare(args):
             'execution_ready': True, 'root_GO_required': True,
             'image': args.image, 'context': str(context), 'context_files': files,
             'artifact_sha256': sha(source), 'expected_modules': modules,
-            'cache_root_mode': 0o755, 'cache_ebin_mode': 0o555, 'cache_file_mode': 0o444,
+            'cache_root_mode': args.cache_root_mode, 'cache_ebin_mode': 0o555, 'cache_file_mode': 0o444,
             'driver_sha256': sha(read(work / 'driver.py')), 'docker_sha256': sha(read('/usr/bin/docker')),
             'docker_socket': {'path': str(socket), 'identity': [info.st_dev, info.st_ino]},
             'python': {'path': str(Path(sys.executable).absolute()), 'realpath': str(Path('/proc/self/exe').resolve()),
@@ -430,6 +433,7 @@ def main():
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument('--prepare', action='store_true'); mode.add_argument('--execute', action='store_true')
     p.add_argument('--image'); p.add_argument('--context', type=Path)
+    p.add_argument('--cache-root-mode', type=lambda value: int(value, 8), choices=(0o555, 0o755))
     p.add_argument('--work', type=Path, required=True); p.add_argument('--plan-sha256')
     args = p.parse_args()
     if args.prepare: prepare(args)

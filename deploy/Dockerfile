@@ -10,6 +10,8 @@ LABEL org.opencontainers.image.title="ADHD coordination hub"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 ADD payload.tar /
 COPY --from=compiler /runtime/adhd /runtime/adhd
+# COPY creates its destination parents with wall-clock metadata.
+RUN chmod 0555 /runtime/adhd && touch -d @0 /runtime /runtime/adhd
 WORKDIR /app
 ENV ERL_FLAGS="+S 2:2" HOME=/tmp
 USER 10001:10001

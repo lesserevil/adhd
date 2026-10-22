@@ -14,14 +14,14 @@ import tempfile
 import time
 
 from foundation_acceptance import Runtime, Client, free_port
-from container_fixture import OwnedImage
+from workflow_provider_isolation import NativeProviderFence, IsolatedWorkflowImage
 
 
 class UpgradeRuntime(Runtime):
     """Own the actual container, keeping native legacy producers independent."""
     def __init__(self, root, command, image=None, manifest=None):
         super().__init__(root, command)
-        self.owned_image = OwnedImage(image, manifest, self.root) if image else None
+        self.owned_image = IsolatedWorkflowImage(image, manifest, self.root) if image else None
 
     def start(self):
         if self.owned_image:
@@ -83,7 +83,10 @@ def main():
     args.work_root.mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="workflow-", dir=args.work_root.resolve()))
     producer = Runtime(root / "producer", producer_command)
-    target = UpgradeRuntime(root / "target", ["elixir", str(args.hub.resolve())] if args.hub else [], args.image, args.image_manifest)
+    provider_fence = NativeProviderFence(producer.root, config)
+    fence_prefix = provider_fence.prepare()
+    producer.command = fence_prefix + producer.command
+    target = UpgradeRuntime(root / "target", fence_prefix + ["elixir", str(args.hub.resolve())] if args.hub else [], args.image, args.image_manifest)
     for name in original_files:
         shutil.copy2(original_root / name, producer.root / name)
     config.update(store_path=str(producer.root / original_store.name), port=free_port())
@@ -141,6 +144,7 @@ def main():
         print("PASS", name, flush=True)
     try:
         producer.start()
+        provider_fence.observe(producer.process)
         before = api(producer, {"op": "retrieval_index"})["index"]
         assert before["selection"]["rollback_available"]
         rollback = api(producer, {"op": "rollback_index", "expected_selection_revision": before["selection"]["revision"]}, True)["proposal"]
@@ -164,9 +168,13 @@ def main():
         target_config = dict(producer.config)
         target_config.update(store_path=str(target.root / offline.name), port=free_port())
         target_config["public_url"] = "http://127.0.0.1:" + str(target_config["port"])
+        if args.image:
+            target_config["host"] = "0.0.0.0"
         target.file.write_text(json.dumps(target_config))
         target.file.chmod(0o600)
         target.start()
+        if not args.image:
+            provider_fence.observe(target.process)
         ready = wait(lambda: value if (value := api(target, {"op": "retrieval_index"})["index"])["status"] == "ready" else None)
         retained = ready["selection"]
         for key in ("revision", "applied", "base_identity", "base_recipe", "effective_recipe", "selected", "previous"):
@@ -184,6 +192,8 @@ def main():
         record("legacy-upgrade-preserves-exact-history-retrieval-archive-replay-optimizer-evidence-labels-cohorts-deliveries-and-selection", changed_runtime=changed_runtime, retired_global_generation_ids=retired)
         target.stop(hard=True)
         target.start()
+        if not args.image:
+            provider_fence.observe(target.process)
         compare(target, expected)
         assert api(target, {"op": "retrieval_index"})["index"]["selection"] == retained
         record("hard-restart-preserves-migrated-workflows-selected-control-and-unacknowledged-deliveries")
@@ -202,6 +212,8 @@ def main():
         result = {"suite": "adhd/multi-workflow-upgrade@1", "passed": True, "checks": checks,
             "producer_artifact_sha256": producer_hash, "producer_report_sha256": hashlib.sha256(args.producer_report.read_bytes()).hexdigest(),
             "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), "legacy_store_sha256": original_files,
+            "provider_export_fence": provider_fence.report(),
+            "provider_isolation_helper_sha256": hashlib.sha256(Path(__file__).with_name("workflow_provider_isolation.py").read_bytes()).hexdigest(),
             "image": args.image, "artifact_sha256": hashlib.sha256(args.hub.read_bytes()).hexdigest() if args.hub else None,
             "evidence_projection_digest": digest({"jobs": [{"kind": k, "id": i, "value": value} for (k, i), value in expected["jobs"].items()], "labels": expected["labels"]})}
     finally:

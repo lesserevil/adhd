@@ -15,6 +15,14 @@ CALLBACKS=('pending-model','pending-kafka','outgoing-queries','incoming-queries'
 HTTP=('admission','rejections','private','agent-admission','uninitialized-move','mixed','federation-errors')
 
 
+EPOCH_BEFORE=b"~w(domain projects directory project_backup storage_registry config resources store)"
+EPOCH_AFTER=b"~w(domain projects directory project_backup storage_registry config resources storage store)"
+
+def epoch_fixture_overlay(raw):
+    assert raw.count(EPOCH_BEFORE)==1 and EPOCH_AFTER not in raw
+    return raw.replace(EPOCH_BEFORE,EPOCH_AFTER,1)
+
+
 def replace_option(argv,key,value):
     result=list(argv);index=result.index(key);result[index:index+2]=value;return result
 
@@ -28,6 +36,14 @@ def layout(plan):
         if value==str(results) or value.startswith(str(results)+'/'):return '${RESULTS}'+value[len(str(results)):]
         return value
     selected=[];dependencies=[]
+    epoch=origin/'tests/project_epoch_fences.exs';epoch_raw=epoch.read_bytes();epoch_fixed=epoch_fixture_overlay(epoch_raw)
+    amendments=[{'row':'primitive-query-validator','kind':'existing-argument','append':'--fixed-baseline',
+        'approved_native_plan_sha256':'c78973b2033a7c991ad9315d7e7a29e39c4ef05aebf4e6971e4b19402fcbdf88',
+        'reason':'Current fixed validator expects successful baseline; preserves all14 strict negative vectors.'},
+        {'row':'primitive-epoch','kind':'one-token-fixture-overlay','approved_commit':'263f6b4935d78da0b977b45bd8454e25f3033633',
+        'path':'tests/project_epoch_fences.exs','original_sha256':hashlib.sha256(epoch_raw).hexdigest(),
+        'amended_sha256':hashlib.sha256(epoch_fixed).hexdigest(),
+        'reason':'Load actual Storage module required by isolated epoch Store fixture; all assertions and deadlines byte-identical.'}]
     for original in rows:
         row=copy.deepcopy(original);name=row['name'];timeout=row['outer_timeout_seconds']
         if name in TRANSPORT+CALLBACKS:
@@ -44,6 +60,7 @@ def layout(plan):
                 if value==artifact:value='/app/hub.exs'
                 elif value==str(results) or value.startswith(str(results)+'/'):value='${RESULTS}/'+name+'-capsule-work'+value[len(str(results)):]
                 arguments.append(value)
+            if name=='primitive-query-validator':arguments.append('--fixed-baseline')
             descriptor.update(family='component',harness='${FROZEN}/tests/image_recovery_component.py',component_job={
                 'application_integration_claim':False,'name':name,'kind':'exunit' if row['kind']=='exunit' else 'json',
                 'script':row['argv'][1],'arguments':arguments,'outer_timeout_seconds':timeout,'cwd':str(origin),
@@ -80,11 +97,11 @@ def layout(plan):
     assert all(r['outer_timeout_seconds']==r['original']['outer_timeout_seconds'] for r in selected)
     return {'schema':'adhd/image-recovery-layout-only@1','execution_authorized':False,'execution_implemented':False,
         'runtime_ready':False,'executed':False,'planned_rows':42,'executed_rows':0,'unrun_rows':42,'families':counts,
-        'original_full52_rows':52,'selected_rows':selected,'separate_dependencies':dependencies,
+        'fixture_amendments':amendments,'original_full52_rows':52,'selected_rows':selected,'separate_dependencies':dependencies,
         'constraints':['Descriptor templates only; deliberately not an executable or final frozen plan.',
             'Diagnostic admitted38 has known ownership defect; corrected successor requires fresh admitted image/input/ABI proof binding.',
             'Wait for root custody/probe fixes and full helper review before final snapshot; then full SET/no symlinks/hash/root/input/tool bindings, actual driver hash, exclusive fsynced once gate.',
-            'Final execution serial fail-fast, explicit attempted/executed/unrun, no resampling; original bounds/scenarios/assertions unchanged.',
+            'Final execution serial fail-fast, explicit attempted/executed/unrun, no resampling; original bounds/scenarios/assertions unchanged; only two explicit reviewed fixture amendments.',
             'Entry supervisor retains BaseException deadline+finally/owned cleanup; child success needs exit0 and report passedtrue and complete runtime custody after cleanup.',
             'All17 component rows are component-runtime evidence, never additional deployed-hub integration or admission claims.',
             'Completed callback5/28 and first5 transport rows remain separate evidence;42 does not relabel full52 closed.',

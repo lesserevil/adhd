@@ -4,7 +4,7 @@ import copy
 import json
 from pathlib import Path
 from unittest.mock import patch
-from image_recovery_remaining_layout import layout,HTTP,TRANSPORT,CALLBACKS
+from image_recovery_remaining_layout import layout,HTTP,TRANSPORT,CALLBACKS,epoch_fixture_overlay,EPOCH_BEFORE,EPOCH_AFTER
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
         assert row['outer_timeout_seconds']==row['original']['outer_timeout_seconds']
         if row['family']=='component':
             job=row['component_job'];assert job['application_integration_claim'] is False and job['cwd']==original['cwd']
-            assert job['script']==row['original']['argv'][1] and len(job['arguments'])==len(row['original']['argv'])-2
+            assert job['script']==row['original']['argv'][1] and len(job['arguments'])==len(row['original']['argv'])-2+(name=='primitive-query-validator')
             for old,new in zip(row['original']['argv'][2:],job['arguments']):
                 if old==original['artifact']['path']:assert new=='/app/hub.exs'
                 elif old.startswith(original['results_root']+'/'):assert new.startswith(job['work']+'/')
@@ -35,6 +35,14 @@ def main():
                 if flag in row['original']['argv']:assert argv[argv.index(flag)+1]==row['original']['argv'][row['original']['argv'].index(flag)+1]
             for flag in ['--no-default','--archived','--damage-stage']:
                 assert (flag in argv)==(flag in row['original']['argv'])
+    assert rows['primitive-query-validator']['component_job']['arguments'][-1]=='--fixed-baseline'
+    assert len(value['fixture_amendments'])==2
+    raw=(Path(original['cwd'])/'tests/project_epoch_fences.exs').read_bytes();fixed=epoch_fixture_overlay(raw)
+    assert fixed.replace(EPOCH_AFTER,EPOCH_BEFORE,1)==raw and fixed.count(EPOCH_AFTER)==1
+    for unsafe in [fixed,raw.replace(EPOCH_BEFORE,b'changed'),raw+EPOCH_BEFORE]:
+        try:epoch_fixture_overlay(unsafe)
+        except AssertionError:pass
+        else:raise AssertionError('Unexpected fixture source accepted')
     assert rows['mixed']['outer_timeout_seconds']==5400 and rows['learned']['outer_timeout_seconds']==1800
     assert all(rows[n]['outer_timeout_seconds']==2400 for n in ('rebind','rebind-hostile'))
     assert len(rows['primitive-journal']['component_job']['readonly_mounts'])==3
@@ -45,7 +53,7 @@ def main():
         try:layout(bad)
         except AssertionError:pass
         else:raise AssertionError('Incomplete/duplicate full52 accepted')
-    print('PASS remaining layout pure8: full52 identity+42 partition, all original cases/bounds/variant flags and producer command, original image payload, owned component outputs, full journal mounts, missing/duplicate denial; runtime/process calls0')
+    print('PASS remaining layout pure10: full52 identity+42 partition, all original cases/bounds/variant flags and producer command, two explicit reviewed amendments/overlay-source denial, original image payload, owned component outputs, full journal mounts, missing/duplicate denial; runtime/process calls0')
 
 
 if __name__=='__main__':main()

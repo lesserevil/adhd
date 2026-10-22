@@ -1,0 +1,35 @@
+{
+  "schema": "adhd/image-recovery-layout-amendments@1",
+  "passed": true,
+  "runtime_ready": false,
+  "execution_started": false,
+  "pure_checks": 10,
+  "runtime_compiler_provider_starts": 0,
+  "amendments": [
+    {
+      "row": "primitive-query-validator",
+      "kind": "existing-argument",
+      "append": "--fixed-baseline",
+      "approved_native_plan_sha256": "c78973b2033a7c991ad9315d7e7a29e39c4ef05aebf4e6971e4b19402fcbdf88",
+      "reason": "Current fixed validator expects successful baseline; preserves all14 strict negative vectors."
+    },
+    {
+      "row": "primitive-epoch",
+      "kind": "one-token-fixture-overlay",
+      "approved_commit": "263f6b4935d78da0b977b45bd8454e25f3033633",
+      "path": "tests/project_epoch_fences.exs",
+      "original_sha256": "f04c8b0ec2ad7f8076429301dfa2a06a8046a7f0d4bd889e79fb340355a8f38b",
+      "amended_sha256": "2d91366b72c59dc0536eff115e876c1c8cf97d6dcc8ce22c3533c3ba35c5a33c",
+      "reason": "Load actual Storage module required by isolated epoch Store fixture; all assertions and deadlines byte-identical."
+    }
+  ],
+  "other16_component_scripts": "Required byte-identical to original466 snapshot; enforced during future executable snapshot preparation.",
+  "all_original_rows_preserved": true,
+  "all_original_deadlines_preserved": true,
+  "files": {
+    "tests/image_recovery_remaining_layout.py": "0532c7d3d16822f0196ee6c29f6ff5daeacfe97031ee9245e163302d47b3d6d7",
+    "tests/image_recovery_remaining_layout_unit.py": "6d796fce26737485dcc2f07a04316ac1395e8544203713b5b259fca72e1f409d",
+    "verification/ownedMULTI008/recovery-remaining/layout42-amended.json": "04f5d513af53d5aeb748378c32fd0876a37d83402ce450de6bb1584912b8dc5a",
+    "verification/ownedMULTI008/recovery-remaining/layout42-amendments-pure.log": "ef5e9d26e5fa9dc8229ab12116fdec5b5e527df4c3d6309e61a1f713df77b4a7"
+  }
+}

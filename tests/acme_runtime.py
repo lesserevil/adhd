@@ -204,6 +204,7 @@ class NativeDiagnostic:
             self.pid_ticks = ticks(self.process.pid)
             assert self.pid_ticks is not None
             row = {'pid': self.process.pid, 'start_ticks': self.pid_ticks,
+                   'config_path_sha256': hashlib.sha256(str(self.file).encode()).hexdigest(),
                    'binding': binding, 'started_monotonic': time.monotonic(), 'reaped': False}
             self.identities.append(row)
             deadline = time.monotonic() + 45

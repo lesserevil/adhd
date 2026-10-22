@@ -66,7 +66,7 @@ def fault_response(mode,category,status,body,number,created):
         if mode in ('forbidden','server-error'):
             return (403 if mode=='forbidden'else 500),b'{"error_code":50001}',True
         if mode=='malformed':return 200,b'{"data":"invalid declared fixture"}',True
-        if mode.startswith('retention-')and status==200:
+        if mode.startswith('retention-')and mode!='retention-recovery'and status==200:
             value=json.loads(body);rows=value['data']
             if mode=='retention-missing':value['data']=[r for r in rows if r['name']!='retention.ms']
             elif mode=='retention-duplicate':value['data']=rows+[next(dict(r)for r in rows if r['name']=='retention.ms')]
@@ -89,6 +89,19 @@ def fault_response(mode,category,status,body,number,created):
     return status,body,False
 
 
+def confirmed_retention_alter(mode,category,method,status,transaction_present):
+    selected=mode=='retention-recovery'and category=='alter'and method=='POST'and status==204
+    if selected:assert transaction_present is True,'Selected alter lacks durable transaction'
+    return selected
+
+
+def retention_recovery_fault(mode,category,status,body,alter_confirmed):
+    """Never invent broker success or fail predecision validation."""
+    if mode=='retention-recovery'and category=='configs'and alter_confirmed:
+        return 503,b'{"error_code":50301,"message":"Declared postdecision readback fault"}',True
+    return status,body,False
+
+
 class Server(ThreadingMixIn,HTTPServer):
     daemon_threads=True
     def process_request(self,request,address):
@@ -105,6 +118,7 @@ class ReadinessProxy:
     def __init__(self,backend):
         parsed=urlsplit(backend);assert parsed.scheme=='http'and parsed.hostname=='127.0.0.1'and parsed.port and parsed.port!=18770 and not(parsed.username or parsed.query or parsed.fragment or parsed.path.strip('/'))
         self.backend=(parsed.hostname,parsed.port);self.topic=None;self.mode=None;self.created=False;self.events=[];self.failures=[];self.counts={};self.lock=threading.Lock()
+        self.alter_confirmed=False
         self.hold=False;self.held_at=None;self.held=threading.Event();self.release=threading.Event();self.handlers=0;self.transaction=None
         owner=self
         class Handler(BaseHTTPRequestHandler):
@@ -134,7 +148,11 @@ class ReadinessProxy:
                             owner.created=True;owner.counts['metadata']=0
                             if owner.mode.startswith('duplicate'):status,data=400,b'{"error_code":40002}'
                         owner.counts[category]=owner.counts.get(category,0)+1
+                        if confirmed_retention_alter(owner.mode,category,self.command,status,owner.transaction is not None and owner.transaction.exists()):
+                            owner.alter_confirmed=True
                         status,data,injected=fault_response(owner.mode,category,status,data,owner.counts[category],owner.created)if owner.mode else(status,data,False)
+                        status,data,retention_injected=retention_recovery_fault(owner.mode,category,status,data,owner.alter_confirmed)
+                        injected=injected or retention_injected
                         assert len(owner.events)<256
                         owner.events.append({'at':time.monotonic(),'method':self.command,'category':category,'selected_create':created_request,'status':status,'injected':injected,'actual_configuration':configuration,'durable_transaction_present':self.server.owner.transaction.exists()if self.server.owner.transaction is not None else None})
                     self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.send_header('Connection','close');self.end_headers();self.wfile.write(data)
@@ -148,7 +166,9 @@ class ReadinessProxy:
         self.server=Server(('127.0.0.1',0),Handler);self.server.slots=threading.BoundedSemaphore(4);self.server.owner=self
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start();self.url='http://127.0.0.1:'+str(self.server.server_port)
     def arm(self,topic,mode):
-        with self.lock:self.topic=topic;self.mode=mode;self.created=False;self.events=[];self.counts={}
+        with self.lock:self.topic=topic;self.mode=mode;self.created=False;self.events=[];self.counts={};self.alter_confirmed=False
+    def disable_fault(self):
+        with self.lock:self.mode=None
     def close(self):
         self.release.set();self.server.shutdown();self.server.server_close();self.thread.join(2)
         end=time.monotonic()+4

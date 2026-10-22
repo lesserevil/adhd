@@ -25,6 +25,7 @@ from acme_acceptance_fixtures import certificate_facts, challenge_request_vector
 from acme_challenge_relay import ChallengeRelay
 from acme_runtime import NativeDiagnostic, PublicClient, sha, regular
 from acme_continuity import OIDCContinuity, FederationContinuity
+from acme_rebind_acceptance import run_stopped_copy
 
 
 def wait_for(test, seconds, label):
@@ -39,7 +40,7 @@ def wait_for(test, seconds, label):
 
 def raw_challenge(path, host='one.acme.test', method='GET'):
     raw = raw_challenge_get(path, host).replace(b'GET ', method.encode() + b' ', 1)
-    with socket.create_connection(('127.0.0.1', 18080), timeout=2) as conn:
+    with socket.create_connection(('127.0.0.2', 8080), timeout=2) as conn:
         conn.settimeout(2)
         conn.sendall(raw)
         body = bytearray()
@@ -108,7 +109,7 @@ def run(args):
               'source_manifest_sha256': args.cache_manifest_sha256, 'public_ca_calls': 0,
               'phase': args.phase,
               'fixture_profile': 'eventing disabled; matcher null; no broker or model calls', 'failure_type': None}
-    relay = ChallengeRelay(upstreams={'one.acme.test':18080, 'two.acme.test':18081})
+    relay = ChallengeRelay(upstreams={'one.acme.test':('127.0.0.2',8080), 'two.acme.test':('127.0.0.3',8080)})
     runtime = None
     oidc = federation = None
     admin = None
@@ -201,7 +202,7 @@ def run(args):
         relay.set_mode('hold')
         relay.start()
         tls = {'enabled': True, 'host': '127.0.0.1', 'port': 18443,
-               'challenge_host': '127.0.0.1', 'challenge_port': 18080,
+               'challenge_host': '127.0.0.2', 'challenge_port': 8080,
                'acme': {'enabled': True, 'directory_url': ca['directory_url'], 'email': 'operator@one.acme.test',
                         'domains': ['one.acme.test'], 'accept_terms': True, 'renew_before_days': 1,
                         'retry_seconds': 30, 'order_timeout_ms': 30000, 'ca_cert_file': 'directory-root.pem'}}
@@ -291,6 +292,11 @@ def run(args):
         assert persisted['certificate']['sha256'] == automatic['certificate']['sha256']
         assert secure.request('/health')[0] == 200
         check('unchanged-file cold restart retains active certificate and HTTPS')
+        if args.rebind:
+            runtime.stop()
+            report['rebind'] = run_stopped_copy(args,hub,work/'moved-hub',automatic['certificate']['sha256'],
+                                               ca['issuer_root'],runtime.identities)
+            check('actual complete stopped-copy public CLI ACME rebind and moved trusted HTTPS')
         report['passed'] = True
     except BaseException as error:
         primary = error
@@ -336,6 +342,7 @@ def main():
     parser.add_argument('--continuity', action='store_true', help='Explicit real OIDC and two-hub HTTPS federation stratum')
     parser.add_argument('--lego-sha256')
     parser.add_argument('--guardian-sha256')
+    parser.add_argument('--rebind',action='store_true',help='Actual stopped complete-copy public rebind after whole first-cut flow')
     args = parser.parse_args()
     def expired(signum, frame):
         raise TimeoutError('Finite diagnostic suite budget')

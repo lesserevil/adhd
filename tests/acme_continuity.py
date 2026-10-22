@@ -131,7 +131,7 @@ class FederationContinuity:
         self.admin.login('admin', password)
         self.initialize(self.admin)
         self.admin.mutate('config_update', patch={'tls': {'enabled': True, 'host': '127.0.0.1', 'port': 18444,
-                          'challenge_host': '127.0.0.1', 'challenge_port': 18081, 'acme': {
+                          'challenge_host': '127.0.0.3', 'challenge_port': 8080, 'acme': {
                               'enabled': True, 'directory_url': self.ca['directory_url'], 'email': 'operator@two.acme.test',
                               'domains': ['two.acme.test'], 'accept_terms': True, 'renew_before_days': 1,
                               'retry_seconds': 30, 'order_timeout_ms': 30000, 'ca_cert_file': 'directory-root.pem'}}})

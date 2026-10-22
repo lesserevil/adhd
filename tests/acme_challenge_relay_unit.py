@@ -37,10 +37,13 @@ class RelayChecks(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 ChallengeRelay(**args)
         pair = ChallengeRelay(upstreams={'one.acme.test':18080, 'two.acme.test':18081})
-        self.assertEqual(pair.upstreams, {'one.acme.test':18080, 'two.acme.test':18081})
+        self.assertEqual(pair.upstreams, {'one.acme.test':('127.0.0.1',18080), 'two.acme.test':('127.0.0.1',18081)})
         self.assertIsNone(pair.server)
         for upstreams in ({'foreign.acme.test':18080}, {'one.acme.test':8080}, {'one.acme.test':True}):
             with self.assertRaises(AssertionError):ChallengeRelay(upstreams=upstreams)
+        isolated = ChallengeRelay(upstreams={'one.acme.test':('127.0.0.2',8080),'two.acme.test':('127.0.0.3',8080)})
+        self.assertEqual(isolated.upstreams['one.acme.test'],('127.0.0.2',8080))
+        with self.assertRaises(AssertionError):ChallengeRelay(upstreams={'one.acme.test':('192.0.2.1',8080)})
 
 
 if __name__ == '__main__':

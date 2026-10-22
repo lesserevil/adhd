@@ -43,12 +43,14 @@ def public_event(path, host, status, body, mode):
 class ChallengeRelay:
     def __init__(self, port=8080, upstream_port=18080, *, bind='127.0.0.1', max_requests=128, hold_seconds=20, upstreams=None):
         assert bind in ('127.0.0.1', '127.0.0.2') and 0 < port < 65536 and 0 < upstream_port < 65536
-        assert 1 <= max_requests <= 256 and 0 < hold_seconds <= 30 and port != upstream_port
+        assert 1 <= max_requests <= 256 and 0 < hold_seconds <= 30
         self.bind, self.port, self.upstream_port = bind, port, upstream_port
-        self.upstreams = dict(upstreams or {'one.acme.test': upstream_port})
+        selected = dict(upstreams or {'one.acme.test': upstream_port})
+        self.upstreams = {name:(bind,value) if type(value) is int else value for name,value in selected.items()}
         assert 1 <= len(self.upstreams) <= 2
-        assert all(name in ('one.acme.test', 'two.acme.test') and type(value) is int and 0 < value < 65536
-                   and value != port for name, value in self.upstreams.items())
+        assert all(name in ('one.acme.test', 'two.acme.test') and isinstance(value,tuple) and len(value)==2 and
+                   value[0] in ('127.0.0.1','127.0.0.2','127.0.0.3') and type(value[1]) is int and 0 < value[1] < 65536
+                   and value != (bind,port) for name,value in self.upstreams.items())
         self.max_requests, self.hold_seconds = max_requests, hold_seconds
         self.lock = threading.Lock()
         self.release = threading.Event()
@@ -119,7 +121,8 @@ class ChallengeRelay:
                     path, host = parse_request(bytes(raw))
                     hostname = host.split(':', 1)[0]
                     assert hostname in owner.upstreams, 'Relay never forwards an unregistered domain'
-                    conn = http.client.HTTPConnection(owner.bind, owner.upstreams[hostname], timeout=3)
+                    upstream_host, upstream_port = owner.upstreams[hostname]
+                    conn = http.client.HTTPConnection(upstream_host, upstream_port, timeout=3)
                     try:
                         conn.request('GET', path, headers={'Host': host, 'Connection': 'close'})
                         response = conn.getresponse()

@@ -9,6 +9,9 @@ import asyncio
 import copy
 import hashlib
 import json
+import os
+import signal
+import subprocess
 from pathlib import Path
 import time
 from uuid import uuid4
@@ -32,22 +35,41 @@ async def until(predicate,seconds):
     raise AssertionError('Declared bounded observation was not reached')
 
 
+def owned_native_identity(process):
+    pid=process.pid
+    return {'pid':pid,'start_ticks':int(Path('/proc/'+str(pid)+'/stat').read_text().split(') ',1)[1].split()[19]),
+            'command_sha256':hashlib.sha256(Path('/proc/'+str(pid)+'/cmdline').read_bytes()).hexdigest()}
+
+
+def reap_owned_native(fixture,identity):
+    """Fallback only for this Fixture's still-live native Popen and exact identity."""
+    process=fixture.process
+    if fixture.image_runtime or process is None or process.poll()is not None:return
+    assert identity is not None and owned_native_identity(process)==identity,'Owned native start identity changed; refusing signal'
+    os.killpg(process.pid,signal.SIGTERM)
+    try:process.wait(timeout=8)
+    except subprocess.TimeoutExpired:
+        assert owned_native_identity(process)==identity,'Owned native start identity changed before hard stop'
+        os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=10)
+    assert process.poll()is not None
+
+
 async def run_case(args,case,e):
-    proxy=ReadinessProxy(args.eventing_rest_url)
-    local=copy.copy(args);local.keep_work=(args.keep_work/case)if args.keep_work else None
-    f=Fixture(local,initialize_projects=False);r=Recovery(f,args.recovery_schema)
-    f.config['eventing'].update(rest_url=proxy.url,timeout_ms=1000,retry_ms=100)
-    if case in ('queue','queue-control'):
-        f.config['eventing']['timeout_ms']=QUEUE_EVENTING_TIMEOUT_MS
-        f.config['recovery']={'timeout_ms':QUEUE_RECOVERY_TIMEOUT_MS}
-        f.config['resources']={'eventing_concurrency':1,'project_eventing_concurrency':1}
-    original=None;native_identity=None;primary=None
+    proxy=None;f=None;native_identity=None;primary=None
     try:
+        local=copy.copy(args);local.keep_work=(args.keep_work/case)if args.keep_work else None
+        f=Fixture(local,initialize_projects=False)
+        proxy=ReadinessProxy(args.eventing_rest_url)
+        r=Recovery(f,args.recovery_schema)
+        f.config['eventing'].update(rest_url=proxy.url,timeout_ms=1000,retry_ms=100)
+        if case in ('queue','queue-control'):
+            f.config['eventing']['timeout_ms']=QUEUE_EVENTING_TIMEOUT_MS
+            f.config['recovery']={'timeout_ms':QUEUE_RECOVERY_TIMEOUT_MS}
+            f.config['resources']={'eventing_concurrency':1,'project_eventing_concurrency':1}
+        original=None
         await f.start()
         if not f.image_runtime:
-            pid=f.process.pid
-            native_identity={'pid':pid,'start_ticks':int(Path('/proc/'+str(pid)+'/stat').read_text().split(') ',1)[1].split()[19]),
-                'command_sha256':hashlib.sha256(Path('/proc/'+str(pid)+'/cmdline').read_bytes()).hexdigest()}
+            native_identity=owned_native_identity(f.process)
         blue_initialized=await r.initialize(BLUE)
         blue=await f.agent('blue-b');actor=await f.agent('bridge')
         await blue.call(scoped(BLUE,'subscribe',mode='raw'))
@@ -142,18 +164,25 @@ async def run_case(args,case,e):
         raise
     finally:
         failures=[]
-        for close in [f.close,proxy.close]:
+        if f is not None and not f.image_runtime and f.process is not None and f.process.poll()is None and native_identity is None:
+            try:native_identity=owned_native_identity(f.process)
+            except BaseException as error:failures.append(type(error).__name__)
+        closers=([f.close]if f is not None else[])+([proxy.close]if proxy is not None else[])
+        for close in closers:
             try:
                 value=close()
                 if asyncio.iscoroutine(value):await value
             except BaseException as error:failures.append(type(error).__name__)
+        if f is not None:
+            try:reap_owned_native(f,native_identity)
+            except BaseException as error:failures.append(type(error).__name__)
         try:
-            f.bind_evidence(e,key='runtime_'+case)
+            if f is not None:f.bind_evidence(e,key='runtime_'+case)
             if native_identity is not None:
                 native_identity['reaped']=f.process.poll() is not None
                 assert native_identity['reaped']
                 e.value.setdefault('native_runtime_cases',{})[case]=native_identity
-            e.value.setdefault('proxy_cleanup',[]).append({'case':case,'handlers':proxy.handlers,'thread_alive':proxy.thread.is_alive(),'failures':proxy.failures,'cleanup_failure_types':failures})
+            e.value.setdefault('proxy_cleanup',[]).append({'case':case,'constructed':proxy is not None,'handlers':proxy.handlers if proxy else 0,'thread_alive':proxy.thread.is_alive()if proxy else False,'failures':proxy.failures if proxy else[],'cleanup_failure_types':failures})
             e.write()
         except BaseException as error:failures.append(type(error).__name__)
         if failures:

@@ -162,6 +162,24 @@ def scoped_processes(root):
   except (FileNotFoundError,ProcessLookupError,PermissionError):pass
  return found
 
+def report_observations(path):
+ report=read(path);observed=[r['name']for r in report['checks']]
+ attempted=[r['case']for r in report.get('proxy_cleanup',[])]
+ assert observed==list(CASES)[:len(observed)]and attempted==list(CASES)[:len(attempted)]
+ assert len(observed)<=len(attempted)<=len(observed)+1
+ retired=[]
+ for name,identity in report.get('native_runtime_cases',{}).items():
+  path_stat=Path('/proc',str(identity['pid']),'stat')
+  try:current=int(path_stat.read_text().split(') ',1)[1].split()[19])
+  except FileNotFoundError:current=None
+  retired.append({'case':name,**identity,'same_identity_absent':current!=identity['start_ticks']})
+ proxies=report.get('proxy_cleanup',[])
+ return report,{'report_sha256':sha(path),'whole_passed':observed,'attempted':attempted,
+  'failed_case':attempted[len(observed)]if len(attempted)>len(observed)else None,'unrun':list(CASES[len(attempted):]),
+  'native_identity_absence':retired,'proxy_cleanup':proxies,
+  'reported_cleanup_verified':all(r['reaped']and r['same_identity_absent']for r in retired)and all(not r['thread_alive']and r['handlers']==0 and not r['failures']and not r['cleanup_failure_types']for r in proxies)}
+
+
 def execute(work):
  plan=verify(work);work=Path(work).absolute();assert not(work/'results').exists()
  claim(work/'started.json');(work/'results').mkdir(mode=0o700)
@@ -172,25 +190,11 @@ def execute(work):
    child=subprocess.Popen(plan['argv'],cwd=work/'frozen',env=plan['environment'],stdout=out,stderr=err,start_new_session=True)
    result['runtime_started']=True;result['child']={'pid':child.pid,'start_ticks':int(Path('/proc',str(child.pid),'stat').read_text().split(') ',1)[1].split()[19])}
    result['exit_code']=child.wait()
-  report=read(work/'results/report.json');result['report_sha256']=sha(work/'results/report.json')
-  observed=[r['name']for r in report['checks']];assert observed==list(CASES)[:len(observed)]
-  attempted=[r['case']for r in report.get('proxy_cleanup',[])]
-  assert attempted==list(CASES)[:len(attempted)]and len(observed)<=len(attempted)<=len(observed)+1
-  result['whole_passed']=observed;result['attempted']=attempted
-  result['failed_case']=attempted[len(observed)]if len(attempted)>len(observed)else None
-  result['unrun']=list(CASES[len(attempted):])
-  assert result['exit_code']==0 and report['passed']is True and observed==list(CASES)
+  report,observations=report_observations(work/'results/report.json');result.update(observations)
+  assert result['exit_code']==0 and report['passed']is True and result['whole_passed']==list(CASES)
   assert report['artifact_sha256']==plan['official']['artifact_sha256']and report['provider_calls']==0
-  assert len(report['native_runtime_cases'])==len(CASES)and all(r['reaped']for r in report['native_runtime_cases'].values())
-  assert len(report['proxy_cleanup'])==len(CASES)and all(not r['thread_alive']and r['handlers']==0 and not r['failures']and not r['cleanup_failure_types']for r in report['proxy_cleanup'])
-  retired=[]
-  for name,identity in report['native_runtime_cases'].items():
-   path=Path('/proc',str(identity['pid']),'stat')
-   try:current=int(path.read_text().split(') ',1)[1].split()[19])
-   except FileNotFoundError:current=None
-   assert current!=identity['start_ticks'],'Recorded actual VM is still alive'
-   retired.append({'case':name,**identity,'same_identity_absent':True})
-  result['native_identity_absence']=retired
+  assert len(report['native_runtime_cases'])==len(CASES)and len(report['proxy_cleanup'])==len(CASES)
+  assert result['reported_cleanup_verified']
   result['passed']=True
  except BaseException as error:failure=error;result['failure_type']=type(error).__name__
  finally:
@@ -198,6 +202,12 @@ def execute(work):
    os.killpg(child.pid,signal.SIGINT)
    try:child.wait(15)
    except subprocess.TimeoutExpired:os.killpg(child.pid,signal.SIGKILL);child.wait();result['forced_cleanup']=True
+  # Capture partial reports and actual identity/cleanup observations even when
+  # the child or a whole-case assertion failed; never replace the first error.
+  if (work/'results/report.json').exists():
+   try:
+    _,observations=report_observations(work/'results/report.json');result.update(observations)
+   except BaseException as error:result['report_audit_failure_type']=type(error).__name__;result['passed']=False
   result['scoped_processes']=scoped_processes(work/'results')
   try:verify(work);result['post_input_closure_verified']=True
   except BaseException as error:result['post_input_closure_verified']=False;result['closure_failure_type']=type(error).__name__

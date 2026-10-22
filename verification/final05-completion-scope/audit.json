@@ -1,0 +1,344 @@
+{
+  "schema": "adhd/final05-completion-scope-audit@1",
+  "review_only": true,
+  "audit_runtime_or_provider_starts": 0,
+  "target_image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "inputs": {
+    "roadmap": {
+      "path": "docs/roadmap/active-work.md",
+      "sha256": "ddf82249eae2d8e30d1b85f8d452d7eb65da8ccd32d047b611b6581c9094359e"
+    },
+    "prior_inventory": {
+      "path": "verification/roadmap-completion-audit40/audit.json",
+      "sha256": "d9011367893156a476e8c05981fe8bda6775c8be5152ad78dfbcacf4b910a9e3"
+    },
+    "recovery_contract": {
+      "path": "components/hub/project-recovery/spec.md",
+      "sha256": "0b281bc1fb64470cadbec109d85e2239d8357f38204c236c36631d97289c5d27"
+    },
+    "old_recovery42": {
+      "path": "verification/ownedMULTI008/recovery40-remainder18-terminal/manifest.json",
+      "sha256": "dcb905c10b2005831fc993f4ba60591c37dff87da0cb8df3fa20fbb80a031a59"
+    },
+    "callbacks28": {
+      "path": "verification/final05-recovery-callback28-positive/manifest.json",
+      "sha256": "06fb3f2491b8a7916ff49de5313910a599a8ee0be5bb614622edffd6935da57b"
+    },
+    "SDK17": {
+      "path": "verification/final05-sdk-whole17-positive/manifest.json",
+      "sha256": "231bb2f6d935b3142576dd41ca2ad234da66620d77e3c2bf13baea1daea46a01"
+    },
+    "UI86": {
+      "path": "verification/final05-ui-whole86-positive/manifest.json",
+      "sha256": "2884e5fbe23c224f16c487a300b620948a476a0dfe015a508ed9419f9b7ffa27"
+    },
+    "quality69": {
+      "path": "verification/quality40-compiled05-positive/audit.json",
+      "sha256": "cdf68c3a3cd863837923e80a9834f97af76e537a22909523248ece2fd0cce235"
+    },
+    "cache17": {
+      "path": "verification/container-cache40-compiled05-positive/audit.json",
+      "sha256": "b1b088f4dd221729778723b4b2d505c3145e7dfc7efa8bedfde6e87ed9668013"
+    },
+    "ABI19": {
+      "path": "verification/image40-compiled05-abi19-positive/audit.json",
+      "sha256": "143f06d58a7a4067a8d1355625acf6faf153850b55d1667c2f5e0c952acc885e"
+    },
+    "OIDC5": {
+      "path": "verification/ownedMULTI008/compiled05-oidc-policy-positive/manifest.json",
+      "sha256": "fea26389dd694b369f3a88c09824aa572ccb20141c135ffd516b5ea47b9e64ae"
+    },
+    "deployed_model12": {
+      "path": "verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json",
+      "sha256": "19897106b2cb75c6d481ab95490f2966e7a7393a2abefccf9766d395a120768b"
+    },
+    "admission": {
+      "path": "verification/container-precompile-image40/compiled05-admission/manifest.json",
+      "sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec"
+    },
+    "old_context": {
+      "path": "_build/roadmap/final/container-context-40/manifest.json",
+      "sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746"
+    },
+    "final_context": {
+      "path": "_build/roadmap/final/container-context-40-compiled05/manifest.json",
+      "sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9"
+    }
+  },
+  "byte_and_runtime_basis": {
+    "all59_app_files_identical_old_and_final": true,
+    "only_staged_file_changed": "Dockerfile",
+    "same_base": "elixir:1.20.4-otp-29-alpine@sha256:f1a8c06b332cacc7239381a25331a807fb63962f8221dff545ea4d8f78b0f50c",
+    "old_entrypoint": [
+      "elixir",
+      "/app/hub.exs"
+    ],
+    "final_entrypoint": [
+      "elixir",
+      "/runtime/adhd/boot.exs",
+      "/app/hub.exs"
+    ],
+    "new_cache": "59 modules/67 file+toolchain checks; original tail evaluated by reviewed boot; deterministic build compilation scope, not changed application logic"
+  },
+  "requirement_mapping": [
+    {
+      "predicate": "MULTI008.staging",
+      "status": "covered",
+      "assessment": "Exact final05 admitted source59/spec33 unchanged; strict staging/cache17/ABI19/repro proofs."
+    },
+    {
+      "predicate": "MULTI008.operating-contracts",
+      "status": "consolidation_remaining",
+      "assessment": "Current docs protocol schema is2.1; final packaging/dependency/license/operator limitations and final proof inventory still need root consolidation, not runtime repetition."
+    },
+    {
+      "predicate": "MULTI008.native-regression",
+      "status": "running",
+      "assessment": "Native28 parent69924 plus existing foundation20 prefix; current native UI9/86 planned. No terminal inference."
+    },
+    {
+      "predicate": "MULTI008.image-regression",
+      "status": "partly_covered",
+      "assessment": "Final05 cache17/ABI19/quality69/SDK17/UI86/OIDC5/callback28 passed in their exact scopes; core13/config3 and uncovered recovery25 remain."
+    },
+    {
+      "predicate": "MULTI008.legacy-adoption",
+      "status": "partly_covered",
+      "assessment": "Final05 SDK17 performs real retained producer upgrades/cold starts; final05 FS17 currently running retains historical permission/migration/fault specimens. Source-only negative primitive evidence remains same-source/same-toolchain."
+    },
+    {
+      "predicate": "MULTI008.coordination-privacy-federation",
+      "status": "partly_covered",
+      "assessment": "UI evidence/OpenRig + callback peers cover distinct real agents/rigs/project privacy. Current core13/Kafka68/stale-owner4 retain complete API/fairness/canonical predicates."
+    },
+    {
+      "predicate": "MULTI008.identities-closure",
+      "status": "remaining",
+      "assessment": "Record exact reports and limits after terminal families; no old image relabel."
+    },
+    {
+      "predicate": "KAFKA009.documents",
+      "status": "consolidation_remaining",
+      "assessment": "Same normative source59/spec33 already staged; final current evidence/operating limits need reconciliation."
+    },
+    {
+      "predicate": "KAFKA009.raw-and-live-model",
+      "status": "partly_covered",
+      "assessment": "quality69 and deployed model12 complete whole child programs; callback5 includes real Kafka. Kafka68/core13 current retargets remain."
+    },
+    {
+      "predicate": "KAFKA009.handoff-fairness-retention-faults",
+      "status": "running_or_prepared",
+      "assessment": "Final05 FS17 running; Kafka68 prepared (caps, gaps, actual broker outage/offsets/rebalance/receipts), core13/config3 prepared; no current success inferred."
+    },
+    {
+      "predicate": "KAFKA009.project-publishers-federation",
+      "status": "prepared",
+      "assessment": "Current Kafka68 plus stale-owner4 are original full real multi-broker/canonical scenarios; callback28 is epoch preservation, not full routing substitute."
+    },
+    {
+      "predicate": "KAFKA009.platform-security-enforcement",
+      "status": "running_or_prepared",
+      "assessment": "Baseline21 and securedKind51 remain; CNI11 parent88522 live, original rollout and18route enforcement not yet proven. Deployedmodel12 is separate from baseline/security/CNI."
+    }
+  ],
+  "recovery_decision": {
+    "old42_original_whole_rows": 42,
+    "old42_authored_checks": 309,
+    "new_callback_suites": 5,
+    "new_callback_groups": 28,
+    "new_callback_actual_unique_VM_count": 21,
+    "callback_scope": "Real instrumented compiled boot, original source/module/cache bound; controlled model/Kafka/incoming/outgoing/catalog epoch work. Not default entrypoint coverage, all-data restore, hostile rebind or kernel-crash matrix.",
+    "repeat_pure_component_capsules_required": false,
+    "pure_component_rows_retained": 17,
+    "pure_component_checks_retained": 181,
+    "pure_component_reason": "Source c635 and exact pinned runtime/base unchanged. Those isolated capsules compile supplied unchanged source rather than exercise product entrypoint/cache. Retain their actual old-image execution identity as source/toolchain-scoped evidence, not final05 runtime proof. Actual final05 cache/ABI/many typed VMs independently cover new loading/forwarding boundary. No new requirement calls for re-running the same source-only capsules.",
+    "uncovered_full_app_rows": 25,
+    "uncovered_full_app_historical_checks": 128,
+    "subtotals": {
+      "HTTP_and_learned": {
+        "rows": 8,
+        "checks": 39
+      },
+      "selective_restore_kernel_crashes": {
+        "rows": 15,
+        "checks": 71
+      },
+      "portable_and_hostile_rebind": {
+        "rows": 2,
+        "checks": 18
+      }
+    },
+    "original_order": [
+      {
+        "name": "admission",
+        "status": "current_compiled_refresh_required",
+        "requirement": "missing/empty/default/no-default lifecycle, hot Admin controls and current configuration preserved",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "rejections",
+        "status": "current_compiled_refresh_required",
+        "requirement": "invalid/stale/populated/owner/hash/schema/permission plans reject without writes",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "private",
+        "status": "current_compiled_refresh_required",
+        "requirement": "recipient/ack/private/history preservation without grant import",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "agent-admission",
+        "status": "current_compiled_refresh_required",
+        "requirement": "current admitted principals, stable owners, rotations, removed grants and no transitive roles",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "uninitialized-move",
+        "status": "current_compiled_refresh_required",
+        "requirement": "empty initialization remains usable after root relocation, old inaccessible anchors not selected",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "mixed",
+        "status": "current_compiled_refresh_required",
+        "requirement": "complete accepted record/allocator families, post-backup collision resistance and newer Blue facts",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "federation-errors",
+        "status": "current_compiled_refresh_required",
+        "requirement": "redacted target recovery errors through actual v1/v2 public routes",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "learned",
+        "status": "current_compiled_refresh_required",
+        "requirement": "actual accepted producer selections/recipes/qualification provenance preserved and correctly invalidated",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-damaged-after-install-snapshot",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-no-default-after-install-snapshot",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-archived-before-cleanup",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-install-snapshot",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-before-stage-snapshot",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-stage-snapshot",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-before-decision",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-decision",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-decision-sync",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-install-checkpoint",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-route-selected",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-route-ready",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-completion",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-before-cleanup",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "crash-after-cleanup",
+        "status": "current_compiled_refresh_required",
+        "requirement": "Selective-project recovery generation/decision/install/route/completion/cleanup crash boundary; one chosen generation, later writes and other projects retained",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "rebind",
+        "status": "current_compiled_refresh_required",
+        "requirement": "complete stopped portable metadata transaction, unchanged product bytes, cold startup/replay and three kernel kills",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      },
+      {
+        "name": "rebind-hostile",
+        "status": "current_compiled_refresh_required",
+        "requirement": "malformed physical checkpoints rejected before metadata decision, no original mutations",
+        "overlap": "Callbacks establish real epoch restoration and original IDs but do not run this original whole program or its complete data/negative/crash specimens. FS17 uses different global store/move/migration transactions; baseline21 samples deployment restore and is not the full mixed/hostile/crash program."
+      }
+    ],
+    "other_current_overlap": "Cache17 validates loading failures before CLI; ABI19 only scalar forwarding/custody, no app durability. SDK17 upgrades older workflows, not selective recover. UI86 Admin cases exercise controls, not complete preservation/cold-crash specimens. Quality69 is workflow quality. OIDC5 is policy. None replaces the uncovered25."
+  },
+  "deployed_model_outer_status": "12 whole platform child cases qualified; authoritative outer143 remains false and cause unknown. No rerun/resampling requested by this audit.",
+  "running_parent_handles_as_reported_not_polled": [
+    69924,
+    75695,
+    88522
+  ],
+  "prepared_remaining_families": [
+    "core13 (original max2 scheduling)",
+    "Kafka68",
+    "baseline Compose11+Kind10",
+    "securedKind51",
+    "stale-owner4",
+    "config3",
+    "native UI9/86",
+    "uncovered recovery25"
+  ],
+  "closure": "No final roadmap/release closure asserted; running/prepared inputs are not passed evidence. Native, browser, deployment, fault and semantic scopes remain separate."
+}

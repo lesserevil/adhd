@@ -10,6 +10,7 @@ def main():
  for key in ('hub','legacy-hub','repo-root','work','report'):p.add_argument('--'+key,type=Path,required=True)
  for key in ('artifact-sha256','eventing-rest-url','federation-rest-url','private-rest-url','owned-broker-container','owned-compose-project'):p.add_argument('--'+key,required=True)
  p.add_argument('--phase',choices=('healthy','private'),required=True)
+ p.add_argument('--only',help='Explicit comma-separated healthy-phase subset for fixture-only reruns')
  a=p.parse_args();root=a.repo_root.resolve();hub=a.hub.resolve();legacy=a.legacy_hub.resolve();work=a.work.resolve();frozen=work/'frozen'
  assert sha(hub)==a.artifact_sha256
  if a.phase=='healthy':
@@ -42,10 +43,15 @@ def main():
   with(work/(name+'.log')).open('w')as log:r=subprocess.run([sys.executable,str(frozen/'tests'/file),*args,'--report',str(report)],cwd=frozen,env=env,stdout=log,stderr=subprocess.STDOUT)
   print('DONE',name,r.returncode,flush=True)
   return {'name':name,'exit_code':r.returncode,'report':report.name,'report_sha256':sha(report)if report.exists()else None,'log_sha256':sha(work/(name+'.log'))}
+ selected=jobs
+ if a.only:
+  assert a.phase=='healthy','Subsets only apply to healthy phase'
+  names=a.only.split(',');assert len(names)==len(set(names)) and set(names)<={j[0]for j in jobs}
+  selected=[j for j in jobs if j[0]in names]
  if a.phase=='healthy':
-  with concurrent.futures.ThreadPoolExecutor(max_workers=2)as pool:results=list(pool.map(run,jobs))
+  with concurrent.futures.ThreadPoolExecutor(max_workers=2)as pool:results=list(pool.map(run,selected))
  else:results=[run(job)for job in serial]
- unchanged=all(sha(frozen/n)==h for n,h in inputs.items());value={'schema':'adhd/native-eventing-matrix@1','passed':unchanged and all(r['exit_code']==0 for r in results),'lifecycle_admitted':False,'artifact_sha256':sha(hub),'plan_sha256':sha(work/'plan.json'),'frozen_inputs_unchanged':unchanged,'phase':a.phase,'results':results}
+ unchanged=all(sha(frozen/n)==h for n,h in inputs.items());value={'schema':'adhd/native-eventing-matrix@1','passed':unchanged and all(r['exit_code']==0 for r in results),'lifecycle_admitted':False,'artifact_sha256':sha(hub),'plan_sha256':sha(work/'plan.json'),'frozen_inputs_unchanged':unchanged,'phase':a.phase,'selected_suites':[r['name']for r in results],'results':results}
  (work/(a.phase+'-matrix.json')).write_text(json.dumps(value,indent=2)+'\n');a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(value,indent=2)+'\n');sys.exit(0 if value['passed']else 1)
 
 if __name__=='__main__':main()

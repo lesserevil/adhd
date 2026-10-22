@@ -69,6 +69,8 @@ specification_roots:
   - project-recovery/spec.md
   - project-recovery/interface.md
   - project-recovery/interface.schema.json
+  - acme/spec.md
+  - acme/interface.schema.json
 ---
 # Agentic Distributed Harness Depot (ADHD)
 
@@ -76,7 +78,11 @@ Provide one private, multi-project A2A service where authenticated agents publis
 work updates, maintain plain-text subscriptions, receive queued information,
 exchange addressed messages, and search published information. Use the selected
 language's standard runtime facilities for hub logic and the selected Kafka REST
-Proxy service for broker access. Support one running service per server registry
+Proxy service for broker access. The sole additional managed certificate exception
+is bundled, version/digest-bound Lego 5.5.2 and its owned POSIX process guardian,
+as specified by acme/spec.md; neither arbitrary executables nor hooks/provider
+plugins are permitted. Native HTTPS uses the selected runtime SSL facilities.
+Support one running service per server registry
 and one writer per project store.
 The product contract below takes precedence over generic portable CLI practice
 where the long-running serve mode requires it.
@@ -121,3 +127,13 @@ project-recovery/spec.md and its closed interface contracts. They extend the
 storage resolver, startup availability, current-owner proof, Admin async jobs and
 project allocation/transport epochs while preserving full-server rollback as a
 separate operation. No older runtime is claimed to serve these future operations.
+
+## Managed ACME HTTPS extension
+
+acme/spec.md and acme/interface.schema.json own the additive application2.2
+global TLS configuration, HTTP-01 challenge listener, bounded bundled-client
+account/order/renewal lifecycle, private managed state and native HTTPS transport.
+Disabled defaults preserve existing HTTP/CLI operation. Enabling TLS does not
+change A2A, peer, Admin authorization or selected-project behavior. Config
+transactions and the TLS certificate publication transaction remain distinct;
+network issuance never blocks the serialized configuration owner.

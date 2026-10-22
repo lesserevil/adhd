@@ -1,0 +1,163 @@
+{
+  "passed": true,
+  "schema_only": true,
+  "unchanged_baseline_definitions": 421,
+  "changed_old_definitions": [
+    "AdminCommand",
+    "AdminResult",
+    "Error",
+    "MergePatch",
+    "PublicConfig"
+  ],
+  "added_definitions": 26,
+  "actual_vectors": [
+    {
+      "case": "tls-read-union",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "read-rejects-message-id",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "renew-union",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "renew-confirm-false",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "renew-extra-path",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "renew-obsolete-revision-key",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "renew-accepted-union",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "normalized-config-requires-fields",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "raw-input-omission-defaults",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "raw-input-inconsistent-enable",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "nested-partial-merge",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "nested-null-remove",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "whole-null-remove",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "nested-secret-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "nested-bound-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "domain-count-limit",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "wildcard-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "directory-insecure-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "status-union",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "status-key-leak-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "ready-no-cert-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "backoff-no-timestamp-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "ordering-recorded-time-required",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "renew-disabled-exact-error",
+      "passed": true,
+      "expected_valid": true
+    },
+    {
+      "case": "renew-error-private-message-reject",
+      "passed": true,
+      "expected_valid": false
+    },
+    {
+      "case": "renew-error-extra-revision-reject",
+      "passed": true,
+      "expected_valid": false
+    }
+  ],
+  "runtime_started": false,
+  "input_sha256": {
+    "schema": "a46197168ee6b745d3ed79976a87699d2c76089f81ff61dd31c0a96cd75b1f43",
+    "baseline": "db7b1fa25216a68b3ea7f2e169dca8cacf780ebe9f1f6877e3ee7e20d83d8596",
+    "openapi": "eabec8b0243b1768bc04e22bba51b042252d1285a9c69a749ab2b1dab2af1808",
+    "baseline_openapi": "baa4a4db3c9f9276ade8ac837a261491297265468660a3aadf096c59221fcfa6",
+    "authority": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60"
+  },
+  "schema": "adhd/acme-protocol-extension-schema-review@1",
+  "candidate_protocol_sha256": "a6546ac1030003961458e012995005966a895954eed0b3facc22ff385c92cfbc",
+  "candidate_protocol_path": "_build/acme/source42-01/protocol.exs",
+  "authority_sha256": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60",
+  "vectors": 26,
+  "scope": "Actual module-only D41 baseline exports plus candidate protocol redefinition, no main/tail/app execution. Baseline schema/OpenAPI unchanged on disk. Candidate combined schema2.2/OpenAPI2.2.0 checked independently against authority and baseline shapes.",
+  "preparation_failures_preserved": [
+    "Initial launcher had no erl on PATH; no VM ran. Corrected explicit native tool paths.",
+    "Initial checker inherited combined root anyOf while selecting AdminResult, rejecting response shapes against command root; fixed checker selects only named definition/$defs, not runtime/schema semantics."
+  ]
+}

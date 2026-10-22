@@ -195,3 +195,37 @@ project rename with full accepted data intact. Kill during config transactions a
 recover a complete state. Test read-only/failed writes and symlink rejection.
 Run actual Docker runner with writable private config mount and replacement,
 plus old schema-1/schema-2/native federation/SDK and real model regressions.
+
+## Managed TLS / ACME extension (application2.2)
+
+The new optional global `tls` setting is exactly defined in
+[ACME authority](../acme/spec.md) and [closed schema](../acme/interface.schema.json).
+Omission retains disabled TLS defaults; the existing HTTP binding, default
+127.0.0.1:8766, bootstrap, auth and all project settings remain unchanged. The
+new tls.host/challenge_host may explicitly bind wildcard IPv4/IPv6 addresses;
+this is a narrow additional-listener exception, not a change to the existing
+HTTP listener's owning host policy. TLS and ACME enablement are independent:
+retained valid certificates may serve while issuance is disabled. No implicit
+HTTP downgrade, reverse-proxy edit or public-reachability claim.
+
+Expose every TLS/ACME field in Admin Settings and config_get; only Admin edits
+them through the existing expected_revision/confirm/message_id transaction.
+Accounts, private keys and certificate PEM never become editable config fields
+or returned config/status secrets. ca_cert_file affects only ACME directory TLS.
+Validate the complete defaulted post-merge configuration. Global tls is forbidden
+in per-project overrides. Config_validate never creates state/listeners/accounts
+or contacts the CA. Config_update preflights bounded local trust and prebinds
+changed listeners before its normal durable decision. Failure preserves old
+config/revision/listeners. Commit queues bounded asynchronous issuance instead of
+waiting for network success; its reply certifies config, not a certificate.
+
+A relevant committed edit retires and fences the old ACME attempt; discard late
+client output rather than installing an old-policy certificate. Preserve unchanged
+valid TLS generations until validated replacements are atomically published.
+ACME status/renewal use the existing Admin route/authorization/CSRF/revision and
+durable mutation-receipt policy; tls_renew's revision member is expected_revision,
+and its successful scheduling reply returns config_revision. No project restore
+may replace the global account/cert state. Full stopped-server backup includes
+config-parent/acme and CONFIG_FILE.acme-owner.json; explicit portable config
+location rebind must preserve their owner binding without importing old settings
+or silently treating missing initialized state as first use.

@@ -11,7 +11,7 @@ methods. Use normative MUST/SHOULD/MAY with RFC2119/RFC8174 meanings. The follow
 profiles plus existing exact component/information/federation contracts are
 normative. All new requests reject unknown keys and invalid shapes before mutation.
 
-## Discovery and schema publication
+## Legacy profile1 discovery and schema publication
 
 GET /protocol returns a public non-secret descriptor exactly containing
 {protocol:"adhd",version:1,agent:{protocol:"A2A",version:"1.0",path:"/a2a"},
@@ -200,3 +200,41 @@ status exposes target availability/defaults. Do not claim strict2.0 schemas
 validate new2.1 messages. Retain actual accepted2.0 exports until a reviewed new
 artifact implements and qualifies the extension; then publish schema, examples,
 compatibility and independent conformance together.
+
+## Managed TLS application profile2.2
+
+The current implementing successor publishes application/OpenAPI2.2.0 and combined
+schema `urn:adhd:protocol:2.2`, incorporating acme/spec.md and its exact closed
+interface.schema.json. This current discovery profile takes precedence over the
+legacy profile1 discovery description above and the previous2.1 minor profile:
+GET /protocol remains exactly
+{protocol:"adhd",version:2,agent:{protocol:"A2A",version:"1.0",path:"/a2a"},
+admin:{version:1,path:"/admin/api"},federation:{versions:[1,2],path:"/federation/v2",
+legacy_path:"/federation"},schema_url:"/protocol/schema"}. Minor capability is
+discovered in the actual combined schema/OpenAPI, not a new descriptor field.
+
+Add only global tls configuration, Admin-only tls_status and tls_renew commands
+and their direct success results, and the precise TLS_RENEW_UNAVAILABLE409 error
+condition. Preserve existing healthy envelopes, wiremajor2/Adminenvelope1/A2A1.0
+and peer1/2 shapes. Read-only tls_status accepts no mutation fields. tls_renew
+requires expected_revision, confirm:true and message_id; successful reply is
+{accepted:true,config_revision}, meaning durable async scheduling, not issuance.
+Current authorization precedes replay. Do not claim old closed2.1 schemas accept
+these additions or publish new exports before implementation qualifies.
+
+Publish TLSConfig's normalized closed form, optional/defaulted TLSConfigInput,
+recursive TLSMergePatch and exact TLSStatus with state-dependent certificate,
+active-domain and timing constraints. Existing JSON integer-token/UTF-8 byte
+annotations apply to new fields. Independently check all remaining semantic
+constraints including actual address/domain parsing, cert/key/SAN/expiry and
+state consistency not expressible by structural JSON Schema. No public paths,
+private keys, PEM, raw client output or CA account/order URLs enter TLSStatus.
+
+The separate unauthenticated HTTP-01 token route belongs only to the configured
+challenge listener. OpenAPI marks that distinct server and its exact text200 and
+empty404/405 responses; it does not add that route to private HTTP/Admin routing.
+The main HTTPS listener carries the same existing HTTP wire profile and security
+checks through native SSL. Public80 routing is an operator prerequisite;8443/8080
+are internal defaults. Update exact schema/OpenAPI exports, examples and
+compatibility notes together after independent qualification, keeping historical
+2.1 accepted exports and reports unchanged.

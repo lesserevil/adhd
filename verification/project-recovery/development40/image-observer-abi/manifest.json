@@ -1,0 +1,57 @@
+{
+  "schema": "adhd/image40-observer-abi-qualification@1",
+  "passed": true,
+  "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "canonical_manifest_sha256": "355aeab4332dd3d5d04f41c1388214288f79e492e90f5790ce8cf04b5fb7d746",
+  "families": {
+    "multi_fault.c": [
+      "rename",
+      "renameat",
+      "renameat2",
+      "link",
+      "linkat"
+    ],
+    "store_move_fault.c": [
+      "rename",
+      "link",
+      "unlink"
+    ],
+    "storage_write_fault.c": [
+      "fsync",
+      "rename",
+      "pwrite",
+      "pwrite64"
+    ],
+    "project_recovery_fault.c": [
+      "rename",
+      "fsync",
+      "link",
+      "unlink"
+    ],
+    "rebind_fault.c": [
+      "rename",
+      "fsync"
+    ],
+    "config_rename_fault.c": [
+      "rename"
+    ]
+  },
+  "actual_export_cases": 19,
+  "independently_absent_container_ids": 19,
+  "inputs_and_build_closure_unchanged": true,
+  "application_started": false,
+  "provider_calls": 0,
+  "broker_calls": 0,
+  "scope": "Actual image loader, original scalar forwarding and physical filesystem boundaries, readonly source-bound observer mappings, process identity, pidfd stop, hard137 and strict owned cleanup. Application crash/recovery scenarios remain separate gates.",
+  "files": {
+    "store_move_fault.c.proof.json": "afbfd2265809b21aa18d49c874d539ac7c9318c0e3aa65714ed15c3a8f7fd397",
+    "rebind_fault.c.proof.json": "e928726edafc320f2bc471212fc3e108c537e1e5b62c67292b941849bc666348",
+    "storage_write_fault.c.proof.json": "15ccc1a7aaf9171ae5cc1dc6c86beb1ae3801a072f8470152e33ed3d47e9ea5a",
+    "result.json": "c0f58bae01b9e40b43e6a848d9881bb90d0c3e345a4eafc1f331299f22cb83b4",
+    "multi_fault.c.proof.json": "24c38937c3d3b46fa4a4569e3296f29fe12c8dfd352be14417df6e39bba0ddaf",
+    "project_recovery_fault.c.proof.json": "d15ddf66aeb15560bb0352ea9a271f6bb8a13426f93c9addc631117c4845175d",
+    "config_rename_fault.c.proof.json": "3e74b3a415678283cb08a7de2ca5f5be698382c575d66096304835b0a557d182",
+    "plan.json": "7f572d8bf123e7b7923b1564bf9b79ecbdf3cfb6d89ec8236ae50a53761ed6e2"
+  }
+}

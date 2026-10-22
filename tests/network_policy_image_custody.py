@@ -55,7 +55,7 @@ def manifest(raw, reference, expected):
     value = document(raw)
     assert type(value.get('schemaVersion')) is int and value['schemaVersion'] == 2
     assert value.get('mediaType') in TYPES, 'Image manifest required; no recursive index resolution'
-    assert 'artifactType' not in value and 'subject' not in value and 'urls' not in value
+    assert 'artifactType' not in value and 'subject' not in value and 'urls' not in value and 'manifests' not in value
     config = value.get('config'); assert isinstance(config, dict)
     assert config.get('mediaType') == TYPES[value['mediaType']]
     assert config.get('digest') == expected

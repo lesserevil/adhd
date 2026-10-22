@@ -34,7 +34,7 @@ class Custody(unittest.TestCase):
         for ref in ['mutable:tag', expected, 'name@sha256:' + 'A' * 64, 'https://foreign@' + m.digest(body), 'name@' + 'sha256:' + '0' * 64]:
             with self.subTest(ref=ref), self.assertRaises(AssertionError): m.manifest(body, ref, expected)
         for key, replacement in [('schemaVersion', True), ('schemaVersion', 2.0), ('schemaVersion', 1),
-            ('mediaType', 'application/vnd.oci.image.index.v1+json'), ('mediaType', 'unknown')]:
+            ('mediaType', 'application/vnd.oci.image.index.v1+json'), ('mediaType', 'unknown'), ('manifests', [])]:
             altered = copy.deepcopy(value); altered[key] = replacement; changed = raw(altered)
             with self.subTest(key=key, value=replacement), self.assertRaises(AssertionError):
                 m.manifest(changed, 'name@' + m.digest(changed), expected)

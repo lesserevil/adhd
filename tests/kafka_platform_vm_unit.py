@@ -20,6 +20,20 @@ def main():
         except AssertionError:pass
         else:raise AssertionError('Wrong process accepted')
     assert vm.COMMAND==['["serve","/config/hub.json"]']
+    with tempfile.TemporaryDirectory() as temp:
+        directory=Path(temp);(directory/'stat').write_bytes(stat(123,99));(directory/'cmdline').write_bytes(args)
+        row={'Id':'owned','Image':'image','State':{'Running':True,'Pid':123,'StartedAt':'now'},'RestartCount':0,
+            'Config':{'Entrypoint':vm.ENTRYPOINT,'Cmd':vm.COMMAND},'HostConfig':{'PidMode':''}}
+        def mapped(value):
+            value=str(value)
+            return directory if value=='/proc/123' else Path(value)
+        with patch.object(vm,'Path',side_effect=mapped),patch('os.readlink',return_value='/container-only/beam.smp'):
+            proof=vm.compose(lambda *a,**k:json.dumps([row]).encode(),'owned','image')
+            assert proof['process']['actual_compiled_boot_and_app_arguments']
+            row['Config']['Cmd']=[]
+            try:vm.compose(lambda *a,**k:json.dumps([row]).encode(),'owned','image')
+            except AssertionError:pass
+            else:raise AssertionError('Wrong serving command accepted')
     cid='a'*64;pod={'metadata':{'uid':'owned-pod'},'spec':{'containers':[{'name':'hub'}]},'status':{'containerStatuses':[{'name':'hub','containerID':'containerd://'+cid,'ready':True,'state':{'running':{'startedAt':'now'}},'restartCount':0}]}}
     events=[]
     def command(argv,**kwargs):
@@ -37,7 +51,7 @@ def main():
     try:vm.kind(lambda *a,**k:(_ for _ in ()).throw(AssertionError('No commands')), 'owned-node',pod,'image')
     except AssertionError as error:assert 'entrypoint' in str(error)
     else:raise AssertionError('Overridden entrypoint accepted')
-    print(json.dumps({'passed':True,'checks':7,'apps_models_sockets_started':False}))
+    print(json.dumps({'passed':True,'checks':9,'apps_models_sockets_started':False}))
 
 
 if __name__=='__main__':main()

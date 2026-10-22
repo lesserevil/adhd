@@ -100,7 +100,7 @@ def main():
         r.stop(hard=True);r.start();client=Client(r)
         assert rpc({'op':'get_record','publication_id':oid,'watermark':mark})==old
         assert rpc(command_event,mid='context-event-once')==first
-        restarted=rpc({'op':'get_record','publication_id':waiting['publication']['id']})
+        restarted=rpc({'op':'get_record','publication_id':waiting['publication']['id'],'watermark':frozen['snapshot']['watermark']})
         assert restarted==frozen
         assert rpc({'op':'search','query':'cardinal'})['publications'][0]['text']==species['publication']['text']
         record('hard-restart-keeps-record-identities-context-retries-unresolved-links-and-literal-search')

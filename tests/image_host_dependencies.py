@@ -119,12 +119,17 @@ def metadata(argv):
 
 OPTIONAL_ODBC_PATH=Path('lib/odbc-2.15.0.1/priv/bin/odbcserver')
 OPTIONAL_ODBC_SHA256='a6905c784e1c794b8cc788eedad77f3a7666560de78334d9607709070ade540e'
+OPTIONAL_WX_PATH=Path('lib/wx-2.4.3.1/priv/wxe_driver.so')
+OPTIONAL_WX_SHA256='f145ecc63ba6332617ebe4c41321419798d69479725794c7f611812525c35204'
+OPTIONAL_WX_LIBRARIES=frozenset(('libwx_gtk3u_stc-3.2.so.0','libwx_gtk3u_xrc-3.2.so.0','libwx_gtk3u_html-3.2.so.0','libwx_gtk3u_core-3.2.so.0','libwx_baseu-3.2.so.0','libwx_gtk3u_gl-3.2.so.0','libwx_gtk3u_aui-3.2.so.0','libwx_gtk3u_webview-3.2.so.0'))
+
 
 def optional_missing(filename,needed,erlang_root):
     filename=Path(filename)
     try:relative=filename.relative_to(erlang_root)
     except ValueError:return False
-    return relative==OPTIONAL_ODBC_PATH and needed=='libodbc.so.2' and sha(filename)==OPTIONAL_ODBC_SHA256
+    return ((relative==OPTIONAL_ODBC_PATH and needed=='libodbc.so.2' and sha(filename)==OPTIONAL_ODBC_SHA256) or
+        (relative==OPTIONAL_WX_PATH and needed in OPTIONAL_WX_LIBRARIES and sha(filename)==OPTIONAL_WX_SHA256))
 
 
 def capture(python,native_path):
@@ -202,7 +207,7 @@ def capture(python,native_path):
                 if stamp['present']:chosen=option;break
             if chosen is None and optional_missing(filename,needed,native_roots[0]):
                 unsupported.append({'path':str(filename),'sha256':sha(filename),'missing':needed,
-                    'scope':'Unsupported unused optional ODBC port; not launcher/tool/NIF qualification.','candidates':[str(p) for p in options]})
+                    'scope':'Unsupported exact unused optional ODBC or wx GUI binary dependency; no optional feature qualification.','candidates':[str(p) for p in options]})
                 continue
             assert chosen is not None,'Unresolved required ELF dependency: '+str(filename)+': '+needed
             dependencies.append(chosen)
@@ -224,7 +229,7 @@ def verify(value):
     roots=[Path(p) for p in value['roots']]
     for row in value.get('unsupported_optional_elfs',[]):
         assert optional_missing(row['path'],row['missing'],Path(value['native_path'].split(':')[0]).parent)
-        assert row['sha256']==OPTIONAL_ODBC_SHA256
+        assert row['sha256'] in (OPTIONAL_ODBC_SHA256,OPTIONAL_WX_SHA256)
     for row in value['trees']:verify_tree(row,roots)
     for row in value['files'].values():verify_path(row)
     for row in value['probes'].values():assert presence(row['path'])==row,'Host precedence/input presence changed: '+row['path']

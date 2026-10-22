@@ -43,8 +43,16 @@ def main():
             assert not closure.optional_missing(candidate,'libodbc.so.3',selected)
             launcher=selected/'beam.smp';launcher.write_bytes(candidate.read_bytes());assert not closure.optional_missing(launcher,'libodbc.so.2',selected)
             candidate.write_bytes(b'changed');assert not closure.optional_missing(candidate,'libodbc.so.2',selected)
+        wx=selected/closure.OPTIONAL_WX_PATH;wx.parent.mkdir(parents=True);wx.write_bytes(b'exact synthetic GUI witness')
+        with patch.object(closure,'OPTIONAL_WX_SHA256',closure.sha(wx)):
+            assert len(closure.OPTIONAL_WX_LIBRARIES)==8
+            assert all(closure.optional_missing(wx,name,selected) for name in closure.OPTIONAL_WX_LIBRARIES)
+            for dependency in ['libc.so.6','libglib-2.0.so.0','libstdc++.so.6','libgcc_s.so.1','libwx_unknown-3.2.so.0']:
+                assert not closure.optional_missing(wx,dependency,selected)
+            launcher.write_bytes(wx.read_bytes());assert not closure.optional_missing(launcher,'libwx_baseu-3.2.so.0',selected)
+            wx.write_bytes(b'changed');assert not closure.optional_missing(wx,'libwx_baseu-3.2.so.0',selected)
         for command in [['cc','source.c'],['gcc','-shared','source.c'],['ldconfig'],['/usr/bin/true'],['/usr/bin/true','-print-file-name=libc.so']]:denied(lambda:closure.metadata(command))
-    print('PASS host dependency pure14: fullSET/content/mode/filealias/directoryescape drift, precedence appearance, explicit isolated-cache policy, sanitized Python/compiler/Elixir/Docker env, actual ELF metadata parse/malformed denial, hostquery no-compile allowlist, exact optional ODBC witness only/changedpath-hash-dep denied; real hostqueries/compiler/VM/provider calls0')
+    print('PASS host dependency pure16: fullSET/content/mode/filealias/directoryescape drift, precedence appearance, explicit isolated-cache policy, sanitized Python/compiler/Elixir/Docker env, actual ELF metadata parse/malformed denial, hostquery no-compile allowlist, exact optional ODBC/wx witnesses only; changedpath-hash-dep/selectedlauncher denied and wx core runtime libs strict; real hostqueries/compiler/VM/provider calls0')
 
 
 if __name__=='__main__':main()

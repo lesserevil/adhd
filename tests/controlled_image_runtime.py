@@ -30,7 +30,7 @@ def audit_models(value,allowed,path=()):
     if isinstance(value,dict):
         scope=any(x in ('matcher','models','model','history','retrieval','archive','settings') for x in path)
         for key,item in value.items():
-            if isinstance(item,str) and (key=='url' and (scope or 'model' in value) or key in ('endpoint','base_url','model_url')):
+            if isinstance(item,str) and (key=='url' and (scope or 'model' in value) or key in ('endpoint','base_url','model_url','endpoint_url') or scope and item.startswith(('http://','https://'))):
                 parsed=urlsplit(item)
                 assert parsed.scheme=='http' and parsed.hostname=='127.0.0.1' and parsed.port!=18770
                 assert not parsed.username and not parsed.password and not parsed.fragment and not parsed.query

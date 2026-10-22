@@ -19,7 +19,7 @@ class Preparation(unittest.TestCase):
         for value in ['http://127.0.0.1:18770/v1/systemone','http://localhost:19001/v1/systemone',
                       'http://other.example/v1/systemone','https://127.0.0.1:19001/v1/systemone',
                       URL+'?redirect=18770',URL+'#alias','http://user:pass@127.0.0.1:19001/v1/systemone']:
-            for key in ['url','endpoint','base_url','model_url']:
+            for key in ['url','endpoint','base_url','model_url','endpoint_url','unknown_alias']:
                 with self.subTest(value=value,key=key),self.assertRaises(AssertionError):
                     audit_models({'projects':[{'settings':{'history':{key:value}}}]},{URL,value})
     def test_inactive_or_unregistered_fixture_refused(self):

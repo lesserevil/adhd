@@ -66,15 +66,19 @@ def main():
         if Path(str(r.file)+'.stores').exists():
             from project_recovery_state import route,snapshot
             state=snapshot(str(route(r.file,r.config['project_id'])[1])+'.snapshot')
-            number=state['allocation_counter']+3;encoded=''
-            while number:
-                number,digit=divmod(number,36);encoded='0123456789abcdefghijklmnopqrstuvwxyz'[digit]+encoded
-            future='publication_'+state['allocation_epoch']+'_'+encoded
+            def future_id(number):
+                encoded=''
+                while number:
+                    number,digit=divmod(number,36);encoded='0123456789abcdefghijklmnopqrstuvwxyz'[digit]+encoded
+                return 'publication_'+state['allocation_epoch']+'_'+encoded
+            # Index generations also allocate IDs asynchronously. Cover a bounded
+            # future range, then require an actual later publication to occupy it.
+            futures=[future_id(state['allocation_counter']+offset) for offset in range(1,17)]
         else:
-            current=rpc({'op':'get_record','publication_id':oid})['snapshot']['watermark'];future=oid.rsplit('-',1)[0]+'-'+str(current+3)
-        waiting=publish('Unresolved when accepted',{'links':[{'relation':'reply','publication_id':future}]})
-        publish('Filler');later=publish('This arrived later');assert later['publication']['id']==future
-        frozen=rpc({'op':'get_record','publication_id':waiting['publication']['id']});assert frozen['record']['links'][0]['target_identity'] is None and not frozen['related']
+            current=rpc({'op':'get_record','publication_id':oid})['snapshot']['watermark'];futures=[oid.rsplit('-',1)[0]+'-'+str(current+3)]
+        waiting=publish('Unresolved when accepted',{'links':[{'relation':'reply','publication_id':future} for future in futures]})
+        publish('Filler');later=publish('This arrived later');assert later['publication']['id'] in futures
+        frozen=rpc({'op':'get_record','publication_id':waiting['publication']['id']});assert all(link['target_identity'] is None for link in frozen['record']['links']) and not frozen['related']
         record('private-absent-and-future-references-remain-unresolved-without-leaking-content')
         truncated=rpc({'op':'get_record','publication_id':oid,'max_depth':0});assert not truncated['related'] and truncated['truncated'] and any(g['reason']=='depth' for g in truncated['gaps'])
         limited=rpc({'op':'get_record','publication_id':oid,'limit':2});assert len(limited['related'])==1 and limited['truncated'] and any(g['reason']=='limit' for g in limited['gaps'])
@@ -96,7 +100,8 @@ def main():
         r.stop(hard=True);r.start();client=Client(r)
         assert rpc({'op':'get_record','publication_id':oid,'watermark':mark})==old
         assert rpc(command_event,mid='context-event-once')==first
-        assert rpc({'op':'get_record','publication_id':waiting['publication']['id']})['record']['links'][0]['target_identity'] is None
+        restarted=rpc({'op':'get_record','publication_id':waiting['publication']['id']})
+        assert restarted==frozen
         assert rpc({'op':'search','query':'cardinal'})['publications'][0]['text']==species['publication']['text']
         record('hard-restart-keeps-record-identities-context-retries-unresolved-links-and-literal-search')
         # Acknowledgement and retries cannot delete original contextual evidence.

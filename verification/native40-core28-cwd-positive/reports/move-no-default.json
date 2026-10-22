@@ -1,0 +1,80 @@
+{
+  "suite": "adhd/multi-store-relocation@1",
+  "started_at": "2026-10-22T09:19:34.024584+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "originals-source-retries-acknowledged-and-unacknowledged-deliveries-created-in-isolated-projects",
+      "passed": true
+    },
+    {
+      "name": "occupied-project-destination-rejected-without-config-or-foreign-file-change",
+      "passed": true
+    },
+    {
+      "name": "every-project-writer-moves-hot-at-one-revision-without-process-restart",
+      "passed": true,
+      "project_count": 3
+    },
+    {
+      "name": "concurrent-accepted-writes-retain-message-idempotency-and-data",
+      "passed": true,
+      "accepted_count": 16,
+      "retryable_busy_count": 2
+    },
+    {
+      "name": "all-project-originals-source-idempotency-and-delivery-identities-survive-live-switch",
+      "passed": true
+    },
+    {
+      "name": "hard-restart-opens-every-relocated-project-and-preserves-postmove-accepted-write",
+      "passed": true
+    },
+    {
+      "name": "same-durable-semantic-job-survives-switch-and-restart-then-completes-after-provider-recovery",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "harness_sha256": "b4d139c58b9a8bb9e48e9166e51cfc64b11f3028c2477c8872cbce8efbd0ba69",
+  "no_default": true,
+  "relocation_timing": {
+    "write_deadline_seconds": 20,
+    "retry_after_seconds": [
+      1.0,
+      1.0
+    ],
+    "retry_count": 2,
+    "admin_move_ms": 1087.861,
+    "all_writes_ms": 2563.318,
+    "accepted_writes": 16
+  },
+  "finished_at": "2026-10-22T09:20:54.091240+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_7a1224b6f2d86162a773f90811090208_1",
+      "operation_id": "restore_7a1224b6f2d86162a773f90811090208_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_7a1224b6f2d86162a773f90811090208_3",
+      "operation_id": "restore_7a1224b6f2d86162a773f90811090208_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_7a1224b6f2d86162a773f90811090208_5",
+      "operation_id": "restore_7a1224b6f2d86162a773f90811090208_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ]
+}

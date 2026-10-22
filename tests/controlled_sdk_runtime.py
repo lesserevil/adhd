@@ -9,6 +9,8 @@ import json
 import os
 from pathlib import Path
 import selectors
+import inspect
+import httpx
 import re
 import subprocess
 import sys
@@ -98,6 +100,7 @@ def startup_diagnostics(custody,obj,reader=bounded):
             result['pid_namespace_mode']=actual['HostConfig']['PidMode']
             vm=request('namespace_vm',['exec',identifier,'sh','-c','readlink /proc/1/exe; cat /proc/1/status; cat /proc/1/cmdline'])
             result['actual_beam_pid1_observed']=bool(vm and vm['returncode']==0 and vm['stdout'].splitlines()[0].endswith(b'/beam.smp') and re.search(rb'^Pid:\s+1$',vm['stdout'],re.M))
+            request('passive_namespace_listeners',['exec',identifier,'sh','-c','cat /proc/1/net/tcp /proc/1/net/tcp6; ls -l /proc/1/fd'])
             manifest=request('canonical_manifest',['exec',identifier,'cat','/app/manifest.json'])
             result['actual_canonical_manifest_matched']=bool(manifest and manifest['returncode']==0 and manifest['stdout']==custody.manifest_bytes)
             files=base.runtime_app_files(custody.manifest,custody.plan['expected_app_files'])
@@ -115,16 +118,58 @@ def startup_diagnostics(custody,obj,reader=bounded):
     return result
 
 
+class OriginalHealthCalls:
+    """Observe only calls issued directly by the unchanged Hub.start body."""
+    def __init__(self,original,obj):
+        self.code=original.__code__;self.url=getattr(obj,'base','')+'/health'
+        self.rows=[];self.observation_errors=[];self.started=time.monotonic()
+    def __enter__(self):
+        self.previous=httpx.get
+        def observed(*args,**kwargs):
+            caller=inspect.currentframe().f_back
+            selected=(caller.f_code is self.code and args==(self.url,) and kwargs=={'timeout':1})
+            if not selected:return self.previous(*args,**kwargs)
+            began=time.monotonic();row={'elapsed_seconds':began-self.started,'timeout_seconds':1}
+            try:
+                response=self.previous(*args,**kwargs)
+            except BaseException as error:
+                row['exception_type']=type(error).__name__
+                self.record(row,began)
+                raise
+            try:
+                # httpx.get has already buffered this response. Never consume a
+                # stream, call json(), request again, or alter the same object.
+                body=response.content
+                row.update(status_code=response.status_code,body_bytes=len(body),body_prefix_hex=body[:1024].hex(),body_truncated=len(body)>1024)
+            except BaseException as error:self.observation_errors.append(type(error).__name__)
+            self.record(row,began)
+            return response
+        httpx.get=observed
+        return self
+    def record(self,row,began):
+        row['request_seconds']=time.monotonic()-began
+        if len(self.rows)<512:self.rows.append(row)
+        elif 'ObservationRowsBound' not in self.observation_errors:self.observation_errors.append('ObservationRowsBound')
+    def __exit__(self,*exception):httpx.get=self.previous
+    def evidence(self):
+        return {'scope':'Only original direct Hub.start health calls; original30s/timeout1/sleeps/request-response-exception semantics unchanged',
+                'maximum_rows':512,'maximum_body_prefix_bytes':1024,'calls':self.rows,'observation_error_types':self.observation_errors}
+
+
 class SDKCustody(base.Custody):
     def start(self,original,obj,*args,**kwargs):
         def observed(instance,*a,**kw):
-            try:return original(instance,*a,**kw)
+            recorder=OriginalHealthCalls(original,instance)
+            try:
+                with recorder:return original(instance,*a,**kw)
             except BaseException:
                 if self.is_image(instance):
                     try:diagnostic=startup_diagnostics(self,instance)
                     except BaseException as error:diagnostic={'unavailable':[{'failure_type':type(error).__name__}]}
                     instance._controlled_custody_attempt['startup_failure_diagnostics']=diagnostic
                 raise
+            finally:
+                instance._controlled_custody_attempt['original_health_calls']=recorder.evidence()
         return super().start(observed,obj,*args,**kwargs)
 
 

@@ -51,6 +51,33 @@ class SDKPreparationGuards(unittest.TestCase):
   with patch.object(runtime.base.Custody,'start',parent),patch.object(runtime,'startup_diagnostics',return_value={'unavailable':[]}):
    with self.assertRaises(AssertionError) as caught:custody.start(original,obj)
   self.assertIs(caught.exception,failure);self.assertIn('startup_failure_diagnostics',obj._controlled_custody_attempt)
+ def test_health_recorder_preserves_original_calls_objects_and_exceptions(self):
+  import httpx
+  obj=SimpleNamespace(base='http://127.0.0.1:54321')
+  def original(obj):return httpx.get(obj.base+'/health',timeout=1)
+  response=httpx.Response(503,content=b'x'*2048);failure=httpx.ConnectError('original exception')
+  for outcome in [response,failure]:
+   with patch.object(httpx,'get',side_effect=outcome if isinstance(outcome,BaseException) else None,return_value=response) as get:
+    with runtime.OriginalHealthCalls(original,obj) as recorder:
+     if isinstance(outcome,BaseException):
+      with self.assertRaises(httpx.ConnectError) as caught:original(obj)
+      self.assertIs(caught.exception,failure)
+     else:self.assertIs(original(obj),response)
+    get.assert_called_once_with(obj.base+'/health',timeout=1)
+   rows=recorder.evidence()['calls'];self.assertEqual(len(rows),1)
+   if outcome is response:
+    self.assertEqual(rows[0]['status_code'],503);self.assertEqual(rows[0]['body_bytes'],2048);self.assertEqual(len(rows[0]['body_prefix_hex']),2048)
+   else:self.assertEqual(rows[0]['exception_type'],'ConnectError')
+ def test_health_recorder_ignores_nonoriginal_calls_and_restores_get(self):
+  import httpx
+  obj=SimpleNamespace(base='http://127.0.0.1:54321')
+  def original(obj):return httpx.get(obj.base+'/health',timeout=1)
+  result=httpx.Response(200,json={'status':'ready'})
+  with patch.object(httpx,'get',return_value=result) as get:
+   with runtime.OriginalHealthCalls(original,obj) as recorder:
+    self.assertIs(httpx.get(obj.base+'/health',timeout=1),result)
+    self.assertIs(original(obj),result)
+   self.assertIs(httpx.get,get);self.assertEqual(get.call_count,2);self.assertEqual(len(recorder.rows),1)
  def test_actual_execute_once_rejects_before_compiler_or_child(self):
   from controlled_image_matrix import durable_once_marker
   with tempfile.TemporaryDirectory() as directory:

@@ -1,0 +1,199 @@
+{
+  "suite": "adhd/project-recovery-process-kill@1",
+  "started_at": "2026-10-22T11:39:45.881197+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-stopped-backup-missing-target-current-blue-and-reviewed-plan",
+      "passed": true,
+      "old_generation": 1,
+      "selected_generation": 2
+    },
+    {
+      "name": "real-libc-boundary-kernel-stopped-before-whole-owner-sigkill",
+      "passed": true,
+      "stage": "after-install-checkpoint",
+      "signal": "SIGKILL",
+      "observed_state": "T",
+      "decision_selected": true
+    },
+    {
+      "name": "decided-kill-completes-original-plan-on-cold-start-with-original-ack-and-no-old-tail",
+      "passed": true
+    },
+    {
+      "name": "later-accepted-write-survives-another-cold-start-without-baseline-rollback",
+      "passed": true
+    },
+    {
+      "name": "global-security-current-config-and-unrelated-newer-facts-private-delivery-and-ack-preserved",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "harness_sha256": "020d5e210ae405eb67d684651f243e70b1c4a88d2c7de001a50a2c8dcfcc8813",
+  "fault_source_sha256": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+  "fault_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+  "recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+  "crash_at": "after-install-checkpoint",
+  "no_default": false,
+  "archived": false,
+  "damaged_stage": false,
+  "provider_calls": 0,
+  "full_recovery_qualified": false,
+  "finished_at": "2026-10-22T11:40:49.826074+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "e204feffa5cd80f03e36ef724eec9808393ddec990c7b45ed6814b1e7076fbba",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "e204feffa5cd80f03e36ef724eec9808393ddec990c7b45ed6814b1e7076fbba",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "35164f5e77d6ea0cc0fc717367f6e9e62504713b7a1f4d0b344958e8730b9d89",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "35164f5e77d6ea0cc0fc717367f6e9e62504713b7a1f4d0b344958e8730b9d89",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "731ae75fbd26df9ee3c84bf3375f209b708ee31902a188477828616f81f687e3",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "731ae75fbd26df9ee3c84bf3375f209b708ee31902a188477828616f81f687e3",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "0e7f592a4bf245fefaf6e550dfa673329b7ee3cee11056627b4055454cef9659",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "0e7f592a4bf245fefaf6e550dfa673329b7ee3cee11056627b4055454cef9659",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "c8a46584a870b0ec28626b174dc0090c8e6eabe0ba2b2753f367e1d9ac339fcc",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "c8a46584a870b0ec28626b174dc0090c8e6eabe0ba2b2753f367e1d9ac339fcc",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-eb3570f64c5d4c75",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-07ec368b9ef84f39",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-fd80fe11b4fd4d18",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-ac887c3b9d99425b",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "observer_source": "project_recovery_fault.c",
+    "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+    "observer_loader_proof_sha256": "5359f5f3aaec1c540892f5da17312040dc97c074b05cf8606f7e486d97a30c54",
+    "actual_beam_kernel_custody": [
+      {
+        "container_id": "731ae75fbd26df9ee3c84bf3375f209b708ee31902a188477828616f81f687e3",
+        "source": "project_recovery_fault.c",
+        "stage": "after-install-checkpoint",
+        "observer_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+        "host_process_pid": 234876,
+        "namespace_pid": 1,
+        "signal_method": "ancestor-pidfd-SIGSTOP",
+        "pid_namespace": "pid:[4026533600]",
+        "executable_basename": "beam.smp",
+        "cmdline_sha256": "8328711eb4a20cb987bacb67d0630e599dd6d9cb7a8d55961ffe6a31073de77e",
+        "process_maps_sha256": "ffcd55593b7011d82154b0d38b4f9371a5929683be07aab56e2987918fd66f51",
+        "process_maps_witness_phase": "kernel-stopped",
+        "observer_mapping_sha256": "59df4795ec55eafc692abb0f916fca01530bf03ee2c4fef819a54617ffbb250b",
+        "observer_library_sha256": "65253f3edcc240a1ed7daba2fa5c01867fa9a5cdb8302ee0b1bb9af975b465bb",
+        "kernel_state": "stopped"
+      }
+    ],
+    "observer_disarmed_after_kill": true,
+    "observer_rearms": [
+      {
+        "after_closed_container_id": "35164f5e77d6ea0cc0fc717367f6e9e62504713b7a1f4d0b344958e8730b9d89",
+        "exit_code": 137,
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+}

@@ -244,7 +244,7 @@ async def main():
         # A current grant removal must survive a later restore of the actual
         # earlier bundle containing the old grant. It is policy, not ownership.
         gate.target=None;gate.phase='revoked';gate.release['old'].set();gate.release['new'].set()
-        no_pairs=peer(a,ba_token,ab);no_pairs['project_pairs']=[]
+        no_pairs=peer(a,ba_token,ab);no_pairs['project_pairs']=[{'local_project_id':BLUE,'remote_project_id':BLUE}]
         patch(b,{'federation':{'peers':[no_pairs]}})
         config_before=b.admin().call({'op':'config_get'})['config'];count=len(gate.rows)
         _,plan=await lose_and_restore(args,b,br,last['backup_id'],last['backup_sha'],'current-grants',gate)

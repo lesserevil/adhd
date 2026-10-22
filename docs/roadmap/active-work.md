@@ -25,11 +25,23 @@ queue item or let `docs/roadmap/` become a plan archive.
 
 ## Authorized implementation batches
 
-**Current status:** all six remaining parents have closed through the proper CLI
-after accepted runtime composition and the first documentation-authority/receipt
-bridge. The historical plans are now archived with compatibility links. The
-**only next action** is the second proper documentation-authority/receipt/context
-bridge covering this archival, followed by final verification and closure retention.
+**Current status:** all 47 parents and 271 subtasks are complete. The six final
+parents closed through the proper CLI after accepted runtime composition. The
+substantial completed plans are archived with compatibility links. The
+[final documentation-authority and receipt bridge](../../verification/source41-final-documentation-bridge/manifest.json)
+passed its full configured acceptance lifecycle, current declared verification,
+and complete container-context file-set and byte comparison. Its actual current
+receipt binds the unchanged qualified application and container to the archived
+roadmap authority. The [property composition](../../verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
+retains the scoped runtime evidence; earlier failed attempts remain historical.
+
+The final independent review and tracker/retention audit are recorded with the
+[completion evidence](../../verification/final-roadmap-completion/manifest.json).
+There is no remaining implementation action in this queue. Earlier qualification
+status sentences in PROJECT.md and chronological entries below describe their
+own prior checkpoints; this queue and its final linked evidence give the current
+completion state. Their behavioral requirements and documented operating limits
+remain applicable.
 
 ### Historical execution narrative — prior states, not current directions
 

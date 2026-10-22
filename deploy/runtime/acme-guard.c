@@ -67,7 +67,7 @@ static int private_lock(const char *path) {
     close(directory);
     if (lock < 0) return -1;
     if (fstat(lock, &info) || !S_ISREG(info.st_mode) || info.st_nlink != 1 ||
-        info.st_uid != geteuid() || (info.st_mode & 0077)) {
+        info.st_uid != geteuid() || (info.st_mode & 07777) != 0600) {
         close(lock); return -1;
     }
     if (flock(lock, LOCK_EX | LOCK_NB)) {

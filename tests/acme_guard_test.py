@@ -146,6 +146,16 @@ class Guardian(unittest.TestCase):
             p=subprocess.Popen(a,stdin=subprocess.PIPE,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
             self.owned.append(p);self.assertEqual(p.wait(timeout=2),125)
         self.assertEqual(target.read_bytes(),before)
+    def test_lock_requires_exact_private_mode_and_one_link(self):
+        path=self.directory/'unsafe-mode.lock';path.write_text('unchanged')
+        for mode in [0o700,0o640,0o1600]:
+            os.chmod(path,mode)
+            before=path.stat();data=path.read_bytes()
+            self.assertEqual(subprocess.run([str(self.binary),'--probe-lock',str(path)]).returncode,125)
+            after=path.stat();self.assertEqual((before.st_ino,before.st_mode),(after.st_ino,after.st_mode));self.assertEqual(path.read_bytes(),data)
+        os.chmod(path,0o600);other=self.directory/'second-link';os.link(path,other)
+        self.assertEqual(subprocess.run([str(self.binary),'--probe-lock',str(path)]).returncode,125)
+        other.unlink();path.unlink()
     def test_hard_owner_death_cancels_and_reaps(self):
         ledger=self.directory/'owner-ledger.json'
         owner_code='''import subprocess,sys,json,time

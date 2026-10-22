@@ -41,6 +41,8 @@ and Compose/Kubernetes deployment. Their contracts and candidate implementation
 are integrated; final combined qualification remains tracked separately from
 older accepted profile-1 evidence. See the [protocol profile](protocol/multi-eventing.md)
 and [native federation/control evidence](verification/federation-controls.md).
+The [project recovery checks](verification/project-recovery.md) distinguish pure
+backup validation from stopped-server portable rebind and crash recovery proofs.
 The [Kafka service operations guide](admin/event-service.md) covers the new
 Compose/Kubernetes packages and their current qualification boundaries.
 The [adaptive retrieval roadmap](roadmap/adaptive-retrieval.md) records the planned

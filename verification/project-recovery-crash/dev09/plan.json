@@ -1,0 +1,27 @@
+{
+  "schema": "adhd/project-recovery-kill-plan@1",
+  "artifact_sha256": "2c700cd6b9306df79492d4f4b509cdbddacbd730460cc4f79406a5f0ccb49d39",
+  "inputs": {
+    "project_recovery_crash.py": "834940a5fd8acd93936ee13eb5498fec10e19b83374a4981a2b8e65dd3fd33fa",
+    "project_recovery_fault.c": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+    "project_recovery_acceptance.py": "3d07ea75423399449717ab5244a739de4e0e69b966024743c8cbe100933c36ab",
+    "project_recovery_restore.py": "e3ecdd758d3c16beb14ca2f71fbecb9ec0c66b0f71d2784a010431b738889189",
+    "project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa",
+    "multi_support.py": "707af2fa63b472eb3b09825e8750b35e671488947f69fc29bf83eeb46e500c8c",
+    "foundation_acceptance.py": "ab358cbbf0e9449bee3c2d1c9406e35790ba7076f84011b8eaeb6692a646aea2"
+  },
+  "stages": [
+    {
+      "stage": "after-install-snapshot",
+      "no_default": true
+    },
+    {
+      "stage": "before-cleanup",
+      "archived": true
+    }
+  ],
+  "transport": "actual isolated topics on existing local Kafka REST18082",
+  "provider_calls": 0,
+  "scope": "Actual selective restore process kills on09 repairedCoordinator, no-default/archived variants; no whole crash-matrix/image qualification",
+  "preserved_prior_attempt": "05-02 before-decision passed; after-install-snapshot actualcoldstartupfailed availability-only mismatch, fixedin09"
+}

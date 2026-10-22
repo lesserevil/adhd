@@ -210,3 +210,6 @@ an availability-only comparison stopping startup. A Coordinator-only repair
 resumed that same interrupted installation, preserved retained target and current
 unrelated state, and passed another cold restart. Remaining crash boundaries,
 checkpoint hardening, complete recovery and successor platform qualification stay open.
+[Development09 kill checks](../../verification/project-recovery-crash/dev09/manifest.json)
+also pass the actual after-first-snapshot boundary without a default project and
+the before-cleanup boundary for an archived project, using real Kafka and no model.

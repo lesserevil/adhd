@@ -106,6 +106,19 @@ def sanitized_case_diagnostic(case,proxy,operation,elapsed,config,primary,cleanu
         'cleanup_failure_types':[typename(v)for v in cleanup_types[:16]],'cleanup_types_truncated':len(cleanup_types)>16}
 
 
+def assert_queue_control_capacity(status):
+    """A genuine no-owner-queue control: Blue cannot occupy Red's slot."""
+    assert status['limits']['eventing_concurrency']==2
+    assert status['limits']['project_eventing_concurrency']==1
+    lane=status['lanes']['eventing'];projects=lane['projects']
+    blue=projects.get(BLUE,{'active':0,'queued':0})
+    assert blue['active']in (0,1)and blue['queued']==0
+    assert lane['active']==blue['active']and lane['queued']==0
+    assert all(v['active']==0 and v['queued']==0 for key,v in projects.items()if key!=BLUE)
+    assert status['limits']['eventing_concurrency']-lane['active']>=1
+    return {'global_limit':2,'per_project_limit':1,'blue_active':blue['active'],'independent_red_slots_at_observation':2-lane['active']}
+
+
 async def run_case(args,case,e):
     proxy=None;f=None;native_identity=None;primary=None;operation=None;started=None;elapsed=None
     try:
@@ -117,7 +130,7 @@ async def run_case(args,case,e):
         if case in ('queue','queue-control'):
             f.config['eventing']['timeout_ms']=QUEUE_EVENTING_TIMEOUT_MS
             f.config['recovery']={'timeout_ms':QUEUE_RECOVERY_TIMEOUT_MS}
-            f.config['resources']={'eventing_concurrency':1,'project_eventing_concurrency':1}
+            f.config['resources']={'eventing_concurrency':2 if case=='queue-control'else 1,'project_eventing_concurrency':1}
         original=None
         await f.start()
         if not f.image_runtime:
@@ -157,6 +170,10 @@ async def run_case(args,case,e):
             return
         planned=r.call(RED,'project_restore_plan',mode='initialize',confirm=True,expected_revision=r.revision(),message_id=uuid4().hex)
         plan=(await r.settle(RED,planned,{'ready'}))['plan'];r.assert_plan(plan,RED,'initialize')
+        if case=='queue-control':
+            capacity=f.admin().call({'op':'resource_status'})
+            premise=assert_queue_control_capacity(capacity)
+            e.value.setdefault('queue_control_capacity',{})[case]={'resources':capacity,'premise':premise}
         proxy.arm(plan['selected']['topic'],case)
         if case=='queue':
             proxy.hold=True

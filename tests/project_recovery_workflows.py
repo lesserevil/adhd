@@ -220,5 +220,5 @@ async def event_controls(f, phase, publication_id):
     assert status()["quarantined"] == 0
     audit = api("eventing_audit", offset=0, limit=100)
     assert repaired["audit_id"] in json.dumps(audit) and retried["audit_id"] in json.dumps(audit)
-    return {"subscription": subscription, "replay": materialized, "repair_retry": retried,
+    return {"subscription": subscription, "replay": materialized, "acknowledged_deliveries": rows, "repair_retry": retried,
         "repair_reconcile": repaired, "audit": audit, "actual_foreign_offset": offset}

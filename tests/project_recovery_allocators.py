@@ -44,8 +44,26 @@ def public_families(f, project):
         families.setdefault(kind,set()).add(identifier)
     queries={}
     for kind in ('history','retrieval','archive','replay','optimization'):
-        rows=f.admin().call(scoped(project,'query_jobs',kind=kind,limit=100))['items']
-        assert rows and len(rows)<100, 'Public allocator scan was empty/truncated; no silent coverage claim'
+        page=f.admin().call(scoped(project,'query_jobs',kind=kind,limit=100))
+        assert type(page['truncated']) is bool
+        rows=page['items']
+        if page['truncated']:
+            # The public response also has a byte bound. Partition by every
+            # configured fixture author rather than treating <100 rows as a
+            # complete listing. These are the actual principals that the
+            # fixture uses; discovery does not read private job dictionaries.
+            observed={row['query']['id'] for row in rows}
+            complete={}
+            for owner in sorted(f.tokens):
+                owned=f.admin().call(scoped(project,'query_jobs',kind=kind,agent_id=owner,limit=100))
+                assert owned['truncated'] is False, 'Even an owner-filtered public allocator page was truncated'
+                for row in owned['items']:
+                    identifier=row['query']['id']
+                    assert identifier not in complete, 'A query appeared under two fixture owners'
+                    complete[identifier]=row
+            assert observed<=complete.keys(), 'An observed query has no known fixture-author partition'
+            rows=list(complete.values())
+        assert rows, 'Public allocator scan was empty; no silent coverage claim'
         for row in rows:
             assert row['kind']==kind
             q=row['query'];add(kind,q['id']);queries[q['id']]=q
@@ -69,6 +87,7 @@ def verify_new(phase,lost,retained_ids,epoch):
         'publication':[phase['record']['publication']['id']],
         'subscription':[phase['subscription']['id'],phase['eventing']['subscription']['id']],
         'delivery':[phase['acknowledged_delivery']['id'],phase['private_delivery']['id']],
+        'event-replay-delivery':[row['id'] for row in phase['eventing']['acknowledged_deliveries']],
         'history':[phase['queries']['query_history']['id']],
         'retrieval':[phase['queries']['retrieve']['id']],
         'archive':[phase['queries']['query_archive']['id']],

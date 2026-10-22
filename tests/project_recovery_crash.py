@@ -61,6 +61,8 @@ async def publication(f, project, recipient, text):
 async def main(args):
     if not args.hub or args.rest_url or args.with_model:
         raise ValueError('Requires an owned native Linux --hub, real Kafka, and no model')
+    if args.damage_stage and args.crash_at not in {'after-decision-sync', 'after-install-snapshot'}:
+        raise ValueError('Stage damage requires a decided checkpoint that has not been installed')
     f = Fixture(args, initialize_projects=False)
     if args.no_default:
         f.config.pop('project_id')
@@ -88,7 +90,7 @@ async def main(args):
         harness_sha256=digest(Path(__file__).read_bytes()), fault_source_sha256=digest(source.read_bytes()),
         fault_library_sha256=digest(library.read_bytes()), recovery_schema_sha256=r.schema_sha256,
         crash_at=args.crash_at, no_default=args.no_default, archived=args.archived,
-        provider_calls=0, full_recovery_qualified=False)
+        damaged_stage=args.damage_stage, provider_calls=0, full_recovery_qualified=False)
     pending = None
     try:
         await f.start()
@@ -159,6 +161,13 @@ async def main(args):
         pending = None
         evidence.record('real-libc-boundary-kernel-stopped-before-whole-owner-sigkill',
             stage=args.crash_at, signal='SIGKILL', observed_state='T', decision_selected=decided)
+        if args.damage_stage:
+            decision = read_json(decision_path)
+            checkpoint = Path(decision['stage']['stage'])
+            assert checkpoint.is_file() and not checkpoint.is_symlink()
+            assert checkpoint.stat().st_nlink == 1
+            checkpoint.unlink()
+            evidence.record('owned-decided-stage-checkpoint-deliberately-lost-before-cold-start')
         f.args = args
         await f.start()
         assert exact(f.admin().call({'op': 'config_get'})['config']) == exact(before_config)
@@ -175,6 +184,15 @@ async def main(args):
             assert not anchor.exists() and not Path(str(anchor) + '.snapshot').exists()
             assert status['operation']['state'] in {'failed', 'blocked'}
             evidence.record('predecision-kill-keeps-original-missing-route-and-does-not-install-stage')
+        elif args.damage_stage:
+            assert status['availability'] == 'recovery_required'
+            assert status['operation']['state'] == 'blocked'
+            assert status['operation']['failure']['code'] == 'RECOVERY_REQUIRED'
+            entry, _ = route(f.file, RED)
+            assert entry['generation'] == plan['selected']['route_generation']
+            assert entry['project_epoch'] == plan['selected']['project_epoch']
+            assert decision_path.exists()
+            evidence.record('damaged-decided-target-stays-blocked-with-original-decision-and-global-admin-blue-available')
         else:
             assert status['availability'] == 'ready' and status['operation']['state'] == 'complete'
             entry, _ = route(f.file, RED)
@@ -222,4 +240,5 @@ if __name__ == '__main__':
     parser.add_argument('--crash-at', choices=STAGES, required=True)
     parser.add_argument('--no-default', action='store_true')
     parser.add_argument('--archived', action='store_true')
+    parser.add_argument('--damage-stage', action='store_true')
     asyncio.run(main(parser.parse_args()))

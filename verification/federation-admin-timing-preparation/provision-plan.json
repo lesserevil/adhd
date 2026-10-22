@@ -1,0 +1,163 @@
+{
+  "schema": "adhd/federation41-owned-service-preparation@1",
+  "executed": false,
+  "root_GO_required": true,
+  "plan_sha256": "d58c58595d512acfd7a7ae102dcfc3752b06831a07512e1ed65c5a30e1237c8f",
+  "driver_sha256": "e9fa4470856facbcdc9ada3c79045d51be9306c4c795e80948ee49b6f6736034",
+  "focused_original_programs": 1,
+  "original_checks": 14,
+  "all_frozen_bound_external_tool_socket_closure_verified": true,
+  "own_driver_and_scenario_equal_current_root": true,
+  "project": "adhd-qa41-fed-diagnostic",
+  "port": 18089,
+  "port_observed_nonaccepting_not_reserved": true,
+  "new_project_label_census_empty": true,
+  "environment": {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "ADHD_KAFKA_TEST_PORT": "18089",
+    "DOCKER_HOST": "unix:///run/docker.sock",
+    "DOCKER_CONFIG": "/home/horde/src/adhd/_build/federation41-diagnostic01/bound/docker-config"
+  },
+  "compose_config": {
+    "sha256": "7c3f91b718195620c68ba77c77d6cbd56ad89c93699b8766bceaf6f39794a65c",
+    "path": "/home/horde/src/adhd/.worktrees/contracts/_build/federation41-diagnostic-provision/compose.json"
+  },
+  "source_files": {
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy/events.compose.yaml": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy/events.test.compose.yaml": "4ebfe4dca1bb566eaca7780e0c9c6f9b2da0990d79154875718c33e5c2cf7a44",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy/kafka-bootstrap.py": "4dcbeae85ae88022945d8bdad304ed213638c7d7e76384e608e90dc268f6bb1f"
+  },
+  "tools": {
+    "/usr/bin/docker": "6d1ac33d27f9f73d1feb0184e7c0847c1b6051dd60b7a6ec7b3ad9a2f7ca01ea",
+    "/usr/libexec/docker/cli-plugins/docker-compose": "9c0f3f21b463fbdd42afed3be203c1a65f0cd440c9b59c68785f35e78d2ebf6a"
+  },
+  "images_available_without_pull": {
+    "kafka": {
+      "requested": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+      "id": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    "kafka-rest": {
+      "requested": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+      "id": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "os": "linux",
+      "architecture": "amd64"
+    }
+  },
+  "protected_services": [
+    {
+      "name": "adhd-qa40-image-events-kafka-1",
+      "id": "0f040af9437bedb6c27cd14c901f766f1cff7a8bf6a82a34702b50fddc9e69ad",
+      "image": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+      "running": true,
+      "started_at": "2026-10-22T10:22:52.449131324Z",
+      "restart_count": 0,
+      "project": "adhd-qa40-image-events"
+    },
+    {
+      "name": "adhd-qa40-image-events-kafka-rest-1",
+      "id": "6498d4f513e5b761bbce465a1aa5d3d6526d37e4353748542a284e768a7df639",
+      "image": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "running": true,
+      "started_at": "2026-10-22T06:08:47.179807247Z",
+      "restart_count": 0,
+      "project": "adhd-qa40-image-events"
+    },
+    {
+      "name": "adhd-event-qual-kafka-1",
+      "id": "01fbe1f7f5a4fe8f8140330fa3a738c82fd75d2628dbd41b439537968d264942",
+      "image": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+      "running": true,
+      "started_at": "2026-10-21T18:14:00.499146289Z",
+      "restart_count": 0,
+      "project": "adhd-event-qual"
+    },
+    {
+      "name": "adhd-event-qual-kafka-rest-1",
+      "id": "18036a88077c6c387e5e83102bafb6b6f118e129b10c1baef648ca67599c590c",
+      "image": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "running": true,
+      "started_at": "2026-10-21T18:12:51.31359941Z",
+      "restart_count": 0,
+      "project": "adhd-event-qual"
+    },
+    {
+      "name": "adhd-fed-qual-1-kafka-1",
+      "id": "dd17a9eda1e48a9a21f29c27c518eab91161216a020e8dc626245150e1a0e1d0",
+      "image": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+      "running": true,
+      "started_at": "2026-10-21T18:47:24.965619504Z",
+      "restart_count": 0,
+      "project": "adhd-fed-qual-1"
+    },
+    {
+      "name": "adhd-fed-qual-1-kafka-rest-1",
+      "id": "7576087a6054d34762c9a15550fd5007c1e58cbb2c9b56d8845f38288dffe0f2",
+      "image": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "running": true,
+      "started_at": "2026-10-21T18:47:38.499946126Z",
+      "restart_count": 0,
+      "project": "adhd-fed-qual-1"
+    }
+  ],
+  "provision_argv": [
+    "/usr/bin/docker",
+    "--host",
+    "unix:///run/docker.sock",
+    "--config",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/bound/docker-config",
+    "compose",
+    "--project-name",
+    "adhd-qa41-fed-diagnostic",
+    "--project-directory",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy",
+    "-f",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy/events.compose.yaml",
+    "-f",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy/events.test.compose.yaml",
+    "up",
+    "--detach",
+    "--pull",
+    "never",
+    "--no-build",
+    "kafka",
+    "kafka-rest"
+  ],
+  "cleanup_argv": [
+    "/usr/bin/docker",
+    "--host",
+    "unix:///run/docker.sock",
+    "--config",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/bound/docker-config",
+    "compose",
+    "--project-name",
+    "adhd-qa41-fed-diagnostic",
+    "--project-directory",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy",
+    "-f",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy/events.compose.yaml",
+    "-f",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/frozen/deploy/events.test.compose.yaml",
+    "down",
+    "--volumes",
+    "--timeout",
+    "60"
+  ],
+  "private_root_cleanup_proof_sha256": "f62d692458c777333fca1e46e7dcfdfdede071ec4107383f5551b39e85d9a639",
+  "resource_requirements": "Root-only provision, inspect exact labels/mounts/image and both service identities, require healthy/bootstrap success plus three distinct Kafka clusterIDs18082/18085/18089 before diagnostic execute. Currentmetadata does not claim service ready.",
+  "execution_argv": [
+    "/home/horde/src/adhd/.venv/bin/python",
+    "-I",
+    "-B",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01/driver.py",
+    "--execute",
+    "--work",
+    "/home/horde/src/adhd/_build/federation41-diagnostic01",
+    "--plan-sha256",
+    "d58c58595d512acfd7a7ae102dcfc3752b06831a07512e1ed65c5a30e1237c8f"
+  ],
+  "claim": "Fresh diagnostic only, no13-prefix composition or fullKafka14pass; no service, compiler, VM, provider starts by preparation."
+}

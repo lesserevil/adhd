@@ -12,6 +12,11 @@ from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('matrix',Path(__file__).with_name('image_kafka_matrix.py'))
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
+UNIT_IMAGE='sha256:'+'a'*64
+UNIT_ARTIFACT='b'*64
+UNIT_ADMISSION='c'*64
+BINDINGS={'image_config_identity':UNIT_IMAGE,'artifact_sha256':UNIT_ARTIFACT,'admission_sha256':UNIT_ADMISSION}
+
 class Guards(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name).resolve()
@@ -56,7 +61,7 @@ class Guards(unittest.TestCase):
   (self.root/'runtime').mkdir()
   plan={'driver_sha256':'test','lane_lock':str(self.root/'lock'),'runtime_cwd':str(self.root/'runtime'),
    'tools':{k:{'path':'/test/'+k} for k in ('python','elixir','erl','docker')},'docker_socket':{'path':'/test/socket'},
-   'tool_trees':[],'jobs':[{'name':n,'argv':['never-run']} for n in m.NAMES],'scope':'pure','image_config_identity':m.IMAGE,'artifact_sha256':m.ARTIFACT}
+   'tool_trees':[],'jobs':[{'name':n,'argv':['never-run']} for n in m.NAMES],'scope':'pure','image_config_identity':UNIT_IMAGE,'artifact_sha256':UNIT_ARTIFACT,'admission_sha256':UNIT_ADMISSION}
   m.save(self.root/'plan.json',plan);return m.sha(self.root/'plan.json')
  def test_once_before_actual_boundary_and_no_retry(self):
   digest=self.fixture()
@@ -77,10 +82,10 @@ class Guards(unittest.TestCase):
    self.assertEqual(run.call_count,1)
   result=json.loads((self.root/'matrix.json').read_text());self.assertEqual(result['executed'],['controls']);self.assertEqual(result['results'][0]['process_exit_code'],0);self.assertFalse(result['passed'])
  def test_unknown_cleanup_not_qualified(self):
-  runtime={'kind':'docker','image_config_identity':m.IMAGE,'artifact_sha256':m.ARTIFACT,'canonical_manifest_sha256':'m',
+  runtime={'kind':'docker','image_config_identity':UNIT_IMAGE,'artifact_sha256':UNIT_ARTIFACT,'canonical_manifest_sha256':'m',
    'cleanup_blocked':True,'container_lifecycle':[]}
-  value={'passed':True,'artifact_sha256':m.ARTIFACT,'checks':[{'passed':True}],'runtime':runtime}
-  with self.assertRaises(AssertionError):m.qualify(value,{'script':'eventing_cutover.py','expected_check_count':1},{'canonical_manifest_sha256':'m'})
+  value={'passed':True,'artifact_sha256':UNIT_ARTIFACT,'checks':[{'passed':True}],'runtime':runtime}
+  with self.assertRaises(AssertionError):m.qualify(value,{'script':'eventing_cutover.py','expected_check_count':1},{**BINDINGS,'canonical_manifest_sha256':'m'})
 
 class ClusterGuards(unittest.TestCase):
  def plan(self):return {'tools':{'docker':{'path':'/never-execute'}},'private_service':{'project':'owned','broker':'owned-kafka-1','rest':'owned-kafka-rest-1','port':'18088','urls':['http://127.0.0.1:'+str(p) for p in (18082,18085,18088)]}}
@@ -115,10 +120,10 @@ class ClusterGuards(unittest.TestCase):
 
 class ProbeLedger(unittest.TestCase):
  def fixture(self):
-  probes=[{'owned_name':'adhd-accept-probe-'+str(i)*16,'container_id':None,'image_config_identity':m.IMAGE,'entrypoint':entry,'run_exit_code':0,'run_failure_type':None,'foreign_object_not_removed':False,'observed_absent':True,'cleanup_failure_types':[]} for i,entry in [(1,'cat'),(2,'sha256sum')]]
-  runtime={'kind':'docker','image_config_identity':m.IMAGE,'artifact_sha256':m.ARTIFACT,'canonical_manifest_sha256':'m','payload_verified':True,'probe_cleanup_blocked':False,'payload_probe_lifecycle':probes,'container_lifecycle':[{'action':'started','container_id':'a'*64},{'action':'stopped','container_id':'a'*64,'observed_absent':True,'wait_observed':True}]}
-  return {'passed':True,'artifact_sha256':m.ARTIFACT,'checks':[{'passed':True}],'runtime':runtime}
- def qualify(self,value):return m.qualify(value,{'script':'eventing_acceptance.py','expected_check_count':1,'observer_source':None},{'canonical_manifest_sha256':'m'})
+  probes=[{'owned_name':'adhd-accept-probe-'+str(i)*16,'container_id':None,'image_config_identity':UNIT_IMAGE,'entrypoint':entry,'run_exit_code':0,'run_failure_type':None,'foreign_object_not_removed':False,'observed_absent':True,'cleanup_failure_types':[]} for i,entry in [(1,'cat'),(2,'sha256sum')]]
+  runtime={'kind':'docker','image_config_identity':UNIT_IMAGE,'artifact_sha256':UNIT_ARTIFACT,'canonical_manifest_sha256':'m','payload_verified':True,'probe_cleanup_blocked':False,'payload_probe_lifecycle':probes,'container_lifecycle':[{'action':'started','container_id':'a'*64},{'action':'stopped','container_id':'a'*64,'observed_absent':True,'wait_observed':True}]}
+  return {'passed':True,'artifact_sha256':UNIT_ARTIFACT,'checks':[{'passed':True}],'runtime':runtime}
+ def qualify(self,value):return m.qualify(value,{'script':'eventing_acceptance.py','expected_check_count':1,'observer_source':None},{**BINDINGS,'canonical_manifest_sha256':'m'})
  def test_probe_names_in_independent_absence_set(self):
   ids,names=self.qualify(self.fixture());self.assertEqual(ids,['a'*64]);self.assertEqual(len(names),2)
  def test_unknown_probe_cleanup_denied(self):
@@ -134,7 +139,22 @@ class ProbeLedger(unittest.TestCase):
  def test_hub_payload_is_verified_in_actual_app_without_standalone_probes(self):
   value=self.fixture();runtime=value['runtime']
   for key in ('payload_verified','probe_cleanup_blocked','payload_probe_lifecycle'):runtime.pop(key)
-  ids,names=m.qualify(value,{'script':'eventing_retention.py','expected_check_count':1,'observer_source':None},{'canonical_manifest_sha256':'m'})
+  ids,names=m.qualify(value,{'script':'eventing_retention.py','expected_check_count':1,'observer_source':None},{**BINDINGS,'canonical_manifest_sha256':'m'})
   self.assertEqual(ids,['a'*64]);self.assertEqual(names,[])
+
+class TargetBindings(unittest.TestCase):
+ def test_explicit_target_has_no_ambient_default(self):
+  self.assertEqual(m.target_bindings(BINDINGS),(UNIT_IMAGE,UNIT_ARTIFACT,UNIT_ADMISSION))
+  for bad in ({},{**BINDINGS,'image_config_identity':'tag:latest'},{**BINDINGS,'artifact_sha256':None},{**BINDINGS,'admission_sha256':'short'}):
+   with self.assertRaises((KeyError,AssertionError)):m.target_bindings(bad)
+ def test_two_targets_stay_distinct_without_mutable_selection(self):
+  for image,artifact,admission in [(UNIT_IMAGE,UNIT_ARTIFACT,UNIT_ADMISSION),('sha256:'+'d'*64,'e'*64,'f'*64)]:
+   target={'image_config_identity':image,'artifact_sha256':artifact,'admission_sha256':admission,'canonical_manifest_sha256':'manifest'}
+   value={'passed':True,'artifact_sha256':artifact,'checks':[{'passed':True}],'runtime':{'kind':'docker','image_config_identity':image,'artifact_sha256':artifact,'canonical_manifest_sha256':'manifest','container_lifecycle':[{'action':'started','container_id':'9'*64},{'action':'stopped','container_id':'9'*64,'observed_absent':True}]}}
+   job={'script':'eventing_retention.py','expected_check_count':1,'observer_source':None}
+   self.assertEqual(m.qualify(value,job,target),(['9'*64],[]))
+   value['runtime']['image_config_identity']='sha256:'+'0'*64
+   with self.assertRaises(AssertionError):m.qualify(value,job,target)
+  self.assertEqual(m.target_bindings(BINDINGS),(UNIT_IMAGE,UNIT_ARTIFACT,UNIT_ADMISSION))
 
 if __name__=='__main__':unittest.main()

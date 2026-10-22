@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze, review, then run the original native38 Kafka ladder in image38."""
+"""Freeze the historical Kafka ladder against one explicitly admitted image target."""
 import sys
 sys.dont_write_bytecode=True
 _STAGED=__file__.rsplit('/',1)[-1]=='driver.py'
@@ -17,9 +17,7 @@ import shutil
 import stat
 import subprocess
 
-IMAGE='sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0'
-ARTIFACT='1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7'
-ADMISSION='2526ad178e88239704f62b9d7437b98c3f4baca71ee9a82b84e635b242896d58'
+BASIS_ARTIFACT='1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7'
 LEGACY='1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48'
 SOURCES=('multi_fault.c','store_move_fault.c','storage_write_fault.c','project_recovery_fault.c','rebind_fault.c')
 NAMES=['controls','caps','dormant','admin','policy','lostreply','fairness','cutover','cutover-decision','cutover-project','retention','outage','federation']
@@ -80,10 +78,22 @@ def tool_tree(root):
  return {'root':str(root),'files':rows,'directories':directories}
 
 
+def target_bindings(plan):
+ image,artifact,admission=plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256']
+ assert all(isinstance(v,str) for v in (image,artifact,admission))
+ assert re.fullmatch('sha256:[a-f0-9]{64}',image)
+ assert re.fullmatch('[a-f0-9]{64}',artifact) and re.fullmatch('[a-f0-9]{64}',admission)
+ return image,artifact,admission
+
+
 def verify(work,plan):
  assert work.resolve(strict=True)==work and not work.is_symlink()
  actual=plain(Path(__file__));assert sha(actual)==sha(work/'driver.py')==plan['driver_sha256']
- assert plan['image_config_identity']==IMAGE and plan['artifact_sha256']==ARTIFACT and plan['admission_sha256']==ADMISSION
+ image,artifact,admission=target_bindings(plan)
+ assert sha(work/'bound/admission.json')==admission
+ admitted=json.loads((work/'bound/admission.json').read_text());assert admitted['passed'] and admitted['image_config_identity']==image and admitted['artifact_sha256']==artifact
+ manifest=json.loads((work/'bound/image-manifest.json').read_text());assert manifest['files']['hub.exs']==artifact
+ assert sha(work/'bound/source-target.exs')==artifact and sha(work/'bound/image-manifest.json')==plan['canonical_manifest_sha256']
  assert [r['name'] for r in plan['jobs']]==NAMES and plan['parallelism']==1 and plan['automatic_retries']==0
  check_tree(work/'frozen',plan['frozen']);check_tree(work/'bound',plan['bound'])
  for tree in plan['tool_trees']:assert tool_tree(tree['root'])==tree,'Native/Python tool closure drift'
@@ -99,7 +109,7 @@ def verify(work,plan):
 
 def selected_native_jobs(native):
  rows=native['jobs'];assert [r['name'] for r in rows]==NAMES
- assert all(r['arguments'][:2]==['--image',IMAGE] for r in rows)
+ assert all(r['arguments'][:2]==['--image',native['runtime']['image_config_identity']] for r in rows)
  for row in rows:
   args=row['arguments']
   if row['name'] in ('lostreply','fairness','cutover','cutover-decision','cutover-project','outage'):assert args[args.index('--deadline')+1]=='90'
@@ -110,13 +120,15 @@ def selected_native_jobs(native):
 
 def prepare(args):
  root=Path(args.repo_root).absolute();assert root.resolve(strict=True)==root
+ image,artifact,admission_sha=target_bindings({'image_config_identity':args.image,'artifact_sha256':args.artifact_sha256,'admission_sha256':args.admission_sha256})
+ project=args.owned_compose_project;assert isinstance(project,str) and re.fullmatch('[a-z0-9][a-z0-9-]{0,62}',project)
  work=Path(args.work).absolute();assert work.resolve()==work and not work.exists();work.mkdir(parents=True,mode=0o700)
  # Read only the current-root pure payload reader; no runtime or compiler entry.
  source=plain(root/'tests/image_qualification_inputs.py');spec=importlib.util.spec_from_file_location('_reviewed_image_inputs',source);reader=importlib.util.module_from_spec(spec);spec.loader.exec_module(reader)
- context=Path(args.context).absolute();admission=plain(root/'verification/project-recovery/development38/admission/manifest.json')
- selected=reader.reviewed_payload(context/'manifest.json',admission,ADMISSION,IMAGE,ARTIFACT)
- assert len(selected['specifications'])==33
- native=plain(args.native_plan);assert sha(native)==BASIS;nv=json.loads(native.read_text());assert nv['artifact_sha256']==ARTIFACT and nv['legacy_sha256']==LEGACY
+ context=Path(args.context).absolute();admission=plain(args.admission_manifest)
+ selected=reader.reviewed_payload(context/'manifest.json',admission,admission_sha,image,artifact)
+ assert len(selected['specifications'])==selected['audit']['canonical_specifications'] and len(selected['specifications'])>0
+ native=plain(args.native_plan);assert sha(native)==BASIS;nv=json.loads(native.read_text());assert nv['artifact_sha256']==BASIS_ARTIFACT and nv['legacy_sha256']==LEGACY
  basis=selected_native_jobs(nv)
  frozen=work/'frozen';frozen.mkdir(mode=0o700)
  for tree in ('tests','scripts','deploy'):
@@ -131,7 +143,7 @@ def prepare(args):
   if not current.is_file() or sha(current)!=hashlib.sha256(body).hexdigest():drift[name]=sha(current) if current.is_file() else None
  bound=work/'bound';bound.mkdir(mode=0o700)
  for source,name in [(context/'manifest.json','image-manifest.json'),(admission,'admission.json'),(native,'native-plan.json')]:shutil.copyfile(plain(source),bound/name)
- (bound/'source38.exs').write_bytes(selected['artifact_bytes']);assert sha(bound/'source38.exs')==ARTIFACT
+ (bound/'source-target.exs').write_bytes(selected['artifact_bytes']);assert sha(bound/'source-target.exs')==artifact
  (bound/'payload.tar.sha256').write_text(selected['payload_sha256']+'\n')
  abi=Path(args.abi_root).absolute();assert abi.resolve(strict=True)==abi
  proofbindings={}
@@ -139,18 +151,18 @@ def prepare(args):
   destination=bound/'observers'/name.removesuffix('.c');destination.mkdir(parents=True,mode=0o700)
   source_library=plain(abi/'build'/name.removesuffix('.c')/'observer.so');source_proof=plain(abi/(name+'.proof.json'))
   shutil.copyfile(source_library,destination/'observer.so');shutil.copyfile(source_proof,destination/'proof.json')
-  report=json.loads(source_proof.read_text());assert report['passed'] and report['image_config_identity']==IMAGE and report['artifact_sha256']==ARTIFACT
+  report=json.loads(source_proof.read_text());assert report['passed'] and report['image_config_identity']==image and report['artifact_sha256']==artifact
   assert report['canonical_manifest_sha256']==sha(bound/'image-manifest.json') and report['observer']['source_sha256']==sha(frozen/'tests'/name)
   assert report['observer']['library_sha256']==sha(destination/'observer.so') and report['owned_container_absent'] and report['exit_code']==137
   assert report['successful_abi_cases']==sorted(report['observer']['exported_symbols'])
   proofbindings[name]={'library':str(destination/'observer.so'),'proof':str(destination/'proof.json'),'source_library':external(source_library),'source_proof':external(source_proof)}
- original_artifact=plain(root/'_build/roadmap/multi/hub-filter-38-local-dev01.exs');assert sha(original_artifact)==ARTIFACT
+ original_artifact=plain(args.basis_artifact);assert sha(original_artifact)==BASIS_ARTIFACT
  legacy=plain(json.loads(basis[0]['arguments'][basis[0]['arguments'].index('--legacy-command')+1])[1]);assert sha(legacy)==LEGACY
  tools={name:external(path) for name,path in [('python',sys.executable),('docker','/usr/bin/docker'),('elixir',root/'_build/federation/native/elixir/bin/elixir'),('erl',root/'_build/federation/native/erlang/bin/erl')]}
  jobs=[]
  for row in basis:
   original=list(row['arguments']);script=row['script'];arguments=[str(work)+v[len(str(native.parent)):] if v.startswith(str(native.parent)) else v for v in original]
-  for flag,value in [('--image-manifest',str(bound/'image-manifest.json')),('--image-fault-library',proofbindings['multi_fault.c']['library']),('--image-fault-proof',proofbindings['multi_fault.c']['proof'])]:
+  for flag,value in [('--image',image),('--owned-broker-container',project+'-kafka-1'),('--broker-container',project+'-kafka-1'),('--image-manifest',str(bound/'image-manifest.json')),('--image-fault-library',proofbindings['multi_fault.c']['library']),('--image-fault-proof',proofbindings['multi_fault.c']['proof'])]:
    if flag in arguments:arguments[arguments.index(flag)+1]=value
   jobs.append({'name':row['name'],'script':script,'native_basis_arguments':original,'arguments':arguments,'expected_check_count':COUNTS[row['name']],
    'observer_source':'multi_fault.c' if '--crash-at' in arguments else None,'argv':[tools['python']['path'],str(frozen/'tests'/script)]+arguments+['--report',str(work/(row['name']+'.json'))]})
@@ -158,16 +170,16 @@ def prepare(args):
  socket=Path('/var/run/docker.sock').resolve(strict=True);socket_info=socket.stat();assert stat.S_ISSOCK(socket_info.st_mode)
  runtime=work/'runtime';runtime.mkdir(mode=0o700)
  shutil.copyfile(plain(Path(__file__)),work/'driver.py')
- plan={'schema':'adhd/image38-kafka-ladder@1','scope':'Actual admitted38 image only; discovers unchanged backend blockers. Does not qualify repaired40/current successor, UI or release.',
-  'image_config_identity':IMAGE,'artifact_sha256':ARTIFACT,'admission_sha256':ADMISSION,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),
-  'payload_sha256':selected['payload_sha256'],'payload_audit':selected['audit'],'target_specifications':33,'payload_custody':'Fixture-based lostreply/fairness/cutover/outage require strict2probe ledger; Hub-based controls/caps/dormant/Admin/policy/retention/federation validate exact manifest+artifact by exec in each actual app container and have no extra standalone payload probes','live_specification_drift':drift,
+ plan={'schema':'adhd/image-kafka-ladder@2','scope':'Only the explicitly selected admitted image/artifact; no historical result relabeling, UI, live-model or release claim',
+  'image_config_identity':image,'artifact_sha256':artifact,'admission_sha256':admission_sha,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),
+  'payload_sha256':selected['payload_sha256'],'payload_audit':selected['audit'],'target_specifications':len(selected['specifications']),'payload_custody':'Fixture-based lostreply/fairness/cutover/outage require strict2probe ledger; Hub-based controls/caps/dormant/Admin/policy/retention/federation validate exact manifest+artifact by exec in each actual app container and have no extra standalone payload probes','live_specification_drift':drift,
   'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'native_plan_sha256':sha(native),
   'docker_socket':{'path':str(socket),'identity':[socket_info.st_dev,socket_info.st_ino]},
   'external_inputs':[external(original_artifact),external(legacy),external(native),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+[v for r in proofbindings.values() for v in (r['source_library'],r['source_proof'])]+list(tools.values()),
   'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'observer_bindings':proofbindings,'jobs':jobs,'parallelism':1,'runs_per_case':1,'automatic_retries':0,'first_failure_stops':True,
   'runtime_cwd':str(runtime),'outer_timeout_seconds':None,'timeout_policy':'Original unchanged harness deadlines only; no invented driver timeout that skips finally cleanup',
-  'lane_lock':str(root/'_build/roadmap/image-kafka.lane.lock'),'known_source38_scope':'Does not relabel original38 ownership defect or source40repair as qualified',
-  'provider_calls_authorized':0,'preparation_app_compiler_or_service_starts':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED','private_service':{'project':'adhd-qa38-image-events','broker':'adhd-qa38-image-events-kafka-1','rest':'adhd-qa38-image-events-kafka-rest-1','port':'18088','urls':['http://127.0.0.1:18082','http://127.0.0.1:18085','http://127.0.0.1:18088']}}
+  'lane_lock':str(root/'_build/roadmap/image-kafka.lane.lock'),'historical_basis':{'native_plan_sha256':BASIS,'artifact_sha256':BASIS_ARTIFACT,'legacy_producer_sha256':LEGACY},
+  'provider_calls_authorized':0,'preparation_app_compiler_or_service_starts':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED','private_service':{'project':project,'broker':project+'-kafka-1','rest':project+'-kafka-rest-1','port':'18088','urls':['http://127.0.0.1:18082','http://127.0.0.1:18085','http://127.0.0.1:18088']}}
  save(work/'plan.json',plan);verify(work,plan);print(json.dumps({'prepared':True,'executed':False,'plan_sha256':sha(work/'plan.json'),'work':str(work),'jobs':len(jobs)}))
 
 
@@ -176,19 +188,20 @@ def absent(result,identifier):
 
 
 def qualify(value,job,plan):
- assert value['passed'] is True and value['artifact_sha256']==ARTIFACT
+ image,artifact,_=target_bindings(plan)
+ assert value['passed'] is True and value['artifact_sha256']==artifact
  rows=value['checks']
  assert len(rows)==job['expected_check_count'] and all(row['passed'] for row in rows)
  runtimes=value['runtime'] if isinstance(value['runtime'],list) else [value['runtime']]
  ids=[];names=[]
  for runtime in runtimes:
-  assert runtime['kind']=='docker' and runtime['image_config_identity']==IMAGE and runtime['artifact_sha256']==ARTIFACT
+  assert runtime['kind']=='docker' and runtime['image_config_identity']==image and runtime['artifact_sha256']==artifact
   assert runtime['canonical_manifest_sha256']==plan['canonical_manifest_sha256'] and not runtime.get('cleanup_blocked',False)
   if job['script'] in ('eventing_faults.py','multi_fairness.py','eventing_cutover.py','eventing_acceptance.py'):
    assert runtime['payload_verified'] is True and not runtime['probe_cleanup_blocked']
    probes=runtime['payload_probe_lifecycle'];assert len(probes)==2 and [r['entrypoint'] for r in probes]==['cat','sha256sum']
    for probe in probes:
-    assert probe['image_config_identity']==IMAGE and probe['observed_absent'] and probe['run_exit_code']==0
+    assert probe['image_config_identity']==image and probe['observed_absent'] and probe['run_exit_code']==0
     assert not probe['run_failure_type'] and not probe['cleanup_failure_types'] and not probe['foreign_object_not_removed']
     names.append(probe['owned_name'])
     if probe['container_id'] is not None:ids.append(probe['container_id'])
@@ -229,7 +242,7 @@ def preflight(plan,env):
 
 def execute(work,digest):
  assert digest and sha(work/'plan.json')==digest
- plan=json.loads((work/'plan.json').read_text());verify(work,plan)
+ plan=json.loads((work/'plan.json').read_text());image,artifact,_=target_bindings(plan);verify(work,plan)
  lock=Path(plan['lane_lock']);lock.parent.mkdir(parents=True,exist_ok=True)
  with lock.open('a') as lane:
   fcntl.flock(lane,fcntl.LOCK_EX|fcntl.LOCK_NB)
@@ -269,8 +282,8 @@ def execute(work,digest):
      path=work/(row['name']+suffix)
      if path.is_file():row[key]=sha(path)
    executed=[r['name'] for r in results if r['started']];unrun=[j['name'] for j in plan['jobs'] if j['name'] not in executed]
-   save(work/'matrix.json',{'schema':'adhd/image38-kafka-matrix@1','passed':not failure and unchanged and not unrun and all(r['passed'] for r in results),
-     'plan_sha256':digest,'image_config_identity':IMAGE,'artifact_sha256':ARTIFACT,'scope':plan['scope'],'input_closure_unchanged':unchanged,
+   save(work/'matrix.json',{'schema':'adhd/image-kafka-matrix@2','passed':not failure and unchanged and not unrun and all(r['passed'] for r in results),
+     'plan_sha256':digest,'image_config_identity':image,'artifact_sha256':artifact,'scope':plan['scope'],'input_closure_unchanged':unchanged,
      'failure_type':failure,'cleanup_confirmed':all(r['passed'] for r in results) and bool(results),'attempted':[r['name'] for r in results],'executed':executed,'unrun':unrun,'results':results})
  return 0 if unchanged and not unrun and all(r['passed'] for r in results) else 1
 
@@ -278,7 +291,8 @@ def execute(work,digest):
 def main():
  parser=argparse.ArgumentParser(description=__doc__);mode=parser.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  parser.add_argument('--work',type=Path,required=True);parser.add_argument('--plan-sha256')
- for name in ('repo-root','native-plan','abi-root','context'):parser.add_argument('--'+name,type=Path)
+ for name in ('repo-root','native-plan','abi-root','context','admission-manifest','basis-artifact'):parser.add_argument('--'+name,type=Path)
+ for name in ('image','artifact-sha256','admission-sha256','owned-compose-project'):parser.add_argument('--'+name)
  args=parser.parse_args()
  if args.prepare:prepare(args)
  else:assert _STAGED;sys.exit(execute(args.work.absolute(),args.plan_sha256))

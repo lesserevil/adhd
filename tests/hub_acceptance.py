@@ -133,6 +133,16 @@ class Hub:
             try:
                 response = httpx.get(self.base + "/health", timeout=1)
                 if response.status_code == 200 and response.json() == {"status": "ready"}:
+                    # The SDK fixture supplies a handwritten config. Profile2.1
+                    # requires explicit public Admin admission of an unknown
+                    # project; health readiness alone does not initialize it.
+                    # Reuse the version-aware fixture helper, which skips ready
+                    # projects and refuses known missing/corrupt generations.
+                    from foundation_acceptance import Runtime
+                    admission = Runtime.__new__(Runtime)
+                    admission.root, admission.file, admission.base = self.root, self.config_file, self.base
+                    admission.initialize_projects = True
+                    admission.initialize_unknown_projects()
                     return
             except httpx.HTTPError:
                 pass

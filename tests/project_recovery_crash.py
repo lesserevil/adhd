@@ -21,6 +21,7 @@ from multi_support import Evidence, Fixture, arguments, poll_until, scoped
 from project_recovery_acceptance import Recovery, RED, BLUE
 from project_recovery_restore import offline_bundle
 from project_recovery_state import digest, exact, read_json, registry, route
+from image_filesystem_fault import fault_arguments, fault_image
 
 STAGES = ('before-stage-snapshot', 'after-stage-snapshot', 'before-decision',
     'after-decision', 'after-decision-sync', 'after-install-snapshot',
@@ -40,6 +41,9 @@ async def stopped(f, sentinel, pending, timeout):
         await asyncio.sleep(.02)
     assert sentinel.exists(), 'Requested actual filesystem boundary was not observed'
     observed = read_json(sentinel)
+    if f.image_runtime:
+        f.image_runtime.stop_at_observed_boundary(observed)
+        return observed
     assert observed['pid'] == f.process.pid
     end = time.monotonic() + 2
     while time.monotonic() < end:
@@ -59,8 +63,8 @@ async def publication(f, project, recipient, text):
 
 
 async def main(args):
-    if not args.hub or args.rest_url or args.with_model:
-        raise ValueError('Requires an owned native Linux --hub, real Kafka, and no model')
+    if not (args.hub or args.image) or args.rest_url or args.with_model:
+        raise ValueError('Requires an owned native --hub or exact --image, real Kafka, and no model')
     if args.damage_stage and args.crash_at not in {'after-decision-sync', 'after-install-snapshot'}:
         raise ValueError('Stage damage requires a decided checkpoint that has not been installed')
     f = Fixture(args, initialize_projects=False)
@@ -73,20 +77,27 @@ async def main(args):
         f.config['projects'] = copy.deepcopy(f.config['projects'])
     source = Path(__file__).with_name('project_recovery_fault.c')
     library = f.root / 'recovery-fault.so'
-    subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-shared', '-fPIC', '-O2',
-        '-o', str(library), str(source), '-ldl'], check=True)
     arm, sentinel = f.root / 'armed', f.root / 'stopped.json'
-    injected = copy.copy(args)
-    injected.hub = None
-    injected.command = json.dumps(['env', 'LD_PRELOAD=' + str(library),
-        'ADHD_RECOVERY_FAULT_STAGE=' + args.crash_at,
-        'ADHD_RECOVERY_FAULT_CONFIG=' + str(f.file), 'ADHD_RECOVERY_FAULT_ROOT=' + str(f.root),
-        'ADHD_RECOVERY_FAULT_ARM=' + str(arm), 'ADHD_RECOVERY_FAULT_SENTINEL=' + str(sentinel),
-        'elixir', str(args.hub.resolve())])
-    f.args = injected
+    if args.image:
+        f.image_runtime=fault_image(args,f.root,source.name,{
+            'ADHD_RECOVERY_FAULT_STAGE':args.crash_at,'ADHD_RECOVERY_FAULT_CONFIG':str(f.file),
+            'ADHD_RECOVERY_FAULT_ROOT':str(f.root),'ADHD_RECOVERY_FAULT_ARM':str(arm),
+            'ADHD_RECOVERY_FAULT_SENTINEL':str(sentinel)})
+        library=f.image_runtime.library
+    else:
+        subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-shared', '-fPIC', '-O2',
+            '-o', str(library), str(source), '-ldl'], check=True)
+        injected = copy.copy(args)
+        injected.hub = None
+        injected.command = json.dumps(['env', 'LD_PRELOAD=' + str(library),
+            'ADHD_RECOVERY_FAULT_STAGE=' + args.crash_at,
+            'ADHD_RECOVERY_FAULT_CONFIG=' + str(f.file), 'ADHD_RECOVERY_FAULT_ROOT=' + str(f.root),
+            'ADHD_RECOVERY_FAULT_ARM=' + str(arm), 'ADHD_RECOVERY_FAULT_SENTINEL=' + str(sentinel),
+            'elixir', str(args.hub.resolve())])
+        f.args = injected
     r = Recovery(f, args.recovery_schema)
     evidence = Evidence(args.report, 'adhd/project-recovery-process-kill@1')
-    evidence.value.update(artifact_sha256=digest(args.hub.read_bytes()),
+    evidence.value.update(artifact_sha256=f.image_runtime.manifest['files']['hub.exs'] if args.image else digest(args.hub.read_bytes()),
         harness_sha256=digest(Path(__file__).read_bytes()), fault_source_sha256=digest(source.read_bytes()),
         fault_library_sha256=digest(library.read_bytes()), recovery_schema_sha256=r.schema_sha256,
         crash_at=args.crash_at, no_default=args.no_default, archived=args.archived,
@@ -153,7 +164,8 @@ async def main(args):
         if args.crash_at in {'after-completion', 'before-cleanup', 'after-cleanup'}:
             assert journal['operations'][operation_id]['state'] == 'complete'
         f.hard_stop()
-        assert f.process.returncode == -signal.SIGKILL
+        if args.image:assert f.process.returncode==137 and f.image_runtime.last_exit_code==137
+        else:assert f.process.returncode == -signal.SIGKILL
         try:
             await pending
         except Exception:
@@ -231,7 +243,10 @@ async def main(args):
             except Exception:
                 pass
         f.args = args
-        await f.close()
+        try:
+            await f.close()
+        finally:
+            f.bind_evidence(evidence);evidence.write()
 
 
 if __name__ == '__main__':
@@ -241,4 +256,5 @@ if __name__ == '__main__':
     parser.add_argument('--no-default', action='store_true')
     parser.add_argument('--archived', action='store_true')
     parser.add_argument('--damage-stage', action='store_true')
+    fault_arguments(parser)
     asyncio.run(main(parser.parse_args()))

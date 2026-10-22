@@ -1,0 +1,109 @@
+{
+  "suite": "adhd/no-default-hot-projects@1",
+  "started_at": "2026-10-22T10:32:50.014825+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "explicit-project-a2a-and-kafka-work-with-no-default-project",
+      "passed": true
+    },
+    {
+      "name": "host-binding-changes-at-the-same-port-without-hub-restart",
+      "passed": true
+    },
+    {
+      "name": "operator-recipe-change-resets-selection-in-every-project-with-no-default-store",
+      "passed": true
+    },
+    {
+      "name": "no-default-project-config-and-all-project-state-survive-hard-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "finished_at": "2026-10-22T10:33:16.563112+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_5158da74ce17b3148216d1242e6c5bc6_1",
+      "operation_id": "restore_5158da74ce17b3148216d1242e6c5bc6_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_5158da74ce17b3148216d1242e6c5bc6_3",
+      "operation_id": "restore_5158da74ce17b3148216d1242e6c5bc6_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_5158da74ce17b3148216d1242e6c5bc6_5",
+      "operation_id": "restore_5158da74ce17b3148216d1242e6c5bc6_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "b85275cce89b9597f5da20cc3b346f11fc5eaf2f1f1e955ffb632482b15063e5",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "b85275cce89b9597f5da20cc3b346f11fc5eaf2f1f1e955ffb632482b15063e5",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "63c4db641a9019a6b27f243a2edfe4cf70182333a0a254cf775e657f9ce704ff",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "63c4db641a9019a6b27f243a2edfe4cf70182333a0a254cf775e657f9ce704ff",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-65081de636004a06",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-1c2af0f98de747e3",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+}

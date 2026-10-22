@@ -1,0 +1,137 @@
+{
+  "suite": "adhd/multi-store-relocation@1",
+  "started_at": "2026-10-22T10:31:56.464711+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "originals-source-retries-acknowledged-and-unacknowledged-deliveries-created-in-isolated-projects",
+      "passed": true
+    },
+    {
+      "name": "occupied-project-destination-rejected-without-config-or-foreign-file-change",
+      "passed": true
+    },
+    {
+      "name": "every-project-writer-moves-hot-at-one-revision-without-process-restart",
+      "passed": true,
+      "project_count": 3
+    },
+    {
+      "name": "concurrent-accepted-writes-retain-message-idempotency-and-data",
+      "passed": true,
+      "accepted_count": 16,
+      "retryable_busy_count": 2
+    },
+    {
+      "name": "all-project-originals-source-idempotency-and-delivery-identities-survive-live-switch",
+      "passed": true
+    },
+    {
+      "name": "hard-restart-opens-every-relocated-project-and-preserves-postmove-accepted-write",
+      "passed": true
+    },
+    {
+      "name": "same-durable-semantic-job-survives-switch-and-restart-then-completes-after-provider-recovery",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "harness_sha256": "b4d139c58b9a8bb9e48e9166e51cfc64b11f3028c2477c8872cbce8efbd0ba69",
+  "no_default": true,
+  "relocation_timing": {
+    "write_deadline_seconds": 20,
+    "retry_after_seconds": [
+      1.0,
+      1.0
+    ],
+    "retry_count": 2,
+    "admin_move_ms": 1346.323,
+    "all_writes_ms": 2634.988,
+    "accepted_writes": 16
+  },
+  "finished_at": "2026-10-22T10:32:44.805624+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_4a0eb97949d0b0f9d148edef9db88772_1",
+      "operation_id": "restore_4a0eb97949d0b0f9d148edef9db88772_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_4a0eb97949d0b0f9d148edef9db88772_3",
+      "operation_id": "restore_4a0eb97949d0b0f9d148edef9db88772_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_4a0eb97949d0b0f9d148edef9db88772_5",
+      "operation_id": "restore_4a0eb97949d0b0f9d148edef9db88772_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "3716fe426375ddc38da508bd2f1cafa64451f74d739612f4c6cdb99647bf8735",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "3716fe426375ddc38da508bd2f1cafa64451f74d739612f4c6cdb99647bf8735",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "12a0dcb0a25e3c97810d4a33500a0b040c4255e98132e3fc1386bd948887286a",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "12a0dcb0a25e3c97810d4a33500a0b040c4255e98132e3fc1386bd948887286a",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-cf8fe573bd554a4d",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-5a54029cae27422e",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+}

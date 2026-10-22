@@ -47,6 +47,37 @@ class NativeRemainingGuards(unittest.TestCase):
     p=root/pid;p.mkdir();(p/'environ').write_bytes(body)
    with patch.object(m,'identity',side_effect=lambda pid:{'pid':pid,'starttime':'7','state':'R'}):rows=m.owned_nonce_processes('exact',root)
    self.assertEqual([r['pid']for r in rows],[1])
+ def cwd_fixture(self,root):
+  frozen=root/'frozen';(frozen/'docs/protocol').mkdir(parents=True);(frozen/'scripts').mkdir()
+  (frozen/'docs/protocol/examples.json').write_text('{"fixture":true}')
+  (frozen/'scripts/configure_hub.py').write_text('# original helper\n')
+  return frozen,m.runtime_fixture(frozen)
+ def test_cwd_materializes_exact_plain_copies(self):
+  with tempfile.TemporaryDirectory()as tmp:
+   root=Path(tmp).resolve();frozen,contract=self.cwd_fixture(root);runtime=root/'runtime';runtime.mkdir()
+   self.assertTrue(m.materialize_runtime_fixture(runtime,frozen,contract))
+   self.assertFalse((runtime/'docs/protocol/examples.json').is_symlink())
+   self.assertEqual((runtime/'scripts/configure_hub.py').read_bytes(),(frozen/'scripts/configure_hub.py').read_bytes())
+   (runtime/'tmp').mkdir();self.assertTrue(m.verify_runtime_fixture(runtime,contract))
+ def test_cwd_missing_extra_tampered_and_redirect_fail(self):
+  for mode in ['missing','extra','directory','tamper','redirect']:
+   with self.subTest(mode=mode),tempfile.TemporaryDirectory()as tmp:
+    root=Path(tmp).resolve();frozen,contract=self.cwd_fixture(root);runtime=root/'runtime';runtime.mkdir();m.materialize_runtime_fixture(runtime,frozen,contract)
+    target=runtime/'docs/protocol/examples.json'
+    if mode=='missing':target.unlink()
+    elif mode=='extra':(runtime/'scripts/extra.py').write_text('unexpected')
+    elif mode=='directory':(runtime/'docs/protocol/extra').mkdir()
+    elif mode=='tamper':target.write_text('changed')
+    else:target.unlink();target.symlink_to(frozen/'docs/protocol/examples.json')
+    with self.assertRaises(AssertionError):m.verify_runtime_fixture(runtime,contract)
+ def test_cwd_redirected_runtime_root_fails(self):
+  with tempfile.TemporaryDirectory()as tmp:
+   root=Path(tmp).resolve();frozen,contract=self.cwd_fixture(root);actual=root/'actual';actual.mkdir();alias=root/'runtime';alias.symlink_to(actual,target_is_directory=True)
+   with self.assertRaises(AssertionError):m.materialize_runtime_fixture(alias,frozen,contract)
+ def test_cwd_missing_required_fixture_fails_at_prepare(self):
+  with tempfile.TemporaryDirectory()as tmp:
+   root=Path(tmp).resolve();frozen,contract=self.cwd_fixture(root);(frozen/'docs/protocol/examples.json').unlink()
+   with self.assertRaises(AssertionError):m.runtime_fixture(frozen)
  def test_tree_rejects_undeclared_redirect(self):
   with tempfile.TemporaryDirectory()as tmp:
    root=Path(tmp);(root/'target').write_text('x');(root/'redirect').symlink_to(root/'target')

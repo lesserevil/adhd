@@ -1,6 +1,10 @@
 """Pure platform driver custody/scheduling checks: every process boundary mocked."""
 import json
+import hashlib
 from pathlib import Path
+import runpy
+import shutil
+import sys
 import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -55,11 +59,12 @@ def main():
     with tempfile.TemporaryDirectory() as temporary:
         root=Path(temporary).resolve();cfg=root/'kubeconfig'
         cfg.write_text(yaml.safe_dump(kube()));assert driver.kube_endpoint(cfg,'adhd-test')['port']==12345;checks+=1
-        for mode in ('exec','remote','path'):
+        for mode in ('exec','remote','path','proxy'):
             value=kube()
             if mode=='exec':value['users'][0]['user']={'exec':{'command':'not-permitted'}}
             if mode=='remote':value['clusters'][0]['cluster']['server']='https://example.invalid:12345'
             if mode=='path':value['clusters'][0]['cluster']['server']='https://127.0.0.1:12345/api'
+            if mode=='proxy':value['clusters'][0]['cluster']['proxy-url']='https://example.invalid'
             cfg.write_text(yaml.safe_dump(value))
             try:driver.kube_endpoint(cfg,'adhd-test')
             except AssertionError:pass
@@ -82,6 +87,36 @@ def main():
         try:driver.file_tree(tree)
         except AssertionError:pass
         else:raise AssertionError('Symlink accepted')
+        checks+=1
+        stage=root/'stage';stage.mkdir();frozen=stage/'frozen/tests';frozen.mkdir(parents=True)
+        shutil.copyfile(driver.__file__,stage/'driver.py')
+        imported=frozen/'image_qualification_inputs.py';imported.write_text('raise RuntimeError("verified-frozen-import")\n')
+        (stage/'image_qualification_inputs.py').write_text('raise AssertionError("unlisted-work-shadow")\n')
+        original_hash=hashlib.sha256(imported.read_bytes()).hexdigest()
+        driver.dump(stage/'plan.json',{'driver_sha256':driver.sha(stage/'driver.py'),'frozen_inputs':{'tests/image_qualification_inputs.py':original_hash}})
+        digest=driver.sha(stage/'plan.json')
+        assert driver.staged_imports(stage/'driver.py',digest)==str(frozen)
+        with patch('subprocess.Popen',side_effect=AssertionError('No process')):
+            try:runpy.run_path(str(stage/'driver.py'),run_name='__main__')
+            except AssertionError as error:assert str(error)=='Run the frozen driver with python -I'
+            else:raise AssertionError('Nonisolated staged driver admitted')
+        checks+=1
+        saved=list(sys.path);real_flags=sys.flags
+        class IsolatedFlags:
+            isolated=True
+            def __getattr__(self,name):return getattr(real_flags,name)
+        try:
+            with patch.object(sys,'argv',[str(stage/'driver.py'),'--execute','--work',str(stage),'--plan-sha256',digest]),patch.object(sys,'flags',IsolatedFlags()),patch.dict(sys.modules,{'image_qualification_inputs':None}),patch('subprocess.Popen',side_effect=AssertionError('No process')):
+                # Force a real import after bootstrap, not the already-imported host helper.
+                del sys.modules['image_qualification_inputs']
+                try:runpy.run_path(str(stage/'driver.py'),run_name='__main__')
+                except RuntimeError as error:assert str(error)=='verified-frozen-import'
+                else:raise AssertionError('Verified staged helper not imported')
+        finally:sys.path[:]=saved
+        imported.write_text('raise RuntimeError("tampered")\n')
+        try:driver.staged_imports(stage/'driver.py',digest)
+        except AssertionError:pass
+        else:raise AssertionError('Modified import executed')
         checks+=1
     print('PASS platform matrix pure'+str(checks)+': Kubeconfig scope, binding-only deny, serial/fail-fast/actual-report/cleanup/attempt accounting, fsynced once-only reentry, exact set/symlink; real process attempts0')
 

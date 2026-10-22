@@ -3,6 +3,11 @@
 Provisioning Kind, loading/tagging images, model relays and credentials are owned
 by the operator. A historical image38 binding plan is always execution-denied.
 """
+import sys
+sys.dont_write_bytecode=True
+_STAGED=__file__.rsplit('/',1)[-1]=='driver.py'
+if _STAGED:
+    assert sys.flags.isolated, 'Run the frozen driver with python -I'
 import argparse
 import hashlib
 import json
@@ -12,9 +17,38 @@ import re
 import shutil
 import stat
 import subprocess
-import sys
-sys.dont_write_bytecode=True
 from urllib.parse import urlsplit
+
+
+def staged_imports(path,expected):
+    """Authenticate the adjacent full helper tree before importing its code."""
+    driver=Path(path).absolute();work=driver.parent;plan_file=work/'plan.json'
+    assert driver.resolve(strict=True)==driver and not driver.is_symlink()
+    assert plan_file.is_file() and not plan_file.is_symlink() and plan_file.stat().st_size<=1048576
+    assert hashlib.sha256(plan_file.read_bytes()).hexdigest()==expected
+    plan=json.loads(plan_file.read_bytes())
+    assert hashlib.sha256(driver.read_bytes()).hexdigest()==plan['driver_sha256']
+    frozen=work/'frozen';assert frozen.resolve(strict=True)==frozen and frozen.is_dir()
+    files=set();directories=set();expected_dirs=set()
+    for name in plan['frozen_inputs']:
+        relative=Path(name);assert not relative.is_absolute() and str(relative)==name and '..' not in relative.parts
+        expected_dirs.update(str(p) for p in relative.parents if str(p)!='.')
+    for member in frozen.rglob('*'):
+        info=member.lstat();assert not stat.S_ISLNK(info.st_mode)
+        name=str(member.relative_to(frozen))
+        if stat.S_ISDIR(info.st_mode):directories.add(name)
+        else:
+            assert stat.S_ISREG(info.st_mode);files.add(name)
+            assert hashlib.sha256(member.read_bytes()).hexdigest()==plan['frozen_inputs'].get(name)
+    assert files==set(plan['frozen_inputs']) and directories==expected_dirs
+    return str(frozen/'tests')
+
+
+if _STAGED:
+    assert '--execute' in sys.argv and '--prepare' not in sys.argv and sys.argv.count('--plan-sha256')==1
+    _expected=sys.argv[sys.argv.index('--plan-sha256')+1]
+    sys.path.insert(0,staged_imports(__file__,_expected))
+
 import yaml
 
 from image_qualification_inputs import reviewed_payload, freeze_inputs, verify_frozen_inputs
@@ -59,7 +93,7 @@ def kube_endpoint(path,cluster):
     assert set(user['user'])=={'client-certificate-data','client-key-data'}, 'No external auth executors/files'
     assert all(isinstance(v,str) and v for v in user['user'].values())
     assert selected['cluster'].get('certificate-authority-data')
-    assert not selected['cluster'].get('insecure-skip-tls-verify')
+    assert set(selected['cluster'])=={'server','certificate-authority-data'}, 'No proxy, TLS override or external CA files'
     endpoint=urlsplit(selected['cluster']['server'])
     assert endpoint.scheme=='https' and endpoint.hostname in ('127.0.0.1','::1') and endpoint.port
     assert not endpoint.username and not endpoint.password and not endpoint.path and not endpoint.query and not endpoint.fragment
@@ -141,6 +175,7 @@ def prepare(args):
         'driver_sha256':sha(work/'driver.py'),'jobs':jobs,'parallelism':1,'fail_fast':True,'runs_per_platform':1,
         'runtime_cwd':str(runtime),'outer_child_timeout_seconds':None,'timeout_policy':'Existing harness deadlines only; no driver timeout that could bypass platform cleanup',
         'provision_load_tag_or_relay_operations':False,'live_provider_calls_authorized':False}
+    plan['frozen_execute_requires_python_isolated']=True
     dump(work/'plan.json',plan);verify(work,plan)
     print(json.dumps({'prepared':True,'execution_allowed':plan['execution_allowed'],'plan':str(work/'plan.json'),'plan_sha256':sha(work/'plan.json')}))
 
@@ -229,6 +264,7 @@ def main():
     p.add_argument('--compose-port',type=int,default=18890);p.add_argument('--kind-port',type=int,default=18891)
     p.add_argument('--execution-ready',action='store_true',help='Only after fresh successor admission and owned Kind provisioning; still requires separate reviewed execute plan digest')
     args=p.parse_args()
+    if _STAGED:assert args.work.absolute()==Path(__file__).absolute().parent
     if args.prepare:prepare(args)
     else:sys.exit(execute(args.work.resolve(),args.plan_sha256))
 

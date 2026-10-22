@@ -19,6 +19,16 @@ exec(compile(ast.Module(body=selected,type_ignores=[]),str(SOURCE),'exec'),NAMES
 diagnostic=NAMESPACE['sanitized_case_diagnostic']
 
 class Pure(unittest.TestCase):
+ def test_whitelists_match_public_schema_exactly(self):
+  schema=json.loads((SOURCE.parents[1]/'components/hub/project-recovery/interface.schema.json').read_bytes())['$defs']
+  expected_states={row['properties']['state']['const']for row in schema['Operation']['oneOf']}
+  fn=next(n for n in TREE.body if isinstance(n,ast.FunctionDef)and n.name=='sanitized_case_diagnostic')
+  declared={n.targets[0].id:ast.literal_eval(n.value)for n in fn.body if isinstance(n,ast.Assign)and isinstance(n.targets[0],ast.Name)and n.targets[0].id in ('states','codes','reasons')}
+  self.assertEqual(declared['states'],expected_states)
+  self.assertEqual(declared['codes'],set(schema['Failure']['properties']['code']['enum']))
+  self.assertEqual(declared['reasons'],set(schema['Reason']['enum']))
+  for state in expected_states:self.assertEqual(diagnostic('lag',None,{'state':state},0,{},None,[])['selected_operation']['state'],state)
+  self.assertIsNone(diagnostic('lag',None,{'state':'applying'},0,{},None,[])['selected_operation']['state'])
  def test_bounded_public_only(self):
   event={'at':1.5,'method':'GET','category':'configs','status':404,'selected_create':False,'injected':True,'actual_configuration':{'cleanup_policy':['delete','SECRET'],'retention_ms':['604800000','SECRET']},'authorization':'SECRET','path':'SECRET','body':'SECRET','topic':'SECRET'}
   proxy=SimpleNamespace(events=[event]*257)

@@ -56,7 +56,7 @@ def reap_owned_native(fixture,identity):
 
 def sanitized_case_diagnostic(case,proxy,operation,elapsed,config,primary,cleanup_types):
     """Bounded public-policy trace only; never retain paths, bodies or identities."""
-    states={'queued','verifying','ready','applying','decided','complete','failed'}
+    states={'queued','verifying','ready','staging','decided','installing','activating','complete','failed','blocked','stale','expired'}
     codes={'RESTORE_INVALID_BACKUP','RESTORE_CONFLICT','RESTORE_STALE_PLAN','RESTORE_TIMEOUT','RESTORE_IO_ERROR','RESTORE_UNAVAILABLE','RECOVERY_REQUIRED'}
     reasons={'hash','schema','identity','alias','owner_missing','owner_changed','owner_unprovable','populated','missing_admission','partial_target','path','revision','route','expired','limits','io','transport','timeout','decision_integrity','snapshot_integrity'}
     def number(value,maximum):

@@ -1,0 +1,32 @@
+PASS official-sdk-archive-and-actual-producer-0
+PASS official-sdk-archive-and-actual-producer-1
+PASS official-sdk-archive-and-actual-producer-2
+Traceback (most recent call last):
+  File "<workspace>/_build/roadmap/final/sdk16/tests/archive_sdk.py", line 67, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "<workspace>/_build/roadmap/final/sdk16/tests/archive_sdk.py", line 66, in main
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--command',required=True);parser.add_argument('--image');parser.add_argument('--legacy-command',action='append',default=[]);parser.add_argument('--report',default='verification/archive-sdk.json');asyncio.run(run(parser.parse_args()))
+                                                                                                                                                                                                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<workspace>/_build/roadmap/final/sdk16/tests/archive_sdk.py", line 61, in run
+    for i,producer in enumerate([command]+[json.loads(x) for x in args.legacy_command]):await flow(Hub(producer,root/('hub-'+str(i)),model.url),producer,i)
+                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<workspace>/_build/roadmap/final/sdk16/tests/archive_sdk.py", line 34, in flow
+    h.start();a=await h.agent('agent-a');b=await h.agent('agent-b')
+    ^^^^^^^^^
+  File "<workspace>/_build/roadmap/final/sdk16/tests/hub_acceptance.py", line 132, in start
+    raise AssertionError(f"Hub exited during startup: {detail}")
+AssertionError: Hub exited during startup: ** (EXIT from #PID<0.95.0>) shutdown
+
+** (EXIT from #PID<0.95.0>) :invalid_configuration
+
+

@@ -187,8 +187,8 @@ async def scenario(args,a,b,ar,relay,model,e,scope,private,label):
     await until(ready,'Directory did not recover after actual offline backup')
     model.blocked=model.blocked|frozenset('lost-'+label+' '+command['question'] for command in commands.values())
     lost=await create('lost-'+label);await until(lambda:submitted(lost),'Postbackup remote jobs were not actually accepted')
-    relay.targets={lost[label]['id']}
-    model.blocked=frozenset(q['question'] for q in retained.values())
+    relay.targets={retained[label]['id']}
+    model.blocked=frozenset(q['question'] for q in [*retained.values(),*lost.values()] if q['id'] not in relay.targets)
     await until(lambda:relay.targets<={r['request'].get('query_id') for r in relay.rows if r['held'] and r['phase']=='old'},
                 'Actual successful old-epoch '+label+' peer response was not held',20)
     for kind,q in retained.items():assert (await read(kind,q))['status']=='pending'
@@ -224,8 +224,8 @@ async def scenario(args,a,b,ar,relay,model,e,scope,private,label):
     assert blue_message['id'] in {d['id'] for d in (await blue.call(scoped(BLUE,'poll')))['deliveries']}
     e.record('released-old-source-and-discovery-success-cannot-cross-live-target-epoch',scenario=label,loss_witness=witness,
              allocation_epoch=plan['selected']['allocation_epoch'],same_vm=True)
-    await until(lambda:{q['id'] for q in retained.values()}<={r['request'].get('query_id') for r in relay.rows if r['phase']=='new'},
-                'Restored pending queries did not recheck original remote jobs',15)
+    await until(lambda:relay.targets<={r['request'].get('query_id') for r in relay.rows if r['phase']=='new' and r['held']},
+                'Restored selected pending query did not recheck its original completed remote job',15)
     model.blocked=frozenset();relay.release['new'].set()
     completed={}
     for kind,q in retained.items():

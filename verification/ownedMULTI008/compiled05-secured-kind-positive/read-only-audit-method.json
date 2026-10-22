@@ -1,0 +1,45 @@
+{
+  "audit_script_private_project_relative": ".worktrees/deployment/_build/audit-secured-compiled05.py",
+  "audit_script_sha256": "269164a1c47da3d83cd1ff38c97172b8b7ac10acda007586c849bde6b722a531",
+  "audit_raw_summary_sha256": "b9406092a8f9fd5b1992333012a378977b7791b3862f5c35642270731c13a0c4",
+  "reviewer_generated_app_service_probe_or_provider_starts": 0,
+  "actual_read_only_commands": [
+    [
+      "docker",
+      "inspect",
+      "<each of five exact issued probe names in review.json>"
+    ],
+    [
+      "docker",
+      "inspect",
+      "adhd-event-qual-control-plane"
+    ],
+    [
+      "<bound kubectl>",
+      "--kubeconfig",
+      "<bound kubeconfig>",
+      "get",
+      "--raw",
+      "/api/v1/namespaces"
+    ],
+    [
+      "<bound kubectl>",
+      "--kubeconfig",
+      "<bound kubeconfig>",
+      "get",
+      "--raw",
+      "/api/v1/persistentvolumes"
+    ],
+    [
+      "<bound kubectl>",
+      "--kubeconfig",
+      "<bound kubeconfig>",
+      "get",
+      "--raw",
+      "/api/v1/pods"
+    ]
+  ],
+  "other_checks": "Pure full SET/hash/no-symlink checks; bound host dependency verify checks9root trees,63files,215presence probes and tool aliases; source-bound compiled-admission/cache reader; exact60actual extracted application files (59payload plus manifest),33canonical specs; process/procnetabsence. No kube secret or config contents retained. Private material is bound only by hashes.",
+  "no_root_handle_polling": true,
+  "original_process_status": "Parent observed authoritative root87601terminal0; independently retained execution.json childexit0/pass and exact raw result hash."
+}

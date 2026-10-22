@@ -59,7 +59,11 @@ also exits137 under the original192Mi limit. Its supported Pod/container cgroup
 paths are unavailable when sampled; no memory counters were obtained and the
 cause remains unknown. Next: capture counters while the exact owned utility is
 alive, within its original readiness deadline; this diagnostic does not qualify
-routes. The
+routes. The [reviewed native startup gate and observer](../../verification/network-policy-kind40-counter19-source-preparation/review.json)
+now have a [successful static compile](../../verification/network-policy-kind40-counter19-compile-only/review.json),
+with unchanged frozen inputs and no dynamic dependencies. Native behavior,
+ordered-environment preservation and actual image/clock bindings remain to be
+proved before a live counter capture. The
 [full-application recovery attempt](../../verification/final05-recovery25-prefix9-first-failure/manifest.json)
 retains nine whole suites/44 checks; the no-default-project crash case failed
 with `RESTORE_IO_ERROR` before reaching its requested boundary. Its partial

@@ -1,0 +1,10 @@
+PASS kill-at-snapshot-data-sync {'snapshot_installed': False, 'checkpoint_needed_repair': False, 'observer': {'stage': 'snapshot-data-sync', 'pid': 1, 'syscall': 'fsync'}, 'actual_sigkill': True}
+PASS kill-at-snapshot-install {'snapshot_installed': True, 'checkpoint_needed_repair': False, 'observer': {'stage': 'snapshot-install', 'pid': 1, 'syscall': 'rename'}, 'actual_sigkill': True}
+PASS kill-at-checkpoint-write {'snapshot_installed': True, 'checkpoint_needed_repair': True, 'observer': {'stage': 'checkpoint-write', 'pid': 1, 'syscall': 'pwrite'}, 'actual_sigkill': True}
+PASS kill-at-checkpoint-sync {'snapshot_installed': True, 'checkpoint_needed_repair': True, 'observer': {'stage': 'checkpoint-sync', 'pid': 1, 'syscall': 'fsync'}, 'actual_sigkill': True}
+PASS corrupt-checksum-fails-closed-without-reset-and-matched-restore-works {}
+PASS stale-snapshot-cannot-roll-back-a-newer-acknowledged-checkpoint {}
+PASS validly-checksummed-foreign-identity-snapshot-is-rejected {}
+PASS missing-checkpoint-reconstructed-from-complete-valid-snapshot {}
+PASS unrelated-checkpoint-corruption-is-not-silently-treated-as-an-interrupted-write {}
+PASS snapshot-symlink-is-rejected-without-modifying-its-target {}

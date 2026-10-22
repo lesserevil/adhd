@@ -1,88 +1,99 @@
 {
-  "schema": "adhd/acme-dependencies@1",
-  "runtime_platforms": [
-    "linux_amd64"
-  ],
   "additional_artifact_pins_not_runtime_qualified": [
     "linux_arm64"
   ],
+  "guardian_build": {
+    "guardian_source_sha256": "6aa3d771b50405e39588d33fdaa60ccd3d7b4c1c28a607ce96915f3c43933a37",
+    "musl_copyright_sha256": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+    "musl_license": "MIT",
+    "musl_source_sha256": "d585fd3b613c66151fc3249e8ed44f77020cb5e6c1e635a616d3f9f82460512a",
+    "musl_source_url": "https://musl.libc.org/releases/musl-1.2.6.tar.gz",
+    "musl_version": "1.2.6"
+  },
   "lego": {
-    "version": "5.5.2",
-    "source_commit": "452dc82113609488fb680acf8fc72712b1794f8d",
+    "artifacts": {
+      "linux_amd64": {
+        "archive_bytes": 21201656,
+        "archive_sha256": "2a35505089e7772c92e1e9ac144df91151ef2eca8568630db0ff91fca06d9bef",
+        "binary_bytes": 67612832,
+        "binary_sha256": "c7ccc528bb254bec3e8ca998a8994dab9653c3e1aa083fd3bfaaa0b75b527b62",
+        "sbom_bytes": 338551,
+        "sbom_sha256": "42426a6e99127f66bb9198b528a33e05505cf18aee59f3ba59f1192a56723e36",
+        "sbom_url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_amd64.tar.gz.sbom.json",
+        "url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_amd64.tar.gz"
+      },
+      "linux_arm64": {
+        "archive_bytes": 19159057,
+        "archive_sha256": "15b14ec2ab14fde69cc8396eb0204c5ce4327e31a486953225a6059b26db3e8c",
+        "binary_bytes": 61866144,
+        "binary_sha256": "7a5b629c889ab663547723ba9a852aab3de336f93a4179f687df24431bfdafdc",
+        "sbom_bytes": 338551,
+        "sbom_sha256": "a10cdf2099c21d6933b96b1e1d65c2d7feb07672132733d5f9f94bbd2b789a74",
+        "sbom_url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_arm64.tar.gz.sbom.json",
+        "url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_arm64.tar.gz"
+      }
+    },
     "license": "MIT",
     "license_sha256": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
     "release_url": "https://github.com/go-acme/lego/releases/tag/v5.5.2",
-    "artifacts": {
-      "linux_amd64": {
-        "url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_amd64.tar.gz",
-        "archive_sha256": "2a35505089e7772c92e1e9ac144df91151ef2eca8568630db0ff91fca06d9bef",
-        "archive_bytes": 21201656,
-        "binary_sha256": "c7ccc528bb254bec3e8ca998a8994dab9653c3e1aa083fd3bfaaa0b75b527b62",
-        "binary_bytes": 67612832,
-        "sbom_url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_amd64.tar.gz.sbom.json",
-        "sbom_sha256": "42426a6e99127f66bb9198b528a33e05505cf18aee59f3ba59f1192a56723e36",
-        "sbom_bytes": 338551
-      },
-      "linux_arm64": {
-        "url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_arm64.tar.gz",
-        "archive_sha256": "15b14ec2ab14fde69cc8396eb0204c5ce4327e31a486953225a6059b26db3e8c",
-        "archive_bytes": 19159057,
-        "binary_sha256": "7a5b629c889ab663547723ba9a852aab3de336f93a4179f687df24431bfdafdc",
-        "binary_bytes": 61866144,
-        "sbom_url": "https://github.com/go-acme/lego/releases/download/v5.5.2/lego_v5.5.2_linux_arm64.tar.gz.sbom.json",
-        "sbom_sha256": "a10cdf2099c21d6933b96b1e1d65c2d7feb07672132733d5f9f94bbd2b789a74",
-        "sbom_bytes": 338551
-      }
-    }
+    "source_commit": "452dc82113609488fb680acf8fc72712b1794f8d",
+    "version": "5.5.2"
   },
   "patched_client": {
-    "purpose": "Durable issuer Retry-After floor before internal retries plus fixed bounded closed result protocol; original release assets remain separately pinned",
-    "source_archive_sha256": "f2a3f956ccf49ba8b247559825f82acce58f3ded725c74bd5b004e200d8e1cd5",
+    "go_linux_amd64_sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+    "go_linux_amd64_url": "https://go.dev/dl/go1.27.3.linux-amd64.tar.gz",
     "go_mod_sha256": "bbad4d92aeeb16cdb801adf72fab44bc4ddeac7534a9a0295c66c301ab05519c",
     "go_sum_sha256": "25b823864244974dd987a639e6d1b526fab612002e834881b2ff51d33b7747f0",
     "go_version": "go1.27.3",
-    "go_linux_amd64_url": "https://go.dev/dl/go1.27.3.linux-amd64.tar.gz",
-    "go_linux_amd64_sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+    "metadata_protocol": "ADHD_ACME_RESULT {\"code\": \"ACME_RATE_LIMIT|ACME_PROCESS\", \"retry_at\": \"null|unix milliseconds\"}",
     "patch_sha256": "574e0f42599bd77dc3af3c80912932b748ab9b0d66a1785429c97c17e02f91ab",
     "patched_files_sha256": {
-      "main.go": "b95096c1ddd7198ffdefe75fed5a1532a2bb2afaf47cfd761760eff783c74ebe",
-      "cmd/cmd_run.go": "f585685da83961fd36af2e99fd84e2f72c6f91ac0182047fe3530e5576d77858",
-      "cmd/internal/retryable.go": "ac101a818f199b27e96fa769781a56025bcaeff773f1ef970654b254893197fb",
-      "cmd/internal/acme_retry_metadata.go": "4e83cba8976363a700778e48dc528a3ed66555338a329db3a7e3172f7e382f7c",
-      "cmd/internal/acme_retry_file.go": "27d2cd6a84dbfb9709c1e68f2cef3114a993b83b6580265a8b58085a2c59aa33",
-      "cmd/internal/acme_retry_metadata_test.go": "f17a318d24ba849a88e1541b0aefbbe8da90b20a320c4183eeab6dc690bfc97a",
-      "cmd/internal/acme_retry_file_test.go": "c522e6dada592df30dcbd40336cece2d12f38d0e931131ec7564ca9224c1a954",
       "cmd/acme_result.go": "83e784a26d90f37479ce80caaf712b2aa49b1d1adb8ddf06084491072a73e844",
-      "cmd/acme_result_test.go": "0340fc52925981a14454f493c8058689a58a84132a6c948c3c9e5c7e40c538de"
+      "cmd/acme_result_test.go": "0340fc52925981a14454f493c8058689a58a84132a6c948c3c9e5c7e40c538de",
+      "cmd/cmd_run.go": "f585685da83961fd36af2e99fd84e2f72c6f91ac0182047fe3530e5576d77858",
+      "cmd/internal/acme_retry_file.go": "27d2cd6a84dbfb9709c1e68f2cef3114a993b83b6580265a8b58085a2c59aa33",
+      "cmd/internal/acme_retry_file_test.go": "c522e6dada592df30dcbd40336cece2d12f38d0e931131ec7564ca9224c1a954",
+      "cmd/internal/acme_retry_metadata.go": "4e83cba8976363a700778e48dc528a3ed66555338a329db3a7e3172f7e382f7c",
+      "cmd/internal/acme_retry_metadata_test.go": "f17a318d24ba849a88e1541b0aefbbe8da90b20a320c4183eeab6dc690bfc97a",
+      "cmd/internal/retryable.go": "ac101a818f199b27e96fa769781a56025bcaeff773f1ef970654b254893197fb",
+      "main.go": "b95096c1ddd7198ffdefe75fed5a1532a2bb2afaf47cfd761760eff783c74ebe"
     },
-    "metadata_protocol": "ADHD_ACME_RESULT {\"code\": \"ACME_RATE_LIMIT|ACME_PROCESS\", \"retry_at\": \"null|unix milliseconds\"}"
+    "purpose": "Durable issuer Retry-After floor before internal retries plus fixed bounded closed result protocol; original release assets remain separately pinned",
+    "source_archive_sha256": "f2a3f956ccf49ba8b247559825f82acce58f3ded725c74bd5b004e200d8e1cd5"
   },
   "pebble_test_only": {
-    "version": "2.10.1",
-    "source_commit": "b1e1ca4f3c30abb64111adaca4544bc5374cc306",
-    "purpose": "Owned isolated acceptance CA/DNS only, never included in hub runtime",
-    "source_archive_sha256": "1fcb79d9cc2b09d13d501612408f7084f67be4c2cc50d4383840a5e8f1188c47",
     "artifacts": {
       "pebble": {
-        "url": "https://github.com/letsencrypt/pebble/releases/download/v2.10.1/pebble-linux-amd64.tar.gz",
+        "archive_member": "pebble-linux-amd64/linux/amd64/pebble",
         "archive_sha256": "4f2fcb5bca8c85c9cf73ad140fccfc0d2be40bd81ab99879c79b7b8a0b4f70ed",
         "binary_sha256": "4e35cad137f20f62a8e71fd104b98417daa592e901bb01ab4227074ee1990e3c",
-        "archive_member": "pebble-linux-amd64/linux/amd64/pebble"
+        "url": "https://github.com/letsencrypt/pebble/releases/download/v2.10.1/pebble-linux-amd64.tar.gz"
       },
       "pebble-challtestsrv": {
-        "url": "https://github.com/letsencrypt/pebble/releases/download/v2.10.1/pebble-challtestsrv-linux-amd64.tar.gz",
+        "archive_member": "pebble-challtestsrv-linux-amd64/linux/amd64/pebble-challtestsrv",
         "archive_sha256": "e93a5aa25ecdf3af2f9fbb2de32b0173e64a2eae81002a4ccfe35fa6f4f60b92",
         "binary_sha256": "00ec0f9680d5eecb23cb4073868a547db635775a52ba14e0392ed15c8004f1ed",
-        "archive_member": "pebble-challtestsrv-linux-amd64/linux/amd64/pebble-challtestsrv"
+        "url": "https://github.com/letsencrypt/pebble/releases/download/v2.10.1/pebble-challtestsrv-linux-amd64.tar.gz"
       }
-    }
+    },
+    "purpose": "Owned isolated acceptance CA/DNS only, never included in hub runtime",
+    "source_archive_sha256": "1fcb79d9cc2b09d13d501612408f7084f67be4c2cc50d4383840a5e8f1188c47",
+    "source_commit": "b1e1ca4f3c30abb64111adaca4544bc5374cc306",
+    "version": "2.10.1"
   },
-  "guardian_build": {
-    "musl_version": "1.2.6",
-    "musl_source_url": "https://musl.libc.org/releases/musl-1.2.6.tar.gz",
-    "musl_source_sha256": "d585fd3b613c66151fc3249e8ed44f77020cb5e6c1e635a616d3f9f82460512a",
-    "musl_license": "MIT",
-    "musl_copyright_sha256": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
-    "guardian_source_sha256": "6aa3d771b50405e39588d33fdaa60ccd3d7b4c1c28a607ce96915f3c43933a37"
-  }
+  "runtime_bundle": {
+    "files": {
+      "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+      "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+      "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+      "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+      "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+      "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd"
+    },
+    "platform": "linux_amd64"
+  },
+  "runtime_platforms": [
+    "linux_amd64"
+  ],
+  "schema": "adhd/acme-dependencies@1"
 }

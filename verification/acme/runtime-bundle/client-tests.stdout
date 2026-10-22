@@ -1,0 +1,51 @@
+=== RUN   TestACMEResultClosedProtocol
+--- PASS: TestACMEResultClosedProtocol (0.00s)
+PASS
+ok  	github.com/go-acme/lego/v5/cmd	0.026s
+=== RUN   TestACMEDurableFloorBeforeBackoff
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713535953}
+time=2026-10-22T23:56:55.972Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: "
+--- PASS: TestACMEDurableFloorBeforeBackoff (0.06s)
+=== RUN   TestACMERetryPersistenceFailureStopsRetry
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536011}
+--- PASS: TestACMERetryPersistenceFailureStopsRetry (0.00s)
+=== RUN   TestACMERetryFileClosedSchema
+--- PASS: TestACMERetryFileClosedSchema (0.00s)
+=== RUN   TestACMERetryMetadata
+--- PASS: TestACMERetryMetadata (0.00s)
+=== RUN   TestACMEFinalExhaustedResponsesPreserveLastHeader
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713416013}
+time=2026-10-22T23:56:56.035Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: private"
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713416035}
+time=2026-10-22T23:56:56.052Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: private"
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713416052}
+time=2026-10-22T23:56:56.071Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: private"
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713416071}
+time=2026-10-22T23:56:56.090Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: private"
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713416090}
+time=2026-10-22T23:56:56.106Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: private"
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713536106}
+time=2026-10-22T23:56:56.124Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: private"
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536106}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536106}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536106}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536106}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536106}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536229}
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713536229}
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713536229}
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713536229}
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713536229}
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713536229}
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792713536350}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536350}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536350}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536350}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536350}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536350}
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792713536477}
+--- PASS: TestACMEFinalExhaustedResponsesPreserveLastHeader (0.49s)
+=== RUN   TestACMEUnrepresentableIssuerMinimumBlocksInsteadOfNull
+--- PASS: TestACMEUnrepresentableIssuerMinimumBlocksInsteadOfNull (0.00s)
+PASS
+ok  	github.com/go-acme/lego/v5/cmd/internal	0.562s

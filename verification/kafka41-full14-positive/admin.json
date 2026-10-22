@@ -1,0 +1,46 @@
+{
+  "schema": "adhd/admin-subscription-edit@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "revisioned-admin-edit-is-idempotent-and-preserves-pending-filter-work",
+      "passed": true
+    },
+    {
+      "name": "mode-selectors-pause-and-resume-affect-future-events-without-resurrecting-acks",
+      "passed": true
+    },
+    {
+      "name": "admin-subscription-pagination-enumerates-more-than-one-hundred-without-gaps-or-repeats",
+      "passed": true
+    },
+    {
+      "name": "only-admin-edits-currently-admitted-owner-and-archive-fences-new-edits",
+      "passed": true
+    }
+  ],
+  "harness_sha256": "235b5a462129f4b83fbdee65abf227bdb3979230311a1ab99d92783271f8b7b6",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "network_mode": "host",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "08eae213100a9d950e2c74c960972321575f5b2fabc0865874e885ce0827b84f",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+      },
+      {
+        "action": "stopped",
+        "container_id": "08eae213100a9d950e2c74c960972321575f5b2fabc0865874e885ce0827b84f",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ]
+  },
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108"
+}

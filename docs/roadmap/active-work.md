@@ -66,7 +66,7 @@ with `RESTORE_IO_ERROR` before reaching its requested boundary. Its partial
 check is excluded and15 later suites remained unrun in that attempt. The
 [source-unchanged diagnostic](../../verification/final05-recovery-phase05-diagnostic/manifest.json)
 passes all five original case assertions and observes normal staging/checkpoint/
-transport completion; the earlier failure did not reproduce and remains unexplained.
+transport completion; the earlier failure did not reproduce in that diagnostic.
 Later [bounded retained-log correlation](../../verification/final05-original-r25-broker-correlation/manifest.json)
 also identifies the original failed topic's configuration404 after a creation201;
 the diagnostic pass did not disprove that transient provisioning failure.

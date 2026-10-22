@@ -106,8 +106,12 @@ async def lose_and_restore(args,b,r,backup_id,backup_sha,label,gate):
     _,anchor=route(b.file,RED);nonce=uuid4().hex
     witness=Path(str(b.file)+'.target-down');witness.unlink(missing_ok=True)
     Path(str(b.file)+'.kill-target').write_text(json.dumps({'project_id':RED,'nonce':nonce}))
-    await until(witness.exists,'Actual incoming target Store DOWN absent',5)
-    observed=json.loads(witness.read_text());assert observed['nonce']==nonce and observed['reason']=='killed' and int(observed['vm_pid'])==b.process.pid
+    def down():
+        try:value=json.loads(witness.read_text())
+        except (FileNotFoundError,json.JSONDecodeError):return None
+        assert value['nonce']==nonce and value['reason']=='killed' and int(value['vm_pid'])==b.process.pid
+        return value
+    observed=await until(down,'Complete actual incoming target Store DOWN witness absent',5)
     held=b.root/('lost-incoming-'+label);held.mkdir(mode=0o700)
     for p in [anchor,Path(str(anchor)+'.snapshot')]:assert p.is_file();os.replace(p,held/p.name)
     assert r.status(RED)['availability']=='recovery_required'

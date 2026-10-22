@@ -1,0 +1,67 @@
+{
+  "suite": "project-recovery-rejections",
+  "started_at": "2026-10-22T00:01:04.639199+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "populated-target-cannot-be-merged-or-replaced-by-restore",
+      "passed": true
+    },
+    {
+      "name": "invalid-backup-wrong-hash-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "hash"
+    },
+    {
+      "name": "invalid-backup-wrong-length-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "hash"
+    },
+    {
+      "name": "invalid-backup-unknown-manifest-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "invalid-backup-duplicate-json-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "invalid-backup-symlink-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "path"
+    },
+    {
+      "name": "invalid-backup-hardlink-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "path"
+    },
+    {
+      "name": "invalid-backup-compressed-etf-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "limits"
+    },
+    {
+      "name": "invalid-backup-unknown-snapshot-fails-closed-without-target-writer-or-unrelated-project-change",
+      "passed": true,
+      "reason": "schema"
+    },
+    {
+      "name": "rotated-unowned-agent-credential-cannot-inherit-retained-private-state",
+      "passed": true,
+      "reason": "owner_unprovable"
+    },
+    {
+      "name": "configuration-change-invalidates-reviewed-plan-without-rewriting-its-digest-or-opening-target",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "2c700cd6b9306df79492d4f4b509cdbddacbd730460cc4f79406a5f0ccb49d39",
+  "harness_sha256": "919bd6da065a67aa8aac38ff344e69901d51612b3448f5851cea4917762fc6c1",
+  "finished_at": "2026-10-22T00:02:13.452449+00:00"
+}

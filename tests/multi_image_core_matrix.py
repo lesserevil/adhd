@@ -114,7 +114,7 @@ def main():
             'admission_manifest_sha256': a.admission_sha256, 'payload_audit': audit,
             'payload_tar_sha256': selected['payload_sha256'], 'target_component_lock_identity': selected['component_lock_identity'],
             'live_root_specification_drift': live_spec_drift,
-            'scope': 'Admitted38 recovery/backend normative payload; live-root presentation changes excluded and unqualified',
+            'scope': 'Selected admitted image and its exact normative payload; other artifacts and broader platform/browser/release qualification remain separate',
             'locked_specifications': {name: hashlib.sha256(body).hexdigest() for name, body in locked_specs.items()},
             'legacy_sha256': sha(legacy), 'legacy_hub': str(legacy), 'driver_sha256': sha(work / 'driver.py'),
             'runtime_cwd': str(runtime), 'outer_child_timeout_seconds': None,

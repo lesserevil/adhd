@@ -1,0 +1,47 @@
+{
+  "schema": "adhd/compiled04-reproducibility-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "bitwise_reproducible": false,
+  "read_only": true,
+  "application_or_compiler_or_container_starts": 0,
+  "archive_sha256": "3a91b7c5b8afc61f16faad75a261f38f55d4457d4a90d872fa6e894ba9ff713a",
+  "images": [
+    "sha256:184d16bf19d292da7f741338eee68d2b61f657eed8fd32f774a1ad1bc2b46a59",
+    "sha256:698d9f32ac1d2931f34a5778e21047c6f66c58dad78c6853e53120697ceee5d9"
+  ],
+  "observed": {
+    "different_layer_indices": [
+      4
+    ],
+    "metadata_differences": 0,
+    "changed_beam_bodies": 51,
+    "changed_chunk_names": [
+      "ExCk"
+    ],
+    "all59_decoded_checker_terms_equal": true,
+    "other_chunk_bytes_equal": true,
+    "cache_manifest_changes_follow_beam_hashes": true
+  },
+  "primary_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/elixir-lang/elixir/v1.20.4/lib/elixir/src/elixir_erl.erl",
+      "sha256": "3a0eaea352e22c65963e62088f21c6b00759294df683aae164a85800807787f5"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/elixir-lang/elixir/v1.20.4/lib/elixir/src/elixir_erl_compiler.erl",
+      "sha256": "7e326f4cf153fecd44d968429b5376d83acd0dfb0fe5916fc458a1c4623164b7"
+    }
+  ],
+  "proposal": "Use compiler-process-only ERL_COMPILER_OPTIONS=[deterministic], consumed by the existing Elixir checker chunk serializer. Not implemented or tested here. Do not rewrite BEAM chunks.",
+  "files": {
+    "chunks.py": "4463401d0d2d396d63a709d89d53031e194f0fa452734a323795913ae8cbafc0",
+    "semantic.json": "2dc3e570163b3f57113a7df2124078f5a57a8d277f2bd208ab63765e4f948805",
+    "second-ExCk.bin": "48c47618cd683173b751cf950870cb3c3e7a7dbe240d39aa92cb764c8f98af4c",
+    "first-ExCk.bin": "a7014db3b7ea2394495f0258a6d1607ac68392c08c16b04339f4633c2068cf1f",
+    "chunks.json": "3cbd5b6ea97c21b068abc1e202ffff0945f4c9ff411c4175c20ab31188440e26",
+    "inspect.py": "d4de63fdf5d146e47ce7452b1a99ea5a152b5948c882daec3d1842c56bfdad77",
+    "comparison.json": "f1ec96190df1e69bddfd6b96bc64644c5bf0044b947ef0bb61847144e9cf5ae9",
+    "semantic.py": "708d67022c6e137253403a306c48e954f013979f64b571622fc28656219be4f8"
+  }
+}

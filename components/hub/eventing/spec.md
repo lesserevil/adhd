@@ -209,6 +209,42 @@ hub restart; Admin cannot execute arbitrary shell/Kubernetes commands.
 Before deciding a hot transport change, probe the destination cluster and every
 local project topic with finite deadlines; validate partition0-only topology and
 delete-only cleanup, create missing topics, and apply the requested retention.
+Topic creation acknowledgment does not establish metadata visibility. After a
+successful create or the supported duplicate-creator response40002, read back
+and validate the exact expected topic metadata and configuration before
+provisioning succeeds. Existing, newly created and concurrent-created topics use
+one partition-count, delete-only cleanup and effective-retention validation path;
+40002 never bypasses it. An intentional existing-topic retention difference in
+predecision read-only validation is deferred policy, not a malformed configuration:
+it neither requires an early alter nor enters the visibility retry path. Apply
+and read back the desired retention only in the already-authorized postdecision
+or normal-worker phase. Existing-retention writes still obey the later
+predecision/postdecision policy rule.
+
+Only404 on the exact expected topic metadata/configuration read after acknowledged
+create or40002 is transient creation visibility. Retry these read-only readiness
+checks with a fixed50ms delay, without repeating creation. Authentication or
+authorization failures, other non2xx responses including500, malformed metadata,
+wrong topology and malformed configuration fail without visibility retry. Topic
+partition count is the integer1. Required cleanup.policy and retention.ms rows are
+unique; cleanup is delete, and retention is a canonical decimal string for a Kafka
+retention integer(-1 or a nonnegative signed64-bit value). Missing/duplicate rows,
+floating partition counts or malformed retention values are not readiness lag and
+must not be silently repaired. A valid intentional retention difference follows
+the deferred/apply policy above; after an authorized alter, read back and verify
+the desired value.
+
+Establish one absolute monotonic provisioning deadline before its first resource
+admission. Bound it by the effective eventing timeout and any already accepted
+owning-operation deadline. Discovery, existence/create calls, resource queue
+residence, readiness reads and retry delay consume this same budget. Before each
+resource admission compute positive remaining time; pass only that remainder
+through the scheduler to connect/response/cancellation. Never reset the deadline
+on404, dispatch after expiration, or hold an active HTTP ticket during retry delay.
+Deadline expiration retains existing typed failure/cancellation behavior and
+predecision atomicity. Recovery additionally retains its exactly-zero integer beginning/end
+offset guard; visibility never permits an old tail, rewind or nonempty topic.
+
 Failed preflight leaves the authoritative hub configuration/checkpoints unchanged;
 created destination topics may remain as unused infrastructure. Retention changes
 on an existing destination are external side effects and must be reported as such.

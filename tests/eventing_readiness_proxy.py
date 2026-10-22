@@ -1,0 +1,115 @@
+"""Bounded transparent real-Kafka REST faults; no broker success is invented."""
+import http.client
+import json
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
+from urllib.parse import unquote, urlsplit
+
+
+def classify(path,topic):
+    path=unquote(urlsplit(path).path)
+    if not topic:return None
+    if path.endswith('/topics/'+topic):return 'metadata'
+    if path.endswith('/topics/'+topic+'/configs'):return 'configs'
+    if path.endswith('/topics/'+topic+'/configs:alter'):return 'alter'
+    if path=='/topics/'+topic+'/partitions/0/offsets':return 'offsets'
+    return None
+
+
+def fault_response(mode,category,status,body,number,created):
+    """Pure fault transform. Only the selected fresh topic can reach this seam."""
+    if not created:return status,body,False
+    if category=='configs':
+        if mode=='never'or mode=='lag'and number<=2 or mode in ('queue','queue-control')and number<=20:
+            return 404,b'{"error_code":40401,"message":"Declared visibility fault"}',True
+        if mode in ('forbidden','server-error'):
+            return (403 if mode=='forbidden'else 500),b'{"error_code":50001}',True
+        if mode=='malformed':return 200,b'{"data":"invalid declared fixture"}',True
+        if mode.startswith('retention-')and status==200:
+            value=json.loads(body);rows=value['data']
+            if mode=='retention-missing':value['data']=[r for r in rows if r['name']!='retention.ms']
+            elif mode=='retention-duplicate':value['data']=rows+[next(dict(r)for r in rows if r['name']=='retention.ms')]
+            else:
+                for row in rows:
+                    if row['name']=='retention.ms':row['value']=0.0 if mode=='retention-float'else '-2'
+            return 200,json.dumps(value).encode(),True
+        if mode=='bad-cleanup'and status==200:
+            value=json.loads(body)
+            for row in value['data']:
+                if row['name']=='cleanup.policy':row['value']='compact'
+            return status,json.dumps(value).encode(),True
+    if category=='metadata'and mode in ('duplicate-bad-topology','partitions-float')and status==200:
+        value=json.loads(body);value['partitions_count']=1.0 if mode=='partitions-float'else 2;return status,json.dumps(value).encode(),True
+    if category=='offsets'and mode.startswith('offset-')and status==200:
+        values={'offset-nonzero':{'beginning_offset':0,'end_offset':1},'offset-negative':{'beginning_offset':-1,'end_offset':0},
+            'offset-missing':{'beginning_offset':0},'offset-float':{'beginning_offset':0.0,'end_offset':0},'offset-string':{'beginning_offset':'0','end_offset':0}}
+        return 200,json.dumps(values[mode]).encode(),True
+    return status,body,False
+
+
+class Server(ThreadingMixIn,HTTPServer):
+    daemon_threads=True
+    def process_request(self,request,address):
+        if not self.slots.acquire(False):
+            self.owner.failures.append('ProxyCapacityExceeded');self.shutdown_request(request);return
+        try:super().process_request(request,address)
+        except BaseException:self.slots.release();raise
+    def process_request_thread(self,request,address):
+        try:super().process_request_thread(request,address)
+        finally:self.slots.release()
+
+
+class ReadinessProxy:
+    def __init__(self,backend):
+        parsed=urlsplit(backend);assert parsed.scheme=='http'and parsed.hostname=='127.0.0.1'and parsed.port and parsed.port!=18770 and not(parsed.username or parsed.query or parsed.fragment or parsed.path.strip('/'))
+        self.backend=(parsed.hostname,parsed.port);self.topic=None;self.mode=None;self.created=False;self.events=[];self.failures=[];self.counts={};self.lock=threading.Lock()
+        self.hold=False;self.held_at=None;self.held=threading.Event();self.release=threading.Event();self.handlers=0;self.transaction=None
+        owner=self
+        class Handler(BaseHTTPRequestHandler):
+            protocol_version='HTTP/1.1'
+            def log_message(self,*_):pass
+            def do_GET(self):self.respond()
+            def do_POST(self):self.respond()
+            def do_DELETE(self):self.respond()
+            def respond(self):
+                connection=None
+                with owner.lock:owner.handlers+=1
+                try:
+                    size=int(self.headers.get('Content-Length','0'));assert 0<=size<=262144
+                    self.connection.settimeout(4);body=self.rfile.read(size);assert len(body)==size
+                    category=classify(self.path,owner.topic);created_request=False
+                    if self.command=='POST'and urlsplit(self.path).path.endswith('/topics'):
+                        value=json.loads(body);created_request=owner.topic is not None and value.get('topic_name')==owner.topic
+                    if owner.hold and self.command=='GET'and '/records'in self.path and not owner.held.is_set():
+                        owner.held_at=time.monotonic();owner.held.set();owner.release.wait(6)
+                    connection=http.client.HTTPConnection(*owner.backend,timeout=3)
+                    headers={k:v for k,v in self.headers.items()if k.lower()not in ('host','connection','content-length')}
+                    headers['Connection']='close';connection.request(self.command,self.path,body,headers)
+                    response=connection.getresponse();data=response.read(262145);assert len(data)<=262144;status=response.status
+                    with owner.lock:
+                        if created_request and status in range(200,300):
+                            owner.created=True
+                            if owner.mode.startswith('duplicate'):status,data=400,b'{"error_code":40002}'
+                        owner.counts[category]=owner.counts.get(category,0)+1
+                        status,data,injected=fault_response(owner.mode,category,status,data,owner.counts[category],owner.created)if owner.mode else(status,data,False)
+                        assert len(owner.events)<256
+                        owner.events.append({'at':time.monotonic(),'method':self.command,'category':category,'selected_create':created_request,'status':status,'injected':injected,'durable_transaction_present':self.server.owner.transaction.exists()if self.server.owner.transaction is not None else None})
+                    self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.send_header('Connection','close');self.end_headers();self.wfile.write(data)
+                except (BrokenPipeError,ConnectionResetError):pass # canceled owned HTTP is expected in deadline cases
+                except BaseException as error:
+                    owner.failures.append(type(error).__name__)
+                    self.close_connection=True
+                finally:
+                    if connection:connection.close()
+                    with owner.lock:owner.handlers-=1
+        self.server=Server(('127.0.0.1',0),Handler);self.server.slots=threading.BoundedSemaphore(4);self.server.owner=self
+        self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start();self.url='http://127.0.0.1:'+str(self.server.server_port)
+    def arm(self,topic,mode):
+        with self.lock:self.topic=topic;self.mode=mode;self.created=False;self.events=[];self.counts={}
+    def close(self):
+        self.release.set();self.server.shutdown();self.server.server_close();self.thread.join(2)
+        end=time.monotonic()+4
+        while self.handlers and time.monotonic()<end:time.sleep(.01)
+        assert not self.thread.is_alive()and self.handlers==0 and not self.failures,self.failures

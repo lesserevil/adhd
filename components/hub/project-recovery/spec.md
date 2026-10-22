@@ -287,7 +287,13 @@ For restore reverify all backup identities/content and current ownership/permiss
 for initialize reverify uninitialized admission and absence of conflicting files.
 Stage a
 complete closed checkpoint/snapshot under the proposed private generation, and
-preflight the fresh Kafka topic under current service security/policy. Never mutate
+preflight the fresh Kafka topic under current service security/policy. Apply the
+bounded post-create metadata readiness rule in eventing/spec.md, passing the
+immutable accepted recovery deadline as an upper bound on the single monotonic
+provisioning/request budget. Queue wait and readiness retry cannot reopen that
+deadline;40002 cannot bypass topic validation. Require exactly-zero integer beginning/end
+offsets after readiness, and fail before decision on exhausted or invalid preflight.
+Never mutate
 old topic retention or consume its tail. No broker success is synthesized. Before
 decision, acquire the serialized coordinator and freeze only the target writer.
 Previously accepted target transactions settle; later ones return

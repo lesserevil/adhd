@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:754cebce5e10d2c1a9f1683fac93e6ec7647e7984acdf4d933809ac14460e93d -->
+<!-- literate-ai:authority-reviewed sha256:1c0f8652dced085d134b3ba6f366db4979cf494e6315c143f45cbbce839244e5 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -101,9 +101,9 @@ the pinned amd64 builder. Current independently scoped positives include:
 
 The complete [Kafka14/68 run](../../verification/kafka41-full14-positive/audit.json)
 also passes on the current image, with owned-service cleanup and protected
-services unchanged. These results do not declare the whole goal complete: full
-recovery25, final evidence composition and authority review remain in the
-[active queue](../roadmap/active-work.md).
+services unchanged. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) and [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json)
+complete the runtime requirement review; the [active queue](../roadmap/active-work.md)
+still holds documentation-authority and receipt/context review before closure.
 Earlier CNI, model, migration and subsystem evidence keeps its exact source scope;
 the [conservation review](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
 states the permitted joins and limits. Changed operating guides still require the

@@ -30,9 +30,10 @@ original filtering, cited-query, Blue-progress, privacy and hot disable/resume g
 The complete [core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json)
 and [Kafka14/68](../../verification/kafka41-full14-positive/audit.json) programs also
 pass on the current image. These are separate programs, not one fresh full
-historical matrix. Full recovery25, including offline rebind/hostile coverage,
-final requirement composition and the documentation/receipt/context bridge remain
-open; retained failed aggregates stay false.
+historical matrix. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json), including offline rebind/hostile
+coverage, and [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json) complete the runtime evidence.
+The documentation/receipt/context bridge remains open; retained failed aggregates
+stay false.
 
 This program belongs to ADHD's hub Component, tests, tooling and guides. It does
 not require a framework pin upgrade, a new model or a database replacement. The

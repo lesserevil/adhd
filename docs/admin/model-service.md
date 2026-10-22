@@ -168,5 +168,6 @@ remains historical evidence and is not rewritten by this positive run. This fixe
 synthetic corpus is not general semantic accuracy or latency calibration, a fresh
 optimizer benchmark, or a full-transitive/legal-clearance inventory. Current
 [Kafka14/68](../../verification/kafka41-full14-positive/audit.json) now passes on
-this image; recovery25, final evidence composition and documentation-authority
-review remain separate gates.
+this image. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) and [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json)
+retain each model/runtime scope separately; documentation-authority and
+receipt/context review remain pending.

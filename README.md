@@ -44,8 +44,10 @@ The current source41 compiled candidate has passed the complete
 and [Compose11/Kind10 deployment programs](verification/ownedMULTI008/source41-baseline-platform-positive/audit.json).
 [Current qualification and limits](docs/admin/event-service.md#qualification)
 include the complete [Kafka14/68 gate](verification/kafka41-full14-positive/audit.json).
-Full recovery25, final evidence composition and documentation-authority review
-remain pending; this is not an all-green release claim.
+The [complete recovery25](verification/recovery41-full25-positive/manifest.json) and
+[requirement-by-requirement composition](verification/ownedMULTI008/source41-final-property-composition/review.json)
+complete the runtime evidence. Final documentation-authority and receipt/context
+review remain pending; this is not a release claim.
 
 Build the accepted portable Elixir artifact with the project's pinned Literate AI
 installation and Elixir/OTP toolchain on the supported Linux authoring host:

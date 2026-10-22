@@ -1,0 +1,266 @@
+{
+  "schema": "adhd/eventing-readiness-native23-positive-proof@1",
+  "passed": true,
+  "original_work": "/home/horde/src/adhd/_build/eventing-readiness-native23-03",
+  "scope": "Exactly23 authored native real-Kafka readiness/fault cases, retaining original21 ordered prefix plus metadata-lag and offset-end-float. No compiled-image, default-capacity SLO, inference, replica durability, source admission, or release completion claim. Retention companion remains a separate required gate.",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "receipt_identity": "sha256:72b3b0625a2bb912399c63eea7925c8bdd46d9a6ae0e070b9b9347d2b6975c45",
+  "plan_sha256": "af2440b9ec40c41075414ec126a7ac850083d1f972bafc228c6ac4fa5a8186a4",
+  "report_sha256": "346df0464825535272732115e5d4b60e6c2c90616e9d4644395f046d10b37fdf",
+  "whole_passed": [
+    "lag",
+    "queue-control",
+    "duplicate",
+    "duplicate-bad-topology",
+    "never",
+    "queue",
+    "forbidden",
+    "server-error",
+    "malformed",
+    "bad-cleanup",
+    "partitions-float",
+    "retention-missing",
+    "retention-float",
+    "retention-negative",
+    "retention-duplicate",
+    "existing-retention",
+    "offset-nonzero",
+    "offset-negative",
+    "offset-missing",
+    "offset-float",
+    "offset-string",
+    "metadata-lag",
+    "offset-end-float"
+  ],
+  "whole_count": 23,
+  "partial": [],
+  "unrun": [],
+  "provider_calls": 0,
+  "original35_assertions_preserved": true,
+  "capacity_scope": {
+    "queue_control": {
+      "queue-control": {
+        "resources": {
+          "ingress_tickets": 1,
+          "lanes": {
+            "eventing": {
+              "active": 1,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 20,
+              "ingress_rejections": 0,
+              "projects": {
+                "project-blue": {
+                  "active": 1,
+                  "queued": 0
+                }
+              },
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            },
+            "model": {
+              "active": 0,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 0,
+              "ingress_rejections": 0,
+              "projects": {},
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            },
+            "network": {
+              "active": 0,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 0,
+              "ingress_rejections": 0,
+              "projects": {},
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            }
+          },
+          "limits": {
+            "eventing_concurrency": 2,
+            "max_waiters": 1024,
+            "model_concurrency": 4,
+            "network_concurrency": 16,
+            "project_eventing_concurrency": 1,
+            "project_model_concurrency": 1,
+            "project_network_concurrency": 4
+          },
+          "started": true,
+          "waiting": 0
+        },
+        "premise": {
+          "global_limit": 2,
+          "per_project_limit": 1,
+          "blue_active": 1,
+          "independent_red_slots_at_observation": 1
+        }
+      }
+    },
+    "existing_retention": {
+      "existing-retention": {
+        "resources": {
+          "ingress_tickets": 0,
+          "lanes": {
+            "eventing": {
+              "active": 0,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 18,
+              "ingress_rejections": 0,
+              "projects": {},
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            },
+            "model": {
+              "active": 0,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 0,
+              "ingress_rejections": 0,
+              "projects": {},
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            },
+            "network": {
+              "active": 0,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 0,
+              "ingress_rejections": 0,
+              "projects": {},
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            }
+          },
+          "limits": {
+            "eventing_concurrency": 16,
+            "max_waiters": 1024,
+            "model_concurrency": 4,
+            "network_concurrency": 16,
+            "project_eventing_concurrency": 2,
+            "project_model_concurrency": 1,
+            "project_network_concurrency": 4
+          },
+          "started": true,
+          "waiting": 0
+        },
+        "premise": {
+          "global_limit": 16,
+          "per_project_limit": 2,
+          "blue_active": 0,
+          "spare_global_tickets_at_observation": 16,
+          "spare_blue_tickets_at_observation": 2
+        }
+      }
+    },
+    "negative_queue": [
+      {
+        "resources": {
+          "ingress_tickets": 2,
+          "lanes": {
+            "eventing": {
+              "active": 1,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 22,
+              "ingress_rejections": 0,
+              "projects": {
+                "project-blue": {
+                  "active": 1,
+                  "queued": 0
+                },
+                "project-red": {
+                  "active": 0,
+                  "queued": 1
+                }
+              },
+              "queue_rejections": 0,
+              "queued": 1,
+              "queued_timeouts": 0
+            },
+            "model": {
+              "active": 0,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 0,
+              "ingress_rejections": 0,
+              "projects": {},
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            },
+            "network": {
+              "active": 0,
+              "caller_deaths": 0,
+              "fenced": 0,
+              "grants": 0,
+              "ingress_rejections": 0,
+              "projects": {},
+              "queue_rejections": 0,
+              "queued": 0,
+              "queued_timeouts": 0
+            }
+          },
+          "limits": {
+            "eventing_concurrency": 1,
+            "max_waiters": 1024,
+            "model_concurrency": 4,
+            "network_concurrency": 16,
+            "project_eventing_concurrency": 1,
+            "project_model_concurrency": 1,
+            "project_network_concurrency": 4
+          },
+          "started": true,
+          "waiting": 1
+        },
+        "premise": {
+          "observed_after_hold_seconds": 0.20604362798621878,
+          "minimum_queue_plus_retry_seconds": 3.543956372013781,
+          "held_http_seconds": 2.75,
+          "visibility_failures": 20,
+          "retry_delay_seconds": 0.05,
+          "eventing_timeout_ms": 3000,
+          "recovery_timeout_ms": 10000
+        }
+      }
+    ]
+  },
+  "bounded_queue_result": {
+    "elapsed_seconds": 3.3266821590077598,
+    "eventing_timeout_ms": 3000,
+    "recovery_timeout_ms": 10000,
+    "created_requests": 0,
+    "note": "Recorded queue premise and bounded failed operation; no claim of20 actual postqueue faults when no selected creation was reached."
+  },
+  "real_broker_observations": {
+    "lag_real_creation_and_two_config404": true,
+    "queue_control_twenty_config404_and_completion": true,
+    "metadata_lag_real_creation_and_metadata404_recovery": true,
+    "existing_retention_old": 604800000,
+    "existing_retention_desired": 302400000,
+    "alter_after_durable_decision_and_desired_readback": true,
+    "failed_red_ticket_release_witnesses": 18
+  },
+  "cleanup": "All23 recorded native VM PID/start identities plus harness child independently absent;23 proxies recorded handlers0/threadfalse/failures[]; no processes matching resultsroot. No global broker/service cleanup claim.",
+  "prior_failures_preserved": [
+    "verification/eventing-readiness-native23-first-failure/manifest.json",
+    "verification/eventing-readiness-native23-retention-failure/manifest.json"
+  ],
+  "files": {
+    "independent-audit.json": "8cdec3bec84a95f4e1f4b2fbe6263b79e701f8159f4447e28b98c0c406624efd",
+    "plan.json": "af2440b9ec40c41075414ec126a7ac850083d1f972bafc228c6ac4fa5a8186a4",
+    "report.json": "346df0464825535272732115e5d4b60e6c2c90616e9d4644395f046d10b37fdf",
+    "result.json": "f9212c3af1f95896715f4311a1749a2592bf70421c24f753bd8c255d54cad074",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

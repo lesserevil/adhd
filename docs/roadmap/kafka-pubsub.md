@@ -36,9 +36,10 @@ the inner reports retain the original semantic gates rather than a twelve-case a
 passes the complete Admin18/Events12/recovery2 programs. The complete
 [core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json) and
 [Kafka14/68](../../verification/kafka41-full14-positive/audit.json) runs now pass,
-including federation in the full Kafka run. Full recovery25, final evidence
-composition and documentation/receipt review remain open; earlier false
-invocations retain their original scope.
+including federation in the full Kafka run. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) and
+[final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json) complete the runtime requirements; documentation-authority
+and receipt/context review remain open. Earlier false invocations retain their
+original scope.
 
 The pivot composes with [multiple projects per server](multi-project.md). Kafka
 is per server, not per project or per agent. A Kafka service can be one development

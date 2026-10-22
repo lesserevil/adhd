@@ -5,8 +5,9 @@
 - Qualification: the source41 compiled candidate passes core13/94, model-free
   Compose11/Kind10, secured Kind7 and focused Admin/Events/recovery UI32. Both
   deployed-model programs pass eight outer checks with 12 actual inference POSTs;
-  complete Kafka14/68 also passes. Full recovery25, final evidence composition and
-  documentation-authority review remain pending.
+  complete Kafka14/68 and [recovery25](verification/recovery41-full25-positive/manifest.json) also pass.
+  [Final property composition](verification/ownedMULTI008/source41-final-property-composition/review.json)
+  records the runtime scope; documentation-authority and receipt/context review remain pending.
 - Packaging: source41 passes two independent sequential no-cache/network-free
   builds with identical image identities, plus offline payload/cache audit and
   cache17. Historical artifacts and false invocations retain their original scope.

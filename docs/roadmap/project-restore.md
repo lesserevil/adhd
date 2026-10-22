@@ -117,9 +117,10 @@ to their actual unchanged modules and runtimes. Scalar observer ABI probes are
 compatibility evidence, not durability tests. The complete
 [core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json) and
 [Kafka14/68](../../verification/kafka41-full14-positive/audit.json) runs pass on the
-current image, without replacing recovery-specific requirements. Full recovery25,
-including the separate offline rebind/hostile regression, final evidence composition
-and documentation/receipt/context bridge stay open. Full-server
+current image. The fresh [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) also passes, including offline
+rebind/hostile coverage; the [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json) records each required
+property. The documentation/receipt/context bridge stays open, and the earlier
+failed aggregate remains false. Full-server
 backup/rebind neither replaces selective recovery nor authorizes populated rollback.
 Keep pre-upgrade compatible backups and the matching prior image for rollback;
 never open a newer store with an older binary or overwrite a populated current

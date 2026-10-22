@@ -8,7 +8,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 from unittest.mock import patch
-from kafka_oauth_custody import KeytoolProbe,unpack_payload,cleanup_all,NamespaceLease
+from kafka_oauth_custody import KeytoolProbe,unpack_payload,cleanup_all,NamespaceLease,finish_primary_after_cleanup
 from container_fixture import OwnedImage
 
 
@@ -65,7 +65,15 @@ async def main():
     replaced={'metadata':{**document['metadata'],'uid':'uid-replaced'}}
     denied(lambda:lease.deletion(replaced))
     assert lease.uid=='uid-original'
-    print('PASS securedK8s custody pure14: safecompletepayload,7malformed/symlink/duplicate/escape/hash denials, independentcleanup preserved, fixedprivate keytool argv, issued-before-create recovery/foreign-nonce and replacedUID denial/atomicDeleteOptions; Docker/Kube/app/provider starts0')
+    class Evidence:
+        def __init__(self):self.value={};self.writes=[]
+        def finish(self,error):self.writes.append((error,dict(self.value)))
+    evidence=Evidence();primary=RuntimeError('original scenario failure')
+    evidence.finish(primary);evidence.value['cleanup']=[{'closed':True}]
+    assert finish_primary_after_cleanup(evidence,primary)
+    assert evidence.writes[-1]==(primary,{'cleanup':[{'closed':True}]})
+    assert not finish_primary_after_cleanup(evidence,None)
+    print('PASS securedK8s custody pure15: safecompletepayload,7malformed/symlink/duplicate/escape/hash denials, independentcleanup preserved, fixedprivate keytool argv, issued-before-create recovery/foreign-nonce and replacedUID denial/atomicDeleteOptions; Docker/Kube/app/provider starts0')
 
 
 if __name__=='__main__':asyncio.run(main())

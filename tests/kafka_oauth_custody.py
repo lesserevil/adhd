@@ -71,8 +71,9 @@ async def cleanup_all(steps):
 
 class NamespaceLease:
     """Fresh namespace issuance and UID-preconditioned deletion only."""
-    def __init__(self,name,nonce):
-        assert re.fullmatch('adhd-oauth-[a-z0-9-]+',name) and re.fullmatch('[a-f0-9]{32}',nonce)
+    def __init__(self,name,nonce,prefix='adhd-oauth-'):
+        assert prefix in ('adhd-oauth-','adhd-final-')
+        assert re.fullmatch(re.escape(prefix)+'[a-z0-9-]+',name) and re.fullmatch('[a-f0-9]{32}',nonce)
         self.name=name;self.nonce=nonce;self.uid=None;self.issued=False;self.cleanup_deadline=None
     def document(self):
         self.issued=True
@@ -89,3 +90,10 @@ class NamespaceLease:
         return {'apiVersion':'v1','kind':'DeleteOptions','preconditions':{'uid':self.observe(row)}}
     def evidence(self):
         return {'name':self.name,'issued':self.issued,'uid':self.uid,'owner_nonce_sha256':hashlib.sha256(self.nonce.encode()).hexdigest(),'delete_uid_precondition_required':True}
+
+
+def finish_primary_after_cleanup(evidence,primary):
+    if primary is not None:
+        evidence.finish(primary)
+        return True
+    return False

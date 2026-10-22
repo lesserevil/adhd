@@ -22,7 +22,7 @@ import time
 from uuid import uuid4
 
 from container_fixture import OwnedImage
-from kafka_oauth_custody import KeytoolProbe, unpack_payload, cleanup_all, NamespaceLease
+from kafka_oauth_custody import KeytoolProbe, unpack_payload, cleanup_all, NamespaceLease, finish_primary_after_cleanup
 
 from cryptography import x509
 import httpx
@@ -414,6 +414,7 @@ async def main(args):
                     primary.add_note('Independent OAuth fixture cleanup failures: '+','.join(type(e).__name__ for e in errors))
                     evidence.finish(primary)
                 else:raise errors[0]
+            finish_primary_after_cleanup(evidence,primary)
             if completed and not errors:
                 logs=(root/'operations.log').read_bytes()
                 if hub and not args.image:

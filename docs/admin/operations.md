@@ -168,7 +168,7 @@ The server file is `.adhd/container/hub.json`. Its important fields are:
 | `agent_projects` | Explicit project admissions for each agent |
 | `host`, `port` | Private listener and available TCP port; use loopback for the legacy host runner |
 | `public_url` | Base URL advertised in discovery; must be reachable by clients |
-| `store_path` | Durable store location; additional projects use separate stores beneath the same mounted storage root |
+| `store_path` | Storage anchor; the durable registry selects each project's active generation and must be retained with its route files |
 | `agents` | Agent ID to distinct bearer-token mappings, at least 24 characters each |
 | `matcher` | Optional decision model; null leaves raw subscriptions and literal fact search operational |
 | `matcher.url`, `matcher.model` | Configured SystemOne endpoint and model identifier when filtering is enabled |
@@ -179,7 +179,14 @@ The server file is `.adhd/container/hub.json`. Its important fields are:
 | `users`, `agent_owners` | Stable user profiles, one role per user and agent ownership, managed in Users/Agents |
 | `eventing` | Per-server Kafka REST transport, topic policy, retention, trust/credentials and backlog bounds |
 | `resources` | Shared and per-project work capacity |
+| `recovery` | Hot backup-root and bounded recovery work settings |
 | `config_revision` | Server-owned conflict-control revision |
+
+On first use, confirm Kafka readiness and complete
+[Admin project initialization](web-console.md#first-use-project-initialization)
+for every `uninitialized` registered project before sending data. Registration,
+agent membership and global `/health` readiness do not create/admit a store. A
+known `recovery_required` target needs verified recovery, not empty initialization.
 
 Give each agent only its `.adhd/container/agent-a.json` or `agent-b.json` client
 file. It contains that agent's token and the URL, without the other identities.
@@ -249,6 +256,12 @@ Each store has a matching `.snapshot` recovery file. Keep the checkpoint and
 snapshot together: startup rejects conflicting generations rather than rolling
 back acknowledged data. A valid snapshot recovers an interrupted DETS write; it
 does not authorize silently resetting an unrelated corrupt store.
+
+For profile2.1, follow the complete
+[Kafka/server recovery-set procedure](event-service.md#recovery-backups-and-upgrades),
+including registry/marker/recovery sidecars, every selected project generation and
+Kafka state. The directory-copy example below is the historical standalone
+storage path; it is not by itself a complete profile2.1 recovery set.
 
 Take an offline backup; do not copy a live DETS file. Stop every process using the
 store and save both the data directory and the matching private configuration:

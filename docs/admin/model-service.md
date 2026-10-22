@@ -155,3 +155,12 @@ accepted artifact and actual running image. Each records all six provider POSTs,
 including scoped semantic history and the resumed filtered subscription after hot
 model re-enablement. These authored workload checks do not imply general calibration,
 latency guarantees or qualification of GPU hardware beyond the tested host.
+
+The [current compiled05 deployment gate](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json)
+independently qualifies all six Compose and six Kind child scenarios against the
+actual packaged runtime: filtered match/nonmatch, model disable/resume, cited
+backend history search, separate raw progress and foreign/private canary exclusion.
+Each child made six provider requests and exited 0 with strict cleanup. The outer
+launcher exited 143; its false aggregate is preserved. This small synthetic corpus
+is not general semantic accuracy or latency calibration, and the earlier evidence
+above retains its exact historical artifact/image scope.

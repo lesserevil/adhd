@@ -1,13 +1,13 @@
 # Multi-project and Kafka protocol profile
 
-This is the target contract for MULTI-001/KAFKA-001, not a claim that an older
-accepted artifact implements it. Normative authority is
+This guide describes the current application 2.1 multi-project/eventing contract.
+Its current schema/OpenAPI exports are linked in the [protocol inventory](README.md).
+An older accepted artifact is governed by its own advertised profile. Normative authority is
 `components/hub/multi/spec.md` and
 `components/hub/eventing/spec.md`. Existing
 [profile-1 foundation](foundation-v1.md) remains applicable except for their explicit
-replacements. Qualification must export schema/OpenAPI from the new accepted
-artifact and independently validate actual traffic; these examples are authored
-inputs, not generated evidence.
+replacements. Qualification binds exported schema/OpenAPI and actual traffic to an exact
+artifact; authored examples alone are not runtime evidence.
 
 ## Compatibility and negotiation
 
@@ -45,6 +45,15 @@ archived mutations use PROJECT_ARCHIVED; disabled semantic capabilities use
 MODEL_UNAVAILABLE; pre-acceptance queue exhaustion is BACKPRESSURE. These use the
 existing JSON-RPC -32000/google.rpc.ErrorInfo representation. CLI validate checks
 shape, not membership/model/broker availability.
+
+Profile 2.1 keeps registration separate from storage admission. An authorized
+project may have `uninitialized`, `recovery_required` or `restoring` availability;
+its ordinary work fails closed with `RECOVERY_REQUIRED`. Admin plan/apply/status
+operations remain available to initialize an unknown empty target or recover a
+verified missing/logically empty target. Agent tokens cannot initialize it.
+Global health readiness does not establish target availability. See the
+[recovery interface](../../components/hub/project-recovery/interface.md) for the
+closed operation/result shapes and Admin versus A2A HTTP status rules.
 
 During a hot all-project backend move, frozen writers reject new transactions
 with retryable CONFIG_APPLY_IN_PROGRESS. Admin HTTP returns503 and Retry-After:1;
@@ -112,7 +121,10 @@ partition; no project ordering claim is derived from a multi-partition broker.
 
 Topic name: PREFIX.server_sha16.project_sha16.events.v1, hashes are lowercase
 SHA256 of UTF8 IDs truncated to16 hexadecimal digits. Persist full identities and
-reject a collision. Consumer group is that topic + .fanout. Fanout group load
+reject a collision. Explicit restore/initialization selects a fresh project epoch
+and topic `PREFIX.server_sha16.project_sha16.rPROJECT_EPOCH.events.v1`; adopted
+legacy topics retain their original binding. Consumer group is the effective
+topic + .fanout. Fanout group load
 sharing never divides independent agents' subscriptions. Physical broker
 retries may duplicate records; stable event IDs deduplicate logical delivery.
 

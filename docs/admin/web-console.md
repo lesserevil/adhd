@@ -16,6 +16,34 @@ configured administrator token works only when explicitly allowed by auth policy
 the console keeps that bearer in page memory and requires sign-in after reload.
 The anonymous shell discloses no project information.
 
+## First-use project initialization
+
+A new configuration registers projects and memberships but does not silently
+create their stores. The server can serve `/health` and the console while a
+project is `uninitialized`. First confirm that the configured private Kafka REST
+service is ready. Sign in as Admin, complete your local profile, select the new
+project and open **Recovery**. The console automatically lands there for an
+unavailable selected project.
+
+For an unknown, empty target only, choose **Review empty initialization** and
+confirm the operation. Wait for the plan to become ready; review its server ID,
+project ID, mode and selected generation. Choose **Apply reviewed plan**, then
+wait for operation completion and project availability `ready`. Repeat for each
+new registered project before giving agents work. Initialization neither imports
+a backup nor grants agent/user membership. Profile 2.1 exposes the same process
+through Admin `project_restore_plan` (`mode:"initialize",confirm:true`),
+`project_restore_status` and `project_restore_apply`, binding the returned plan
+ID/hash and configuration revision; see the
+[normative interface](../../components/hub/project-recovery/interface.md).
+
+Never use this flow for `recovery_required`: that status can mean an initialized
+store is missing or damaged. Preserve its files/registry/journals and use a
+verified backup recovery plan. The server rejects empty initialization of known
+initialized targets, populated files and uncertain registry history. There is no
+automatic initialization fallback after a failed restore or unavailable broker.
+
+## Roles and project views
+
 Each user has one server-local role. Admin can inspect and manage all server
 resources. Developer can inspect public server state and create agents on their
 own behalf. Viewer can inspect and cannot change state. Only Admin assigns roles

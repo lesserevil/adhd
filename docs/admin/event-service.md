@@ -68,6 +68,11 @@ of it for remote access. Never publish the broker/controller ports or REST Proxy
 The qualification-only `events.test.compose.yaml` exposes REST Proxy to loopback
 and is excluded from the application package.
 
+After the hub starts, sign in to `/admin` and explicitly
+[initialize each new project](web-console.md#first-use-project-initialization)
+through Recovery review/apply. A healthy process and a registered project do not
+mean its store has been admitted. Never initialize a known lost target as empty.
+
 The accepted container staging context includes the complete authored hub Markdown
 specification tree at `/app/specification/`, including federation, multi-project,
 eventing and resource contracts. `/app/manifest.json` binds each packaged input to
@@ -149,7 +154,9 @@ on the hub PVC. Neither static placeholders nor bootstrap credentials are checke
 into these manifests. Applications do not receive Kubernetes API tokens. Network
 policies allow broker ingress from broker/proxy and proxy ingress from hub only;
 agent ingress terminates at the hub service. Kubernetes Secret encryption at rest
-and TLS ingress are deployment responsibilities.
+and TLS ingress are deployment responsibilities. After first hub startup, use the
+same Admin Recovery initialization flow for each new registered project; replacing
+a pod must preserve existing registry/store identity and must not reinitialize it.
 
 Apply `deploy/k8s/model.yaml` only when a GPU device plugin and a verified,
 prepopulated model-checkpoint PVC are available. It never downloads model weights.
@@ -266,6 +273,36 @@ never reset to latest and assert complete delivery.
 
 ## Qualification
 
+Current compiled05 deployment evidence is bound to the admitted source40 artifact,
+exact image, context and frozen harnesses:
+
+- [Model-free Compose11 and Kind10](../../verification/ownedMULTI008/compiled05-baseline-platform-positive/manifest.json)
+  pass the complete 21 named checks: public project initialization, durable raw
+  A2A delivery, replacements, consistent full cold backup/restore and selective
+  missing-project recovery preserving current Blue/security/global state. Compose
+  additionally passes the real same-volume 8.3.1→8.3.2 broker upgrade. All 84 original
+  platform assertions remain in the current 115-assertion harness.
+- [Secured Kind rotation](../../verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json)
+  passes seven whole scenarios with 51 assertions preserving all 48 originals:
+  HTTPS/native JWT denial and key retirement, hot token/trust validation, mounted
+  Secret password/certificate rotation, REST/broker pod replacement, durable cursor
+  progress and unchanged hub identity. The namespace, claimed PVs and owned probes
+  were removed. This is Enterprise/permitted-trial scope, with private plaintext
+  proxy-to-broker transport.
+- [Deployed optional-model filtering and search](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json)
+  independently qualifies all six Compose and six Kind child scenarios with their
+  exact compiled VM identities, bounded actual inference, raw progress and privacy
+  checks. Both children exited 0 and cleaned up. The outer launcher exited 143;
+  that failed invocation remains recorded and is not relabeled as a successful
+  aggregate run.
+
+These are scoped positive deployment gates. They do not close the integrated
+roadmap, final documentation-authority lifecycle, full CNI, complete recovery,
+Kafka, browser or core qualification by themselves. Independent cache integrity
+and reproducibility are linked in the [build guide](operations.md#build-and-transfer).
+Older service/native/accepted-image reports below retain their exact historical
+scope and do not substitute for these compiled05 results.
+
 `python3 tests/kafka_service.py --url URL --output _build/.../service.json` exercises
 real topic creation, ordered publication, manual consumer replacement/replay,
 explicit durable-position restoration and retention settings. It deliberately
@@ -318,7 +355,7 @@ subscriptions before restoring model-free operation. Keep the private credential
 password files and recovery snapshot out of Git. These diagnostic commands do not
 replace accepted-artifact staging or final lifecycle qualification.
 
-The accepted-image platform probes use `tests/kafka_final_platform.py` with an
+The accepted-image platform probes used by these gates are `tests/kafka_final_platform.py` with an
 already admitted `--image`, `--context` and passing `--acceptance-report`; they do
 not build or publish an image. Supply a fresh private work directory and owned
 `adhd-final-*` resource name. `--platform compose --broker-patch-upgrade` adds the
@@ -328,7 +365,7 @@ backup of configuration, every project store and Kafka, verify the intentional
 recovery boundary, and optionally exercise hot live-model filtering and semantic
 history queries. Use `--help` for explicit platform and bounded model-relay inputs.
 
-The [accepted Compose image evidence](../../verification/kafka-platform/compose-accepted-manifest.json),
+The earlier [accepted Compose image evidence](../../verification/kafka-platform/compose-accepted-manifest.json),
 [accepted Kubernetes image evidence](../../verification/kafka-platform/kind-accepted-manifest.json)
 and [accepted-image TLS/OAuth evidence](../../verification/kafka-platform/oauth-accepted-manifest.json)
 bind the actual OTP29 image to its accepted artifact, running image identity,
@@ -341,9 +378,9 @@ The [candidate platform diagnostic](../../verification/kafka-platform-diagnostic
 records eight official-SDK checks per platform, durable hub replacement and four
 live Nemotron decisions across Compose and Kubernetes. Its image is explicitly a
 lifecycle-unqualified diagnostic candidate. The temporary model relay was removed
-and the existing model remained ready. Final accepted-artifact platform
-qualification, browser coverage and the documented infrastructure upgrade/security
-gates remain separate requirements.
+and the existing model remained ready. Current accepted compiled05 platform and
+security results are linked above; the old diagnostic is retained as history,
+while remaining integrated qualification and release gates stay explicit.
 
 ## REST authentication and TLS boundary
 
@@ -376,8 +413,9 @@ necessary when its principals need restricted topic/group access. See the
 [CP 8.3 security guide](https://docs.confluent.io/platform/8.3/kafka-rest/production-deployment/rest-proxy/security.html)
 and [connection configuration](https://docs.confluent.io/platform/8.3/kafka-rest/production-deployment/rest-proxy/config.html).
 
-These are deployment integration requirements, not qualified overlays shipped in
-the baseline. Before claiming secured rotation, prove missing/invalid/expired
+Broker SASL_SSL, mTLS and principal/ACL extensions require separate deployment
+integration; the optional native OAuth/HTTPS proof above does not qualify them.
+A secured rotation claim must prove missing/invalid/expired
 credentials fail, current credentials pass, hot replacement preserves the hub
 process and durable cursor, retired credentials fail, and logs/Admin redact all
 secrets. Kafka/SASL credentials and certificate rotation may roll broker/proxy
@@ -551,5 +589,6 @@ adds actual fresh-PVC startup under the broker's nonroot user/fsGroup and restar
 with the committed identity, using the exact ConfigMap source. It also repeats
 Secret and trust rotation with the native frozen diagnostic hub and complete
 old/new pod log capture. Its six checks passed and its namespace/PVC/PV were
-removed. The final accepted-image branch of this harness remains a distinct gate;
-this native result is not evidence for the final container's OTP runtime.
+removed. The current compiled05 secured Kind result above independently qualifies its
+accepted-image branch. This older native result retains its original runtime
+scope; it is not itself evidence for the final container's OTP runtime.

@@ -80,50 +80,56 @@ Use the SDK client helper from the repository after installing the test/client
 environment described in [getting started](getting-started.md). The helper reads
 credentials from the ignored private configuration and does not print them.
 
-Agent B subscribes:
+After the Admin has initialized `shared-project`, Agent B subscribes without a
+model. Replace the project ID and private client paths if your installation differs:
 
 ```console
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-b '{"op":"subscribe","description":"API request or response schema changes that require client code updates."}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-b.json --agent agent-b '{"op":"subscribe","project_id":"shared-project","mode":"raw"}'
 ```
+
+For semantic narrowing instead, choose `mode:"filtered"` with a nonblank `filter`
+and a configured matcher. Raw mode remains sufficient for this walkthrough.
 
 Agent A publishes its work:
 
 ```console
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-a --message-id api-status-change-1 '{"op":"publish","text":"I am adding a required status field to the task API response. The client decoder must handle it."}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-a.json --agent agent-a --message-id api-status-change-1 '{"op":"publish","project_id":"shared-project","text":"I am adding a required status field to the task API response. The client decoder must handle it."}'
 ```
 
 Agent B polls, then acknowledges the returned delivery identifier:
 
 ```console
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-b '{"op":"poll"}'
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-b '{"op":"ack","delivery_ids":["REPLACE_WITH_DELIVERY_ID"]}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-b.json --agent agent-b '{"op":"poll","project_id":"shared-project"}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-b.json --agent agent-b '{"op":"ack","project_id":"shared-project","delivery_ids":["REPLACE_WITH_DELIVERY_ID"]}'
 ```
 
 Agent B can publish a response, send a private message, and search earlier updates:
 
 ```console
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-b '{"op":"publish","text":"Client integration is blocked until the new API status field becomes optional."}'
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-b '{"op":"send","recipient_id":"agent-a","text":"I am updating the decoder now."}'
-_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --agent agent-a '{"op":"search","query":"decoder"}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-b.json --agent agent-b '{"op":"publish","project_id":"shared-project","text":"Client integration is blocked until the new API status field becomes optional."}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-b.json --agent agent-b '{"op":"send","project_id":"shared-project","recipient_id":"agent-a","text":"I am updating the decoder now."}'
+_build/tools/a2a/hub001/bin/python scripts/hub_agent.py --config .adhd/native/agent-a.json --agent agent-a '{"op":"search","project_id":"shared-project","query":"decoder"}'
 ```
 
 ## Delivery behavior
 
-Publishing succeeds once the publication and matching jobs have been flushed to
-disk. Delivery may appear later. The background worker asks the configured
-Nemotron service whether each new publication satisfies each subscription. Model
-failures remain pending and are retried; the server does not turn an unavailable
-model into a nonmatch or silently use a keyword matcher.
+Publishing succeeds after the original, retry identity and event handoff work are
+durable. Kafka publication and recipient fanout are asynchronous. Raw subscriptions
+and exact selectors do not call a model. Filtered targets keep their frozen
+criterion/revision and use the configured SystemOne service; unavailable inference
+remains pending rather than becoming a nonmatch. Direct messages, polling and
+literal search do not depend on the matcher.
 
-The initial threshold is 900,000 parts per million. Returned probabilities are
+Filtered matching initially uses a threshold of 900,000 parts per million. Returned probabilities are
 rounded to parts per million before comparison. This is a configurable starting
 policy, not an established accuracy guarantee. Multiple matching subscriptions
 for one agent produce one delivery with the matching evidence attached.
 
 Polling does not consume an item. Repeated delivery is expected until acknowledgement.
 Accepted state, pending matching jobs, and acknowledgements persist across process
-restarts. Subscriptions apply to new publications; search retrieves older
-information. Removing a subscription stops future matching for it but does not
+restarts. Subscriptions ordinarily apply to new publications; literal search retrieves older
+information. Admin may request [explicit bounded historical replay](../protocol/event-recovery.md#explicit-historical-replay)
+to exact subscription revisions without resetting existing acknowledgements. Removing a subscription stops future matching for it but does not
 withdraw information already queued.
 
 Reuse the same A2A `messageId` when retrying a mutation. The same command returns

@@ -29,7 +29,10 @@ _build/tools/a2a/hub001/bin/python scripts/hub_agent.py \
 ```
 
 Run these commands from the repository root. Verify that `whoami` returns your
-assigned identity and project_ids before sharing project information. With
+assigned identity and project_ids before sharing project information. The Admin
+must also complete [project initialization](../admin/web-console.md#first-use-project-initialization)
+before the project accepts data; `RECOVERY_REQUIRED` is not an agent permission grant
+or a reason to recreate a lost project. With
 profile 2, call list_projects and include project_id in every project command
 when admitted to more than one project. Tokens grant only their current project
 memberships; selecting a name, contextId or guessed record ID grants nothing.
@@ -59,7 +62,9 @@ for raw subscriptions. Use plain-text filters that explain the information you n
 “Changes to API response schemas that require updates to the client decoder” is
 more useful than “project updates.” Reuse an existing appropriate subscription;
 creating a new one does not replay old publications. Use `unsubscribe` when a
-responsibility ends and `search` for historical context.
+responsibility ends and `search` for historical context. Admin can explicitly
+[replay retained history](../protocol/event-recovery.md#explicit-historical-replay)
+to selected subscription revisions; subscribing alone never requests that replay.
 
 See the [two-agent walkthrough](hub-api.md#two-agent-example) for subscribe,
 publish, poll, acknowledge, send, and search commands. Replace its agent IDs

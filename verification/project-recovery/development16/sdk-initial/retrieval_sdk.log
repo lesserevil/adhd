@@ -1,0 +1,31 @@
+PASS official-sdk-and-actual-store-producer-0
+PASS official-sdk-and-actual-store-producer-1
+PASS official-sdk-and-actual-store-producer-2
+Traceback (most recent call last):
+  File "<workspace>/_build/roadmap/final/sdk16/tests/retrieval_sdk.py", line 75, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "<workspace>/_build/roadmap/final/sdk16/tests/retrieval_sdk.py", line 74, in main
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--image');p.add_argument('--legacy-command',action='append',default=[]);p.add_argument('--report',default='verification/retrieval-sdk.json');asyncio.run(run(p.parse_args()))
+                                                                                                                                                                                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<workspace>/_build/roadmap/final/sdk16/tests/retrieval_sdk.py", line 69, in run
+    await flow(Hub(producer,root/('hub-'+str(i)),model.url),producer,i)
+  File "<workspace>/_build/roadmap/final/sdk16/tests/retrieval_sdk.py", line 34, in flow
+    h.start();a=await h.agent('agent-a');b=await h.agent('agent-b')
+    ^^^^^^^^^
+  File "<workspace>/_build/roadmap/final/sdk16/tests/hub_acceptance.py", line 132, in start
+    raise AssertionError(f"Hub exited during startup: {detail}")
+AssertionError: Hub exited during startup: ** (EXIT from #PID<0.95.0>) shutdown
+
+** (EXIT from #PID<0.95.0>) :invalid_configuration
+
+

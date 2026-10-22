@@ -1,0 +1,17 @@
+{
+  "schema": "adhd/compiler-reproducibility-header-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "read_only_operations": [
+    "Docker image save of existing e05/cb97 images",
+    "Raw archive/config/layer SHA256 and tar-header inspection"
+  ],
+  "actual_builds_or_application_starts": 0,
+  "finding": "COPY-layer runtime directory mtime and final-RUN-layer etc directory mtime differ; all other decoded header fields and all file body hashes match",
+  "causality_limit": "Observed layer fields establish the bitwise mismatch. Wrapper-root COPY repair is proposed and still requires independent actual builds.",
+  "files": {
+    "comparison.json": "8365bd5ee50e78c564b89dbcc29afcabcd77e935ef3bb56da76422b28c6c52d2",
+    "inspect.py": "b3e13d8b38433f3bb5f2eb3801a53a1421c85495dc2161aebc415c880804ad81"
+  },
+  "docker_executable_sha256": "6d1ac33d27f9f73d1feb0184e7c0847c1b6051dd60b7a6ec7b3ad9a2f7ca01ea"
+}

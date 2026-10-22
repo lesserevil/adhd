@@ -1,21 +1,21 @@
 PREPARATION ONLY. CWD=/home/horde/src/adhd. Do not run this text as a batch. Root owns the current lifecycle; an invocation already started must be observed, never duplicated. No new receipt/image/admission is assigned here.
 
-# Known fresh retained-source02 authorization. Root-only actual lifecycle command;
+# Historical completed source41-03 lifecycle command. Do NOT execute again;
 # do NOT run again if the current root lifecycle already uses this snapshot.
-/home/horde/src/adhd/_build/federation/litai/bin/python /home/horde/src/adhd/_build/federation/litai/bin/litai rebuild components/hub --project /home/horde/src/adhd --target host --retained-source /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-02/retained-source --build-dir /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-02/build --obj-dir /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-02/objects --jobs 1 --authorize-retained-source sha256:45f8992af31bd38bc310a2d1bead43773978d855323a347bb2c36ae82459aa65 --update-receipt --allow-host-execution
+/home/horde/src/adhd/_build/federation/litai/bin/python /home/horde/src/adhd/_build/federation/litai/bin/litai rebuild components/hub --project /home/horde/src/adhd --target host --retained-source /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-03/retained-source --build-dir /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-03/build --obj-dir /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-03/objects --jobs 1 --authorize-retained-source sha256:45f8992af31bd38bc310a2d1bead43773978d855323a347bb2c36ae82459aa65 --update-receipt --allow-host-execution
 
 # AFTER actual passing lifecycle: inspect rebuild.json's actual result.artifact,
 # receipt_identity/lifecycle_request_identity/lifecycle_result_identity and current
 # receipt. Require exported hub SHA d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108.
-# Native18 is the proper lifecycle built-in suite, NOT the readiness21 suite.
+# Native18 is the proper lifecycle built-in suite, separate from the current full readiness23 suite and the three-boot retention companion.
 # ACTUAL_EXPORTED_HUB must be read from that real passing rebuild result, not an
 # invented default path. Root reviews full frozen helper/schema/tool/source plan.
 
-# All21 independent readiness cases, real baseline Kafka, no model flag or service.
+# All23 independent readiness cases, real baseline Kafka, no model flag or service.
 # PYTHON/NATIVE_BIN_PATH/FROZEN_TESTS/FROZEN_SCHEMA/WORK/REPORT come from the fresh
-# reviewed native21 input snapshot; do not import authored ambient helpers.
+# reviewed native23 input snapshot; do not import authored ambient helpers.
 PATH="$NATIVE_BIN_PATH" ERL_FLAGS='+S 2:2' "$PYTHON" -s -B "$FROZEN_TESTS/eventing_readiness_faults.py" --hub "$ACTUAL_EXPORTED_HUB" --eventing-rest-url http://127.0.0.1:18082 --report "$REPORT" --keep-work "$WORK" --deadline 20 --recovery-schema "$FROZEN_SCHEMA"
-# --cases is intentionally absent: preserve full21, original20s per-fixture
+# --cases is intentionally absent: preserve full23, original20s per-fixture
 # observation deadline and the authored recovery10000ms/Eventing3000ms queue discrimination.
 # Require real broker creation/delivery, no model calls, current native PID/source
 # custody and final cleanup. A source-bound positive report can be staging's
@@ -24,10 +24,10 @@ PATH="$NATIVE_BIN_PATH" ERL_FLAGS='+S 2:2' "$PYTHON" -s -B "$FROZEN_TESTS/eventi
 # Proper whole verify once root chooses after successful receipt/native acceptance.
 /home/horde/src/adhd/_build/federation/litai/bin/python /home/horde/src/adhd/_build/federation/litai/bin/litai verify
 
-# Stage only from that actual new rebuild and independently passing native21.
+# Stage only from that actual new rebuild and independently passing native23.
 # The existing stage command itself runs proper pinned verification and compares
 # receipt binding and exported artifact digest. No --export from old receipt.
-"$PYTHON" scripts/stage_container.py --rebuild-result /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-02/rebuild.json --acceptance-report "$NATIVE21_REPORT" --output "$FRESH_SOURCE41_CONTEXT" --litai-command '["/home/horde/src/adhd/_build/federation/litai/bin/python","/home/horde/src/adhd/_build/federation/litai/bin/litai"]'
+"$PYTHON" scripts/stage_container.py --rebuild-result /home/horde/src/adhd/_build/roadmap/final/eventing-ready41-03/rebuild.json --acceptance-report "$NATIVE23_REPORT" --output "$FRESH_SOURCE41_CONTEXT" --litai-command '["/home/horde/src/adhd/_build/federation/litai/bin/python","/home/horde/src/adhd/_build/federation/litai/bin/litai"]'
 
 # Root verifies exact5 context files/no symlinks, actual app/spec inventories and
 # all hashes, compiler-inputs/toolchain/packaging and new source payload before
@@ -37,16 +37,16 @@ PATH="$NATIVE_BIN_PATH" ERL_FLAGS='+S 2:2' "$PYTHON" -s -B "$FROZEN_TESTS/eventi
 # Compare actual IDs/config/layers and input closure; no new digest is guessed.
 
 # Next reuse the reviewed successor-orchestration-preparation commands:
-# 1. Fresh reviewed target-bound offline payload/cache auditor + admission capture.
-#    Replace old source40 receipt/admission/context/iid/output bindings ONLY with
-#    actual new source41 receipt/rebuild/context/image/audit results. Preserve
+# 1. Use parameterized tests/image_payload_audit.py + tests/image_compiled_admission.py.
+#    Pass actual source41 admissione1ee/receipt/rebuild03/context41/image/audit outputs;
+#    old target-bound source40 copies remain immutable historical evidence. Preserve
 #    strict create-only audit cleanup and all original source/cache assertions.
 # 2. container_cache_acceptance.py --prepare with actual image/context/admission,
 #    --cache-root-mode0555; review plan, then frozen driver.py --execute under -I.
-# 3. Existing actual target ABI gate, then image readiness21 on the same program:
-"$PYTHON" -s -B "$FROZEN_IMAGE_TESTS/eventing_readiness_faults.py" --image "$ACTUAL_ADMITTED_IMAGE" --image-manifest "$ACTUAL_CONTEXT_MANIFEST" --eventing-rest-url http://127.0.0.1:18082 --report "$IMAGE21_REPORT" --keep-work "$IMAGE21_WORK" --deadline 20 --recovery-schema "$FROZEN_SCHEMA"
+# 3. Existing actual target ABI gate, then image readiness23 on the same program:
+"$PYTHON" -s -B "$FROZEN_IMAGE_TESTS/eventing_readiness_faults.py" --image "$ACTUAL_ADMITTED_IMAGE" --image-manifest "$ACTUAL_CONTEXT_MANIFEST" --eventing-rest-url http://127.0.0.1:18082 --report "$IMAGE23_REPORT" --keep-work "$IMAGE23_WORK" --deadline 20 --recovery-schema "$FROZEN_SCHEMA"
 # No --cases/--with-model, no bypass of full current target closure or VM custody.
 # 4. All25 recovery programs on new image with actual observed assertion counts,
 #    Kafka14 plus affected core paths, actual deployment/security/model integration.
 #    Never union old Eventing passing reports as successor integrated qualification.
-# 5. CNI18 proceeds independently; no routes are qualified by the steps above.
+# 5. CNI18 is separately positive on the original-e2 TCP fixture; see cni-static-gate-positive/audit.json. No source41 app or Kafka qualification is inferred from it.

@@ -13,11 +13,11 @@ $DOCKER --host "$DOCKER_SOCKET_URL" --config "$DOCKER_CONFIG" build --network=no
 $DOCKER --host "$DOCKER_SOCKET_URL" --config "$DOCKER_CONFIG" build --network=none --no-cache --pull=false --iidfile "$IID_SECOND" --tag "$TAG_SECOND" "$CONTEXT"
 # Independently compare exact ID/config/RootFS layer identities and bind both logs; compiler RUN must execute in both. No equality or admission is asserted here.
 
-# Offline payload/cache audit and admission: existing retained scripts have no CLI parameters.
-# Do not run old copies in place. Review a fresh target-bound copy of:
-# verification/container-precompile-image40/compiled05-admission/image-payload-audit.py
-# _build/roadmap/final/admit-compiled05.py
-# Replace only target/output/source admission bindings, then root reviews exact command/file hashes and GO. Preserve all original audit predicates and cleanup.
+# Parameterized create-only payload/cache audit; old40/05 scripts stay historical.
+$PYTHON -I -B tests/image_payload_audit.py --execute --context "$CONTEXT" --runtime-helpers "$ROOT/deploy/runtime" --output "$AUDIT_OUTPUT" --docker "$DOCKER" --docker-socket "$DOCKER_SOCKET_PATH" --docker-config "$DOCKER_CONFIG" --image "$ACTUAL_IMAGE_ID" --artifact-sha256 "$ARTIFACT_SHA" --context-sha256 "$CONTEXT_SHA"
+# Actual compiled-admission capture, after the source admission + receipt/rebuild and actual offline audit all pass.
+$PYTHON -I -B tests/image_compiled_admission.py --execute --source-admission "$SOURCE_ADMISSION" --receipt "$RECEIPT" --rebuild "$REBUILD_JSON" --context "$CONTEXT" --audit-directory "$AUDIT_OUTPUT" --build-log "$ACTUAL_BUILD_LOG" --output "$COMPILED_ADMISSION_OUTPUT" --docker "$DOCKER" --docker-socket "$DOCKER_SOCKET_PATH" --docker-config "$DOCKER_CONFIG" --image "$ACTUAL_IMAGE_ID" --artifact-sha256 "$ARTIFACT_SHA" --context-sha256 "$CONTEXT_SHA" --source-admission-sha256 "$SOURCE_ADMISSION_SHA" --payload-audit-sha256 "$ACTUAL_PAYLOAD_AUDIT_SHA"
+# No new receipt or runtime/deployment qualification is issued by either helper.
 
 # Cache17: accepts new image/context/admission directly. Actual normalized final cache root is0555.
 $PYTHON tests/container_cache_acceptance.py --prepare --work "$CACHE_WORK" --image "$IMAGE_ID" --context "$CONTEXT" --admission-manifest "$ADMISSION" --admission-sha256 "$ADMISSION_SHA" --cache-root-mode 0555

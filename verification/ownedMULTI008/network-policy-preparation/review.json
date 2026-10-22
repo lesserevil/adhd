@@ -1,0 +1,26 @@
+{
+  "schema": "adhd/network-policy-gate-preparation@1",
+  "status": "UNSTARTED_CNI_RUNTIME_REQUIRED",
+  "runtime_qualified": false,
+  "pure_guards_passed": 5,
+  "authored_elixir_syntax_cases_passed": 2,
+  "native_parser_vm_starts": 1,
+  "application_or_container_or_cluster_or_model_starts": 0,
+  "fixtures": {
+    "namespaces": 2,
+    "pods": 9,
+    "before_policy_routes": 18,
+    "after_policy_routes": 18
+  },
+  "traffic_scope": "TCP ingress enforcement of exact shipped policies; no actual Kafka, hub, OAuth, HA or application qualification. Distinct source/target pods avoid self-traffic bypass; matching hub/rest/broker roles tested across namespaces.",
+  "cleanup": "Owner nonce/UID checked, raw DeleteOptions.preconditions.uid atomically fences namespace deletion, independent namespace absence required even on failure.",
+  "independent_read_only_review": "contracts agent found and rechecked cross-namespace matching-role controls, actual pod role/namespace/UID binding, atomic UID deletion, strict per-probe convergence budget.",
+  "actual_cni_gate_pending": true,
+  "source_reference": "https://github.com/kubernetes/kubectl/blob/v0.35.0/pkg/cmd/delete/delete.go#L297-L307",
+  "files": {
+    "tests/kafka_network_policy.py": "1151873be469447bf9b45f0eb0edf40f7c079e4fee3d2db6b9da07a81e2fab0e",
+    "tests/kafka_network_policy_unit.py": "4edf3f430e95a10cb512ce00238cd5d75e055f61c61f4720589cdce7784d936a",
+    "deploy/k8s/private.yaml": "bb2c39acf279a30bfe9f21c0df1ff4672872e8403a52cf3176efacd3e661940a"
+  },
+  "parser_output": "PASS authored TCP fixture syntax2 on Elixir 1.18.4"
+}

@@ -1,0 +1,140 @@
+{
+  "cases": [
+    {
+      "case": "GET-body-refused",
+      "passed": true
+    },
+    {
+      "case": "encoded-traversal-refused",
+      "passed": true
+    },
+    {
+      "case": "extra-proof-suffix",
+      "passed": true
+    },
+    {
+      "case": "hardlink-refused",
+      "passed": true
+    },
+    {
+      "case": "method-not-GET",
+      "passed": true
+    },
+    {
+      "case": "mismatched-token-content",
+      "passed": true
+    },
+    {
+      "case": "missing-host",
+      "passed": true
+    },
+    {
+      "case": "original-restored",
+      "passed": true
+    },
+    {
+      "case": "oversize-proof",
+      "passed": true
+    },
+    {
+      "case": "policy-changed-fence",
+      "passed": true
+    },
+    {
+      "case": "query-refused",
+      "passed": true
+    },
+    {
+      "case": "reject-host-",
+      "passed": true
+    },
+    {
+      "case": "reject-host-666F726569676E2E6578616D706C652E6F7267",
+      "passed": true
+    },
+    {
+      "case": "reject-host-6875622E6578616D706C652E6F72670D0A583A2079",
+      "passed": true
+    },
+    {
+      "case": "reject-host-6875622E6578616D706C652E6F72672E",
+      "passed": true
+    },
+    {
+      "case": "reject-host-6875622E6578616D706C652E6F72673A30",
+      "passed": true
+    },
+    {
+      "case": "reject-host-6875622E6578616D706C652E6F72673A3635353336",
+      "passed": true
+    },
+    {
+      "case": "reject-host-6875622E6578616D706C652E6F72673A38303A3830",
+      "passed": true
+    },
+    {
+      "case": "reject-host-6875622E6578616D706C652E6F72673A38343433",
+      "passed": true
+    },
+    {
+      "case": "reject-host-75736572406875622E6578616D706C652E6F7267",
+      "passed": true
+    },
+    {
+      "case": "retired-attempt-fence",
+      "passed": true
+    },
+    {
+      "case": "symlink-refused",
+      "passed": true
+    },
+    {
+      "case": "unknown-token",
+      "passed": true
+    },
+    {
+      "case": "unrelated-path-refused",
+      "passed": true
+    },
+    {
+      "case": "valid-host-HUB.EXAMPLE.ORG",
+      "passed": true
+    },
+    {
+      "case": "valid-host-hub.example.org:80",
+      "passed": true
+    },
+    {
+      "case": "valid-host-hub.example.org:8080",
+      "passed": true
+    },
+    {
+      "case": "valid-owned-proof",
+      "passed": true
+    },
+    {
+      "case": "writable-by-others-refused",
+      "passed": true
+    }
+  ],
+  "input_sha256": {
+    "/home/horde/src/adhd/_build/acme/source42-01/tls.exs": "730876cd5d036dd4886324294c438a89163388018debe57aa44bc9f7cb443510",
+    "/home/horde/src/adhd/_build/acme/source42-01/tls_certificate.exs": "4505196e331b8c3803cb7a2f68662f69655668d0e6c4afb8664fe06b65503aee"
+  },
+  "live_source_unchanged_at_end": true,
+  "passed": true,
+  "scope": "Actual challenge functions/module-only with Config persistent-state seam; no HTTP server, TLS handshake, CA or child-client execution.",
+  "services_started": 0,
+  "schema": "adhd/acme-challenge-reader-pure@1",
+  "test_sha256": "5d07aafc06203295c1b4787d7fd7770d005eb973806b4ceb840eaf0bf4e513d6",
+  "first_failure": {
+    "scope": "Harness fixture used mkdir_p inherited0775 intermediate dirs instead of Lego requested0755. Actual reader correctly refused writable-by-others paths.",
+    "kept_private_logs": "_build/acme-challenge-pure.{stdout,stderr}",
+    "correction": "Only fixturechmod to0755 and explicit text/plain response assertion; no reader guard relaxed."
+  },
+  "qualification_limits": [
+    "No HTTP socket/framing, certificate issuance, real client, TLS handshake or guardian process execution claimed.",
+    "Config seam uses isolated persistent state, not full Config transaction service.",
+    "Raw OS O_NOFOLLOW atomic opening is not claimed; fd/path identities and ownedprivateancestor policy are checked."
+  ]
+}

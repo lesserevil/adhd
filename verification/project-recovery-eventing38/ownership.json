@@ -1,0 +1,31 @@
+{
+  "schema": "adhd/owned-kafka-qualification-fixture@1",
+  "cluster_ids": {
+    "18082": "MkU3OEVBNTcwNTJENDM2Qk",
+    "18085": "NEiAAXk0v1xqZFCdSDoQjA",
+    "18088": "Gxd-XZuGSwu6g53qL8Jw8g"
+  },
+  "containers": [
+    {
+      "name": "adhd-qa38-events-kafka-1",
+      "id": "cbee7da5e69e541956886a8ae1b3584b5097cde065e4c8871ba7b1fdb188aa20",
+      "image": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2",
+      "requested_image": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+      "status": "running",
+      "health": "healthy",
+      "compose_project": "adhd-qa38-events"
+    },
+    {
+      "name": "adhd-qa38-events-kafka-rest-1",
+      "id": "c33a7666e4d4c348c57d5d5c427469ebcb4b4cf47a3035cd4d1be593aa971b75",
+      "image": "sha256:42a89e90d177eadb12beff52f5c65edd336450b23c1c8284998d06ea2f0b9b56",
+      "requested_image": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+      "status": "running",
+      "health": "healthy",
+      "compose_project": "adhd-qa38-events"
+    }
+  ],
+  "owned_project": "adhd-qa38-events",
+  "private_loopback_rest_port": 18088,
+  "existing_clusters_preserved": true
+}

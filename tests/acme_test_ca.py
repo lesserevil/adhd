@@ -11,11 +11,36 @@ import socket
 import ssl
 import subprocess
 import time
+import tarfile
 import urllib.request
 
 SHA = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
+def verify_fixture_tools(tools):
+    pins=json.loads((Path(__file__).resolve().parents[1]/'deploy/runtime/acme-pins.json').read_bytes())['pebble_test_only']
+    assert SHA(tools/'pebble-source.tar.gz')==pins['source_archive_sha256']
+    for name, pin in pins['artifacts'].items():
+        archive=tools/Path(pin['url']).name
+        assert SHA(archive)==pin['archive_sha256']
+        binary=tools/'testca-bin'/pin['archive_member']
+        assert binary.resolve(strict=True)==binary and binary.is_file() and SHA(binary)==pin['binary_sha256']
+        with tarfile.open(archive) as members:
+            choices=[m for m in members.getmembers() if m.name==pin['archive_member']]
+            assert len(choices)==1 and choices[0].isfile()
+            assert hashlib.sha256(members.extractfile(choices[0]).read()).hexdigest()==pin['binary_sha256']
+    source=next((tools/'pebble-source').iterdir())
+    with tarfile.open(tools/'pebble-source.tar.gz') as archive:
+        for relative in ['test/certs/pebble.minica.pem','test/certs/localhost/cert.pem','test/certs/localhost/key.pem']:
+            choices=[m for m in archive.getmembers() if m.name.endswith('/'+relative)]
+            assert len(choices)==1 and choices[0].isfile()
+            target=source/relative
+            assert target.resolve(strict=True)==target
+            assert hashlib.sha256(archive.extractfile(choices[0]).read()).hexdigest()==SHA(target)
+    return pins
+
+
 def run(args):
+    verify_fixture_tools(args.tools)
     work = args.work.resolve()
     work.mkdir(mode=0o700, parents=True, exist_ok=False)
     source = next((args.tools/'pebble-source').iterdir())

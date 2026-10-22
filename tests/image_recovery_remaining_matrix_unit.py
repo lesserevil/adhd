@@ -51,7 +51,31 @@ def execute_case(root,mode):
     return result
 
 
+def full_app_resume_case():
+    names=['admission','rejections','private','agent-admission','uninitialized-move','mixed','federation-errors','learned','crash-damaged-after-install-snapshot','crash-no-default-after-install-snapshot']+['crash-later-'+str(n)for n in range(13)]+['rebind','rebind-hostile']
+    image='sha256:'+'a'*64;artifact='b'*64
+    basis={'jobs':[{'name':n}for n in names],'full_app_only':True,'compiled_binding':{'bound':True},'image_config_identity':image,'artifact_sha256':artifact}
+    matrix_value={'passed':False,'artifact_sha256':artifact,'image_config_identity':image,'planned':25,
+        'rows':[{'name':n,'passed':i<9,'exit_code':0 if i<9 else 1,'started':True}for i,n in enumerate(names[:10])],
+        'executed':names[:10],'attempted':names[:10],'unrun':names[10:]}
+    assert matrix.remainder_names(basis,matrix_value,artifact,image)==names[9:]
+    for mode in ['not-full-app','missing-cache','wrong-parent-artifact','wrong-parent-image','prefix-false','wrong-failed-name','wrong-unrun','partial-executed']:
+        b=copy.deepcopy(basis);m=copy.deepcopy(matrix_value)
+        if mode=='not-full-app':b['full_app_only']=False
+        elif mode=='missing-cache':b['compiled_binding']=None
+        elif mode=='wrong-parent-artifact':b['artifact_sha256']='c'*64
+        elif mode=='wrong-parent-image':b['image_config_identity']='sha256:'+'d'*64
+        elif mode=='prefix-false':m['rows'][8]['passed']=False
+        elif mode=='wrong-failed-name':m['rows'][9]['name']='unrelated'
+        elif mode=='wrong-unrun':m['unrun']=m['unrun'][:-1]
+        else:m['executed']=m['executed'][:-1]
+        try:matrix.remainder_names(b,m,artifact,image)
+        except AssertionError:pass
+        else:raise AssertionError('Full-app25 continuation scope bypass: '+mode)
+
+
 def main():
+    full_app_resume_case()
     names=['admission','rejections','private','agent-admission','uninitialized-move','mixed','federation-errors','learned']+['crash-'+str(n)for n in range(15)]+['rebind','rebind-hostile']
     rows=[{'name':n,'family':'crash'if n.startswith('crash-')else'http'}for n in names]
     descriptor={'selected_rows':rows[:8]+[{'name':'primitive-'+str(n),'family':'component'}for n in range(17)]+rows[8:]}
@@ -119,7 +143,7 @@ def main():
             try:matrix.resolve(value,{'KNOWN':'x'})
             except AssertionError:pass
             else:raise AssertionError('Unresolved command admitted')
-    print('PASS remaining matrix pure19 (including full-app25 exact order/incomplete rejection): staged fullSET/hash/symlink/root custody, exact42 success, creationfail attempted-vs-executed, reportfalse failfast, openimage closure denial, diagnostic38 beforeclaim denial, unresolved templates, exact declared-origin trees with excluded old outputs/inside-shadow denial, parent interruption signals owned child cleanup/preserves primary+known terminal exit, stale/redirected caches rejected, ambient injection not inherited; actual subprocess/runtime calls0')
+    print('PASS remaining matrix pure20 (plus eight full-app25 continuation negative guards) (including full-app25 exact order/incomplete rejection): staged fullSET/hash/symlink/root custody, exact42 success, creationfail attempted-vs-executed, reportfalse failfast, openimage closure denial, diagnostic38 beforeclaim denial, unresolved templates, exact declared-origin trees with excluded old outputs/inside-shadow denial, parent interruption signals owned child cleanup/preserves primary+known terminal exit, stale/redirected caches rejected, ambient injection not inherited; actual subprocess/runtime calls0')
 
 
 if __name__=='__main__':main()

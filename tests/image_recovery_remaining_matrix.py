@@ -125,14 +125,19 @@ def verify_empty_cache(path,required):
 
 def remainder_names(basis,matrix,artifact,image):
     names=[job['name'] for job in basis['jobs']]
-    assert len(names) in (42,34,19) and len(set(names))==len(names)
+    assert len(names) in (42,34,19,25) and len(set(names))==len(names)
     assert matrix['passed'] is False and matrix['artifact_sha256']==artifact and matrix['image_config_identity']==image
-    whole={42:8,34:15,19:1}[len(names)]
-    failed={42:'crash-damaged-after-install-snapshot',34:'primitive-allocator',19:'primitive-epoch'}[len(names)]
+    whole={42:8,34:15,19:1,25:9}[len(names)]
+    failed={42:'crash-damaged-after-install-snapshot',34:'primitive-allocator',19:'primitive-epoch',25:'crash-no-default-after-install-snapshot'}[len(names)]
     rows=matrix['rows'];assert len(rows)==whole+1 and matrix['planned']==len(names)
     assert [row['name'] for row in rows]==names[:whole+1]
     assert all(row['passed'] is True and row['exit_code']==0 and row['started'] for row in rows[:whole])
     assert rows[-1]['name']==failed and rows[-1]['passed'] is False and rows[-1]['exit_code']==1 and rows[-1]['started']
+    if len(names)==25:
+        assert basis['full_app_only'] is True and basis.get('compiled_binding')
+        assert basis['artifact_sha256']==artifact and basis['image_config_identity']==image
+        assert names[:9]==['admission','rejections','private','agent-admission','uninitialized-move','mixed','federation-errors','learned','crash-damaged-after-install-snapshot']
+        assert names[-2:]==['rebind','rebind-hostile']
     if len(names)==34:assert all(name.startswith('crash-') for name in names[:15])
     if len(names)==19:assert names[:2]==['primitive-allocator','primitive-epoch']
     assert matrix['unrun']==names[whole+1:] and matrix['executed']==names[:whole+1] and matrix['attempted']==names[:whole+1]
@@ -180,7 +185,7 @@ def verify(work,plan):
     if plan.get('resume_basis'):
         prior=json.loads((work/'bound/prior-plan.json').read_text());matrix=json.loads((work/'bound/prior-matrix.json').read_text())
         names=remainder_names(prior,matrix,plan['artifact_sha256'],plan['image_config_identity'])
-        assert [job['name'] for job in plan['jobs']]==names and len(names) in (34,19,18)
+        assert [job['name'] for job in plan['jobs']]==names and len(names) in (34,19,18,16)
         expected=len(names)
     assert len(plan['jobs'])==expected and len({j['name'] for j in plan['jobs']})==expected
     assert sha(work/'frozen/tests/image_recovery_remaining_matrix.py')==plan['driver_sha256']
@@ -279,7 +284,8 @@ def prepare(args):
             assert Path(name).resolve(strict=True)==Path(row['realpath']) and sha(name)==row['sha256']
         selected_names=remainder_names(basis,matrix,artifact,args.image)
         full_names=[row['name'] for row in descriptor['selected_rows']]
-        assert [job['name'] for job in basis['jobs']] in (full_names,full_names[8:],full_names[23:])
+        allowed=(full_names,full_names[8:],full_names[23:],[r['name']for r in full_app_rows(descriptor)])
+        assert [job['name'] for job in basis['jobs']] in allowed
         if len(basis['jobs'])==34:
             from image_recovery_component import qualify_output
             failed=prior/'results/primitive-allocator-capsule-work/stdout.log'
@@ -337,7 +343,7 @@ def prepare(args):
     socket=args.docker_socket.stat();assert stat.S_ISSOCK(socket.st_mode)
     plan={'schema':'adhd/image-recovery42-plan@1','execution_ready':args.execution_ready,'execution_started':False,
         'full_app_only':full_app_only,'compiled_binding':compiled_binding,
-        'scope':('Original full-app25/128 subset; source-only17/181 and callback5/28 remain separately scoped.'if full_app_only else 'Failed+unrun'+str(len(selected_names))+' of original recovery42; prior whole passes remain separate preserved evidence.' if resume_basis else 'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.'),'resume_basis':resume_basis,
+        'scope':('Failed+unrun16 of original full-app25/128; nine whole prefix suites retained, failed partial excluded; original aggregate remains false.'if resume_basis and len(selected_names)==16 else 'Original full-app25/128 subset; source-only17/181 and callback5/28 remain separately scoped.'if full_app_only else 'Failed+unrun'+str(len(selected_names))+' of original recovery42; prior whole passes remain separate preserved evidence.' if resume_basis else 'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.'),'resume_basis':resume_basis,
         'known38_ownership_gap':args.image==BASELINE,'image_config_identity':args.image,'artifact_sha256':artifact,
         'admission_manifest_sha256':args.admission_sha256,'canonical_manifest_sha256':sha(work/'context/manifest.json'),
         'payload_tar_sha256':selected['payload_sha256'],'original_plan_sha256':args.original_sha256,

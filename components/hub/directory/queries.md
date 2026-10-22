@@ -51,7 +51,9 @@ revalidated, resume the original idempotent remote job; do not create a replacem
 remote identity or extend its deadline. This retry rule requires the same owner
 and retained admitted peer from the accepted membership snapshot. Explicit peer
 removal, identity conflict, canonical revocation and expired deadlines retain
-their terminal behavior. A new query without an already dispatched pinned result
+their terminal behavior. A fresh different canonical owner MUST NOT silently
+retarget an already dispatched job; terminate that result as revoked so a new
+query can select the new owner explicitly. A new query without an already dispatched pinned result
 still reports established-owner unavailability under the rules below.
 
 Resolve canonical claims before any source-specific network question dispatch.

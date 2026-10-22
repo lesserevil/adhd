@@ -1,0 +1,107 @@
+{
+  "suite": "project-recovery-browser",
+  "started_at": "2026-10-22T01:00:20.939738+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "desktop-rendered-init-hot-settings-missing-target-restore-current-security-and-project-epoch",
+      "passed": true,
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "captures": [
+        {
+          "name": "uninitialized",
+          "png_sha256": "92dbe7d993bab9151df0cd4f08389f378526e695a0f8052f56d86f2cf045c08b",
+          "structure_sha256": "b0f7d3fb7f627f53795d1166c4ce6de3263f1b06b8aa4b51b5e6514c10a7fc63",
+          "path": "desktop/uninitialized.png"
+        },
+        {
+          "name": "review-initialization",
+          "png_sha256": "e4214129ffd0a80d4f8715d872e6c8b2568744375f7d1261ad66b93f6a87c4f6",
+          "structure_sha256": "44dd65bdac327e28ea92489ae693e4acf3b16d69fc4163120b5706f77436dd6c",
+          "path": "desktop/review-initialization.png"
+        },
+        {
+          "name": "review-restore",
+          "png_sha256": "ae7990886ce3f3864a8dd8adc19d15255988a424f6d36a40341113143180e74c",
+          "structure_sha256": "645e835e8c83752191656b5bbfcd44e2ccc096f47890d1d189965bd8c931cf95",
+          "path": "desktop/review-restore.png"
+        },
+        {
+          "name": "restored",
+          "png_sha256": "d77ce663be0d4b95a999111b987b93d5f0240d4a07c067dc14ee1a94abef181e",
+          "structure_sha256": "6300616e26ba956af0ef7ce1d2e7eba4feaed26d4229acd15e6ec67267c56b27",
+          "path": "desktop/restored.png"
+        }
+      ],
+      "normal_path_errors": [],
+      "delay_scope": "One unmodified actual status response released after project switch"
+    },
+    {
+      "name": "mobile-rendered-init-hot-settings-missing-target-restore-current-security-and-project-epoch",
+      "passed": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "captures": [
+        {
+          "name": "uninitialized",
+          "png_sha256": "0c5919e97cb160f3f80519eb7594bc3f5897dd345993ad70955c42b9bb805687",
+          "structure_sha256": "8f9ef81b34adc84cac602252a0e698dfaca61559da6d539cb1ab698824b2186a",
+          "path": "mobile/uninitialized.png"
+        },
+        {
+          "name": "review-initialization",
+          "png_sha256": "461451cd502dca184c389a4f449605f9a2639f9d3c9451e7f3b653df739054a4",
+          "structure_sha256": "7edbd55398ffb48c0bb68a45c56f9c2706f4981ce3839150d1d105d2088529ae",
+          "path": "mobile/review-initialization.png"
+        },
+        {
+          "name": "review-restore",
+          "png_sha256": "1d09e487d47f8180518e51e85750aa20ea37d064665178bf35d0563db564c05c",
+          "structure_sha256": "1da6b8f66fc3ad276c1a53eba3c2d56345f1aa3dad588e5a54754a3341cf5b18",
+          "path": "mobile/review-restore.png"
+        },
+        {
+          "name": "restored",
+          "png_sha256": "6a383592cd71b22df0b922abc155e1ac08f24257b67b78de38f128e433978af2",
+          "structure_sha256": "ca9f0ddd8ae2d1f805499b9a93597b6ca872ea92b16d2da5e574f6621687b722",
+          "path": "mobile/restored.png"
+        }
+      ],
+      "normal_path_errors": [],
+      "delay_scope": "One unmodified actual status response released after project switch"
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "harness_sha256": "c1c80a0533242e9abf11c23105f7ab543d07a2c10238198f1948e0292d2cb804",
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "late_response_observation": {
+    "viewport": "mobile",
+    "selected_project": "project-blue",
+    "alert_text": "",
+    "old_target_visible": false
+  },
+  "finished_at": "2026-10-22T01:03:03.985066+00:00",
+  "direct_visual_review": {
+    "captures_inspected": [
+      "desktop/review-restore.png",
+      "desktop/restored.png",
+      "mobile/review-restore.png",
+      "mobile/restored.png"
+    ],
+    "observations": [
+      "Correct target transitions recovery_required to ready",
+      "Apply action appears for reviewed ready plan and disappears after completion",
+      "No initialization action after ready",
+      "Mobile form and plan details wrap within content; long manifest input scrolls internally"
+    ],
+    "scope": "Four direct PNG inspections; eight capture digests verified. No semantic-model quality claim."
+  }
+}

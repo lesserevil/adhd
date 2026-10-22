@@ -142,3 +142,14 @@ bound by the report digest.
 The focused SourceQueries pin review on the source15-only overlay is retained in `verification/project-recovery/query-pin-overlay01-review.json`, with its failed ten-case raw report and log. Nine cases pass; explicit owner removal masked by another peer’s pending metadata remains a terminal-status defect. This is isolated actual-module evidence, not a full recovery or admission claim.
 
 The source16 follow-up `verification/project-recovery/query-validator-native16-review.json` closes that isolated removal case: eleven actual-module owner/pin cases pass, including no retarget to a fresh different owner. Fourteen pure full-state vectors accept the untouched real pending source/discovery backup and reject malformed hosts and violated conditional numeric/array bounds. The unchanged older offline regression suite also passes33 checks with no forbidden calls. These are distinct component/validator proofs; actual restore/callback and successor admission remain separate gates. Earlier genuine failure and mistaken fixture expectation remain retained and explained.
+
+The [combined16 qualification](../../verification/project-recovery/development16/manifest.json)
+binds artifact `881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19`:
+87 schema vectors, eight actual wire groups and two desktop/mobile recovery cases
+pass. Four restore screenshots were directly inspected and all eight capture
+digests verified. The browser checks include a real status response released after
+switching projects, with no old-target display or alert. These development results
+do not replace formal admission, full crash/regression or image/platform gates.
+The assembly freeze predates restoration of the unchanged protected clean helper;
+its separate review verifies owned output removal and refusal to clean the source
+tree. Final sourceBOM generation must include that helper.

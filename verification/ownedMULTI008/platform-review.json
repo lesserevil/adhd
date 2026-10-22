@@ -1,0 +1,34 @@
+{
+  "schema": "adhd/platform-selective-readonly-review@1",
+  "reviewer": "/root/deployment",
+  "reviewed_commits": [
+    "82a283a",
+    "8f54dad",
+    "3507221"
+  ],
+  "approved_for_preparation": true,
+  "runtime_ready": false,
+  "scope": "Read-only review only; no application/platform/image qualification claimed",
+  "files": {
+    "tests/kafka_final_platform.py": "2e4d21d5e05ebdbefe22c129078daa394557a01309bac5901ee41e0d2a7b486a",
+    "tests/kafka_selective_platform.py": "bd024fe341eacdc4de715e4da042a23b1eebc98bfb7c58be91f352eea6bc79cf",
+    "tests/kafka_selective_platform_unit.py": "3496a283fd308ce555295f3ba06a5c7f41d993beda62f75c3749d919ccb51de2"
+  },
+  "historical_blocker": "82a283a attempted populated restore and PlanTargetready. Preserved in parent review; repaired to stopped missing-target setup and explicit allow_missing/PlanTargetmissing.",
+  "reviewed_predicates": [
+    "Registered Red checkpoint/snapshot selected only after hub stop; both paths verified before first rename; bytes/inode/UID/GID/mode/size preserved.",
+    "Helper data/config mount only; no Kafka volume; broker/proxy identities unchanged. K8s unprivileged UID10001 matches packaged hub.",
+    "Restart setup separate from hot-apply no-restart proof; new external Fixture disables unknown initialization and rebinds fresh clients/recovery service.",
+    "Strict marker/registry/recovery/config-journal/no-active-decision inventory; source archive hash binds parent recovery set; fresh allocation epoch and lost-ID inequality.",
+    "Newer Blue data/private queue/ack/route/log/cursor and current global config/Viewer credential login preserved across restore and replacement.",
+    "Helper absence handles actual[]/lowercase exact rc1 errors; rejects mixed/foreign/daemon outcomes; helper removal precedes hub restart."
+  ],
+  "pure_tests": "Parent reports21 local cases (18 archive/selection,1absence classifier,2local shell fixtures). This review did not rerun new suite; initial82 archive12 were independently passed earlier.",
+  "original_assertions": "Parent AST proof preserves84 existing assertions; not relabeled as new runtime execution.",
+  "remaining_custody_note": "Optional hardening: resolve helper Pod and every replacement hub imageID again; current preparation assumes unique preverified image tag in exclusively owned unchanged Kind node.",
+  "execution_gate": "New exact snapshot and parentGO only after intended image39 admission; do not relabel older image34/38 qualification.",
+  "application_starts": 0,
+  "loader_probes": 0,
+  "broker_starts": 0,
+  "provider_calls": 0
+}

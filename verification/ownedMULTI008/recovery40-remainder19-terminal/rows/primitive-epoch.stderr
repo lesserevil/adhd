@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/recovery19-image40-prepare02/frozen/tests/image_recovery_entry.py", line 131, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/recovery19-image40-prepare02/frozen/tests/image_recovery_entry.py", line 128, in main
+    run_script(args.script,argv,args.timeout,args.cleanup_report)
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/recovery19-image40-prepare02/frozen/tests/image_recovery_entry.py", line 84, in run_script
+    try:runpy.run_path(str(script),run_name='__main__')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/recovery19-image40-prepare02/frozen/tests/image_recovery_component.py", line 167, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/recovery19-image40-prepare02/frozen/tests/image_recovery_component.py", line 153, in main
+    result=runtime.run_component(job['script'],job['arguments'],job['readonly_mounts'],job['outer_timeout_seconds'],job['cwd'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/recovery19-image40-prepare02/frozen/tests/image_recovery_component.py", line 77, in run_component
+    self.observe_vm(session,deadline)
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/recovery19-image40-prepare02/frozen/tests/image_rebind_runtime.py", line 91, in observe_vm
+    if not row['State']['Running']:raise AssertionError('CLI ended before VM observation')
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: CLI ended before VM observation

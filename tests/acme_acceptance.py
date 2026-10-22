@@ -206,7 +206,7 @@ def run(args):
                'acme': {'enabled': True, 'directory_url': ca['directory_url'], 'email': 'operator@one.acme.test',
                         'domains': ['one.acme.test'], 'accept_terms': True, 'renew_before_days': 1,
                         'retry_seconds': 30, 'order_timeout_ms': 30000, 'ca_cert_file': 'directory-root.pem'}}
-        admin.mutate('config_update', patch={'tls': tls})
+        admin.mutate('config_update', patch={'tls': tls,'public_url':'https://one.acme.test:18443'})
         assert relay.held.wait(20), 'Actual CA challenge GET must reach a real successful app proof'
         path, host, proof = relay.held_proof
         assert host.split(':')[0] == 'one.acme.test'

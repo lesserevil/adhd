@@ -8,7 +8,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 from unittest.mock import patch
-from kafka_oauth_custody import KeytoolProbe,unpack_payload,cleanup_all
+from kafka_oauth_custody import KeytoolProbe,unpack_payload,cleanup_all,NamespaceLease
 from container_fixture import OwnedImage
 
 
@@ -56,7 +56,16 @@ async def main():
             probe.import_truststore();args=run.call_args.args
             assert args[0]=='/usr/bin/keytool' and args[-2:]==('-storepass:file','/fixture/password.txt')
             assert args.count('-importcert')==1
-    print('PASS securedK8s custody pure11: safecompletepayload,7malformed/symlink/duplicate/escape/hash denials, independentcleanup preserved, fixedprivate keytool argv; Docker/Kube/app/provider starts0')
+    lease=NamespaceLease('adhd-oauth-owned','1'*32)
+    document=lease.document();assert lease.issued and lease.uid is None
+    current={'metadata':{**document['metadata'],'uid':'uid-original'}}
+    assert lease.deletion(current)=={'apiVersion':'v1','kind':'DeleteOptions','preconditions':{'uid':'uid-original'}}
+    foreign={'metadata':{'name':lease.name,'uid':'uid-original','annotations':{'adhd.qa/owner':'2'*32}}}
+    denied(lambda:lease.deletion(foreign))
+    replaced={'metadata':{**document['metadata'],'uid':'uid-replaced'}}
+    denied(lambda:lease.deletion(replaced))
+    assert lease.uid=='uid-original'
+    print('PASS securedK8s custody pure14: safecompletepayload,7malformed/symlink/duplicate/escape/hash denials, independentcleanup preserved, fixedprivate keytool argv, issued-before-create recovery/foreign-nonce and replacedUID denial/atomicDeleteOptions; Docker/Kube/app/provider starts0')
 
 
 if __name__=='__main__':asyncio.run(main())

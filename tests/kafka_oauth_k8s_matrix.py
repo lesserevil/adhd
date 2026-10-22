@@ -81,6 +81,11 @@ def cluster_facts(kubectl,kubeconfig,node,tag,broker,proxy,namespace):
     assert row['Name']=='/'+node and row['State']['Running'] is True
     cluster=row['Config']['Labels']['io.x-k8s.kind.cluster']
     assert node==cluster+'-control-plane'
+    endpoint=kube_endpoint(Path(kubeconfig),cluster)
+    bindings=row['NetworkSettings']['Ports'].get('6443/tcp') or []
+    matching=[b for b in bindings if b['HostIp']==endpoint['host'] and int(b['HostPort'])==endpoint['port']]
+    assert len(matching)==1 and ipaddress.ip_address(matching[0]['HostIp']).is_loopback, 'Kube endpoint is not the actual selected node published6443'
+    api_binding=matching[0]
     network=json.loads(readonly(['docker','network','inspect','kind']));assert len(network)==1
     addresses=[r['Gateway'] for r in network[0]['IPAM']['Config'] if ipaddress.ip_address(r['Gateway']).version==4]
     assert len(addresses)==1 and ipaddress.ip_address(addresses[0]).is_private
@@ -104,7 +109,7 @@ def cluster_facts(kubectl,kubeconfig,node,tag,broker,proxy,namespace):
             assert 'sha256:'+hashlib.sha256(config).hexdigest()==selected[name]['id']
             assert json.loads(config)['rootfs']['diff_ids']==original[name]['layers']
             selected[name]['manifest_sha256']=hashlib.sha256(manifest).hexdigest()
-    return {'node':{'name':node,'id':row['Id'],'image':row['Image'],'pid':row['State']['Pid'],'cluster':cluster},
+    return {'node':{'name':node,'id':row['Id'],'image':row['Image'],'pid':row['State']['Pid'],'cluster':cluster,'api_port_binding':api_binding},
         'kind_network_id':network[0]['Id'],'issuer_bind':addresses[0],'selected_images':selected,'host_image_equivalence':original}
 
 

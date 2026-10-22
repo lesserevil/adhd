@@ -22,7 +22,7 @@ import time
 from uuid import uuid4
 
 from container_fixture import OwnedImage
-from kafka_oauth_custody import KeytoolProbe, unpack_payload, cleanup_all
+from kafka_oauth_custody import KeytoolProbe, unpack_payload, cleanup_all, NamespaceLease
 
 from cryptography import x509
 import httpx
@@ -78,6 +78,7 @@ async def main(args):
     seed_fixture=None
     log_followers=[]
     owned = completed = False
+    namespace_lease=NamespaceLease(args.namespace,uuid4().hex)
     primary = None
     keytool = None
     tokens = []
@@ -173,7 +174,9 @@ async def main(args):
         existing=obj(['get','namespaces'])['items']
         if any(row['metadata']['name']==args.namespace for row in existing):
             raise ValueError('Never adopt an existing namespace')
-        run(['create','namespace',args.namespace]); owned=True
+        namespace_document=namespace_lease.document();owned=True
+        created=json.loads(run(['create','-f','-','-o','json'],data=json.dumps(namespace_document).encode(),capture=True))
+        namespace_lease.observe(created)
         issuer=Issuer(root/'security',args.issuer_bind)
         keytool=KeytoolProbe(PROXY_IMAGE,issuer.root)
         issuer.java_truststore(probe=keytool); sensitive.append(issuer.password)
@@ -368,10 +371,18 @@ async def main(args):
                 for name in (['hub','kafka','kafka-rest'] if args.image else ['kafka','kafka-rest']):
                     with suppress(Exception):
                         run(ns(['logs','-l','app='+name,'--all-containers=true','--prefix=true']))
-                run(['delete','namespace',args.namespace,'--wait=true','--timeout=120s'],timeout=140)
+                namespace_lease.cleanup_deadline=time.monotonic()+120
+                current=run(['get','namespace',args.namespace,'--ignore-not-found=true','-o','json'],capture=True)
+                if current.strip():
+                    deletion=namespace_lease.deletion(json.loads(current))
+                    run(['delete','--raw','/api/v1/namespaces/'+args.namespace,'-f','-'],data=json.dumps(deletion).encode(),timeout=140)
         async def prove_namespace_absent():
             if owned:
-                remaining=obj(['get','namespaces'])['items']
+                while True:
+                    remaining=obj(['get','namespaces'])['items']
+                    if all(row['metadata']['name']!=args.namespace for row in remaining):break
+                    assert namespace_lease.cleanup_deadline is not None and time.monotonic()<namespace_lease.cleanup_deadline
+                    await asyncio.sleep(.3)
                 assert all(row['metadata']['name']!=args.namespace for row in remaining)
                 deadline=time.monotonic()+30
                 while True:
@@ -388,6 +399,7 @@ async def main(args):
             ('namespace-pv-absence',prove_namespace_absent)])
         outcomes,errors=await cleanup_all(steps)
         evidence.value['cleanup']=outcomes
+        evidence.value['namespace_lease']=namespace_lease.evidence()
         if keytool is not None:
             evidence.value['keytool_probe_custody']=keytool.probe_events
             evidence.value['keytool_image_config_digest']=keytool.image_id

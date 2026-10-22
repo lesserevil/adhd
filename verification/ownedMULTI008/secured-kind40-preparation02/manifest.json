@@ -1,0 +1,48 @@
+{
+  "schema": "adhd/secured-kind40-ownership-review@1",
+  "prepared": true,
+  "executed": false,
+  "root_go_required": true,
+  "plan_sha256": "7e4a0effeee43589534d2d40304d3a23809cfc2020631089fda548a666a891b7",
+  "work": "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-prepare02",
+  "original48assertions_preserved": true,
+  "new_assertion_count": 49,
+  "fixes": [
+    "Namespace ownernonce is issued before create RPC, so committedcreate/lostreply remains owned and discoverable.",
+    "All cleanup GETs verify ownernonce and originalUID; delete request carries atomic UID precondition.",
+    "Namespace/PV absence checks remain independent even when creation or deletion fails.",
+    "InlineKubeconfig API host/port now exactly equals selected Kind node published6443 loopbackbinding."
+  ],
+  "pure_checks": {
+    "custody14": true,
+    "preparation5": true,
+    "app_resource_vm_provider_compiler_starts": 0
+  },
+  "preserved_first_pure_failure": {
+    "executed": true,
+    "passed": false,
+    "reason": "Preparation test still expected48totalasserts after adding one cleanupdeadline assertion; actualcode retained all48 plus one, test count corrected49. No runtime or appsource failure."
+  },
+  "preparation01_preserved_unstarted": {
+    "path": "/home/horde/src/adhd/.worktrees/deployment/_build/secured-kind40-prepare01",
+    "plan_sha256": "3f691ca2d315ca00e3cf24cff6fd55a198aafc6723d0b1b64e6be97d967c536d"
+  },
+  "node_binding": {
+    "name": "adhd-event-qual-control-plane",
+    "id": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+    "image": "sha256:a9f00b2666c3e111d51e6cab9b122e2c96cc539f22ffbf0612169bfafdb9818b",
+    "pid": 3063947,
+    "cluster": "adhd-event-qual",
+    "api_port_binding": {
+      "HostIp": "127.0.0.1",
+      "HostPort": "34113"
+    }
+  },
+  "test_only_files": {
+    "tests/kafka_oauth_custody.py": "086eff9ffae1321f23a2faef9458d539ff5abe58596c13e63eeba0f29d473e09",
+    "tests/kafka_oauth_custody_unit.py": "2ed59c882be74482b26074394ddd35c5037c8439949ab493e5c6cb2975f6da71",
+    "tests/kafka_oauth_k8s.py": "fa5bb4aa47b3d5f5f259d70e0f1f3593ffdad0fcceeee7f3b5c2761296ed1bc7",
+    "tests/kafka_oauth_k8s_matrix.py": "923a8bb73a53f6a1cdebecd4987d96f349e02565518a3a594b344d3ba652d844",
+    "tests/kafka_oauth_k8s_matrix_unit.py": "72c123b06aac37408ce2ee47f8ae32a1c60669fffccddda69e3ac2568735ab08"
+  }
+}

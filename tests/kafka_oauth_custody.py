@@ -67,3 +67,25 @@ async def cleanup_all(steps):
         except BaseException as error:
             errors.append(error);outcomes.append({'resource':name,'closed':False,'failure_type':type(error).__name__})
     return outcomes,errors
+
+
+class NamespaceLease:
+    """Fresh namespace issuance and UID-preconditioned deletion only."""
+    def __init__(self,name,nonce):
+        assert re.fullmatch('adhd-oauth-[a-z0-9-]+',name) and re.fullmatch('[a-f0-9]{32}',nonce)
+        self.name=name;self.nonce=nonce;self.uid=None;self.issued=False;self.cleanup_deadline=None
+    def document(self):
+        self.issued=True
+        return {'apiVersion':'v1','kind':'Namespace','metadata':{'name':self.name,'annotations':{'adhd.qa/owner':self.nonce}}}
+    def observe(self,row):
+        metadata=row['metadata']
+        assert metadata['name']==self.name and metadata.get('annotations',{}).get('adhd.qa/owner')==self.nonce,'Namespace ownership is foreign'
+        uid=metadata['uid'];assert isinstance(uid,str) and re.fullmatch('[a-zA-Z0-9-]{1,128}',uid)
+        assert self.uid is None or uid==self.uid,'Namespace UID changed'
+        self.uid=uid
+        return uid
+    def deletion(self,row):
+        assert self.issued
+        return {'apiVersion':'v1','kind':'DeleteOptions','preconditions':{'uid':self.observe(row)}}
+    def evidence(self):
+        return {'name':self.name,'issued':self.issued,'uid':self.uid,'owner_nonce_sha256':hashlib.sha256(self.nonce.encode()).hexdigest(),'delete_uid_precondition_required':True}

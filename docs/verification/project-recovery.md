@@ -154,4 +154,14 @@ The assembly freeze predates restoration of the unchanged protected clean helper
 its separate review verifies owned output removal and refusal to clean the source
 tree. Final sourceBOM generation must include that helper.
 
-The separate read-only admission review at `verification/project-recovery/development16/admission-review-independent.json` records exact locked Standard-node recipe/source-BOM bindings, unchanged18 native case declarations and independent review of all15 added oracle grammar cases. It grants no admission and does not replace actual106-case execution or runtime/platform qualification.
+The separate read-only admission review at `verification/project-recovery/development16/admission-review-independent.json` records the initial prospective recipe/source-BOM bindings, unchanged18 native case declarations and independent review of all15 added oracle grammar cases. It grants no admission and does not replace actual106-case execution or runtime/platform qualification.
+
+The [first actual admission attempt](../../verification/project-recovery/development16/admission-attempt1.json)
+rejects the test manifest before compilation with a recipe-identity mismatch;
+the passing source34 receipt remains unchanged. The initial helper projected an
+ordinary Codex generation node, while pinned framework1.3 selects a distinct
+`operator-retained-source` provider for this lifecycle. Independently projecting
+that retained provider matches the actual failed attempt's recipe and generation
+key; the source BOM is unchanged. Preserve the original helper output and failed
+attempt. Correct only disposable source metadata through the actual retained
+preparation path, renew authority review/authorization, then rerun admission.

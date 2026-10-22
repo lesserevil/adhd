@@ -132,7 +132,13 @@ def optional_missing(filename,needed,erlang_root):
         (relative==OPTIONAL_WX_PATH and needed in OPTIONAL_WX_LIBRARIES and sha(filename)==OPTIONAL_WX_SHA256))
 
 
-def capture(python,native_path):
+def selected_tools(extra_tools=()):
+    assert isinstance(extra_tools,tuple) and len(set(extra_tools))==len(extra_tools)
+    assert set(extra_tools)<=set(('strace',)), 'Unreviewed extra native tool'
+    return ('docker','cc','gcc','as','ld','env','sh','dirname','basename','readlink','cat','which')+extra_tools
+
+
+def capture(python,native_path,extra_tools=()):
     python=Path(python).absolute();assert python.resolve()==Path(sys.executable).resolve()
     venv=python.parent.parent;configuration=venv/'pyvenv.cfg'
     assert configuration.is_file() and re.search(r'^include-system-site-packages\s*=\s*false\s*$',configuration.read_text(),re.M|re.I)
@@ -155,7 +161,7 @@ def capture(python,native_path):
     trees=[tree_inventory(p,roots) for p in roots]
     path=':'.join(str(p) for p in native_dirs)+':/usr/bin:/bin'
     tools={}
-    for name in ('docker','cc','gcc','as','ld','env','sh','dirname','basename','readlink','cat','which'):
+    for name in selected_tools(extra_tools):
         selected=shutil.which(name,path=path);assert selected;tools[name]=path_binding(selected)
     ldconfig=Path('/sbin/ldconfig');tools['ldconfig']=path_binding(ldconfig)
     raw_cache=metadata([str(ldconfig),'-p']);cache={}

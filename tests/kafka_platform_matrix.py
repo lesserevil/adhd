@@ -55,6 +55,7 @@ import yaml
 
 from image_qualification_inputs import reviewed_payload, freeze_inputs, verify_frozen_inputs
 from multi_image_core_matrix import claim_execution, report_passed
+from kafka_image_equivalence import verify_pair
 
 BASELINE_IMAGE='sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0'
 BASELINE_ARTIFACT='1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7'
@@ -117,6 +118,27 @@ def verify(work,plan):
     return True
 
 
+ORIGINAL_BROKER='confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f'
+ORIGINAL_PROXY='confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058'
+
+
+def selected_platforms(args):
+    values=getattr(args,'platforms',('compose','k8s'))
+    assert values and len(set(values))==len(values) and set(values)<=set(('compose','k8s'))
+    return list(values)
+
+
+def image_overrides(args):
+    values={name:getattr(args,name,None) for name in ('broker_image','proxy_image')}
+    for value in values.values():
+        if value is not None:assert re.fullmatch('[a-z0-9./:_-]+@sha256:[a-f0-9]{64}',value)
+    return {key:value for key,value in values.items() if value is not None}
+
+
+def verify_equivalence(node,overrides,read):
+    return [verify_pair(node,value,ORIGINAL_BROKER if name=='broker_image' else ORIGINAL_PROXY,read=read) for name,value in sorted(overrides.items())]
+
+
 def prepare(args):
     assert all(getattr(args,key) for key in ('repo_root','context','admission_manifest','acceptance_report',
         'kubeconfig','compose_plugin','kubectl','kind','image','admission_sha256','kind_cluster','kind_node','cluster_image','name'))
@@ -153,13 +175,18 @@ def prepare(args):
     shutil.copyfile(args.compose_plugin,config/'cli-plugins/docker-compose');(config/'cli-plugins/docker-compose').chmod(0o755)
     tools={name:executable(getattr(args,name.replace('-','_'))) for name in ('python','docker','compose-plugin','kubectl','kind')}
     docker_socket=args.docker_socket.resolve();info=docker_socket.stat();assert stat.S_ISSOCK(info.st_mode)
+    platforms=selected_platforms(args);overrides=image_overrides(args)
+    def read(argv):return subprocess.check_output(argv,env={'PATH':'/usr/bin:/bin','DOCKER_HOST':'unix://'+str(docker_socket),'DOCKER_CONFIG':str(config)},stderr=subprocess.PIPE,timeout=30)
+    equivalence=verify_equivalence(args.kind_node,overrides,read)
     jobs=[]
     for platform,port in [('compose',args.compose_port),('k8s',args.kind_port)]:
+        if platform not in platforms:continue
         assert 1024<=port<=65535
         name=args.name+'-'+('compose' if platform=='compose' else 'kind')
         argv=[tools['python']['path'],str(frozen/'tests/kafka_final_platform.py'),'--platform',platform,'--name',name,
             '--image',args.image,'--context',str(work/'context'),'--acceptance-report',str(work/'bound/acceptance.json'),
             '--work',str(work/(platform+'-work')),'--report',str(work/(platform+'.json')),'--port',str(port),'--selective-recovery']
+        for key,value in overrides.items():argv+=['--'+key.replace('_','-'),value]
         if platform=='compose':argv+=['--broker-patch-upgrade']
         else:argv+=['--kubectl',tools['kubectl']['path'],'--kubeconfig',str(work/'bound/kubeconfig'),
             '--kind-node',args.kind_node,'--cluster-image',args.cluster_image]
@@ -174,6 +201,7 @@ def prepare(args):
         'live_root_specification_drift':drift,'frozen_inputs':inputs,'original_context':str(context),'context_inputs':context_inputs,
         'bound_inputs':bound,'tools':tools,'kind_node':args.kind_node,'kind_cluster':args.kind_cluster,'cluster_image':args.cluster_image,'kube_endpoint':endpoint,
         'docker_socket':str(docker_socket),'docker_socket_identity':[info.st_dev,info.st_ino],
+        'selected_platforms':platforms,'image_overrides':overrides,'imported_image_equivalence':equivalence,
         'driver_sha256':sha(work/'driver.py'),'jobs':jobs,'parallelism':1,'fail_fast':True,'runs_per_platform':1,
         'runtime_cwd':str(runtime),'outer_child_timeout_seconds':None,'timeout_policy':'Existing harness deadlines only; no driver timeout that could bypass platform cleanup',
         'provision_load_tag_or_relay_operations':False,'live_provider_calls_authorized':False}
@@ -202,6 +230,7 @@ def preflight(work,plan,env):
     assert len(ports)==1 and ports[0]['HostIp']==endpoint['host'] and int(ports[0]['HostPort'])==endpoint['port']
     assert json.loads(read([docker,'image','inspect',plan['image_config_identity']]))[0]['Id']==plan['image_config_identity']
     assert json.loads(read([docker,'image','inspect',plan['cluster_image']]))[0]['Id']==plan['image_config_identity']
+    assert verify_equivalence(plan['kind_node'],plan.get('image_overrides',{}),read)==plan.get('imported_image_equivalence',[])
     for job in plan['jobs']:
         if job['name']=='compose':
             for kind in ('container','network','volume'):
@@ -267,6 +296,8 @@ def main():
     p.add_argument('--docker-socket',type=Path,default=Path('/var/run/docker.sock'))
     for name in ('image','admission-sha256','kind-cluster','kind-node','cluster-image','name'):p.add_argument('--'+name)
     p.add_argument('--compose-port',type=int,default=18890);p.add_argument('--kind-port',type=int,default=18891)
+    p.add_argument('--platforms',nargs='+',choices=['compose','k8s'],default=['compose','k8s'])
+    p.add_argument('--broker-image');p.add_argument('--proxy-image')
     p.add_argument('--execution-ready',action='store_true',help='Only after fresh successor admission and owned Kind provisioning; still requires separate reviewed execute plan digest')
     args=p.parse_args()
     if _STAGED:assert args.work.absolute()==Path(__file__).absolute().parent

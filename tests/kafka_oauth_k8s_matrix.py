@@ -64,6 +64,7 @@ from image_recovery_remaining_matrix import tree,verify_empty_cache,wait_owned_c
 from kafka_platform_matrix import kube_endpoint
 from multi_image_core_matrix import claim_execution
 from kafka_oauth_provider import PROXY_IMAGE
+from kafka_image_equivalence import verify_pair
 import image_host_dependencies as host_dependencies
 
 
@@ -109,6 +110,7 @@ def cluster_facts(kubectl,kubeconfig,node,tag,broker,proxy,namespace):
             assert 'sha256:'+hashlib.sha256(config).hexdigest()==selected[name]['id']
             assert json.loads(config)['rootfs']['diff_ids']==original[name]['layers']
             selected[name]['manifest_sha256']=hashlib.sha256(manifest).hexdigest()
+            selected[name]['all_layer_equivalence']=verify_pair(node,selected[name]['requested'],requested,read=readonly)
     return {'node':{'name':node,'id':row['Id'],'image':row['Image'],'pid':row['State']['Pid'],'cluster':cluster,'api_port_binding':api_binding},
         'kind_network_id':network[0]['Id'],'issuer_bind':addresses[0],'selected_images':selected,'host_image_equivalence':original}
 
@@ -138,7 +140,7 @@ def prepare(a):
     _,drift=freeze_inputs(a.repo_root,work/'frozen',selected['specifications'])
     tree(a.repo_root/'deploy')
     shutil.copytree(a.repo_root/'deploy',work/'frozen/deploy')
-    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py']
+    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py','kafka_image_equivalence.py']
     for name in overlays:shutil.copyfile(Path(__file__).parent/name,work/'frozen/tests'/name)
     for p in a.context.iterdir():
         assert p.is_file() and not p.is_symlink();shutil.copyfile(p,work/'context'/p.name)

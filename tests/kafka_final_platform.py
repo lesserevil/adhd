@@ -22,6 +22,7 @@ import time
 import httpx
 
 from multi_support import Evidence, Fixture, MEMBERSHIPS, PROJECTS, poll_until, reject, scoped
+from kafka_oauth_custody import NamespaceLease
 from kafka_selective_platform import (prepare_bundle, bundle_tar, exercise_selective_restore,
     verify_selective_restore, missing_target_anchor, MISSING_TARGET_SCRIPT, helper_absent)
 from project_recovery_acceptance import Recovery
@@ -55,6 +56,7 @@ async def main(args):
                     'Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate.'])
     evidence.value['harness_dependencies_sha256']={name+'.py': hashlib.sha256(Path(sys.modules[name].__file__).read_bytes()).hexdigest() for name in ['multi_support','foundation_acceptance','hub_acceptance','kafka_selective_platform','project_recovery_acceptance','project_recovery_state']}
     env={**os.environ}; owned=False; fixture=forward=None
+    namespace_lease=NamespaceLease(args.name,secrets.token_hex(16),prefix='adhd-final-') if args.platform=='k8s' else None
     image_check=None; completed=False; primary_error=None
     sensitive_values=[]
     context=args.context.resolve()
@@ -358,7 +360,9 @@ async def main(args):
             assert args.kubectl and args.kubeconfig
             namespaces=json.loads(k(['get','namespaces','-o','json'],capture=True))['items']
             assert all(row['metadata']['name']!=args.name for row in namespaces),'Never adopt an existing namespace'
-            k(['create','namespace',args.name]);owned=True
+            document=namespace_lease.document();owned=True
+            created=json.loads(k(['create','-f','-','-o','json'],data=json.dumps(document).encode(),capture=True))
+            namespace_lease.observe(created)
             kn(['create','secret','generic','hub-seed','--from-file=hub.json='+str(config_file)])
             stage=root/'kustomize';stage.mkdir(mode=0o700)
             for name in ['events.yaml','hub.yaml']:
@@ -674,13 +678,23 @@ async def main(args):
                 else:
                     for label in ['hub','kafka','kafka-rest']:
                         with suppress(Exception):kn(['logs','-l','app='+label,'--all-containers=true','--prefix=true'])
-                    cleanup('namespace-delete',lambda:k(['delete','namespace',args.name,'--wait=true','--timeout=120s'],timeout=140))
+                    def delete_owned_namespace():
+                        namespace_lease.cleanup_deadline=time.monotonic()+120
+                        current=k(['get','namespace',args.name,'--ignore-not-found=true','-o','json'],capture=True)
+                        if current.strip():
+                            deletion=namespace_lease.deletion(json.loads(current))
+                            k(['delete','--raw','/api/v1/namespaces/'+args.name,'-f','-'],data=json.dumps(deletion).encode(),timeout=140)
+                    cleanup('namespace-delete',delete_owned_namespace)
                 try:
                     if args.platform=='compose':
                         for kind in ['container','network','volume']:
                             argv=['docker','ps','-aq'] if kind=='container' else ['docker',kind,'ls','-q']
                             assert not command(argv+['--filter','label=com.docker.compose.project='+args.name],capture=True).strip()
                     else:
+                        while args.name in [r['metadata']['name'] for r in json.loads(k(['get','namespaces','-o','json'],capture=True))['items']]:
+                            if namespace_lease.cleanup_deadline is None or time.monotonic()>=namespace_lease.cleanup_deadline:
+                                raise AssertionError('Owned namespace deletion deadline exceeded')
+                            await asyncio.sleep(.3)
                         assert args.name not in [r['metadata']['name'] for r in json.loads(k(['get','namespaces','-o','json'],capture=True))['items']]
                         deadline=time.monotonic()+30
                         while True:
@@ -691,6 +705,7 @@ async def main(args):
                             await asyncio.sleep(.3)
                     resources_absent=True
                 except BaseException as error:cleanup_failures.append(('independent-absence',error))
+            if namespace_lease is not None:evidence.value['namespace_lease']=namespace_lease.evidence()
             evidence.value['cleanup']={'owned_platform':owned,'resources_independently_absent':resources_absent,
                 'failures':[{'stage':stage,'error_type':type(error).__name__} for stage,error in cleanup_failures]}
             if completed and not cleanup_failures:

@@ -119,7 +119,17 @@ settings and privately prebind each changed required listener before the durable
 configuration decision; collision, invalid trust input or unusable listener
 returns CONFIG_APPLY_FAILED without losing old listeners/config/revision.
 Prebinding may reserve a socket before the first certificate exists; no invalid
-TLS session is accepted while waiting. Do not wait for ACME/network issuance
+TLS session is accepted while waiting. Cold configuration normalization validates
+syntax and path shape; an operationally missing/corrupt referenced CA bundle or
+unavailable TLS/challenge bind must instead leave private HTTP/Admin available,
+report a fixed managed-state error and block issuance. A valid retained certificate
+may continue serving when only issuance trust is unavailable. An absent required
+HTTPS listener reports https_state=error, never ready, regardless of retained
+certificate validity. Explicit config_validate reads referenced trust material
+through the same bounded strict reader as hot prepare. A successful hot prepare
+and activation may repair these bootstrap errors, including the same listener
+settings after a collision is removed. Malformed configuration still follows the
+ordinary cold-start rejection rules. Do not wait for ACME/network issuance
 inside Config's serialized transaction or mailbox. A successful config_update
 means configuration committed, not certificate issued or externally reachable.
 

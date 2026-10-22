@@ -1,0 +1,149 @@
+{
+  "application_started": false,
+  "cases": [
+    {
+      "case": "bootstrap-error-exact-replay-preserved",
+      "passed": true
+    },
+    {
+      "case": "bootstrap-replay-still-auth-first",
+      "passed": true
+    },
+    {
+      "case": "cold-bind-failure-controller-survives",
+      "passed": true
+    },
+    {
+      "case": "cold-retained-valid-ready",
+      "passed": true
+    },
+    {
+      "case": "cold-valid-empty-waiting",
+      "passed": true
+    },
+    {
+      "case": "corrupt-ca-private-controller-survives",
+      "passed": true
+    },
+    {
+      "case": "dry-validation-rejects-corrupt-ca",
+      "passed": true
+    },
+    {
+      "case": "dry-validation-rejects-missing-ca",
+      "passed": true
+    },
+    {
+      "case": "dry-validation-valid-ca",
+      "passed": true
+    },
+    {
+      "case": "hot-bind-failure-preserves-original-state",
+      "passed": true
+    },
+    {
+      "case": "hot-listener-repair-clears-only-bootstrap-flags",
+      "passed": true
+    },
+    {
+      "case": "hot-prepare-trust-remains-strict",
+      "passed": true
+    },
+    {
+      "case": "hot-trust-repair-clears-only-bootstrap-flags",
+      "passed": true
+    },
+    {
+      "case": "https-listener-map-absence-never-ready",
+      "passed": true
+    },
+    {
+      "case": "listener-error-force-blocked",
+      "passed": true
+    },
+    {
+      "case": "listener-error-renew-rejected",
+      "passed": true
+    },
+    {
+      "case": "missing-ca-retained-cert-stays-ready-error-issuance",
+      "passed": true
+    },
+    {
+      "case": "syntax-invalid-host-still-rejected",
+      "passed": true
+    },
+    {
+      "case": "syntax-normalization-does-not-read-missing-ca",
+      "passed": true
+    },
+    {
+      "case": "trust-error-force-blocked",
+      "passed": true
+    },
+    {
+      "case": "trust-error-new-renew-rejected",
+      "passed": true
+    }
+  ],
+  "network_operations": 0,
+  "passed": true,
+  "projection_count": 1152,
+  "test_io_seams": [
+    "recover",
+    "initialize",
+    "initialize",
+    "activate_listeners",
+    "prepare_listeners"
+  ],
+  "tls_source_sha256": "5666d7f2dd2c1949e7e0939699f1000a31f18a247d13f6a00c37612f6a485182",
+  "schema": "adhd/acme-cold-bootstrap-callback-capsule@1",
+  "patch_sha256": "b0139794a99130eb83366e92d52cb69dbea2910fc179923f7070ba4fcb8a5f88",
+  "baseline_inputs": {
+    "tls": "9e927b0b189c9712d884d7015d767bf1f785d6114e755957b56bf519e4a05b03",
+    "config": "8d7e2f5c3cb755422ca2bca997908d712c08bb505f07d6e7ffc39af9b610630d"
+  },
+  "candidate_inputs": {
+    "tls": "5666d7f2dd2c1949e7e0939699f1000a31f18a247d13f6a00c37612f6a485182",
+    "config": "31eb8f6e9f939b227c1a4ad9ca7072a67f5312fb565a654305280110c088845d"
+  },
+  "status_schema_sha256": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60",
+  "actual_private_projection_report_sha256": "1e5523b26632e006108c37542e5197fb47144341a61a9407538f97235602a77b",
+  "status_schema_validation_passed": true,
+  "https_states": [
+    "disabled",
+    "error",
+    "expired",
+    "ready",
+    "waiting"
+  ],
+  "acme_states": [
+    "backoff",
+    "disabled",
+    "error",
+    "idle",
+    "ordering"
+  ],
+  "guards": 21,
+  "scope": [
+    "normalize is syntax/path only; explicit config_validate calls bounded validate_inputs; hot prepare remains strict.",
+    "Cold missing/corrupt CA and bind exceptions produce explicit bootstrap flags/fixed ACME_STORAGE and preserve controller startup.",
+    "A retained live certificate may serve during CA-only failure; absent HTTPS listener never projects ready.",
+    "Bootstrap flags prevent issuance/new renewal admission, preserve exact authorized receipt replay, and suppress nonexistent next-attempt dates.",
+    "Successful hot prepare+activate clears bootstrap faults even at identical listener policy.",
+    "Actual init/status/renew/force/prepare/activate callbacks and trust parsing execute; five I/O clauses replaced in test AST to avoid app/listener/managed-state startup.",
+    "1152 status projections cover disabled/enabled, issuance, nil/valid/expired certificate, nil/job, nil/retryable/hard error, nil/epoch/current/max dates and both bootstrap flags. Full closed TLSStatus schema+formats independently validated.",
+    "Status fixtures independently retain required ordering-attempt and backoff-retry timestamps; other nullable combinations remain. Two explicit malformed timestamp-state negatives must fail schema."
+  ],
+  "limits": [
+    "No real socket bind/collision, TLS handshake, retained-key recovery, application boot or real CA operation is claimed.",
+    "Certificate placeholder represents public projection only, not cryptographic certificate acceptance.",
+    "Config mutation controller is checked for exact dry-validation hook placement but not executed in this capsule."
+  ],
+  "test_files": {
+    "acme_cold_bootstrap_contracts.exs": "08fd294416ae154e1b7b913e5c39ae273c4ee8e73acbd3b09eb58fcb480709e7",
+    "acme_status_schema.py": "1bd84a3bdceb968345910436b6b0f3033f669c913b5f990759249beebd1f6a17"
+  },
+  "first_private_failure": "test01 relative fixture path mismatch fixed; result03 synthetic cross-product included impossible ordering/backoff nil required timestamps and schema correctly rejected it. result04 preserves state invariants and all1152 projections pass; earlier private results unchanged.",
+  "schema_negative_guards": 2
+}

@@ -1,0 +1,113 @@
+--- a/tls.exs
++++ b/tls.exs
+@@ -46,11 +46,18 @@
+       D.string(a["ca_cert_file"], 4096)
+       D.check(not Regex.match?(~r/[\x00-\x1f\x7f]/, a["ca_cert_file"]))
+       path = Path.expand(a["ca_cert_file"], base)
+-      ADHD.ACMEFiles.public_ca(path)
+       Map.put(a, "ca_cert_file", path)
+     else a end
+     Map.put(c, "tls", Map.put(value, "acme", a))
+   end
++
++  # Syntax normalization remains usable at cold boot when a referenced trust
++  # file has disappeared. Explicit dry validation and hot commit remain strict.
++  def validate_inputs(c) do
++    read_trust(c)
++    :ok
++  rescue _ -> D.fail("CONFIG_APPLY_FAILED")
++  catch _, _ -> D.fail("CONFIG_APPLY_FAILED") end
+ 
+   def start_link(path, c), do: GenServer.start_link(__MODULE__, {path, c}, name: __MODULE__)
+   def prepare(c), do: GenServer.call(__MODULE__, {:prepare, c}, 10000)
+@@ -63,13 +70,12 @@
+   def format_status(status), do: status |> Map.put(:state, :redacted) |> Map.put(:message, :redacted) |> Map.put(:log, [])
+   def init({path, c}) do
+     s = %{path: path, root: Path.join(Path.dirname(path), "acme"), config: c,
+-      listeners: %{}, trust: nil, recovering: false, certificate: nil, active: nil, owner: nil, job: nil, fingerprint: nil,
++      listeners: %{}, trust: nil, trust_error: false, listener_error: false, recovering: false, certificate: nil, active: nil, owner: nil, job: nil, fingerprint: nil,
+       data: %{"last_attempt_at" => nil, "next_attempt_at" => nil, "last_success_at" => nil, "last_error" => nil, "receipts" => %{}, "active" => nil}}
+     try do
+       s = try do recover(s) rescue _ -> storage_error(s) catch _, _ -> storage_error(s) end
+-      trust = read_trust(c)
+-      prepared = prepare_listeners(s, c)
+-      s = activate_listeners(%{s | trust: trust}, prepared, c)
++      s = cold_trust(s, c)
++      s = cold_listeners(s, c)
+       :persistent_term.put({__MODULE__, :certificate}, s.certificate)
+       :persistent_term.put({__MODULE__, :challenge}, nil)
+       Process.send_after(self(), :tick, 100)
+@@ -77,6 +83,17 @@
+     rescue _ -> {:stop, :managed_tls_unavailable}
+     catch _, _ -> {:stop, :managed_tls_unavailable} end
+   end
++  defp cold_trust(s, c) do
++    %{s | trust: read_trust(c)}
++  rescue _ -> %{storage_error(s) | trust_error: true}
++  catch _, _ -> %{storage_error(s) | trust_error: true} end
++
++  defp cold_listeners(s, c) do
++    prepared = prepare_listeners(s, c)
++    activate_listeners(s, prepared, c)
++  rescue _ -> %{storage_error(s) | listener_error: true}
++  catch _, _ -> %{storage_error(s) | listener_error: true} end
++
+   def handle_call(:status, _, s), do: {:reply, public(s), s}
+   def handle_call({:prepare, c}, _, s) do
+     try do
+@@ -97,8 +114,9 @@
+   end
+   def handle_call({:activate, {:ok, p}, c}, _, s) do
+     old = s.fingerprint
+-    s = activate_listeners(%{s | trust: p.trust}, p.listeners, c)
+-    s = if old != p.fingerprint do
++    repairing_bootstrap = s.trust_error or s.listener_error
++    s = activate_listeners(%{s | trust: p.trust, trust_error: false, listener_error: false}, p.listeners, c)
++    s = if old != p.fingerprint or repairing_bootstrap do
+       if s.job, do: send(s.job.pid, :cancel)
+       :persistent_term.put({__MODULE__, :challenge}, nil)
+       floor = s.data["issuer_retry_at"] || 0
+@@ -117,6 +135,7 @@
+         receipt -> D.fail("IDEMPOTENCY_CONFLICT")
+         cmd["expected_revision"] != s.config["config_revision"] -> D.fail("CONFIG_CONFLICT")
+         not enabled?(s.config) -> D.fail("TLS_RENEW_UNAVAILABLE")
++        s.trust_error or s.listener_error -> D.fail("CONFIG_APPLY_FAILED")
+         true ->
+           s = initialize(s) |> load_retry_floor()
+           result = %{"accepted" => true, "config_revision" => s.config["config_revision"]}
+@@ -310,13 +329,13 @@
+   defp iso(ms), do: DateTime.from_unix!(ms, :millisecond) |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+   defp public(s) do
+     t = s.config["tls"]; cert = s.certificate; d = s.data
+-    https = cond do not t["enabled"] -> "disabled"; is_map(s.data["last_error"]) and s.data["last_error"]["code"] == "ACME_STORAGE" and is_nil(cert) -> "error"; is_nil(cert) -> "waiting"; not ADHD.TLSCertificate.live?(cert) -> "expired"; true -> "ready" end
+-    acme = cond do not enabled?(s.config) -> "disabled"; s.job != nil -> "ordering"; d["last_error"] && not d["last_error"]["retryable"] -> "error"; d["last_error"] -> "backoff"; true -> "idle" end
++    https = cond do not t["enabled"] -> "disabled"; s.listener_error or not Map.has_key?(s.listeners, :https) -> "error"; is_map(s.data["last_error"]) and s.data["last_error"]["code"] == "ACME_STORAGE" and is_nil(cert) -> "error"; is_nil(cert) -> "waiting"; not ADHD.TLSCertificate.live?(cert) -> "expired"; true -> "ready" end
++    acme = cond do not enabled?(s.config) -> "disabled"; s.trust_error or s.listener_error -> "error"; s.job != nil -> "ordering"; d["last_error"] && not d["last_error"]["retryable"] -> "error"; d["last_error"] -> "backoff"; true -> "idle" end
+     metadata = if cert, do: cert.metadata |> Map.update!("not_before", &iso/1) |> Map.update!("not_after", &iso/1), else: nil
+     %{"enabled" => t["enabled"], "https_state" => https, "acme_state" => acme,
+       "domains" => t["acme"]["domains"], "active_domains" => if(https == "ready", do: cert.domains, else: []),
+       "certificate" => metadata, "last_attempt_at" => iso(d["last_attempt_at"]),
+-      "next_attempt_at" => if(enabled?(s.config) and is_nil(s.job), do: iso(d["next_attempt_at"]), else: nil),
++      "next_attempt_at" => if(enabled?(s.config) and is_nil(s.job) and not (s.trust_error or s.listener_error), do: iso(d["next_attempt_at"]), else: nil),
+       "last_success_at" => iso(d["last_success_at"]), "last_error" => d["last_error"], "config_revision" => s.config["config_revision"]}
+   end
+   defp initialize(%{owner: owner} = s) when is_binary(owner) do
+@@ -475,6 +494,8 @@
+     if ADHD.ACMEClient.lock_available?(s.root), do: finish(%{s | recovering: false}, {:error, "ACME_PROCESS", nil}), else: s
+   end
+   defp recover_closed(s), do: s
++  defp maybe_start(%{trust_error: true} = s, _), do: s
++  defp maybe_start(%{listener_error: true} = s, _), do: s
+   defp maybe_start(%{recovering: true} = s, _), do: s
+   defp maybe_start(s, force) do
+     try do
+--- a/config.exs
++++ b/config.exs
+@@ -984,6 +984,7 @@
+         ADHD.Projects.validate_aliases(proposed, old)
+ 
+         if cmd["op"] == "config_validate" do
++          ADHD.TLS.validate_inputs(proposed)
+           {%{"valid" => true, "config_revision" => old["config_revision"]}, x}
+         else
+           proposed = Map.put(proposed, "config_revision", old["config_revision"] + 1)

@@ -1,0 +1,472 @@
+{
+  "schema": "adhd/neutral-optimizer-preregistration@1",
+  "status": "fixed-before-model-free-preflight",
+  "execution_authorization": "model-free structural preflight only; provider phase requires separate review",
+  "target": {
+    "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+    "server_id": "20e2672c4cc09de5ff5e4379478d000a",
+    "project_id": "project-red",
+    "agent_id": "bridge"
+  },
+  "recipe": {
+    "tokenizer": "words",
+    "chunk_bytes": 1024,
+    "context_depth": 1,
+    "context_limit": 8,
+    "include_context": true,
+    "semantic": false,
+    "semantic_window": 32,
+    "lexical_weight": 1,
+    "semantic_weight": 2
+  },
+  "history": {
+    "context_depth": 2,
+    "context_limit": 32,
+    "request_bytes": 8192,
+    "min_confidence_ppm": 500000
+  },
+  "archive": {
+    "audit_rate_ppm": 0
+  },
+  "optimizer_gates": "unchanged defaults; no proposal or provider calls authorized by this manifest",
+  "limits": {
+    "preflight_provider_posts": 0,
+    "proposed_later_total_posts": 256,
+    "proposed_later_total_seconds": 900,
+    "retries": 0
+  },
+  "cases": [
+    {
+      "id": "train01",
+      "cohort": "training",
+      "question": "Was parcel Larch delivered to the loading bay?",
+      "records": [
+        {
+          "key": "0",
+          "text": "Was parcel Larch delivered to the loading bay?",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q01",
+            "item_id": "0"
+          },
+          "occurred_at": "2026-10-20T00:01:00Z",
+          "reply_to": null
+        },
+        {
+          "key": "1",
+          "text": "Acknowledged.",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q01",
+            "item_id": "1"
+          },
+          "occurred_at": "2026-10-20T00:01:01Z",
+          "reply_to": "0"
+        },
+        {
+          "key": "2",
+          "text": "Yes",
+          "information_type": "c01",
+          "source": {
+            "kind": "fixture",
+            "id": "q01",
+            "item_id": "2"
+          },
+          "occurred_at": "2026-10-20T00:01:02Z",
+          "reply_to": "1"
+        }
+      ],
+      "scope": {
+        "information_type": "c01"
+      },
+      "complete": false,
+      "limit": 8,
+      "gold": {
+        "expectation": "supported",
+        "support_keys": [
+          "0",
+          "2"
+        ],
+        "confirmed": true,
+        "tags": []
+      }
+    },
+    {
+      "id": "train02",
+      "cohort": "training",
+      "question": "Was parcel Juniper delivered to the loading bay?",
+      "records": [
+        {
+          "key": "0",
+          "text": "Was parcel Juniper delivered to the loading bay?",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q02",
+            "item_id": "0"
+          },
+          "occurred_at": "2026-10-20T00:02:00Z",
+          "reply_to": null
+        },
+        {
+          "key": "1",
+          "text": "Acknowledged.",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q02",
+            "item_id": "1"
+          },
+          "occurred_at": "2026-10-20T00:02:01Z",
+          "reply_to": "0"
+        },
+        {
+          "key": "2",
+          "text": "Yes",
+          "information_type": "c02",
+          "source": {
+            "kind": "fixture",
+            "id": "q02",
+            "item_id": "2"
+          },
+          "occurred_at": "2026-10-20T00:02:02Z",
+          "reply_to": "1"
+        }
+      ],
+      "scope": {
+        "information_type": "c02"
+      },
+      "complete": false,
+      "limit": 8,
+      "gold": {
+        "expectation": "supported",
+        "support_keys": [
+          "0",
+          "2"
+        ],
+        "confirmed": true,
+        "tags": []
+      }
+    },
+    {
+      "id": "held01",
+      "cohort": "held_out",
+      "question": "Was parcel Aspen delivered to the loading bay?",
+      "records": [
+        {
+          "key": "0",
+          "text": "Was parcel Aspen delivered to the loading bay?",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q03",
+            "item_id": "0"
+          },
+          "occurred_at": "2026-10-20T00:03:00Z",
+          "reply_to": null
+        },
+        {
+          "key": "1",
+          "text": "Acknowledged.",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q03",
+            "item_id": "1"
+          },
+          "occurred_at": "2026-10-20T00:03:01Z",
+          "reply_to": "0"
+        },
+        {
+          "key": "2",
+          "text": "Yes",
+          "information_type": "c03",
+          "source": {
+            "kind": "fixture",
+            "id": "q03",
+            "item_id": "2"
+          },
+          "occurred_at": "2026-10-20T00:03:02Z",
+          "reply_to": "1"
+        }
+      ],
+      "scope": {
+        "information_type": "c03"
+      },
+      "complete": false,
+      "limit": 8,
+      "gold": {
+        "expectation": "supported",
+        "support_keys": [
+          "0",
+          "2"
+        ],
+        "confirmed": true,
+        "tags": []
+      }
+    },
+    {
+      "id": "held02",
+      "cohort": "held_out",
+      "question": "Was parcel Cedar delivered to the loading bay?",
+      "records": [
+        {
+          "key": "0",
+          "text": "Was parcel Cedar delivered to the loading bay?",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q04",
+            "item_id": "0"
+          },
+          "occurred_at": "2026-10-20T00:04:00Z",
+          "reply_to": null
+        },
+        {
+          "key": "1",
+          "text": "Acknowledged.",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q04",
+            "item_id": "1"
+          },
+          "occurred_at": "2026-10-20T00:04:01Z",
+          "reply_to": "0"
+        },
+        {
+          "key": "2",
+          "text": "Yes",
+          "information_type": "c04",
+          "source": {
+            "kind": "fixture",
+            "id": "q04",
+            "item_id": "2"
+          },
+          "occurred_at": "2026-10-20T00:04:02Z",
+          "reply_to": "1"
+        }
+      ],
+      "scope": {
+        "information_type": "c04"
+      },
+      "complete": false,
+      "limit": 8,
+      "gold": {
+        "expectation": "supported",
+        "support_keys": [
+          "0",
+          "2"
+        ],
+        "confirmed": true,
+        "tags": []
+      }
+    },
+    {
+      "id": "held03",
+      "cohort": "held_out",
+      "question": "Was parcel Maple delivered to the loading bay?",
+      "records": [
+        {
+          "key": "0",
+          "text": "Was parcel Willow delivered to the loading bay?",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q05",
+            "item_id": "0"
+          },
+          "occurred_at": "2026-10-20T00:05:00Z",
+          "reply_to": null
+        },
+        {
+          "key": "1",
+          "text": "Acknowledged.",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q05",
+            "item_id": "1"
+          },
+          "occurred_at": "2026-10-20T00:05:01Z",
+          "reply_to": "0"
+        },
+        {
+          "key": "2",
+          "text": "Yes",
+          "information_type": "c05",
+          "source": {
+            "kind": "fixture",
+            "id": "q05",
+            "item_id": "2"
+          },
+          "occurred_at": "2026-10-20T00:05:02Z",
+          "reply_to": "1"
+        }
+      ],
+      "scope": {
+        "information_type": "c05"
+      },
+      "complete": false,
+      "limit": 8,
+      "gold": {
+        "expectation": "no_evidence",
+        "support_keys": [],
+        "confirmed": true,
+        "tags": []
+      }
+    },
+    {
+      "id": "reg01",
+      "cohort": "regression",
+      "question": "Was parcel Birch delivered to the loading bay?",
+      "records": [
+        {
+          "key": "0",
+          "text": "Was parcel Birch delivered to the loading bay?",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q06",
+            "item_id": "0"
+          },
+          "occurred_at": "2026-10-20T00:06:00Z",
+          "reply_to": null
+        },
+        {
+          "key": "1",
+          "text": "Acknowledged.",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q06",
+            "item_id": "1"
+          },
+          "occurred_at": "2026-10-20T00:06:01Z",
+          "reply_to": "0"
+        },
+        {
+          "key": "2",
+          "text": "No",
+          "information_type": "c06",
+          "source": {
+            "kind": "fixture",
+            "id": "q06",
+            "item_id": "2"
+          },
+          "occurred_at": "2026-10-20T00:06:02Z",
+          "reply_to": "1"
+        }
+      ],
+      "scope": {
+        "information_type": "c06"
+      },
+      "complete": false,
+      "limit": 8,
+      "gold": {
+        "expectation": "supported",
+        "support_keys": [
+          "0",
+          "2"
+        ],
+        "confirmed": true,
+        "tags": [
+          "negation"
+        ]
+      }
+    },
+    {
+      "id": "reg02",
+      "cohort": "regression",
+      "question": "Was parcel Spruce delivered to the loading bay?",
+      "records": [
+        {
+          "key": "0",
+          "text": "Was parcel Spruce delivered to the loading bay?",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q07",
+            "item_id": "0"
+          },
+          "occurred_at": "2026-10-20T00:07:00Z",
+          "reply_to": null
+        },
+        {
+          "key": "1",
+          "text": "Yes",
+          "information_type": "r00",
+          "source": {
+            "kind": "fixture",
+            "id": "q07",
+            "item_id": "1"
+          },
+          "occurred_at": "2026-10-20T00:07:01Z",
+          "reply_to": "0"
+        },
+        {
+          "key": "2",
+          "text": "Correction: No",
+          "information_type": "c07",
+          "source": {
+            "kind": "fixture",
+            "id": "q07",
+            "item_id": "2"
+          },
+          "occurred_at": "2026-10-20T00:07:02Z",
+          "reply_to": "1"
+        }
+      ],
+      "scope": {
+        "information_type": "c07"
+      },
+      "complete": false,
+      "limit": 8,
+      "gold": {
+        "expectation": "conflicting",
+        "support_keys": [
+          "0",
+          "1",
+          "2"
+        ],
+        "confirmed": true,
+        "tags": [
+          "correction"
+        ]
+      }
+    }
+  ],
+  "publication_order": [
+    "train01:0",
+    "train01:1",
+    "train01:2",
+    "train02:0",
+    "train02:1",
+    "train02:2",
+    "held01:0",
+    "held01:1",
+    "held01:2",
+    "held02:0",
+    "held02:1",
+    "held02:2",
+    "held03:0",
+    "held03:1",
+    "held03:2",
+    "reg01:0",
+    "reg01:1",
+    "reg01:2",
+    "reg02:0",
+    "reg02:1",
+    "reg02:2"
+  ],
+  "spec_sha256": {
+    "components/hub/optimization/spec.md": "01526232cd88786f004c902e38c76860e371dee15279230331372033d48eef0f",
+    "components/hub/retrieval/spec.md": "ead989174290747fbd73d0fad10df6fa4cb1940940e84e91cdc1e07e51e25940",
+    "components/hub/retrieval/index.md": "cd2341468d2cef4ca4987d63eee3f8664623f3b05fcb575361562af5508bdc18",
+    "components/hub/archive/spec.md": "c6669a7ab69c6e9b354c175ac350df55011ade398d051c491ee92388add9fee0",
+    "components/hub/feedback/replay.md": "e9da3b7ffad2b089822b3c0b6cda9e5634d1bba6a35e402f1bdaecd568e77236"
+  },
+  "failure_policy": "Any failed mechanical prerequisite stops this fixed cohort with zero provider forwarding, no metadata/IDs/content/gold/policy reselection. Actual assigned IDs/timestamps captured once before inference. Existing30/34 optimizer failures remain failed."
+}

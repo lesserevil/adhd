@@ -58,7 +58,12 @@ async def main():
         dependency_sha256={str(p):digest(p.read_bytes()) for p in [args.recovery_schema,Path(__file__).with_name('multi_support.py'),Path(__file__).with_name('project_recovery_queries.py')]},
         frozen_manifest=manifest)
     try:
-        await f.start();await Recovery(f,args.recovery_schema).initialize(RED);actor=await f.agent(manifest['target']['agent_id'])
+        await f.start()
+        admin=f.admin();config=admin.call({'op':'config_get'})
+        revision=config['config_revision']
+        e.value['config_validation']=admin.call({'op':'config_validate','patch':{},'expected_revision':revision})
+        assert e.value['config_validation']['valid'] is True and not guard.posts
+        await Recovery(f,args.recovery_schema).initialize(RED);actor=await f.agent(manifest['target']['agent_id'])
         async def call(op,**fields):
             assert not guard.posts,'Model request attempted during forbidden-provider preflight'
             result=await actor.call(scoped(RED,op,**fields))

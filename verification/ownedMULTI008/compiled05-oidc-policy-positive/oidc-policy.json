@@ -1,0 +1,156 @@
+{
+  "schema": "adhd/oidc-policy@1",
+  "passed": true,
+  "cases": [
+    {
+      "case": "matching-email-never-auto-merges-local-or-distinct-oidc-subjects",
+      "passed": true
+    },
+    {
+      "case": "proved-profile-updates-retain-internal-id-role-and-agent-ownership",
+      "passed": true
+    },
+    {
+      "case": "invalid-and-unmapped-groups-denied-multiple-mappings-highest-role-hot-demotion",
+      "passed": true
+    },
+    {
+      "case": "explicit-default-viewer-and-admin-profile-completion-without-fabricated-claims",
+      "passed": true
+    },
+    {
+      "case": "renamed-bootstrap-account-remains-local-and-unlinkable-after-hard-restart",
+      "passed": true
+    }
+  ],
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "9ce5276a701cf89ea4cbd490fe7d9a59912c94779b155bd4b6d31be2ef93aafe",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "9ce5276a701cf89ea4cbd490fe7d9a59912c94779b155bd4b6d31be2ef93aafe",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "8008868f5d6bb2c6e54cdf211a381f5b81db62ac91b8ca024be6fb37636e1bf9",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "stopped",
+        "container_id": "8008868f5d6bb2c6e54cdf211a381f5b81db62ac91b8ca024be6fb37636e1bf9",
+        "exit_code": 0,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-1222ec7158fe4080",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-4553749e3a6a404c",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "kernel_vm_observations": [
+      {
+        "container_id": "9ce5276a701cf89ea4cbd490fe7d9a59912c94779b155bd4b6d31be2ef93aafe",
+        "host_pid": 3350559,
+        "kernel_start_time": "21911411",
+        "pid_namespace": "pid:[4026533621]",
+        "executable": "/usr/local/lib/erlang/erts-17.1.1/bin/beam.smp",
+        "command_sha256": "bb575c95cb973c3d62093cd4145f8da2c730c1de6764e3c8c7f2a8338d5b3cf6"
+      },
+      {
+        "container_id": "9ce5276a701cf89ea4cbd490fe7d9a59912c94779b155bd4b6d31be2ef93aafe",
+        "host_pid": 3350559,
+        "kernel_start_time": "21911411",
+        "pid_namespace": "pid:[4026533621]",
+        "executable": "/usr/local/lib/erlang/erts-17.1.1/bin/beam.smp",
+        "command_sha256": "bb575c95cb973c3d62093cd4145f8da2c730c1de6764e3c8c7f2a8338d5b3cf6"
+      },
+      {
+        "container_id": "8008868f5d6bb2c6e54cdf211a381f5b81db62ac91b8ca024be6fb37636e1bf9",
+        "host_pid": 3352438,
+        "kernel_start_time": "21912809",
+        "pid_namespace": "pid:[4026533621]",
+        "executable": "/usr/local/lib/erlang/erts-17.1.1/bin/beam.smp",
+        "command_sha256": "bb575c95cb973c3d62093cd4145f8da2c730c1de6764e3c8c7f2a8338d5b3cf6"
+      },
+      {
+        "container_id": "8008868f5d6bb2c6e54cdf211a381f5b81db62ac91b8ca024be6fb37636e1bf9",
+        "host_pid": 3352438,
+        "kernel_start_time": "21912809",
+        "pid_namespace": "pid:[4026533621]",
+        "executable": "/usr/local/lib/erlang/erts-17.1.1/bin/beam.smp",
+        "command_sha256": "bb575c95cb973c3d62093cd4145f8da2c730c1de6764e3c8c7f2a8338d5b3cf6"
+      }
+    ],
+    "auth_only_fixture_transitions": [
+      {
+        "phase": "first-admission",
+        "eventing_enabled_before": true,
+        "eventing_enabled_after": false,
+        "revision_before": 1,
+        "revision_after": 2,
+        "public_local_admin_login": true,
+        "public_initialization_completed": true,
+        "projects": [
+          {
+            "project_id": "shared-project",
+            "availability": "ready"
+          }
+        ],
+        "container_id": "9ce5276a701cf89ea4cbd490fe7d9a59912c94779b155bd4b6d31be2ef93aafe"
+      },
+      {
+        "phase": "verified-restart",
+        "eventing_enabled_before": false,
+        "eventing_enabled_after": false,
+        "revision_before": 14,
+        "revision_after": 14,
+        "public_local_admin_login": true,
+        "public_initialization_completed": true,
+        "projects": [
+          {
+            "project_id": "shared-project",
+            "availability": "ready"
+          }
+        ],
+        "container_id": "8008868f5d6bb2c6e54cdf211a381f5b81db62ac91b8ca024be6fb37636e1bf9"
+      }
+    ]
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+}

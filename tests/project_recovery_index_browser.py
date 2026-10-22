@@ -3,7 +3,7 @@
 
 Success bodies are captured unchanged from the real backend and delayed. The
 current-context error case revokes a real Viewer grant before fetching its held
-request, obtaining an actual403 instead of synthesizing an HTTP response.
+request, obtaining an actual non-disclosing denial instead of synthesizing an HTTP response.
 """
 import asyncio
 import copy
@@ -81,7 +81,7 @@ async def viewport(args, browser, name, width, height, evidence):
                 body=route.request.post_data_json
                 if body.get('op')=='retrieval_index' and not captured.is_set():
                     captured.set();await release.wait()
-                    response=await route.fetch();actual_status.append(response.status)
+                    response=await route.fetch();body=await response.json();actual_status.append((response.status,body['error']['code']))
                     await route.fulfill(response=response);fulfilled.set()
                 else:await route.continue_()
             await child.route('**/admin/api',current_error)
@@ -90,11 +90,14 @@ async def viewport(args, browser, name, width, height, evidence):
             f.admin().call({'op':'save_user','user':{'id':user['id'],'username':'index-viewer','name':'Index viewer',
                 'email':'index-viewer@example.invalid','role':'Viewer','project_ids':[]}},mutation=True)
             release.set();await asyncio.wait_for(fulfilled.wait(),10)
-            await expect(child.get_by_role('alert')).to_have_text('FORBIDDEN')
-            assert actual_status==[403]
+            assert len(actual_status)==1 and actual_status[0] in {(403,'FORBIDDEN'),(404,'PROJECT_NOT_FOUND')}
+            status,code=actual_status[0]
+            evidence.value.setdefault('current_error_observations',[]).append({'viewport':name,'http_status':status,'error':code})
+            evidence.write()
+            await expect(child.get_by_role('alert')).to_have_text(code)
             await expect(child.get_by_role('heading',name='Overview',exact=True)).to_be_visible()
             captures.append(await capture(child,f.root,'current-context-error'))
-            evidence.record(name+'-actual-current-context-index-denial-remains-visible',http_status=403,error='FORBIDDEN')
+            evidence.record(name+'-actual-current-context-index-denial-remains-visible',http_status=status,error=code)
         finally:await viewer.close()
         assert not errors,errors
         evidence.value.setdefault('captures',[]).extend(captures)

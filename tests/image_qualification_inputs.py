@@ -29,7 +29,8 @@ def reviewed_payload(manifest_path, admission_path, expected_admission_sha, imag
     assert payload_path.stat().st_size <= 32 * 1024 * 1024
     contents = {}
     seen = set()
-    with tarfile.open(payload_path) as archive:
+    total_bytes = 0
+    with tarfile.open(payload_path, mode="r:") as archive:
         members = archive.getmembers()
         assert len(members) <= 512
         for member in members:
@@ -41,8 +42,11 @@ def reviewed_payload(manifest_path, admission_path, expected_admission_sha, imag
             assert member.isdir() or member.isfile(), 'Reject redirected archive entries'
             if member.isfile():
                 assert 0 <= member.size <= 8 * 1024 * 1024
+                total_bytes += member.size
+                assert total_bytes <= 16 * 1024 * 1024
                 contents[member.name] = archive.extractfile(member).read()
     expected = {'app/' + name for name in manifest['files'] if name != 'Dockerfile'} | {'app/manifest.json'}
+    # The payload audit counts application files, excluding manifest metadata.
     assert set(contents) == expected and len(contents) - 1 == audit['actual_app_files']
     assert contents['app/manifest.json'] == raw
     assert sha(manifest_path.with_name('Dockerfile')) == manifest['files']['Dockerfile']

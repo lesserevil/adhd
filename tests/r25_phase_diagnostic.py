@@ -108,6 +108,33 @@ def verify(work,plan):
     return True
 
 
+def import_preflight(work,plan):
+    """Load only the verified venv, without ambient site/.pth processing."""
+    original=Path(plan['original_work']);parent=json.loads((original/'plan.json').read_text())
+    host=json.loads((original/'bound/host-dependencies.json').read_text())
+    root=Path(parent['python']['path']).parent.parent
+    trees=[t for t in host['trees']if Path(t['root'])==root];assert len(trees)==1
+    candidates=[Path(n).parent.parent for n in trees[0]['files']if n.endswith('/httpx/__init__.py')]
+    assert len(candidates)==1
+    site=root/candidates[0];assert site.resolve(strict=True)==site and site.is_dir()
+    assert sha(site/'httpx/__init__.py')==trees[0]['files'][str(candidates[0]/'httpx/__init__.py')]['sha256']
+    if str(site)not in sys.path:sys.path.append(str(site))
+    import subprocess
+    names=['Popen','run','check_call','check_output','call'];saved={n:getattr(subprocess,n)for n in names}
+    def denied(*_,**__):raise AssertionError('Dependency import attempted a subprocess')
+    undo=None
+    try:
+        for name in names:setattr(subprocess,name,denied)
+        undo=install(work/'observer.exs')
+        command=plan['argv'];entry=Path(command[3]);script=Path(command[command.index('--script')+1])
+        runpy.run_path(str(entry),run_name='diagnostic_dependency_import_only')
+        runpy.run_path(str(script),run_name='diagnostic_dependency_import_only')
+    finally:
+        if undo:undo()
+        for name,value in saved.items():setattr(subprocess,name,value)
+    return {'site_packages':str(site),'pth_executed':False,'install_and_original_modules_imported':True,'subprocess_calls_authorized':0}
+
+
 def prepare(args):
     work=args.work.absolute();assert not work.exists();old=args.original.absolute();parent=json.loads((old/'plan.json').read_text())
     row=next(r for r in parent['jobs']if r['name']=='crash-no-default-after-install-snapshot')
@@ -136,20 +163,23 @@ def execute(args):
     work=args.work.absolute();assert Path(__file__).absolute()==work/'driver.py'
     assert sha(regular(work/'plan.json'))==args.plan_sha256
     plan=json.loads((work/'plan.json').read_text());assert verify(work,plan)
+    imports=import_preflight(work,plan)
     claim(work);(work/'results').mkdir(mode=0o700)
     parent=json.loads((Path(plan['original_work'])/'plan.json').read_text())
     os.environ.clear();os.environ.update(parent['env'])
     # The original entry installs exact owned runtime finally cleanup. Instrument
     # its class in-place; executing the entry cannot change the original script.
-    undo=install(work/'observer.exs');oldargv=sys.argv;failure=None;primary=None
+    undo=None;oldargv=sys.argv;failure=None;primary=None
     try:
+        undo=install(work/'observer.exs')
         command=plan['argv'];sys.argv=command[3:]
         assert sys.argv[0].endswith('/image_recovery_entry.py')
         runpy.run_path(sys.argv[0],run_name='__main__')
     except BaseException as error:
         primary=error;failure=type(error).__name__;raise
     finally:
-        sys.argv=oldargv;undo()
+        sys.argv=oldargv
+        if undo:undo()
         postverify=False
         try:
             assert verify(work,plan);postverify=True
@@ -159,7 +189,7 @@ def execute(args):
                 lines=f.read_text().splitlines()
                 traces.append({'path':str(f),'sha256':sha(f),'bytes':s.st_size,'ready_observed':any('|ready|'in line for line in lines),
                     'incomplete_observed':any(any('|'+mark+'|'in line for mark in ['expired','limit','observer-failed'])for line in lines)})
-            dump(work/'result.json',{'diagnostic_only':True,'original_inputs_reverified':postverify,'failure_type':failure,'trace_files':traces,'original_cleanup_report':str(work/'results'/ (plan['case']+'-cleanup.json'))})
+            dump(work/'result.json',{'diagnostic_only':True,'dependency_import_preflight':imports,'original_inputs_reverified':postverify,'failure_type':failure,'trace_files':traces,'original_cleanup_report':str(work/'results'/ (plan['case']+'-cleanup.json'))})
         except BaseException as error:
             if primary is not None:primary.add_note('Diagnostic evidence finalization failed: '+type(error).__name__)
             else:raise
@@ -170,7 +200,9 @@ def main():
     if a.prepare:prepare(a)
     elif a.verify_only:
         assert sha(regular(a.work/'plan.json'))==a.plan_sha256
-        assert verify(a.work,json.loads((a.work/'plan.json').read_text()))
+        plan=json.loads((a.work/'plan.json').read_text())
+        assert verify(a.work,plan)
+        print(json.dumps(import_preflight(a.work,plan)))
         assert not(a.work/'started.json').exists()and not(a.work/'results').exists()
         print('Verified; no execution')
     else:execute(a)

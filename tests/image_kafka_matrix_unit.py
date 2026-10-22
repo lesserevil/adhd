@@ -44,6 +44,14 @@ class Guards(unittest.TestCase):
   self.assertTrue(m.absent(good,id))
   for rc,err in [(2,good.stderr),(1,b'daemon unavailable'),(1,good.stderr+b'\nconnection failed')]:
    self.assertFalse(m.absent(subprocess.CompletedProcess([],rc,b'',err),id))
+ def test_absence_identifier_is_case_sensitive(self):
+  for key in ('aBcD'*16,'adhd-accept-probe-aBcD1234'):
+   self.assertTrue(m.absent(subprocess.CompletedProcess([],1,b'[]',('error: no such object: '+key).encode()),key))
+   for wrong in (key.upper(),key.lower()):self.assertFalse(m.absent(subprocess.CompletedProcess([],1,b'[]',('Error: No such object: '+wrong).encode()),key))
+ def test_absence_cannot_contradict_stdout(self):
+  key='a'*64
+  for out in (b'[{"Id":"foreign"}]',b'{"State":"running"}',b'[]\nforeign'):
+   self.assertFalse(m.absent(subprocess.CompletedProcess([],1,out,('error: no such object: '+key).encode()),key))
  def fixture(self):
   (self.root/'runtime').mkdir()
   plan={'driver_sha256':'test','lane_lock':str(self.root/'lock'),'runtime_cwd':str(self.root/'runtime'),

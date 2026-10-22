@@ -172,7 +172,7 @@ def prepare(args):
 
 
 def absent(result,identifier):
- return result.returncode==1 and result.stdout.strip()==b'[]' and re.fullmatch(r'(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*'+re.escape(identifier),result.stderr.decode(errors='replace').strip(),re.IGNORECASE) is not None
+ return result.returncode==1 and result.stdout.strip() in (b'',b'[]') and re.fullmatch(r'(?i:(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*)'+re.escape(identifier),result.stderr.decode(errors='replace').strip()) is not None
 
 
 def qualify(value,job,plan):

@@ -35,8 +35,21 @@ built the exact successor export, then stopped because the independent oracle
 still referenced the previous specification set; no new receipt was issued.
 The [oracle review](../../verification/eventing-readiness-oracle-review41/review.json)
 preserves all 106 arguments and expected results and updates only their specification
-binding. Next: finish the proper lifecycle rerun, then run the independent readiness
-faults against its actual passing export and receipt.
+binding. The [proper lifecycle rerun](../../verification/eventing-readiness-source41-lifecycle-positive/manifest.json)
+now passes and issues the successor receipt with all 18 declared tests passing.
+The [first independent readiness run](../../verification/eventing-readiness-native23-first-failure/manifest.json)
+passes the real-broker lag case, then fails its queue-control case; the remaining
+21 cases are unrun. Inputs and native/proxy cleanup are independently verified.
+The positive control incorrectly shares one global HTTP ticket with Blue's normal
+one-second Kafka polling, so absence of the deliberate hold does not establish
+absence of queue contention. Correct that control to two global tickets and one
+per project, observe those limits through the public resource-status API, and
+retain its same 20 visibility faults and three-second deadline. The negative queue
+case keeps its original single global ticket, held Blue request, observed queued
+Red work and shared three-second budget within the ten-second recovery budget.
+Retain bounded failure traces before assertions can discard them. Next: review
+that fixture correction and run all 23 independent cases against the passing
+export and receipt; the earlier failure remains false.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

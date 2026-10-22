@@ -111,6 +111,7 @@ def run(args):
     relay = ChallengeRelay(upstreams={'one.acme.test':18080, 'two.acme.test':18081})
     runtime = None
     oidc = federation = None
+    admin = None
     primary = None
     def check(name, **facts):
         report['checks'].append({'name': name, 'passed': True, **facts})
@@ -297,6 +298,13 @@ def run(args):
         raise
     finally:
         cleanup = []
+        if primary and admin:
+            try:
+                failure_status = admin.api({'op':'tls_status'})
+                validator.validate(failure_status)
+                report['failure_tls_status'] = failure_status
+            except BaseException as observation_error:
+                report['failure_status_observation_error'] = type(observation_error).__name__
         for close in (federation.close if federation else lambda: None, oidc.close if oidc else lambda: None,
                       runtime.stop if runtime else lambda: None, relay.close):
             try:

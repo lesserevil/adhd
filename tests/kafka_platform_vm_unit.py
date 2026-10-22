@@ -21,12 +21,12 @@ def main():
         else:raise AssertionError('Wrong process accepted')
     assert vm.COMMAND==['["serve","/config/hub.json"]']
     with tempfile.TemporaryDirectory() as temp:
-        directory=Path(temp);(directory/'stat').write_bytes(stat(123,99));(directory/'cmdline').write_bytes(args)
+        directory=Path(temp)/'123';directory.mkdir();(directory/'stat').write_bytes(stat(123,99));(directory/'cmdline').write_bytes(args)
         row={'Id':'owned','Image':'image','State':{'Running':True,'Pid':123,'StartedAt':'now'},'RestartCount':0,
             'Config':{'Entrypoint':vm.ENTRYPOINT,'Cmd':vm.COMMAND},'HostConfig':{'PidMode':''}}
         def mapped(value):
             value=str(value)
-            return directory if value=='/proc/123' else Path(value)
+            return Path(temp) if value=='/proc' else Path(value)
         with patch.object(vm,'Path',side_effect=mapped),patch('os.readlink',return_value='/container-only/beam.smp'):
             proof=vm.compose(lambda *a,**k:json.dumps([row]).encode(),'owned','image')
             assert proof['process']['actual_compiled_boot_and_app_arguments']

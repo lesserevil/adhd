@@ -26,6 +26,7 @@ from kafka_oauth_custody import KeytoolProbe, unpack_payload, cleanup_all, Names
 
 from cryptography import x509
 import httpx
+import yaml
 
 from kafka_oauth_provider import Issuer, private, PROXY_IMAGE
 from multi_support import Evidence, Fixture, poll_until, scoped
@@ -72,7 +73,7 @@ async def main(args):
         input_sha256={str(path.relative_to(repo)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in [Path(__file__), repo/'tests/kafka_oauth_provider.py',
                          repo/'deploy/k8s/events.yaml', repo/'deploy/k8s/oauth.patch.yaml',
-                         repo/'deploy/security/kafka-rest.oauth.properties.example']})
+                         repo/'deploy/security/kafka-rest.oauth.properties.example', repo/'deploy/kafka-bootstrap.py']})
     evidence.value['harness_dependencies_sha256']={name+'.py': hashlib.sha256(Path(sys.modules[name].__file__).read_bytes()).hexdigest() for name in ['multi_support','foundation_acceptance','hub_acceptance']}
     issuer = hub = http = forward = hub_forward = None
     seed_fixture=None
@@ -202,12 +203,14 @@ async def main(args):
             images.append({'name':name,'newName':new_name,'digest':digest})
         if args.image:
             images.append({'name':'adhd-hub','newName':args.cluster_image.rsplit(':',1)[0],'newTag':args.cluster_image.rsplit(':',1)[1]})
-        (stage/'kafka-bootstrap.py').write_bytes((repo/'deploy/kafka-bootstrap.py').read_bytes())
+        shipped=list(yaml.safe_load_all((stage/'events.yaml').read_text()))
+        bootstrap=next(row for row in shipped if row['kind']=='ConfigMap' and row['metadata']['name']=='kafka-bootstrap')
+        assert bootstrap['data']['kafka-bootstrap.py'].encode()==(repo/'deploy/kafka-bootstrap.py').read_bytes()
+        broker=next(row for row in shipped if row['kind']=='StatefulSet' and row['metadata']['name']=='kafka')
+        assert next(v for v in broker['spec']['template']['spec']['volumes'] if v['name']=='bootstrap')['configMap']['name']=='kafka-bootstrap'
         (stage/'kustomization.yaml').write_text(json.dumps({'apiVersion':'kustomize.config.k8s.io/v1beta1',
             'kind':'Kustomization','namespace':args.namespace,'resources':['events.yaml','hub.yaml'] if args.image else ['events.yaml'],
-            'patches':[{'path':'oauth.patch.yaml'}],'images':images,
-            'configMapGenerator':[{'name':'adhd-kafka-bootstrap','files':['kafka-bootstrap.py']}],
-            'generatorOptions':{'disableNameSuffixHash':True}}))
+            'patches':[{'path':'oauth.patch.yaml'}],'images':images}))
         rendered=run(['kustomize',str(stage)],capture=True)
         evidence.value['rendered_sha256']=hashlib.sha256(rendered).hexdigest()
         private(root/'rendered.yaml',rendered)

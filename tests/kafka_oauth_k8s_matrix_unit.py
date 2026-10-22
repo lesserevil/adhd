@@ -23,11 +23,11 @@ def main():
         else:raise AssertionError('Wrong published port accepted')
     source=Path(__file__).with_name('kafka_oauth_k8s.py').read_text()
     tree=ast.parse(source)
-    assert len([n for n in ast.walk(tree) if isinstance(n,ast.Assert)])==49
-    assert "args.initialize_projects=True" in source and "'configMapGenerator'" in source
+    assert len([n for n in ast.walk(tree) if isinstance(n,ast.Assert)])==51
+    assert "args.initialize_projects=True" in source and "'configMapGenerator'" not in source
     assert 'with suppress(Exception):\n                run([\'delete\'' not in source
     assert "keytool=KeytoolProbe(PROXY_IMAGE,issuer.root)" in source
-    print('PASS securedKind preparation pure5: authored entry rejected before helpers, zero real preflight calls, original48assertions/static initialization/bootstrap additions, fixed keytoolsource, publishednode-port mismatch denial and no hidden namespace-delete errors; runtimes/providers0')
+    print('PASS securedKind preparation pure5: authored entry rejected before helpers, zero real preflight calls, original48assertions/static initialization/shipped inline bootstrap verification, fixed keytoolsource, publishednode-port mismatch denial and no hidden namespace-delete errors; runtimes/providers0')
 
 
 if __name__=='__main__':main()

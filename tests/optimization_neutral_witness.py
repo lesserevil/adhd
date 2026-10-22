@@ -10,16 +10,17 @@ import copy
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 import json
 import os
+import socket
 from pathlib import Path
 import threading
 import time
 
-import httpx
 
 from multi_support import Evidence,arguments,scoped
 from optimization_positive_witness import canonical,digest
 from project_recovery_queries import NativeFixture
 from protocol_acceptance import ByteValidator
+from optimization_provider_io import exchange
 
 
 class ProviderBudget:
@@ -28,9 +29,14 @@ class ProviderBudget:
         self.provider=manifest['provider'];self.budget=manifest['provider_budget'];self.log=log
         self.deadline=time.monotonic()+self.budget['maximum_wall_clock_seconds']
         self.questions={c['question'] for c in manifest['preregistration']['cases'][:2]}
-        self.lock=threading.Condition();self.closed=True;self.count=0;self.inflight=0;self.violations=[]
+        self.lock=threading.Condition();self.closed=True;self.stopping=False;self.count=0;self.inflight=0;self.handlers=0;self.violations=[];self.sockets=set()
         self.log.write_text('');self.log.chmod(0o600);outer=self
         class Handler(BaseHTTPRequestHandler):
+            def setup(self):
+                super().setup();self.connection.settimeout(max(.001,min(10,outer.deadline-time.monotonic())));outer.register(self.connection)
+            def finish(self):
+                try:super().finish()
+                finally:outer.unregister(self.connection)
             def log_message(self,*_):pass
             def do_POST(self):
                 n=int(self.headers.get('Content-Length','0'))
@@ -50,10 +56,8 @@ class ProviderBudget:
                     outer.count+=1;number=outer.count;outer.inflight+=1
                 row={'sequence':number,'request_sha256':digest(raw),'request_json':raw.decode()};started=time.monotonic()
                 try:
-                    with httpx.Client(trust_env=False,follow_redirects=False,timeout=max(.001,min(10,remaining))) as http:
-                        response=http.post(outer.provider['url'],content=raw,headers={'Content-Type':'application/json'})
-                    body=response.content;assert len(body)<=262144
-                    status=response.status_code;row.update(http_status=status,response_sha256=digest(body),response_text=body.decode())
+                    status,body=exchange(outer.provider['url'],raw,min(outer.deadline,started+10),outer.register,outer.unregister)
+                    row.update(http_status=status,response_sha256=digest(body),response_text=body.decode())
                 except Exception as error:
                     body,status=b'{}',502;row['transport_error_type']=type(error).__name__
                 finally:
@@ -66,18 +70,52 @@ class ProviderBudget:
                 self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(body)));self.end_headers()
                 try:self.wfile.write(body)
                 except (BrokenPipeError,ConnectionResetError):pass
-        self.server=ThreadingHTTPServer(('127.0.0.1',0),Handler);self.server.daemon_threads=True
-        self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
+        class Server(ThreadingHTTPServer):
+            daemon_threads=True
+            slots=threading.BoundedSemaphore(2)
+            def process_request(self,request,address):
+                with outer.lock:
+                    if outer.stopping or not self.slots.acquire(False):
+                        self.shutdown_request(request);outer.violations.append('closed-or-concurrency');return
+                    outer.handlers+=1
+                try:super().process_request(request,address)
+                except BaseException:
+                    with outer.lock:outer.handlers-=1;outer.lock.notify_all()
+                    self.slots.release();raise
+            def process_request_thread(self,request,address):
+                try:super().process_request_thread(request,address)
+                finally:
+                    self.slots.release()
+                    with outer.lock:outer.handlers-=1;outer.lock.notify_all()
+            def handle_error(self,*_):outer.violate('inbound-handler-error')
+        self.server=Server(('127.0.0.1',0),Handler)
+        self.thread=threading.Thread(target=lambda:self.server.serve_forever(poll_interval=.05),daemon=True);self.thread.start()
         self.url='http://127.0.0.1:'+str(self.server.server_port)+'/v1/systemone'
+        self.timer=threading.Timer(max(0,self.deadline-time.monotonic()),self.expire);self.timer.daemon=True;self.timer.start()
+    def register(self,sock):
+        with self.lock:
+            if self.stopping:raise OSError('Relay stopped')
+            self.sockets.add(sock)
+    def unregister(self,sock):
+        with self.lock:self.sockets.discard(sock)
+    def stop(self):
+        with self.lock:self.closed=True;self.stopping=True;active=list(self.sockets)
+        for sock in active:
+            try:sock.shutdown(socket.SHUT_RDWR)
+            except OSError:pass
+            sock.close()
+    def expire(self):
+        self.violate('absolute-wall-deadline');self.stop()
     def violate(self,reason):
         with self.lock:self.violations.append(reason)
     def check(self):
         assert not self.violations and time.monotonic()<self.deadline,'Frozen provider scope/budget exhausted'
     def close(self):
+        self.timer.cancel();self.stop()
         try:
-            with self.lock:
-                self.closed=True;assert self.lock.wait_for(lambda:self.inflight==0,timeout=12),'Provider exchange failed to settle'
-        finally:self.server.shutdown();self.server.server_close();self.thread.join(2)
+            with self.lock:assert self.lock.wait_for(lambda:self.inflight==0 and self.handlers==0,timeout=12),'Provider exchange/handler failed to settle'
+        finally:
+            self.server.shutdown();self.server.server_close();self.thread.join(2);self.timer.join(2)
 
 
 class WireAgent:
@@ -107,7 +145,8 @@ def verify(args):
     assert p['cases'][6]['gold']['support_keys']==['0','1','2'] and p['cases'][6]['gold']['expectation']=='conflicting'
     old=json.loads(args.parent_manifest.read_bytes());assert digest(args.parent_manifest.read_bytes())==m['preregistration_parent_sha256']
     unchanged=copy.deepcopy(p);unchanged['cases'][6]['question']=old['cases'][6]['question'];unchanged['limits']['proposed_later_total_posts']=256;assert unchanged==old
-    assert digest(args.hub.read_bytes())==p['target']['artifact_sha256']
+    target=m.get('execution_target',p['target'])
+    assert digest(args.hub.read_bytes())==target['artifact_sha256']
     assert digest(args.preflight_report.read_bytes())==c['preflight_report_sha256']
     pre=json.loads(args.preflight_report.read_bytes());assert pre['passed'] and len(pre['checks'])==2 and pre['provider_posts']==0 and pre['forbidden_model_attempts']==[]
     assert pre['harness_sha256']==c['preflight_harness_sha256'] and pre['manifest_sha256']==c['preflight_manifest_sha256']
@@ -124,6 +163,7 @@ async def checks(f,e,m,budget):
     agent=WireAgent(await f.agent(name));admin=f.admin();captures=copy.deepcopy(m['continuation']['original_records'])
     e.value['frozen_originals']=copy.deepcopy(captures);e.write()
     schema=admin.client.get('/protocol/schema')[1];validator=ByteValidator({'$defs':schema['$defs'],'$ref':'#/$defs/OptimizationProposal'})
+    replay_validator=ByteValidator({'$defs':schema['$defs'],'$ref':'#/$defs/ReplayQuery'})
     def management(op,mutation=False,**fields):return admin.call(scoped(project,op,**fields),mutation=mutation)
     async def call(op,**fields):budget.check();return await agent.call(scoped(project,op,**fields))
     async def wait(fn):
@@ -191,6 +231,31 @@ async def checks(f,e,m,budget):
             v=management('index_proposal',proposal_id=pid,limit=64);e.value['latest_proposal']=v['proposal'];e.write()
             return v['proposal'] if v['proposal']['status']!='pending' else None
         value=await wait(observe);validator.validate(value);return value
+    async def verify_pairs(proposal):
+        saved={v['detail']['id']:v['detail'] for v in e.value['confirmed_attempts']}
+        variants={v['recipe_identity']:v for v in proposal['variants']}
+        for row in proposal['cases']:
+            current=management('feedback_attempt',attempt_id=row['attempt_id'])['attempt'];original=saved[row['attempt_id']]
+            replay=(await call('get_retrieval_replay',query_id=row['replay_id'],run=row['run']))['query']
+            e.value.setdefault('paired_replays',{})[row['replay_id']+':'+str(row['run'])]={'replay':replay,'current_attempt':current};e.write()
+            replay_validator.validate(replay)
+            assert replay['id']==row['replay_id'] and replay['run']==row['run'] and replay['attempt_id']==original['id']
+            assert replay['corpus']=='frozen' and replay['baseline_origin']=='current' and replay['owner_id']==name and replay['project_id']==project
+            assert replay['snapshot']==replay['original_snapshot']==current['snapshot']==original['snapshot']
+            assert replay['scope']==original['scope'] and replay['question']==original['question']
+            assert replay['label']==current['labels'][-1]==original['labels'][-1] and replay['label_revision']==row['label_revision']==original['label_revision']
+            assert current['group_id']==row['group_id']==original['group_id'] and replay['label']['cohort']==row['cohort']
+            assert replay['baseline']['recipe']==p['recipe'] and replay['candidate']['recipe']==variants[row['variant_identity']]['recipe']
+            assert replay['candidate']['recipe_identity']==row['variant_identity']
+            assert replay['status']=='completed' and replay['error'] is None and replay['comparison']['eligible']
+            for branch in ('baseline','candidate'):
+                assert replay[branch]['error'] is None and replay[branch]['metrics']['eligible'] and row[branch]==replay[branch]['metrics']
+            assert row['usage']==replay['usage']
+            for key,value in replay['comparison'].items():
+                if key not in ('calls_delta','bytes_delta','time_ms_delta'):assert row['comparison'][key]==value
+            for key in ('calls','bytes','time_ms'):
+                assert row['comparison'][key+'_delta']==replay['usage']['candidate']['cumulative_'+key]-replay['usage']['baseline']['cumulative_'+key]
+        e.write()
     # Before arming, verify exactly the existing corpus and terminal old work.
     assert management('overview')['counts']['publications']==6
     jobs=management('query_jobs',limit=64);assert not jobs['truncated']
@@ -214,7 +279,7 @@ async def checks(f,e,m,budget):
         group=next(v for v in groups['items'] if v['id']==detail['group_id']);assert group['cohort']=='training' and group['owners']==[name] and not group['exposed']
     e.value.update(training_cohorts=groups,training_clusters=clusters);e.record('two-actual-completed-confirmed-independent-training-gaps-and-all-gold-answers-before-one-proposal')
     proposal=management('propose_index',True,training_attempt_ids=training)['proposal'];pid=proposal['id'];e.value['proposal_id']=pid;e.write()
-    proposal=await settled(pid);assert proposal['status']=='awaiting_evaluation' and proposal['held_out_attempt_ids']==proposal['regression_attempt_ids']==[]
+    proposal=await settled(pid);await verify_pairs(proposal);assert proposal['status']=='awaiting_evaluation' and proposal['held_out_attempt_ids']==proposal['regression_attempt_ids']==[]
     assert len(proposal['variants'])==6
     e.value['training_freeze']=copy.deepcopy(proposal);e.record('one-winner-frozen-before-any-final-original-publication')
     final=[]
@@ -227,10 +292,12 @@ async def checks(f,e,m,budget):
             record=(await call('publish_record',**fields))['record'];ids[key]=record['publication']['id'];captures[case['id']+':'+key]=record
         e.value['frozen_originals']=copy.deepcopy(captures);e.write();await ready(len(captures))
         aid,_=await attempt(case,ids);final.append(aid)
-    management('evaluate_index',True,proposal_id=pid,held_out_attempt_ids=final[:3],regression_attempt_ids=final[3:]);proposal=await settled(pid)
+    management('evaluate_index',True,proposal_id=pid,held_out_attempt_ids=final[:3],regression_attempt_ids=final[3:]);proposal=await settled(pid);await verify_pairs(proposal)
     assert proposal['status']=='qualified','Fixed cohort failed qualification; no retries or replacement proposal'
     ev=proposal['evaluation'];assert ev['passed'] and ev['mean_recall_gain_ppm']>0 and ev['total_calls_delta']<=0 and ev['total_bytes_delta']<=0
     assert ev['answer_failures']==ev['answer_regressions']==ev['false_supports']==0
+    assert ev['candidate_native_bytes']*1000000<=max(1,ev['baseline_native_bytes'])*m['optimization']['max_native_growth_ppm']
+    assert ev['candidate_native_bytes']==proposal['build']['native_bytes']==proposal['index_manifest']['bytes']
     rows=[v for v in proposal['cases'] if v['cohort']!='training'];assert len(rows)==5
     assert all(v['baseline']['answer_pass'] and v['candidate']['answer_pass'] and v['comparison']['retrieval_gain_ppm']>=0 for v in rows)
     assert proposal['winner_identity']==e.value['training_freeze']['winner_identity'] and proposal['build']['status']=='ready' and proposal['index_manifest']['excluded']==0
@@ -282,6 +349,7 @@ async def main(args):
         print(json.dumps({'manifest_sha256':sha,'harness_sha256':digest(Path(__file__).read_bytes()),
                           'valid':True,'runtime_started':False,'provider_posts':0,'training_originals_republished':0}))
         return
+    assert not manifest.get('execution_hold'),'Final admitted execution target remains on hold'
     assert args.approved_manifest_sha256==sha,'Separate explicit reviewed manifest digest required before inference'
     assert args.approved_harness_sha256==digest(Path(__file__).read_bytes()),'Separately reviewed exact harness digest required'
     assert not args.with_model and not args.image and not args.rest_url and not args.report.exists()
@@ -331,6 +399,9 @@ async def main(args):
             try:await f.close()
             except BaseException as cleanup_error:
                 evidence.value.setdefault('cleanup_failure_types',[]).append(type(cleanup_error).__name__);error=error or cleanup_error
+                if f.process is not None and f.process.poll() is None:
+                    try:f.hard_stop();evidence.value['owned_vm_cleanup_fallback']='hard-stopped-and-waited'
+                    except BaseException as fallback_error:evidence.value.setdefault('cleanup_failure_types',[]).append(type(fallback_error).__name__)
             finally:
                 f.bind_evidence(evidence)
                 if budget:

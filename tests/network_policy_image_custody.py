@@ -6,6 +6,7 @@ absolute custody deadline; errors never become network-policy denials.
 import hashlib
 import json
 import os
+from pathlib import Path
 import re
 import selectors
 import signal
@@ -16,6 +17,7 @@ TYPES = {
     'application/vnd.docker.distribution.manifest.v2+json': 'application/vnd.docker.container.image.v1+json',
     'application/vnd.oci.image.manifest.v1+json': 'application/vnd.oci.image.config.v1+json',
 }
+INDEX_TYPE = 'application/vnd.oci.image.index.v1+json'
 MAX_CONTENT = 1024 * 1024
 
 
@@ -52,15 +54,36 @@ def manifest(raw, reference, expected):
     assert digest(raw) == selected, 'Manifest content digest mismatch'
     value = document(raw)
     assert type(value.get('schemaVersion')) is int and value['schemaVersion'] == 2
-    assert value.get('mediaType') in TYPES, 'Image manifest required; no index resolution'
+    assert value.get('mediaType') in TYPES, 'Image manifest required; no recursive index resolution'
+    assert 'artifactType' not in value and 'subject' not in value and 'urls' not in value
     config = value.get('config'); assert isinstance(config, dict)
     assert config.get('mediaType') == TYPES[value['mediaType']]
     assert config.get('digest') == expected
     assert type(config.get('size')) is int and 0 < config['size'] <= MAX_CONTENT
-    assert not config.get('urls')
+    assert 'urls' not in config and 'artifactType' not in config
     assert isinstance(value.get('layers'), list)
     return config
 
+
+
+def index_descriptor(raw, reference):
+    assert isinstance(raw, bytes) and 0 < len(raw) <= MAX_CONTENT
+    assert digest(raw) == manifest_digest(reference)
+    value = document(raw)
+    assert type(value.get('schemaVersion')) is int and value['schemaVersion'] == 2
+    assert value.get('mediaType') == INDEX_TYPE
+    assert set(value) <= {'schemaVersion', 'mediaType', 'manifests', 'annotations'}
+    children = value.get('manifests')
+    assert isinstance(children, list) and len(children) == 1, 'Exactly one image child required'
+    child = children[0]; assert isinstance(child, dict)
+    assert set(child) <= {'mediaType', 'digest', 'size', 'annotations'}
+    assert child.get('mediaType') in TYPES, 'No recursive index, artifact or platform choice'
+    assert isinstance(child.get('digest'), str) and re.fullmatch(r'sha256:[a-f0-9]{64}', child['digest'])
+    assert type(child.get('size')) is int and 0 < child['size'] <= MAX_CONTENT
+    for entry in (value, child):
+        if 'annotations' in entry:
+            assert isinstance(entry['annotations'], dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in entry['annotations'].items())
+    return child
 
 def configuration(raw, descriptor, expected):
     assert isinstance(raw, bytes) and 0 < len(raw) <= MAX_CONTENT
@@ -119,18 +142,50 @@ def command(argv, deadline, limit=MAX_CONTENT):
             else: raise errors[0]
 
 
-def observe(node, reference, expected, run=command, clock=time.monotonic):
+
+def observe(node, reference, expected, run=command, clock=time.monotonic, evidence_dir=None):
     deadline = clock() + 30
+    evidence = []
+    if evidence_dir is not None:
+        evidence_dir = Path(evidence_dir).absolute()
+        assert evidence_dir.resolve() == evidence_dir and not evidence_dir.exists()
+        evidence_dir.mkdir(mode=0o700)
+    def retain(name, raw):
+        # Bounded command output only. Retain even malformed/empty documents before parsing.
+        assert isinstance(raw, bytes) and len(raw) <= MAX_CONTENT
+        if evidence_dir is not None:
+            fd = os.open(evidence_dir / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, 'wb') as stream:
+                stream.write(raw); stream.flush(); os.fsync(stream.fileno())
+        evidence.append({'name': name, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)})
     selected = manifest_digest(reference)
-    raw_manifest = run(['docker', 'exec', node, 'ctr', '-n=k8s.io', 'content', 'get', selected], deadline)
-    descriptor = manifest(raw_manifest, reference, expected)
+    raw_root = run(['docker', 'exec', node, 'ctr', '-n=k8s.io', 'content', 'get', selected], deadline)
+    retain('root.json', raw_root)
+    root_value = document(raw_root)
+    index_proof = None
+    if root_value.get('mediaType') == INDEX_TYPE:
+        child = index_descriptor(raw_root, reference)
+        raw_manifest = run(['docker', 'exec', node, 'ctr', '-n=k8s.io', 'content', 'get', child['digest']], deadline)
+        retain('manifest.json', raw_manifest)
+        assert len(raw_manifest) == child['size'] and digest(raw_manifest) == child['digest']
+        assert document(raw_manifest).get('mediaType') == child['mediaType']
+        descriptor = manifest(raw_manifest, 'child@' + child['digest'], expected)
+        index_proof = {'digest': selected, 'bytes': len(raw_root), 'media_type': INDEX_TYPE, 'children': 1}
+        manifest_id = child['digest']
+    else:
+        raw_manifest = raw_root
+        descriptor = manifest(raw_manifest, reference, expected)
+        manifest_id = selected
     raw_config = run(['docker', 'exec', node, 'ctr', '-n=k8s.io', 'content', 'get', expected], deadline)
+    retain('config.json', raw_config)
     configuration(raw_config, descriptor, expected)
     raw_cri = run(['docker', 'exec', node, 'crictl', 'inspecti', expected], deadline)
+    retain('cri.json', raw_cri)
     actual_image = document(raw_cri)
     assert actual_image['status']['id'] == expected
     assert clock() <= deadline, 'Image custody deadline'
-    return actual_image, {'pod_status_image_ref': reference, 'manifest_digest': selected,
+    return actual_image, {'pod_status_image_ref': reference, 'index': index_proof,
+        'manifest_digest': manifest_id,
         'manifest_bytes': len(raw_manifest), 'manifest_media_type': document(raw_manifest)['mediaType'],
         'config_digest': expected, 'config_bytes': len(raw_config), 'os': 'linux', 'architecture': 'amd64',
-        'cri_image_config_identity': actual_image['status']['id']}
+        'cri_image_config_identity': actual_image['status']['id'], 'private_input_hashes': evidence}

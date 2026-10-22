@@ -225,7 +225,8 @@ def main(args):
                 statuses = actual['status']['containerStatuses']
                 assert len(statuses) == 1 and statuses[0]['ready'] and statuses[0]['restartCount'] == 0
                 observed_image = statuses[0]['imageID'].removeprefix('docker-pullable://')
-                actual_image, custody = image_custody.observe(args.kind_node, statuses[0]['imageID'], args.image)
+                actual_image, custody = image_custody.observe(args.kind_node, statuses[0]['imageID'], args.image,
+                    evidence_dir=root / ('image-custody-' + namespace + '-' + name))
                 assert actual_image['status']['id'] == args.image
                 report['fixture_runtime_images'].append({'namespace': namespace, 'pod': name,
                     'pod_uid': actual['metadata']['uid'], 'runtime_image_id': observed_image,

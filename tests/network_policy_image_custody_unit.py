@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
 from unittest.mock import patch, Mock
 import network_policy_image_custody as m
@@ -118,6 +119,71 @@ class Custody(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, 'Image custody output limit'):
                 m.command(['docker', 'exec', 'owned-node', 'ctr'], 30, limit=10)
             kill.assert_called_once(); child.wait.assert_called_once_with(timeout=5)
+
+    def test_actual_retained_single_index_chain(self):
+        base = Path(__file__).resolve().parents[1] / 'verification/ownedMULTI008/cni-static-custody-format-diagnosis'
+        index = (base / 'pod-digest-index.json').read_bytes()
+        manifest = (base / 'image-manifest.json').read_bytes()
+        actual_pod_digest = 'sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad'
+        self.assertEqual(m.digest(index), actual_pod_digest)
+        child = m.index_descriptor(index, 'import-date@' + actual_pod_digest)
+        self.assertEqual(child['digest'], m.digest(manifest)); self.assertEqual(child['size'], len(manifest))
+        self.assertEqual(m.manifest(manifest, 'child@' + child['digest'],
+            'sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21')['size'], 7691)
+
+    def test_single_index_four_commands_one_budget_and_private_capture(self):
+        config, expected, value = self.fixture(); body = raw(value)
+        index = raw({'schemaVersion': 2, 'mediaType': m.INDEX_TYPE, 'manifests': [
+            {'mediaType': value['mediaType'], 'digest': m.digest(body), 'size': len(body)}]})
+        calls = []
+        def run(argv, deadline):
+            calls.append((argv, deadline))
+            return [index, body, config, raw({'status': {'id': expected}})][len(calls) - 1]
+        with tempfile.TemporaryDirectory() as root:
+            directory = Path(root) / 'private'
+            actual, proof = m.observe('owned-node', 'import-date@' + m.digest(index), expected,
+                run=run, clock=lambda: 100, evidence_dir=directory)
+            self.assertEqual(len(calls), 4); self.assertEqual({d for _, d in calls}, {130})
+            self.assertEqual(proof['index']['digest'], m.digest(index))
+            self.assertEqual(proof['manifest_digest'], m.digest(body)); self.assertEqual(actual['status']['id'], expected)
+            self.assertEqual(sorted(p.name for p in directory.iterdir()), ['config.json', 'cri.json', 'manifest.json', 'root.json'])
+            self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in directory.iterdir()))
+            self.assertEqual(len(proof['private_input_hashes']), 4)
+
+    def test_index_ambiguity_recursion_artifact_urls_and_types_reject(self):
+        config, expected, value = self.fixture(); body = raw(value)
+        child = {'mediaType': value['mediaType'], 'digest': m.digest(body), 'size': len(body)}
+        base = {'schemaVersion': 2, 'mediaType': m.INDEX_TYPE, 'manifests': [child]}
+        variants = []
+        for children in ([], [child, child]):
+            bad = copy.deepcopy(base); bad['manifests'] = children; variants.append(bad)
+        for key, replacement in [('mediaType', m.INDEX_TYPE), ('mediaType', 'application/vnd.oci.artifact.manifest.v1+json'),
+            ('size', True), ('size', 1.0), ('size', 0), ('size', m.MAX_CONTENT + 1), ('digest', 'not-a-digest'),
+            ('urls', []), ('artifactType', 'artifact'), ('platform', {'os': 'linux', 'architecture': 'amd64'})]:
+            bad = copy.deepcopy(base); bad['manifests'][0][key] = replacement; variants.append(bad)
+        for key, replacement in [('schemaVersion', True), ('schemaVersion', 2.0), ('artifactType', 'artifact'), ('subject', {})]:
+            bad = copy.deepcopy(base); bad[key] = replacement; variants.append(bad)
+        for bad in variants:
+            document = raw(bad)
+            with self.subTest(bad=bad), self.assertRaises(AssertionError):
+                m.index_descriptor(document, 'named@' + m.digest(document))
+        duplicate = raw(base).replace(b'"schemaVersion":2', b'"schemaVersion":2,"schemaVersion":2')
+        with self.assertRaises(AssertionError): m.index_descriptor(duplicate, 'named@' + m.digest(duplicate))
+
+    def test_forged_child_bytes_size_media_and_capture_before_failure(self):
+        config, expected, value = self.fixture(); body = raw(value)
+        for field, replacement in [('size', len(body) + 1), ('digest', 'sha256:' + '0' * 64),
+                                   ('mediaType', 'application/vnd.oci.image.manifest.v1+json')]:
+            child = {'mediaType': value['mediaType'], 'digest': m.digest(body), 'size': len(body)}; child[field] = replacement
+            index = raw({'schemaVersion': 2, 'mediaType': m.INDEX_TYPE, 'manifests': [child]})
+            responses = iter([index, body])
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as root:
+                directory = Path(root) / 'private'
+                with self.assertRaises(AssertionError):
+                    m.observe('node', 'named@' + m.digest(index), expected, run=lambda a,d: next(responses), evidence_dir=directory)
+                self.assertEqual((directory / 'root.json').read_bytes(), index)
+                self.assertEqual((directory / 'manifest.json').read_bytes(), body)
+                self.assertFalse((directory / 'config.json').exists())
 
     def test_expired_command_never_launches(self):
         with patch.object(m.time, 'monotonic', return_value=40), patch.object(m.subprocess, 'Popen') as launch:

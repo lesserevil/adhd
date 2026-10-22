@@ -51,3 +51,14 @@ def certificate_facts(der,expected_domains,now):
             'not_before':cert.not_valid_before_utc.isoformat(),'not_after':cert.not_valid_after_utc.isoformat(),
             'validity_seconds':(cert.not_valid_after_utc-cert.not_valid_before_utc).total_seconds(),
             'chain_trust_checked_here':False}
+
+
+def certificate_key_pair_facts(der, private_key_pem):
+    """Compare actual parsed public keys independently; never publish key bytes."""
+    assert len(der) <= 1048576 and len(private_key_pem) <= 65536
+    cert = x509.load_der_x509_certificate(der)
+    key = serialization.load_pem_private_key(private_key_pem, password=None)
+    public = lambda value: value.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+    left, right = public(cert.public_key()), public(key.public_key())
+    assert left == right, 'Issued leaf does not match private key public SPKI'
+    return {'key_pair_match': True, 'public_key_spki_sha256': hashlib.sha256(left).hexdigest()}

@@ -6,7 +6,7 @@ from cryptography.hazmat.primitives import hashes,serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 from acme_acceptance_fixtures import(TEST_DOMAINS,TOKEN,certificate_facts,
-                                     challenge_request_vectors,raw_challenge_get)
+                                     challenge_request_vectors,raw_challenge_get,certificate_key_pair_facts)
 
 
 def ephemeral_certificate(names,start,end):
@@ -20,6 +20,18 @@ def ephemeral_certificate(names,start,end):
 
 
 class FixtureTest(unittest.TestCase):
+    def test_key_pair_uses_actual_spki_not_file_name_or_status(self):
+        key=ec.generate_private_key(ec.SECP256R1())
+        wrong=ec.generate_private_key(ec.SECP256R1())
+        now=datetime(2030,1,1,tzinfo=timezone.utc)
+        name=x509.Name([x509.NameAttribute(NameOID.COMMON_NAME,'pure-spki-fixture')])
+        cert=(x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
+              .serial_number(17).not_valid_before(now).not_valid_after(now+timedelta(minutes=2)).sign(key,hashes.SHA256()))
+        der=cert.public_bytes(serialization.Encoding.DER)
+        encode=lambda value:value.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())
+        self.assertTrue(certificate_key_pair_facts(der,encode(key))['key_pair_match'])
+        with self.assertRaises(AssertionError):certificate_key_pair_facts(der,encode(wrong))
+
     def test_raw_adversarial_request_target_is_preserved(self):
         vectors=challenge_request_vectors()
         self.assertEqual(len({v['id']for v in vectors}),len(vectors))

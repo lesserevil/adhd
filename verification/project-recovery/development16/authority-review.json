@@ -1,0 +1,31 @@
+{
+  "schema": "adhd/recovery-authority-gate-review@1",
+  "passed": true,
+  "executor": "retained pinned framework1.3.0 distribution2a8303d48ec698eca8a19e1e67424353fd7a09b81594d51c230e78204ab8f399",
+  "component_lock_identity": "sha256:0df2ef2c800f7d41ff0369d83426af91f9bf0dd2dbcc0a1d0e364548c39916f6",
+  "documentation_authority_identity": "sha256:1721ee21c2af881595a20bc6dc92bae6da13d125aec473f273297c4fb2ec559b",
+  "checks": [
+    {
+      "command": [
+        "verify",
+        "--gate",
+        "authority",
+        "--gate",
+        "locks"
+      ],
+      "exit_code": 0,
+      "passed_gates": 2,
+      "failed_gates": 0
+    },
+    {
+      "command": [
+        "project",
+        "validate"
+      ],
+      "exit_code": 0,
+      "ok": true
+    }
+  ],
+  "sample_resolution_audit": "CLI refreshed stale sample catalog audit only; sample component lock was already current and unchanged.",
+  "limitation": "Source34 receipt remains stale against successor authority; no formal successor admission is implied."
+}

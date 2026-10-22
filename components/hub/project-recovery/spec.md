@@ -102,7 +102,10 @@ This is a local adoption path, never an imported backup/bundle permission except
 The source must be owned by the running server UID, regular, singly linked and
 readable, with no symlink path component. Historical permission acceptance excludes
 execute/special bits and world-write permission; current schema4 stores retain the
-normal private-file requirement. Unknown layouts or unsafe metadata fail closed.
+normal private-file requirement. A schema4 generation without its matching route
+registry/witness is not a legacy adoption input: recover its matching metadata
+through whole-server recovery instead of inferring a fresh registry. Unknown
+layouts or unsafe metadata fail closed.
 
 Read the entire bounded local source through an opened handle, checking its exact
 identity against lstat before and after reading; reject changed identities, lengths
@@ -124,7 +127,7 @@ secure them. Use the verified bytes/state to create owner-private staging and ac
 generations through the existing durable adoption transaction, with closed checkpoint
 preflight before native reads. Retain original source bytes/modes/inodes and all
 existing rollback backups unchanged. Bind adoption proofs to the verified source
-identities/content, rechecking before decision; startup still requires exclusive
+identities/content and exact checkpoint/snapshot absence, rechecking before decision; startup still requires exclusive
 ownership of the storage set. Symlinks, hardlinks, non-owned files, malformed state,
 identity conflicts and concurrent source changes reject without changing those inputs
 or admitting a writer. Imported/offline bundles remain subject to strict private

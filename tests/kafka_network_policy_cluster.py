@@ -84,7 +84,7 @@ def verify_bootstrap_dependency(directory,binding,plan):
  assert prior['diagnostic_only']is True and prior['controller_direct_api_endpoint']=={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
  for key in ('node_image','CNI_images','CNI_archives','image','artifact_sha256','admission_sha256','canonical_manifest_sha256','direct_api_endpoint','controller_direct_api_endpoint'):assert prior[key]==plan[key]
  assert prior['frozen']['files']['deploy/k8s/private.yaml']==plan['frozen']['files']['deploy/k8s/private.yaml']
- old_program=prior['frozen']['files']['tests/kafka_network_policy.py'];new_program=plan['frozen']['files']['tests/kafka_network_policy.py']
+ old_program=prior['frozen']['files']['tests/kafka_network_policy.py'];new_program=plan.get('static_helper',{}).get('route_basis_sha256',plan['frozen']['files']['tests/kafka_network_policy.py'])
  if old_program!=new_program:
   from kafka_network_policy_readiness import overlay
   baseline=directory.parent/'route-original-program.py';assert sha(plain(baseline))==old_program
@@ -99,6 +99,28 @@ def verify_bootstrap_dependency(directory,binding,plan):
  return True
 
 
+
+def verify_static_helper(work, plan):
+ binding=plan['static_helper'];directory=work/'bound/static-helper'
+ from network_policy_static import read_helper
+ assert read_helper(directory/'tcp',binding['helper_sha256'])
+ for name,key in [('source.c','source_sha256'),('compile.json','compile_proof_sha256'),
+                  ('protocol.json','protocol_proof_sha256'),('route-basis.py','route_basis_sha256')]:
+  assert sha(plain(directory/name))==binding[key]
+ compile=json.loads((directory/'compile.json').read_text())
+ assert compile['passed']is True and compile['exit_code']==0
+ assert compile['elf_sha256']==binding['helper_sha256'] and compile['source_sha256']==binding['source_sha256']
+ assert compile['elf']=={'interpreter':None,'needed':[],'search':[]}
+ assert compile['plan_sha256']==sha(plain(directory/'compile-plan.json'))
+ protocol=json.loads((directory/'protocol.json').read_text())
+ assert protocol['schema']=='adhd/network-policy-static-protocol-result@1' and protocol['passed']is True
+ assert protocol['image_config_identity']==plan['image']
+ assert protocol['helper_sha256']==binding['helper_sha256'] and protocol['source_sha256']==binding['source_sha256']
+ assert protocol['compile_proof_sha256']==binding['compile_proof_sha256']
+ assert protocol['inputs_unchanged']is True and protocol['all_issued_containers_absent']is True
+ assert protocol['plan_sha256']==sha(plain(directory/'protocol-plan.json'))
+ return True
+
 def verify(work,plan):
  assert work.resolve(strict=True)==work and not work.is_symlink()
  assert sha(plain(__file__))==sha(work/'driver.py')==plan['driver_sha256']
@@ -112,6 +134,7 @@ def verify(work,plan):
  # Import only after the complete frozen/bound/tool closure has been verified.
  helpers=str(work/'frozen/tests')
  if helpers not in sys.path:sys.path.insert(0,helpers)
+ if plan.get('static_helper'):verify_static_helper(work,plan)
  if plan.get('bootstrap_dependency'):verify_bootstrap_dependency(work/'bound/bootstrap12',plan['bootstrap_dependency'],plan)
  if plan.get('direct_api_endpoint')and not plan.get('diagnostic_only'):assert plan.get('bootstrap_dependency')and plan.get('controller_direct_api_endpoint')
  assert plan['cluster']=='adhd-netpol-qa40' and plan['network']==plan['cluster']+'-net' and plan['node']==plan['cluster']+'-control-plane'
@@ -135,7 +158,7 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py','kafka_network_policy_cri.py','kafka_network_policy_cri_unit.py','kafka_network_policy_utility.py','kafka_network_policy_utility_unit.py'):
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py','kafka_network_policy_cri.py','kafka_network_policy_cri_unit.py','kafka_network_policy_utility.py','kafka_network_policy_utility_unit.py','network_policy_static.py'):
   shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)
@@ -173,9 +196,27 @@ def prepare(args):
   from kafka_network_policy_readiness import overlay
   prior=json.loads((bound/'bootstrap12/plan.json').read_text());baseline=plain(baseline_path)
   assert sha(baseline)==prior['frozen']['files']['tests/kafka_network_policy.py']
-  assert overlay(baseline.read_bytes())==(frozen/'tests/kafka_network_policy.py').read_bytes()
+  route_basis=plain(args.static_route_basis) if getattr(args,'static_helper',None) else frozen/'tests/kafka_network_policy.py'
+  assert overlay(baseline.read_bytes())==route_basis.read_bytes()
   shutil.copyfile(baseline,bound/'route-original-program.py')
-  route_amendment={'kind':'failure-only-bounded-readiness-observer','original_sha256':sha(baseline),'amended_sha256':sha(frozen/'tests/kafka_network_policy.py')}
+  route_amendment={'kind':'failure-only-bounded-readiness-observer','original_sha256':sha(baseline),'amended_sha256':sha(route_basis)}
+ static_binding=None
+ if getattr(args,'static_helper',None):
+  assert bootstrap_binding and baseline_path and not args.diagnostic_only and not getattr(args,'utility_diagnostic',False)
+  from network_policy_static import read_helper
+  import ast
+  before=ast.parse(route_basis.read_bytes());after=ast.parse((frozen/'tests/kafka_network_policy.py').read_bytes())
+  retained=[ast.dump(n,include_attributes=False)for n in ast.walk(after)if isinstance(n,ast.Assert)]
+  assert all(ast.dump(n,include_attributes=False)in retained for n in ast.walk(before)if isinstance(n,ast.Assert))
+  helper=plain(args.static_helper);read_helper(helper,args.static_helper_sha256)
+  directory=bound/'static-helper';directory.mkdir()
+  for source,name in [(helper,'tcp'),(plain(args.static_source),'source.c'),
+      (plain(args.static_compile_proof),'compile.json'),(plain(args.static_compile_proof.parent/'plan.json'),'compile-plan.json'),
+      (plain(args.static_protocol_proof),'protocol.json'),(plain(args.static_protocol_proof.parent/'plan.json'),'protocol-plan.json'),
+      (route_basis,'route-basis.py')]:shutil.copyfile(source,directory/name)
+  static_binding={'helper_sha256':args.static_helper_sha256,'source_sha256':sha(directory/'source.c'),
+   'compile_proof_sha256':sha(directory/'compile.json'),'protocol_proof_sha256':sha(directory/'protocol.json'),
+   'route_basis_sha256':sha(directory/'route-basis.py')}
  (work/'runtime').mkdir();shutil.copyfile(plain(__file__),work/'driver.py')
  tools={name:external(p) for name,p in [('python',sys.executable),('kind',root/'.worktrees/deployment/_build/kafka/kind'),('kubectl',root/'.worktrees/deployment/_build/kafka/kubectl'),('docker','/usr/bin/docker'),('ip','/usr/sbin/ip')]}
  for n in ('kind','kubectl','docker'):assert tools[n]['sha256']==base['tools'][n]['sha256']
@@ -183,6 +224,7 @@ def prepare(args):
  socket=Path('/var/run/docker.sock').resolve(strict=True);s=socket.stat()
  plan={'schema':'adhd/enforcing-cni-kind-executor@1','prepared':True,'executed':False,'root_GO_required':True,'cluster':base['cluster'],'network':base['dedicated_network'],'node':base['node'],'bridge_subnet':base['network_subnet'],'owner_label':'adhd-policy-owner','owner_nonce':os.urandom(16).hex(),'image':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'node_image':node,'node_anonymous_volume_destinations':['/var'],'node_image_declared_volumes':sorted((json.loads(node_config.read_text())['config'].get('Volumes') or {}).keys()),'CNI_images':cni,'CNI_provisioning':'exact-OCI-archive-import','CNI_transfer':'owned-node-exec-stdin-private-varlib','CNI_archives':oci_report['images'],'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'external_inputs':[external(oci_source/name) for name in ('manifest.json','0.oci.tar','1.oci.tar','2.oci.tar')]+[external(node_config),external(source),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+list(tools.values()),'docker_socket':{'path':str(socket),'identity':[s.st_dev,s.st_ino]},'lane_lock':str(root/'_build/roadmap/netpol-kind.lane.lock'),'automatic_retries':0,'parallelism':1,'fixture_pods':9,'routes':18,'scope':'Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.','runtime_starts_during_preparation':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED'}
  assert not args.direct_api_endpoint or args.diagnostic_only or bootstrap_binding,'Direct full gate requires qualified bootstrap12 dependency'
+ if static_binding:plan['static_helper']=static_binding;verify_static_helper(work,plan)
  if bootstrap_binding:plan['bootstrap_dependency']=bootstrap_binding
  if route_amendment:plan['route_observer_amendment']=route_amendment
  if not args.diagnostic_only:plan['owned_cri_failure_observer']={'docker_commands':6,'total_commands':32,'total_seconds':60,'total_bytes':8388608,'cgroup_files':['memory.events','memory.events.local','memory.current','memory.max','memory.peak','pids.current','pids.max','pids.events','cpu.max','cpu.stat','cgroup.events'],'scope':'Only exact failed PodUID/containerID on issued Kind node; parent-before-child; unknown layout unsupported/no scan.'}
@@ -350,6 +392,8 @@ class Executor:
   self.run('load-qa40',[p['tools']['kind']['path'],'load','docker-image','adhd-hub:qa40','--name',p['cluster']],timeout=180)
   assert json.loads(self.docker('qa40-image-after-load','image','inspect','adhd-hub:qa40').stdout)[0]['Id']==p['image']
   argv=[p['tools']['python']['path'],str(self.work/'frozen/tests/kafka_network_policy.py'),'--kubectl',p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG'],'--context',str(self.work/'bound/context'),'--admission-manifest',str(self.work/'bound/admission.json'),'--admission-sha256',p['admission_sha256'],'--image',p['image'],'--cluster-image','adhd-hub:qa40','--kind-cluster',p['cluster'],'--kind-node',p['node'],'--namespace','adhd-netpol-gate40','--policy',str(self.work/'frozen/deploy/k8s/private.yaml'),'--work',str(self.work/'runtime/gate'),'--report',str(self.work/'gate-report.json')]
+  if p.get('static_helper'):
+   argv += ['--static-helper',str(self.work/'bound/static-helper/tcp'),'--static-helper-sha256',p['static_helper']['helper_sha256']]
   if p.get('utility_diagnostic'):
    argv=[p['tools']['python']['path'],str(self.work/'frozen/tests/kafka_network_policy_utility.py'),'--kubectl',p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG'],'--kind-node',p['node'],'--cluster-image','adhd-hub:qa40','--namespace','adhd-netpol-utility40','--work',str(self.work/'runtime/gate'),'--report',str(self.work/'gate-report.json')]
   # Private hash-sealed observation authority; never passed to application traffic.
@@ -366,6 +410,9 @@ class Executor:
    assert report['passed'] and report['image_config_identity']==p['image'] and report['policy_sha256']==sha(self.work/'frozen/deploy/k8s/private.yaml')
    assert len(report['before'])==len(report['after'])==18 and all(r['reachable'] for r in report['before'])
    assert all(r['reachable']==r['expected_reachable'] for r in report['after']) and len(report['fixture_runtime_images'])==9
+   if p.get('static_helper'):
+    assert report['static_helper']['sha256']==p['static_helper']['helper_sha256']
+    assert len(report['static_helper']['configmaps'])==2 and all(x['uid']for x in report['static_helper']['configmaps'])
    assert len(report['owned_namespace_cleanup'])==2 and all(r['observed_absent'] for r in report['owned_namespace_cleanup'])
   self.capture_volumes(self.inspect(self.known_node))
   assert self.protected()==before,'Protected existing cluster/network changed'
@@ -511,6 +558,8 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--verify-only',action='store_true')
  p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
  for n in ('repo-root','cluster-plan','context','admission-manifest','node-config','oci-inputs'):p.add_argument('--'+n,type=Path)
+ for n in ('static-helper','static-source','static-compile-proof','static-protocol-proof','static-route-basis'):p.add_argument('--'+n,type=Path)
+ p.add_argument('--static-helper-sha256')
  p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');p.add_argument('--controller-direct-api-endpoint',action='store_true');p.add_argument('--bootstrap-proof',type=Path);p.add_argument('--bootstrap-proof-sha256');p.add_argument('--route-baseline',type=Path);p.add_argument('--utility-diagnostic',action='store_true');args=p.parse_args()
  if args.prepare:prepare(args)
  elif args.verify_only:

@@ -1,0 +1,76 @@
+{
+  "schema": "adhd/controlled-image-custody@1",
+  "passed": false,
+  "failure_type": "AssertionError",
+  "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+  "adapter_sha256": "c9e9f1cc1a096a9e29b6ad53d0b8c40a7151b328f7cbf90a040f5f634ae8c2b6",
+  "original_helpers_sha256": {
+    "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+    "hub_acceptance.py": "ddfb691f1d5a52a0b328613ac9db7617c3ebd732ca457e86a42b4febfa10e222",
+    "container_acceptance.py": "d78909efae902f679b42b985233f91ffd683a9cfbca0ba84ae92effd774ac904"
+  },
+  "controlled_endpoint_whitelist": {
+    "http://127.0.0.1:39569/v1/systemone": {
+      "class": "archive_support.ArchiveFixture",
+      "helper_sha256": "d17dc84f0c9f49a8b4cd4634654372b730681a2db15e052f5dff4b86284b6b45"
+    }
+  },
+  "runtime_events": [
+    {
+      "action": "start",
+      "kind": "native-producer",
+      "root": "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38h/runtime/_build/roadmap/feedback-sdk/run-t2vfplfr/hub-0",
+      "config_sha256": "9c68fac68ff10701abca134783338c7277bd1ef074291816e24dece12f9043a9",
+      "completed": true,
+      "selected_models": [
+        {
+          "path": [
+            "matcher",
+            "url"
+          ],
+          "url": "http://127.0.0.1:39569/v1/systemone"
+        }
+      ],
+      "producer_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+      "native_vms": [
+        {
+          "pid": 1690571,
+          "starttime": "20692834",
+          "executable_sha256": "bcda8c7b99851d3486f04b86213d9570ba1fe90301f985747ef541224eddae2d",
+          "fence_mapped": true,
+          "maps_sha256": "49067cba63ed9b5723bac94b6de62fc1f6d78c614ac8f6b3e15f1263ead302ec"
+        }
+      ],
+      "observed_absent": true,
+      "docker_client_exited": true
+    },
+    {
+      "action": "start",
+      "kind": "docker",
+      "root": "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38h/runtime/_build/roadmap/feedback-sdk/run-t2vfplfr/hub-0",
+      "config_sha256": "65888c755cf947c39746ae8f953ab797de6953bf90cad85d0e2e11749b3f1e1d",
+      "completed": false,
+      "selected_models": [
+        {
+          "path": [
+            "matcher",
+            "url"
+          ],
+          "url": "http://127.0.0.1:39569/v1/systemone"
+        }
+      ],
+      "failure_type": "AssertionError",
+      "cleanup_container_id": "4ed47a2b1654f521ba9ef2dd6ce59ad4ca420ddfdcddbd44cdc6b01011f45c55",
+      "known_container_id_used": false
+    }
+  ],
+  "cleanup_failure_types": [
+    "AssertionError"
+  ],
+  "native_fence_sha256": "7158f342be00ca847e2c4c95306bf082d0495e344188bdd570fcc68c14beb767",
+  "blocked_provider_connects": 0,
+  "provider_isolation_scope": "Native connect fence mapped; image exact typed-loopback config selection and no redirects. Docker host network has no physical egress firewall; no claim LD_PRELOAD fences image.",
+  "all_original_assertions_bounds_corpus": "Original frozen entrypoint run unchanged; wrapper observes custody and cleans owned startup failures only."
+}

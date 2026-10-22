@@ -1,0 +1,57 @@
+{
+  "artifact_sha256": "7f51d87e5fe66ee0000d473ca58cb8ec3275cb9a3f834e7e8861455e3ff1cc7f",
+  "checkpoint_sha256": "e9a123cde4d4f3160b6322f71918a8fd1c6f634e9932abd64f38ffcfc4de0a00",
+  "forbidden_calls": [],
+  "harness_sha256": "052dbf78f036479434aac94cfba0896c9d81fb95f05d47b8d3db75987c1a2f51",
+  "input_unchanged": true,
+  "links": 1,
+  "mode": "664",
+  "observed_foreign_uid": 65534,
+  "outcome": "{\"RESTORE_INVALID_BACKUP\", \"path\"}",
+  "passed": true,
+  "schema": "adhd/local-foreign-owner-native@1",
+  "scope": "One unprivileged actual runtime local-reader call on valid foreign-owned checkpoint; helper container only changes owned fixture metadata, not application image qualification",
+  "server_uid": 1003,
+  "helper_image": "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+  "helper_scope": "networknone/read-only/capdropALL+CHOWN/user0; exactly one fresh disposable file bind, no original or parent directory mount",
+  "helper_lifecycle": [
+    {
+      "action": "assign-foreign-owner",
+      "returncode": 0
+    },
+    {
+      "action": "restore-original-owner",
+      "returncode": 0
+    }
+  ],
+  "owner_restored": true,
+  "original_checkpoint_unchanged": true,
+  "orchestrator_sha256": "6b0069bbb0d140acc4b06c93c021449c0e1a20358caec17c08c47cca335b0e97",
+  "helper_docker_argv_shape": [
+    "docker",
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--read-only",
+    "--cap-drop",
+    "ALL",
+    "--cap-add",
+    "CHOWN",
+    "--user",
+    "0:0",
+    "--security-opt",
+    "no-new-privileges",
+    "--mount",
+    "type=bind,src=OWNED_COPY,dst=/probe.dets",
+    "--entrypoint",
+    "/bin/sh",
+    "sha256:84b8e414c05a4ff0051ce5c69511e4681c932c70c8d617568d2fcdb5659e859b",
+    "-c",
+    "chown \"$1:$2\" /probe.dets",
+    "fixture-owner",
+    "UID",
+    "GID"
+  ],
+  "owned_checkpoint_copy_removed": true
+}

@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 from urllib.request import (Request, build_opener, ProxyHandler, HTTPSHandler,
                             HTTPCookieProcessor, HTTPRedirectHandler)
 from uuid import uuid4
+from acme_process_observer import Descendants
 
 
 def sha(path):
@@ -141,6 +142,7 @@ class NativeDiagnostic:
         self.file = self.root / 'hub.json'
         self.process, self.logs, self.log_ids = None, [], []
         self.identities = []
+        self.observer = None
 
     def verify(self):
         manifest = self.cache / 'sources.json'
@@ -207,6 +209,7 @@ class NativeDiagnostic:
                    'config_path_sha256': hashlib.sha256(str(self.file).encode()).hexdigest(),
                    'binding': binding, 'started_monotonic': time.monotonic(), 'reaped': False}
             self.identities.append(row)
+            self.observer = Descendants(self.process.pid,self.pid_ticks).start()
             deadline = time.monotonic() + 45
             while time.monotonic() < deadline:
                 assert self.process.poll() is None, 'Owned diagnostic VM exited before readiness'
@@ -243,11 +246,19 @@ class NativeDiagnostic:
                 self.process = None
         finally:
             try:
-                for handle in self.logs:
-                    handle.close()
+                if self.observer:
+                    try:
+                        self.observer.close()
+                    finally:
+                        self.identities[-1]['observed_descendants'] = self.observer.evidence()
+                        self.observer = None
             finally:
-                self.logs = []
-                for path, dev, ino in self.log_ids:
-                    value = regular(path)
-                    assert (value.st_dev, value.st_ino) == (dev, ino), 'Owned log pathname replaced'
-                self.log_ids = []
+                try:
+                    for handle in self.logs:
+                        handle.close()
+                finally:
+                    self.logs = []
+                    for path, dev, ino in self.log_ids:
+                        value = regular(path)
+                        assert (value.st_dev, value.st_ino) == (dev, ino), 'Owned log pathname replaced'
+                    self.log_ids = []

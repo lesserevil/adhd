@@ -17,7 +17,6 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 
 from acme_runtime import NativeDiagnostic, PublicClient
-from foundation_acceptance import Provider
 
 
 def redirect_to(value, expected):
@@ -43,6 +42,9 @@ class OIDCContinuity:
         self.events = []
 
     def configure(self, admin):
+        # Preserve the original real provider unchanged, but do not pull its
+        # unrelated model/httpx imports into inert pure/bootstrap paths.
+        from foundation_acceptance import Provider
         self.root.mkdir(mode=0o700)
         self.provider = Provider(self.root)
         settings = {'provider_id': 'owned-acme-provider', 'issuer': self.provider.issuer,

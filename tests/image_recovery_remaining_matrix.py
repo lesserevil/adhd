@@ -122,6 +122,18 @@ def verify_empty_cache(path,required):
     return True
 
 
+def remainder_names(basis,matrix,artifact,image):
+    names=[job['name'] for job in basis['jobs']]
+    assert len(names)==42 and len(set(names))==42
+    assert matrix['passed'] is False and matrix['artifact_sha256']==artifact and matrix['image_config_identity']==image
+    rows=matrix['rows'];assert len(rows)==9
+    assert [row['name'] for row in rows]==names[:9]
+    assert all(row['passed'] is True and row['exit_code']==0 and row['started'] for row in rows[:8])
+    assert rows[-1]['name']=='crash-damaged-after-install-snapshot' and rows[-1]['passed'] is False and rows[-1]['exit_code']==1 and rows[-1]['started']
+    assert matrix['unrun']==names[9:] and matrix['executed']==names[:9] and matrix['attempted']==names[:9]
+    return names[8:]
+
+
 def verify(work,plan):
     assert sha(Path(__file__))==sha(work/'driver.py')==plan['driver_sha256']
     for key,directory in [('frozen_inputs','frozen'),('component_inputs','component'),('context_inputs','context')]:
@@ -136,7 +148,14 @@ def verify(work,plan):
     assert Path(sys.executable).resolve(strict=True)==Path(plan['python']['realpath']) and sha(plan['python']['realpath'])==plan['python']['sha256']
     sock=Path(plan['docker_socket']['path']).stat()
     assert stat.S_ISSOCK(sock.st_mode) and [sock.st_dev,sock.st_ino]==plan['docker_socket']['identity']
-    assert len(plan['jobs'])==42 and len({j['name'] for j in plan['jobs']})==42
+    expected=42
+    if plan.get('resume_basis'):
+        prior=json.loads((work/'bound/prior-plan.json').read_text());matrix=json.loads((work/'bound/prior-matrix.json').read_text())
+        names=remainder_names(prior,matrix,plan['artifact_sha256'],plan['image_config_identity'])
+        assert [job['name'] for job in plan['jobs']]==names and len(names)==34
+        expected=34
+    assert len(plan['jobs'])==expected and len({j['name'] for j in plan['jobs']})==expected
+    assert sha(work/'frozen/tests/image_recovery_remaining_matrix.py')==plan['driver_sha256']
     return True
 
 
@@ -158,6 +177,7 @@ def prepare(args):
     descriptor=layout(original)
     work.mkdir(mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700)
     inputs,drift=freeze_inputs(args.helper_root,frozen,selected['specifications'])
+    shutil.copyfile(__file__,frozen/'tests/image_recovery_remaining_matrix.py')
     shutil.copytree(origin/'fixtures',frozen/'fixtures',copy_function=shutil.copy2)
     # Complete original component fixtures are copied without modifying their
     # source directory, and mounted later at that original absolute path.
@@ -201,8 +221,32 @@ def prepare(args):
     dump(bound/'config.json',{})
     dependencies=host_dependencies.capture(args.python,original['env']['PATH'])
     dump(bound/'host-dependencies.json',dependencies)
+    resume_basis=None;selected_names=None
+    if args.resume_work:
+        prior=args.resume_work.absolute();assert args.resume_plan_sha256 and sha(prior/'plan.json')==args.resume_plan_sha256
+        basis=json.loads((prior/'plan.json').read_text());matrix=json.loads((prior/'matrix.json').read_text())
+        assert matrix['plan_sha256']==args.resume_plan_sha256
+        for key,directory in [('frozen_inputs','frozen'),('component_inputs','component'),('context_inputs','context')]:verify_frozen_inputs(prior/directory,basis[key])
+        verify_frozen_inputs(prior/'bound',{str(Path(name).relative_to('bound')):digest for name,digest in basis['bound_inputs'].items()})
+        host_dependencies.verify(json.loads((prior/'bound/host-dependencies.json').read_text()))
+        for name,row in basis['external_inputs'].items():
+            assert Path(name).resolve(strict=True)==Path(row['realpath']) and sha(name)==row['sha256']
+        selected_names=remainder_names(basis,matrix,artifact,args.image)
+        assert [row['name'] for row in descriptor['selected_rows']]==[job['name'] for job in basis['jobs']]
+        for name in ('plan.json','matrix.json'):shutil.copyfile(prior/name,bound/('prior-'+name))
+        for row in matrix['rows']:
+            for suffix,key in [('.json','report_sha256'),('-cleanup.json','cleanup_report_sha256')]:
+                file=prior/'results'/(row['name']+suffix);assert sha(file)==row[key]
+                value=json.loads(file.read_text())
+                if suffix=='.json':assert value['passed']==row['passed'] and value['artifact_sha256']==artifact
+                else:
+                    assert value['owned_native_processes_absent'] and not value['cleanup_failure_types'] and all(image['closed'] for image in value['images'])
+                    assert value['passed']==row['passed']
+                shutil.copyfile(file,bound/('prior-'+row['name']+suffix))
+        resume_basis={'original_plan_sha256':args.resume_plan_sha256,'original_matrix_sha256':sha(prior/'matrix.json'),'previous_whole_passes':[row['name'] for row in matrix['rows'][:8]],'selected_failed_and_unrun':selected_names,'original_aggregate_stays_false':True}
     jobs=[]
     for row in descriptor['selected_rows']:
+        if selected_names is not None and row['name'] not in selected_names:continue
         name=row['name'];tokens={'FROZEN':str(frozen),'RESULTS':str(work/'results'),'ARTIFACT':str(bound/'artifact.exs'),
             'IMAGE':args.image,'MANIFEST':str(work/'context/manifest.json'),'COMPONENT_SNAPSHOT':str(component),
             'JOURNAL_CONFIG_COPY':str(bound/'journal-config'),'JOURNAL_RECOVERY_COPY':str(bound/'journal-recovery'),
@@ -229,7 +273,7 @@ def prepare(args):
         external[str(executable)]={'realpath':str(real),'sha256':sha(real)}
     socket=args.docker_socket.stat();assert stat.S_ISSOCK(socket.st_mode)
     plan={'schema':'adhd/image-recovery42-plan@1','execution_ready':args.execution_ready,'execution_started':False,
-        'scope':'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.',
+        'scope':('Failed+unrun34 of original recovery42; original8wholepasses remain separate preserved evidence.' if resume_basis else 'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.'),'resume_basis':resume_basis,
         'known38_ownership_gap':args.image==BASELINE,'image_config_identity':args.image,'artifact_sha256':artifact,
         'admission_manifest_sha256':args.admission_sha256,'canonical_manifest_sha256':sha(work/'context/manifest.json'),
         'payload_tar_sha256':selected['payload_sha256'],'original_plan_sha256':args.original_sha256,
@@ -270,7 +314,7 @@ def execute(work,expected):
     claim_execution(work,expected,plan['driver_sha256'])
     rows=[];primary=None;env=dict(plan['env']);env['PYTHONDONTWRITEBYTECODE']='1'
     matrix={'schema':'adhd/image-recovery42-matrix@1','passed':False,'plan_sha256':expected,
-        'image_config_identity':plan['image_config_identity'],'artifact_sha256':plan['artifact_sha256'],'planned':42,
+        'image_config_identity':plan['image_config_identity'],'artifact_sha256':plan['artifact_sha256'],'planned':len(plan['jobs']),
         'attempted':[],'executed':[],'unrun':[j['name'] for j in plan['jobs']],'rows':rows}
     try:
         for job in plan['jobs']:
@@ -298,7 +342,7 @@ def execute(work,expected):
                     observed=process.poll()
                     if observed is not None:row['exit_code']=observed
                 row['elapsed_seconds']=time.monotonic()-start;dump(work/'matrix.json',matrix)
-        verify(work,plan);assert len(rows)==42 and not matrix['unrun'];matrix['passed']=True
+        verify(work,plan);assert len(rows)==len(plan['jobs']) and not matrix['unrun'];matrix['passed']=True
     except BaseException as error:primary=error;matrix['failure_type']=type(error).__name__;raise
     finally:
         try:dump(work/'matrix.json',matrix)
@@ -317,6 +361,7 @@ def main():
     for name in ['original-sha256','admission-sha256','image']:parser.add_argument('--'+name)
     parser.add_argument('--python',type=Path,default=Path(sys.executable).absolute());parser.add_argument('--docker-socket',type=Path,default=Path('/var/run/docker.sock'))
     parser.add_argument('--execution-ready',action='store_true')
+    parser.add_argument('--resume-work',type=Path);parser.add_argument('--resume-plan-sha256')
     args=parser.parse_args()
     if args.prepare:prepare(args)
     else:assert args.plan_sha256;execute(args.work.absolute(),args.plan_sha256)

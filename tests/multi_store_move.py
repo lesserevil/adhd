@@ -90,12 +90,18 @@ async def main(args):
         pid = f.process.pid
         accepted = []
         retryable = []
+        writes_started = time.monotonic()
+        writes_deadline = writes_started + args.deadline
+        timing = {'write_deadline_seconds': args.deadline, 'retry_after_seconds': [], 'retry_count': 0}
+        evidence.value['relocation_timing'] = timing
         async def concurrent_writer(project, sender):
             for n in range(8):
                 command = scoped(project, 'publish', text='Concurrent move write ' + project + ' ' + str(n))
                 mid = uuid4().hex
-                for attempt in range(20):
-                    response = await f.raw(sender, command, mid)
+                while time.monotonic() < writes_deadline:
+                    response = await asyncio.wait_for(f.raw(sender, command, mid),
+                                                      timeout=max(0, writes_deadline - time.monotonic()))
+                    assert time.monotonic() <= writes_deadline, 'Concurrent write acknowledgement exceeded the shared deadline'
                     value = response.json()
                     if 'error' not in value:
                         result = value['result']['message']['parts'][0]['data']
@@ -103,14 +109,23 @@ async def main(args):
                         break
                     assert 'CONFIG_APPLY_IN_PROGRESS' in json.dumps(value), value
                     retryable.append(project)
-                    await asyncio.sleep(.01)
+                    timing['retry_count'] += 1
+                    retry_after = response.headers.get('Retry-After')
+                    delay = float(retry_after) if retry_after and retry_after.isdecimal() else .01
+                    timing['retry_after_seconds'].append(delay)
+                    await asyncio.sleep(min(delay, max(0, writes_deadline - time.monotonic())))
                 else:
                     raise AssertionError('Frozen project writer did not resume')
                 await asyncio.sleep(.01)
         writes = [asyncio.create_task(concurrent_writer(project, sender)) for project,sender,_ in pairs]
         await asyncio.sleep(.025)
+        move_started = time.monotonic()
         await asyncio.to_thread(admin.call, {'op': 'config_update', 'patch': {'store_path': str(destination)}}, mutation=True)
+        timing['admin_move_ms'] = round((time.monotonic() - move_started) * 1000, 3)
         await asyncio.gather(*writes)
+        timing['all_writes_ms'] = round((time.monotonic() - writes_started) * 1000, 3)
+        timing['accepted_writes'] = len(accepted)
+        assert time.monotonic() <= writes_deadline, 'All concurrent writes exceeded the shared deadline'
         assert len(accepted) == 16
         assert f.process.pid == pid and f.process.poll() is None
         config = admin.call({'op': 'config_get'})['config']

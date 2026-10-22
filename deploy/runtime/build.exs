@@ -72,3 +72,8 @@ Enum.each(Path.wildcard(output <> "/**/*"), fn path ->
   File.chmod!(path, if(File.dir?(path), do: 0o555, else: 0o444))
 end)
 File.chmod!(output, 0o555)
+
+# RUN/COPY output timestamps must not inherit wall clock build time.
+Enum.each(["/runtime", output | Path.wildcard(output <> "/**/*")], fn path ->
+  File.touch!(path, 0)
+end)

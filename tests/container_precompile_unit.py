@@ -101,6 +101,12 @@ class Packaging(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             self.stage()
 
+    def test_generated_cache_has_fixed_timestamp_policy(self):
+        build = self.helpers['build.exs'].decode()
+        self.assertIn('File.touch!(path, 0)', build)
+        self.assertIn('["/runtime", output | Path.wildcard(output <> "/**/*")]', build)
+        self.assertGreater(build.index('File.touch!(path, 0)'), build.index('File.chmod!(output, 0o555)'))
+
     def test_same_pinned_runtime_and_visible_original_argv(self):
         lines = (ROOT / 'deploy/Dockerfile').read_text().splitlines()
         bases = [line.split()[1] for line in lines if line.startswith('FROM ')]

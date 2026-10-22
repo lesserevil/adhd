@@ -1,0 +1,315 @@
+{
+  "suite": "project-recovery-peer-catalog-epoch",
+  "started_at": "2026-10-22T04:18:47.838943+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-authenticated-v2-peer-catalog-success-held-before-target-loss",
+      "passed": true,
+      "response_sha256": "b8e91ee3c549030f7bb3b33e9d083e2e6834b84ca1439e1650c9205ad31c7fa3"
+    },
+    {
+      "name": "same-vm-target-restored-to-new-epoch-while-blue-remains-current",
+      "passed": true,
+      "loss_witness": {
+        "nonce": "6244def081cb4cdcb2718985ae761bd8",
+        "project_id": "project-red",
+        "reason": "killed",
+        "store_pid": "#PID<0.324.0>",
+        "vm_pid": "1"
+      },
+      "old_epoch": "21209949f963f777143c2f6433283261",
+      "new_epoch": "2e5030aa62fa64b903cdc67ab04a886e"
+    },
+    {
+      "name": "released-old-real-peer-response-does-not-populate-restored-directory",
+      "passed": true,
+      "peer_status": "pending"
+    },
+    {
+      "name": "fresh-epoch-real-peer-refresh-succeeds-and-blue-originals-remain-usable",
+      "passed": true,
+      "fresh_response_sha256": "9d3ce796a786717d26489ceebe0170eb3c5323ab3d9329477e942e7b83744f31",
+      "peer_catalog_revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782"
+    }
+  ],
+  "limitations": [
+    "Model-free/eventing-disabled two-hub cache/epoch case; runtime custody separately bound; no Kafka, semantic provider or release completion claim."
+  ],
+  "prior_attempts": [
+    {
+      "report": "recovery-peer13.json",
+      "report_sha256": "f10ec12f9c0d2885090c6b82c336f876f083ebf99fc0c3ed5c45c903cd51fdf3",
+      "result": "Harness waited for fresh request before releasing old synchronous worker request; failure retained, corrected ordering does not change old-result rejection expectation."
+    },
+    {
+      "report": "recovery-peer13b.json",
+      "report_sha256": "445de0d95b8dbcb822aff25579ed8cc132205bf54c367701a55ec54d1d3885af",
+      "result": "Harness fresh-refresh3s deadline shorter than configured10s network timeout; corrected to10s+2s scheduling, immediate old-directory-empty assertion preserved."
+    }
+  ],
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "60e359bbab842bfe65994ea70d1ebc783ebfb79d8d8625bfb15b21e099bcb40c",
+  "scope": "Actual v2 peer HTTP catalog refresh across live target writer loss/restore; runtime custody separately bound; no Kafka/model/provider",
+  "limits": {
+    "startup_seconds": 150,
+    "relay_slots": 4,
+    "relay_requests": 128,
+    "hold_seconds": 10,
+    "epoch_transition_seconds": 8,
+    "fresh_refresh_seconds": 12
+  },
+  "dependency_sha256": {
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/ri38d/frozen/tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/ri38d/frozen/tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/ri38d/frozen/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/ri38d/frozen/components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "relay_observations": [
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:20:03.535Z",
+        "items": [
+          {
+            "aliases": [
+              "held-catalog"
+            ],
+            "canonical": true,
+            "description": "Actual peer canonical catalog marker",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "held-catalog",
+              "tenant": "fixture"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782",
+        "server_id": "5a4fd950a733431d9cf5ff8798fe19f4",
+        "visible": true
+      },
+      "response_sha256": "b8e91ee3c549030f7bb3b33e9d083e2e6834b84ca1439e1650c9205ad31c7fa3",
+      "held_index": 0,
+      "released": true,
+      "write_succeeded": false
+    },
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:20:06.182Z",
+        "items": [
+          {
+            "aliases": [
+              "held-catalog"
+            ],
+            "canonical": true,
+            "description": "Actual peer canonical catalog marker",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "held-catalog",
+              "tenant": "fixture"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782",
+        "server_id": "5a4fd950a733431d9cf5ff8798fe19f4",
+        "visible": true
+      },
+      "response_sha256": "9d3ce796a786717d26489ceebe0170eb3c5323ab3d9329477e942e7b83744f31",
+      "held_index": 1,
+      "released": true,
+      "write_succeeded": true
+    },
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:20:07.416Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "5a4fd950a733431d9cf5ff8798fe19f4",
+        "visible": false
+      },
+      "response_sha256": "e9096a29527a2812c8bffa71e3271fc445803890f01c21e56aba5aaa31776e4f",
+      "held_index": null,
+      "released": false,
+      "write_succeeded": true
+    }
+  ],
+  "runtime_origin": {
+    "kind": "docker",
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "c2b73e10738322a5d15f7d59a3e99ef5bb9b79ac97ac156f58bcab5b16599e1b",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "c2b73e10738322a5d15f7d59a3e99ef5bb9b79ac97ac156f58bcab5b16599e1b",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "4809f061f534a9dd9c228ea9f432b662a3ef758d84fa5a220ee4acd431d019cc",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "stopped",
+        "container_id": "4809f061f534a9dd9c228ea9f432b662a3ef758d84fa5a220ee4acd431d019cc",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "observer_sha256": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "observer_mount": "/adhd-test/recovery-observer.exs",
+    "recovery_image_helper_sha256": "0ba13d11979b3bd10ae19d502d6e48207e05b2e248eb98c4bb81ce94d8eda4fb",
+    "startup_seconds": 150,
+    "watched_vm_observations": [
+      {
+        "container_id": "c2b73e10738322a5d15f7d59a3e99ef5bb9b79ac97ac156f58bcab5b16599e1b",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "host_vm_pid": 899851,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "08fd3bd52d6dde2ece5d7bee1e80578e70f13226aecdd659e415477c08001c0f",
+        "proc1_cmdline_sha256": "592d6540b675a01a0e12d6870d3cac2a0d22ab644ee8ede98746bc763bd366ec",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "4809f061f534a9dd9c228ea9f432b662a3ef758d84fa5a220ee4acd431d019cc",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "host_vm_pid": 905552,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "9fdecc4b14bdabc02a0e6257926ea2ce30cf55c7e32dccc94674837aa43cc0e0",
+        "proc1_cmdline_sha256": "592d6540b675a01a0e12d6870d3cac2a0d22ab644ee8ede98746bc763bd366ec",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "4809f061f534a9dd9c228ea9f432b662a3ef758d84fa5a220ee4acd431d019cc",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "host_vm_pid": 905552,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "c845c3cb06eecd7f9d30e5f49ea96c9c566cd782f563de2d2c7d88b8cad5e900",
+        "proc1_cmdline_sha256": "592d6540b675a01a0e12d6870d3cac2a0d22ab644ee8ede98746bc763bd366ec",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "4809f061f534a9dd9c228ea9f432b662a3ef758d84fa5a220ee4acd431d019cc",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "host_vm_pid": 905552,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "2bfd8c77b588c4334a57c74163d8a17c7db9400ffdbe636c5e526e3fae2871df",
+        "proc1_cmdline_sha256": "592d6540b675a01a0e12d6870d3cac2a0d22ab644ee8ede98746bc763bd366ec",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "4809f061f534a9dd9c228ea9f432b662a3ef758d84fa5a220ee4acd431d019cc",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "host_vm_pid": 905552,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "982fe38efc82a844c18cfb4c0fb68cef6682b8c09a65caf623cd5c8e51eb68b4",
+        "proc1_cmdline_sha256": "592d6540b675a01a0e12d6870d3cac2a0d22ab644ee8ede98746bc763bd366ec",
+        "observer_read_only": true
+      }
+    ],
+    "payload_probe_lifecycle": [
+      {
+        "name": "adhd-recovery-probe-d9a17ee0af704b8f",
+        "entrypoint": "cat",
+        "observed_absent": true
+      },
+      {
+        "name": "adhd-recovery-probe-9949e2290fc5468d",
+        "entrypoint": "sha256sum",
+        "observed_absent": true
+      }
+    ],
+    "cleanup_failure_types": [],
+    "docker_client_pid": 905476,
+    "owned_docker_client_exited": true,
+    "owned_container_absent": true
+  },
+  "runtime_peer": {
+    "kind": "docker",
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+    "container_helper_sha256": "dd1958dd36af972158d751bb6c19fee913515824c399940a2505a26ca9c1b274",
+    "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "fed0ce7a7cde1e5a4288c96625a166ecf41e869a3fc71381c6f45ec51857346f",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0"
+      },
+      {
+        "action": "stopped",
+        "container_id": "fed0ce7a7cde1e5a4288c96625a166ecf41e869a3fc71381c6f45ec51857346f",
+        "observed_absent": true
+      }
+    ],
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "observer_sha256": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "observer_mount": "/adhd-test/recovery-observer.exs",
+    "recovery_image_helper_sha256": "0ba13d11979b3bd10ae19d502d6e48207e05b2e248eb98c4bb81ce94d8eda4fb",
+    "startup_seconds": 150,
+    "watched_vm_observations": [
+      {
+        "container_id": "fed0ce7a7cde1e5a4288c96625a166ecf41e869a3fc71381c6f45ec51857346f",
+        "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+        "host_vm_pid": 900301,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "78a9dd9f08037eb06cf4435a7bec267ea4e8e5a04343c1cd412d76caaba271fc",
+        "proc1_cmdline_sha256": "29254dee43cdd3f6d65f35ea6498d554c329873e486bf7fd250908b3c306aadd",
+        "observer_read_only": true
+      }
+    ],
+    "payload_probe_lifecycle": [
+      {
+        "name": "adhd-recovery-probe-37bc76eeb3ca41d5",
+        "entrypoint": "cat",
+        "observed_absent": true
+      },
+      {
+        "name": "adhd-recovery-probe-ad6d6e2f559b4310",
+        "entrypoint": "sha256sum",
+        "observed_absent": true
+      }
+    ],
+    "cleanup_failure_types": [],
+    "docker_client_pid": 900238,
+    "owned_docker_client_exited": true,
+    "owned_container_absent": true
+  },
+  "finished_at": "2026-10-22T04:20:08.990972+00:00"
+}

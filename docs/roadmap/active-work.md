@@ -47,7 +47,7 @@ their exact artifact/report identities and outstanding gates. Tracker
 reconciliation and the start-of-cycle peer survey found no open
 ADHD issues/reviews or collectable existing branches.
 
-Current admitted successor38 has passed [official admission and exact image
+Admitted image38 has passed [official admission and exact image
 payload review](../../verification/project-recovery/development38/admission/manifest.json).
 Its [native core composition](../../verification/project-recovery-core38-serial/manifest.json)
 covers 169 groups, its [controlled workflow/SDK composition](../../verification/project-recovery/development38/history-second/manifest.json)
@@ -59,12 +59,15 @@ retains the accepted 2.0 snapshots and binds 87 recovery vectors and eight wire 
 
 Integrated qualification remains open. [Native38 browser qualification](../../verification/native38-ui-initial/manifest.json)
 stopped at a genuine mobile replay-ID overflow; the [painted-text diagnosis](../../verification/native38-ui-overflow/manifest.json)
-led to a CSS-only successor39, whose 18 native self-tests pass and whose full
-browser lane is in progress as development prequalification. The [first image
-recovery attempt](../../verification/project-recovery/development38/image-recovery-serial38/manifest.json)
-passes the pending-model case and preserves a Kafka fixture settlement timeout;
-its overlapping held-callback resource profile is being corrected without changing
-product admission or the assertion deadline. Complete recovery, image/runtime and
+led to a CSS-only successor39. [Formal host39 admission](../../verification/project-recovery/development39/admission/manifest.json)
+now matches the exact artifact used by all nine passing native browser suites;
+no image39 was built. The [five image recovery suites](../../verification/project-recovery/development38/image-recovery-cap2/manifest.json)
+pass all28 groups under the explicit overlapping-callback resource profile, with
+the original failed attempt retained. The [image core run](../../verification/image38-core-initial/manifest.json)
+passes ten complete suites but exposes an ownership-verification crash; two later
+suites remain unrun. The [narrow successor40 repair](../../verification/ownership40-development/manifest.json)
+passes18 native checks and all three public ownership fault/recovery checks;
+its independent formal admission is running. Complete recovery, image/runtime and
 platform evidence must still pass before parent items close. The older
 [source34 review](../../verification/multi-eventing/completion-review-34.json)
 remains historical evidence rather than current program completion.
@@ -842,8 +845,9 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Owner:** hub acceptance harnesses, protocol documentation and operator/client guides
 - **Direction:** Finish the program only with independent evidence for isolation, compatibility and operation.
 - **Conclusion:** Bind qualification to the exact accepted artifact and container, with native, SDK, browser, migration, federation, fault and live-model evidence. Existing single-project evidence remains historical and cannot attest the new architecture.
-- **Ownership verification failure follow-up:** The admitted38 image core run rejects a missing snapshot correctly, but a corrupt registered target snapshot throws a restore-verification error through the Developer `create_agent` ownership check and terminates `ADHD.Config`. Subsequent `config_get` returns500 and the hub exits. Preserve the actual failed report/logs and ten complete passing suites; do not count its two partial fault checks or the two unrun suites as qualified. Scope the repair to converting unavailable ownership evidence into a published redacted configuration error before mutation, preserving configuration/revision/tokens and the live shared service. Clarify that unrelated project access remains usable, and verify exact snapshot restoration permits a fresh authorized creation. Native38core169 did not include this distinct suite; the earlier profile2.1 retirement-fault pass belongs to development09, not this artifact. **Next:** freeze a successor from the unchanged source39 candidate plus the narrow ownership repair, qualify native and exact-image missing/corrupt/healthy recovery, then finish the unrun image suites. Keep source38/source39 and their reports immutable.
+- **Ownership verification failure follow-up:** The admitted38 image core run rejects a missing snapshot correctly, but a corrupt registered target snapshot throws a restore-verification error through the Developer `create_agent` ownership check and terminates `ADHD.Config`. Subsequent `config_get` returns500 and the hub exits. Preserve the actual failed report/logs and ten complete passing suites; do not count its two partial fault checks or the two unrun suites as qualified. The [independently reviewed repair](../../verification/ownedMULTI008/ownership40-review.json) converts unavailable ownership evidence into a published redacted configuration error before mutation, preserving configuration/revision/tokens and the live shared service. [Native40 passes18 self-tests and three actual ownership checks](../../verification/ownership40-development/manifest.json), including healthy Blue progress during both faults and authorized creation after exact snapshot restoration. Native38core169 did not include this distinct suite; the earlier profile2.1 retirement-fault pass belongs to development09, not this artifact. **Next:** finish current source40 formal admission, qualify exact-image missing/corrupt/healthy recovery, then finish the unrun image suites. Keep source38/source39 and their reports immutable.
 - **Held Kafka callback fixture follow-up:** Preserve the admitted image38 serial attempt: the model callback suite passed four groups, while Kafka restore apply exceeded the fixture's unchanged 20-second settlement bound before a durable decision. Required fresh-topic preflight shares the default single project eventing slot with the deliberately held old 30-second HTTP request; queue residence is part of that request budget, not a product 20-second restore promise. Qualify this overlapping-callback scenario with an explicit two-slot project eventing fixture profile, retain the global sixteen-slot limit, observe actual public scheduler counts, and keep all old-response, offset, identity, acknowledgement, Blue and cold-reopen assertions. This scoped fixture does not claim default-one-slot restore latency or bypass product admission. Retain the failed attempt and prepare a fresh serial image plan for review before execution.
+- **Held-callback qualification result:** The [fresh serial image38 plan](../../verification/project-recovery/development38/image-recovery-cap2/manifest.json) now passes five complete suites/28groups: pending model4, pending Kafka5, queries8, incoming7 and peer epoch4. Root independently rehashed all reports, eight actual origin/peer runtime bindings,239 frozen files and four bound inputs, then confirmed all21 app containers and16 payload probes absent. Preserve the old failed matrix and do not extend this scope to default-one-slot latency, the broader recovery52 matrix, successor40 or release qualification. This status belongs in the execution queue; stable recovery contract documentation is unchanged.
 - **Depends on:** MULTI-001, MULTI-002, MULTI-003, MULTI-004, MULTI-005, MULTI-006, MULTI-007, KAFKA-009
 - **Implementation:**
   - [ ] Complete local OCI staging of the locked normative hub specification closure, including the recovery JSON Schema, and allow explicit selection of the verifier CLI/interpreter. The current Markdown-only walker omits declared JSON authority and an ambient CLI can differ from the project-pinned framework. Preserve existing aliases and deterministic archives; reject changed, missing, redirected or colliding inputs and qualify the exact staged byte identities before successor image claims. This is local deployment packaging, not a native-package or registry release.

@@ -12,6 +12,8 @@ from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('matrix',Path(__file__).with_name('image_filesystem_matrix.py'))
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
+TARGET={'image_config_identity':'sha256:'+'4'*64,'artifact_sha256':'5'*64,'admission_sha256':'6'*64}
+
 class Guards(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name).resolve()
@@ -42,7 +44,7 @@ class Guards(unittest.TestCase):
   (self.root/'runtime').mkdir()
   plan={'driver_sha256':'test','lane_lock':str(self.root/'lock'),'runtime_cwd':str(self.root/'runtime'),
    'tools':{k:{'path':'/test/'+k} for k in ('python','elixir','erl','docker')},'docker_socket':{'path':'/test/socket'},
-   'jobs':[{'name':n,'argv':['never-run']} for n in m.NAMES],'scope':'pure','image_config_identity':m.IMAGE,'artifact_sha256':m.ARTIFACT}
+   'jobs':[{'name':n,'argv':['never-run']} for n in m.NAMES],'scope':'pure',**TARGET}
   m.save(self.root/'plan.json',plan);return m.sha(self.root/'plan.json')
  def test_once_before_actual_boundary_and_no_retry(self):
   digest=self.fixture()
@@ -63,9 +65,41 @@ class Guards(unittest.TestCase):
    self.assertEqual(run.call_count,1)
   result=json.loads((self.root/'matrix.json').read_text());self.assertEqual(result['executed'],['storage-crash']);self.assertEqual(result['results'][0]['process_exit_code'],0);self.assertFalse(result['passed'])
  def test_unknown_cleanup_not_qualified(self):
-  runtime={'kind':'docker','image_config_identity':m.IMAGE,'artifact_sha256':m.ARTIFACT,'canonical_manifest_sha256':'m',
+  runtime={'kind':'docker',**TARGET,'canonical_manifest_sha256':'m',
    'cleanup_blocked':True,'container_lifecycle':[]}
-  value={'passed':True,'artifact_sha256':m.ARTIFACT,'checks':[{'passed':True}],'runtime':runtime}
-  with self.assertRaises(AssertionError):m.qualify(value,{'script':'multi_migration.py','expected_check_count':1},{'canonical_manifest_sha256':'m'})
+  value={'passed':True,'artifact_sha256':TARGET['artifact_sha256'],'checks':[{'passed':True}],'runtime':runtime}
+  with self.assertRaises(AssertionError):m.qualify(value,{'script':'multi_migration.py','expected_check_count':1},{**TARGET,'canonical_manifest_sha256':'m'})
+
+ def test_target_no_defaults_and_no_global_mutation(self):
+  first=m.target_bindings(TARGET);second=m.target_bindings(dict(image_config_identity='sha256:'+'7'*64,artifact_sha256='8'*64,admission_sha256='9'*64))
+  self.assertNotEqual(first,second);self.assertEqual(first,m.target_bindings(TARGET))
+  with self.assertRaises(KeyError):m.target_bindings({})
+ def test_malformed_target(self):
+  for key in TARGET:
+   for bad in (None,'','sha256:tag','A'*64):
+    with self.assertRaises(AssertionError):m.target_bindings({**TARGET,key:bad})
+ def test_absence_identifier_case_sensitive(self):
+  name='MixedCase'
+  self.assertTrue(m.absent(subprocess.CompletedProcess([],1,b'',b'error: no such object: MixedCase'),name))
+  self.assertFalse(m.absent(subprocess.CompletedProcess([],1,b'[]',b'error: no such object: mixedcase'),name))
+ def test_absence_contradictory_stdout(self):
+  for out in (b'[{}]',b'connected',b'{}'):
+   self.assertFalse(m.absent(subprocess.CompletedProcess([],1,out,b'error: no such object: Name'),'Name'))
+ def valid_report(self):
+  probe=lambda kind:{'entrypoint':kind,'image_config_identity':TARGET['image_config_identity'],'observed_absent':True,'run_exit_code':0,'run_failure_type':None,'cleanup_failure_types':[],'foreign_object_not_removed':False,'owned_name':'adhd-accept-probe-'+'a'*16,'container_id':None}
+  runtime={'kind':'docker',**TARGET,'canonical_manifest_sha256':'m','payload_verified':True,'probe_cleanup_blocked':False,'payload_probe_lifecycle':[probe('cat'),probe('sha256sum')],'container_lifecycle':[{'action':'started','container_id':'a'*64},{'action':'hard-killed','container_id':'a'*64,'observed_absent':True,'wait_observed':True,'exit_code':137}]}
+  return {'passed':True,'artifact_sha256':TARGET['artifact_sha256'],'checks':[{'passed':True}],'runtime':runtime}
+ def test_payload_probe_ledger_required(self):
+  v=self.valid_report();job={'script':'multi_migration.py','expected_check_count':1};plan={**TARGET,'canonical_manifest_sha256':'m'}
+  self.assertEqual(m.qualify(v,job,plan)[0],['a'*64])
+  for modify in (lambda r:r.update(payload_verified=False),lambda r:r.update(probe_cleanup_blocked=True),lambda r:r.update(payload_probe_lifecycle=[]),lambda r:r['payload_probe_lifecycle'][0].update(observed_absent=False)):
+   bad=copy.deepcopy(v);modify(bad['runtime'])
+   with self.assertRaises(AssertionError):m.qualify(bad,job,plan)
+ def test_other_target_report_refused(self):
+  v=self.valid_report();v['runtime']['image_config_identity']='sha256:'+'1'*64
+  with self.assertRaises(AssertionError):m.qualify(v,{'script':'multi_migration.py','expected_check_count':1},{**TARGET,'canonical_manifest_sha256':'m'})
+ def test_no_old_result_composition(self):
+  self.assertEqual(len(m.NAMES),17);self.assertEqual(m.NAMES[0:2],['storage-crash','movefault-before-decision'])
+  self.assertFalse(hasattr(m,'read_prefix'))
 
 if __name__=='__main__':unittest.main()

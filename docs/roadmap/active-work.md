@@ -50,19 +50,29 @@ passes nine whole programs/86 assertions, matching the independently qualified
 container browser scope. [Kafka qualification](../../verification/final05-kafka-whole68-positive/manifest.json)
 passes all14 whole programs/68 checks. The first full NetworkPolicy route run
 [failed before traffic](../../verification/network-policy-kind40-route13-negative/audit.json)
-on broker fixture readiness; its underlying Pod cause is unknown. A bounded
-failure-only readiness observer is now running after its corrected isolated
-import preflight passed. Full-application recovery and the proper
-documentation receipt lifecycle remain running; no parent item is closed by these
-partial results.
+on broker fixture readiness; its underlying Pod cause is unknown. The [observed route15 failure](../../verification/network-policy-kind40-route15-negative/audit.json)
+records broker utility exit137 with empty logs; its cause remains unknown and
+zero routes were tested. Next: diagnose the original utility startup with its
+unchanged192Mi limit before rerunning the route matrix. The
+[full-application recovery attempt](../../verification/final05-recovery25-prefix9-first-failure/manifest.json)
+retains nine whole suites/44 checks; the no-default-project crash case failed
+with `RESTORE_IO_ERROR` before reaching its requested boundary. Its partial
+check is excluded and15 later suites remain unrun. Next: trace only the bounded
+staging/checkpoint/transport interval to identify the underlying failure. The
+proper documentation receipt lifecycle remains running; no parent item is closed
+by these partial results.
 
 The [leaf-by-leaf closure review](../../verification/final05-leaf-closure-proposal/review.json)
 supports49 additional implementation/evidence checklist closures across the
 multi-project and Kafka programs. Historical subsystem tests remain scoped to
 their original artifacts and are complemented by exact unchanged-code comparisons
-and current integration tests. The broad stale-owner evidence leaf and two full
+and current integration tests. The [current stale-owner4 audit](../../verification/ownedMULTI008/compiled05-stale-canonical-owner-positive/manifest.json)
+now closes the broad canonical-routing evidence leaf alongside the three-server
+Kafka federation and callback proofs. The
+[compiled configuration crash gate](../../verification/ownedMULTI008/compiled05-config-crash3-positive/manifest.json)
+passes all three cases/13 original assertions with unchanged bounds. Two full
 selective-recovery leaves remain open, together with the separate integrated
-configuration, deployment, documentation and parent completion gates.
+deployment, documentation and parent completion gates.
 
 The user has now authorized implementation of all outstanding roadmap work,
 grouped in branches with parallel agents. MULTI-001 through MULTI-008 and
@@ -864,7 +874,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Bind durable requests, status polling, responses and idempotency to authenticated origin server plus origin and destination projects; reject scope substitution and stale authority.
   - [x] Handle same-server canonical routing, conflicts, project archival, peer revocation and negotiated legacy peers without duplicate delivery or silent downgrade.
 - **Evidence:**
-  - [ ] Qualify at least three real servers with multiple projects, local/remote canonical routing, conflicting owners, stale caches, outages, retries and revocation.
+  - [x] Qualify at least three real servers with multiple projects, local/remote canonical routing, conflicting owners, stale caches, outages, retries and revocation. The current [three-server Kafka federation](../../verification/final05-kafka-whole68-positive/manifest.json), [stale-owner four-check run](../../verification/ownedMULTI008/compiled05-stale-canonical-owner-positive/manifest.json) and [callback/epoch fences](../../verification/final05-recovery-callback28-positive/manifest.json) jointly qualify this scope. Expiry uses the original10-second TTL and12-second wait; an unavailable canonical owner never delegates work to a reachable noncanonical server.
   - [x] Validate exact new wire traffic independently and test old/new peer compatibility, bounded forwarding, privacy and unchanged server-local roles.
 
 ### [ ] MULTI-006 — Manage multiple projects through the hot Admin console

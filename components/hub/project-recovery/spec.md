@@ -122,6 +122,24 @@ bombs. Current ADHDSTATE1 snapshots are uncompressed deterministic ETF, prefixed
 by ASCII ADHDSTATE, byte1 and 32-byte SHA256 of the ETF body. Safe bounded decoding
 rejects executable/function/PID/port/reference terms and unknown atoms; no
 untrusted dynamic atom creation. Reject compressed ETF in this bundle version.
+
+Closed native checkpoint verification must preflight untrusted bytes before any
+native DETS opener. Support the modern checksummed DETS version9 set/key-position1
+layout emitted by the supported OTP runtimes, with exactly one {:state,map}
+object. Bound the entire encoded file, structural walk and term scan by the frozen
+byte/deadline/batch limits. Verify header hash and counts, file trailer, reachable
+segment/slot/bucket pointers, disjoint live allocations, free-list structure and
+nonoverlapping free allocations; reject unsupported layouts, unknown versions,
+cycles, overlaps, trailing structures, compressed or unsafe ETF and unknown atoms.
+Only after exact safe term decoding may a read-only repair:false native opener
+run, and its single lookup must equal the preflight-decoded object. A matching
+operator-supplied hash is never a substitute for this validation. A recognized
+structurally valid header explicitly marked not closed may return needs-repair
+without native opening. Ordinary independently verified authoritative-snapshot
+reconstruction may handle that case under its forensic-preservation rules;
+byte-preserving offline rebind must reject it. Malformed or unsupported closed
+checkpoints fail closed, never trigger an untrusted native repair/decode path.
+
 Retain the complete accepted state, not a search/export projection. Preserve
 workflow primitives, selections and qualification provenance; revalidate their
 owning compatibility identities against current code/config/epoch and mark only

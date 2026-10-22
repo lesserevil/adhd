@@ -19,3 +19,24 @@ These tests use actual native checkpoints and CLI operations. They precede the
 additional raw-DETS hostile-input guard and do not qualify that later source or
 claim container recovery coverage. An initial runner stopped on a harness-only
 error-envelope assertion; the corrected report binds the exact harness bytes.
+
+The raw checkpoint guard has independent [OTP27](../../verification/project-recovery/checkpoint-native.json)
+and [OTP29](../../verification/project-recovery/checkpoint-otp29.json) reports,
+each with46 passing checks. The tests execute the same new parser module against
+actual runtime-produced checkpoints and a complete source36 product checkpoint.
+They verify header/hash/count/trailer consistency, pointer and allocation
+overlap/cycle rejection, exact one-row/state-map identity, integer free-list
+structure, safe ETF and unknown-atom rejection, byte/deadline bounds, and legacy
+phash lookup equivalence. Rejected inputs and explicitly unclosed headers cause
+zero traced native DETS opens; each accepted file has exactly one native read-only
+open and a lookup equal to the independently preflight-decoded value.
+
+OTP29 executes the new module in the existing accepted image34 runtime with
+network disabled and read-only source mounts. It does not claim that the existing
+image34 application contains the recovery feature. The report's declared image
+producer identity corresponds to the explicitly pinned Docker invocation; the
+observed OTP/ERTS versions and file digests are recorded separately. Earlier
+synthetic-fixture mistakes (nonzero-base trailer and hostile-atom length) remain
+identified in the reports; their weaker results are not substituted for these
+corrected checks. Full integrated recovery/CLI qualification remains a separate
+gate after the guard is wired into every relevant native opener.

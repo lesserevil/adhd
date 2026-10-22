@@ -270,7 +270,12 @@ old location strings embedded in copied metadata. Snapshot suffix remains
 .snapshot. Bind SHA256 to exact existing bytes and verify complete store/header,
 registry, marker, recovery journal and configuration-receipt consistency. Apply
 recovery byte/record/deadline bounds per project, one verification table at a time;
-there is no unbounded archive extraction or directory discovery.
+there is no unbounded archive extraction or directory discovery. Native checkpoint
+preflight supports checksummed DETSv9 set/key-position1 with one {:state,map}
+row; unsupported layouts fail closed. Validate the full pointer/free-list graph,
+header/trailer and bounded safe ETF before any read-only native table open, then
+compare the native lookup exactly. A structurally recognized unclosed header is
+needs-repair and cannot satisfy a byte-preserving rebind request.
 
 The copied .stores/.stores.marker/.recovery/.journal set must have mutually valid
 original location/server identities. Config file must validate with the same

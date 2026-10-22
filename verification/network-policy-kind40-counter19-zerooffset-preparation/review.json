@@ -1,0 +1,85 @@
+{
+  "actual_isolated_verify": {
+    "execution_ready": false,
+    "exit_code": 0,
+    "native_starts": 0,
+    "verified": true
+  },
+  "corrected_semantics": [
+    "Read fixed /proc/actualPID/timens_offsets with bound512bytes and exact monotonic0:0+boottime0:0 grammar. Reject any nonzero/unknown/malformed/extra fields; never calculate or infer an offset.",
+    "The offset file describes time_for_children. Require a process own current+children namespace identity equal and stable around its read; retain identity PER process.",
+    "Host/node/target/observer namespace inodes may differ when each is verified zero-offset. Do not compare inode equality across aligned processes.",
+    "Gate and parent observer recheck target+observer namespaces independently; sameIdentity includes each stable inode. All original SHA/UID/CID/cgroup/FD/pidfd/deadline guards remain.",
+    "RawENV same-container resume verifies target1 and self zero offsets and stable per-process timens before+after pidfd_open. Its deadline arguments are original host window beginning and exact10s release deadline, never offset arithmetic/reset.",
+    "Driver records bounded actual host monotonic+boottime brackets for native clock facts, facts container and gate-ready. Time readings must lie in those brackets; no offset adjustment.",
+    "Gate-ready buffer enlarged512 only to retain new clock metadata, with explicit snprintf length check. Byte/output/Ready30/first10s/192Mi/security/once/cleanup bounds remain."
+  ],
+  "future_held": [
+    "Parent source review before compiling either new helper",
+    "Actual static ELF hash/no-interpreter/no-needed/<=1MiB admission then fresh plan; source-only plan never becomes executable",
+    "Parent GO for8 native cases (original7 plus1 nonzero-offset rejection) and2 no-app containers",
+    "Parent Kind livecounter executor/ConfigMap/actual host-node bracket/cgroup capture remains future work"
+  ],
+  "host_clock_proof": {
+    "offsets": {
+      "boottime": [
+        0,
+        0
+      ],
+      "monotonic": [
+        0,
+        0
+      ]
+    },
+    "time_for_children_namespace_inode": 4026531834,
+    "time_namespace_inode": 4026531834
+  },
+  "new_source_files": {
+    "tests/policy_kind_counter2.c": "ecc016135d5c55741d1ccaa4b5b64580383d20e92407efa4fe07094586f69db4",
+    "tests/policy_kind_counter_probe3.c": "dfa24d2224f2ad741037273471fc086aa15e5a6088e5c7dd66747461ad657736",
+    "tests/policy_kind_counter_run2.py": "1e05920e6b351478b74f5c028c602f20bfbb7a3fc090b62a3da6f222a8d75437",
+    "tests/policy_kind_counter_run2_unit.py": "6542898ec61159a91d10ef71d55c19a9cbc7f036bc092c4bb34f24d376089866"
+  },
+  "not_claimed": [
+    "New C compilation or native outcomes",
+    "Original ENV witness success",
+    "Original image clock offsets retrospectively captured",
+    "Kind cause/OOM/routes/application/model qualification"
+  ],
+  "original_exec01_negative": "verification/network-policy-kind40-counter19-exec01-negative/audit.json",
+  "passed": true,
+  "plan": {
+    "ELF_admission": "Requires actual NEW gate2 + probe3 static ELFs before fresh execution-ready plan",
+    "compiler_flags_unchanged": true,
+    "container_count": 2,
+    "driver_sha256": "1e05920e6b351478b74f5c028c602f20bfbb7a3fc090b62a3da6f222a8d75437",
+    "execution_ready": false,
+    "gate_and_probe_future_compile_argv_frozen": true,
+    "input_files": 7,
+    "native_cases_planned": 8,
+    "path": "_build/policy-kind-counter19-zerooffset-source01/plan.json",
+    "sha256": "a1b24e5c5df42fea81ec10155f8ae07829b36bc48ba049c5d0f672f7ed4318e6"
+  },
+  "primary_sources": [
+    {
+      "claim": "Monotonic and boottime offsets are relative to initial time namespace.",
+      "url": "https://man7.org/linux/man-pages/man7/time_namespaces.7.html"
+    },
+    {
+      "claim": "proc_timens_show_offsets obtains time_ns_for_children; current/children correspondence must be independently bound. This is ABI source evidence, not a host kernel version claim.",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/v6.12/kernel/time/namespace.c"
+    }
+  ],
+  "prior_sources_unchanged": {
+    "tests/policy_kind_counter.c": "61cb48e9c07837aaa4d371a17226a3ab9d542295f27269c02efa4a9d73d4e489",
+    "tests/policy_kind_counter_probe2.c": "80f2273cb1631a2b924f0c55609cabdcd85b51bff9bc581bed40c86a8df5124b",
+    "tests/policy_kind_counter_run.py": "a81eb3dc28ad9530edf658d711b7f1d23e32c637a8273a209d049e86304e2146"
+  },
+  "pure_tests": {
+    "actual_native_C_claim": false,
+    "all_counter_groups": 34,
+    "new_groups": 12
+  },
+  "schema": "adhd/counter19-zero-offset-successor-source-preparation@1",
+  "scope": "NEW test-tool source/preparation ONLY. No compile/native/container/cluster starts."
+}

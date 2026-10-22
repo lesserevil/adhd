@@ -95,6 +95,25 @@ class PayloadTests(unittest.TestCase):
         with patch.object(audit,'compiled_context',return_value=self.f.binding),patch.object(audit,'cleanup',return_value={'observed_absent':False,'failure_types':['daemon']}):
             with self.assertRaises(ValueError)as caught:audit.execute(args,Fake())
         self.assertIs(caught.exception,error);report=json.loads((args.output/'image-payload.json').read_bytes());self.assertFalse(report['passed']);self.assertEqual(report['failure_type'],'ValueError')
+    def test_malformed_create_id_uses_issued_name_cleanup_only(self):
+        args=SimpleNamespace(image=IMAGE,artifact_sha256=self.f.source_sha,context_sha256=self.f.context_sha,context=self.f.context,runtime_helpers=self.f.helpers,output=self.root/'out')
+        calls=[]
+        class Fake:
+            def checked(self,argv):
+                assert argv[0]=='create'
+                return b'malformed-container-id\n'
+            def run(self,argv):
+                calls.append(argv)
+                assert argv[0]=='inspect' and argv[-1].startswith('adhd-image-audit-')
+                return subprocess.CompletedProcess(argv,1,b'[]',('Error: No such object: '+argv[-1]).encode())
+        with patch.object(audit,'compiled_context',return_value=self.f.binding):
+            with self.assertRaisesRegex(AssertionError,'Malformed create container ID'):
+                audit.execute(args,Fake())
+        report=json.loads((args.output/'image-payload.json').read_bytes())
+        self.assertFalse(report['passed']);self.assertTrue(report['owned_container_absent'])
+        self.assertEqual(report['failure_type'],'AssertionError');self.assertNotIn('audit_container_id',report)
+        self.assertIsNone(report['cleanup']['container_id']);self.assertTrue(calls)
+        self.assertFalse(any('malformed-container-id'in v for call in calls for v in call))
     def test_execute_synthetic_valid_archive_cleanup_failure_is_false(self):
         f=self.f
         class Fake:

@@ -204,8 +204,9 @@ def execute(args, docker=None):
               'container_started': False, 'audit_container_name': name}
     (output / 'image-payload.json').write_bytes(json_bytes(result))
     try:
-        identifier = docker.checked(['create', '--pull', 'never', '--name', name, '--network', 'none', '--read-only', args.image]).decode().strip()
-        assert re.fullmatch('[a-f0-9]{64}', identifier)
+        raw_identifier = docker.checked(['create', '--pull', 'never', '--name', name, '--network', 'none', '--read-only', args.image]).decode().strip()
+        assert re.fullmatch('[a-f0-9]{64}', raw_identifier), 'Malformed create container ID'
+        identifier = raw_identifier
         result['audit_container_id'] = identifier
         observed = json.loads(docker.checked(['inspect', identifier]))
         assert len(observed) == 1

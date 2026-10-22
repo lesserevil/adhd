@@ -131,7 +131,11 @@ class Issuer:
         self.cert('issuer',[x509.IPAddress(ipaddress.ip_address(bind))])
         self.server.tls_context.load_cert_chain(self.root/'issuer.pem',self.root/'issuer-key.pem')
 
-    def java_truststore(self):
+    def java_truststore(self, probe=None):
+        if probe is not None:
+            probe.import_truststore()
+            (self.root/'issuer-trust.p12').chmod(0o600)
+            return
         subprocess.run(['docker','run','--rm','--user',str(os.getuid())+':'+str(os.getgid()),
             '--network','none','--entrypoint','/usr/bin/keytool','-v',str(self.root)+':/fixture',PROXY_IMAGE,
             '-importcert','-noprompt','-alias','issuer-ca','-file','/fixture/ca.pem',

@@ -21,10 +21,13 @@ import sys
 import time
 from uuid import uuid4
 
+from container_fixture import OwnedImage
+from kafka_oauth_custody import KeytoolProbe, unpack_payload, cleanup_all
+
 from cryptography import x509
 import httpx
 
-from kafka_oauth_provider import Issuer, private
+from kafka_oauth_provider import Issuer, private, PROXY_IMAGE
 from multi_support import Evidence, Fixture, poll_until, scoped
 
 
@@ -51,15 +54,14 @@ async def main(args):
         assert acceptance.get('passed') is True and acceptance.get('artifact_sha256')==artifact_sha
         assert json.loads(subprocess.check_output(['docker','image','inspect',args.image]))[0]['Id']==args.image
         assert json.loads(subprocess.check_output(['docker','image','inspect',args.cluster_image]))[0]['Id']==args.image
-        check_container=subprocess.check_output(['docker','create',args.image],text=True).strip()
-        try:
-            subprocess.run(['docker','cp',check_container+':/app',str(root/'image-app')],check=True,stdout=subprocess.DEVNULL)
-            assert json.loads((root/'image-app/manifest.json').read_text())==accepted_manifest
-            for name,digest in accepted_manifest['files'].items():
-                path=args.context/'Dockerfile' if name=='Dockerfile' else root/'image-app'/name
-                assert path.is_file() and not path.is_symlink() and hashlib.sha256(path.read_bytes()).hexdigest()==digest
-        finally:
-            subprocess.run(['docker','rm',check_container],check=True,stdout=subprocess.DEVNULL)
+        payload=OwnedImage(args.image,args.context/'manifest.json',root)
+        payload.verify()
+        unpack_payload(payload.probe('tar','-C','/app','-cf','-','.'),root/'image-app',accepted_manifest)
+        assert json.loads((root/'image-app/manifest.json').read_text())==accepted_manifest
+        for name,digest in accepted_manifest['files'].items():
+            path=args.context/'Dockerfile' if name=='Dockerfile' else root/'image-app'/name
+            assert path.is_file() and not path.is_symlink() and hashlib.sha256(path.read_bytes()).hexdigest()==digest
+        evidence.value['payload_probe_custody']=payload.probe_events
     evidence.value.update(lifecycle_qualified=False, release_qualified=False, production_entitlement_qualified=False,
         license_scope='Confluent Enterprise or documented permitted trial',
         limitations=['Actual admitted deployment image verified against staging and independent artifact acceptance; full release lifecycle remains a separate gate.' if args.image else 'Diagnostic native hub; final retained image lifecycle is a separate gate.',
@@ -76,6 +78,8 @@ async def main(args):
     seed_fixture=None
     log_followers=[]
     owned = completed = False
+    primary = None
+    keytool = None
     tokens = []
     sensitive = []
     def run(argv, *, data=None, capture=False, timeout=180):
@@ -171,7 +175,8 @@ async def main(args):
             raise ValueError('Never adopt an existing namespace')
         run(['create','namespace',args.namespace]); owned=True
         issuer=Issuer(root/'security',args.issuer_bind)
-        issuer.java_truststore(); sensitive.append(issuer.password)
+        keytool=KeytoolProbe(PROXY_IMAGE,issuer.root)
+        issuer.java_truststore(probe=keytool); sensitive.append(issuer.password)
         properties(); update_secret()
         first=issuer.token(exp=int(time.time())+1200); second=issuer.token('second',exp=int(time.time())+1200)
         tokens.extend([first,second])
@@ -194,9 +199,12 @@ async def main(args):
             images.append({'name':name,'newName':new_name,'digest':digest})
         if args.image:
             images.append({'name':'adhd-hub','newName':args.cluster_image.rsplit(':',1)[0],'newTag':args.cluster_image.rsplit(':',1)[1]})
+        (stage/'kafka-bootstrap.py').write_bytes((repo/'deploy/kafka-bootstrap.py').read_bytes())
         (stage/'kustomization.yaml').write_text(json.dumps({'apiVersion':'kustomize.config.k8s.io/v1beta1',
             'kind':'Kustomization','namespace':args.namespace,'resources':['events.yaml','hub.yaml'] if args.image else ['events.yaml'],
-            'patches':[{'path':'oauth.patch.yaml'}],'images':images}))
+            'patches':[{'path':'oauth.patch.yaml'}],'images':images,
+            'configMapGenerator':[{'name':'adhd-kafka-bootstrap','files':['kafka-bootstrap.py']}],
+            'generatorOptions':{'disableNameSuffixHash':True}}))
         rendered=run(['kustomize',str(stage)],capture=True)
         evidence.value['rendered_sha256']=hashlib.sha256(rendered).hexdigest()
         private(root/'rendered.yaml',rendered)
@@ -241,6 +249,7 @@ async def main(args):
             private(root/'credentials.json',json.dumps({'agents':seed_fixture.tokens,'admin':{'username':'admin','password':password}}).encode())
             sensitive.extend(list(seed_fixture.tokens.values())+[password])
             args.rest_url=base;args.credentials=root/'credentials.json';args.keep_work=root/'client'
+            args.initialize_projects=True
             hub=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await hub.start()
             run(ns(['cp',pod('hub')['metadata']['name']+':/app/manifest.json',str(root/'running-manifest.json')]))
             assert json.loads((root/'running-manifest.json').read_text())==accepted_manifest
@@ -301,7 +310,7 @@ async def main(args):
         issuer.password=secrets.token_urlsafe(24); sensitive.append(issuer.password)
         private(issuer.root/'password.txt',issuer.password.encode())
         issuer.cert('rest',[x509.IPAddress(ipaddress.ip_address('127.0.0.1')),x509.DNSName('localhost'),x509.DNSName('kafka-rest')])
-        (issuer.root/'issuer-trust.p12').unlink(); issuer.java_truststore()
+        (issuer.root/'issuer-trust.p12').unlink(); issuer.java_truststore(probe=keytool)
         properties(); update_secret()
         new_secret=secret()
         assert new_secret['metadata']['uid']==old_secret['metadata']['uid']
@@ -345,34 +354,23 @@ async def main(args):
         evidence.value['jwks_fetches']=issuer.requests
         completed=True
     except BaseException as error:
+        primary=error
         evidence.finish(error)
         raise
     finally:
-        if hub:
-            await hub.close()
-        if hub_forward:
-            hub_forward.terminate()
-            try:hub_forward.wait(timeout=5)
-            except subprocess.TimeoutExpired:hub_forward.kill();hub_forward.wait(timeout=5)
-        if owned:
-            for name in (['hub','kafka','kafka-rest'] if args.image else ['kafka','kafka-rest']):
-                with suppress(Exception):
-                    run(ns(['logs','-l','app='+name,'--all-containers=true','--prefix=true']))
-            stop_forward()
-            with suppress(Exception):
+        def stop_process(process):
+            if process is not None:
+                process.terminate()
+                try:process.wait(timeout=5)
+                except subprocess.TimeoutExpired:process.kill();process.wait(timeout=5)
+        def delete_namespace():
+            if owned:
+                for name in (['hub','kafka','kafka-rest'] if args.image else ['kafka','kafka-rest']):
+                    with suppress(Exception):
+                        run(ns(['logs','-l','app='+name,'--all-containers=true','--prefix=true']))
                 run(['delete','namespace',args.namespace,'--wait=true','--timeout=120s'],timeout=140)
-        for follower in log_followers:
-            try:follower.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                follower.terminate()
-                try:follower.wait(timeout=5)
-                except subprocess.TimeoutExpired:follower.kill();follower.wait(timeout=5)
-        if http:
-            http.close()
-        if issuer:
-            issuer.close()
-        if completed:
-            try:
+        async def prove_namespace_absent():
+            if owned:
                 remaining=obj(['get','namespaces'])['items']
                 assert all(row['metadata']['name']!=args.namespace for row in remaining)
                 deadline=time.monotonic()+30
@@ -382,16 +380,36 @@ async def main(args):
                         break
                     assert time.monotonic()<deadline
                     await asyncio.sleep(.3)
+        steps=[('hub',lambda:hub.close() if hub else None),
+            ('hub-forward',lambda:stop_process(hub_forward)),('rest-forward',stop_forward),
+            ('namespace-delete',delete_namespace)]
+        steps.extend(('log-follower-'+str(i),lambda process=process:stop_process(process)) for i,process in enumerate(log_followers))
+        steps.extend([('http',lambda:http.close() if http else None),('issuer',lambda:issuer.close() if issuer else None),
+            ('namespace-pv-absence',prove_namespace_absent)])
+        outcomes,errors=await cleanup_all(steps)
+        evidence.value['cleanup']=outcomes
+        if keytool is not None:
+            evidence.value['keytool_probe_custody']=keytool.probe_events
+            evidence.value['keytool_image_config_digest']=keytool.image_id
+            if keytool.probe_cleanup_blocked:
+                errors.append(AssertionError('Keytool probe cleanup remains unconfirmed'))
+        try:
+            if errors:
+                if primary is not None:
+                    primary.add_note('Independent OAuth fixture cleanup failures: '+','.join(type(e).__name__ for e in errors))
+                    evidence.finish(primary)
+                else:raise errors[0]
+            if completed and not errors:
                 logs=(root/'operations.log').read_bytes()
                 if hub and not args.image:
                     logs+=(hub.root/'stdout.log').read_bytes()+(hub.root/'stderr.log').read_bytes()
                 assert all(value.encode() not in logs for value in tokens+sensitive+['-----BEGIN PRIVATE KEY-----'])
                 evidence.record('owned-namespace-pvcs-pvs-and-forward-cleaned-and-runtime-logs-redact-all-credentials')
                 evidence.finish()
-            except BaseException as error:
-                evidence.finish(error)
-                raise
-        log.close()
+        except BaseException as error:
+            evidence.finish(error)
+            raise
+        finally:log.close()
 
 
 if __name__=='__main__':

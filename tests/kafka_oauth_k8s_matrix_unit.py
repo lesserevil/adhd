@@ -1,0 +1,28 @@
+"""Pure secured-Kind entry and immutable preparation guards; no resources."""
+import ast
+from pathlib import Path
+import sys
+from unittest.mock import patch
+import kafka_oauth_k8s_matrix as runner
+
+
+def main():
+    code=compile(Path(runner.__file__).read_text(),runner.__file__,'exec')
+    with patch.object(sys,'argv',[runner.__file__,'--execute']),patch('subprocess.Popen',side_effect=AssertionError('No processes')):
+        try:exec(code,{'__name__':'__main__','__file__':runner.__file__})
+        except AssertionError as error:assert 'reviewed frozen driver.py' in str(error)
+        else:raise AssertionError('Authored execution accepted')
+    with patch.object(runner,'readonly',side_effect=AssertionError('No Docker/Kube commands')):
+        try:runner.cluster_facts('/kubectl','/config','foreign','tag','broker','proxy','namespace')
+        except AssertionError as error:assert str(error)=='No Docker/Kube commands'
+        else:raise AssertionError('Unexpected commands')
+    source=Path(__file__).with_name('kafka_oauth_k8s.py').read_text()
+    tree=ast.parse(source)
+    assert len([n for n in ast.walk(tree) if isinstance(n,ast.Assert)])==48
+    assert "args.initialize_projects=True" in source and "'configMapGenerator'" in source
+    assert 'with suppress(Exception):\n                run([\'delete\'' not in source
+    assert "keytool=KeytoolProbe(PROXY_IMAGE,issuer.root)" in source
+    print('PASS securedKind preparation pure4: authored entry rejected before helpers, zero real preflight calls, original48assertions/static initialization/bootstrap additions, fixed keytoolsource and no hidden namespace-delete errors; runtimes/providers0')
+
+
+if __name__=='__main__':main()

@@ -1,0 +1,20 @@
+# Requires a provider LoadBalancer that forwards TCP without terminating TLS.
+# Existing ClusterIP hub:8766 remains the private administration/application path.
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-public-tls
+  namespace: adhd
+spec:
+  type: LoadBalancer
+  selector:
+    app: hub
+  ports:
+  - name: acme-http01
+    port: 80
+    targetPort: acme-http01
+    protocol: TCP
+  - name: native-https
+    port: 443
+    targetPort: native-https
+    protocol: TCP

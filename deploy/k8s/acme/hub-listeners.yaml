@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub
+  namespace: adhd
+spec:
+  template:
+    spec:
+      containers:
+      - name: hub
+        ports:
+        - name: acme-http01
+          containerPort: 8080
+        - name: native-https
+          containerPort: 8443

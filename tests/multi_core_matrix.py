@@ -8,6 +8,7 @@ def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  for key in ('hub','legacy-hub','repo-root','work','report'):p.add_argument('--'+key,type=Path,required=True)
+ p.add_argument('--protocol-profile',choices=('2','2.1'),required=True)
  p.add_argument('--artifact-sha256',required=True);p.add_argument('--eventing-rest-url',required=True)
  p.add_argument('--parallelism',type=int,choices=(1,2,3,4),default=2)
  a=p.parse_args();root=a.repo_root.resolve();hub=a.hub.resolve();legacy=a.legacy_hub.resolve();work=a.work.resolve()
@@ -22,7 +23,7 @@ def main():
    inputs[str(relative)]=sha(target)
  shutil.copyfile(Path(__file__),work/'matrix-driver.py')
  command=json.dumps(['elixir',str(hub)]);base=['--hub',str(hub),'--eventing-rest-url',a.eventing_rest_url,'--with-model'];old=['--legacy-hub',str(legacy)]
- jobs=[('foundation','foundation_acceptance.py',['--command',command,'--protocol-version','2']),('multi','multi_acceptance.py',base),('store-move','multi_store_move.py',base),('move-no-default','multi_store_move.py',base+['--no-default']),('hot','multi_hot.py',base),('aliases','multi_aliases.py',base+old),('backend-models','multi_model_capabilities.py',base),('auth','auth_lifecycle.py',['--command',command]),('storage-crash','storage_recovery.py',['--command',command])]
+ jobs=[('foundation','foundation_acceptance.py',['--command',command,'--protocol-version','2','--protocol-profile',a.protocol_profile]),('multi','multi_acceptance.py',base),('store-move','multi_store_move.py',base),('move-no-default','multi_store_move.py',base+['--no-default']),('hot','multi_hot.py',base),('aliases','multi_aliases.py',base+old),('backend-models','multi_model_capabilities.py',base),('auth','auth_lifecycle.py',['--command',command]),('storage-crash','storage_recovery.py',['--command',command])]
  for stage in ('before-decision','after-decision','after-first-snapshot','after-first-checkpoint','before-config','after-config','before-cleanup'):
   jobs.append(('movefault-'+stage,'multi_store_move_fault.py',base+['--crash-at',stage]))
  migrations=[('ordinary',[])]+[(s,['--crash-at',s])for s in ('before-prepared','before-decided','before-config','after-snapshot','before-completed')]+[('damage-'+x,['--damage-backup',x,'--crash-at',s])for x,s in (('config','before-decided'),('backend','before-config'),('snapshot','after-snapshot'))]

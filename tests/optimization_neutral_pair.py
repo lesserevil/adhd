@@ -13,14 +13,17 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 from types import SimpleNamespace
 import time
+from urllib.error import URLError
 
 import httpx
 
 from multi_support import Evidence, scoped
 from optimization_neutral_runtime import (RefusingModel, SealedRuntime, canonical,
-    private_seal, python_pins, sha, validate_target, verify_pins, verify_seal)
+    CustodyViolation,ExperimentFailed,ProviderUnavailable,RuntimeUnavailable,
+    log_digest,private_seal, python_pins, sha, validate_target, verify_pins, verify_seal)
 from optimization_neutral_witness import ProviderBudget, WireAgent, checks
 from project_recovery_queries import until
 
@@ -61,6 +64,11 @@ def template(parent):
             'retries':0,'borrow_unused_allowance':False},
         'order':['native','image'],'one_proposal_per_runtime':True,'adapt_to_other_result':False,
         'sealed_inputs':None,'python_dependency_sha256':python_pins(ENTRIES),
+        'preparation_parent_manifest_sha256':'a9771b97a9dd62f776e6a08e1ecbcf6f8c41658aa10019d83a0ec8869663f1e2',
+        'continuation_policy':{'allowed_failed_classes':['experiment_failed','provider_unavailable','runtime_unavailable'],
+            'stop_classes':['custody_violation','budget_scope_violation','cleanup_failed','harness_error'],
+            'required_proof':['owned_runtime_closed','relay_closed','no_budget_scope_violation','current_custody_valid','pins_intact','unrun_seals_intact'],
+            'unknown_assertion':'harness_error; stop','outcome_based_input_changes':False},
         'assertion_clarification':{'training':'Require actual completed empty search, recorded baseline recipe, confirmed gap and independent current owned groups.',
             'held_out_and_regression':'Original scan-only Archive planning is allowed only with completed expected gold answer, full nontruncated History and unchanged actual paired current-baseline/candidate answer/recall/cost/native gates.',
             'all_seven':'Require model-free empty lexical baseline and exact complete depth2 original gold closure before each original attempt.'}}
@@ -71,7 +79,7 @@ def validate_plan(plan,parent,*,bound=False):
     assert plan['historical_parent_sha256']==PARENT_SHA
     assert plan['semantic_plan']==semantics(parent) and plan['semantics_sha256']==sha(canonical(semantics(parent)))
     baseline=template(parent)
-    for key in ('budgets','order','one_proposal_per_runtime','adapt_to_other_result','assertion_clarification','native_originals_sha256'):
+    for key in ('budgets','order','one_proposal_per_runtime','adapt_to_other_result','assertion_clarification','native_originals_sha256','continuation_policy','preparation_parent_manifest_sha256'):
         assert plan[key]==baseline[key], 'Reviewed experiment/gates/order changed'
     for label in ('native','image'):
         target=plan['targets'][label]
@@ -99,8 +107,12 @@ def fixture_args(target,report):
 async def broker_identity(target):
     async with httpx.AsyncClient(trust_env=False) as client:
         response=await client.get(target['broker_rest_url']+'/v3/clusters',timeout=5)
-        response.raise_for_status();clusters=response.json()['data']
-        assert len(clusters)==1 and clusters[0]['cluster_id']==target['broker_cluster_id']
+        response.raise_for_status()
+        try:clusters=response.json()['data']
+        except (ValueError,KeyError,TypeError) as caught:raise CustodyViolation('Broker identity response invalid') from caught
+        if not (isinstance(clusters,list) and len(clusters)==1 and isinstance(clusters[0],dict)
+                and clusters[0].get('cluster_id')==target['broker_cluster_id']):
+            raise CustodyViolation('Wrong responding broker cluster identity')
         return clusters[0]['cluster_id']
 
 
@@ -289,6 +301,41 @@ def continuation(parent,seal,target):
     return m
 
 
+def failure_class(error,phase,*,cleanup_failed=False,budget_violations=False,custody_failed=False):
+    """An arbitrary assertion is never presumed to be a quality outcome."""
+    if custody_failed or isinstance(error,CustodyViolation):return 'custody_violation'
+    if budget_violations:return 'budget_scope_violation'
+    if cleanup_failed:return 'cleanup_failed'
+    if error is None:return 'none'
+    if isinstance(error,ExperimentFailed):return 'experiment_failed'
+    if isinstance(error,ProviderUnavailable):return 'provider_unavailable'
+    if isinstance(error,RuntimeUnavailable):return 'runtime_unavailable'
+    if phase=='experiment' and isinstance(error,(httpx.RequestError,URLError)):return 'runtime_unavailable'
+    if phase=='broker_identity':
+        if isinstance(error,httpx.RequestError):return 'runtime_unavailable'
+        if isinstance(error,httpx.HTTPStatusError) and (error.response.status_code>=500 or error.response.status_code==429):return 'runtime_unavailable'
+        if isinstance(error,httpx.HTTPStatusError):return 'custody_violation'
+    if phase in ('runtime_startup','runtime_versions') and isinstance(error,(OSError,subprocess.SubprocessError)):
+        return 'runtime_unavailable'
+    return 'harness_error'
+
+
+def continuation_safe(classification,proof,*,pins_intact,unrun_seals_intact):
+    allowed=classification in ('none','experiment_failed','provider_unavailable','runtime_unavailable')
+    required=('owned_runtime_closed','relay_closed','no_budget_scope_violation','current_custody_valid')
+    return allowed and pins_intact is True and unrun_seals_intact is True and all(proof.get(k) is True for k in required)
+
+
+def relay_closed_proof(budget,construction_started):
+    if budget is None:
+        return {'never_constructed':not construction_started,'closed':not construction_started}
+    return {'closed':budget.closed and budget.stopping and budget.inflight==0 and budget.handlers==0
+        and not budget.sockets and not budget.thread.is_alive() and not budget.timer.is_alive() and budget.log_handle.closed,
+        'closed_gate':budget.closed,'stopping':budget.stopping,'inflight':budget.inflight,'handlers':budget.handlers,
+        'registered_sockets':len(budget.sockets),'server_thread_alive':budget.thread.is_alive(),'timer_alive':budget.timer.is_alive(),
+        'owned_log_descriptor_closed':budget.log_handle.closed}
+
+
 async def one_leg(plan,parent,label,seal,report):
     target=plan['targets'][label];root=Path(target['fixture_root'])
     verify_seal(root,seal['closed_private_files'])
@@ -298,20 +345,27 @@ async def one_leg(plan,parent,label,seal,report):
         harness_sha256=sha(Path(__file__).read_bytes()),qualification='none',dependency_sha256=plan['python_dependency_sha256'],
         input_seal_sha256=sha(canonical(seal['closed_private_files'])),semantic_sha256=plan['semantics_sha256'],
         limitations=['Prior30 QUALITY_REGRESSION and34 MIN_EVIDENCE remain failed.','Explicit lexical profile; same seven semantic cases in two runtime profiles, not14 independent semantic cases.'])
-    f=None;budget=None;error=None
+    f=None;budget=None;error=None;phase='broker_identity';budget_started=False
     try:
         await broker_identity(target)
+        phase='runtime_adoption'
         f=SealedRuntime(fixture_args(target,report),target,adopt=True)
         m=continuation(parent,seal,target)
         # Startup/compilation is not provider time. Both manifests are already
         # sealed, and no model work is pending; a closed relay remains necessary
         # until all public pre-inference checks complete.
-        await f.start()
+        phase='runtime_startup';await f.start()
+        phase='runtime_versions'
         e.value['actual_runtime_versions']=f.versions()
+        phase='provider_construction';budget_started=True
         budget=ProviderBudget(m,root/'neutral-provider-exchanges.jsonl')
         provider_started=time.monotonic()
+        phase='experiment'
         await asyncio.wait_for(checks(f,e,m,budget),timeout=max(.01,budget.deadline-time.monotonic()))
-    except BaseException as caught:error=caught
+    except BaseException as caught:
+        error=caught
+        if budget and time.monotonic()>=budget.deadline and 'absolute-wall-deadline' not in budget.violations:
+            budget.violate('absolute-wall-deadline')
     finally:
         try:
             if budget:budget.close()
@@ -322,10 +376,33 @@ async def one_leg(plan,parent,label,seal,report):
         if f:f.bind_evidence(e)
         if budget:
             e.value['provider_budget_observed']={'upstream_http_posts':budget.count,'violations':budget.violations,
-                'inflight':budget.inflight,'exchange_log_sha256':sha(budget.log.read_bytes()),
-                'absolute_provider_allowance_seconds':900,'elapsed_including_bounded_cleanup_seconds':time.monotonic()-provider_started}
+                'inflight':budget.inflight,
+                'absolute_provider_allowance_seconds':900,'elapsed_including_bounded_cleanup_seconds':time.monotonic()-provider_started,
+                'infra_events':budget.infra_events,'custody_errors':budget.custody_errors}
+            try:e.value['provider_budget_observed']['exchange_log_sha256']=log_digest(budget.log,budget.log_identity)
+            except BaseException as caught:budget.custody_errors.append(type(caught).__name__);error=error or caught
             if budget.violations:error=error or AssertionError('Provider budget/scope violated')
             assert budget.count<=106
+        runtime_proof=f.closed_proof() if f else {'owned_process_exited':True,'process_never_constructed':True}
+        relay_proof=relay_closed_proof(budget,budget_started)
+        custody_failed=bool((f and f.custody_failures) or (budget and budget.custody_errors))
+        try:private_seal(root)
+        except BaseException as caught:
+            custody_failed=True;e.value['post_cleanup_custody_error_type']=type(caught).__name__;error=error or caught
+        classification=failure_class(error,phase,cleanup_failed=bool(e.value.get('cleanup_failure_types')),
+            budget_violations=bool(budget and budget.violations),custody_failed=custody_failed)
+        e.value.update(failure_class=classification,failure_phase=phase,
+            continuation_proof={'owned_runtime_closed':runtime_proof['owned_process_exited'] and
+                runtime_proof.get('owned_container_absent',True) and runtime_proof.get('payload_probes_verified',True),
+                'relay_closed':relay_proof['closed'],'no_budget_scope_violation':not bool(budget and budget.violations),
+                'current_custody_valid':not custody_failed,'runtime':runtime_proof,'relay':relay_proof})
+        if not (e.value['continuation_proof']['owned_runtime_closed'] and relay_proof['closed']):
+            e.value.setdefault('cleanup_failure_types',[]).append('ClosureUnproven')
+            error=error or RuntimeError('Owned runtime or relay closure unproven')
+            if e.value['failure_class'] not in ('custody_violation','budget_scope_violation'):e.value['failure_class']='cleanup_failed'
+        if error is not None:
+            e.value['observed_qualification_before_failure']=e.value.get('qualification','none')
+            e.value['qualification']='none'
         e.finish(error)
     return e.value,error
 
@@ -334,7 +411,7 @@ async def run_pair(plan,parent,reports):
     seals=load_seals(plan) # BOTH checked before either runtime sees output.
     marker=Path(reports)/'pair.once';once(marker,sha(canonical(plan)))
     results={};errors=[];posts=0
-    for label in plan['order']:
+    for index,label in enumerate(plan['order']):
         # No branch on a quality result. Image inputs/code are rechecked after
         # native, so neither its winner nor its final failures can tune image.
         verify_pins(plan['python_dependency_sha256'])
@@ -344,10 +421,20 @@ async def run_pair(plan,parent,reports):
         posts+=budget.get('upstream_http_posts',0)
         if error:errors.append(label)
         assert posts<=212
-        # Cleanup/security/transport errors cannot authorize another live leg.
-        if result.get('cleanup_failure_types') or budget.get('violations'):
-            break
-    output={'schema':'adhd/two-runtime-optimizer-result@1','passed':len(results)==2 and not errors,
+        pins_intact=True;unrun_intact=True
+        try:verify_pins(plan['python_dependency_sha256'])
+        except BaseException as caught:pins_intact=False;result['continuation_pin_error_type']=type(caught).__name__
+        try:
+            for remaining in plan['order'][index+1:]:
+                verify_seal(Path(plan['targets'][remaining]['fixture_root']),seals[remaining]['closed_private_files'])
+        except BaseException as caught:unrun_intact=False;result['continuation_seal_error_type']=type(caught).__name__
+        result.update(continuation_safe=continuation_safe(result['failure_class'],result['continuation_proof'],
+            pins_intact=pins_intact,unrun_seals_intact=unrun_intact),
+            continuation_pins_intact=pins_intact,continuation_unrun_seals_intact=unrun_intact)
+        if not (pins_intact and unrun_intact):result['continuation_failure_class']='custody_violation'
+        (Path(reports)/(label+'.json')).write_text(json.dumps(result,indent=2)+'\n')
+        if not result['continuation_safe']:break
+    output={'schema':'adhd/two-runtime-optimizer-result@1','passed':len(results)==2 and not errors and all(v['passed'] and v['continuation_safe'] for v in results.values()),
         'per_runtime_passed':{key:value['passed'] for key,value in results.items()},'provider_posts':posts,
         'maximum_provider_posts':212,'maximum_provider_seconds':1800,'plan_sha256':sha(canonical(plan)),
         'runtime_reports':{key:{'path':str(Path(reports)/(key+'.json')),'sha256':sha((Path(reports)/(key+'.json')).read_bytes())} for key in results},

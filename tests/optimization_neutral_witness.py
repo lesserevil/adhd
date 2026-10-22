@@ -21,6 +21,8 @@ from optimization_positive_witness import canonical,digest
 from project_recovery_queries import NativeFixture
 from protocol_acceptance import ByteValidator
 from optimization_provider_io import exchange
+from optimization_neutral_runtime import (CustodyViolation,ExperimentFailed,
+    ProviderUnavailable,append_held_log,log_digest,regular,safe_append)
 
 
 class ProviderBudget:
@@ -30,7 +32,9 @@ class ProviderBudget:
         self.deadline=time.monotonic()+self.budget['maximum_wall_clock_seconds']
         self.questions={c['question'] for c in manifest['preregistration']['cases'][:2]}
         self.lock=threading.Condition();self.closed=True;self.stopping=False;self.count=0;self.inflight=0;self.handlers=0;self.violations=[];self.sockets=set()
-        self.log.write_text('');self.log.chmod(0o600);outer=self
+        self.log_handle=safe_append(self.log,require_new=True)
+        info=os.fstat(self.log_handle.fileno());self.log_identity=(info.st_dev,info.st_ino)
+        self.infra_events=[];self.custody_errors=[];outer=self
         class Handler(BaseHTTPRequestHandler):
             def setup(self):
                 super().setup();self.connection.settimeout(max(.001,min(10,outer.deadline-time.monotonic())));outer.register(self.connection)
@@ -58,13 +62,19 @@ class ProviderBudget:
                 try:
                     status,body=exchange(outer.provider['url'],raw,min(outer.deadline,started+10),outer.register,outer.unregister)
                     row.update(http_status=status,response_sha256=digest(body),response_text=body.decode())
+                    if not 200<=status<300:
+                        with outer.lock:outer.infra_events.append({'sequence':number,'http_status':status})
                 except Exception as error:
                     body,status=b'{}',502;row['transport_error_type']=type(error).__name__
+                    with outer.lock:outer.infra_events.append({'sequence':number,'transport_error_type':type(error).__name__})
                 finally:
                     row['elapsed_seconds']=time.monotonic()-started
                     with outer.lock:
-                        with outer.log.open('a') as output:output.write(json.dumps(row)+'\n')
-                        outer.inflight-=1;outer.lock.notify_all()
+                        try:
+                            append_held_log(outer.log_handle,outer.log,outer.log_identity,(json.dumps(row)+'\n').encode())
+                        except BaseException as error:
+                            outer.custody_errors.append(type(error).__name__);outer.stop()
+                        finally:outer.inflight-=1;outer.lock.notify_all()
                 self.reply(status,body)
             def reply(self,status,body):
                 self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(body)));self.end_headers()
@@ -88,10 +98,26 @@ class ProviderBudget:
                     self.slots.release()
                     with outer.lock:outer.handlers-=1;outer.lock.notify_all()
             def handle_error(self,*_):outer.violate('inbound-handler-error')
-        self.server=Server(('127.0.0.1',0),Handler)
-        self.thread=threading.Thread(target=lambda:self.server.serve_forever(poll_interval=.05),daemon=True);self.thread.start()
-        self.url='http://127.0.0.1:'+str(self.server.server_port)+'/v1/systemone'
-        self.timer=threading.Timer(max(0,self.deadline-time.monotonic()),self.expire);self.timer.daemon=True;self.timer.start()
+        self.server=None;self.thread=None;self.timer=None
+        try:
+            self.server=Server(('127.0.0.1',0),Handler)
+            self.thread=threading.Thread(target=lambda:self.server.serve_forever(poll_interval=.05),daemon=True)
+            self.timer=threading.Timer(max(0,self.deadline-time.monotonic()),self.expire);self.timer.daemon=True
+            self.thread.start()
+            self.url='http://127.0.0.1:'+str(self.server.server_port)+'/v1/systemone'
+            self.timer.start()
+        except BaseException:
+            try:
+                if self.timer:self.timer.cancel()
+                self.stop()
+                if self.server:
+                    if self.thread and self.thread.is_alive():self.server.shutdown()
+                    self.server.server_close()
+                if self.thread and self.thread.ident is not None:self.thread.join(2)
+                if self.timer and self.timer.ident is not None:self.timer.join(2)
+                with self.lock:self.lock.wait_for(lambda:self.inflight==0 and self.handlers==0,timeout=12)
+            finally:self.log_handle.close()
+            raise
     def register(self,sock):
         with self.lock:
             if self.stopping:raise OSError('Relay stopped')
@@ -113,9 +139,16 @@ class ProviderBudget:
     def close(self):
         self.timer.cancel();self.stop()
         try:
-            with self.lock:assert self.lock.wait_for(lambda:self.inflight==0 and self.handlers==0,timeout=12),'Provider exchange/handler failed to settle'
+            try:
+                with self.lock:assert self.lock.wait_for(lambda:self.inflight==0 and self.handlers==0,timeout=12),'Provider exchange/handler failed to settle'
+            finally:
+                self.server.shutdown();self.server.server_close();self.thread.join(2);self.timer.join(2)
         finally:
-            self.server.shutdown();self.server.server_close();self.thread.join(2);self.timer.join(2)
+            try:
+                info=regular(self.log)
+                if (info.st_dev,info.st_ino)!=self.log_identity:raise CustodyViolation('Provider log replaced')
+            except BaseException as caught:self.custody_errors.append(type(caught).__name__);raise
+            finally:self.log_handle.close()
 
 
 class WireAgent:
@@ -139,10 +172,11 @@ def original_gap_requirement(query,detail,case,recipe):
     if detail['recipe'] is not None:assert detail['recipe']==recipe
     if case['cohort']=='training':
         search=query['search']
-        assert search and search['status']=='completed' and search['error'] is None and search['candidates']==[]
-        assert query['assessment'] is None and 'no_candidates' in query['fallback_reasons']
-        assert detail['recipe']==recipe
-        assert detail['adjudicated_diagnosis'] in ('confirmed_retrieval_gap','confirmed_context_assembly_gap')
+        if not (search and search['status']=='completed' and search['error'] is None and search['candidates']==[]
+                and query['assessment'] is None and 'no_candidates' in query['fallback_reasons']
+                and detail['recipe']==recipe
+                and detail['adjudicated_diagnosis'] in ('confirmed_retrieval_gap','confirmed_context_assembly_gap')):
+            raise ExperimentFailed('Original training attempt did not establish the required recurring gap')
 
 
 def verify(args):
@@ -175,7 +209,16 @@ async def checks(f,e,m,budget):
     e.value['frozen_originals']=copy.deepcopy(captures);e.write()
     schema=admin.client.get('/protocol/schema')[1];validator=ByteValidator({'$defs':schema['$defs'],'$ref':'#/$defs/OptimizationProposal'})
     replay_validator=ByteValidator({'$defs':schema['$defs'],'$ref':'#/$defs/ReplayQuery'})
-    def management(op,mutation=False,**fields):return admin.call(scoped(project,op,**fields),mutation=mutation)
+    def management(op,mutation=False,**fields):
+        try:return admin.call(scoped(project,op,**fields),mutation=mutation)
+        except AssertionError as caught:
+            observed=caught.args[0] if len(caught.args)==1 else None
+            if isinstance(observed,tuple) and len(observed)==4 and observed[0]==op and isinstance(observed[3],dict):
+                error=observed[3].get('error');code=error.get('code') if isinstance(error,dict) else None
+                if observed[1] in (400,409) and code in ('MIN_EVIDENCE','QUALITY_REGRESSION'):
+                    e.value['management_rejection']={'op':op,'http_status':observed[1],'code':code};e.write()
+                    raise ExperimentFailed('Fixed public optimizer evidence rejected: '+code) from caught
+            raise
     async def call(op,**fields):budget.check();return await agent.call(scoped(project,op,**fields))
     async def wait(fn):
         while True:
@@ -216,7 +259,9 @@ async def checks(f,e,m,budget):
             v=(await call('get_archive_query',query_id=q['id']))['query'];return v if v['status']!='pending' else None
         q=await wait(done)
         e.value.setdefault('actual_archive_queries',[]).append(q);e.write()
-        assert q['status']=='completed' and q['error'] is None and answer_pass(q,case,ids),'Original asserted answer/coverage failed'
+        if q['error'] and q['error']['code']=='MODEL_ERROR':raise ProviderUnavailable('Original Archive evaluator unavailable')
+        if not (q['status']=='completed' and q['error'] is None and answer_pass(q,case,ids)):
+            raise ExperimentFailed('Original asserted answer/coverage failed')
         assert q['mode']=='search_then_scan' and q['complete'] is False and q['limit']==8
         assert q['coverage']['full_scope_evaluated'] and q['scan']['error'] is None
         scan=q['scan']['coverage'];supplied=set(ids.values())
@@ -288,7 +333,9 @@ async def checks(f,e,m,budget):
         group=next(v for v in groups['items'] if v['id']==detail['group_id']);assert group['cohort']=='training' and group['owners']==[name] and not group['exposed']
     e.value.update(training_cohorts=groups,training_clusters=clusters);e.record('two-actual-completed-confirmed-independent-training-gaps-and-all-gold-answers-before-one-proposal')
     proposal=management('propose_index',True,training_attempt_ids=training)['proposal'];pid=proposal['id'];e.value['proposal_id']=pid;e.write()
-    proposal=await settled(pid);await verify_pairs(proposal);assert proposal['status']=='awaiting_evaluation' and proposal['held_out_attempt_ids']==proposal['regression_attempt_ids']==[]
+    proposal=await settled(pid);await verify_pairs(proposal)
+    if proposal['status']!='awaiting_evaluation':raise ExperimentFailed('Fixed training proposal did not produce a winner')
+    assert proposal['held_out_attempt_ids']==proposal['regression_attempt_ids']==[]
     assert len(proposal['variants'])==6
     e.value['training_freeze']=copy.deepcopy(proposal);e.record('one-winner-frozen-before-any-final-original-publication')
     final=[]
@@ -302,7 +349,7 @@ async def checks(f,e,m,budget):
         e.value['frozen_originals']=copy.deepcopy(captures);e.write();await ready(len(captures))
         aid,_=await attempt(case,ids);final.append(aid)
     management('evaluate_index',True,proposal_id=pid,held_out_attempt_ids=final[:3],regression_attempt_ids=final[3:]);proposal=await settled(pid);await verify_pairs(proposal)
-    assert proposal['status']=='qualified','Fixed cohort failed qualification; no retries or replacement proposal'
+    if proposal['status']!='qualified':raise ExperimentFailed('Fixed cohort failed qualification; no retries or replacement proposal')
     ev=proposal['evaluation'];assert ev['passed'] and ev['mean_recall_gain_ppm']>0 and ev['total_calls_delta']<=0 and ev['total_bytes_delta']<=0
     assert ev['answer_failures']==ev['answer_regressions']==ev['false_supports']==0
     assert ev['candidate_native_bytes']*1000000<=max(1,ev['baseline_native_bytes'])*m['optimization']['max_native_growth_ppm']
@@ -415,7 +462,7 @@ async def main(args):
                 f.bind_evidence(evidence)
                 if budget:
                     evidence.value['provider_budget_observed']={'upstream_http_posts':budget.count,'violations':budget.violations,
-                        'inflight':budget.inflight,'exchange_log_sha256':digest(budget.log.read_bytes())}
+                        'inflight':budget.inflight,'exchange_log_sha256':log_digest(budget.log,budget.log_identity)}
                     if budget.violations:error=error or AssertionError('Provider scope/budget violation')
                 evidence.finish(error)
     if error:raise error

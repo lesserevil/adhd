@@ -26,6 +26,12 @@ import httpx
 from multi_support import Fixture
 
 
+class CustodyViolation(AssertionError):pass
+class ExperimentFailed(AssertionError):pass
+class ProviderUnavailable(RuntimeError):pass
+class RuntimeUnavailable(RuntimeError):pass
+
+
 def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
@@ -36,10 +42,65 @@ def canonical(value):
 
 def regular(path,*,private=True):
     info=path.lstat()
-    assert stat.S_ISREG(info.st_mode) and info.st_nlink==1, 'Expected owned unlinked regular input'
-    assert info.st_uid==os.getuid(), 'Private input owner changed'
-    if private:assert not info.st_mode & 0o077, 'Private input permissions changed'
+    if not (stat.S_ISREG(info.st_mode) and info.st_nlink==1 and info.st_uid==os.getuid()):
+        raise CustodyViolation('Expected owned unlinked regular input')
+    if private and info.st_mode & 0o077:raise CustodyViolation('Private input permissions changed')
     return info
+
+
+def safe_append(path,*,require_new=False,expected=None):
+    """Open only the validated owned inode, never a symlink/replaced log."""
+    path=Path(path)
+    private=expected is not None or require_new
+    try:before=regular(path,private=private)
+    except FileNotFoundError:before=None
+    if require_new and before is not None:raise CustodyViolation('Log must be newly created')
+    if expected is not None and (before is None or (before.st_dev,before.st_ino)!=expected):
+        raise CustodyViolation('Log inode replaced')
+    flags=os.O_WRONLY|os.O_APPEND|os.O_NOFOLLOW|os.O_CLOEXEC
+    if before is None:flags|=os.O_CREAT|os.O_EXCL
+    fd=os.open(path,flags,0o600)
+    try:
+        opened=os.fstat(fd);after=regular(path,private=private)
+        identity=(opened.st_dev,opened.st_ino)
+        if not (stat.S_ISREG(opened.st_mode) and opened.st_nlink==1 and opened.st_uid==os.getuid()):
+            raise CustodyViolation('Opened log metadata changed')
+        if identity!=(after.st_dev,after.st_ino) or (before is not None and identity!=(before.st_dev,before.st_ino)):
+            raise CustodyViolation('Log changed during open')
+        return os.fdopen(fd,'ab',buffering=0)
+    except BaseException:
+        os.close(fd);raise
+
+
+def log_digest(path,expected):
+    before=regular(path)
+    if (before.st_dev,before.st_ino)!=expected:raise CustodyViolation('Provider log replaced before hashing')
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC)
+    try:
+        info=os.fstat(fd)
+        if (info.st_dev,info.st_ino)!=expected:raise CustodyViolation('Provider log changed during hash open')
+        result=hashlib.sha256();size=0
+        while True:
+            block=os.read(fd,65536)
+            if not block:break
+            size+=len(block)
+            if size>268435456:raise CustodyViolation('Provider log exceeds bounded106-exchange allowance')
+            result.update(block)
+        after=regular(path)
+        if (after.st_dev,after.st_ino)!=expected:raise CustodyViolation('Provider log replaced during hashing')
+        return result.hexdigest()
+    finally:os.close(fd)
+
+
+def append_held_log(handle,path,expected,raw):
+    """Write through the retained owned inode only while its path still binds."""
+    current=regular(path);opened=os.fstat(handle.fileno())
+    if ((current.st_dev,current.st_ino)!=expected or (opened.st_dev,opened.st_ino)!=expected
+            or opened.st_nlink!=1 or opened.st_uid!=os.getuid() or opened.st_mode & 0o077):
+        raise CustodyViolation('Provider log binding changed before append')
+    if handle.write(raw)!=len(raw):raise OSError('Short provider-log write')
+    after=regular(path)
+    if (after.st_dev,after.st_ino)!=expected:raise CustodyViolation('Provider log binding changed during append')
 
 
 def private_seal(root):
@@ -54,6 +115,7 @@ def private_seal(root):
             assert stat.S_ISDIR(info.st_mode) and info.st_uid==os.getuid() and not info.st_mode & 0o077
         for name in sorted(files):
             if name in ('stdout.log','stderr.log'):
+                regular(Path(current)/name,private=False)
                 continue
             # An interrupted snapshot write in the ORIGINAL accepted fixture
             # can leave a nonauthoritative temporary file with umask modes.
@@ -141,7 +203,7 @@ class SealedRuntime(Fixture):
             assert not root.exists(), 'Fresh image fixture must never replace an existing installation'
         super().__init__(args,initialize_projects=False)
         assert self.root==root and (self.image_runtime is not None)==(target['kind']=='image')
-        self.target=target
+        self.target=target;self.adopt=adopt;self.log_identities={};self.custody_failures=[]
         if adopt:
             self.config=json.loads(self.file.read_bytes())
             self.tokens=self.config['agents'];self.base='http://127.0.0.1:'+str(self.config['port'])
@@ -153,24 +215,32 @@ class SealedRuntime(Fixture):
 
     async def start(self):
         if not self.file.exists():
+            if self.adopt:raise CustodyViolation('Existing config disappeared; never recreate known installation')
             with self.file.open('x') as output:json.dump(self.config,output)
             self.file.chmod(0o600)
-        command=self.image_runtime.argv(self.file) if self.image_runtime else ['elixir',str(self.args.hub.resolve())]
+        regular(self.file)
+        if sha(self.args.hub.read_bytes())!=self.target['artifact_sha256']:
+            raise CustodyViolation('Native/image artifact binding changed')
+        self.logs=[]
+        for name in ('stdout.log','stderr.log'):
+            handle=safe_append(self.root/name);self.logs.append(handle)
+            info=os.fstat(handle.fileno());self.log_identities[name]=(info.st_dev,info.st_ino)
+        try:command=self.image_runtime.argv(self.file) if self.image_runtime else ['elixir',str(self.args.hub.resolve())]
+        except AssertionError as caught:raise CustodyViolation('Image payload/lifecycle identity mismatch') from caught
         if self.image_runtime:
-            assert self.image_runtime.image_id==self.target['image_config_identity']
-        self.logs=[(self.root/name).open('ab') for name in ('stdout.log','stderr.log')]
+            if self.image_runtime.image_id!=self.target['image_config_identity']:raise CustodyViolation('Image config identity changed')
         self.process=subprocess.Popen(command+[json.dumps(['serve',str(self.file)])],stdout=self.logs[0],stderr=self.logs[1],start_new_session=True)
         deadline=time.monotonic()+150
         async with httpx.AsyncClient(trust_env=False) as client:
             while time.monotonic()<deadline:
-                assert self.process.poll() is None, 'Owned runtime exited before readiness'
+                if self.process.poll() is not None:raise RuntimeUnavailable('Owned runtime exited before readiness')
                 try:
                     if (await client.get(self.base+'/health',timeout=1)).status_code==200:
                         if self.image_runtime:self.image_runtime.observe()
                         return
                 except httpx.HTTPError:pass
                 await asyncio.sleep(.1)
-        raise AssertionError('Declared150s startup bound exceeded')
+        raise RuntimeUnavailable('Declared150s startup bound exceeded')
 
     async def close(self):
         error=None
@@ -187,9 +257,25 @@ class SealedRuntime(Fixture):
                 elif self.process and self.process.poll() is None:
                     os.killpg(self.process.pid,signal.SIGKILL);self.process.wait(timeout=10)
             finally:
-                for log in self.logs:log.close()
+                for log in self.logs:
+                    try:log.close()
+                    except BaseException as caught:error=error or caught
                 self.logs=[]
+                try:self.verify_log_custody()
+                except BaseException as caught:error=error or caught
         if error:raise error
+
+    def verify_log_custody(self):
+        try:
+            for name,identity in self.log_identities.items():
+                info=regular(self.root/name,private=False)
+                if (info.st_dev,info.st_ino)!=identity:raise CustodyViolation('Opened subprocess log was replaced')
+        except BaseException as caught:
+            self.custody_failures.append(type(caught).__name__);raise
+
+    def hard_stop(self):
+        try:super().hard_stop()
+        finally:self.verify_log_custody()
 
     def versions(self):
         assert self.process is not None and self.process.poll() is None
@@ -202,6 +288,17 @@ class SealedRuntime(Fixture):
         return {'command_kind':'actual-container-exec' if self.image_runtime else 'native-toolchain',
             'stdout':result.stdout.decode(),'stderr':result.stderr.decode(),
             'stdout_sha256':sha(result.stdout)}
+
+    def closed_proof(self):
+        process_done=self.process is None or self.process.poll() is not None
+        result={'process_never_started':self.process is None,'owned_process_exited':process_done}
+        result['log_custody_valid']=not self.custody_failures
+        if self.image_runtime:
+            events=self.image_runtime.events
+            result['owned_container_absent']=(self.image_runtime.name is None and
+                (not any(v['action']=='started' for v in events) or bool(events[-1].get('observed_absent'))))
+            result['payload_probes_verified']=self.image_runtime.verified
+        return result
 
     def bind_evidence(self,evidence,key='runtime'):
         super().bind_evidence(evidence,key)

@@ -1,0 +1,32 @@
+{
+  "schema": "adhd/fixture-review@1",
+  "scope": "Pure fixture regression only; no hub, proxy, model, compiler or container started.",
+  "recorded_followup_commit": "8f12004",
+  "retained_failure_commit": "dea519e",
+  "amendment": "Refresh the full private configuration snapshot immediately after public acceptance of the external reload, before invalid-file construction.",
+  "original_fixture_sha256": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+  "fixture_sha256": "08e6c029c0cab5838b2365f75ecce4b0cfab8577570fbb5e87d17c0f6c20fab0",
+  "regression_sha256": "aa6add0bac5242dac72be21fdad54c0e7170623759a05070794511cf4ea229bb",
+  "checks": {
+    "actual_ast_regression_cases": 2,
+    "passed": true,
+    "original_assert_call_while_asts_unchanged": true,
+    "only_fixture_change": "one cfg=runtime.config assignment",
+    "new_block": {
+      "accepted_reloads": 1,
+      "final_revision": 18,
+      "invalid_boolean_rejected": true,
+      "full_normalized_snapshot_preserved": true
+    },
+    "predecessor": {
+      "original_threshold_assertion_passes": true,
+      "accepted_reloads": 2,
+      "final_revision": 19
+    }
+  },
+  "limits": [
+    "The deterministic fake schedule proves the stale-restoration premise, not the unrecorded request revision or precise timing of the historical CONFIG_CONFLICT.",
+    "Initial pure-test attempt accessed a temporary file after its context closed; corrected to capture final bytes before teardown. No application execution occurred.",
+    "No core plan reprepare or runtime rerun authorized by this proof."
+  ]
+}

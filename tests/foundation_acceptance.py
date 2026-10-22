@@ -413,6 +413,7 @@ def main():
             if admin.api({'op':'config_get'})['config']['threshold_ppm']==812345:break
             time.sleep(.1)
         else:raise AssertionError('External configuration reload did not apply')
+        cfg=runtime.config
         bad={**runtime.config,'threshold_ppm':True}
         runtime.file.write_text(json.dumps(bad))
         time.sleep(.7)

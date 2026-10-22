@@ -136,6 +136,7 @@ async def main(args):
         blue_entry, _ = route(f.file, BLUE)
         for path in (anchor, Path(str(anchor) + '.snapshot')):
             os.replace(path, path.with_name(path.name + '.lost'))
+        if args.image:f.image_runtime.rearm_for_start()
         await f.start()
         assert r.status(RED)['availability'] == 'recovery_required'
         old_entry, _ = route(f.file, RED)

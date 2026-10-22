@@ -137,7 +137,7 @@ class FilesystemFaultImage(RetainedImage):
         self.library,self.proof=validate_observer(image,library,proof,source_name)
         self.library_sha256=sha(self.library);self.proof_sha256=sha(proof)
         self.environment=dict(environment);self.stage=environment[SOURCES[source_name]['prefix']+'STAGE']
-        self.config_file=None;self.custody=[];self.armed=True
+        self.config_file=None;self.custody=[];self.armed=True;self.rearm_history=[]
 
     def argv(self,config_file):
         assert not getattr(self,'cleanup_blocked',False), 'Prior owned cleanup remains unconfirmed'
@@ -149,6 +149,20 @@ class FilesystemFaultImage(RetainedImage):
         assert self.proof['canonical_manifest_sha256']==hashlib.sha256(self.manifest_bytes).hexdigest()
         assert self.proof['artifact_sha256']==self.manifest['files']['hub.exs']
         return instrument_argv(base,self.library,self.source_name,self.environment)
+
+    def rearm_for_start(self):
+        # Project recovery legitimately kills two baseline owners before arming
+        # its delayed target operation. A witnessed fault must never be rearmed.
+        assert self.source_name=='project_recovery_fault.c'
+        assert self.name is None and self.container_id is None and not self.armed
+        assert not getattr(self,'cleanup_blocked',False) and not getattr(self,'probe_cleanup_blocked',False)
+        assert not self.custody and self.last_exit_code==137
+        previous=self.events[-1]
+        assert previous['action']=='hard-killed' and previous['exit_code']==137 and previous['wait_observed'] and previous['observed_absent']
+        arm=Path(self.environment[SOURCES[self.source_name]['prefix']+'ARM'])
+        assert not arm.exists() and not arm.is_symlink(), 'Cannot rearm after operation was armed'
+        self.rearm_history.append({'after_closed_container_id':previous['container_id'],'exit_code':137,'observed_absent':True})
+        self.armed=True
 
     def stop_at_observed_boundary(self,trace):
         assert self.armed and trace['stage']==self.stage and trace['pid']==1
@@ -169,7 +183,7 @@ class FilesystemFaultImage(RetainedImage):
         result=super().identity()
         result.update(observer_source=self.source_name,observer_library_sha256=self.library_sha256,
             observer_loader_proof_sha256=self.proof_sha256,actual_beam_kernel_custody=self.custody,
-            observer_disarmed_after_kill=not self.armed)
+            observer_disarmed_after_kill=not self.armed,observer_rearms=self.rearm_history)
         return result
 
 

@@ -392,7 +392,7 @@ def main():
     p.add_argument('--image',help='Run HTTP and CLI checks against this immutable container image')
     p.add_argument('--eventing-rest-url', default='http://127.0.0.1:18082', help='Actual Kafka REST service for profile 2')
     p.add_argument('--port-lock', type=Path, default=Path('_build/roadmap/foundation-port.lock'))
-    p.add_argument('--profile-version', choices=['1.7.0','2.0.0','2.1.0'], default='2.0.0', help='Exact application profile expected; legacy 1.7 requires explicit selection')
+    p.add_argument('--profile-version', choices=['1.7.0','2.0.0','2.1.0'], default='2.1.0', help='Exact application profile expected; legacy 1.7 requires explicit selection')
     p.add_argument('--published-schema', type=Path, default=Path('docs/protocol/schema.json'))
     p.add_argument('--published-openapi', type=Path, default=Path('docs/protocol/openapi.json'))
     p.add_argument('--report',default='verification/protocol-acceptance.json')

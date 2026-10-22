@@ -4,7 +4,7 @@ This is the target contract for MULTI-001/KAFKA-001, not a claim that an older
 accepted artifact implements it. Normative authority is
 `components/hub/multi/spec.md` and
 `components/hub/eventing/spec.md`. Existing
-[wire documentation](README.md) remains applicable except for their explicit
+[profile-1 foundation](foundation-v1.md) remains applicable except for their explicit
 replacements. Qualification must export schema/OpenAPI from the new accepted
 artifact and independently validate actual traffic; these examples are authored
 inputs, not generated evidence.
@@ -25,9 +25,11 @@ inputs, not generated evidence.
 
 Public protocol discovery must advertise supported peer versions [1,2], v2 path
 /federation/v2 and project-scoped/raw-filtered capabilities, with no private
-project list. Target schema profile is 2.0.0 because required multi-project
+project list. The base schema profile is 2.0.0 because required multi-project
 selection and raw reason shapes change existing validation assumptions; peer
-wiremajor2 is separately explicit. A2A-Version remains1.0. Old-to-new federation
+wiremajor2 is separately explicit. The additive selective-recovery profile2.1
+publishes the current [schema/OpenAPI snapshots](README.md); its descriptor
+major and peer versions stay unchanged. A2A-Version remains1.0. Old-to-new federation
 works only through the configured legacy pair. New-to-old selects v1 only from
 explicit configured compatibility, never after a v2 auth/error failure.
 

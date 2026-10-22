@@ -68,5 +68,5 @@ inspection/cancellation. Configuring the planner, inherited evaluator settings,
 audit rate and all stage budgets requires no hub restart. Operator versions are
 assertions about the configured model, not attestations of provider weights.
 
-The exact wire contract is [profile 1.5](../protocol/README.md#archive-workflow-profile-150).
+The exact wire contract is [profile 1.5](../protocol/foundation-v1.md#archive-workflow-profile-150).
 Feedback/replay and recipe promotion have separate roadmap gates.

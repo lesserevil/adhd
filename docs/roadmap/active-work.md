@@ -47,7 +47,27 @@ their exact artifact/report identities and outstanding gates. Tracker
 reconciliation and the start-of-cycle peer survey found no open
 ADHD issues/reviews or collectable existing branches.
 
-Current source34 has passed [official admission and guarded image staging](../../verification/multi-eventing/image-admission-34.json). The actual image payload matches the reviewed manifest; current image runtime/platform qualification is now in progress. [The completion review](../../verification/multi-eventing/completion-review-34.json) tracks all 87 implementation/evidence predicates across 16 items and separates completed native evidence from remaining gates. Native evidence now includes the 151-group project/migration matrix, 81 Kafka/protocol/durability checks, 52 focused UI/OpenRig checks, 117 controlled workflow/SDK groups, five actual coordinator-interference/recovery checks, 69 existing live-model cases and the six-call optional-filter/backend witness. Positive adaptive-retrieval qualification and selective project restore remain open; no program closure is implied.
+Current admitted successor38 has passed [official admission and exact image
+payload review](../../verification/project-recovery/development38/admission/manifest.json).
+Its [native core composition](../../verification/project-recovery-core38-serial/manifest.json)
+covers 169 groups, its [controlled workflow/SDK composition](../../verification/project-recovery/development38/history-second/manifest.json)
+covers 117, and its [Kafka matrix](../../verification/project-recovery-eventing38/manifest.json)
+passes all 13 suites / 66 checks. The fixed [native and image optimizer experiment](../../verification/multi-eventing/optimizer38-positive/manifest.json)
+passes both legs with 172 actual model requests; unsuccessful earlier experiments
+remain failed. The reviewed [2.1 wire publication](../../verification/protocol21-publication/manifest.json)
+retains the accepted 2.0 snapshots and binds 87 recovery vectors and eight wire groups.
+
+Integrated qualification remains open. [Native38 browser qualification](../../verification/native38-ui-initial/manifest.json)
+stopped at a genuine mobile replay-ID overflow; the [painted-text diagnosis](../../verification/native38-ui-overflow/manifest.json)
+led to a CSS-only successor39, whose 18 native self-tests pass and whose full
+browser lane is in progress as development prequalification. The [first image
+recovery attempt](../../verification/project-recovery/development38/image-recovery-serial38/manifest.json)
+passes the pending-model case and preserves a Kafka fixture settlement timeout;
+its overlapping held-callback resource profile is being corrected without changing
+product admission or the assertion deadline. Complete recovery, image/runtime and
+platform evidence must still pass before parent items close. The older
+[source34 review](../../verification/multi-eventing/completion-review-34.json)
+remains historical evidence rather than current program completion.
 
 The Kafka pivot replaces
 mandatory model matching in the target architecture, retains A2A for agents and
@@ -828,6 +848,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Update normative specs/traceability, schemas/OpenAPI/examples, agent onboarding, configuration tooling, deployment and operator recovery guides.
   - [ ] Run the complete multiple-project matrix plus existing regression suites against native and Docker artifacts and the existing model container.
   - [ ] Record acceptance identities, upgrade/rollback limitations and unresolved gates; close dependent items and the detailed roadmap only when their evidence passes.
+- **Protocol publication follow-up:** The admitted38 runtime exports schema/OpenAPI2.1 and passes the independent87-vector combined-schema and eight-group wire checks, but the protocol landing page still calls itself profile1 while its downloadable snapshots remain2.0. Publish the exact reviewed2.1 exports, retain byte-identical2.0 snapshots, separate historical profile1 semantics from current project/Kafka/recovery rules, and link conformance evidence. Publication does not close the remaining runtime/image/platform gates.
 - **Local legacy adoption compatibility follow-up:** The oldest supported actual producer writes a valid closed schema1 checkpoint with historical mode0664 and no persisted server ID; successor16 applies imported-bundle private-mode checks during local identity probing and registry adoption, rejecting the unchanged accepted source. Keep bundle/import checks strict and preserve source16. In a separate derived successor, add an explicit local-only bounded owned regular/nlink1/no-symlink reader, safe checkpoint/snapshot preflight and project/server proof; create only private verified staged generations before native opening, retaining original files and migration rollback backups unchanged. Source37 now has component, file-proof, native and actual interrupted-upgrade/cold-replacement evidence; its four SDK ladders pass, while the additional schema2 identity case below requires successor38. Final native, lifecycle, image and platform qualification remain open.
 - **Pre-federation schema2 compatibility:** Source37 passes all four SDK producer ladders and seven current context groups, but the existing Context suite's second supported historical producer also lacks a persisted server ID. Its actual closed schema2 checkpoint passes pure physical parsing and complete graph validation; source37 rejects only because its identity genesis guard permits schema1 alone. Extend verified historical absence to schema1 and schema2 in a new immutable successor. Keep schema3-and-later missing IDs, malformed or conflicting IDs, unclosed-checkpoint rules and imported-bundle permissions fail closed. Retain the source37 failure and qualify both historical producers through upgrade and cold restart before claiming the full context suite.
   - [ ] Qualify real oldest-producer0664 and historical snapshot permissions, exact bytes/IDs/acks/retries and cold restart; repair a copy of the actual interrupted prepared migration; prove malformed/foreign/wrong-project/symlink/hardlink/non-owned inputs retain bytes/mode/inode and open no native checkpoint. Recheck strict imported-bundle permission rejection; bind evidence to the repaired successor without relabeling source16.

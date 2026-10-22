@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Protocol: publish the reviewed application 2.1 schema/OpenAPI with selective
+  recovery contracts, examples and conformance evidence. Retain exact 2.0 exports
+  and separate historical profile-1 semantics from current project/Kafka rules.
+  Integrated runtime and deployment qualification remains in progress.
+
 - Hub storage: validate supported historical local checkpoints before migration,
   preserve original files and rollback backups, and adopt verified pre-federation
   identities into private generations. Imported backups retain strict ownership

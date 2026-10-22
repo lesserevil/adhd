@@ -87,9 +87,17 @@ now records two independent sequential builds with identical image, configuratio
 and filesystem-layer identities. Its create-only offline audit verifies the exact
 59-file application payload, 33 specifications, 59 compiled modules and 65 cache
 entries, normalized timestamps and owned-container absence. This is scoped build
-and payload evidence. Next: finish the image's cache, ABI, full recovery, readiness
-and affected integration/deployment gates. Native evidence does not qualify that
-image's runtime behavior.
+and payload evidence. Its [complete cache/CLI gate](../../verification/container-cache41-positive/audit.json)
+now passes all 17 groups, including 18 built-in tests and all 12 corruption
+rejections. The [six-family ABI gate](../../verification/ownedMULTI008/source41-image-abi-positive/audit.json)
+passes all 19 physical probes, with actual container identities absent; the
+historical runner's unretained issued-name limitation is stated explicitly.
+The [compiled retention companion](../../verification/eventing-retention-compiled41-positive/audit.json)
+passes all three recovery checks across three actual default-entrypoint VMs,
+verifying 59 application files and 67 cache/toolchain files in each VM and complete
+owned cleanup. Next: finish full recovery, compiled readiness and affected
+integration/deployment gates. Native evidence does not qualify the image's runtime
+behavior.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

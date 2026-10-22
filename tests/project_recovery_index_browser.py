@@ -14,7 +14,8 @@ from playwright.async_api import async_playwright, expect
 
 from multi_support import Evidence, Fixture, arguments
 from project_recovery_acceptance import BLUE, RED
-from project_recovery_browser import capture, login
+from project_recovery_browser import login
+from browser_observation import BrowserObservation, capture
 from project_recovery_state import digest
 
 
@@ -22,9 +23,9 @@ async def viewport(args, browser, name, width, height, evidence):
     local=copy.copy(args);local.keep_work=args.keep_work/name;local.with_model=False
     f=Fixture(local);f.config['eventing']={'enabled':False}
     context=await browser.new_context(viewport={'width':width,'height':height})
-    errors=[];release=None
+    release=None
     page=await context.new_page()
-    page.on('pageerror',lambda error:errors.append(str(error)))
+    observation=BrowserObservation(page,f.base)
     try:
         await f.start()
         password=re.search(r'^Password: (.+)$',(f.root/'initial-admin-password.txt').read_text(),re.M)[1]
@@ -39,6 +40,7 @@ async def viewport(args, browser, name, width, height, evidence):
                 if body.get('op')=='retrieval_index' and body.get('project_id')==project and not captured.is_set():
                     response=await route.fetch()
                     assert response.status==200
+                    observation.allow(route.request,op='retrieval_index',project=project,aborted=True)
                     captured.set();await release.wait()
                     await route.fulfill(response=response);fulfilled.set()
                 else:await route.continue_()
@@ -65,14 +67,14 @@ async def viewport(args, browser, name, width, height, evidence):
             else:await expect(page.locator('#content').get_by_role('heading',name=RED,exact=True)).to_have_count(0)
             await page.unroute('**/admin/api',delayed)
             evidence.record(name+'-held-actual-index-'+phase+'-does-not-write-old-content-or-global-alert')
-        assert not errors,errors
+        evidence.value.setdefault("browser_observations",[]).append(observation.check())
         # A current-context failure must still be shown. Revoke the real Viewer's
         # admission after the overview succeeded, before its actual index request.
         user=f.admin().call({'op':'save_user','user':{'username':'index-viewer','name':'Index viewer',
             'email':'index-viewer@example.invalid','password':'private-index-viewer-password','role':'Viewer','project_ids':[BLUE]}},mutation=True)['user']
         viewer=await browser.new_context(viewport={'width':width,'height':height})
         try:
-            child=await viewer.new_page();child.on('pageerror',lambda error:errors.append(str(error)))
+            child=await viewer.new_page();child_observation=BrowserObservation(child,f.base)
             await login(child,f.base,'index-viewer','private-index-viewer-password')
             await expect(child.get_by_role('heading',name='Retrieval index',exact=True).locator('..')).to_contain_text('archive watermark')
             captured,release,fulfilled=asyncio.Event(),asyncio.Event(),asyncio.Event()
@@ -82,6 +84,8 @@ async def viewport(args, browser, name, width, height, evidence):
                 if body.get('op')=='retrieval_index' and not captured.is_set():
                     captured.set();await release.wait()
                     response=await route.fetch();body=await response.json();actual_status.append((response.status,body['error']['code']))
+                    assert (response.status,body['error']['code']) in {(403,'FORBIDDEN'),(404,'PROJECT_NOT_FOUND')}
+                    child_observation.allow(route.request,op='retrieval_index',status=response.status,project=BLUE)
                     await route.fulfill(response=response);fulfilled.set()
                 else:await route.continue_()
             await child.route('**/admin/api',current_error)
@@ -98,14 +102,19 @@ async def viewport(args, browser, name, width, height, evidence):
             await expect(child.get_by_role('heading',name='Overview',exact=True)).to_be_visible()
             captures.append(await capture(child,f.root,'current-context-error'));evidence.value.setdefault('captures',[]).append(captures[-1])
             evidence.record(name+'-actual-current-context-index-denial-remains-visible',http_status=status,error=code)
-        finally:await viewer.close()
-        assert not errors,errors
+        finally:
+            try:evidence.value.setdefault("browser_observations",[]).append(child_observation.check())
+            finally:await viewer.close()
+        evidence.value.setdefault("browser_observations",[]).append(observation.check())
     finally:
         if release is not None:release.set()
-        try:await context.close()
+        try:
+            evidence.value.setdefault("browser_observations",[]).append(observation.check())
         finally:
-            try:await f.close()
-            finally:f.bind_evidence(evidence,key=name+'_runtime');evidence.write()
+            try:await context.close()
+            finally:
+                try:await f.close()
+                finally:f.bind_evidence(evidence,key=name+'_runtime');evidence.write()
 
 
 async def main(args):

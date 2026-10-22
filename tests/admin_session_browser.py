@@ -10,6 +10,7 @@ import tempfile
 
 from playwright.async_api import async_playwright, expect, Error as BrowserError
 from multi_workflow_upgrade import UpgradeRuntime
+from browser_observation import BrowserObservation, capture
 
 
 async def viewport_check(pw, runtime, password, viewport, report):
@@ -18,12 +19,10 @@ async def viewport_check(pw, runtime, password, viewport, report):
     page = await context.new_page()
     page.set_default_timeout(15000)
     held, release, finished = asyncio.Event(), asyncio.Event(), asyncio.Event()
-    first, errors, replies = [], [], []
-    normal_http, normal_console = [], []
-    phase = {"negative": False}
-    page.on("response", lambda r: normal_http.append(r.status) if r.status >= 400 and not phase["negative"] else None)
-    page.on("console", lambda m: normal_console.append(m.text) if m.type == "error" and not phase["negative"] else None)
-    page.on("pageerror", lambda error: errors.append(str(error)))
+    first, replies = [], []
+    observation=BrowserObservation(page,runtime.base)
+    label="desktop" if viewport["width"]==1440 else "mobile"
+    captures=[]
 
     async def intercept(route):
         request = route.request
@@ -35,6 +34,7 @@ async def viewport_check(pw, runtime, password, viewport, report):
             await route.continue_()
             return
         first.append(True)
+        observation.allow(request,op="list_projects",status=401,aborted=True)
         headers = await request.all_headers()
         held.set()
         probe = None
@@ -80,19 +80,18 @@ async def viewport_check(pw, runtime, password, viewport, report):
                "server_session_authenticated": session.get("authenticated"),
                "workspace_visible": await page.locator("#workspace").is_visible(),
                "login_visible": await page.get_by_label("Username", exact=True).is_visible(),
-               "page_errors": list(errors), "normal_http_errors": normal_http,
-               "normal_console_errors": normal_console}
+               "browser_observation": observation.check(), "captures":captures}
         report["observations"].append(row)
         assert replies == [{"op": "list_projects", "status": 401}]
         assert row["server_session_authenticated"] and row["workspace_visible"]
-        assert not row["login_visible"] and not errors and not normal_http and not normal_console
+        assert not row["login_visible"]
+        captures.append(await capture(page,runtime.root,label+"-replacement-session"))
 
         # A current-session revocation must still take effect. The revoker owns
         # a separate cookie jar, so its Set-Cookie cannot clear browser cookies.
         await page.get_by_role("button", name="Settings", exact=True).click()
         validate = page.get_by_role("button", name="Validate settings", exact=True)
         await expect(validate).to_be_visible()
-        phase["negative"] = True
         cookies = await context.cookies(runtime.base + "/admin")
         assert any(c["name"] == "adhd_session" for c in cookies)
         cookie = "; ".join(c["name"] + "=" + c["value"] for c in cookies)
@@ -105,14 +104,23 @@ async def viewport_check(pw, runtime, password, viewport, report):
         finally:
             await revoker.dispose()
         async with page.expect_response(lambda r: r.url == runtime.base + "/admin/api"
-                                         and r.status == 401):
+                                         and r.status == 401
+                                         and r.request.method == "POST"
+                                         and r.request.post_data_json.get("op") == "config_validate") as denied:
             await validate.click()
+        response=await denied.value
+        observation.allow(response.request,op="config_validate",status=401)
         await expect(page.get_by_label("Username", exact=True)).to_be_visible()
+        captures.append(await capture(page,runtime.root,label+"-current-session-revoked"))
+        row["browser_observation"]=observation.check()
         row["current_session_revocation_returns_to_login"] = True
         row["passed"] = True
     finally:
         release.set()
-        await browser.close()
+        try:
+            if not page.is_closed():
+                report.setdefault("final_browser_observations",[]).append(observation.check())
+        finally:await browser.close()
 
 
 async def run(runtime, password, report):

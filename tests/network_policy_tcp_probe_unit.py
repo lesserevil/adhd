@@ -88,6 +88,17 @@ class Guards(unittest.TestCase):
   self.assertEqual(args[args.index('--cap-drop')+1],'ALL')
   self.assertNotIn('--privileged',args);self.assertNotIn('--pid',args)
   obj.cleanup.assert_called_once_with(obj.ledger[0])
+ def test_original_exec_cap_and_separate_startup_lifetime(self):
+  self.assertEqual((m.STARTUP_READY_SECONDS,m.PROBE_EXEC_SECONDS,m.SERVER_LIFETIME_SECONDS),(30,40,180))
+  with mock.patch.object(m.time,'monotonic',return_value=100):
+   self.assertEqual(m.remaining_seconds(280),40)
+   self.assertEqual(m.remaining_seconds(130),30)
+   self.assertEqual(m.remaining_seconds(102),2)
+   with self.assertRaises(AssertionError):m.remaining_seconds(100)
+   with self.assertRaises(AssertionError):m.remaining_seconds(99)
+ def test_all_original25_observations_preserved(self):
+  self.assertEqual(m.CASES,[('fragmented',10001,0,'REACHABLE\n'),('wrong',10002,2,''),('short',10003,2,''),('extra-suffix-prefix-semantics',10004,0,'REACHABLE\n'),('receive-timeout',10005,2,''),('refused',10006,0,'DENIED\n'),('unroutable',9092,0,'DENIED\n')])
+  self.assertEqual(6+5+len(m.CASES)*2,25)
  def test_source_only_cannot_execute(self):
   with mock.patch.object(m.sys,'flags',mock.Mock(isolated=1,no_site=1)),mock.patch.object(m.sys,'dont_write_bytecode',True),mock.patch.object(m,'TCPRunner') as runner:
    with self.assertRaises(AssertionError):m.execute(Path('/unused'),{'execution_ready':False},None)

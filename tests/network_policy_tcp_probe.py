@@ -16,6 +16,9 @@ import time
 IMAGE = 'sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21'
 ADMISSION_SHA = 'a78519154311d105ed84ed2e0887490b47d22807141eb2371163fc2c1a0b0f03'
 BANNER = b'adhd-policy-v1\n'
+STARTUP_READY_SECONDS = 30
+PROBE_EXEC_SECONDS = 40
+SERVER_LIFETIME_SECONDS = 180
 # Fixed no-app fault fixture. Each connection gets the same declared bytes.
 FAULT_SERVER = r'''
 for {port, parts, delay} <- [
@@ -80,6 +83,10 @@ def probe_literal(raw):
  assert '[:timeout, :ehostunreach, :enetunreach, :econnrefused]' in probe
  return probe
 
+def remaining_seconds(deadline,cap=PROBE_EXEC_SECONDS):
+ left=deadline-time.monotonic();assert left>0,'standalone witness lifetime exceeded'
+ return min(cap,left)
+
 def compile_binding(elf,proof,source,compiler_plan):
  data=read(elf,1048576);record=json.loads(read(proof)); assert record['passed'] is True
  # Explicit named compile product prevents binding an unrelated successful build.
@@ -103,11 +110,21 @@ def prepare(args):
  originals={'driver.py':Path(__file__),'runner.py':own/'policy_kind_counter_run3.py','prepare.py':own/'policy_kind_counter_prepare.py',
             'policy.py':root/'tests/kafka_network_policy.py'}
  for name,path in originals.items():(inp/name).write_bytes(read(path))
+ predecessor=own.parent/'_build/network-policy-static-protocol-e2-01'
+ previous_plan=read(predecessor/'plan.json');previous_result=read(predecessor/'result.json');previous=json.loads(previous_plan);failed=json.loads(previous_result)
+ assert sha(previous_plan)=='c3109a9dbab108cfdca813e09a8d6166c37c3349ca28163e59899ca2c3078c35'
+ assert failed['passed'] is False and failed['inputs_unchanged'] and failed['all_issued_containers_absent']
+ assert previous['cases']==json.loads(canon(CASES)) and previous['image']==IMAGE
+ assert sha(source)==previous['inputs']['files']['tcp.c']
+ assert sha(FAULT_SERVER.encode())==previous['inputs']['files']['fault-server.exs']
+ assert sha(probe_literal(read(root/'tests/kafka_network_policy.py')).encode())==previous['inputs']['files']['original-probe.exs']
+ for name,raw in {'previous-plan.json':previous_plan,'previous-result.json':previous_result,'previous-once.json':read(predecessor/'EXECUTION_STARTED')}.items():(inp/name).write_bytes(raw)
  for name,raw in {'admission.json':admission,'context-manifest.json':context,'tcp.c':source,'compiler-plan.json':compiler_plan,
                   'fault-server.exs':FAULT_SERVER.encode(),'original-probe.exs':probe_literal(read(root/'tests/kafka_network_policy.py')).encode()}.items():(inp/name).write_bytes(raw)
  helper=module(inp/'prepare.py','tcp_prepare')
  if ready:
   elf=compile_binding(args.elf,args.compile_proof,source,compiler_plan);assert helper.elf_dependencies(elf)==([],[])
+  assert sha(elf)==previous['inputs']['files']['tcp'] and sha(read(args.compile_proof))==previous['inputs']['files']['compile-proof.json']
   (inp/'tcp').write_bytes(elf);(inp/'compile-proof.json').write_bytes(read(args.compile_proof));os.chmod(inp/'tcp',0o555)
  for p in inp.iterdir():
   if p.name!='tcp':os.chmod(p,0o444 if p.name=='fault-server.exs' else 0o400)
@@ -117,8 +134,8 @@ def prepare(args):
        'driver_sha256':sha(read(Path(__file__))),'inputs':inventory(inp),'admission_sha256':ADMISSION_SHA,
        'tools':{'docker':base.bind('/usr/bin/docker'),'python':base.bind('/home/horde/src/adhd/.venv/bin/python')},
        'socket':{'path':'/run/docker.sock','identity':[socket.st_dev,socket.st_ino]},'Python_stdlib':helper.tree('/usr/lib/python3.12'),
-       'host_clock_proof':base.host_clock(),'bounds':{'containers':2,'seconds_each':30,'CPU':1,'memory':201326592,'pids':64,'output_each':65536,'output_total':1048576,'parallelism':1,'retries':0},
-       'cases':CASES,'scope':'No-app TCP fixture protocol only. Prefix15 LF semantics; extra suffix accepted. Four-source errno mappings retained, actual network-none refused/unroutable observations only; no inference of all four errno execution. No routes/Kafka/hub/CNI/application qualification.'}
+       'host_clock_proof':base.host_clock(),'bounds':{'containers':2,'server_lifetime_seconds':SERVER_LIFETIME_SECONDS,'startup_ready_seconds':STARTUP_READY_SECONDS,'probe_exec_seconds':PROBE_EXEC_SECONDS,'connect_timeout_ms':1000,'receive_timeout_ms':1000,'CPU':1,'memory':201326592,'pids':64,'output_each':65536,'output_total':1048576,'parallelism':1,'retries':0},
+       'predecessor':{'plan_sha256':sha(previous_plan),'result_sha256':sha(previous_result),'false_preserved':True},'cases':CASES,'standalone_lifetime_reason':'Separate cold original Elixir CLI cross-checks need original exec40; lifetime180 bounds this no-app witness only. Original CNI Ready30/exec40/convergence60 unchanged; no retries/socket timeout extension.', 'scope':'No-app TCP fixture protocol only. Prefix15 LF semantics; extra suffix accepted. Four-source errno mappings retained, actual network-none refused/unroutable observations only; no inference of all four errno execution. No routes/Kafka/hub/CNI/application qualification.'}
  (w/'plan.json').write_bytes(canon(plan));return {'plan':str(w/'plan.json'),'sha256':sha(canon(plan)),'execution_ready':ready,'starts':0}
 
 def verify(work,expected):
@@ -161,7 +178,7 @@ class TCPRunner:
   commands=[('native',['/probe/tcp','probe',host,str(port)])]
   if crosscheck:commands.append(('original-Elixir',['/usr/local/bin/elixir','-e',read(self.w/'inputs/original-probe.exs').decode(),'--',host,str(port)]))
   for kind,cmd in commands:
-   row=self.r.docker(['exec','--user','1000:1000','--env','ERL_FLAGS=+S 1:1',item['id']]+cmd,seconds=min(4,max(.001,item['deadline']-time.monotonic())))
+   row=self.r.docker(['exec','--user','1000:1000','--env','ERL_FLAGS=+S 1:1',item['id']]+cmd,seconds=remaining_seconds(item['deadline']))
    expected_probe(row,code,out);item['cases'].append({'case':label,'probe':kind,'passed':True,'exit_code':code,'stdout':out})
   assert time.monotonic()<item['deadline']
  def cleanup(self,item):
@@ -196,20 +213,22 @@ class TCPRunner:
   args+=[self.p['image']]+command;error=None
   try:
    created=self.r.docker(args);assert created['exit_code']==0 and re.fullmatch('[a-f0-9]{64}',created['stdout'].strip());item['id']=created['stdout'].strip()
-   self.owned(self.r.inspect(item['id']),item);item['deadline']=time.monotonic()+30
+   self.owned(self.r.inspect(item['id']),item);begin=time.monotonic();item['deadline']=begin+SERVER_LIFETIME_SECONDS;ready_deadline=begin+STARTUP_READY_SECONDS
    start=self.r.docker(['start',item['id']]);assert start['exit_code']==0
    # Poll exact native probe until startup completes; never repeat a qualification case.
    while True:
-    assert time.monotonic()<item['deadline']
-    row=self.r.docker(['exec','--user','1000:1000',item['id'],'/probe/tcp','probe','127.0.0.1',str(8082 if kind=='static' else 10001)],seconds=min(3,max(.001,item['deadline']-time.monotonic())))
+    assert time.monotonic()<ready_deadline
+    row=self.r.docker(['exec','--user','1000:1000',item['id'],'/probe/tcp','probe','127.0.0.1',str(8082 if kind=='static' else 10001)],seconds=remaining_seconds(ready_deadline))
+    assert time.monotonic()<ready_deadline
     assert row['error'] is None and row['exit_code']==0 and row['stdout'] in ('REACHABLE\n','DENIED\n') and row['stderr']==''
     if row['stdout']=='REACHABLE\n':break
-    assert time.monotonic()<item['deadline'];time.sleep(.05)
+    assert time.monotonic()<ready_deadline;time.sleep(.05)
+   item['startup_elapsed_seconds']=time.monotonic()-begin;assert item['startup_elapsed_seconds']<STARTUP_READY_SECONDS
    initial=self.owned(self.r.inspect(item['id']),item);assert initial['State']['Running'];item['started_at']=initial['State']['StartedAt']
    if kind=='static':
     for port in (8082,9092,9093):self.probe(item,'static-port-'+str(port),'127.0.0.1',port,0,'REACHABLE\n')
     for command in ([],['probe','bad-address','8082'],['probe','127.0.0.1','0'],['probe','127.0.0.1','65536'],['probe','127.0.0.1','abc']):
-     row=self.r.docker(['exec','--user','1000:1000',item['id'],'/probe/tcp']+command,seconds=min(3,max(.001,item['deadline']-time.monotonic())))
+     row=self.r.docker(['exec','--user','1000:1000',item['id'],'/probe/tcp']+command,seconds=remaining_seconds(item['deadline']))
      expected_probe(row,3,'');item['cases'].append({'case':'invalid-input','argv':command,'passed':True,'exit_code':3})
    else:
     for label,port,code,out in CASES:self.probe(item,label,'192.0.2.1' if label=='unroutable' else '127.0.0.1',port,code,out)

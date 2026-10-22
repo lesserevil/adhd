@@ -1,0 +1,179 @@
+{
+  "suite": "adhd/accepted-kafka-platform@1",
+  "started_at": "2026-10-22T09:44:33.316601+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-image-payload-and-complete-specification-manifest-match-accepted-staging-inputs",
+      "passed": true
+    },
+    {
+      "name": "actual-profile21-explicit-admin-initialization-of-all-platform-projects",
+      "passed": true,
+      "initialized_projects": 3
+    },
+    {
+      "name": "full-no-model-image-accepts-a2a-original-source-idempotency-and-durable-unacknowledged-delivery",
+      "passed": true,
+      "broker_next_offset": 1
+    },
+    {
+      "name": "hub-broker-proxy-replacements-preserve-server-original-retry-delivery-and-checkpoint-then-advance",
+      "passed": true,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "name": "real-8.3.1-to-8.3.2-same-volume-broker-upgrade-preserves-a2a-originals-acks-unacked-identities-and-cursor-with-outage-acceptance",
+      "passed": true,
+      "before": 2,
+      "after": 5,
+      "volume": "adhd-final-c05-baseline2-compose_kafka-data",
+      "hub_and_proxy_unrestarted": true,
+      "override_sha256": "b002f93ae2bf3d7631ad64da31e7a46dad5ad5d71b00b5ad432d6654b1ed78a0"
+    },
+    {
+      "name": "consistent-offline-config-all-project-stores-and-kafka-recovery-set-created",
+      "passed": true,
+      "archives_sha256": {
+        "hub-state.tgz": "1d540564ab1f55dcac2a6c51fe146822e46650d64af7e7414e79a8dbdb4843fd",
+        "kafka-state.tgz": "052621d6aca66cabcc445d8e43a4743f7c7340658cb903f5284cc1b67beb401f"
+      },
+      "recovery_manifest_sha256": "3bd39e9250eb164772a84c612dbe881c84aa4837617838ae1d4c7db3b62fce44"
+    },
+    {
+      "name": "actual-cold-restore-recovers-both-projects-config-credentials-acks-delivery-identities-and-broker-cursors-then-advances",
+      "passed": true,
+      "red_offset": 5,
+      "blue_offset": 1,
+      "intentional_postbackup_sentinel_absent": true
+    },
+    {
+      "name": "stopped-hub-target-only-loss-preserves-bytes-and-leaves-broker-and-proxy-running",
+      "passed": true,
+      "checkpoint_sha256": "e19e6224024ad44faa9584a17468b19490bd55af95e247c947dc9216d79d9b69",
+      "snapshot_sha256": "3ffbd25060e201b6d27cf58f3344cac189f8dedb9c48259023305fbfac0d748f",
+      "original_file_identities": [
+        "64769:8701038:1003:1003:600:210701",
+        "64769:8702534:1003:1003:600:63999"
+      ],
+      "registry_sha256": "eb9da3961d718e0df735caef57e13d64f101533f15591d7f21d63e094f3f67bd"
+    },
+    {
+      "name": "selective-red-restore-preserves-current-blue-security-and-broker-without-vm-restart",
+      "passed": true,
+      "old_red_log_unchanged": true,
+      "blue_ack_and_private_queue_unchanged": true,
+      "backup_manifest_sha256": "e8a9b22d10cdc0b805fa90f93fa48eb65d02948a6d5821650f9afe8361556438",
+      "source_archive_sha256": "1d540564ab1f55dcac2a6c51fe146822e46650d64af7e7414e79a8dbdb4843fd"
+    },
+    {
+      "name": "selective-restored-route-current-blue-and-global-config-survive-hub-only-replacement-and-advance",
+      "passed": true
+    },
+    {
+      "name": "owned-platform-services-and-durable-volumes-removed-with-redacted-logs",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "One broker and one hub; no replicated availability qualification.",
+    "Baseline private network, no OAuth/SASL qualification in this probe.",
+    "Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate."
+  ],
+  "platform": "compose",
+  "release_qualified": false,
+  "selective_recovery_requested": true,
+  "model_only_requested": false,
+  "required_application_profile": "2.1.0",
+  "harness_dependencies_sha256": {
+    "multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+    "hub_acceptance.py": "ddfb691f1d5a52a0b328613ac9db7617c3ebd732ca457e86a42b4febfa10e222",
+    "kafka_selective_platform.py": "f17e456df2d62f9e95d6cdfa62f9982b4775c107636e6fe2ff61e66ff56c5272",
+    "project_recovery_acceptance.py": "8ccd66fedabeb1fe19f47ebdf286db159fb34261726f2cf59a31eb22dd0ab4d9",
+    "project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa"
+  },
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "image_config_digest": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "acceptance_sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec",
+  "staging_sha256": {
+    "manifest.json": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "payload.tar": "f8b6bf6b66c2a98b640f316c6568757f6f4e6dc25f15e9f13af48e3c75dd42d8",
+    "Dockerfile": "9ded107e56e6d142c629632d9eae514fb15c34aca689de73a07eeeddec5f9efa"
+  },
+  "input_sha256": {
+    "tests/kafka_final_platform.py": "45d143c1362c7f9ba94f0b591cc3e90b6d7f34ac465b4a6143a461bf0f9289d6",
+    "deploy/app.compose.yaml": "caae0b621b7b380fad3d509dd6c09aa50b5b68b2d6f10c32f8a0929cb487934a",
+    "deploy/events.compose.yaml": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0",
+    "deploy/k8s/hub.yaml": "20f26eca2660146d35311c83ebaf3c6c9accb9becbc3f82e8f5fa43e77605cb5",
+    "deploy/init-config.py": "6e559cb28078757c67d04908b2f45fe93f94668d6d64d6305172732dbf281d5c"
+  },
+  "offline_helper_mode_probe": {
+    "passed": true,
+    "report_sha256": "e68baa54e1fdf4ae69949217f319d01288e9b4f22ca5f4d065e879256aaf7341"
+  },
+  "broker_upgrade_inputs": {
+    "from": "confluentinc/cp-kafka@sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e",
+    "to": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+    "image_configs": {
+      "confluentinc/cp-kafka@sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e": "sha256:c584e12277be7195dbb71793ae288b26550ef218b5d61013d768942a8a8b13f8",
+      "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f": "sha256:9ab6c5cff1917c68eb53bba30c9fbe135a322339aa2c8169564ae6d25c0a4ce2"
+    },
+    "wrapper_sha256": "1e840ad139d4087e11f743178afdf75789967e9fb3fe0563318b29026a64a5aa",
+    "initial_override_sha256": "235acee1136e57cf6bd1e1787aa61891c944d0c55aa6f5d24649d9dfafdab39c"
+  },
+  "compiled_vm_custody": [
+    {
+      "scope": "actual Docker host PID private container",
+      "container_id": "892b68c598231ff08195729a6cd41faa5518227cdd66eef9be2bf4e990fb49f7",
+      "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "entrypoint": [
+        "elixir",
+        "/runtime/adhd/boot.exs",
+        "/app/hub.exs"
+      ],
+      "process": {
+        "pid": 3540575,
+        "start_ticks": "22022789",
+        "executable_basename": "beam.smp",
+        "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+        "actual_compiled_boot_and_app_arguments": true
+      },
+      "started_at": "2026-10-22T09:45:29.52591252Z",
+      "restart_count": 0
+    },
+    {
+      "scope": "actual Docker host PID private container",
+      "container_id": "40bba1399b0f4c0c7a806d0f46fc65f0cd0ba387771f8a887ecad464a60afec0",
+      "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+      "entrypoint": [
+        "elixir",
+        "/runtime/adhd/boot.exs",
+        "/app/hub.exs"
+      ],
+      "process": {
+        "pid": 3596650,
+        "start_ticks": "22057686",
+        "executable_basename": "beam.smp",
+        "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+        "actual_compiled_boot_and_app_arguments": true
+      },
+      "started_at": "2026-10-22T09:51:18.480740198Z",
+      "restart_count": 0
+    }
+  ],
+  "runtime_hub_image_config_digest": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "replaced_resources": [
+    "hub",
+    "kafka",
+    "kafka-rest"
+  ],
+  "cleanup": {
+    "owned_platform": true,
+    "resources_independently_absent": true,
+    "failures": []
+  },
+  "finished_at": "2026-10-22T09:51:43.174992+00:00"
+}

@@ -101,7 +101,8 @@ class ImageRebindRuntime:
                 start_time=Path('/proc/'+str(pid)+'/stat').read_text().rsplit(')',1)[1].split()[19]
             except FileNotFoundError:time.sleep(.02);continue
             if executable.name not in ('beam.smp','beam'):time.sleep(.02);continue
-            assert b'/app/hub.exs' in cmdline.split(b'\0') and session['serialized'].encode() in cmdline.split(b'\0')
+            expected=(session['component_argv'] if session['command_kind']=='component' else ['/app/hub.exs',session['serialized']])
+            assert expected and all(isinstance(arg,str) and arg.encode() in cmdline.split(b'\0') for arg in expected)
             assert namespace!=os.readlink('/proc/self/ns/pid')
             target.observe()
             again=json.loads(target.docker('inspect',target.name).stdout)[0]

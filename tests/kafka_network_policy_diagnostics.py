@@ -17,8 +17,20 @@ class CommandUnavailable(Exception): pass
 
 LIMITS = {'anchor_seconds': 30, 'capture_seconds': 60, 'command_seconds': 10,
           'total_bytes': 8 * 1024 * 1024, 'metadata_bytes': 2 * 1024 * 1024,
-          'log_bytes': 65536, 'tail_lines': 200, 'pods': 4, 'containers': 4,
+          'log_bytes': 65536, 'tail_lines': 200, 'pods': 4, 'containers': 5,
           'log_requests': 16}
+
+# Exact reviewed v3.33.0 pinned DaemonSet/Deployment template names.
+EXPECTED_CONTAINERS = {
+    'calico-node': ('upgrade-ipam','cni-plugins','install-cni','ebpf-bootstrap','calico-node'),
+    'calico-kube-controllers': ('calico-kube-controllers',),
+}
+
+def container_names(pod, pin):
+    names = [v['name'] for k in ('initContainers','containers') for v in pod['spec'].get(k,[])]
+    assert len(names) <= LIMITS['containers'] and len(set(names)) == len(names)
+    assert set(names) <= set(pin['containers'])
+    return names
 
 def owner(obj, uid, kind):
     return any(x.get('uid') == uid and x.get('kind') == kind and x.get('controller') is True
@@ -132,8 +144,9 @@ class Diagnostics:
         for kind, name in [('daemonset', 'calico-node'), ('deployment', 'calico-kube-controllers')]:
             obj = self.call(name + '-pin', ['-n', 'kube-system', 'get', kind, name, '-o', 'json'])
             uid = named(obj, name, 'kube-system'); assert obj['spec']['selector']['matchLabels'] == {'k8s-app': name}
-            pins['controllers'][name] = {'uid': uid, 'kind': kind, 'object_kind': obj['kind'],
-                                         'containers': [v['name'] for k in ('initContainers','containers') for v in obj['spec']['template']['spec'].get(k,[])]}
+            containers = container_names({'spec':obj['spec']['template']['spec']}, {'containers':EXPECTED_CONTAINERS[name]})
+            assert tuple(containers) == EXPECTED_CONTAINERS[name]
+            pins['controllers'][name] = {'uid': uid, 'kind': kind, 'object_kind': obj['kind'], 'containers':containers}
         self.pins = pins
     def capture(self):
         assert self.pins is not None
@@ -157,8 +170,7 @@ class Diagnostics:
                 assert pod['spec'].get('nodeName') in (None, '', self.node)
                 self.call('pod-events-'+str(pod_count), ['-n','kube-system','get','events','--field-selector','involvedObject.uid='+uid,'-o','json'])
                 if pod['spec'].get('nodeName') != self.node: continue
-                containers = [v['name'] for k in ('initContainers','containers') for v in pod['spec'].get(k,[])]
-                assert len(containers) <= LIMITS['containers'] and set(containers) <= set(pin['containers'])
+                containers = container_names(pod, pin)
                 statuses = {v['name']:v for k in ('initContainerStatuses','containerStatuses') for v in pod.get('status',{}).get(k,[])}
                 for container in containers:
                     for previous in (False, True):

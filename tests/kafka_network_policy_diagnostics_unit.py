@@ -17,6 +17,17 @@ class Guards(unittest.TestCase):
   obj={'metadata':{'ownerReferences':[{'uid':'a','kind':'DaemonSet','controller':True}]}}
   self.assertTrue(d.owner(obj,'a','DaemonSet'));self.assertFalse(d.owner(obj,'b','DaemonSet'));self.assertFalse(d.owner(obj,'a','ReplicaSet'))
   obj['metadata']['ownerReferences'][0]['controller']=False;self.assertFalse(d.owner(obj,'a','DaemonSet'))
+ def test_actual_pinned_five_container_template(self):
+  expected=['upgrade-ipam','cni-plugins','install-cni','ebpf-bootstrap','calico-node']
+  pod={'spec':{'initContainers':[{'name':n}for n in expected[:4]],'containers':[{'name':'calico-node'}]}}
+  self.assertEqual(d.EXPECTED_CONTAINERS['calico-node'],tuple(expected))
+  self.assertEqual(d.container_names(pod,{'containers':expected}),expected)
+ def test_six_container_even_expanded_pin_denied(self):
+  names=list(d.EXPECTED_CONTAINERS['calico-node'])+['extra']
+  with self.assertRaises(AssertionError):d.container_names({'spec':{'containers':[{'name':n}for n in names]}},{'containers':names})
+ def test_duplicate_container_or_foreign_name_denied(self):
+  for names in [['calico-node','calico-node'],['foreign']]:
+   with self.assertRaises(AssertionError):d.container_names({'spec':{'containers':[{'name':n}for n in names]}},{'containers':d.EXPECTED_CONTAINERS['calico-node']})
  def test_closed_fixed_limits(self):
   self.assertEqual(d.LIMITS['anchor_seconds']+d.LIMITS['capture_seconds'],90)
   self.assertEqual(d.LIMITS['command_seconds'],10);self.assertEqual(d.LIMITS['total_bytes'],8*1024*1024)

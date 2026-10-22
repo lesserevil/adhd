@@ -125,7 +125,7 @@ async def lose_and_restore(args,b,r,backup_id,backup_sha,label,gate):
     return observed,plan
 
 
-async def scenario(args,a,b,ar,br,token,scope,model,gate,e,label):
+async def pending_bundle(args,a,b,br,token,scope,model,gate,label):
     actor=await a.agent('bridge');remote=await b.agent('bridge');blue=await b.agent('blue-b')
     gate.phase='old';gate.target=None
     for event in gate.release.values():event.clear()
@@ -152,6 +152,13 @@ async def scenario(args,a,b,ar,br,token,scope,model,gate,e,label):
         assert remaining>0,'Original incoming query deadline expired during cold backup precondition'
         status,value=await wire(a,b,token,kind,q['id'],scope)
         assert status==200 and value['status']=='pending' and value['query_id']==q['id']
+    return {'backup_id':backup_id,'backup_sha':backup_sha,'queries':queries,'original':original,'questions':questions}
+
+
+async def scenario(args,a,b,ar,br,token,scope,model,gate,e,label):
+    last=await pending_bundle(args,a,b,br,token,scope,model,gate,label)
+    backup_id,backup_sha,queries,original,questions=(last[k] for k in ('backup_id','backup_sha','queries','original','questions'))
+    actor=await a.agent('bridge');remote=await b.agent('bridge');blue=await b.agent('blue-b')
     gate.target=questions[label];model.blocked=frozenset(v for k,v in questions.items() if k!=label)
     await until(lambda:any(v['held'] and v['phase']=='old' and gate.target in v['instructions'] for v in gate.rows),
                 'Actual selected incoming model success was not held',15)
@@ -205,6 +212,7 @@ async def scenario(args,a,b,ar,br,token,scope,model,gate,e,label):
 async def main():
     parser=arguments(__doc__);parser.add_argument('--recovery-schema',type=Path,required=True)
     parser.add_argument('--loss-runner',type=Path,required=True);parser.add_argument('--peer-eventing-rest-url',default='http://127.0.0.1:18085')
+    parser.add_argument('--revocation-only',action='store_true',help='Run only fresh pending backup plus current grant denial restore control')
     args=parser.parse_args();assert args.hub and not args.image and not args.rest_url and not args.with_model
     aa,ba=copy.copy(args),copy.copy(args);aa.keep_work=args.keep_work/'origin';ba.keep_work=args.keep_work/'peer'
     for target in [aa,ba]:target.command=json.dumps(['elixir',str(args.loss_runner.resolve()),str(args.hub.resolve())])
@@ -213,6 +221,7 @@ async def main():
     model=PeerModel();gate=ModelGate(model.url);e=Evidence(args.report,'project-recovery-incoming-peer-jobs')
     e.value.update(artifact_sha256=digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),
         scope='Native incoming accepted source/discovery snapshot preservation, actual model callback epochs and current peer authorization; local controlled typed model only, not provider quality, Docker or release admission.',
+        case_selection='revocation-only' if args.revocation_only else 'all',
         limits={'native_startup_seconds':150,'original_query_deadline_ms':120000,'model_hold_seconds':30,'model_slots':8,'model_inventory':1024},
         dependency_sha256={str(p):digest(p.read_bytes()) for p in [args.loss_runner,args.recovery_schema,Path(__file__).with_name('project_recovery_queries.py'),Path(__file__).with_name('project_recovery_restore.py'),Path(__file__).with_name('multi_support.py')]})
     ab,ba_token=secrets.token_urlsafe(32),secrets.token_urlsafe(32)
@@ -244,7 +253,10 @@ async def main():
             return peers if len(peers)==1 and peers[0]['status']=='ready' and peers[0]['catalog'] else None
         await until(ready,'Actual canonical incoming target directory did not become ready')
         last=None
-        for label in ['source','discovery']:last=await scenario(args,a,b,ar,br,ab,scope,model,gate,e,label)
+        if args.revocation_only:
+            last=await pending_bundle(args,a,b,br,ab,scope,model,gate,'revocation')
+        else:
+            for label in ['source','discovery']:last=await scenario(args,a,b,ar,br,ab,scope,model,gate,e,label)
         # A current grant removal must survive a later restore of the actual
         # earlier bundle containing the old grant. It is policy, not ownership.
         gate.target=None;gate.phase='revoked';gate.release['old'].set();gate.release['new'].set()

@@ -17,6 +17,8 @@ import os
 from pathlib import Path
 import runpy
 import stat
+import re
+import tarfile
 from uuid import uuid4
 
 
@@ -26,6 +28,53 @@ def regular(path):
     path=Path(path).absolute();s=path.lstat()
     assert path.resolve(strict=True)==path and stat.S_ISREG(s.st_mode) and s.st_uid==os.getuid() and s.st_nlink==1
     return path
+
+
+def render_observer(template,source,artifact_sha256):
+    """Select known MFA arities from exact source bytes, never evaluate code."""
+    assert hashlib.sha256(source).hexdigest()==artifact_sha256
+    match=re.search(r'^defmodule ADHD\.Eventing do\n(.*?)(?=^defmodule |\Z)',source.decode(),re.M|re.S)
+    assert match,'Bound Eventing module missing'
+    def arities(name):
+        result=set()
+        for arguments in re.findall(r'^\s+defp? '+re.escape(name)+r'\(([^\n)]*)\)',match.group(1),re.M):
+            depth=0;count=1 if arguments.strip()else 0
+            for char in arguments:
+                if char in '[{(':depth+=1
+                elif char in ']})':depth-=1
+                elif char==',' and depth==0:count+=1
+                assert depth>=0
+            assert depth==0
+            defaults=arguments.count(chr(92)*2)
+            result.update(range(count-defaults,count+1))
+        return sorted(result)
+    observed={name:arities(name)for name in ('preflight_restore','provision','request','request_until','request_now','response','success')}
+    legacy={'preflight_restore':[2],'provision':[2,3],'request':[4,5,6],'request_until':[],'request_now':[7],'response':[4],'success':[1]}
+    current={'preflight_restore':[2,3],'provision':[2,3,4],'request':[4,5,6],'request_until':[7],'request_now':[8],'response':[4],'success':[1]}
+    assert observed in (legacy,current),'Unsupported Eventing observer signature profile'
+    rendered=template.decode()
+    assert len(re.findall(r'^\s+\{ADHD\.',rendered,re.M))==16
+    for token in ('{ADHD.Eventing, :preflight_restore, 2}', '{ADHD.Eventing, :provision, 3}', '{ADHD.Eventing, :request, 6}', '{ADHD.Eventing, :request_now, 7}'):
+        assert rendered.count(token)==1,'Unexpected observer template'
+    if observed==current:
+        rendered=rendered.replace('{ADHD.Eventing, :preflight_restore, 2},','{ADHD.Eventing, :preflight_restore, 2},\n    {ADHD.Eventing, :preflight_restore, 3},')
+        rendered=rendered.replace('{ADHD.Eventing, :provision, 3},','{ADHD.Eventing, :provision, 3},\n    {ADHD.Eventing, :provision, 4},')
+        rendered=rendered.replace('{ADHD.Eventing, :request, 6},','{ADHD.Eventing, :request, 6},\n    {ADHD.Eventing, :request_until, 7},')
+        rendered=rendered.replace('{ADHD.Eventing, :request_now, 7}', '{ADHD.Eventing, :request_now, 8}')
+    profile={'name':'shared-deadline19'if observed==current else 'legacy16','pattern_count':19 if observed==current else 16,
+             'source_sha256':artifact_sha256,'observed_arities':observed,'template_sha256':hashlib.sha256(template).hexdigest()}
+    assert len(re.findall(r'^\s+\{ADHD\.',rendered,re.M))==profile['pattern_count']
+    return rendered.encode(),profile
+
+
+def bound_observer(original,parent,template):
+    """Read only the already context-bound source, without code evaluation."""
+    path=regular(Path(original)/'context/payload.tar');assert path.stat().st_size<=32*1024*1024
+    with tarfile.open(path,mode='r:')as archive:
+        entries=[item for item in archive.getmembers()if item.name=='app/hub.exs']
+        assert len(entries)==1 and entries[0].isfile()and entries[0].size<=8*1024*1024
+        source=archive.extractfile(entries[0]).read()
+    return render_observer(template,source,parent['artifact_sha256'])
 
 
 def instrument(base,image,observer,root,arm,index,nonce):
@@ -51,7 +100,8 @@ def inspected(row,target,compiled,original):
     return proof
 
 
-def install(observer):
+def install(observer,pattern_count=16):
+    assert pattern_count in (16,19)
     import image_filesystem_fault as faults
     import image_recovery_cache as cache
     from multi_support import Fixture
@@ -79,7 +129,7 @@ def install(observer):
                 info=regular(path).stat();assert stat.S_IMODE(info.st_mode)==0o600 and info.st_size<=65536
                 lines=path.read_text().splitlines()
                 assert not any('|observer-failed|'in x or '|limit|'in x or '|expired|'in x for x in lines)
-                if any('|header|'+target.phase_nonce+'|'in x for x in lines)and any('|ready|'+target.phase_nonce+'|'in x for x in lines):return
+                if any('|header|'+target.phase_nonce+'|'in x for x in lines)and any(x.endswith('|ready|'+target.phase_nonce+'|'+str(pattern_count)+'-mfa-patterns')for x in lines):return
             await asyncio.sleep(.01)
         raise AssertionError('Diagnostic tracing was not verified within the unchanged original startup bound')
     Fixture.start=ready
@@ -90,7 +140,7 @@ def install(observer):
 
 def verify(work,plan):
     assert sha(regular(work/'driver.py'))==plan['driver_sha256']
-    assert {p.name for p in work.iterdir()} <= {'driver.py','observer.exs','plan.json','started.json','result.json','results','parent-cache'}
+    assert {p.name for p in work.iterdir()} <= {'driver.py','observer.exs','observer-template.exs','plan.json','started.json','result.json','results','parent-cache'}
     assert sha(regular(work/'observer.exs'))==plan['observer_sha256']
     original=Path(plan['original_work']);assert sha(original/'plan.json')==plan['original_plan_sha256']
     # Import only the original read-only verifier, not its main/execute path.
@@ -99,6 +149,9 @@ def verify(work,plan):
         spec=importlib.util.spec_from_file_location('reviewed_original_r25',original/'driver.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
         parent=json.loads((original/'plan.json').read_text());assert module.verify(original,parent)
     finally:sys.argv=oldargv
+    assert sha(regular(work/'observer-template.exs'))==plan['observer_profile']['template_sha256']
+    rendered,profile=bound_observer(original,parent,(work/'observer-template.exs').read_bytes())
+    assert profile==plan['observer_profile']and rendered==(work/'observer.exs').read_bytes()
     selected=next(r for r in parent['jobs']if r['name']==plan['case'])
     assert plan['argv']==[v.replace(str(original/'results'),str(work/'results'))for v in selected['argv']]
     assert sha(original/'matrix.json')==plan['original_matrix_sha256']
@@ -125,7 +178,7 @@ def import_preflight(work,plan):
     undo=None
     try:
         for name in names:setattr(subprocess,name,denied)
-        undo=install(work/'observer.exs')
+        undo=install(work/'observer.exs',plan['observer_profile']['pattern_count'])
         command=plan['argv'];entry=Path(command[3]);script=Path(command[command.index('--script')+1])
         runpy.run_path(str(entry),run_name='diagnostic_dependency_import_only')
         runpy.run_path(str(script),run_name='diagnostic_dependency_import_only')
@@ -140,10 +193,13 @@ def prepare(args):
     row=next(r for r in parent['jobs']if r['name']=='crash-no-default-after-install-snapshot')
     work.mkdir(mode=0o700);(work/'parent-cache').mkdir(mode=0o700)
     import shutil
-    shutil.copyfile(__file__,work/'driver.py');shutil.copyfile(Path(__file__).with_name('recovery_phase_observer.exs'),work/'observer.exs')
+    shutil.copyfile(__file__,work/'driver.py')
+    template=regular(Path(__file__).with_name('recovery_phase_observer.exs')).read_bytes()
+    rendered,profile=bound_observer(old,parent,template)
+    (work/'observer-template.exs').write_bytes(template);(work/'observer.exs').write_bytes(rendered)
     plan={'schema':'adhd/recovery-causal-diagnostic@1','scope':'One diagnostic, not qualification. Original no-default crash assertions and deadlines unchanged; no retry.',
         'case':row['name'],'original_work':str(old),'original_plan_sha256':sha(old/'plan.json'),'original_matrix_sha256':sha(old/'matrix.json'),
-        'driver_sha256':sha(work/'driver.py'),'observer_sha256':sha(work/'observer.exs'),'image_config_identity':parent['image_config_identity'],
+        'driver_sha256':sha(work/'driver.py'),'observer_sha256':sha(work/'observer.exs'),'observer_profile':profile,'image_config_identity':parent['image_config_identity'],
         'artifact_sha256':parent['artifact_sha256'],'argv':[v.replace(str(old/'results'),str(work/'results'))for v in row['argv']],
         'original_outer_timeout_seconds':row['outer_timeout_seconds'],'provider_calls_authorized':0,'parallelism':1,'runs':1,
         'python_flags':['-I','-S','-B','-X','pycache_prefix='+str(old/'parent-cache')],'expected_original_input_counts':{k:len(parent[k])for k in ['frozen_inputs','component_inputs','context_inputs','bound_inputs','external_inputs']}}
@@ -171,7 +227,7 @@ def execute(args):
     # its class in-place; executing the entry cannot change the original script.
     undo=None;oldargv=sys.argv;failure=None;primary=None
     try:
-        undo=install(work/'observer.exs')
+        undo=install(work/'observer.exs',plan['observer_profile']['pattern_count'])
         command=plan['argv'];sys.argv=command[3:]
         assert sys.argv[0].endswith('/image_recovery_entry.py')
         runpy.run_path(sys.argv[0],run_name='__main__')

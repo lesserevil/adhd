@@ -27,4 +27,26 @@ class ProbeGuards(unittest.TestCase):
         self.assertIn('emit(fd, ["pattern", inspect(m)',text)
         self.assertIn('safe_class(class) | Process.get(:phase_setup',text)
         self.assertIn('bytes <= 65536',text)
+
+class ProfileCopy(unittest.TestCase):
+    def prepare(self,drift=False):
+        import tempfile,json,sys,io
+        from unittest.mock import patch
+        temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup);root=Path(temp.name)
+        phase=root/'phase';phase.mkdir();original=root/'original';original.mkdir()
+        observed=b'# source-bound nineteen-pattern observer fixture; never compiled\n'
+        (phase/'observer.exs').write_bytes(observed)
+        (phase/'driver.py').write_text('# not executed')
+        (phase/'plan.json').write_text(json.dumps({'original_work':str(original),'observer_sha256':'f'*64 if drift else m.sha(phase/'observer.exs')}))
+        parent={'compiled_binding':{'compiled_cache':{'manifest_sha256':'a'*64}},'image_config_identity':'sha256:'+'b'*64,'artifact_sha256':'c'*64,'canonical_manifest_sha256':'d'*64,'admission_manifest_sha256':'e'*64,'env':{'PATH':'testpath','DOCKER_HOST':'testsocket','DOCKER_CONFIG':'testconfig'}}
+        (original/'plan.json').write_text(json.dumps(parent));work=root/'work'
+        with patch.object(sys,'argv',['probe','--prepare','--work',str(work),'--phase-work',str(phase)]),patch('sys.stdout',io.StringIO()):m.main()
+        return work,observed
+    def test_prepare_copies_phase_render_not_authored_legacy_template(self):
+        import json
+        work,observed=self.prepare();self.assertEqual((work/'observer.exs').read_bytes(),observed)
+        self.assertEqual(json.loads((work/'plan.json').read_bytes())['observer_sha256'],m.sha(work/'observer.exs'))
+    def test_prepare_rejects_phase_observer_hash_drift(self):
+        with self.assertRaises(AssertionError):self.prepare(True)
+
 if __name__=='__main__':unittest.main()

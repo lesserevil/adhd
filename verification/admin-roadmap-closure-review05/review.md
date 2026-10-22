@@ -1,25 +1,29 @@
-# Admin roadmap closure review
+# Admin roadmap leaf closure proposal
 
-No new implementation gap was found in MULTI-006 or KAFKA-006. The final05 image passes the original nine browser programs /86 units. Exact sourceC native UI qualification and the current Kafka/security gates remain required; no checkbox is changed.
+All13 explicit MULTI-006/KAFKA-006 leaves are now supported for closure. No roadmap checkbox or parent status was changed. The machine-readable map retains exact before/after checkbox text and current evidence bindings.
 
-| Requirement | Exact retained interaction / scope | Remaining condition |
+| Item / current line | Leaf | Current qualifying evidence |
 | --- | --- | --- |
-| MULTI-006 line839: Project lifecycle/access/catalog | roles22: create/rename/archive/resume, agent grants, user admission; admin18: canonical/export | After native UI9/86 passes unchanged, implementation checkbox is eligible for review. |
-| MULTI-006 line840: Server/project inheritance | roles22 policy/reset/resource forms; admin18 six event-policy overrides and hot OIDC groups | After native UI9/86 passes; retain server configuration-location restart exception and independent listener/resource API gate. |
-| MULTI-006 line841: Scoped views, stale context, security | roles22 switch/CSRF/revisions; admin18 two tabs and delayed replies; Events12 revoke/refresh | After native UI9/86 passes, including all native late-response and role cases. |
-| MULTI-006 line842: First-time proposed OIDC connection | accounts-oidc2 original pre-save Test OIDC flow, desktop/mobile | Native accounts-oidc two-viewport case must pass; no new screenshot of the pre-save moment is required. |
-| MULTI-006 line843: Old-session401 fence | session-fence2 old response across logout/login and current-session revocation | Native session-fence must pass; do not retrospectively assign the original untraced401 cause. |
-| MULTI-006 line844: 390px complete Event IDs | Events12 replay/ack + actual desktop/mobile PNG/ARIA review | Explicit native+container follow-up: native eventing browser/overflow and replay cases must pass before closure. |
-| MULTI-006 line846: Every-role browser evidence | roles22 +admin18 +Events12 +accounts2/session2; representative13 +root7 capture reviews | Native full9/86 must pass and root retains final manual acceptance; image gate already complete. |
-| KAFKA-006 line983: Subscription forms/edit/pause/filter | admin18 selector/page/edit/cancel/paused backlog/model transitions | Native UI gate plus final05 Kafka admin/caps/fairness/optional-filter gates must pass. |
-| KAFKA-006 line984: Hot connection/policy/replay | roles22 secret form; admin18 policy; Events12 CA/>100 exact targets | Require final05 Kafka policy+cutover normal/decision/project and secured credential rotation gates; browser blank-retains is not real credential rotation. |
-| KAFKA-006 line985: Interrupted transition/quarantine | Events12 actual foreign-row retry/reconcile; Kafka transition crash branches separate | Final05 Kafka controls+cutover-decision+cutover-project terminal qualifiers required. |
-| KAFKA-006 line986: Authorized diagnostics/redaction | role controls/resource refresh +Events/model queue; full numerical API diagnostics separate | Final05 Kafka controls/caps/retention/outage and native role/admin UI status gates required. |
-| KAFKA-006 line988: Role-scoped hot model/revision evidence | roles22/admin18/Events12 both viewports | Native fullUI9/86 required; no additional invented threat model/screenshots. |
-| KAFKA-006 line989: Live credential/connection/filter changes | admin18 model transitions/policy; secured broker suites for actual token/cert rotation | Require final05 secured Compose/Kind token/CA rotation and current Kafka transport/capacity gates. Pending suites cannot be counted from source-only older images. |
+| MULTI-006 / 861 | Project lifecycle/access/catalog | nativeUI9/86 + imageUI9/86 |
+| MULTI-006 / 862 | Server/project settings and inheritance | nativeUI9/86 + imageUI9/86; sourceC native core hot/backend cases |
+| MULTI-006 / 863 | Context/revocation/secrets/CSRF/concurrent edits | nativeUI9/86 + imageUI9/86 |
+| MULTI-006 / 864 | First proposed OIDC connection test | nativeUI9/86 + imageUI9/86 |
+| MULTI-006 / 865 | Stale401 replacement-session fence | nativeUI9/86 + imageUI9/86 |
+| MULTI-006 / 866 | 390px full Event IDs | nativeUI9/86 + imageUI9/86 |
+| MULTI-006 / 868 | Every-role desktop/mobile interactions | nativeUI9/86 + imageUI9/86 |
+| KAFKA-006 / 1005 | Raw/filtered edit/pause/backlog forms | nativeUI9/86 + imageUI9/86; current Kafka admin, caps, fairness, optional-filter |
+| KAFKA-006 / 1006 | Hot connection/credentials/policy/exact replay targets | nativeUI9/86 + imageUI9/86; current Kafka policy, cutover, cutover-decision, cutover-project; actual secured Kind7/51 |
+| KAFKA-006 / 1007 | Interrupted transition and quarantine repair | nativeUI9/86 + imageUI9/86; current Kafka controls, cutover-decision, cutover-project |
+| KAFKA-006 / 1008 | Authorized backlog/lag/gaps/budgets/redaction | nativeUI9/86 + imageUI9/86; current Kafka controls, caps, retention, outage |
+| KAFKA-006 / 1010 | Role-scoped live model/revision interactions | nativeUI9/86 + imageUI9/86; current Kafka admin, caps |
+| KAFKA-006 / 1011 | Live credential/connection/filter changes | nativeUI9/86 + imageUI9/86; current Kafka cutover, policy, controls, optional-filter; actual secured Kind7/51 |
 
-The explicit native+container mobile follow-up requires an actual native pass; identical Web bytes across native39/sourceC do not replace it. Blank-retains bearer form tests do not prove broker credential rotation. The pending Kafka plan contains14 original suites/68 checks; its policy case explicitly tests failed multi-project retention against actual broker state.
+Proposed leaf-only checkbox ranges at this snapshot: MULTI-006 lines861–866 and868; KAFKA-006 lines1005–1008 and1010–1011. Apply by exact text because concurrent root edits can move line numbers.
 
-Saved Settings PNGs show post-save revisions rather than the unsaved initial proposal. Agent screenshots show the list/create form rather than an open editor. Those are honest visual-sample limits, not newly invented missing interaction requirements. Original browser programs exercise their required actions. No claim all76 captures were manually reviewed.
+Keep MULTI-006 and KAFKA-006 parent checkboxes unchanged. Their dependency items and remaining overall core/recovery/CNI/documentation/lifecycle gates are independently controlled. Completion of these Admin leaves does not close those gates.
 
-Machine-readable exact case names, requirement text/lines, artifact identity and hashes of every cited input are in [review.json](review.json). This is a review proposal only, not a runtime result or release attestation.
+The earlier review added an unnecessary requirement to duplicate secured rotation on Compose and Kind. The actual leaf does not require both security platforms: current Kind51, Kafka68 and both UI runtimes prove the specified properties. Preserve actual Kind scope, licensing and telemetry limits.
+
+Historical false aggregates remain false. The original untraced401 is still not definitively attributed; the independently reproduced session race is repaired and qualified. Visual inspection covers specific retained samples, not every capture.
+
+See [review.json](review.json) for all13 exact requirement texts, proposed checkbox replacements, exact case names, report hashes and dependency IDs. No new tests, runtimes, provider calls, plans or application changes were made.

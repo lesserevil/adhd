@@ -151,6 +151,15 @@ follow-up is likewise diagnostic first: retain sanitized argument-match booleans
 and hashes before the exact VM assertion, including failure cleanup, without
 recording serialized requests or relaxing custody.
 
+The [source41 deployment qualification](../../verification/ownedMULTI008/source41-baseline-platform-positive/audit.json)
+now passes all 21 model-free checks across Compose and Kind, including replacement,
+broker patch upgrade, complete cold restore and target-only selective restore.
+The independent audit verifies the full frozen inputs, actual compiled VM custody
+and owned-resource absence. The [Kafka negative audit](../../verification/kafka41-compiled-first-failure/audit.json)
+and [full recovery negative audit](../../verification/recovery41-full25-first-failure/audit.json)
+preserve the failed aggregates and their passing whole-program prefixes separately;
+later private Kafka service cleanup does not change either failed result.
+
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
 passes28 whole suites/156 checks; its separately verified foundation prefix adds20

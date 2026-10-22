@@ -140,6 +140,17 @@ the false attempt and cleanup, identify the launch/custody mismatch, and preserv
 exact process identity and original fault assertions in any correction. Partial
 checks do not qualify either failed program.
 
+The fresh core13 attempt passes foundation and ten further whole programs, then
+auth setup fails before starting its first hub because it resolves
+`scripts/configure_hub.py` relative to the private runtime working directory.
+Workflow-upgrade remains unrun. Resolve this authored fixture input from the test
+file's repository root, retain the negative run and unchanged application scope,
+and test setup from a different working directory. Preserve the original Python
+launcher, setup arguments, authentication assertions and deadlines. The rebind
+follow-up is likewise diagnostic first: retain sanitized argument-match booleans
+and hashes before the exact VM assertion, including failure cleanup, without
+recording serialized requests or relaxing custody.
+
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
 passes28 whole suites/156 checks; its separately verified foundation prefix adds20

@@ -75,6 +75,16 @@ defmodule SourceQueryPinReview do
     assert value(next)["status"]=="partial" and row(next)["status"]=="unavailable"
     assert hd(value(next)["coverage"])["status"]=="identity_conflict"
   end
+  test "fresh different owner cannot retarget a previously dispatched row even if both peers were admitted" do
+    {s,c,p,scope}=fixture()
+    other=%{p|"server_id"=>String.duplicate("d",32),"project_id"=>"other-owner"}
+    c=put_in(c,["federation","peers"],[p,other]);:persistent_term.put({ADHD.Config,:config},c)
+    s=%{s|owner_pins: %{}} |> cache(p,scope,false) |> cache(other,scope,true)
+    s=put_in(s,[:source_queries,"query-pinned",:peer_ids],[Directory.peer_key(p),Directory.peer_key(other)])
+    assert {:idle,next}=prepare(s,c)
+    assert value(next)["status"]=="partial" and row(next)["status"]=="revoked"
+    assert row(next)["owner_server_id"]==p["server_id"]
+  end
   test "fresh canonical revocation remains terminal" do
     {s,c,p,scope}=fixture();s=cache(s,p,scope,false)
     assert {:idle,next}=prepare(s,c)

@@ -32,7 +32,8 @@ def execution(work,behavior):
         name=argv[-1];calls.append(name)
         if behavior=='raise':raise OSError('Synthetic child creation failure')
         if behavior=='false':return SimpleNamespace(returncode=1)
-        if behavior!='missing-report':
+        if behavior=='malformed-report':driver.dump(work/(name+'.json'),{'passed':True})
+        elif behavior!='missing-report':
             driver.dump(work/(name+'.json'),{'passed':True,'artifact_sha256':value['artifact_sha256'],
                 'image_config_digest':value['image_config_identity'],'selective_recovery_requested':True,
                 'cleanup':{'resources_independently_absent':behavior!='unknown-cleanup','failures':[]}})
@@ -41,7 +42,7 @@ def execution(work,behavior):
         if behavior=='preflight':raise AssertionError('Synthetic cluster binding failure')
     with patch.object(driver,'verify',return_value=True),patch.object(driver,'environment',return_value={}),patch.object(driver,'preflight',preflight),patch('subprocess.run',child),patch('subprocess.Popen',side_effect=AssertionError('No real process permitted')):
         try:result=driver.execute(work,digest)
-        except (AssertionError,OSError):result=None
+        except (AssertionError,OSError,KeyError):result=None
     output=json.loads((work/'matrix.json').read_text())
     assert (work/'execution-started.json').is_file()
     if behavior=='pass':assert result==0 and calls==['compose','k8s'] and output['passed'] and output['unrun_platforms']==[]
@@ -49,6 +50,7 @@ def execution(work,behavior):
     elif behavior=='raise':assert calls==['compose'] and output['attempted_platforms']==['compose'] and output['executed_platforms']==[] and output['unrun_platforms']==['compose','k8s']
     else:assert calls==['compose'] and output['executed_platforms']==['compose'] and output['unrun_platforms']==['k8s']
     assert output['passed']==(behavior=='pass')
+    if behavior=='malformed-report':assert output['results'][0]['process_exit_code']==0 and output['failure_type']=='KeyError'
     with patch.object(driver,'verify',return_value=True),patch.object(driver,'preflight',side_effect=AssertionError('No preflight on reentry')),patch('subprocess.Popen',side_effect=AssertionError('No process')):
         try:driver.execute(work,digest)
         except FileExistsError:pass
@@ -82,7 +84,7 @@ def main():
             except AssertionError as error:assert str(error)=='Execute only the reviewed frozen driver.py with python -I'
             else:raise AssertionError('Authored execute imported unverified helpers')
         checks+=1
-        for behavior in ('pass','false','missing-report','unknown-cleanup','raise','preflight'):
+        for behavior in ('pass','false','missing-report','unknown-cleanup','raise','preflight','malformed-report'):
             work=root/behavior;work.mkdir();execution(work,behavior);checks+=1
         tree=root/'tree';tree.mkdir();(tree/'known').write_text('fixture');inputs=driver.file_tree(tree)
         (tree/'shadow.py').write_text('unreviewed')

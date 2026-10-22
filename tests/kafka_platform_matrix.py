@@ -229,7 +229,7 @@ def execute(work,expected):
             results.append(row)
             print('START',job['name'],flush=True)
             with log.open('x') as output:child=subprocess.run(job['argv'],cwd=plan['runtime_cwd'],env=env,stdout=output,stderr=subprocess.STDOUT)
-            row['started']=True  # A returned child outcome witnesses actual creation.
+            row.update(started=True,process_exit_code=child.returncode)  # Record actual outcome before parsing report.
             qualified=child.returncode==0 and report_passed(report)
             value=json.loads(report.read_text()) if report_passed(report) else {}
             if qualified:

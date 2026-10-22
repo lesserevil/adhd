@@ -76,6 +76,7 @@ async def viewport(args, browser, name, width, height, evidence):
         captures.append(await capture(page, f.root, "review-initialization"))
         await page.get_by_role("button", name="Apply reviewed plan", exact=True).click()
         await expect(page.get_by_text("apply · complete", exact=True)).to_be_visible(timeout=30000)
+        await expect(page.get_by_text("Target " + RED + " · ready", exact=True)).to_be_visible()
         assert r.status(RED)["availability"] == "ready" and r.revision() == before
         assert r.status(RED)["operation"]["result"]["initialized"] is True
         await page.get_by_role("button", name="Refresh", exact=True).click()
@@ -147,6 +148,7 @@ async def viewport(args, browser, name, width, height, evidence):
         captures.append(await capture(page, f.root, "review-restore"))
         await page.get_by_role("button", name="Apply reviewed plan", exact=True).click()
         await expect(page.get_by_text("apply · complete", exact=True)).to_be_visible(timeout=30000)
+        await expect(page.get_by_text("Target " + RED + " · ready", exact=True)).to_be_visible()
         actual = r.status(RED)
         assert actual["operation"]["result"]["transport_discontinuity"] is True
         assert actual["route"]["project_epoch"] != old_red_route["project_epoch"]

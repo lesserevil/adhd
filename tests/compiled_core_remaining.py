@@ -123,8 +123,11 @@ def prepare(args):
     print(json.dumps({'prepared': True, 'executed': False, 'plan_sha256': sha(work / 'plan.json')}))
 
 
-def absence(identifier):
-    result = subprocess.run(['/usr/bin/docker', 'inspect', identifier], capture_output=True, timeout=30)
+def absence(identifier, trusted_env):
+    # Reuse the child's reviewed socket/private config, never the outer shell's
+    # Docker context or remote-daemon selectors.
+    result = subprocess.run(['/usr/bin/docker', 'inspect', identifier], capture_output=True, timeout=30,
+                            env=trusted_env)
     assert result.returncode == 1 and result.stdout.strip() in (b'', b'[]') and re.fullmatch(
         r'(?i:(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*)' + re.escape(identifier),
         result.stderr.decode(errors='replace').strip()), 'Recorded owned container absence unconfirmed'
@@ -182,7 +185,7 @@ def execute(args):
                 row['process_exit_code'] = child.wait()
             assert row['process_exit_code'] == 0 and report.is_file()
             value = json.loads(report.read_text()); assert value['passed'] is True
-            row['strict_recorded_container_absence'] = [absence(x) for x in runtime_handles(value)]
+            row['strict_recorded_container_absence'] = [absence(x, env) for x in runtime_handles(value)]
             row.update(passed=True, report_sha256=sha(report), log_sha256=sha(work / (name + '.log')))
             print('DONE', name, True, flush=True)
     except BaseException as error:

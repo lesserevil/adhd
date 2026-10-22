@@ -32,15 +32,19 @@ class Guards(unittest.TestCase):
 
     def test_strict_absence_rejects_foreign_mixed_and_transport_failures(self):
         identifier = 'a' * 64
+        env = {'DOCKER_HOST': 'unix:///reviewed/docker.sock', 'DOCKER_CONFIG': '/private/reviewed/config'}
         good = subprocess.CompletedProcess([], 1, b'[]\n', ('Error: No such object: ' + identifier + '\n').encode())
-        with patch.object(driver.subprocess, 'run', return_value=good):
-            self.assertEqual(driver.absence(identifier)['identifier'], identifier)
+        with patch.object(driver.subprocess, 'run', return_value=good) as run, patch.dict('os.environ',
+                {'DOCKER_HOST': 'tcp://untrusted.invalid:2375', 'DOCKER_CONTEXT': 'foreign'}):
+            self.assertEqual(driver.absence(identifier, env)['identifier'], identifier)
+            self.assertEqual(run.call_args.kwargs['env'], env)
+            self.assertNotIn('DOCKER_CONTEXT', run.call_args.kwargs['env'])
         for code, err in [(0, good.stderr), (2, good.stderr),
                           (1, b'Cannot connect to daemon: No such object: ' + identifier.encode()),
                           (1, good.stderr + b'additional daemon failure'),
                           (1, b'Error: No such object: foreign')]:
             with patch.object(driver.subprocess, 'run', return_value=subprocess.CompletedProcess([], code, b'[]', err)):
-                with self.assertRaises(AssertionError): driver.absence(identifier)
+                with self.assertRaises(AssertionError): driver.absence(identifier, env)
 
     def test_changed_driver_rejected_before_loading_or_child(self):
         with tempfile.TemporaryDirectory() as temp:

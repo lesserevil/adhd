@@ -1,0 +1,67 @@
+{
+  "schema": "adhd/source36-admission-terminal-review@1",
+  "lifecycle_outcome": "failed",
+  "receipt_committed": false,
+  "admission_claim": false,
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "official_error_code": "standard_rebuild.lifecycle_failed",
+  "failure_phase": "source-cache-publication",
+  "failure_code": "source-cache.evidence-invalid",
+  "failure_evidence_identity": "sha256:bc92eadac0f96fdfc0e632a59a960cd1798f2677d4d58068b943f8383ad542f3",
+  "stderr_sha256": "6777fb5527cfca24f48af95e12a2d8fbc5b61156ebff489691b3094e4159bebb",
+  "native_generated_tests": {
+    "evidence_identity": "sha256:e64ccfc1a85b6f77642ec2b3e90ed28b33bb91e6dfe14ed809b96a2ee71192d0",
+    "schema": "urn:literate-ai:schema:v2:standard-generated-test-execution-evidence",
+    "executed_count": 18,
+    "passed_count": 18,
+    "all_case_outcomes_passed": true,
+    "case_ids": [
+      "native-optimization-archive",
+      "native-optimization-cancel",
+      "native-optimization-continue",
+      "native-optimization-detail",
+      "native-optimization-evaluate",
+      "native-optimization-jobs",
+      "native-optimization-list",
+      "native-optimization-promote",
+      "native-optimization-propose",
+      "native-optimization-record",
+      "native-optimization-replay",
+      "native-optimization-reset",
+      "native-optimization-retire",
+      "native-optimization-retry",
+      "native-optimization-rollback",
+      "native-optimization-selection",
+      "native-optimization-settings",
+      "native-optimization-status"
+    ]
+  },
+  "component_acceptance": {
+    "evidence_identity": "sha256:8feba51da8c6c95a4dbfb40fb916a78b20f31ea2cda95628ebb52ab776fb37c0",
+    "outcome": "passed",
+    "build_outcome": "passed",
+    "execution_outcome": "passed"
+  },
+  "independent_oracle": {
+    "declared_case_count": 106,
+    "oracle_sha256": "c3a201b01277489b116908ce0c64c4eb54b9625000dfeccb96fa9d2ef382287c",
+    "status": "Completed successful strict oracle loop inferred from reaching later source-cache publication; no per-case durable oracle-result claim",
+    "ordering_basis": "standard_project_lifecycle accepts root independently at2554 beforepublication at2588; standard_local strict oracle raises on nonzero/mismatched result and records final observation onlyafterallcases8040..8112",
+    "limitation": "Individual oracle observations live in bounded in-memory recorder and were not retained after terminal failure. Sampled process watcher observed103commands, never used as a passed-test count."
+  },
+  "serialization_diagnosis": {
+    "raw_manifest_sha256": "98d2b057b89757ebe7d8e612306808e5205eacbc1851120f3b69f75053fecbf3",
+    "canonical_manifest_sha256": "5fd82b42b04978de8e0a44f12e3c7b9537c313ca6b8a24fe34378f181126f7cf",
+    "raw_bytes": 6750,
+    "canonical_bytes": 6749,
+    "only_extra_trailing_newline": true,
+    "schema_version_valid": true,
+    "raw_equals_canonical": false,
+    "canonical_identity_equals_raw_blob_identity": false,
+    "canonical_future_bytes_would_satisfy_both_checks": true,
+    "prior34_manifest_was_canonical": true,
+    "cause": "Generated manifest installation appended one newline; cache publication requires exact canonical versioned JSON bytes and identity. No framework defect or cache bypass needed.",
+    "correction_for_next_candidate": "Emit canonical_json_bytes(manifest) directly, no newline; recapture actual full retained tree and freshauthorization after metadata installation."
+  },
+  "mutation_scope": "Read-only source, CLI error, immutable evidence and framework-code review; no CAS, source, receipt, framework or authority edits; no rebuild/staging/provider invocation"
+}

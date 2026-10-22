@@ -1,0 +1,145 @@
+{
+  "schema": "adhd/acme-independent-acceptance-design@1",
+  "status": "DRAFT_PENDING_CANONICAL_ACME_SCHEMA_AND_TESTCA_PIN",
+  "owner": "ACME-001 independentacceptance",
+  "branch": "roadmap/acme-acceptance",
+  "existing_app_baseline": "source41D41; nevermutatedbyharness",
+  "firstcut": "HTTP01only, realmaintainedLego5.5.2, appownedchallenge8080/nativeHTTPS8443, defaultTLSdisabled; exactfields/errors pendingrootnorm",
+  "scope": "Design+purefixtures only. No service/container/model/publicCA/nativecompiler/client starts. Pureunitkeys/certificates existinmemoryonly and do not qualifyACMEissuance.",
+  "cases": [
+    {
+      "id": "01-disabled-bootstrap",
+      "assertion_scope": "Default TLS disabled: privateHTTP bootstrap stillworks; no HTTPS/challenge listener and no ACME child/directoryrequests."
+    },
+    {
+      "id": "02-global-role-boundaries",
+      "assertion_scope": "Admin-only tls_status/tls_renew; Developer/Viewer/agent attempts denied by current auth, not transportfailure; projectmembership mustnot grant globalTLScontrol."
+    },
+    {
+      "id": "03-config-atomicity",
+      "assertion_scope": "Validate+commit exactrevision viaexisting config_update; HTTPS/challenge portcollision and invalidshape leave exactrevision/config/currentcertificate/listener unchanged; no genericconflictretries."
+    },
+    {
+      "id": "04-real-initial-issuance",
+      "assertion_scope": "Maintained pinnedLego5.5.2 insideapp creates realPebble account/order, actualHTTP01 requests reach appowned8080, CA signsactualSANcertificate; nomanualcertcopy/fakelego/alwaysvalid."
+    },
+    {
+      "id": "05-narrow-challenge-surface",
+      "assertion_scope": "RawGET validactive token returns exactkeyauthorization; unknown/stale token and all nonchallenge routes404. Traversal/encodedslash/NUL/query/backslash/extra-path vectors preserve rawtarget. NoAdmin/A2A exposure onchallengeport."
+    },
+    {
+      "id": "06-trusted-https-client",
+      "assertion_scope": "Independentssl client trustingonly ownedTestCA verifieschain+hostname+currentvalidity, then DERoracle checks exactSANset/leafSHA/serial/expiry; wrongname/untrustedroot connections fail."
+    },
+    {
+      "id": "07-hot-explicit-renewal",
+      "assertion_scope": "Admin tls_renew usescurrentexpectedconfig_revision. Observeleaf fingerprint/serialchange throughnew verifyinghandshakes, samehubVM/listenerorigin and realA2Arequests; existingconnections handled pernorm."
+    },
+    {
+      "id": "08-scheduled-renewal",
+      "assertion_scope": "OwnedCA defaultprofile shortleafvalidity +ordinaryrenew_before_days schedule; observeautomatic secondrealorder/cert while no tls_renew call aftersetup. Nohostclock changes/producttimebackdoor/expiryfileediting."
+    },
+    {
+      "id": "09-bad-challenge",
+      "assertion_scope": "Routeonly CAvalidation traffic through reviewedcontrolledfault or temporaryownedDNSmappingerror; realCA rejectsactualHTTP01. Existingvalidcertificate/service preserved; statusfailure bounded/redacted."
+    },
+    {
+      "id": "10-directory-outage",
+      "assertion_scope": "OwnedCA relay refuses/delays withinacceptedorderbudget; priorcertcontinues; coldretryobserves configuredboundedretry; no indefinitechild/helper/listener leakage."
+    },
+    {
+      "id": "11-retry-rate-limit",
+      "assertion_scope": "Protocoltransparent ownedCA faultrelay injects selected429/RetryAfter thenforwards realCA; recordactualrequesttimestamps/noearlyretry. MaintainrealCA orders/challenges/signatures outsideinjectedfault. Exactbackoff semantics awaitcanon."
+    },
+    {
+      "id": "12-untrusted-directory-ca",
+      "assertion_scope": "Wrong/missingca_cert_file forprivateissuer: ACME TLSverificationfails, noverify_nonefallback; priorcert/configpreserved asnormrequires."
+    },
+    {
+      "id": "13-domains-and-policy",
+      "assertion_scope": "Independentlyderive invaliddomain/wildcard/IP/terms/contact/directory URL bounds fromauthoredschema; invalidconfig mustnotplaceorder oradvanceacceptedrevision. No assumptionsaboutuncheckedranges."
+    },
+    {
+      "id": "14-cold-restart-reuse",
+      "assertion_scope": "StopactualownedVM and restart sameprivatefiles unchanged; accountkeyidentity/publicregistration+cert reused, no needlessnewaccount/order; verifyingHTTPS/A2A usableagain."
+    },
+    {
+      "id": "15-interrupted-order-recovery",
+      "assertion_scope": "HoldoneactualCAexchange; killactualownedVM, inspectoldownedLegoPID/start/portsabsent; samefilesnewVMresumes/retrieswithincontracts; oldchallengegone, noorphanwriters/newforeignwork."
+    },
+    {
+      "id": "16-private-file-redaction",
+      "assertion_scope": "lstat onlyownedACMEstorage: dirs0700/privatekeys0600,nosymlink/hardlink/foreignowner pernorm; actualaccount/privatekeysentinels absentfromAdminresponses/status/errors/logs/exports; publiccertmode normdependent."
+    },
+    {
+      "id": "17-oidc-over-native-https",
+      "assertion_scope": "RealcontrolledOIDCcodeflow withsignedIDtoken againsthubHTTPS callback; verifySecure+HttpOnly+SameSitecookies, origin/CSRF/nonce/redirectmatching, role/admission unchanged acrosscertrotation."
+    },
+    {
+      "id": "18-a2a-federation-over-native-https",
+      "assertion_scope": "Twoactualhubs withindependentserver/projectIDs and CAissuedcerts: authenticatedA2A +V2catalog/source/discovery overHTTPS before/afterhotrotation; peerhostname/untrustedCA/revocationnegativecontrol. OutboundprivateCAtrust viaordinaryisolatedtruststore, neververify_none."
+    },
+    {
+      "id": "19-hot-domain-and-disable",
+      "assertion_scope": "Domain/issuer/listener edits arehotAdmintransactions withcurrentrevision; oldandnewownership/activeorders fenced pernorm. Disabling TLS closesonlyownedTLS/challengeresources and preservesprivateHTTP bootstrap."
+    },
+    {
+      "id": "20-packaged-platform-and-recovery",
+      "assertion_scope": "Repeatrequirednative+admittedimage gates thenrealCompose/Kind challengeportmapping/durableTLSvolume/privatebootstrap checks; backup/keyrotation restoration semantics pernorm. No publicCAissuanceclaim fromPebble."
+    }
+  ],
+  "execution_prerequisites": [
+    "RootcanonicalACMEcomponent/spec/schema+status/renewerrors/role+revisionenvelope stable; freeze exactlythat authority beforeharnessruntime.",
+    "DeploymentownedimmutableLego/Pebbleimage/source/clienthashes+actualdirectoryTLSroot+DNSresolvers/validationport/shortvalidity knobs preregistered; no tagalone/automaticbypass.",
+    "RootexplicitGO forownedisolatedTestCA+hubresources andfinite budgets; persistentexistingservices/privateuserdata excluded.",
+    "Realhubinstance+Lego child identity/hash/argv scope/privatepath, publicAPI calls, CAexchange counts andchallenge token lifecycle recordedwithoutprivatekeys/accountsecret.",
+    "Nativeandimage qualification separated; actualcontainerVM/privatePID/defaultentrypoint/payload/runtimeclientcustody andstrictcleanup inheritedfromreviewedexistinghelpers.",
+    "Eachscenario finitepreregisteredorderbudget andsuitewallclock; no retries/resampling except explicitproductretryunderassertion.",
+    "RuntimeHTTPS chain verification usesstockssltrust+hostnamecheck; certificatefacts helper declareschain_trust_checked_here:false."
+  ],
+  "pending_contract_questions": [
+    "Exacttls_status/tls_renew command/result/error schemas andconfirm/message_id/revision semantics.",
+    "Persistence layout andprivate/publicfilepermissions; accountbinding ondomain/email/directorychanges; interruption/retry/rate-limitstatus semantics.",
+    "Firstcertificateunavailable/expiredcertificatebehavior andhotlisteneradmissionatomicity.",
+    "OutboundfederationprivateTestCAtrust throughordinaryownedruntime truststore vs existingpublicinterface; noverify_none.",
+    "Challenge token alphabet+length/method/query exactcontract before assertingallnegativevectors.",
+    "Productrenewalschedulerperiod andrenew_before_daysbounds soissuer-shortvalidity can deterministicallyproveautomaticrenewal withoutchangingclock."
+  ],
+  "cleanup_and_proof": [
+    "ExactownedVM/container/clientPID+startticks/CAhelperDNS/relay/listener lifecycle capturedfromstart, actualkill/reap/absence onallpathsincludingstartupfailure.",
+    "Storeprivateaccountkey/leafkey/config/CArequestsecrets onlyignored0700roots; durableproofcontains hashes+publiccertfacts/statusenums/ownedresourceidentities.",
+    "Allfailing/partial/unrunscopes retained; no aggregatePASStoerasefailure; nofixtureonlycertcountsasrealCA.",
+    "ExistingprivateHTTP/Admin/A2A/rawpubsub services remain separatelyqualified andavailable; testsneverstop sharedKafka/modelservices."
+  ],
+  "primary_sources": [
+    {
+      "url": "https://www.rfc-editor.org/rfc/rfc8555.html#section-8.3",
+      "use": "HTTP01 keyauthorization/token/base64url/port80 challenge semantics; app8080 is externallymapped or Pebblevalidationportconfigured."
+    },
+    {
+      "url": "https://github.com/letsencrypt/pebble",
+      "use": "RealtestCA, configurablevalidationports; prohibitPEBBLE_VA_ALWAYS_VALID bypass."
+    },
+    {
+      "url": "https://github.com/letsencrypt/pebble/blob/main/test/config/pebble-config.json",
+      "use": "Defaultcertificateprofile validityPeriod andauthz/orderRetryAfter knobs; deploymentmustpinactualtag/commitbeforeexecution."
+    },
+    {
+      "url": "https://go-acme.github.io/lego/obtain/http01/index.html",
+      "use": "HTTP01 webroot realclientintegration."
+    },
+    {
+      "url": "https://github.com/go-acme/lego/security/advisories/GHSA-qqx8-2xmm-jrv8",
+      "use": "Actualwebroot traversalfailureclass motivates strictmalicioustoken/pathcoverage; notaclaim5.5.2affected."
+    }
+  ],
+  "pure_checks": {
+    "passed": 3,
+    "runtime_services_started": 0,
+    "ephemeral_private_keys_persisted": false
+  },
+  "files": {
+    "tests/acme_acceptance_fixtures.py": "fabfe37fc25d7592a903ac49c6289d931d36bc90df9fd576d3ab2dbd5ff721a0",
+    "tests/acme_acceptance_fixtures_unit.py": "838a079b7e188c4aaaaca7a6755159be8dd8825d4bb24e7c5671b12c9361d2b6"
+  }
+}

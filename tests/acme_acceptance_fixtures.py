@@ -1,0 +1,53 @@
+"""Inert independent ACME acceptance data and certificate observations.
+
+No ACME client, service, process or socket starts here. DER parsing alone never
+qualifies a trust chain; the runtime harness must use an ordinary verifying TLS
+client and retain that handshake separately.
+"""
+from datetime import timezone
+import hashlib
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+
+
+TEST_DOMAINS=('hub.acme.fixture.test','peer.acme.fixture.test')
+TOKEN='aBcdEfghIjklMnopQrstuVwxyZ0123456789_-abcDEF'
+
+
+def challenge_request_vectors():
+    prefix='/.well-known/acme-challenge/'
+    return [
+        {'id':'active-token','path':prefix+TOKEN,'expectation':'exact-active-key-authorization'},
+        {'id':'unknown-token','path':prefix+'Z'*43,'expectation':'404'},
+        *[{'id':name,'path':path,'expectation':'404'}for name,path in [
+            ('admin-route','/admin'),('root-route','/'),('a2a-route','/a2a'),
+            ('token-directory',prefix),('dotdot',prefix+'../account.key'),
+            ('encoded-dotdot',prefix+'%2e%2e%2faccount.key'),
+            ('double-encoded-dotdot',prefix+'%252e%252e%252faccount.key'),
+            ('extra-slash',prefix+TOKEN+'/extra'),('backslash',prefix+'..\\account.key'),
+            ('percent-nul',prefix+TOKEN+'%00'),('query',prefix+TOKEN+'?suffix=1'),
+            ('double-leading-slash','/'+prefix+TOKEN),('encoded-separator',prefix+TOKEN+'%2fextra')]],
+    ]
+
+
+def raw_challenge_get(path,host):
+    # Explicit ASCII request target, preserving adversarial escapes without URL
+    # normalization by a client library. No request is sent by this fixture.
+    assert '\r'not in path and '\n'not in path and '\r'not in host and '\n'not in host
+    return ('GET '+path+' HTTP/1.1\r\nHost: '+host+'\r\nConnection: close\r\n\r\n').encode('ascii')
+
+
+def certificate_facts(der,expected_domains,now):
+    assert now.tzinfo is not None
+    cert=x509.load_der_x509_certificate(der)
+    names=cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.DNSName)
+    assert len(names)==len(set(names))and set(names)==set(expected_domains),'Certificate SAN set differs'
+    now=now.astimezone(timezone.utc)
+    assert cert.not_valid_before_utc<=now<cert.not_valid_after_utc,'Certificate outside validity interval'
+    spki=cert.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo)
+    return {'leaf_der_sha256':hashlib.sha256(der).hexdigest(),
+            'public_key_spki_sha256':hashlib.sha256(spki).hexdigest(),
+            'serial_number_hex':format(cert.serial_number,'x'),'dns_names':sorted(names),
+            'not_before':cert.not_valid_before_utc.isoformat(),'not_after':cert.not_valid_after_utc.isoformat(),
+            'validity_seconds':(cert.not_valid_after_utc-cert.not_valid_before_utc).total_seconds(),
+            'chain_trust_checked_here':False}

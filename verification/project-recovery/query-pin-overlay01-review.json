@@ -1,0 +1,16 @@
+{
+  "schema": "adhd/source-query-resumption-review@1",
+  "passed": false,
+  "artifact": "hub-query-resume-fix01.exs",
+  "artifact_sha256": "6f2eb576e6a174c46506ffbdc27c07de72d17f8622af9c3868aea60ec38a350f",
+  "source_changed": false,
+  "checks_passed": 9,
+  "checks_failed": 1,
+  "failure": "An accepted/dispatched pinned owner removed while an unrelated configured peer lacks metadata remains pending, contradicting explicit peer removal terminal unavailable. Directory reconciliation removes the prior pin; Directory.resolve then returns pending for incomplete remaining coverage; SourceQueries.prepare generic pending branch waits without checking removed prior owner. No dispatch is produced.",
+  "required_correction": "Check current retained frozen-owner admission for already pinned remote rows before generic metadata-pending wait; preserve nilpin initial-query semantics and original deadlines. Review callback equivalent against config-generation fence.",
+  "scope": "Actual frozen-module pure state transitions only; parent independently owns real held-peer response/restart qualification. No claim of HTTP, recovery, Docker or formal admission coverage.",
+  "harness": "tests/source_query_pin_review.exs",
+  "harness_sha256": "973234a58a6e9b40242e2355709915fded22bb88481ca37d2455a415afd2381e",
+  "raw_report": "verification/project-recovery/query-pin-overlay01-failure.json",
+  "raw_log": "verification/project-recovery/query-pin-overlay01-failure.log"
+}

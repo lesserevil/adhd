@@ -138,3 +138,5 @@ valid advanced target. These are component checks, separate from the full
 hub/Kafka/crash evidence. An initial harness compile attempt failed on ambiguous
 Elixir `!=` spacing before any application modules ran; the corrected harness is
 bound by the report digest.
+
+The focused SourceQueries pin review on the source15-only overlay is retained in `verification/project-recovery/query-pin-overlay01-review.json`, with its failed ten-case raw report and log. Nine cases pass; explicit owner removal masked by another peer’s pending metadata remains a terminal-status defect. This is isolated actual-module evidence, not a full recovery or admission claim.

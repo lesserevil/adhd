@@ -1,0 +1,84 @@
+{
+  "schema": "adhd/image-filesystem-abi-preparation@1",
+  "passed": true,
+  "scope": "Host compilation/ELF and pure checks only; NO actual image loading or app crash qualification",
+  "code": {
+    "image_filesystem_abi.py": "24fbf3b903642cc73cebb0c1d8fffc3e0a31cc6a89cbdcab7b8282eee8ff17d3",
+    "image_filesystem_abi_caller.c": "236a329cad694491c27f8653c88cdf77c1b39b7c312318f8a34dd1dbaeb58828",
+    "image_filesystem_abi_unit.py": "59537c35b743e7a9e20cc9ac04a3a83404129458fd425dc27e15c9c00b0f937c"
+  },
+  "observer_sources_unchanged": {
+    "multi_fault.c": "a6c109c937a6b9570f5fb96bf156ea890ae38b635af6f46cbdece98aa4bc2966",
+    "store_move_fault.c": "9af736cb17ffc8faaca52a97ec5995e2ec75fc670cf325c1b1e0bcbf132cd366",
+    "storage_write_fault.c": "73eae65e688ce1bfd410a20a4744f4336bfab6f480a5776b15ca84948ecea217",
+    "project_recovery_fault.c": "72fdee24007d2ca9a7a54999358653e4f1e8a3656422ccb8bc2ca30aa4297e62",
+    "rebind_fault.c": "214336e720e505aa0da8e2cfd6049fe9fc821220e9b8e9df7727b3702c694b08"
+  },
+  "helper_baseline": "deployment b83ed2b; strict full ABI closure9afb7a0 +startup cleanup; codec runtime not used",
+  "pure_guards": {
+    "tests": 9,
+    "passed": true,
+    "source_specific_export_fixtures": 18,
+    "subprocess_attempts": 0,
+    "actual_execute_test": "First mocked case fails; fsynced execution.started survives removing partial result; second actual execute raises FileExistsError before another case",
+    "cleanup_tests": "Known-ID initial inspect exception still attempts independent force-remove; positive foreign never removed; daemon errors never establish absence",
+    "input_checks": "Exact file AND directory sets; actual driver digest; extra directory, symlink and byte changes rejected"
+  },
+  "host_elf": {
+    "objects": 6,
+    "passed": true,
+    "needed_libraries": [],
+    "glibc_symbol_versions": [],
+    "architecture": "ELF64 x86_64",
+    "objects_never_loaded": true,
+    "caller_scalar_imports": [
+      "_exit",
+      "access",
+      "close",
+      "dlopen",
+      "dlsym",
+      "fsync",
+      "getenv",
+      "getpid",
+      "lseek",
+      "memcmp",
+      "open",
+      "pread",
+      "read",
+      "setenv",
+      "snprintf",
+      "strcmp",
+      "strlen",
+      "unsetenv",
+      "write"
+    ]
+  },
+  "unstarted_plan": {
+    "path": "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/plan.json",
+    "sha256": "c2c15f47c92eef22bd1837fc14155c7333361837005a3ee6dbaedd8134d5bc53",
+    "driver_sha256": "24fbf3b903642cc73cebb0c1d8fffc3e0a31cc6a89cbdcab7b8282eee8ff17d3",
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+    "cases": 18,
+    "case_seconds": 120,
+    "cleanup_seconds": 45,
+    "max_serial_containers": 1,
+    "fresh_full_verify": true,
+    "runtime_marker_cases_result_absent": true,
+    "frozen_files": 23,
+    "frozen_directories": 7
+  },
+  "baseline_binding": "Example plan binds admitted38 image b12/rawcontext38 ONLY. NOT39 evidence. Future39 needs fresh exactimage plan +rootreview/GO; no relabeling.",
+  "required_execution_gate": "Root reviews concrete code and exact plan then gives explicitGO; none given for loader execution",
+  "actual_loader_probes": 0,
+  "application_starts": 0,
+  "provider_calls": 0,
+  "broker_calls": 0,
+  "prior_preparation": "verification/image-filesystem-abi-preparation preserves initial03 host/pure report. Ignored01/02/03unstarted plans retained; none executed.",
+  "limitations": [
+    "HostELF and mocked tests do not qualify musl runtime forwarding; all18 actual exports UNRUN",
+    "pwrite64 real-next resolution/distinct-pointer and >4GiB sparse byte/size assertions implemented failclosed, not runtime-proven",
+    "Standalone operations on owned private controls do not qualify ADHD crash durability, recovery or a current successor image",
+    "First failure stops all later cases; no retry, symbol fallback or invented upstream success"
+  ]
+}

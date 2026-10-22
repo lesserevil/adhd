@@ -20,8 +20,8 @@ class AuditTest(unittest.TestCase):
         cid='a'*64
         ids,names,pids=owned_resources([{'container_id':cid,'namespace_pid':1,
             'host_vm_pid':123,'vm_start_time_ticks':'456','owned_name':'adhd-known',
-            'child':{'host_container_pid':789,'namespace_pid':1},'name':'arbitrary'}])
-        self.assertEqual(ids,{cid});self.assertEqual(names,{'adhd-known'})
+            'child':{'host_container_pid':789,'namespace_pid':1,'Id':'b'*64,'Name':'/adhd-inspected'},'name':'arbitrary'}])
+        self.assertEqual(ids,{cid,'b'*64});self.assertEqual(names,{'adhd-known','adhd-inspected'})
         self.assertEqual(pids,{(123,'456'),(789,None)})
 
 if __name__=='__main__':unittest.main()

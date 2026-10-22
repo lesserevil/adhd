@@ -40,8 +40,9 @@ def owned_resources(values):
     def walk(value):
         if isinstance(value,dict):
             for key,item in value.items():
-                if key=='container_id'and isinstance(item,str)and re.fullmatch('[a-f0-9]{64}',item):ids.add(item)
+                if key in('container_id','Id')and isinstance(item,str)and re.fullmatch('[a-f0-9]{64}',item):ids.add(item)
                 if key in('owned_name','name')and isinstance(item,str)and re.fullmatch('adhd-[a-z0-9-]+',item):names.add(item)
+                if key=='Name'and isinstance(item,str)and re.fullmatch('/adhd-[a-z0-9-]+',item):names.add(item[1:])
                 if key in('host_vm_pid','host_container_pid','host_process_pid','child_pid')and type(item)is int and item>1:
                     ticks=next((value[k]for k in('vm_start_time_ticks','start_time_ticks','start_ticks')if k in value),None)
                     processes.add((item,str(ticks)if ticks is not None else None))

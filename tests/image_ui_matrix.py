@@ -44,10 +44,32 @@ def tree(root,links=False,external_links=None):
  return {'files':files,'directories':directories,'links':aliases,'external_links':outside}
 
 
+
+def approved_entrypoint(key,current,original,amendments):
+ if current==original:
+  assert key not in amendments,'Unused entrypoint amendment'
+  return False
+ assert key=='tests/openrig_acceptance.py','Unapproved original UI entrypoint change'
+ row=amendments[key]
+ assert row['original_sha256']==original and row['approved_sha256']==current
+ assert isinstance(row['scope'],str) and 1<=len(row['scope'])<=1024
+ return True
+
+
 def prepare(a):
  repo=a.repo.absolute();work=a.work.absolute();assert repo.resolve()==repo and not work.exists()
  assert sha(a.admission)==a.admission_sha256;admission=json.loads(a.admission.read_text());image=admission['image_config_identity'];artifact=admission['artifact_sha256']
  reader=load(repo/'tests/image_qualification_inputs.py','reviewed_ui_inputs');selected=reader.reviewed_payload(a.context/'manifest.json',a.admission,a.admission_sha256,image,artifact)
+ compiled=None
+ if a.compiled_cache_manifest:
+  validator=load(repo/'tests/controlled_sdk_matrix.py','reviewed_ui_cache_binding')
+  compiled=validator.compiled_cache_binding(a.compiled_cache_manifest,admission,image,artifact,sha(a.context/'manifest.json'))
+ assert compiled is not None or 'compiled_runtime_audit' not in admission,'Compiled UI target requires cache manifest binding'
+ amendments={}
+ if a.entrypoint_amendments:
+  amendment=json.loads(a.entrypoint_amendments.read_text());assert amendment['schema']=='adhd/ui-entrypoint-amendments@1';amendments=amendment['entries']
+  assert set(amendments)<= {'tests/openrig_acceptance.py'}
+ used_amendments=set()
  initial=json.loads((repo/'verification/native39-ui-initial/plan.json').read_text());remainder=json.loads((repo/'verification/native39-ui-remainder/plan.json').read_text())
  historical=json.loads((repo/'verification/native39-ui-remainder/manifest.json').read_text());assert historical['passed'] and historical['complete_suites']==9 and historical['complete_check_or_viewport_units']==86
  old_inputs=json.loads(Path(remainder['inputs_manifest']).read_text());assert sha(remainder['inputs_manifest'])==remainder['inputs_manifest_sha256']
@@ -59,6 +81,8 @@ def prepare(a):
  for name in ['image_ui_matrix.py','image_ui_runtime.py','image_ui_static.py']:shutil.copyfile(Path(__file__).parent/name,frozen/'tests'/name)
  bound={'image-manifest.json':a.context/'manifest.json','staged-Dockerfile':a.context/'Dockerfile','admission.json':a.admission,
   'receipt.json':a.admission.parent/'receipt.json','rebuild.json':a.admission.parent/'rebuild.json','openrig.tgz':Path(initial['frozen_tarball'])}
+ if compiled:bound.update({'cache-manifest.json':a.compiled_cache_manifest,'cache-metadata.json':a.compiled_cache_manifest.with_name('cache-metadata.json')})
+ if a.entrypoint_amendments:bound['entrypoint-amendments.json']=a.entrypoint_amendments
  for name,path in bound.items():assert path.is_file() and not path.is_symlink();shutil.copyfile(path,work/name)
  assert all(sha(work/name)==admission['files'][name] for name in ['receipt.json','rebuild.json'])
  pin=json.loads((frozen/'tests/openrig_pin.json').read_text());assert 'sha512-'+base64.b64encode(hashlib.sha512((work/'openrig.tgz').read_bytes()).digest()).decode()==pin['integrity']
@@ -77,12 +101,15 @@ def prepare(a):
    external_links[str(path.relative_to(modules))]={'link':os.readlink(path),'resolved':str(path.resolve()),'sha256':sha(path.resolve())}
  tool_roots[str(modules)]=tree(modules,links=True,external_links=external_links)
  node=Path(initial['env']['PATH'].split(':')[0])/'node';externals[str(node)]={'sha256':sha(node),'resolved':str(node.resolve())}
+ docker=Path('/usr/bin/docker');assert docker.resolve()==docker;externals[str(docker)]={'sha256':sha(docker)}
+ qualified_path=':'.join([str(node.parent),str(repo/'_build/federation/native/erlang/bin'),str(repo/'_build/federation/native/elixir/bin'),'/usr/bin','/bin'])
+ assert shutil.which('docker',path=qualified_path)==str(docker)
  jobs=[];runtime=work/'runtime';openrig_root=a.openrig_root.absolute();assert not openrig_root.exists() and len(str(openrig_root/'rigs/mux/tmux-999999/default'))<105
  for row in initial['serial_lane']:
   name=row['name'];assert name in CASES
   old=row['argv'];entry=next(Path(value) for value in old if value.endswith('.py'))
   entry=frozen/'tests'/entry.name;key='tests/'+entry.name
-  assert sha(entry)==old_inputs['files'][key]['sha256'],'Original UI entrypoint body changed'
+  if approved_entrypoint(key,sha(entry),old_inputs['files'][key]['sha256'],amendments):used_amendments.add(key)
   common=[str(entry),'--image',image,'--image-manifest',str(work/'image-manifest.json'),'--report',str(work/(name+'.json'))]
   if name not in ['accounts-oidc','session-fence']:
    keep=openrig_root if name=='openrig' else runtime/name
@@ -92,17 +119,17 @@ def prepare(a):
   if name=='session-fence':common+=['--port-lock',initial['serial_lane'][8]['argv'][-1]]
   jobs.append({'name':name,'expected_units':CASES[name],'test_argv':common,'outer_timeout_seconds':row['outer_timeout_seconds'],'scope':row['scope'],
    'custody_report':str(work/(name+'-custody.json')),'launch_ledger':str(work/(name+'-launches.json')),'foundation_lock':initial['serial_lane'][7]['argv'][1] if name=='accounts-oidc' else None})
- assert [v['name'] for v in jobs]==list(CASES)
+ assert [v['name'] for v in jobs]==list(CASES) and used_amendments==set(amendments)
  shutil.copyfile(__file__,work/'run.py')
- env={key:value for key,value in initial['env'].items() if key not in ['PYTHONPYCACHEPREFIX']};env.update(PYTHONDONTWRITEBYTECODE='1',NODE_DISABLE_COMPILE_CACHE='1')
+ env={key:value for key,value in initial['env'].items() if key not in ['PYTHONPYCACHEPREFIX']};env.update(PYTHONDONTWRITEBYTECODE='1',NODE_DISABLE_COMPILE_CACHE='1',PATH=qualified_path)
  plan={'schema':'adhd/image-ui-nine-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','image_config_identity':image,'artifact_sha256':artifact,'admission_sha256':a.admission_sha256,
-  'canonical_manifest_sha256':sha(work/'image-manifest.json'),'manifest':str(work/'image-manifest.json'),'frozen':str(frozen),'frozen_tree':tree(frozen),'frozen_inputs':{key:value['sha256'] for key,value in tree(frozen)['files'].items()},
+  'compiled_cache':compiled,'entrypoint_amendments':amendments,'canonical_manifest_sha256':sha(work/'image-manifest.json'),'manifest':str(work/'image-manifest.json'),'frozen':str(frozen),'frozen_tree':tree(frozen),'frozen_inputs':{key:value['sha256'] for key,value in tree(frozen)['files'].items()},
   'externals':externals,'tool_roots':tool_roots,'bound_inputs':{name:sha(work/name) for name in bound},'driver_sha256':sha(work/'run.py'),'python':sys.executable,
   'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'admitted_specification_drift':drift,'actual_formal_export':str(formal),'specifications':33,'actual_app_files':59,
   'runtime_cwd':str(runtime),'openrig_root':str(openrig_root),'lane_lock':initial['lane_lock'],'env':env,'jobs':jobs,'planned_suites':list(CASES),'expected_units':86,
-  'parallelism':1,'maximum_owned_hubs':2,'automatic_retries':0,'runs_per_suite':1,'stop_first_failure':True,'provider_calls_authorized':0,
+  'docker':{'path':str(docker),'sha256':sha(docker)},'qualified_path':qualified_path,'tool_closure_scope':'Existing declared tool roots and exact top executables; no additional recursive library closure claim','parallelism':1,'maximum_owned_hubs':2,'automatic_retries':0,'runs_per_suite':1,'stop_first_failure':True,'provider_calls_authorized':0,
   'native39_historical_only':{'artifact_sha256':historical['artifact_sha256'],'completed_units':86,'original_false_aggregate_preserved':True},
-  'capture_and_manual_review':initial['capture_and_manual_review'],'openrig_scope':'Actual two builtin:terminal rigs via pinned CLI0.6.14. No LLM coding-provider workload; no image egress firewall claim.',
+  'prior_image40_prefix':'Six whole71 remain historical source-only-image40 scopes; old false aggregate and10 partial OpenRig excluded, not counted into new full9 execution','diagnostic_capture_storage':'Actual PNG/ARIA remain ignored under runtime/OpenRig private roots; retain hashes and paths only in durable proof, then require root visual review','capture_and_manual_review':initial['capture_and_manual_review'],'openrig_scope':'Actual two builtin:terminal rigs via pinned CLI0.6.14. No LLM coding-provider workload; no image egress firewall claim.',
   'scope':'Exact admitted image40 UI/OpenRig nine suites86units only after actual execution. Native39 evidence remains historical; captures require root visual inspection; no backend semantic quality/platform/release claim.'}
  write(work/'plan.json',plan);load(work/'run.py','copied_image_ui_driver').verify(plan,work)
  print(json.dumps({'plan':str(work/'plan.json'),'plan_sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],'frozen_files':len(plan['frozen_inputs']),'external_entries':len(externals),'tool_roots':len(tool_roots),'bound_inputs':len(bound)}))
@@ -119,7 +146,14 @@ def verify(plan,work):
    if 'resolved' in value:assert str(path.resolve())==value['resolved']
  for root,value in plan['tool_roots'].items():assert tree(Path(root),links=bool(value['links']),external_links=value['external_links'])==value
  for name,digest in plan['bound_inputs'].items():assert not(work/name).is_symlink() and sha(work/name)==digest
+ if plan.get('compiled_cache'):
+  validator=load(work/'frozen/tests/controlled_sdk_matrix.py','frozen_ui_cache_binding')
+  assert validator.compiled_cache_binding(work/'cache-manifest.json',json.loads((work/'admission.json').read_text()),plan['image_config_identity'],plan['artifact_sha256'],plan['canonical_manifest_sha256'])==plan['compiled_cache']
+ if plan.get('entrypoint_amendments'):
+  assert json.loads((work/'entrypoint-amendments.json').read_text())['entries']==plan['entrypoint_amendments']
  assert plan['planned_suites']==list(CASES) and [v['name'] for v in plan['jobs']]==list(CASES) and [v['expected_units'] for v in plan['jobs']]==list(CASES.values())
+ assert plan['docker']['path']=='/usr/bin/docker' and sha(plan['docker']['path'])==plan['docker']['sha256']
+ assert plan['env']['PATH']==plan['qualified_path'] and shutil.which('docker',path=plan['qualified_path'])==plan['docker']['path']
  assert plan['parallelism']==1 and plan['automatic_retries']==0 and plan['expected_units']==86
  return True
 
@@ -148,16 +182,16 @@ def cleanup_ledger(work,job,plan):
  for launch in ledger['launches']:
   identifier=launch.get('container_id') or launch['name'];result={'name':launch['name'],'identifier':identifier,'observed_absent':False,'fallback_mutation':False}
   try:
-   inspected=subprocess.run(['docker','inspect',identifier],capture_output=True,timeout=30)
+   inspected=subprocess.run([plan['docker']['path'],'inspect',identifier],capture_output=True,timeout=30)
    if not helper.authoritative_absence(inspected,identifier):
     assert inspected.returncode==0;objects=json.loads(inspected.stdout);assert len(objects)==1;obj=objects[0]
     assert obj['Image']==plan['image_config_identity'] and obj['Name']=='/'+launch['name']
     if launch.get('container_id'):assert obj['Id']==launch['container_id']
     if launch['kind']=='app':assert any(m['Type']=='bind' and m['Source']==launch['private_root'] and m['Destination']==launch['private_root'] for m in obj['Mounts'])
-    removed=subprocess.run(['docker','rm','--force',obj['Id']],capture_output=True,timeout=30);assert removed.returncode==0
+    removed=subprocess.run([plan['docker']['path'],'rm','--force',obj['Id']],capture_output=True,timeout=30);assert removed.returncode==0
     mutated=True;result['fallback_mutation']=True;identifier=obj['Id']
    for key in dict.fromkeys([identifier,launch['name']]):
-    final=subprocess.run(['docker','inspect',key],capture_output=True,timeout=30);assert helper.authoritative_absence(final,key)
+    final=subprocess.run([plan['docker']['path'],'inspect',key],capture_output=True,timeout=30);assert helper.authoritative_absence(final,key)
    result['identifier']=identifier;result['observed_absent']=True
   except BaseException as error:result['failure_type']=type(error).__name__;errors.append(type(error).__name__)
   rows.append(result)
@@ -231,7 +265,7 @@ def execute(work,expected):
 if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__);mode=parser.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  parser.add_argument('--work',type=Path,required=True);parser.add_argument('--reviewed-plan-sha256')
- for name in ['repo','context','admission','openrig-root']:parser.add_argument('--'+name,type=Path)
+ for name in ['repo','context','admission','openrig-root','compiled-cache-manifest','entrypoint-amendments']:parser.add_argument('--'+name,type=Path)
  parser.add_argument('--admission-sha256');a=parser.parse_args();work=a.work.absolute()
  if a.prepare:prepare(a)
  else:sys.exit(execute(work,a.reviewed_plan_sha256))

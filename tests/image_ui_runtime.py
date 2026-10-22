@@ -74,7 +74,7 @@ class Custody:
  def progress(self):
   value={'launches':self.launches,'clients':[{'pid':v.pid,'identity':identity} for v,identity in self.clients],'chromium':self.chromium,'rigs':self.rigs,'vm':self.vm}
   Path(self.job['launch_ledger']).write_text(json.dumps(value,indent=2)+'\n')
- def docker(self,*argv):return subprocess.run(['docker',*argv],capture_output=True,check=True,timeout=30)
+ def docker(self,*argv):return subprocess.run([self.plan.get('docker',{'path':'/usr/bin/docker'})['path'],*argv],capture_output=True,check=True,timeout=30)
  def audit_models(self,config):
   from controlled_image_runtime import audit_models
   allowed=set()
@@ -84,6 +84,20 @@ class Custody:
   models={key:config[key] for key in ['matcher','history','retrieval','archive','feedback','optimization'] if key in config}
   models['projects']=[{'settings':{key:value for key,value in (project.get('settings') or {}).items() if key in ['matcher','history','retrieval','archive','feedback','optimization']}} for project in config.get('projects',[])]
   return audit_models(models,allowed)
+ def observe_compiled_cache(self,identifier,row):
+  compiled=self.plan.get('compiled_cache')
+  if not compiled:return None
+  value=compiled['manifest'];raw=self.docker('exec',identifier,'cat','/runtime/adhd/manifest.json').stdout
+  assert hashlib.sha256(raw).hexdigest()==compiled['manifest_sha256'] and json.loads(raw)==value
+  files={'/runtime/adhd/boot.exs':value['boot_sha256'],'/runtime/adhd/build.exs':value['build_sha256'],'/runtime/adhd/inputs.json':value['inputs_sha256'],
+   **{'/runtime/adhd/ebin/'+k:v for k,v in value['beams'].items()},
+   **{('/proc/1/exe'if k=='/proc/self/exe'else k):v for k,v in value['toolchain']['anchors'].items()}}
+  raw=self.docker('exec',identifier,'sha256sum',*files).stdout.decode().splitlines()
+  observed={line.split(None,1)[1].strip():line.split(None,1)[0]for line in raw};assert observed==files
+  assert row['Config']['Entrypoint']==compiled['reviewed_runtime_audit']['entrypoint']
+  again=json.loads(self.docker('inspect',identifier).stdout)[0]
+  assert again['Id']==identifier and again['State']['Pid']==row['State']['Pid'] and again['State']['Running']
+  return {'manifest_sha256':compiled['manifest_sha256'],'modules':len(value['modules']),'cache_and_toolchain_files_verified':len(files),'same_actual_VM':True,'entrypoint':row['Config']['Entrypoint']}
  def observe_vm(self,image,phase):
   if image.name is None:return
   self.audit_models(json.loads(image.config_file.read_text()) if getattr(image,'config_file',None) else {})
@@ -99,7 +113,7 @@ class Custody:
   hashes=self.docker('exec',identifier,'sha256sum',*['/app/'+key for key in expected]).stdout.decode()
   actual={path.removeprefix('/app/'):digest for digest,path in (v.split() for v in hashes.splitlines())};assert actual==expected
   self.vm.append({'phase':phase,'container_id':identifier,'owned_name':image.name,'image_config_identity':row['Image'],'host_vm_pid':row['State']['Pid'],
-   'namespace_vm_pid':1,'vm_executable':exe,'pid_namespace_mode':row['HostConfig']['PidMode'],'actual_app_files':len(actual),'canonical_manifest_sha256':hashlib.sha256(self.manifest_raw).hexdigest()})
+   'namespace_vm_pid':1,'vm_executable':exe,'pid_namespace_mode':row['HostConfig']['PidMode'],'actual_app_files':len(actual),'compiled_cache':self.observe_compiled_cache(identifier,row),'canonical_manifest_sha256':hashlib.sha256(self.manifest_raw).hexdigest()})
   for launch in self.launches:
    if launch['name']==image.name:launch['container_id']=identifier
   self.progress()
@@ -136,6 +150,7 @@ class Custody:
      mount=dict(part.split('=',1) for part in mounts[0].split(','));assert mount['type']=='bind' and mount['src']==mount['dst']
      launch['private_root']=mount['src']
     custody.launches.append(launch);custody.progress()
+   if isinstance(argv,(list,tuple)) and argv and argv[0]=='docker':argv=[custody.plan['docker']['path'],*argv[1:]]
    process=popen(argv,*a,**kw);identity=proc(process.pid);custody.clients.append((process,identity))
    if launch:launch.update(client_pid=process.pid,client_identity=identity)
    custody.progress();return process

@@ -14,6 +14,39 @@ class UIInputGuards(unittest.TestCase):
  def test_original_nine_suite_scope_is_explicit(self):
   self.assertEqual(list(matrix.CASES),['admin','evidence','eventing','roles','recovery','index-epoch','openrig','accounts-oidc','session-fence'])
   self.assertEqual(sum(matrix.CASES.values()),86)
+ def test_only_exact_reviewed_openrig_entrypoint_amendment_is_allowed(self):
+  key='tests/openrig_acceptance.py';a='a'*64;b='b'*64;amendment={key:{'original_sha256':a,'approved_sha256':b,'scope':'Original100lines; exact shipped CLI JSON/session/fulladapter path with terminal soft wrapping; raw bearer denial unchanged'}}
+  self.assertTrue(matrix.approved_entrypoint(key,b,a,amendment));self.assertFalse(matrix.approved_entrypoint('tests/other.py',a,a,{}))
+  for source,current,original,amendments in [('tests/other.py',b,a,amendment),(key,'c'*64,a,amendment),(key,b,'d'*64,amendment),(key,a,a,amendment)]:
+   with self.assertRaises(AssertionError):matrix.approved_entrypoint(source,current,original,amendments)
+ def test_source_only_runtime_does_not_issue_cache_calls(self):
+  custody=runtime.Custody.__new__(runtime.Custody);custody.plan={}
+  with patch.object(runtime.subprocess,'run')as called:
+   self.assertIsNone(custody.observe_compiled_cache('owned',{}));called.assert_not_called()
+ def test_compiled_cache_audits_exact_helpers_BEAMs_and_same_VM_without_health(self):
+  from controlled_sdk_static import SDKPreparationGuards
+  import controlled_sdk_matrix
+  with tempfile.TemporaryDirectory()as tmp:
+   args=SDKPreparationGuards().compiled_fixture(Path(tmp));compiled=controlled_sdk_matrix.compiled_cache_binding(*args)
+   for changed in [False,True]:
+    custody=runtime.Custody.__new__(runtime.Custody);custody.plan={'compiled_cache':compiled};calls=[]
+    row={'State':{'Pid':123},'Config':{'Entrypoint':compiled['reviewed_runtime_audit']['entrypoint']}}
+    def docker(*argv):
+     calls.append(argv)
+     if argv[0]=='inspect':body=json.dumps([{'Id':'owned','State':{'Pid':124 if changed else 123,'Running':True}}]).encode()
+     elif argv[2]=='cat':body=args[0].read_bytes()
+     else:
+      value=compiled['manifest'];expected={'/runtime/adhd/boot.exs':'2'*64,'/runtime/adhd/build.exs':'3'*64,'/runtime/adhd/inputs.json':'1'*64,
+       **{'/runtime/adhd/ebin/'+k:v for k,v in value['beams'].items()},
+       **{('/proc/1/exe'if k=='/proc/self/exe'else k):v for k,v in value['toolchain']['anchors'].items()}}
+      body=('\n'.join(v+'  '+k for k,v in expected.items())+'\n').encode()
+     return SimpleNamespace(stdout=body)
+    custody.docker=docker
+    if changed:
+     with self.assertRaises(AssertionError):custody.observe_compiled_cache('owned',row)
+    else:
+     result=custody.observe_compiled_cache('owned',row);self.assertEqual(result['modules'],59);self.assertEqual(result['cache_and_toolchain_files_verified'],67)
+    self.assertEqual(len(calls),3);self.assertNotIn('health',str(calls))
  def test_tree_rejects_added_files_and_redirected_roots(self):
   with tempfile.TemporaryDirectory() as directory:
    root=Path(directory);owned=root/'owned';owned.mkdir();(owned/'source').write_text('source');before=matrix.tree(owned)

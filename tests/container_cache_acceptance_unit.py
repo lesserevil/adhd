@@ -8,7 +8,7 @@ import tarfile
 import tempfile
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 spec = importlib.util.spec_from_file_location('cache', Path(__file__).with_name('container_cache_acceptance.py'))
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
@@ -75,6 +75,33 @@ class Guards(unittest.TestCase):
             with self.assertRaises(AssertionError): runner.close(row)
             self.assertFalse(any(args[0] == 'rm' for args in calls))
 
+    def test_fixed_socket_and_private_client_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runner = self.runner(directory)
+            runner.plan['docker_socket'] = {'path': '/run/docker.sock', 'identity': [1, 2]}
+            socket = MagicMock()
+            socket.stat.return_value = SimpleNamespace(st_mode=m.stat.S_IFSOCK, st_dev=1, st_ino=2)
+            socket.resolve.return_value = socket
+            socket.__str__.return_value = '/run/docker.sock'
+            with patch.object(m, 'Path', return_value=socket), patch.object(m, 'read', return_value=b'{}'), \
+                 patch.dict(m.os.environ, {'DOCKER_HOST': 'tcp://untrusted', 'LD_PRELOAD': '/untrusted'}), \
+                 patch.object(m.subprocess, 'run') as process:
+                runner.command(['inspect', 'owned'])
+                self.assertEqual(process.call_args.args[0][:3], ['/usr/bin/docker', '--host', 'unix:///run/docker.sock'])
+                self.assertNotIn('DOCKER_HOST', process.call_args.kwargs['env'])
+                self.assertNotIn('LD_PRELOAD', process.call_args.kwargs['env'])
+                socket.stat.return_value.st_ino = 3
+                process.reset_mock()
+                with self.assertRaises(AssertionError): runner.command(['inspect', 'owned'])
+                process.assert_not_called()
+
+    def test_known_id_mismatch_is_foreign(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runner = self.runner(directory)
+            with self.assertRaises(m.ForeignContainer):
+                runner.owned({'Name': '/owned', 'Image': runner.plan['image'], 'Id': 'd' * 64},
+                             {'name': 'owned', 'container_id': 'c' * 64})
+
     def test_true_missing_helper_is_fixed_allowlist(self):
         self.assertIn('rm -- "$1"', m.MISSING_HELPER)
         self.assertNotIn('eval ', m.MISSING_HELPER)
@@ -109,7 +136,7 @@ class Guards(unittest.TestCase):
                 captured.append(args)
                 return subprocess.CompletedProcess(args, 0, ('c' * 64).encode(), b'')
             runner.command = command
-            runner.inspect = lambda _: {'Name': '/' + runner.ledger[-1]['name'], 'Image': runner.plan['image'],
+            runner.inspect = lambda _: {'Name': '/' + runner.ledger[-1]['name'], 'Image': runner.plan['image'], 'Id': 'c' * 64,
                 'Config': {'User': '10001:10001'}, 'HostConfig': {'ReadonlyRootfs': True, 'NetworkMode': 'none', 'CapDrop': ['ALL']}}
             runner.create('production', ['["describe"]'])
             self.assertIn('--read-only', captured[0])
@@ -123,7 +150,7 @@ class Guards(unittest.TestCase):
                 captured.append(args)
                 return subprocess.CompletedProcess(args, 0, ('c' * 64).encode(), b'')
             runner.command = command
-            runner.inspect = lambda _: {'Name': '/' + runner.ledger[-1]['name'], 'Image': runner.plan['image'],
+            runner.inspect = lambda _: {'Name': '/' + runner.ledger[-1]['name'], 'Image': runner.plan['image'], 'Id': 'c' * 64,
                 'Config': {'User': '10001:10001'}, 'HostConfig': {'ReadonlyRootfs': False, 'NetworkMode': 'none', 'CapDrop': ['ALL']}}
             row = runner.create('copy', ['["describe"]'], True)
             self.assertNotIn('--read-only', captured[0]); self.assertEqual(row['runtime_user'], '10001:10001')

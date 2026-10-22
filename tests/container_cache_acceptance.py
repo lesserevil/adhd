@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -114,7 +115,15 @@ class Runner:
         self.ledger = []
 
     def command(self, args, timeout=30, data=None):
-        return subprocess.run(['/usr/bin/docker', *args], input=data, capture_output=True, timeout=timeout)
+        socket = Path(self.plan['docker_socket']['path'])
+        info = socket.stat()
+        assert socket.resolve() == socket and stat.S_ISSOCK(info.st_mode)
+        assert [info.st_dev, info.st_ino] == self.plan['docker_socket']['identity']
+        env = {k: v for k, v in os.environ.items() if not k.startswith(('DOCKER_', 'LD_', 'PYTHON'))}
+        env['DOCKER_CONFIG'] = str(self.work / 'docker-config')
+        assert read(self.work / 'docker-config/config.json') == b'{}'
+        return subprocess.run(['/usr/bin/docker', '--host', 'unix://' + str(socket), *args],
+                              input=data, capture_output=True, timeout=timeout, env=env)
 
     def inspect(self, name):
         p = self.command(['inspect', name])
@@ -125,7 +134,8 @@ class Runner:
         return rows[0]
 
     def owned(self, state, row):
-        if state['Name'] != '/' + row['name'] or state['Image'] != self.plan['image']:
+        if (state['Name'] != '/' + row['name'] or state['Image'] != self.plan['image'] or
+                (row.get('container_id') and state['Id'] != row['container_id'])):
             raise ForeignContainer('Container identity mismatch')
 
     def close(self, row):
@@ -136,6 +146,9 @@ class Runner:
             state = self.inspect(identity)
             if state is not None:
                 self.owned(state, row)
+                identity = state['Id']
+                assert re.fullmatch('[0-9a-f]{64}', identity)
+                row['container_id'] = identity
                 if state['State']['Running']:
                     killed = self.command(['kill', identity])
                     assert killed.returncode == 0
@@ -172,7 +185,7 @@ class Runner:
                'rootfs': 'writable-offline-tamper' if negative else 'production-readonly',
                'runtime_user': '0:0' if helper_target else '10001:10001'}
         self.ledger.append(row)
-        args = ['create', '--name', row['name'], '--network', 'none', '--cap-drop', 'ALL',
+        args = ['create', '--pull', 'never', '--name', row['name'], '--network', 'none', '--cap-drop', 'ALL',
                 '--security-opt', 'no-new-privileges', '--user', row['runtime_user'],
                 '--memory', '768m', '--cpus', '2', '--pids-limit', '256', '--workdir', '/tmp',
                 '--tmpfs', '/tmp:rw,nosuid,nodev,size=64m']
@@ -200,7 +213,7 @@ class Runner:
         self.ledger.append(row)
         primary = None
         try:
-            p = self.command(['create', '--name', row['name'], '--network', 'none', '--cap-drop', 'ALL',
+            p = self.command(['create', '--pull', 'never', '--name', row['name'], '--network', 'none', '--cap-drop', 'ALL',
                               '--security-opt', 'no-new-privileges', '--read-only', '--user', '10001:10001', self.plan['image']])
             assert p.returncode == 0
             identity = p.stdout.decode().strip()
@@ -312,6 +325,10 @@ def verify(work, plan):
     assert str(Path('/proc/self/exe').resolve()) == plan['python']['realpath']
     assert sha(read(plan['python']['realpath'])) == plan['python']['sha256']
     assert sys.version == plan['python']['version']
+    assert read(work / 'docker-config/config.json') == b'{}'
+    socket = Path(plan['docker_socket']['path']); info = socket.stat()
+    assert socket.resolve() == socket and stat.S_ISSOCK(info.st_mode)
+    assert [info.st_dev, info.st_ino] == plan['docker_socket']['identity']
 
 
 def prepare(args):
@@ -328,11 +345,17 @@ def prepare(args):
     assert len(modules) == len(set(modules)) == 59
     work.mkdir(parents=True, mode=0o700)
     shutil.copyfile(__file__, work / 'driver.py')
+    (work / 'docker-config').mkdir(mode=0o700)
+    (work / 'docker-config/config.json').write_bytes(b'{}')
+    socket = Path('/var/run/docker.sock').resolve(strict=True)
+    info = socket.stat()
+    assert stat.S_ISSOCK(info.st_mode)
     plan = {'schema': 'adhd/cache-qualification-plan@1', 'prepared': True,
             'execution_ready': True, 'root_GO_required': True,
             'image': args.image, 'context': str(context), 'context_files': files,
             'artifact_sha256': sha(source), 'expected_modules': modules,
             'driver_sha256': sha(read(work / 'driver.py')), 'docker_sha256': sha(read('/usr/bin/docker')),
+            'docker_socket': {'path': str(socket), 'identity': [info.st_dev, info.st_ino]},
             'python': {'path': str(Path(sys.executable).absolute()), 'realpath': str(Path('/proc/self/exe').resolve()),
                        'sha256': sha(read(Path('/proc/self/exe').resolve())), 'version': sys.version},
             'cases': list(CASES), 'application_deadline_seconds': 30,

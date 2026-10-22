@@ -1,0 +1,209 @@
+{
+  "scope": "Read-only selected public policy and redacted stack; complete private journals/configuration/store are not copied. No causal exception is available from the redacted Store stop.",
+  "private_inputs": {
+    "/home/horde/src/adhd/_build/eventing-readiness-native23-02/results/fixtures/existing-retention/hub.json": {
+      "sha256": "b0be804956cf63b046a252afb78fe547275fc0cea173eaaf513293bb4b025b61",
+      "bytes": 4386
+    },
+    "/home/horde/src/adhd/_build/eventing-readiness-native23-02/results/fixtures/existing-retention/hub.json.transaction": {
+      "sha256": "f8a78709ff95c2ebe6bfd4ea40a68ff5fefe4242f2b02ea735fe22d39d254c7b",
+      "bytes": 6740
+    },
+    "/home/horde/src/adhd/_build/eventing-readiness-native23-02/results/fixtures/existing-retention/hub.json.recovery": {
+      "sha256": "6987a3ff5d2e7afa3c5fe8d7e15ce94b8f5fdc8552084a0b8b31c7ce27df4aa3",
+      "bytes": 7506
+    },
+    "/home/horde/src/adhd/_build/eventing-readiness-native23-02/results/fixtures/existing-retention/hub.json.journal": {
+      "sha256": "983ce396941f90cdde0f5e0b2f19c388f8cbe2b7fff334aefc176e65a0936f2a",
+      "bytes": 235
+    },
+    "/home/horde/src/adhd/_build/eventing-readiness-native23-02/results/fixtures/existing-retention/hub.json.stores": {
+      "sha256": "6c82c6be0731de2a5c1f7ac00ee42f898e85e923308eccfef353ee541d61f598",
+      "bytes": 1978
+    },
+    "/home/horde/src/adhd/_build/eventing-readiness-native23-02/results/fixtures/existing-retention/stdout.log": {
+      "sha256": "13bd1be848e44874b6ae788072aaa23c291d63fe419227d4bc96e9c5154a2487",
+      "bytes": 1095
+    },
+    "/home/horde/src/adhd/_build/eventing-readiness-native23-02/results/fixtures/existing-retention/stderr.log": {
+      "sha256": "1257abcad0a19bfd46c8315cf0d5ef504871876c4f929adbe7cbe92cf4d07bea",
+      "bytes": 36
+    }
+  },
+  "transaction_present": true,
+  "transaction_fields": [
+    "config",
+    "eventing_transition",
+    "index_resets",
+    "journal",
+    "storage_registry",
+    "store_moves"
+  ],
+  "eventing_transition_present": true,
+  "persisted_retention_ms": 302400000,
+  "decided_retention_ms": 302400000,
+  "redacted_stack_selection": [
+    "13:47:01.630 [error] GenServer {ADHD.Store, \"project-blue\"} terminating",
+    "** (stop) :redacted",
+    "Last message (from ADHD.Config): :redacted",
+    "State: :redacted",
+    "Client ADHD.Config is alive",
+    "    /home/horde/src/adhd/_build/eventing-readiness-native23-02/bound/hub.exs:14061: ADHD.Store.call/1",
+    "    /home/horde/src/adhd/_build/eventing-readiness-native23-02/bound/hub.exs:16606: anonymous fn/2 in ADHD.Config.finish_eventing_transition/2",
+    "    /home/horde/src/adhd/_build/eventing-readiness-native23-02/bound/hub.exs:3812: ADHD.Scope.with_project/2",
+    "    /home/horde/src/adhd/_build/eventing-readiness-native23-02/bound/hub.exs:16605: anonymous fn/4 in ADHD.Config.finish_eventing_transition/2",
+    "    /home/horde/src/adhd/_build/eventing-readiness-native23-02/bound/hub.exs:16604: ADHD.Config.finish_eventing_transition/2",
+    "13:47:01.656 [notice] SIGTERM received - shutting down"
+  ],
+  "trace": {
+    "case": "existing-retention",
+    "selected_operation": null,
+    "elapsed_seconds": null,
+    "eventing_timeout_ms": 1000,
+    "recovery_timeout_ms": null,
+    "events": [
+      {
+        "at": 234718.763597402,
+        "method": "POST",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 234718.769582006,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 234718.780700926,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": false
+      },
+      {
+        "at": 234718.793312344,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "604800000"
+          ]
+        },
+        "durable_transaction_present": false
+      },
+      {
+        "at": 234718.876975515,
+        "method": "GET",
+        "category": "offsets",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 234719.792538884,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 234719.801478095,
+        "method": "GET",
+        "category": null,
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 234719.815190493,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 234719.827652445,
+        "method": "GET",
+        "category": "configs",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": {
+          "cleanup_policy": [
+            "delete"
+          ],
+          "retention_ms": [
+            "604800000"
+          ]
+        },
+        "durable_transaction_present": true
+      },
+      {
+        "at": 234719.925426352,
+        "method": "POST",
+        "category": "alter",
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 234719.934600722,
+        "method": "GET",
+        "category": "metadata",
+        "status": 200,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      },
+      {
+        "at": 234719.972811073,
+        "method": "DELETE",
+        "category": null,
+        "status": 204,
+        "selected_create": false,
+        "injected": false,
+        "actual_configuration": null,
+        "durable_transaction_present": true
+      }
+    ],
+    "events_available": true,
+    "event_count": 12,
+    "events_truncated": false,
+    "assertion_or_primary_type": "AssertionError",
+    "cleanup_failure_types": [],
+    "cleanup_types_truncated": false
+  },
+  "cause": "UNDETERMINED",
+  "observed_phase": "durable eventing transition exists; config published; Blue Store terminates during Config.finish_eventing_transition/2 after successful alteration and metadata read, before observed configuration readback"
+}

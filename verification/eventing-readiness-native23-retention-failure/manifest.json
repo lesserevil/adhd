@@ -1,0 +1,190 @@
+{
+  "schema": "adhd/eventing-readiness-native23-negative-proof@1",
+  "passed": false,
+  "scope": "Second fixed native23 execution against actual official source41 export; not a completed23 gate, image qualification, or release claim. Prior failed run and formal lifecycle remain separate immutable evidence.",
+  "original_work": "/home/horde/src/adhd/_build/eventing-readiness-native23-02",
+  "plan_sha256": "8893003d3533f5e9fa427e076ef07db188df7c9c8ba560f774e2ae7b22705fdf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "receipt_identity": "sha256:72b3b0625a2bb912399c63eea7925c8bdd46d9a6ae0e070b9b9347d2b6975c45",
+  "whole_passed": [
+    "lag",
+    "queue-control",
+    "duplicate",
+    "duplicate-bad-topology",
+    "never",
+    "queue",
+    "forbidden",
+    "server-error",
+    "malformed",
+    "bad-cleanup",
+    "partitions-float",
+    "retention-missing",
+    "retention-float",
+    "retention-negative",
+    "retention-duplicate"
+  ],
+  "whole_passed_count": 15,
+  "failed_case": "existing-retention",
+  "failed_case_counted_whole": false,
+  "unrun": [
+    "offset-nonzero",
+    "offset-negative",
+    "offset-missing",
+    "offset-float",
+    "offset-string",
+    "metadata-lag",
+    "offset-end-float"
+  ],
+  "failure": "Authenticated retention config_update returned HTTP500 INTERNAL after durable eventing transition decision. Exact underlying exception remains undetermined.",
+  "assertion_conservation": {
+    "original_count": 35,
+    "all_preserved": true
+  },
+  "positive_control": {
+    "queue-control": {
+      "resources": {
+        "ingress_tickets": 1,
+        "lanes": {
+          "eventing": {
+            "active": 1,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 20,
+            "ingress_rejections": 0,
+            "projects": {
+              "project-blue": {
+                "active": 1,
+                "queued": 0
+              }
+            },
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "model": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "network": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          }
+        },
+        "limits": {
+          "eventing_concurrency": 2,
+          "max_waiters": 1024,
+          "model_concurrency": 4,
+          "network_concurrency": 16,
+          "project_eventing_concurrency": 1,
+          "project_model_concurrency": 1,
+          "project_network_concurrency": 4
+        },
+        "started": true,
+        "waiting": 0
+      },
+      "premise": {
+        "global_limit": 2,
+        "per_project_limit": 1,
+        "blue_active": 1,
+        "independent_red_slots_at_observation": 1
+      }
+    }
+  },
+  "negative_queue_premise": [
+    {
+      "resources": {
+        "ingress_tickets": 2,
+        "lanes": {
+          "eventing": {
+            "active": 1,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 22,
+            "ingress_rejections": 0,
+            "projects": {
+              "project-blue": {
+                "active": 1,
+                "queued": 0
+              },
+              "project-red": {
+                "active": 0,
+                "queued": 1
+              }
+            },
+            "queue_rejections": 0,
+            "queued": 1,
+            "queued_timeouts": 0
+          },
+          "model": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "network": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          }
+        },
+        "limits": {
+          "eventing_concurrency": 1,
+          "max_waiters": 1024,
+          "model_concurrency": 4,
+          "network_concurrency": 16,
+          "project_eventing_concurrency": 1,
+          "project_model_concurrency": 1,
+          "project_network_concurrency": 4
+        },
+        "started": true,
+        "waiting": 1
+      },
+      "premise": {
+        "observed_after_hold_seconds": 0.3236108580022119,
+        "minimum_queue_plus_retry_seconds": 3.426389141997788,
+        "held_http_seconds": 2.75,
+        "visibility_failures": 20,
+        "retry_delay_seconds": 0.05,
+        "eventing_timeout_ms": 3000,
+        "recovery_timeout_ms": 10000
+      }
+    }
+  ],
+  "failed_red_ticket_release_count": 12,
+  "cleanup_scope": "All16 recorded native PID/start identities and harness child independently absent; all16 proxy handler/thread closure recorded; no scoped processes currently. No global machine/process absence claim.",
+  "files": {
+    "independent-audit.json": "9e52343da4fd480821254f4e65f7303455b43debb21b645c6e3058530fd652ea",
+    "plan.json": "8893003d3533f5e9fa427e076ef07db188df7c9c8ba560f774e2ae7b22705fdf",
+    "report.json": "36dd5d4a2f2706aff9a0713c0f36ed7ac12bda13e49b7fc4052f162105881b73",
+    "result.json": "a252014675db1e9a28fc93379829a2f05c49a35eb2a75f37c48d0a107764d137",
+    "retention-diagnostic.json": "9238a749c1dead0b0962d20de53b5f645c0a8bb9646b70278027164b25c46279",
+    "stderr.log": "c87f0c7cc5b38c8e1f32ca1d1ec6ec9589679344a60c4bf3a0ea426ae482df92",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "next_action": "Root-owned diagnosis of Config/Eventing transition; no source edits or rerun authorized by this proof."
+}

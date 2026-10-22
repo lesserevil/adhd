@@ -1,0 +1,224 @@
+{
+  "schema": "adhd/compiled05-dependency-license-completion-audit@1",
+  "audit_passed": true,
+  "all_license_deliverables_complete": false,
+  "runtime_or_provider_starts": 0,
+  "image": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "admission_sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec",
+  "app_license": "Apache-2.0",
+  "source_and_resolved_bom_receipt_identities": {
+    "resolved-sbom": "sha256:f2c473e8b61c5a6793d8e8f309931844de87ae35b05e4757a7a41922d6a82458",
+    "source-sbom": "sha256:d2bcb67ea2929fcae4ea0633274a715b2a87a1cd67d81a50a57ba53187ef9aca"
+  },
+  "sbom_scope": "Existing CLI source/resolved BOM receipts remain authoritative and unchanged. Their identities do not alone claim a complete final OCI/Java/npm/model inventory. This audit supplements them and does not mutate sourceBOM/CAS/receipts.",
+  "packaging": {
+    "base": "elixir:1.20.4-otp-29-alpine@sha256:f1a8c06b332cacc7239381a25331a807fb63962f8221dff545ea4d8f78b0f50c",
+    "actual_versions": {
+      "Elixir": "1.20.4",
+      "OTP": "29.1.2",
+      "Rebar3": "3.27.0",
+      "musl": "1.2.6-r2",
+      "Alpine": "3.24.2-r0"
+    },
+    "source_build_helpers": {
+      "deploy/runtime/build.exs": "84afbc5b1f16bc2d23f2d2abaf8a86b331df8a405016e148007b61b1896b0a21",
+      "deploy/runtime/boot.exs": "2199b1dc8c3e77613d3cd550bead874352dbb5958797f16ae7b3d7444863dbb4"
+    },
+    "generated_cache": "59 modules; image/compiler/cache/manifest identities bound by compiled05 admission; no Hex/mix-installed Kafka dependency. Event transport uses OTP inets/httpc+SSL/crypto."
+  },
+  "services": [
+    {
+      "name": "Kafka broker",
+      "image": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+      "release_label": "8.3.2-15",
+      "actual_retained_log_version": "8.3.2-ccs",
+      "upstream_license": "Apache Kafka Apache-2.0; image and bundled components have separate terms"
+    },
+    {
+      "name": "REST Proxy/Java client",
+      "image": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+      "release_label": "8.3.2-15",
+      "actual_retained_client_version": "8.3.2-ce",
+      "license": "Confluent Community License1.0; optional authentication extension is Enterprise/permitted-trial, not baseline CCL/Apache grant"
+    }
+  ],
+  "qualification_python": [
+    {
+      "name": "a2a-sdk",
+      "version": "1.1.0",
+      "license_declared": "Apache-2.0",
+      "metadata_sha256": "baea011f9d019ce7b64f657181b61cccd56a4ca7f7c9ff690ed71c5a0b48737e",
+      "license_files": {
+        "a2a_sdk-1.1.0.dist-info/licenses/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "license_declared": "BSD-3-Clause",
+      "metadata_sha256": "febb9b0f8f3e80d57c8199c304f35c4336e8581d1d18d7983c92766b82793b25",
+      "license_files": {
+        "httpx-0.28.1.dist-info/licenses/LICENSE.md": "4ec59d544f12b5f539a3a716fd321ac58ccd8030b465221f2c880200cdf28d8d"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.23.0",
+      "license_declared": "MIT",
+      "metadata_sha256": "1ddf7a8007dd3b4bf946915e4f6e6a8f2a3b3ef8404b2e7a178270dc55144e5a",
+      "license_files": {
+        "jsonschema-4.23.0.dist-info/licenses/COPYING": "4f92a015a13c4d1a040bef018aa13430b4f1bc73b41b16bb846c346766de7439"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    },
+    {
+      "name": "openapi-spec-validator",
+      "version": "0.7.2",
+      "license_declared": "Apache-2.0",
+      "metadata_sha256": "655786ddb644019b293f7e846f1e8b409447099ad720d008d4724fc0323e31a7",
+      "license_files": {
+        "openapi_spec_validator-0.7.2.dist-info/LICENSE": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    },
+    {
+      "name": "protobuf",
+      "version": "6.33.6",
+      "license_declared": "3-Clause BSD License",
+      "metadata_sha256": "6f3b31fd64380f5e60ed10f5a2954699bcc1f6266eb74316f0ba96702d30546f",
+      "license_files": {
+        "protobuf-6.33.6.dist-info/LICENSE": "6e5e117324afd944dcf67f36cf329843bc1a92229a8cd9bb573d7a83130fea7d"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.1",
+      "license_declared": "MIT",
+      "metadata_sha256": "4d4c8e8d5e6a27d5208f0d7949f25628e6747133034969d4d1399b1ad5394036",
+      "license_files": {
+        "pydantic-2.14.1.dist-info/licenses/LICENSE": "a9e186f3ca16b5eef84318e7a701721351a00cb7b8ae3a4394b67b49e3529ef3"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "license_declared": "MIT",
+      "metadata_sha256": "03c3b415ed38d09faedc49360e930769b40c58f68585e6de00e2e4916a858d34",
+      "license_files": {
+        "pyyaml-6.0.3.dist-info/licenses/LICENSE": "8d3928f9dc4490fd635707cb88eb26bd764102a7282954307d3e5167a577e8a4"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    },
+    {
+      "name": "playwright",
+      "version": "1.64.0",
+      "license_declared": "Apache-2.0",
+      "metadata_sha256": "b841440dc92c85d9fb70d87ad2af686b275bc9e1f8fbf9d92e07410544bddd49",
+      "license_files": {
+        "playwright-1.64.0.dist-info/licenses/LICENSE": "7fab1461b41970ff376f1c9303a637076bfaaeb71cd12dd3a1c44aaf59a1a2b9",
+        "playwright/driver/LICENSE": "5888dbb9a1d2b18f2c3e6c5f6af1b39de658372b402a0577b002777f14c62ace",
+        "playwright/driver/package/LICENSE": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb",
+        "playwright/driver/package/lib/serverRegistry.js.LICENSE": "3098a6efcbc11752cbdf6075fa65480f5470f78c8d981fab9c0796dc9a41cefe",
+        "playwright/driver/package/lib/utilsBundle.js.LICENSE": "1362b7f413c08083af537384162ab69a323d019fe26e0a2cd78536fafd6b9cbf",
+        "playwright/driver/package/lib/webp_codec.LICENSE": "995c7ee35aceb7666829b7a501ca89c0864e12b493c1174b155774ab1e03d831"
+      },
+      "scope": "Host qualification tool, not hub runtime image dependency"
+    }
+  ],
+  "openrig": {
+    "name": "@openrig/cli",
+    "version": "0.6.14",
+    "license": "Apache-2.0",
+    "tarball_sha256": "67b8f40338e73ab99bd4a48a0f7735e3938c2b385726d918b9e87dffb8faf927",
+    "package_json_sha256": "c93e293408457f0ac4d65545a536d5505891c5b737da6922d1251eb67731c086",
+    "license_sha256": "c92a33920bf0cd3aa07ca2c479932ec900931ca1449948a4dc01d3bf979f45e3",
+    "declared_dependencies": {
+      "@hono/node-server": "^1.13.0",
+      "@hono/node-ws": "^1.3.1",
+      "@modelcontextprotocol/sdk": "^1.28.0",
+      "ajv": "^8.18.0",
+      "ajv-formats": "^3.0.1",
+      "better-sqlite3": "^13.0.3",
+      "commander": "^13.0.0",
+      "hono": "^4.7.0",
+      "jsonc-parser": "^3.3.1",
+      "smol-toml": "^1.8.0",
+      "string-width": "^8.3.0",
+      "tar": "^7.5.13",
+      "ulid": "^2.3.0",
+      "yaml": "^2.8.3",
+      "zod": "^4.3.6"
+    },
+    "scope": "Interoperability tool, not installed in hub image. This is a direct-dependency manifest, not a resolved transitive npm BOM."
+  },
+  "primary_licenses": [
+    {
+      "url": "https://raw.githubusercontent.com/elixir-lang/elixir/v1.20.4/LICENSE",
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "license_heading": "Apache-2.0",
+      "scope": "Exact upstream tagged/commit license, not every transitive bundled component."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/erlang/otp/OTP-29.1.2/LICENSE.txt",
+      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0",
+      "license_heading": "Apache-2.0",
+      "scope": "Exact upstream tagged/commit license, not every transitive bundled component."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/confluentinc/kafka-rest/v8.3.2/LICENSE",
+      "sha256": "6392a9da8e2f4601254574a4990bfa0427d91b88a51139cb59fb789dd747a53d",
+      "license_heading": "Confluent Community License1.0",
+      "scope": "Exact upstream tagged/commit license, not every transitive bundled component."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pst2154/nemotron-deciffusion/763a66b4bef4ad94a0f63ec9a2d9ad1e56673a4a/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "license_heading": "Apache-2.0",
+      "scope": "Exact upstream tagged/commit license, not every transitive bundled component."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/mvschwarz/openrig/df1c1517f03a403fb468523be1c563d489209a1d/LICENSE",
+      "sha256": "c92a33920bf0cd3aa07ca2c479932ec900931ca1449948a4dc01d3bf979f45e3",
+      "license_heading": "Apache-2.0",
+      "scope": "Exact upstream tagged/commit license, not every transitive bundled component."
+    }
+  ],
+  "remaining_deliverables": [
+    {
+      "predicate": "KAFKA007/009 inventory/operator documentation",
+      "status": "needs final consolidation",
+      "detail": "Current top-level Kafka/REST/OAuth/model table exists. Add final compiled05 base/runtime version+digest+cache/source inventory references and explicit separation from testSDK/OpenRig dependencies through the planned final documentation/lifecycle review."
+    },
+    {
+      "predicate": "Third-party notice/package-license traceability",
+      "status": "incomplete evidence",
+      "detail": "Actual image archive inspection finds app/LICENSE as only conventional license/notice filename. APK records disclose mixed licenses; no independent final-image third-party notice/source-offer bundle reviewed here. A third-party notice inventory and upstream image redistribution material should be retained separately; this report is not a legal clearance determination."
+    },
+    {
+      "predicate": "Optional model distribution inventory",
+      "status": "partially declared",
+      "detail": "Pinned service image/source/weights SHA and source Apache2 license known. CUDA/image transitive package and exact private checkpoint/model license texts are not bound by current operating inventory. Do not imply service sourceApache2 relicenses all weights/CUDA layers."
+    },
+    {
+      "predicate": "Complete transitive service/test-tool BOM",
+      "status": "not claimed",
+      "detail": "Hub image APK inventory and host direct SDK/OpenRig manifests now retained. Full bundled Java/image/npm/model transitive inventories are not established by this audit; no roadmap claim of a completed transitive scanner is made."
+    }
+  ],
+  "retained_log_evidence": {
+    "path": "deployment worktree _build/kafka/oauth-hub-08/services.log",
+    "sha256": "441d49b345d69e741a1771cb2daabd76a98f5732f2821bb08bff7f88bc288313",
+    "scope": "Historical pinned8.3.2 service-version witness, not new final05 runtime execution."
+  },
+  "authority_files_read": {
+    "components/hub/eventing/spec.md": "c3be8cfa5eaf0a61d72334d38f0805f4d8388c63e0cd60e1f2d1666340c4f66f",
+    "docs/admin/event-service.md": "54e7bc8c4fa2f4f1658d119b380859043538e9f443a67f758dd3b73e4afd4f01",
+    "docs/admin/model-service.md": "b90bcdc4267d70e3c4ae49040f8449d03ceb0aa2751a9c4f7c2434d986aa88e1",
+    "tests/requirements.txt": "90587f6edafa6e39c03e58942a5b16673cd9a0731d7fd5a1351acc40e6f52e40",
+    "tests/openrig_pin.json": "d11714312a9acf202aedcb692afa6d2bee63852e64e61199a821b58b1ded9d94"
+  }
+}

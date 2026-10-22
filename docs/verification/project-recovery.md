@@ -153,3 +153,5 @@ do not replace formal admission, full crash/regression or image/platform gates.
 The assembly freeze predates restoration of the unchanged protected clean helper;
 its separate review verifies owned output removal and refusal to clean the source
 tree. Final sourceBOM generation must include that helper.
+
+The separate read-only admission review at `verification/project-recovery/development16/admission-review-independent.json` records exact locked Standard-node recipe/source-BOM bindings, unchanged18 native case declarations and independent review of all15 added oracle grammar cases. It grants no admission and does not replace actual106-case execution or runtime/platform qualification.

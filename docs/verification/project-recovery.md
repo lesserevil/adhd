@@ -51,3 +51,11 @@ supports the precise ordinary one-key physical subset stated in the recovery
 interface; it does not claim generic DETS, imported/bchunk or custom-directory
 compatibility. The earlier46-check reports remain historical evidence for their
 earlier parser digest. Integrated service/CLI recovery remains independently gated.
+
+The [integrated hostile-checkpoint CLI report](../../verification/project-recovery/rebind-hostile-native12.json)
+binds source36-dev12 artifact `9b09eee676fb8ac2e95cba38cd29144c09f6e4a03acc0d84fb30747e745b7d71`.
+Six explicit-hash requests reject missing free space, forged arena metadata,
+a directory cycle, compressed/executable ETF and a free block within live padding.
+Each returns the closed RESTORE_CONFLICT CLI error before a durable decision,
+and every byte in its copied complete backup remains unchanged. Native-opener
+tracing belongs to the separate parser reports, not this public CLI proof.

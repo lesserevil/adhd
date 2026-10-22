@@ -4,10 +4,20 @@ Preparation never starts a process. A diagnostic38 plan is execution-denied;
 corrected successors require their own admitted image, source and ABI proofs.
 """
 import sys
-sys.dont_write_bytecode=True
 _STAGED=__file__.rsplit('/',1)[-1]=='driver.py'
-if _STAGED:assert sys.flags.isolated and sys.flags.no_site, 'Frozen execution requires python -I -S'
-elif __name__=='__main__':assert '--execute' not in sys.argv, 'Execute only frozen driver.py under python -I'
+if _STAGED:
+    # Check before importing even non-builtin bootstrap helpers. -B suppresses
+    # writes only; explicit -X redirects all reads away from excluded caches.
+    assert sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode, 'Require python -I -S -B -X pycache_prefix=<owned-empty-path>'
+    assert __file__.startswith('/')
+    _prefix=__file__.rsplit('/',1)[0]+'/parent-cache'
+    assert sys._xoptions.get('pycache_prefix')==sys.pycache_prefix==_prefix
+    import posix
+    _cache=posix.lstat(_prefix)
+    assert _cache.st_mode & 0o170000==0o040000 and _cache.st_uid==posix.getuid() and _cache.st_mode & 0o077==0
+    assert not posix.listdir(_prefix), 'Parent cache must be owned and empty before imports'
+elif __name__=='__main__':assert '--execute' not in sys.argv, 'Execute only reviewed frozen driver.py'
+sys.dont_write_bytecode=True
 import argparse
 import copy
 import hashlib
@@ -31,6 +41,7 @@ def bootstrap(driver,expected):
     assert driver.resolve(strict=True)==driver and not driver.is_symlink()
     planfile=work/'plan.json';assert planfile.is_file() and not planfile.is_symlink() and planfile.stat().st_size<=8*1024*1024
     assert sha(planfile)==expected;plan=json.loads(planfile.read_text());assert sha(driver)==plan['driver_sha256']
+    if _STAGED:assert plan['parent_pycache_prefix']==sys.pycache_prefix
     frozen=work/'frozen';assert frozen.resolve(strict=True)==frozen and frozen.is_dir()
     found=set();dirs=set();wanted_dirs=set()
     for name in plan['frozen_inputs']:
@@ -101,12 +112,24 @@ def resolve(value,tokens):
     return value
 
 
+def verify_empty_cache(path,required):
+    path=Path(path)
+    try:info=path.lstat()
+    except FileNotFoundError:
+        assert not required;return True
+    assert stat.S_ISDIR(info.st_mode) and not path.is_symlink() and info.st_uid==os.getuid() and info.st_mode & 0o077==0
+    assert path.resolve(strict=True)==path and not list(path.iterdir()), 'Stale/redirected bytecode cache rejected'
+    return True
+
+
 def verify(work,plan):
     assert sha(Path(__file__))==sha(work/'driver.py')==plan['driver_sha256']
     for key,directory in [('frozen_inputs','frozen'),('component_inputs','component'),('context_inputs','context')]:
         verify_frozen_inputs(work/directory,plan[key])
     assert all(sha(work/name)==digest for name,digest in plan['bound_inputs'].items())
     verify_frozen_inputs(work/'bound',{str(Path(name).relative_to('bound')):digest for name,digest in plan['bound_inputs'].items()})
+    verify_empty_cache(work/'parent-cache',required=True)
+    verify_empty_cache(work/'results/pycache',required=False)
     host_dependencies.verify(json.loads((work/'bound/host-dependencies.json').read_text()))
     for name,row in plan['external_inputs'].items():
         p=Path(name);assert p.resolve(strict=True)==Path(row['realpath']) and sha(p)==row['sha256']
@@ -173,6 +196,8 @@ def prepare(args):
     for name,library,proof in [('project_recovery_fault',args.project_library,args.project_proof),('rebind_fault',args.rebind_library,args.rebind_proof)]:
         shutil.copy2(library,bound/(name+'.so'));shutil.copy2(proof,bound/(name+'.proof.json'))
     (work/'results').mkdir(mode=0o700)
+    (work/'parent-cache').mkdir(mode=0o700)
+    verify_empty_cache(work/'results/pycache',required=False)
     dump(bound/'config.json',{})
     dependencies=host_dependencies.capture(args.python,original['env']['PATH'])
     dump(bound/'host-dependencies.json',dependencies)
@@ -208,7 +233,8 @@ def prepare(args):
         'known38_ownership_gap':args.image==BASELINE,'image_config_identity':args.image,'artifact_sha256':artifact,
         'admission_manifest_sha256':args.admission_sha256,'canonical_manifest_sha256':sha(work/'context/manifest.json'),
         'payload_tar_sha256':selected['payload_sha256'],'original_plan_sha256':args.original_sha256,
-        'driver_sha256':sha(work/'driver.py'),'driver_python_flags':['-I','-S'],'jobs':jobs,'parallelism':1,'runs_per_suite':1,'fail_fast':True,
+        'driver_sha256':sha(work/'driver.py'),'driver_python_flags':['-I','-S','-B','-X','pycache_prefix='+str(work/'parent-cache')],
+        'parent_pycache_prefix':str(work/'parent-cache'),'jobs':jobs,'parallelism':1,'runs_per_suite':1,'fail_fast':True,
         'original_input_trees':[str(n) for n in original_trees],
         'excluded_original_outputs':'Original native runtime _build is outside declared six input trees and is not copied; each authoritative tree exactSET verified.',
         'fixture_amendments':descriptor['fixture_amendments'],'separate_dependencies':descriptor['separate_dependencies'],
@@ -242,7 +268,7 @@ def execute(work,expected):
     plan=json.loads((work/'plan.json').read_text());assert sha(work/'plan.json')==expected
     verify(work,plan);assert plan['execution_ready'] and not plan['known38_ownership_gap']
     claim_execution(work,expected,plan['driver_sha256'])
-    rows=[];primary=None;env=os.environ.copy();env.update(plan['env']);env['PYTHONDONTWRITEBYTECODE']='1'
+    rows=[];primary=None;env=dict(plan['env']);env['PYTHONDONTWRITEBYTECODE']='1'
     matrix={'schema':'adhd/image-recovery42-matrix@1','passed':False,'plan_sha256':expected,
         'image_config_identity':plan['image_config_identity'],'artifact_sha256':plan['artifact_sha256'],'planned':42,
         'attempted':[],'executed':[],'unrun':[j['name'] for j in plan['jobs']],'rows':rows}

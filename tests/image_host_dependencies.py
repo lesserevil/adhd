@@ -117,6 +117,16 @@ def metadata(argv):
     return value.stdout.strip()
 
 
+OPTIONAL_ODBC_PATH=Path('lib/odbc-2.15.0.1/priv/bin/odbcserver')
+OPTIONAL_ODBC_SHA256='a6905c784e1c794b8cc788eedad77f3a7666560de78334d9607709070ade540e'
+
+def optional_missing(filename,needed,erlang_root):
+    filename=Path(filename)
+    try:relative=filename.relative_to(erlang_root)
+    except ValueError:return False
+    return relative==OPTIONAL_ODBC_PATH and needed=='libodbc.so.2' and sha(filename)==OPTIONAL_ODBC_SHA256
+
+
 def capture(python,native_path):
     python=Path(python).absolute();assert python.resolve()==Path(sys.executable).resolve()
     venv=python.parent.parent;configuration=venv/'pyvenv.cfg'
@@ -167,7 +177,7 @@ def capture(python,native_path):
     for row in trees:
         base=Path(row['root']);candidates.update(base/name for name in row['files'])
         candidates.update(Path(v['realpath']) for v in row['links'].values() if not v['directory'])
-    queue=list(candidates);seen=set();elfs={}
+    queue=list(candidates);seen=set();elfs={};unsupported=[]
     while queue:
         filename=queue.pop();filename=filename.resolve(strict=True)
         if filename in seen:continue
@@ -190,7 +200,11 @@ def capture(python,native_path):
             for option in options:
                 stamp=presence(option);probes[str(option)]=stamp
                 if stamp['present']:chosen=option;break
-            assert chosen is not None,'Unresolved actual ELF dependency: '+needed
+            if chosen is None and optional_missing(filename,needed,native_roots[0]):
+                unsupported.append({'path':str(filename),'sha256':sha(filename),'missing':needed,
+                    'scope':'Unsupported unused optional ODBC port; not launcher/tool/NIF qualification.','candidates':[str(p) for p in options]})
+                continue
+            assert chosen is not None,'Unresolved required ELF dependency: '+str(filename)+': '+needed
             dependencies.append(chosen)
         for dependency in dependencies:
             files[str(dependency)]=path_binding(dependency);queue.append(dependency)
@@ -201,13 +215,16 @@ def capture(python,native_path):
     preload=presence('/etc/ld.so.preload');assert not preload['present'],'Unreviewed global loader preloads'
     probes[preload['path']]=preload
     return {'schema':'adhd/image-host-dependencies@1','roots':[str(p) for p in roots],'trees':trees,'files':files,'probes':probes,
-        'elf_inputs':elfs,'tools':tools,'compiler_queries':query_outputs,'ldconfig_output_sha256':hashlib.sha256(raw_cache.encode()).hexdigest(),
+        'elf_inputs':elfs,'unsupported_optional_elfs':unsupported,'tools':tools,'compiler_queries':query_outputs,'ldconfig_output_sha256':hashlib.sha256(raw_cache.encode()).hexdigest(),
         'python_executable':str(python),'native_path':path,'cache_exclusion':'__pycache__ directories only; -B + owned PYTHONPYCACHEPREFIX prevents cache reads/writes.',
         'pth_policy':'No .pth import hooks in selected venv; include-system-site-packages false.'}
 
 
 def verify(value):
     roots=[Path(p) for p in value['roots']]
+    for row in value.get('unsupported_optional_elfs',[]):
+        assert optional_missing(row['path'],row['missing'],Path(value['native_path'].split(':')[0]).parent)
+        assert row['sha256']==OPTIONAL_ODBC_SHA256
     for row in value['trees']:verify_tree(row,roots)
     for row in value['files'].values():verify_path(row)
     for row in value['probes'].values():assert presence(row['path'])==row,'Host precedence/input presence changed: '+row['path']

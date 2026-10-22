@@ -26,6 +26,7 @@ def execute_case(root,mode):
     plan=fake_plan(root);calls=[]
     def popen(argv,**kwargs):
         calls.append(argv)
+        assert 'PYTHONPATH' not in kwargs['env'] and 'LD_PRELOAD' not in kwargs['env'] and 'GCC_EXEC_PREFIX' not in kwargs['env']
         if mode=='creation':raise OSError('synthetic creation failure')
         i=int(argv[-1]);job=plan['jobs'][i]
         matrix.dump(job['report'],{'passed':mode!='report-false','artifact_sha256':plan['artifact_sha256']})
@@ -78,8 +79,18 @@ def main():
         except AssertionError:pass
         else:raise AssertionError('Unknown input inside declared tree accepted')
         (original/'tests/shadow.exs').unlink()
+        cache=root/'empty-cache';cache.mkdir(mode=0o700);matrix.verify_empty_cache(cache,required=True)
+        (cache/'stale.pyc').write_bytes(b'cache')
+        try:matrix.verify_empty_cache(cache,required=True)
+        except AssertionError:pass
+        else:raise AssertionError('Stale cache accepted')
+        (cache/'stale.pyc').unlink();redirected=root/'redirected-cache';redirected.symlink_to(cache,target_is_directory=True)
+        try:matrix.verify_empty_cache(redirected,required=True)
+        except AssertionError:pass
+        else:raise AssertionError('Redirected cache accepted')
         for mode in ['success','creation','report-false','open-image','parent-interrupt']:
-            case=root/mode;case.mkdir();execute_case(case,mode)
+            case=root/mode;case.mkdir()
+            with patch.dict(matrix.os.environ,{'PYTHONPATH':'unreviewed','LD_PRELOAD':'unreviewed','GCC_EXEC_PREFIX':'unreviewed'}):execute_case(case,mode)
         bad=root/'diagnostic';bad.mkdir();p=fake_plan(bad);p['known38_ownership_gap']=True;matrix.dump(bad/'plan.json',p)
         with patch.object(matrix,'verify',return_value=True),patch.object(matrix,'claim_execution') as claim,patch.object(matrix.subprocess,'Popen') as child:
             try:matrix.execute(bad,sha(bad/'plan.json'))
@@ -100,7 +111,7 @@ def main():
             try:matrix.resolve(value,{'KNOWN':'x'})
             except AssertionError:pass
             else:raise AssertionError('Unresolved command admitted')
-    print('PASS remaining matrix pure15: staged fullSET/hash/symlink/root custody, exact42 success, creationfail attempted-vs-executed, reportfalse failfast, openimage closure denial, diagnostic38 beforeclaim denial, unresolved templates, exact declared-origin trees with excluded old outputs/inside-shadow denial, parent interruption signals owned child cleanup/preserves primary+known terminal exit; actual subprocess/runtime calls0')
+    print('PASS remaining matrix pure17: staged fullSET/hash/symlink/root custody, exact42 success, creationfail attempted-vs-executed, reportfalse failfast, openimage closure denial, diagnostic38 beforeclaim denial, unresolved templates, exact declared-origin trees with excluded old outputs/inside-shadow denial, parent interruption signals owned child cleanup/preserves primary+known terminal exit, stale/redirected caches rejected, ambient injection not inherited; actual subprocess/runtime calls0')
 
 
 if __name__=='__main__':main()

@@ -35,8 +35,16 @@ def main():
         malformed=root/'bad-elf';malformed.write_bytes(b'\x7fELF'+b'\0'*100);denied(lambda:closure.elf_inputs(malformed))
         actual=closure.elf_inputs('/usr/bin/true');assert actual['interpreter'].startswith('/') and 'libc.so.6' in actual['needed']
         object_file=closure.elf_inputs('/usr/lib/x86_64-linux-gnu/crti.o');assert object_file=={'interpreter':None,'needed':[],'search':[]}
+        selected=root/'native';selected.mkdir();candidate=selected/closure.OPTIONAL_ODBC_PATH;candidate.parent.mkdir(parents=True)
+        candidate.write_bytes(b'exact synthetic optional witness')
+        assert len(closure.OPTIONAL_ODBC_SHA256)==64
+        with patch.object(closure,'OPTIONAL_ODBC_SHA256',closure.sha(candidate)):
+            assert closure.optional_missing(candidate,'libodbc.so.2',selected)
+            assert not closure.optional_missing(candidate,'libodbc.so.3',selected)
+            launcher=selected/'beam.smp';launcher.write_bytes(candidate.read_bytes());assert not closure.optional_missing(launcher,'libodbc.so.2',selected)
+            candidate.write_bytes(b'changed');assert not closure.optional_missing(candidate,'libodbc.so.2',selected)
         for command in [['cc','source.c'],['gcc','-shared','source.c'],['ldconfig'],['/usr/bin/true'],['/usr/bin/true','-print-file-name=libc.so']]:denied(lambda:closure.metadata(command))
-    print('PASS host dependency pure12: fullSET/content/mode/filealias/directoryescape drift, precedence appearance, explicit isolated-cache policy, sanitized Python/compiler/Elixir/Docker env, actual ELF metadata parse/malformed denial, hostquery no-compile allowlist; real hostqueries/compiler/VM/provider calls0')
+    print('PASS host dependency pure14: fullSET/content/mode/filealias/directoryescape drift, precedence appearance, explicit isolated-cache policy, sanitized Python/compiler/Elixir/Docker env, actual ELF metadata parse/malformed denial, hostquery no-compile allowlist, exact optional ODBC witness only/changedpath-hash-dep denied; real hostqueries/compiler/VM/provider calls0')
 
 
 if __name__=='__main__':main()

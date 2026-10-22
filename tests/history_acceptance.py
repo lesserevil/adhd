@@ -168,7 +168,11 @@ def main():
         flood.stop(hard=True);flood.start();archived=get(flood,run);assert archived['status']=='cancelled' and len(archived['prior_runs'])==15
         record('active-job-and-run-count-bounds-cancellation-and-archived-runs-survive-restart')
         for runtime_value in hubs:
-            runtime_value.stop();data=Path(runtime_value.config['store_path']);content=data.read_bytes()+Path(str(data)+'.snapshot').read_bytes()
+            runtime_value.stop();data=Path(runtime_value.config['store_path'])
+            if Path(str(runtime_value.file)+'.stores').exists():
+                from project_recovery_state import route
+                data=route(runtime_value.file,runtime_value.config['project_id'])[1]
+            content=data.read_bytes()+Path(str(data)+'.snapshot').read_bytes()
             for token in [runtime_value.config['admin_token'],*runtime_value.config['agents'].values()]:assert token.encode() not in content
         binding=({'image_id':subprocess.check_output(['docker','image','inspect','--format','{{.Id}}',args.image],text=True).strip()} if args.image else {'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest()})
         Path(args.report).write_text(json.dumps({'schema':'adhd/history-acceptance@1','passed':True,'cases':cases,**binding},indent=2)+'\n')

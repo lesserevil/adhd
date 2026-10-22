@@ -36,10 +36,17 @@ async def interrupted_update(fixture, local, args, admin, command, prefix, evide
         else:
             raise AssertionError("Hot transition never reached requested filesystem boundary")
         trace = json.loads(sentinel.read_text())
-        assert trace["stage"] == args.crash_at and trace["pid"] == fixture.process.pid
+        assert trace["stage"] == args.crash_at
+        image_custody = None
+        if args.image:
+            image_custody = fixture.image_runtime.stop_at_observed_boundary(trace)
+            observed_pid = image_custody['host_process_pid']
+        else:
+            assert trace["pid"] == fixture.process.pid
+            observed_pid = trace["pid"]
         end = time.monotonic() + 2
         while time.monotonic() < end:
-            state = Path("/proc/" + str(trace["pid"]) + "/status").read_text()
+            state = Path("/proc/" + str(observed_pid) + "/status").read_text()
             if re.search(r"^State:\s+T\b", state, re.M):
                 break
             await asyncio.sleep(.01)
@@ -52,7 +59,10 @@ async def interrupted_update(fixture, local, args, admin, command, prefix, evide
         installed = json.loads(fixture.file.read_text())["eventing"]["topic_prefix"] == prefix
         assert installed == (args.crash_at == "transition-project")
         fixture.hard_stop()
-        assert fixture.process.returncode == -signal.SIGKILL
+        if args.image:
+            assert fixture.image_runtime.last_exit_code == 137 and fixture.process.returncode == 137
+        else:
+            assert fixture.process.returncode == -signal.SIGKILL
         try:
             await update
         except (AssertionError, OSError):
@@ -67,7 +77,8 @@ async def interrupted_update(fixture, local, args, admin, command, prefix, evide
         assert recovered["eventing"]["topic_prefix"] == prefix
         evidence.record("actual-hot-transition-kill-recovers-durable-config-decision-before-readiness",
                         stage=args.crash_at, transition_id=identity,
-                        kernel_state_before_kill="stopped", signal="SIGKILL")
+                        kernel_state_before_kill="stopped", signal="SIGKILL",
+                        image_beam_custody=image_custody)
     finally:
         if not update.done():
             if fixture.process and fixture.process.poll() is None:
@@ -90,20 +101,27 @@ async def main(args):
     evidence.value["harness_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     evidence.value["source_sha256"] = source_identities(args.hub) if args.hub else None
     if args.crash_at:
-        if not args.hub:
-            raise ValueError("Exact filesystem crash qualification requires --hub")
-        source = Path(__file__).with_name("multi_fault.c")
-        library = fixture.root / "transition-fault.so"
-        subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-shared", "-fPIC", "-O2",
-                        "-o", str(library), str(source), "-ldl"], check=True)
-        wrapped = copy.copy(local)
-        wrapped.hub = None
-        wrapped.command = json.dumps(["env", "LD_PRELOAD=" + str(library), "ADHD_CRASH_STAGE=" + args.crash_at,
-            "ADHD_CRASH_CONFIG=" + str(fixture.file), "ADHD_CRASH_STORE=" + fixture.config["store_path"],
-            "ADHD_CRASH_SENTINEL=" + str(fixture.root / "transition-fault.json"), "elixir", str(args.hub)])
-        fixture.args = wrapped
-        evidence.value["fault_source_sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
-        evidence.value["fault_library_sha256"] = hashlib.sha256(library.read_bytes()).hexdigest()
+        if args.image:
+            from image_eventing_runtime import EventingFaultImage
+            if not args.image_fault_library or not args.image_fault_proof:
+                raise ValueError("Image kernel faults require actual-image observer loader proof and exact library")
+            fixture.image_runtime = EventingFaultImage(args.image, args.image_manifest, fixture.root,
+                args.image_fault_library, args.image_fault_proof, args.crash_at, fixture.config["store_path"])
+        else:
+            if not args.hub:
+                raise ValueError("Exact filesystem crash qualification requires --hub or --image")
+            source = Path(__file__).with_name("multi_fault.c")
+            library = fixture.root / "transition-fault.so"
+            subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-shared", "-fPIC", "-O2",
+                            "-o", str(library), str(source), "-ldl"], check=True)
+            wrapped = copy.copy(local)
+            wrapped.hub = None
+            wrapped.command = json.dumps(["env", "LD_PRELOAD=" + str(library), "ADHD_CRASH_STAGE=" + args.crash_at,
+                "ADHD_CRASH_CONFIG=" + str(fixture.file), "ADHD_CRASH_STORE=" + fixture.config["store_path"],
+                "ADHD_CRASH_SENTINEL=" + str(fixture.root / "transition-fault.json"), "elixir", str(args.hub)])
+            fixture.args = wrapped
+            evidence.value["fault_source_sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+            evidence.value["fault_library_sha256"] = hashlib.sha256(library.read_bytes()).hexdigest()
     try:
         await fixture.start()
         admin = fixture.admin()
@@ -199,5 +217,7 @@ async def main(args):
 
 if __name__ == "__main__":
     parser = arguments(__doc__)
+    parser.add_argument("--image-fault-library", type=Path)
+    parser.add_argument("--image-fault-proof", type=Path)
     parser.add_argument("--crash-at", choices=("transition-decision", "transition-project"))
     asyncio.run(main(parser.parse_args()))

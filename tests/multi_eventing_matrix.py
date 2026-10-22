@@ -23,13 +23,30 @@ def bounded_jobs(jobs,run,parallelism,fail_fast):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
- for key in ('hub','legacy-hub','repo-root','work','report'):p.add_argument('--'+key,type=Path,required=True)
+ for key in ('legacy-hub','repo-root','work','report'):p.add_argument('--'+key,type=Path,required=True)
  for key in ('artifact-sha256','eventing-rest-url','federation-rest-url','private-rest-url','owned-broker-container','owned-compose-project'):p.add_argument('--'+key,required=True)
+ target=p.add_mutually_exclusive_group(required=True)
+ target.add_argument('--hub',type=Path)
+ target.add_argument('--image',help='Immutable reviewed Docker image configuration ID')
+ p.add_argument('--image-manifest',type=Path)
+ p.add_argument('--image-fault-library',type=Path)
+ p.add_argument('--image-fault-proof',type=Path)
  p.add_argument('--phase',choices=('healthy','private'),required=True)
  p.add_argument('--fail-fast',action='store_true',help='Stop admitting suites after an observed failure; already running suites finish')
  p.add_argument('--only',help='Explicit comma-separated healthy-phase subset for fixture-only reruns')
- a=p.parse_args();root=a.repo_root.resolve();hub=a.hub.resolve();legacy=a.legacy_hub.resolve();work=a.work.resolve();frozen=work/'frozen'
- assert sha(hub)==a.artifact_sha256
+ a=p.parse_args();root=a.repo_root.resolve();hub=a.hub.resolve() if a.hub else None;legacy=a.legacy_hub.resolve();work=a.work.resolve();frozen=work/'frozen'
+ bound_inputs={}
+ if a.image:
+  import re
+  assert re.fullmatch('sha256:[a-f0-9]{64}',a.image),'Require immutable image configuration ID'
+  assert a.image_manifest and a.image_fault_library and a.image_fault_proof,'Full13image suites require reviewed manifest and actual-image fault observer proof/library'
+  manifest=json.loads(a.image_manifest.read_text());artifact=manifest['files']['hub.exs']
+  from image_eventing_runtime import validate_observer
+  validate_observer(a.image,a.image_fault_library,a.image_fault_proof)
+  for name,path in [('manifest',a.image_manifest),('fault_library',a.image_fault_library),('fault_proof',a.image_fault_proof)]:
+   bound_inputs[name]={'path':str(path.resolve()),'sha256':sha(path)}
+ else:artifact=sha(hub)
+ assert artifact==a.artifact_sha256
  if a.phase=='healthy':
   assert not work.exists(),'Fresh work required';work.mkdir(parents=True,mode=0o700);frozen.mkdir(mode=0o700);inputs={}
   for subtree in ('tests','scripts','components'):
@@ -41,17 +58,22 @@ def main():
   previous=json.loads((work/'healthy-matrix.json').read_text());assert previous['passed'],'Healthy phase must pass before private faults'
   inputs=json.loads((work/'plan.json').read_text())['frozen_inputs']
  assert all(sha(frozen/n)==h for n,h in inputs.items()),'Frozen input changed'
- command=json.dumps(['elixir',str(hub)]);old=json.dumps(['elixir',str(legacy)]);rest=a.eventing_rest_url;private=a.private_rest_url
+ command=json.dumps(['elixir',str(hub)]) if hub else None;old=json.dumps(['elixir',str(legacy)]);rest=a.eventing_rest_url;private=a.private_rest_url
+ hub_target=['--image',a.image,'--image-manifest',str(a.image_manifest.resolve())] if a.image else ['--command',command]
+ fixture_target=['--image',a.image,'--image-manifest',str(a.image_manifest.resolve())] if a.image else ['--hub',str(hub)]
+ fault_target=['--image-fault-library',str(a.image_fault_library.resolve()),'--image-fault-proof',str(a.image_fault_proof.resolve())] if a.image else []
  jobs=[]
  for name,file,extra in [('controls','eventing_controls.py',['--legacy-command',old]),('caps','eventing_filter_budget.py',[]),('dormant','eventing_dormant_policy.py',[]),('admin','eventing_admin_edit.py',[]),('policy','eventing_project_policy.py',[])]:
-  jobs.append((name,file,['--command',command,'--work',str(work/(name+'-work')),'--eventing-rest-url',rest]+extra))
+  jobs.append((name,file,hub_target+['--work',str(work/(name+'-work')),'--eventing-rest-url',rest]+extra))
  for name,file,extra in [('lostreply','eventing_faults.py',[]),('fairness','multi_fairness.py',[]),('cutover','eventing_cutover.py',[]),('cutover-decision','eventing_cutover.py',['--crash-at','transition-decision']),('cutover-project','eventing_cutover.py',['--crash-at','transition-project'])]:
-  jobs.append((name,file,['--hub',str(hub),'--eventing-rest-url',rest,'--deadline','90']+extra))
- serial=[('retention','eventing_retention.py',['--command',command,'--eventing-rest-url',private,'--owned-broker-container',a.owned_broker_container,'--work',str(work/'retention-work')]),('outage','eventing_acceptance.py',['--hub',str(hub),'--eventing-rest-url',private,'--broker-container',a.owned_broker_container,'--deadline','90']),('federation','federation_multi.py',['--command',command,'--legacy-command',old,'--eventing-rest-urls',json.dumps([rest,a.federation_rest_url,private]),'--work',str(work/'federation-work')])]
+  jobs.append((name,file,fixture_target+['--eventing-rest-url',rest,'--deadline','90']+extra+(fault_target if '--crash-at'in extra else [])))
+ serial=[('retention','eventing_retention.py',hub_target+['--eventing-rest-url',private,'--owned-broker-container',a.owned_broker_container,'--work',str(work/'retention-work')]),('outage','eventing_acceptance.py',fixture_target+['--eventing-rest-url',private,'--broker-container',a.owned_broker_container,'--deadline','90']),('federation','federation_multi.py',hub_target+['--legacy-command',old,'--eventing-rest-urls',json.dumps([rest,a.federation_rest_url,private]),'--work',str(work/'federation-work')])]
  if a.phase=='healthy':
-  plan={'schema':'adhd/native-eventing-plan@1','artifact_sha256':sha(hub),'legacy_sha256':sha(legacy),'runner_sha256':sha(Path(__file__)),'parallelism':2,'runs_per_suite':1,'fail_fast':a.fail_fast,'no_live_provider':True,'frozen_inputs':inputs,'jobs':[{'name':n,'script':f,'arguments':v}for n,f,v in jobs+serial]};(work/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
+  plan={'schema':'adhd/native-eventing-plan@1','artifact_sha256':artifact,'legacy_sha256':sha(legacy),'runtime':{'kind':'docker','image_config_identity':a.image} if a.image else {'kind':'native'},'bound_inputs':bound_inputs,'runner_sha256':sha(Path(__file__)),'parallelism':2,'runs_per_suite':1,'fail_fast':a.fail_fast,'no_live_provider':True,'frozen_inputs':inputs,'jobs':[{'name':n,'script':f,'arguments':v}for n,f,v in jobs+serial]};(work/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
  else:
-  plan=json.loads((work/'plan.json').read_text());assert plan['artifact_sha256']==sha(hub) and plan['legacy_sha256']==sha(legacy)
+  plan=json.loads((work/'plan.json').read_text());assert plan['artifact_sha256']==artifact and plan['legacy_sha256']==sha(legacy)
+  assert plan.get('bound_inputs',{})==bound_inputs
+  assert plan.get('runtime',{'kind':'native'})==({'kind':'docker','image_config_identity':a.image} if a.image else {'kind':'native'})
   assert plan.get('fail_fast',False)==a.fail_fast
   assert plan['jobs']==[{'name':n,'script':f,'arguments':v}for n,f,v in jobs+serial]
   owned=subprocess.check_output(['docker','inspect','--format','{{index .Config.Labels "com.docker.compose.project"}}',a.owned_broker_container],text=True).strip();assert owned==a.owned_compose_project,'Disposable broker ownership mismatch'
@@ -74,7 +96,7 @@ def main():
    result=run(job);results.append(result)
    if a.fail_fast and result['exit_code']!=0:break
  unrun=[job[0]for job in planned if job[0]not in {row['name']for row in results}]
- unchanged=all(sha(frozen/n)==h for n,h in inputs.items());value={'schema':'adhd/native-eventing-matrix@1','passed':unchanged and not unrun and all(r['exit_code']==0 for r in results),'lifecycle_admitted':False,'artifact_sha256':sha(hub),'plan_sha256':sha(work/'plan.json'),'frozen_inputs_unchanged':unchanged,'phase':a.phase,'selected_suites':[r['name']for r in results],'fail_fast':a.fail_fast,'planned_suites':[j[0]for j in planned],'executed_suites':[r['name']for r in results],'unrun_suites':unrun,'results':results}
+ unchanged=all(sha(frozen/n)==h for n,h in inputs.items()) and all(sha(Path(row['path']))==row['sha256'] for row in bound_inputs.values()) and sha(legacy)==plan['legacy_sha256'];value={'schema':'adhd/native-eventing-matrix@1','passed':unchanged and not unrun and all(r['exit_code']==0 for r in results),'lifecycle_admitted':False,'artifact_sha256':artifact,'plan_sha256':sha(work/'plan.json'),'frozen_inputs_unchanged':unchanged,'runtime':plan['runtime'],'bound_inputs':bound_inputs,'phase':a.phase,'selected_suites':[r['name']for r in results],'fail_fast':a.fail_fast,'planned_suites':[j[0]for j in planned],'executed_suites':[r['name']for r in results],'unrun_suites':unrun,'results':results}
  (work/(a.phase+'-matrix.json')).write_text(json.dumps(value,indent=2)+'\n');a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(value,indent=2)+'\n');sys.exit(0 if value['passed']else 1)
 
 if __name__=='__main__':main()

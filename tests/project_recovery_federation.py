@@ -6,6 +6,7 @@ import secrets
 from uuid import uuid4
 
 import httpx
+from recovery_image_support import retained_recovery_fixture, close_recovery_fixture
 from multi_support import Fixture, Evidence, arguments
 from project_recovery_acceptance import Recovery, RED, BLUE, HIDDEN
 from project_recovery_state import route
@@ -16,10 +17,10 @@ async def main():
     parser.add_argument('--recovery-schema', type=Path, required=True)
     args = parser.parse_args()
     assert not args.rest_url and not args.with_model
-    f = Fixture(args, initialize_projects=False)
+    f = retained_recovery_fixture(Fixture(args, initialize_projects=False))
     evidence = Evidence(args.report, 'federation-v2-recovery-http')
     evidence.value.update(lifecycle_admitted=False, scope='Real authenticated v2 HTTP; no Kafka or model; owned unknown and missing targets with healthy peer project')
-    evidence.value['limitations'] = ['No semantic, Kafka, crash, or admitted-image qualification.']
+    evidence.value['limitations'] = ['No semantic, Kafka or crash qualification; lifecycle admission is independently bound by the parent plan.']
     peer_id, token, outbound = uuid4().hex, secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     f.config['eventing']['enabled'] = False
     f.config['federation'] = {'description': 'Recovery HTTP fixture', 'retry_ms': 1000, 'timeout_ms': 1000,
@@ -64,7 +65,7 @@ async def main():
         evidence.finish(error)
         raise
     finally:
-        await f.close()
+        await close_recovery_fixture(f,evidence)
 
 
 if __name__ == '__main__':

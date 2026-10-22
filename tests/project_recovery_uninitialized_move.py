@@ -2,6 +2,7 @@
 import asyncio,os
 from pathlib import Path
 from uuid import uuid4
+from recovery_image_support import retained_recovery_fixture, close_recovery_fixture
 from multi_support import Fixture,Evidence,arguments,scoped
 from project_recovery_acceptance import Recovery,RED,BLUE,HIDDEN
 from project_recovery_state import route,registry
@@ -9,9 +10,9 @@ from project_recovery_state import route,registry
 async def main():
  p=arguments(__doc__);p.add_argument('--recovery-schema',type=Path,required=True);a=p.parse_args()
  assert not a.rest_url and not a.with_model
- f=Fixture(a,initialize_projects=False);e=Evidence(a.report,'uninitialized-project-relocation')
+ f=retained_recovery_fixture(Fixture(a,initialize_projects=False));e=Evidence(a.report,'uninitialized-project-relocation')
  e.value.update(scope='NoKafka/noModel public Admin initialization after accepted hot anchor relocation; inaccessible old directory is actual mode000',lifecycle_admitted=False)
- e.value['limitations']=['No Kafka, model, crash, selective restore or admitted-image qualification.']
+ e.value['limitations']=['No Kafka, model, crash or selective restore qualification; lifecycle admission is independently bound by the parent plan.']
  old=f.root/'old-storage';new=f.root/'new-storage';old.mkdir(mode=0o700);new.mkdir(mode=0o700)
  f.config['store_path']=str(old/'root.dets');f.config['eventing']['enabled']=False
  try:
@@ -50,6 +51,7 @@ async def main():
   e.finish()
  except BaseException as error:e.finish(error);raise
  finally:
-  old.chmod(0o700);await f.close()
+  try:old.chmod(0o700)
+  finally:await close_recovery_fixture(f,e)
 
 if __name__=='__main__':asyncio.run(main())

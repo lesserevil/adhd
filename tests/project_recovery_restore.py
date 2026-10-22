@@ -15,6 +15,7 @@ import re
 from uuid import uuid4
 
 from archive_support import ArchiveFixture
+from recovery_image_support import retained_recovery_fixture, close_recovery_fixture
 from multi_support import Evidence, Fixture, arguments, poll_until, scoped
 from project_recovery_acceptance import Recovery, RED, BLUE
 from project_recovery_state import canonical, digest, exact, read_json, registry, route, snapshot
@@ -239,7 +240,7 @@ async def main(args):
     from project_recovery_workflows import configure, model_fixture
     assert not args.rest_url, "Target restore requires an owned isolated backend"
     args.with_model = False
-    f = Fixture(args, initialize_projects=False)
+    f = retained_recovery_fixture(Fixture(args, initialize_projects=False))
     model = model_fixture()
     f.model = model
     f.config.update(matcher={"url": model.url, "model": "controlled-recovery", "timeout_ms": 3000, "retry_ms": 100},
@@ -263,13 +264,7 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        try:
-            await f.close()
-        except BaseException as error:
-            evidence.finish(error)
-            raise
-        f.bind_evidence(evidence)
-        evidence.write()
+        await close_recovery_fixture(f,evidence)
 
 
 if __name__ == "__main__":

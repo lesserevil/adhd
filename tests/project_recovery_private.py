@@ -2,13 +2,14 @@
 import asyncio,os
 from pathlib import Path
 from uuid import uuid4
+from recovery_image_support import retained_recovery_fixture, close_recovery_fixture
 from multi_support import Fixture,arguments,scoped,Evidence
 from project_recovery_acceptance import Recovery,RED,BLUE
 from project_recovery_restore import offline_bundle
 from project_recovery_state import route
 async def main():
  parser=arguments(__doc__);parser.add_argument('--recovery-schema',type=Path,default=Path(__file__).resolve().parents[1]/'components/hub/project-recovery/interface.schema.json')
- a=parser.parse_args();f=Fixture(a,initialize_projects=False);e=Evidence(a.report,'private-target-restore')
+ a=parser.parse_args();f=retained_recovery_fixture(Fixture(a,initialize_projects=False));e=Evidence(a.report,'private-target-restore')
  e.value.update(scope='NoKafka/noModel: private deliveries and acknowledged-state target-only restore plus cold restart',lifecycle_admitted=False)
  f.config['eventing']['enabled']=False
  f.config['recovery']={'backup_root':str(f.root/'offline-backups')}
@@ -38,5 +39,5 @@ async def main():
   e.record('other-current-project-and-global-config-preserved-original-private-visible-ack-hidden')
   f.hard_stop();await f.start();assert r.status(RED)['availability']=='ready';e.record('restored-generation-opens-after-cold-restart');e.finish()
  except BaseException as error:e.finish(error);raise
- finally:await f.close()
-asyncio.run(main())
+ finally:await close_recovery_fixture(f,e)
+if __name__=='__main__':asyncio.run(main())

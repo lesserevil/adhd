@@ -20,6 +20,7 @@ import jsonschema
 from jsonschema import validators
 
 from foundation_acceptance import Client
+from recovery_image_support import retained_recovery_fixture, close_recovery_fixture
 from multi_support import Evidence, Fixture, PROJECTS, arguments, scoped
 from project_recovery_state import canonical, digest, read_json, registry, route, snapshot
 
@@ -240,7 +241,7 @@ async def known_missing(f, r, evidence):
 
 async def main(args):
     evidence = Evidence(args.report, "project-recovery-admission")
-    f = Fixture(args, initialize_projects=False)
+    f = retained_recovery_fixture(Fixture(args, initialize_projects=False))
     if args.hub:
         evidence.value["artifact_sha256"] = digest(args.hub.read_bytes())
     evidence.value["qualification"] = "pending-profile2.1-execution"
@@ -257,13 +258,7 @@ async def main(args):
     else:
         evidence.finish()
     finally:
-        try:
-            await f.close()
-        except BaseException as error:
-            evidence.finish(error)
-            raise
-        f.bind_evidence(evidence)
-        evidence.write()
+        await close_recovery_fixture(f,evidence)
 
 
 if __name__ == "__main__":

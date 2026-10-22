@@ -15,6 +15,7 @@ import shutil
 from uuid import uuid4
 import zlib
 
+from recovery_image_support import retained_recovery_fixture, close_recovery_fixture
 from multi_support import Evidence, Fixture, arguments, scoped
 from project_recovery_acceptance import BLUE, RED, Recovery
 from project_recovery_restore import offline_bundle
@@ -147,7 +148,7 @@ async def checks(f, r, evidence):
 
 async def main(args):
     assert not args.rest_url and not args.with_model
-    f=Fixture(args,initialize_projects=False)
+    f=retained_recovery_fixture(Fixture(args,initialize_projects=False))
     f.config['recovery']={'backup_root':str(f.root/'offline-backups')}
     evidence=Evidence(args.report,'project-recovery-rejections')
     if args.hub: evidence.value['artifact_sha256']=digest(args.hub.read_bytes())
@@ -159,8 +160,7 @@ async def main(args):
         evidence.finish(error); raise
     else: evidence.finish()
     finally:
-        try: await f.close()
-        finally: f.bind_evidence(evidence); evidence.write()
+        await close_recovery_fixture(f,evidence)
 
 
 if __name__=='__main__':

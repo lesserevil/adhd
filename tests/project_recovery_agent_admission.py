@@ -8,6 +8,7 @@ import secrets
 from uuid import uuid4
 
 from foundation_acceptance import Client
+from recovery_image_support import retained_recovery_fixture, close_recovery_fixture
 from multi_support import Admin, Evidence, Fixture, arguments, scoped
 from project_recovery_acceptance import Recovery, RED, BLUE, HIDDEN
 from project_recovery_state import digest, registry, route
@@ -87,7 +88,7 @@ async def checks(f, r, evidence):
 
 async def main(args):
     assert not args.rest_url and not args.with_model
-    f=Fixture(args,initialize_projects=False)
+    f=retained_recovery_fixture(Fixture(args,initialize_projects=False))
     evidence=Evidence(args.report,'recovery-developer-agent-admission')
     evidence.value['harness_sha256']=digest(Path(__file__).read_bytes())
     if args.hub:evidence.value['artifact_sha256']=digest(args.hub.read_bytes())
@@ -96,8 +97,7 @@ async def main(args):
     except BaseException as error:evidence.finish(error);raise
     else:evidence.finish()
     finally:
-        try:await f.close()
-        finally:f.bind_evidence(evidence);evidence.write()
+        await close_recovery_fixture(f,evidence)
 
 
 if __name__=='__main__':

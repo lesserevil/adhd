@@ -76,8 +76,12 @@ artifact. A fresh final-seven batch is running with that flag; all466 frozen inp
 11 external bindings, remaining suite order and assertions are unchanged. The reviewed image filesystem/migration ladder
 is now running serially: 17 original jobs / 85 expected checks, with all five
 observers bound to the actual passing image ABI probes. Preparation and isolated
-guard checks for all 15 image recovery crash variants and private-network learned
-recovery have also passed; their application runs remain pending. Complete
+guard checks for all 15 image recovery crash variants, private-network learned
+recovery and the actual-image offline rebind adapter have also passed; their
+application runs remain pending. The integrated platform driver and missing-target
+selective restore checks pass38 isolated checks while retaining all84 original
+platform assertions. Compose/Kind application execution still requires a freshly
+bound plan for the admitted repaired successor. Complete
 recovery, image/runtime and platform evidence must still pass before parent items close. The older
 [source34 review](../../verification/multi-eventing/completion-review-34.json)
 remains historical evidence rather than current program completion.

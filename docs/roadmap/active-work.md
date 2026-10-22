@@ -823,6 +823,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Bind qualification to the exact accepted artifact and container, with native, SDK, browser, migration, federation, fault and live-model evidence. Existing single-project evidence remains historical and cannot attest the new architecture.
 - **Depends on:** MULTI-001, MULTI-002, MULTI-003, MULTI-004, MULTI-005, MULTI-006, MULTI-007, KAFKA-009
 - **Implementation:**
+  - [ ] Complete local OCI staging of the locked normative hub specification closure, including the recovery JSON Schema, and allow explicit selection of the verifier CLI/interpreter. The current Markdown-only walker omits declared JSON authority and an ambient CLI can differ from the project-pinned framework. Preserve existing aliases and deterministic archives; reject changed, missing, redirected or colliding inputs and qualify the exact staged byte identities before successor image claims. This is local deployment packaging, not a native-package or registry release.
   - [ ] Update normative specs/traceability, schemas/OpenAPI/examples, agent onboarding, configuration tooling, deployment and operator recovery guides.
   - [ ] Run the complete multiple-project matrix plus existing regression suites against native and Docker artifacts and the existing model container.
   - [ ] Record acceptance identities, upgrade/rollback limitations and unresolved gates; close dependent items and the detailed roadmap only when their evidence passes.

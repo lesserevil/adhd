@@ -106,7 +106,7 @@ class Custody:
         name=self.name(obj);assert name,'Unsupported image branch without owned name'
         row=json.loads(self.docker('inspect',name).stdout)[0]
         assert row['Image']==self.image and row['State']['Running'] is True
-        assert row['HostConfig']['PidMode']!='host' and row['HostConfig']['NetworkMode']=='host'
+        assert row['HostConfig']['PidMode']=='' and row['HostConfig']['NetworkMode']=='host'
         assert row['HostConfig']['ReadonlyRootfs'] is True
         event.update(container_name=name,container_id=row['Id'],host_vm_pid=row['State']['Pid'])
         manifest=self.docker('exec',name,'cat','/app/manifest.json').stdout
@@ -145,6 +145,8 @@ class Custody:
                 event['producer_sha256']=sha(obj.command[-1])
                 assert event['producer_sha256'] in self.plan['native_artifact_sha256']
                 event['native_vms']=native_vm(obj.process,self.fence)
+                launch=next(v for v in reversed(self.launches) if v.get('client_pid')==obj.process.pid)
+                launch['native_vms']=event['native_vms'];self.ledger.write_text(json.dumps(self.launches,indent=2)+'\n')
             event['completed']=True;obj._controlled_custody_event=event
             return result
         except BaseException as error:
@@ -224,8 +226,12 @@ class Custody:
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--plan',type=Path,required=True);parser.add_argument('--job',required=True)
-    args=parser.parse_args();plan=json.loads(args.plan.read_text());job=next(v for v in plan['jobs'] if v['name']==args.job)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--plan',type=Path,required=True);parser.add_argument('--job',required=True);parser.add_argument('--reviewed-plan-sha256',required=True)
+    args=parser.parse_args();assert not args.plan.is_symlink() and sha(args.plan)==args.reviewed_plan_sha256
+    plan=json.loads(args.plan.read_text())
+    assert sha(__file__)==plan['frozen_inputs']['tests/controlled_image_runtime.py']
+    marker=json.loads((args.plan.parent/'started.json').read_text());assert marker['plan_sha256']==args.reviewed_plan_sha256
+    job=next(v for v in plan['jobs'] if v['name']==args.job)
     sys.path.insert(0,str(Path(plan['frozen'])/'tests'))
     custody=Custody(plan,job,Path(job['custody_report']));failure=None
     try:

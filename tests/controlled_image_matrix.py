@@ -6,6 +6,7 @@ requires a separately reviewed plan hash. Historical SDK producers are actual
 retained artifacts; entrypoints/assertions/corpus/deadlines remain unchanged.
 """
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -98,7 +99,13 @@ def prepare(repo,work,bindings):
     for path in [elixir.resolve(),beam.resolve(),Path(sys.executable).resolve(),Path(shutil.which('cc')).resolve()]:externals[str(path)]=sha(path)
     jobs=[];runtime=work/'runtime'
     for name,count in SUITES.items():
-        test_argv=[str(frozen/'tests'/f'{name}.py'),'--image',IMAGE,'--report',str(work/(name+'.json'))]
+        entry=frozen/'tests'/f'{name}.py'
+        tree=ast.parse(entry.read_text())
+        imported={(node.module,alias.name) for node in ast.walk(tree) if isinstance(node,ast.ImportFrom) for alias in node.names}
+        expected=('hub_acceptance','Hub') if name.endswith('_sdk') else ('foundation_acceptance','Runtime')
+        assert expected in imported,('Unsupported fixture branch',name)
+        assert '--image' in entry.read_text(),('Missing original image branch',name)
+        test_argv=[str(entry),'--image',IMAGE,'--report',str(work/(name+'.json'))]
         if name.endswith('_sdk'):
             test_argv+=['--command',json.dumps([str(elixir),str(artifact)])]
             for path in history['legacy_commands'][name]:test_argv+=['--legacy-command',json.dumps([str(elixir),path])]
@@ -154,6 +161,14 @@ def cleanup_ledger(job,plan):
                     os.killpg(pid,signal.SIGKILL)
             except ProcessLookupError:pass
             except FileNotFoundError:pass
+        for vm in row.get('native_vms',[]):
+            try:
+                raw=Path(f"/proc/{vm['pid']}/stat").read_text();actual=raw[raw.rfind(')')+2:].split()[19]
+                if actual==vm['starttime']:
+                    assert os.getpgid(vm['pid'])==pid,'Observed BEAM left its owned process group'
+                    os.killpg(pid,signal.SIGKILL)
+            except ProcessLookupError:pass
+            except FileNotFoundError:pass
         if row['kind']=='docker':
             assert row['image']==plan['image_config_identity']
             result=subprocess.run(['docker','inspect',row['name']],capture_output=True,timeout=30)
@@ -191,7 +206,7 @@ def execute(work,expected):
         for job in plan['jobs']:
             verify(plan,work);name=job['name'];report=work/(name+'.json');log=work/(name+'.log')
             assert not report.exists() and not log.exists() and not Path(job['custody_report']).exists()
-            argv=[plan['python'],str(work/'frozen/tests/controlled_image_runtime.py'),'--plan',str(work/'plan.json'),'--job',name]
+            argv=[plan['python'],str(work/'frozen/tests/controlled_image_runtime.py'),'--plan',str(work/'plan.json'),'--job',name,'--reviewed-plan-sha256',expected]
             print('START',name,flush=True);began=time.monotonic()
             cleanup=[];returncode=None;child_failure=None;cleanup_failure=None
             try:

@@ -4,13 +4,14 @@ import json
 from pathlib import Path
 
 ENTRYPOINT=['elixir','/runtime/adhd/boot.exs','/app/hub.exs']
+COMMAND=['["serve","/config/hub.json"]']
 
 
 def process_witness(cmdline,exe,before,after,pid):
     assert type(pid) is int and pid>0
     # Use kernel cmdline bytes, never the configured OCI command as a substitute.
     args=cmdline.rstrip(b'\0').split(b'\0')
-    assert b'/runtime/adhd/boot.exs' in args and b'/app/hub.exs' in args
+    assert b'/runtime/adhd/boot.exs' in args and b'/app/hub.exs' in args and COMMAND[0].encode() in args
     assert Path(exe.decode().strip()).name=='beam.smp'
     def identity(raw):
         text=raw.decode();assert text.split(' ',1)[0]==str(pid) and ') ' in text
@@ -23,7 +24,7 @@ def process_witness(cmdline,exe,before,after,pid):
 def compose(command,identifier,image):
     row=json.loads(command(['docker','inspect',identifier],capture=True))[0]
     assert row['Id']==identifier and row['Image']==image and row['State']['Running']
-    assert row['Config']['Entrypoint']==ENTRYPOINT and row['Config']['Cmd'] in (None,[])
+    assert row['Config']['Entrypoint']==ENTRYPOINT and row['Config']['Cmd']==COMMAND
     assert row['HostConfig']['PidMode'] in ('',None)
     pid=row['State']['Pid'];base=Path('/proc')/str(pid)
     before=(base/'stat').read_bytes();cmdline=(base/'cmdline').read_bytes()

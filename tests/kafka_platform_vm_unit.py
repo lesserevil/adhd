@@ -12,13 +12,14 @@ def stat(pid,ticks,cpu='0'):
 
 
 def main():
-    args=b'/usr/lib/erlang/erts/bin/beam.smp\0-extra\0/runtime/adhd/boot.exs\0/app/hub.exs\0'
+    args=b'/usr/lib/erlang/erts/bin/beam.smp\0-extra\0/runtime/adhd/boot.exs\0/app/hub.exs\0["serve","/config/hub.json"]\0'
     witness=vm.process_witness(args,b'/container-only/beam.smp',stat(123,99),stat(123,99,'12'),123)
     assert witness['start_ticks']=='99' and witness['actual_compiled_boot_and_app_arguments']
     for cmd,exe,before,after,pid in [(args,b'/bin/sh',stat(123,99),stat(123,99),123),(args.replace(b'/runtime/adhd/boot.exs',b'/other'),b'/beam.smp',stat(123,99),stat(123,99),123),(args,b'/beam.smp',stat(123,99),stat(123,100),123),(args,b'/beam.smp',stat(122,99),stat(122,99),123)]:
         try:vm.process_witness(cmd,exe,before,after,pid)
         except AssertionError:pass
         else:raise AssertionError('Wrong process accepted')
+    assert vm.COMMAND==['["serve","/config/hub.json"]']
     cid='a'*64;pod={'metadata':{'uid':'owned-pod'},'spec':{'containers':[{'name':'hub'}]},'status':{'containerStatuses':[{'name':'hub','containerID':'containerd://'+cid,'ready':True,'state':{'running':{'startedAt':'now'}},'restartCount':0}]}}
     events=[]
     def command(argv,**kwargs):

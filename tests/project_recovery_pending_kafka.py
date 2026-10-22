@@ -18,6 +18,7 @@ from multi_support import Fixture, Evidence, arguments, scoped, poll_until
 from project_recovery_acceptance import Recovery, RED, BLUE
 from project_recovery_restore import offline_bundle
 from project_recovery_state import digest, read_json, route
+from recovery_image_runtime import RecoveryImageRuntime, bind_down, same_vm, finish_callback
 from project_recovery_pending_model import until
 
 
@@ -71,17 +72,23 @@ class ConsumerGateway:
 
 
 async def main(args):
-    assert args.hub and not args.with_model
-    gateway=ConsumerGateway(args.eventing_rest_url);local=copy.copy(args);local.eventing_rest_url=gateway.url
-    f=Fixture(local,initialize_projects=False);f.config['project_id']=BLUE;f.config['eventing']['timeout_ms']=30000
-    backup=f.root/'backups';backup.mkdir(mode=0o700);f.config['recovery']={'backup_root':str(backup)}
-    runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
-    wrapped=copy.copy(local);wrapped.hub=None;wrapped.command=json.dumps(['elixir',str(runner),str(args.hub.resolve())]);f.args=wrapped
-    r=Recovery(f,args.recovery_schema);e=Evidence(args.report,'adhd/project-recovery-pending-kafka@1')
-    e.value.update(artifact_sha256=digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),runner_sha256=digest(runner.read_bytes()),provider_calls=0,
-        scope='Actual real Kafka consumer reply across same-VM target-only restore; isolated native runner, not admitted image/platform qualification')
+    assert (args.hub or args.image) and not args.with_model
+    assert not args.command and not args.rest_url
+    f=None;gateway=None;error=None
+    e=Evidence(args.report,'adhd/project-recovery-pending-kafka@1')
     gates=[]
     try:
+        gateway=ConsumerGateway(args.eventing_rest_url);local=copy.copy(args);local.eventing_rest_url=gateway.url
+        runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
+        f=RecoveryImageRuntime(local,runner) if args.image else Fixture(local,initialize_projects=False)
+        f.config['project_id']=BLUE;f.config['eventing']['timeout_ms']=30000
+        backup=f.root/'backups';backup.mkdir(mode=0o700);f.config['recovery']={'backup_root':str(backup)}
+        runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
+        if not args.image:
+            wrapped=copy.copy(local);wrapped.hub=None;wrapped.command=json.dumps(['elixir',str(runner),str(args.hub.resolve())]);f.args=wrapped
+        r=Recovery(f,args.recovery_schema)
+        e.value.update(artifact_sha256=f.image_runtime.manifest['files']['hub.exs'] if args.image else digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),runner_sha256=digest(runner.read_bytes()),provider_calls=0,
+            scope='Actual real Kafka consumer reply across same-VM target-only restore; runtime custody recorded separately, not full platform qualification')
         await f.start();await r.initialize(RED);await r.initialize(BLUE)
         actor=await f.agent('bridge');reader=await f.agent('red-b')
         await reader.call(scoped(RED,'subscribe',mode='raw'))
@@ -94,7 +101,9 @@ async def main(args):
         assert state['eventing']['events'][publication['id']]['state']!='materialized'
         initial.release.set();await until(initial.attempted.is_set,5,'Pre-backup held response did not retire')
         old=Gate();gates.append(old);gateway.gates[oldtopic]=old
-        await f.start();owner_pid=f.process.pid
+        await f.start()
+        owner_vm=f.watched_vm() if args.image else None
+        owner_pid=owner_vm['namespace_vm_pid'] if args.image else f.process.pid
         await until(old.entered.is_set,args.deadline,'Actual old-topic row not observed after restart')
         assert {row['topic'] for row in old.observation['rows']}=={oldtopic}
         assert publication['id'] in json.dumps(old.observation['rows'])
@@ -106,6 +115,7 @@ async def main(args):
         arm.write_text(json.dumps({'project_id':RED,'nonce':nonce}));arm.chmod(0o600)
         await until(ack.exists,args.deadline,'Actual Red Store DOWN not observed')
         assert read_json(ack)['nonce']==nonce and f.process.poll() is None
+        if args.image:bind_down(owner_vm,read_json(ack),nonce,RED);same_vm(owner_vm,f.watched_vm())
         for p in (checkpoint,Path(str(checkpoint)+'.snapshot')):os.replace(p,Path(str(p)+'.lost'))
         receipt=r.call(RED,'project_restore_plan',mode='restore',backup_id='pending-event',manifest_sha256=manifest_sha,
             allow_missing=True,expected_revision=r.revision(),message_id=uuid4().hex)
@@ -114,7 +124,8 @@ async def main(args):
         fresh=Gate();gates.append(fresh);gateway.gates[newtopic]=fresh
         applied=r.call(RED,'project_restore_apply',plan_id=plan['plan_id'],plan_sha256=plan['plan_sha256'],expected_revision=r.revision(),confirm=True,message_id=uuid4().hex)
         await r.settle(RED,applied,{'complete'})
-        assert f.process.pid==owner_pid and f.process.poll() is None
+        if args.image:same_vm(owner_vm,f.watched_vm());assert f.process.poll() is None
+        else:assert f.process.pid==owner_pid and f.process.poll() is None
         await until(fresh.entered.is_set,args.deadline,'Actual fresh-topic consumer response not observed')
         assert publication['id'] in json.dumps(fresh.observation['rows'])
         e.record('same-accepted-event-republished-to-fresh-topic-while-both-real-consumer-replies-are-held',old_topic=oldtopic,new_topic=newtopic)
@@ -136,11 +147,10 @@ async def main(args):
         assert (await actor.call(scoped(BLUE,'get',publication_id=blue['id'])))['publication']==blue
         e.record('acknowledgement-and-current-blue-survive-real-cold-restart')
         e.value['actual_old_response']=old.observation;e.value['actual_new_response']=fresh.observation
-    except BaseException as exc:e.finish(exc);raise
-    else:e.finish()
+    except BaseException as exc:error=exc
     finally:
         for gate in gates:gate.release.set()
-        await f.close();gateway.close()
+        await finish_callback(f,e,error,gateway.close if gateway else lambda:None)
 
 if __name__=='__main__':
     parser=arguments(__doc__);parser.add_argument('--recovery-schema',type=Path,default=Path('components/hub/project-recovery/interface.schema.json'))

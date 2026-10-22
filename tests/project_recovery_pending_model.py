@@ -20,6 +20,7 @@ from multi_support import Fixture, Evidence, arguments, scoped
 from project_recovery_acceptance import Recovery, RED, BLUE
 from project_recovery_restore import offline_bundle
 from project_recovery_state import digest, read_json, route, snapshot
+from recovery_image_runtime import RecoveryImageRuntime, bind_down, same_vm, finish_callback
 
 
 class GatedEvaluator:
@@ -65,23 +66,31 @@ async def until(predicate,deadline,message):
 
 
 async def main(args):
-    assert args.hub and not args.with_model
-    f=Fixture(args,initialize_projects=False); model=GatedEvaluator()
-    f.config['project_id']=BLUE
-    f.config['matcher']={'url':model.url,'model':'controlled-history-epoch','timeout_ms':30000,'retry_ms':100}
-    f.config['history']={'timeout_ms':30000,'budget':{'time_ms':120000}}
-    backups=f.root/'backups';backups.mkdir(mode=0o700)
-    f.config['recovery']={'backup_root':str(backups)}
-    runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
-    wrapped=copy.copy(args);wrapped.hub=None
-    wrapped.command=json.dumps(['elixir',str(runner),str(args.hub.resolve())]);f.args=wrapped
-    r=Recovery(f,args.recovery_schema);e=Evidence(args.report,'adhd/project-recovery-pending-model@1')
-    e.value.update(artifact_sha256=digest(args.hub.read_bytes()),runner_sha256=digest(runner.read_bytes()),
-        harness_sha256=digest(Path(__file__).read_bytes()),scope='Actual controlled History HTTP callback and one live nondefault Store loss; not full service callback qualification',external_provider_calls=0)
+    assert (args.hub or args.image) and not args.with_model
+    assert not args.command and not args.rest_url
+    f=None;model=None;error=None
+    e=Evidence(args.report,'adhd/project-recovery-pending-model@1')
     try:
+        runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
+        f=RecoveryImageRuntime(args,runner) if args.image else Fixture(args,initialize_projects=False)
+        model=GatedEvaluator()
+        f.config['project_id']=BLUE
+        f.config['matcher']={'url':model.url,'model':'controlled-history-epoch','timeout_ms':30000,'retry_ms':100}
+        f.config['history']={'timeout_ms':30000,'budget':{'time_ms':120000}}
+        backups=f.root/'backups';backups.mkdir(mode=0o700)
+        f.config['recovery']={'backup_root':str(backups)}
+        runner=Path(__file__).with_name('project_recovery_live_loss.exs').resolve()
+        if not args.image:
+            wrapped=copy.copy(args);wrapped.hub=None
+            wrapped.command=json.dumps(['elixir',str(runner),str(args.hub.resolve())]);f.args=wrapped
+        r=Recovery(f,args.recovery_schema)
+        e.value.update(artifact_sha256=f.image_runtime.manifest['files']['hub.exs'] if args.image else digest(args.hub.read_bytes()),runner_sha256=digest(runner.read_bytes()),
+            harness_sha256=digest(Path(__file__).read_bytes()),scope='Actual controlled History HTTP callback and one live nondefault Store loss; not full service callback qualification',external_provider_calls=0)
         await f.start();await r.initialize(RED);await r.initialize(BLUE)
         f.hard_stop();_,manifest_sha,backup_state=offline_bundle(f,r,'empty-before-pending')
-        await f.start();owner_pid=f.process.pid
+        await f.start()
+        owner_vm=f.watched_vm() if args.image else None
+        owner_pid=owner_vm['namespace_vm_pid'] if args.image else f.process.pid
         actor=await f.agent('bridge')
         oldpub=(await actor.call(scoped(RED,'publish_record',text='The retained observation was amber.')))['record']['publication']
         query=(await actor.call(scoped(RED,'query_history',question='What was the retained observation?')))['query']
@@ -94,6 +103,7 @@ async def main(args):
         arm.write_text(json.dumps({'project_id':RED,'nonce':nonce}));arm.chmod(0o600)
         await until(ack.exists,args.deadline,'Actual nondefault Store DOWN not observed')
         down=read_json(ack);assert down['nonce']==nonce and int(down['vm_pid'])==owner_pid
+        if args.image:bind_down(owner_vm,down,nonce,RED);same_vm(owner_vm,f.watched_vm())
         assert f.process.poll() is None
         for p in (checkpoint,Path(str(checkpoint)+'.snapshot')): os.replace(p,Path(str(p)+'.lost'))
         receipt=r.call(RED,'project_restore_plan',mode='restore',backup_id='empty-before-pending',
@@ -102,7 +112,8 @@ async def main(args):
         accepted=r.call(RED,'project_restore_apply',plan_id=plan['plan_id'],plan_sha256=plan['plan_sha256'],
             expected_revision=r.revision(),confirm=True,message_id=uuid4().hex)
         await r.settle(RED,accepted,{'complete'})
-        assert f.process.pid==owner_pid and f.process.poll() is None
+        if args.image:same_vm(owner_vm,f.watched_vm());assert f.process.poll() is None
+        else:assert f.process.pid==owner_pid and f.process.poll() is None
         assert not model.release.is_set()
         newentry,newpath=route(f.file,RED);assert newentry['project_epoch']!=oldentry['project_epoch']
         e.record('same-hub-restores-earlier-empty-target-while-real-old-model-post-is-held',old_epoch=oldentry['project_epoch'],new_epoch=newentry['project_epoch'])
@@ -124,10 +135,10 @@ async def main(args):
         assert blue['id'] in json.dumps(await actor.call(scoped(BLUE,'get_record',publication_id=blue['id'])))
         e.record('fresh-target-and-current-blue-survive-another-real-cold-start')
         e.value['controlled_requests']=model.requests;e.value['controlled_replies']=model.replies
-    except BaseException as exc:e.finish(exc);raise
-    else:e.finish()
+    except BaseException as exc:error=exc
     finally:
-        model.release.set();await f.close();model.close()
+        if model:model.release.set()
+        await finish_callback(f,e,error,model.close if model else lambda:None)
 
 if __name__=='__main__':
     parser=arguments(__doc__)

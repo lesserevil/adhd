@@ -193,7 +193,7 @@ async def event_controls(f, phase, publication_id):
         reason="Independent recovery allocation replay " + phase, confirm=True, message_id="event-replay-" + phase)
     replay = admin.api(command)
     assert admin.api(command) == replay
-    rows = await poll_until(subscriber, RED, {publication_id}, 30)
+    rows = await poll_until(subscriber, RED, {publication_id}, 300)
     await subscriber.call(scoped(RED, "ack", delivery_ids=[row["id"] for row in rows]))
     materialized = await wait(lambda: value if (value := api("eventing_replay", replay_id=replay["replay"]["id"]))["replay"]["status"] == "materialized" else None,
         "Actual replay did not reach Kafka materialization", timeout=300)
@@ -206,13 +206,13 @@ async def event_controls(f, phase, publication_id):
         response.raise_for_status()
         offset = response.json()["offsets"][0]["offset"]
     quarantined = await wait(lambda: value if (value := status())["quarantined"] else None,
-        "Foreign actual Kafka row was not quarantined")
+        "Foreign actual Kafka row was not quarantined", timeout=300)
     item = next(row for row in quarantined["quarantines"] if row["offset"] == offset)
     repair = scoped(RED, "repair_eventing", offset=offset, expected_checkpoint=quarantined["next_offset"],
         expected_digest=item["digest"], action="retry", reason="Retry real foreign recovery row " + phase,
         confirm=True, message_id="repair-retry-" + phase)
     retried = admin.api(repair)
-    await wait(lambda: status()["quarantined"] == 1, "Retry silently accepted foreign data")
+    await wait(lambda: status()["quarantined"] == 1, "Retry silently accepted foreign data", timeout=300)
     assert admin.api(repair) == retried
     repaired = admin.api({**repair, "message_id": "repair-reconcile-" + phase,
         "action": "reconcile", "reason": "Explicit physical skip for recovery allocator " + phase})

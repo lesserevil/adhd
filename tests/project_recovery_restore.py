@@ -115,11 +115,14 @@ def offline_bundle(f, r, backup_id, project=RED):
 
 async def checks(f, r, evidence):
     from project_recovery_workflows import allocate, event_controls
+    from project_recovery_allocators import rebuild, public_families, verify_new
     await r.initialize(RED)
     await r.initialize(BLUE)
     retained = await basic_families(f, "retained")
     retained["optimizer"] = await allocate(f, f.model, "retained")
     retained["eventing"] = await event_controls(f, "retained", retained["record"]["publication"]["id"])
+    retained["index_rebuild"] = await rebuild(f, RED)
+    retained["public_ids"] = public_families(f, RED)
     actor, blue_recipient = await f.agent("bridge"), await f.agent("blue-b")
     blue_sub = (await blue_recipient.call(scoped(BLUE, "subscribe", mode="raw")))["subscription"]
     before = (await actor.call(scoped(BLUE, "publish_record", text="Blue before target backup")))["record"]["publication"]
@@ -131,6 +134,8 @@ async def checks(f, r, evidence):
     lost = await basic_families(f, "lost")
     lost["optimizer"] = await allocate(f, f.model, "lost")
     lost["eventing"] = await event_controls(f, "lost", lost["record"]["publication"]["id"])
+    lost["index_rebuild"] = await rebuild(f, RED)
+    lost["public_ids"] = public_families(f, RED)
     actor, blue_recipient = await f.agent("bridge"), await f.agent("blue-b")
     newer = (await actor.call(scoped(BLUE, "publish_record", text="Blue newer than target backup")))["record"]["publication"]
     newer_deliveries = await poll_until(blue_recipient, BLUE, {newer["id"]})
@@ -195,6 +200,8 @@ async def checks(f, r, evidence):
     new = await basic_families(f, "lost")
     new["optimizer"] = await allocate(f, f.model, "recovered")
     new["eventing"] = await event_controls(f, "recovered", new["record"]["publication"]["id"])
+    new["index_rebuild"] = await rebuild(f, RED)
+    new["public_ids"] = public_families(f, RED)
     before_ids = allocated(retained_state)
     # New responses legitimately cite retained objects. Compare accepted ID
     # deltas instead of incorrectly demanding that preserved references change.
@@ -202,12 +209,15 @@ async def checks(f, r, evidence):
     assert before_ids and lost_ids and new_ids
     assert not new_ids & (before_ids | lost_ids), "Post-restore allocator collided with retained or lost post-backup IDs"
     allocation_epoch = done["result"]["allocation_epoch"]
+    family_counts = verify_new(new, lost, before_ids, allocation_epoch)
     assert all(ALLOCATED.fullmatch(value).group(1) == allocation_epoch for value in new_ids)
     evidence.record("target-only-restore-keeps-originals-private-acks-current-security-and-other-project-newer-position",
         retained_ids=len(before_ids), lost_post_backup_ids=len(lost_ids), new_ids=len(new_ids),
         families=["publication", "subscription", "delivery", "history", "retrieval", "archive", "feedback", "replay",
             "optimizer-proposal", "optimizer-child", "optimizer-evaluation", "selection-reset", "event-replay", "repair", "audit"],
         complete_accepted_subtrees_compared=list(stable_families),
+        explicit_public_allocated_family_counts=family_counts,
+        unseeded_families=["source-query", "federated-query"],
         optimizer_quality_results={"retained": previous_proposal["status"], "lost": lost["optimizer"]["proposal"]["status"],
             "recovered": new["optimizer"]["proposal"]["status"]},
         transport_discontinuity=True)
@@ -237,7 +247,7 @@ async def main(args):
         recovery={"backup_root": str(f.root / "offline-backups")})
     configure(f)
     evidence = Evidence(args.report, "target-only-project-restore")
-    evidence.value["fixture_phase_wait_seconds"] = {"optimizer_training": 300, "optimizer_evaluation": 300, "kafka_replay_materialization": 300, "kafka_drain": 300}
+    evidence.value["fixture_phase_wait_seconds"] = {"optimizer_training": 300, "optimizer_evaluation": 300, "kafka_replay_materialization": 300, "kafka_drain": 300, "replay_delivery": 300, "quarantine": 300, "repair_retry": 300, "index_rebuild": 300}
     evidence.value["timing_scope"] = "Bounded complete-state lifecycle fixture, not throughput qualification; all original cases, gold and quality gates retained."
     if args.hub:
         evidence.value["artifact_sha256"] = digest(args.hub.read_bytes())
@@ -246,7 +256,7 @@ async def main(args):
         r = Recovery(f, args.recovery_schema)
         evidence.value["authored_recovery_schema_sha256"] = r.schema_sha256
         await checks(f, r, evidence)
-        evidence.value["scope"] = "Target restore and public original/query/feedback/replay/optimizer/selection and actual Kafka repair/replay/audit allocator families using controlled typed replies. Deterministic lineage hashes remain stable. Federation and crash/browser gates remain separate; no live semantic model qualification."
+        evidence.value["scope"] = "Target restore and public original/query/feedback/replay/optimizer/selection and actual Kafka repair/replay/audit allocator families using controlled typed replies. Deterministic lineage hashes remain stable. SourceQuery/FederatedQuery allocation and federation/crash/browser gates remain separate; no full allocator or live semantic model qualification claim."
     except BaseException as error:
         evidence.finish(error)
         raise

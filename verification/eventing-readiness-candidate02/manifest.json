@@ -1,0 +1,64 @@
+{
+  "schema": "adhd/eventing-readiness-candidate-preparation@1",
+  "branch": "roadmap/eventing-readiness",
+  "qualified": false,
+  "app_compiled": false,
+  "app_or_proxy_started": false,
+  "provider_calls": 0,
+  "predecessor": {
+    "path": "verification/eventing-readiness-candidate01/manifest.json",
+    "sha256": "c397445f8841cb1488928c6b4d3a6bf1aa875b2db4eee25247f7389dbf81d695",
+    "preserved_unchanged": true
+  },
+  "candidate_raw_assembly_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "candidate_path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/eventing-readiness-successor/candidate01.exs",
+  "source_and_specifications_unchanged": true,
+  "source_closure_rechecked": 53,
+  "harness": {
+    "eventing_readiness_proxy.py": "46de11fddaadb85940a3684984ce8cb5d6e0a14dca51f6e8411702c51d152af4",
+    "eventing_readiness_faults.py": "883319c96f8715018bb8c6c8878cb5c23296422f19c2a81d22c163c57f2a238c",
+    "eventing_readiness_proxy_unit.py": "6f1b83354d0f0ca3e1bc97433df67d66b6908af9f7f865122817bc299e9bacf1"
+  },
+  "pure_checks_passed": 8,
+  "pure_command": [
+    "/home/horde/src/adhd/.venv/bin/python",
+    "-I",
+    "-B",
+    "tests/eventing_readiness_proxy_unit.py"
+  ],
+  "queue_discrimination": {
+    "eventing_timeout_ms": 3000,
+    "accepted_recovery_timeout_ms": 10000,
+    "held_http_seconds": 2.75,
+    "actual_public_red_queued_observation_max_seconds_from_held_blue_http": 0.5,
+    "same_fixed_configs_404_count_in_queue_and_noqueue_control": 20,
+    "retry_delay_seconds": 0.05,
+    "minimum_observed_queue_plus_retry_seconds": 3.25,
+    "premise": "Actual public Red queued observation within0.5s establishes provisioning has reached resource admission after staging. Blue active1, global active1, local/global caps1 are asserted and retained. Late/missing actual queued observation fails the fixture premise before evaluating the product outcome.",
+    "discrimination": "The accepted recovery deadline remains10000ms; a3000ms failure cannot be explained solely by that owner timer. No-queue control uses the same20 declared404 responses and budgets and must complete with genuine Kafka delivery.",
+    "limits": "No app execution, proxy start, compiler invocation, model/provider call or integration qualification occurred."
+  },
+  "planned_integration_cases": [
+    "lag",
+    "queue-control",
+    "duplicate",
+    "duplicate-bad-topology",
+    "never",
+    "queue",
+    "forbidden",
+    "server-error",
+    "malformed",
+    "bad-cleanup",
+    "partitions-float",
+    "retention-missing",
+    "retention-float",
+    "retention-negative",
+    "retention-duplicate",
+    "existing-retention",
+    "offset-nonzero",
+    "offset-negative",
+    "offset-missing",
+    "offset-float",
+    "offset-string"
+  ]
+}

@@ -13,7 +13,8 @@ from pathlib import Path
 import time
 from uuid import uuid4
 
-from eventing_readiness_proxy import ReadinessProxy
+from eventing_readiness_proxy import (ReadinessProxy,queue_premise,QUEUE_EVENTING_TIMEOUT_MS,
+    QUEUE_RECOVERY_TIMEOUT_MS,QUEUE_OBSERVATION_MAX_SECONDS)
 from multi_support import Fixture,Evidence,arguments,scoped,poll_until
 from project_recovery_acceptance import Recovery,RED,BLUE
 from project_recovery_state import route
@@ -37,8 +38,8 @@ async def run_case(args,case,e):
     f=Fixture(local,initialize_projects=False);r=Recovery(f,args.recovery_schema)
     f.config['eventing'].update(rest_url=proxy.url,timeout_ms=1000,retry_ms=100)
     if case in ('queue','queue-control'):
-        f.config['eventing']['timeout_ms']=3000
-        f.config['recovery']={'timeout_ms':3000}
+        f.config['eventing']['timeout_ms']=QUEUE_EVENTING_TIMEOUT_MS
+        f.config['recovery']={'timeout_ms':QUEUE_RECOVERY_TIMEOUT_MS}
         f.config['resources']={'eventing_concurrency':1,'project_eventing_concurrency':1}
     original=None;native_identity=None;primary=None
     try:
@@ -82,15 +83,20 @@ async def run_case(args,case,e):
         receipt=r.call(RED,'project_restore_apply',plan_id=plan['plan_id'],plan_sha256=plan['plan_sha256'],
             expected_revision=r.revision(),confirm=True,message_id=uuid4().hex)
         if case=='queue':
-            assert time.monotonic()-proxy.held_at<.9,'Queue observation premise failed before assessing product outcome'
             def queued():
                 status=f.admin().call({'op':'resource_status'})
                 lane=status['lanes']['eventing']
                 if lane['projects'].get(RED,{}).get('queued',0)>=1:return status
-            resources=await until(queued,2)
+            try:
+                resources=await until(queued,QUEUE_OBSERVATION_MAX_SECONDS)
+            except AssertionError as error:
+                raise AssertionError('Fixture premise failed: no timely actual Red queued observation')from error
+            premise=queue_premise(proxy.held_at,time.monotonic())
             assert resources['limits']['eventing_concurrency']==1
             assert resources['lanes']['eventing']['projects'][BLUE]['active']==1
-            e.value.setdefault('queue_observations',[]).append(resources)
+            assert resources['limits']['project_eventing_concurrency']==1
+            assert resources['lanes']['eventing']['active']==1
+            e.value.setdefault('queue_observations',[]).append({'resources':resources,'premise':premise})
         operation=await r.settle(RED,receipt,{'complete','failed'})
         elapsed=time.monotonic()-started
         proxy.release.set()
@@ -118,13 +124,13 @@ async def run_case(args,case,e):
                 # This is an experiment observation margin, not a widened app
                 # deadline: queue+retries share the declared1000/3000ms budget.
                 budget=f.config['eventing']['timeout_ms']
-                assert elapsed<=budget/1000+1.0,('Single provisioning/owner budget reset/overrun',elapsed,budget)
+                assert elapsed<=budget/1000+1.0,('Single Eventing budget reset/overrun with longer owning recovery budget',elapsed,budget)
             if case in ('forbidden','server-error','malformed','bad-cleanup','partitions-float','retention-missing','retention-float','retention-negative','retention-duplicate','existing-retention','duplicate-bad-topology'):
                 injected=[v for v in selected if v['injected']]
                 assert len(injected)==1,'Nontransient failure was retried'
         assert not proxy.failures
         e.record(case,operation_state=operation['state'],elapsed_seconds=elapsed,eventing_timeout_ms=f.config['eventing']['timeout_ms'],
-                 statuses=selected,created_requests=len(creates),real_blue_record_and_ack_preserved=True)
+                 recovery_timeout_ms=f.config.get('recovery',{}).get('timeout_ms'),statuses=selected,created_requests=len(creates),real_blue_record_and_ack_preserved=True)
     except BaseException as error:
         primary=error
         raise

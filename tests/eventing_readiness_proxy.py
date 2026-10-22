@@ -8,6 +8,26 @@ from socketserver import ThreadingMixIn
 from urllib.parse import unquote, urlsplit
 
 
+QUEUE_HOLD_SECONDS=2.75
+QUEUE_OBSERVATION_MAX_SECONDS=.5
+QUEUE_VISIBILITY_FAILURES=20
+QUEUE_RETRY_DELAY_SECONDS=.05
+QUEUE_EVENTING_TIMEOUT_MS=3000
+QUEUE_RECOVERY_TIMEOUT_MS=10000
+
+
+def queue_premise(held_at,observed_at):
+    """Validate the actual queued observation before evaluating product behavior."""
+    elapsed=observed_at-held_at
+    assert 0<=elapsed<=QUEUE_OBSERVATION_MAX_SECONDS, "Fixture premise failed: Red was not observed queued within0.5s of held Blue HTTP"
+    minimum=QUEUE_HOLD_SECONDS-elapsed+QUEUE_VISIBILITY_FAILURES*QUEUE_RETRY_DELAY_SECONDS
+    assert minimum>QUEUE_EVENTING_TIMEOUT_MS/1000
+    return {"observed_after_hold_seconds":elapsed,"minimum_queue_plus_retry_seconds":minimum,
+            "held_http_seconds":QUEUE_HOLD_SECONDS,"visibility_failures":QUEUE_VISIBILITY_FAILURES,
+            "retry_delay_seconds":QUEUE_RETRY_DELAY_SECONDS,"eventing_timeout_ms":QUEUE_EVENTING_TIMEOUT_MS,
+            "recovery_timeout_ms":QUEUE_RECOVERY_TIMEOUT_MS}
+
+
 def classify(path,topic):
     path=unquote(urlsplit(path).path)
     if not topic:return None
@@ -22,7 +42,7 @@ def fault_response(mode,category,status,body,number,created):
     """Pure fault transform. Only the selected fresh topic can reach this seam."""
     if not created:return status,body,False
     if category=='configs':
-        if mode=='never'or mode=='lag'and number<=2 or mode in ('queue','queue-control')and number<=20:
+        if mode=='never'or mode=='lag'and number<=2 or mode in ('queue','queue-control')and number<=QUEUE_VISIBILITY_FAILURES:
             return 404,b'{"error_code":40401,"message":"Declared visibility fault"}',True
         if mode in ('forbidden','server-error'):
             return (403 if mode=='forbidden'else 500),b'{"error_code":50001}',True
@@ -83,7 +103,7 @@ class ReadinessProxy:
                     if self.command=='POST'and urlsplit(self.path).path.endswith('/topics'):
                         value=json.loads(body);created_request=owner.topic is not None and value.get('topic_name')==owner.topic
                     if owner.hold and self.command=='GET'and '/records'in self.path and not owner.held.is_set():
-                        owner.held_at=time.monotonic();owner.held.set();owner.release.wait(6)
+                        owner.held_at=time.monotonic();owner.held.set();owner.release.wait(QUEUE_HOLD_SECONDS)
                     connection=http.client.HTTPConnection(*owner.backend,timeout=3)
                     headers={k:v for k,v in self.headers.items()if k.lower()not in ('host','connection','content-length')}
                     headers['Connection']='close';connection.request(self.command,self.path,body,headers)

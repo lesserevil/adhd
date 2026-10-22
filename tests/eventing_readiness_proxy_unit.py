@@ -18,6 +18,13 @@ class Faults(unittest.TestCase):
         self.assertEqual(p.fault_response('lag','configs',403,b'denied',1,False),(403,b'denied',False))
     def test_queue_control_same_fixed_lag(self):
         for n in [1,20,21]:self.assertEqual(p.fault_response('queue','configs',200,b'valid',n,True),p.fault_response('queue-control','configs',200,b'valid',n,True))
+    def test_queue_premise_distinguishes_owner_and_eventing_budgets(self):
+        observed=p.queue_premise(10,10.5)
+        self.assertGreater(observed['minimum_queue_plus_retry_seconds'],3)
+        self.assertEqual(observed['minimum_queue_plus_retry_seconds'],3.25)
+        self.assertGreater(observed['recovery_timeout_ms'],observed['eventing_timeout_ms'])
+        for late in [10.5001,11,9]:
+            with self.assertRaisesRegex(AssertionError,'Fixture premise failed'):p.queue_premise(10,late)
     def test_nontransient_and_float_fault_bytes(self):
         self.assertEqual(p.fault_response('forbidden','configs',200,b'valid',1,True)[0],403)
         self.assertEqual(p.fault_response('server-error','configs',200,b'valid',1,True)[0],500)

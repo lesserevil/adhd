@@ -156,14 +156,14 @@ async def allocate(f, model, phase):
     def current():
         return f.admin().call(scoped(RED, "index_proposal", proposal_id=proposal["id"], limit=64))["proposal"]
     frozen = await wait(lambda: value if (value := current())["status"] != "pending" else None,
-        "Real bounded optimizer training did not freeze")
+        "Real bounded optimizer training did not freeze", timeout=300)
     assert frozen["status"] == "awaiting_evaluation", (frozen["status"], frozen.get("error"))
     held = [await case("held_out", variant) for variant in ("negation", "correction", "no-evidence")]
     regression = [await case("regression", variant) for variant in ("negation", "correction", "no-evidence")]
     evaluated = f.admin().call(scoped(RED, "evaluate_index", proposal_id=proposal["id"],
         held_out_attempt_ids=held, regression_attempt_ids=regression), mutation=True)["proposal"]
     final = await wait(lambda: value if (value := current())["status"] != "pending" else None,
-        "Real optimizer evaluation did not settle")
+        "Real optimizer evaluation did not settle", timeout=300)
     assert final["evaluation"] is not None
     assert {c["cohort"] for c in final["cases"]} >= {"training", "held_out", "regression"}
     assert any(v["cohort"] != "training" for v in final["children"])

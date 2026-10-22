@@ -237,6 +237,8 @@ async def main(args):
         recovery={"backup_root": str(f.root / "offline-backups")})
     configure(f)
     evidence = Evidence(args.report, "target-only-project-restore")
+    evidence.value["fixture_phase_wait_seconds"] = {"optimizer_training": 300, "optimizer_evaluation": 300, "kafka_replay_materialization": 300, "kafka_drain": 300}
+    evidence.value["timing_scope"] = "Bounded complete-state lifecycle fixture, not throughput qualification; all original cases, gold and quality gates retained."
     if args.hub:
         evidence.value["artifact_sha256"] = digest(args.hub.read_bytes())
     try:

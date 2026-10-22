@@ -2,7 +2,12 @@
   "schema": "adhd/image40-ui-partial-visual-review@1",
   "status": "PARTIAL",
   "suites_complete": [
-    "admin"
+    "admin",
+    "evidence",
+    "eventing",
+    "roles",
+    "recovery",
+    "index-epoch"
   ],
   "manual_images": [
     {
@@ -12,12 +17,56 @@
     {
       "path": "desktop-subscription-edit-form.png",
       "sha256": "0943b81d1db8224beb515331d333fd4341cb4dc3c6b1302aaba33804b6131416"
+    },
+    {
+      "path": "eventing/mobile-replay.png",
+      "sha256": "3c8c3f3377c9b04f96836febd969047e269e620d00ae2403df5ea04a21f17a90",
+      "aria_sha256": "dc34a7eb96a02d0678bbf091c820aecaa275455a35a443f5b21570bf844f78cf"
+    },
+    {
+      "path": "eventing/desktop-recovery.png",
+      "sha256": "41a49d5bf349cc3668777be619c11f9815db39c7cbced2213259e372ef80129c",
+      "aria_sha256": "e0ae558a295465e7f17e431187a562f2b1e79511741c2a4a2c1018acb3877062"
+    },
+    {
+      "path": "roles/mobile-viewer.png",
+      "sha256": "65aad054030b55e08affc830b367ce448857a437ad27dd0cdd3d75dbc23599d4",
+      "aria_sha256": "dbc377276e276392b5c49a24b590ebb5c8424587db65ee337e61ef619ac69e6c"
+    },
+    {
+      "path": "roles/desktop-developer-agent.png",
+      "sha256": "bed01fd06ceeee3aa037da44719391abc7bdf95092d7de111fe6e49587e0ac1c",
+      "aria_sha256": "ddfb7abedd41559dd344517efda8637ef227243bd202be449fc5e5e1288c1143"
+    },
+    {
+      "path": "recovery/mobile/review-restore.png",
+      "sha256": "742b6f67b9d22dc8850191a13a4b5d1756b65f39d139ac6d23bc7066cce1fff9",
+      "aria_sha256": "368a4f74863eb47a9f5c1b6d42f6926fe7ae7f87d852ca37aeb4389dfbc5e8aa"
+    },
+    {
+      "path": "recovery/desktop/restored.png",
+      "sha256": "221f9591dd05a276a9abb17f44f905f860d29a814d0ef2f8b092f9897466b236",
+      "aria_sha256": "afd3117f84b199f058f8bcb88a294427c2a06f7ba8591e8b6505f0edbe45421d"
+    },
+    {
+      "path": "index-epoch/mobile/current-context-error.png",
+      "sha256": "8600c038a6517c552c06edb06e407450ad0537e5f14a7f9ceaf06db281d558e2",
+      "aria_sha256": "67b14a3319db77952078e3282a934e619b7993f402ed3d0f09dfb89348311ad5"
+    },
+    {
+      "path": "index-epoch/desktop/project-switch.png",
+      "sha256": "23cc1640ad5d9c73b7d36e610203e8367d30ddb217afd1a7e20ad296d5c09aee",
+      "aria_sha256": "6c229a35234ce41bdf01d522770bc502184d54373221e68944a1a4e6560f30b3"
     }
   ],
   "observations": [
     "Mobile subscription form and saved filtered subscription controls readable; long identifier wraps within card.",
     "Desktop editable selectors, filter, pause, cancel and confirm controls visible; revision and future-event explanation present.",
-    "Mobile navigation uses horizontal scrolling; no whole-document horizontal overflow visible."
+    "Mobile navigation uses horizontal scrolling; no whole-document horizontal overflow visible.",
+    "Viewer mobile Agents view exposes admitted Blue agents and no create/edit controls; Developer desktop offers self-owned agent creation and only its admitted project.",
+    "Recovery mobile reviewed plan wraps metadata and keeps Apply visible; desktop restored state reports ready/complete and retained operations.",
+    "Index mobile unavailable state retains Blue context and explicit current-context error; desktop project switch shows only current Blue zero-state index/counters.",
+    "Events desktop recovery exposes replay/retry/audit and hot connection controls; mobile full capture keeps namespaced replay identifiers within the form."
   ],
-  "remaining": "Inspect other completed browser suites and their accessibility/error/viewport evidence before final UI qualification."
+  "remaining": "Accounts/OIDC and session-fence desktop/mobile captures, complete matrix/error/viewport checks and terminal input/cleanup audit remain required."
 }

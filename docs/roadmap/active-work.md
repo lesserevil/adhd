@@ -100,9 +100,10 @@ now passes all 23 cases on that image. [SDK compatibility and cold startup](../.
 passes all 17 cases under the original 30-second readiness deadline. The
 [late-callback recovery gate](../../verification/recovery-callback41-positive/manifest.json)
 passes all five original programs /28 checks with actual compiled VM custody;
-that gate uses its original instrumented Store-loss entrypoint. Next: finish full
-recovery, core, Kafka and deployment/security/model/browser gates, then consolidate
-their exact scoped evidence and operating limits.
+that gate uses its original instrumented Store-loss entrypoint. Current deployment,
+security, browser and deployed-model results are recorded below. Next: finish the
+fresh full25 recovery and full14 Kafka gates, retain the completed core13 audit,
+then consolidate exact scoped evidence, declared verification and operating limits.
 
 The [successor core13 attempt](../../verification/eventing-readiness-core13-first-failure/manifest.json)
 stopped in its first foundation program after 11
@@ -176,6 +177,23 @@ The [focused rebind controller](../../verification/rebind-focused41-once-control
 and [federation timing diagnostic](../../verification/federation-admin-timing-preparation/metadata-review.json)
 run the original scenarios with additive sanitized observations; neither changes
 the failed aggregate or independently closes the full regression requirement.
+Both focused diagnostics now pass: [rebind2/18](../../verification/rebind41-focused-positive/manifest.json)
+and [federation1/14](../../verification/federation41-focused-positive/audit.json),
+with independent input and cleanup audits. All retained rebind argument matches
+are true; the earlier mismatch remains unexplained. The previously slow catalog
+update returns within the original five-second timeout in the diagnostic, without
+establishing the earlier delay's cause. The [fresh full25 recovery](../../verification/recovery41-full25-second-preparation/manifest.json)
+and [fresh full14 Kafka](../../verification/source41-kafka-fresh-full14-preparation/review.json)
+plans retain every original scenario and deadline and borrow no passing prefixes.
+Their runtime gates remain open until the complete results pass.
+
+The [source41 deployed model audit](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
+passes on both Compose and Kind: eight outer reported checks and twelve actual
+upstream POSTs total, six per platform under the original twelve-per-platform
+cap. Filtering, cited fact search, raw progress, privacy and same-VM hot
+disable/resume are covered by the original assertions and semantic reports;
+these counts do not invent twelve separately serialized test cases. The original
+model container identity, cooperative lease release and owned cleanup are verified.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

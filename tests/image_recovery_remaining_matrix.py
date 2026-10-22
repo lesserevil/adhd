@@ -124,15 +124,16 @@ def verify_empty_cache(path,required):
 
 def remainder_names(basis,matrix,artifact,image):
     names=[job['name'] for job in basis['jobs']]
-    assert len(names) in (42,34) and len(set(names))==len(names)
+    assert len(names) in (42,34,19) and len(set(names))==len(names)
     assert matrix['passed'] is False and matrix['artifact_sha256']==artifact and matrix['image_config_identity']==image
-    whole=8 if len(names)==42 else 15
-    failed='crash-damaged-after-install-snapshot' if len(names)==42 else 'primitive-allocator'
+    whole={42:8,34:15,19:1}[len(names)]
+    failed={42:'crash-damaged-after-install-snapshot',34:'primitive-allocator',19:'primitive-epoch'}[len(names)]
     rows=matrix['rows'];assert len(rows)==whole+1 and matrix['planned']==len(names)
     assert [row['name'] for row in rows]==names[:whole+1]
     assert all(row['passed'] is True and row['exit_code']==0 and row['started'] for row in rows[:whole])
     assert rows[-1]['name']==failed and rows[-1]['passed'] is False and rows[-1]['exit_code']==1 and rows[-1]['started']
     if len(names)==34:assert all(name.startswith('crash-') for name in names[:15])
+    if len(names)==19:assert names[:2]==['primitive-allocator','primitive-epoch']
     assert matrix['unrun']==names[whole+1:] and matrix['executed']==names[:whole+1] and matrix['attempted']==names[:whole+1]
     return names[whole:]
 
@@ -156,7 +157,7 @@ def verify(work,plan):
     if plan.get('resume_basis'):
         prior=json.loads((work/'bound/prior-plan.json').read_text());matrix=json.loads((work/'bound/prior-matrix.json').read_text())
         names=remainder_names(prior,matrix,plan['artifact_sha256'],plan['image_config_identity'])
-        assert [job['name'] for job in plan['jobs']]==names and len(names) in (34,19)
+        assert [job['name'] for job in plan['jobs']]==names and len(names) in (34,19,18)
         expected=len(names)
     assert len(plan['jobs'])==expected and len({j['name'] for j in plan['jobs']})==expected
     assert sha(work/'frozen/tests/image_recovery_remaining_matrix.py')==plan['driver_sha256']
@@ -181,7 +182,7 @@ def prepare(args):
     descriptor=layout(original)
     work.mkdir(mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700)
     inputs,drift=freeze_inputs(args.helper_root,frozen,selected['specifications'])
-    for name in ('image_recovery_remaining_matrix.py','image_recovery_component.py','image_recovery_remaining_layout.py'):
+    for name in ('image_recovery_remaining_matrix.py','image_recovery_component.py','image_recovery_remaining_layout.py','image_rebind_runtime.py'):
         shutil.copyfile(Path(__file__).with_name(name),frozen/'tests'/name)
     shutil.copytree(origin/'fixtures',frozen/'fixtures',copy_function=shutil.copy2)
     # Complete original component fixtures are copied without modifying their
@@ -238,7 +239,7 @@ def prepare(args):
             assert Path(name).resolve(strict=True)==Path(row['realpath']) and sha(name)==row['sha256']
         selected_names=remainder_names(basis,matrix,artifact,args.image)
         full_names=[row['name'] for row in descriptor['selected_rows']]
-        assert [job['name'] for job in basis['jobs']] in (full_names,full_names[8:])
+        assert [job['name'] for job in basis['jobs']] in (full_names,full_names[8:],full_names[23:])
         if len(basis['jobs'])==34:
             from image_recovery_component import qualify_output
             failed=prior/'results/primitive-allocator-capsule-work/stdout.log'
@@ -246,6 +247,13 @@ def prepare(args):
             assert result['runtime']['sessions'][0]['client_exit_code']==0
             assert qualify_output({'kind':'exunit','expected_tests':5},subprocess.CompletedProcess([],0,failed.read_bytes(),b''))['tests']==5
             shutil.copyfile(failed,bound/'prior-primitive-allocator-actual-vm.stdout')
+        if len(basis['jobs'])==19:
+            failed=prior/'results/primitive-epoch-capsule-work'
+            assert (failed/'component-runtime.txt').read_text().splitlines()==['1','29','1.20.4']
+            assert not (failed/'component-release').exists() and not (failed/'component-release').is_symlink()
+            failed_result=json.loads((prior/'results/primitive-epoch.json').read_text())
+            assert failed_result['runtime']['sessions'][0]['actual_vm_custody'] is None and not failed_result['checks']
+            shutil.copyfile(failed/'component-runtime.txt',bound/'prior-primitive-epoch-unreleased-capsule.txt')
         for name in ('plan.json','matrix.json'):shutil.copyfile(prior/name,bound/('prior-'+name))
         for row in matrix['rows']:
             for suffix,key in [('.json','report_sha256'),('-cleanup.json','cleanup_report_sha256')]:

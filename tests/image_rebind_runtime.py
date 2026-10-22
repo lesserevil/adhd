@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import time
@@ -76,6 +77,28 @@ class ImageRebindRuntime:
             except BaseException as cleanup:error.add_note('Owned image CLI cleanup failure: '+type(cleanup).__name__)
             raise
 
+    @staticmethod
+    def pending_created(state):
+        if state.get('Status')!='created':return False
+        zero=lambda value:isinstance(value,str) and re.fullmatch(r'0001-01-01T00:00:00(?:\.0+)?Z',value)
+        assert state['Running'] is False and type(state['Pid']) is int and state['Pid']==0
+        assert all(state[key] is False for key in ('Paused','Restarting','Dead','OOMKilled'))
+        assert type(state['ExitCode']) is int and state['ExitCode']==0 and state['Error']==''
+        assert zero(state['StartedAt']) and zero(state['FinishedAt'])
+        return True
+
+    @staticmethod
+    def record_inspection(session,row):
+        # Bounded distinct snapshots, captured before state assertions. No
+        # environment or serialized public request is retained here.
+        snapshot={'Id':row.get('Id'),'Image':row.get('Image'),'Name':row.get('Name'),
+            'State':row.get('State'),'User':row.get('Config',{}).get('User'),
+            'HostConfig':{key:row.get('HostConfig',{}).get(key) for key in ('PidMode','Privileged','NetworkMode')}}
+        observations=session.setdefault('vm_observations',[])
+        if not observations or observations[-1]!=snapshot:
+            assert len(observations)<64,'VM inspection observation bound'
+            observations.append(snapshot)
+
     def observe_vm(self,session,deadline):
         target=session['target'];process=session['process']
         while time.monotonic()<deadline:
@@ -87,13 +110,19 @@ class ImageRebindRuntime:
                 assert target.authoritative_absence(result,target.name)
                 time.sleep(.02);continue
             row=json.loads(result.stdout)[0]
+            self.record_inspection(session,row)
             assert row['Image']==target.image_id and row['Name']=='/'+target.name
+            assert isinstance(row['Id'],str) and re.fullmatch('[a-f0-9]{64}',row['Id'])
+            if session.get('observed_container_id') is None:session['observed_container_id']=row['Id']
+            assert session['observed_container_id']==row['Id'],'Owned container changed during VM observation'
+            assert row['Config']['User']==f'{os.getuid()}:{os.getgid()}'
+            assert row['HostConfig']['PidMode'] in ('','private') and row['HostConfig']['Privileged'] is False
+            assert row['HostConfig']['NetworkMode']==('none' if session['offline'] else 'host')
+            if self.pending_created(row['State']):time.sleep(.02);continue
             if not row['State']['Running']:raise AssertionError('CLI ended before VM observation')
+            assert not any(row['State'].get(key,False) for key in ('Dead','Paused','Restarting'))
             pid=row['State']['Pid']
             if not pid:time.sleep(.02);continue
-            assert row['Config']['User']==f'{os.getuid()}:{os.getgid()}'
-            assert row['HostConfig']['PidMode'] in ('','private') and not row['HostConfig']['Privileged']
-            assert row['HostConfig']['NetworkMode']==('none' if session['offline'] else 'host')
             try:
                 executable=Path(os.readlink('/proc/'+str(pid)+'/exe'))
                 cmdline=Path('/proc/'+str(pid)+'/cmdline').read_bytes()
@@ -153,7 +182,7 @@ class ImageRebindRuntime:
         return {'image_config_identity':self.args.image,'artifact_sha256':self.manifest['files']['hub.exs'],
             'canonical_manifest_sha256':sha(self.args.image_manifest),'runtime_helper_sha256':sha(__file__),
             'cleanup_blocked':self.cleanup_blocked,'sessions':[{'command_kind':s['command_kind'],'actual_vm_custody':s['custody'],
-                'client_exit_code':s.get('client_exit_code'),'closed':s.get('closed',False),'runtime':s['target'].identity()} for s in self.sessions]}
+                'client_exit_code':s.get('client_exit_code'),'closed':s.get('closed',False),'vm_observations':s.get('vm_observations',[]),'output_diagnostics':s.get('output_diagnostics'),'runtime':s['target'].identity()} for s in self.sessions]}
 
 
 def stop_image_process(process,hard=False):

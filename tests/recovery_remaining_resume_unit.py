@@ -29,7 +29,17 @@ def main():
         bad=copy.deepcopy(terminal);bad[key]=value;denied(lambda bad=bad:remainder_names(prior,bad,'artifact','image'))
     for index,key,value in [(14,'passed',False),(15,'name','other'),(15,'exit_code',0)]:
         bad=copy.deepcopy(terminal);bad['rows'][index][key]=value;denied(lambda bad=bad:remainder_names(prior,bad,'artifact','image'))
-    print('PASS recovery resume pure18: exact8wholepasses retained/failed+33unrun34selection, green/wrongartifact/image/reordered/omitted/unstarted/failureidentity/mismatchedexit denials; originalmatrixunchanged, runtime/provider starts0')
+    names19=['primitive-allocator','primitive-epoch']+['component-'+str(i)for i in range(15)]+['rebind','rebind-hostile']
+    basis19={'jobs':[{'name':n}for n in names19]}
+    terminal19={'planned':19,'passed':False,'artifact_sha256':'artifact','image_config_identity':'image',
+        'rows':[{'name':n,'passed':i==0,'exit_code':0 if i==0 else 1,'started':True}for i,n in enumerate(names19[:2])],
+        'unrun':names19[2:],'executed':names19[:2],'attempted':names19[:2]}
+    assert len(remainder_names(basis19,terminal19,'artifact','image'))==18
+    for key,value in [('planned',18),('passed',True),('unrun',names19[3:])]:
+        bad=copy.deepcopy(terminal19);bad[key]=value;denied(lambda bad=bad:remainder_names(basis19,bad,'artifact','image'))
+    for index,key,value in [(0,'passed',False),(1,'name','other'),(1,'exit_code',0)]:
+        bad=copy.deepcopy(terminal19);bad['rows'][index][key]=value;denied(lambda bad=bad:remainder_names(basis19,bad,'artifact','image'))
+    print('PASS recovery resume pure25: exact8wholepasses retained/failed+33unrun34selection, green/wrongartifact/image/reordered/omitted/unstarted/failureidentity/mismatchedexit denials; originalmatrixunchanged, runtime/provider starts0')
 
 
 if __name__=='__main__':main()

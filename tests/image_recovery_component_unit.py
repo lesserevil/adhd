@@ -62,12 +62,32 @@ def main():
             communicate=lambda **kw:(b'2 tests, 0 failures\n',b''))
         def observed(session,deadline):
             session['custody']={'namespace_pid':1};p=out/'component-runtime.txt';p.write_text('1\n29\n1.19.0\n');p.chmod(0o600)
+            (out/'stdout.log').write_bytes(b'2 tests, 0 failures\n')
+            (out/'stderr.log').write_bytes(b'synthetic startup diagnostics\n')
         runtime.observe_vm=observed
         with patch('image_recovery_component.RetainedImage',return_value=target),patch('subprocess.Popen',return_value=process):
             result=runtime.run_component(script,args,[(str(source),'/original/frozen')],600,'/original/frozen')
-        assert result.returncode==0 and actions==[False] and (out/'component-release').is_file()
+        assert result.returncode==0 and result.stdout==b'2 tests, 0 failures\n' and result.stderr==b'synthetic startup diagnostics\n' and actions==[False] and (out/'component-release').is_file()
         assert runtime.sessions[0]['runtime_version']['otp_release']=='29' and runtime.active is None
-    print('PASS image component preparation10: readonly original paths/cwd, networknone, immutable payload mount denial, actual-PID1 capsule barrier shape, strict test outcomes, retained closure, mount ancestor/traversal and output containment, actual child JSON, report-primary preservation; compiler/app/process attempts0')
+        failed=out/'failed-startup';failed.mkdir()
+        runtime=object.__new__(ImageComponentRuntime);runtime.args=SimpleNamespace(image='sha256:'+'a'*64,image_manifest=root/'manifest.json');runtime.root=failed
+        runtime.active=None;runtime.cleanup_blocked=False;runtime.sessions=[];target.name='synthetic-held'
+        primary=RuntimeError('Held capsule custody rejected')
+        def failed_observation(session,deadline):
+            (failed/'stdout.log').write_bytes(b'actual startup stdout before assertion\n')
+            (failed/'stderr.log').write_bytes(b'actual startup stderr before assertion\n')
+            session['vm_observations']=[{'State':{'Status':'created','Running':False,'Pid':0}}]
+            raise primary
+        runtime.observe_vm=failed_observation
+        with patch('image_recovery_component.RetainedImage',return_value=target),patch('subprocess.Popen',return_value=process):
+            try:runtime.run_component(script,args,[(str(source),'/original/frozen')],600,'/original/frozen')
+            except RuntimeError as error:assert error is primary
+            else:raise AssertionError('Failed custody became component success')
+        assert not (failed/'component-release').exists() and runtime.sessions[0]['closed'] and runtime.active is None
+        assert (failed/'stdout.log').read_bytes()==b'actual startup stdout before assertion\n'
+        assert (failed/'stderr.log').read_bytes()==b'actual startup stderr before assertion\n'
+        assert runtime.sessions[0]['output_diagnostics']['stdout']['sha256'] and runtime.sessions[0]['output_diagnostics']['stderr']['sha256']
+    print('PASS image component preparation11: readonly original paths/cwd, networknone, immutable payload mount denial, actual-PID1 capsule barrier shape, strict test outcomes, retained closure, mount ancestor/traversal and output containment, actual child JSON, report-primary preservation; compiler/app/process attempts0')
 
 
 if __name__=='__main__':main()

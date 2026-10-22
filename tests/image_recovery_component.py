@@ -68,11 +68,16 @@ class ImageComponentRuntime(ImageRebindRuntime):
         session={'target':target,'process':None,'command_kind':'component','serialized':'','offline':True,'custody':None,
             'component_argv':[str(script),*arguments]}
         self.active=session;self.sessions.append(session);primary=None;deadline=time.monotonic()+timeout
-        metadata=self.root/'component-runtime.txt';release=self.root/'component-release'
+        metadata=self.root/'component-runtime.txt';release=self.root/'component-release';streams=[]
+        stdout_path=self.root/'stdout.log';stderr_path=self.root/'stderr.log'
         assert not metadata.exists() and not release.exists()
         try:
             argv=component_argv(target.argv(self.root/'unused-component-config.json'),script,arguments,mounts,metadata,release,timeout,cwd)
-            process=subprocess.Popen(argv,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
+            # Regular owned files retain startup output even if custody fails
+            # before communicate; no pipe buffer can block a held capsule.
+            stdout_file=stdout_path.open('xb');streams.append(stdout_file)
+            stderr_file=stderr_path.open('xb');streams.append(stderr_file)
+            process=subprocess.Popen(argv,stdout=stdout_file,stderr=stderr_file,start_new_session=True)
             session['process']=process
             self.observe_vm(session,deadline)
             # The actual PID1 interpreter pauses BEFORE unchanged vectors load,
@@ -87,17 +92,38 @@ class ImageComponentRuntime(ImageRebindRuntime):
                 'actual_pid1_metadata_sha256':sha(metadata),'capsule_sha256':hashlib.sha256(CAPSULE.encode()).hexdigest()}
             descriptor=os.open(release,os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_CLOEXEC,0o600)
             with os.fdopen(descriptor,'w') as gate:gate.write('owned VM verified\n')
-            stdout,stderr=process.communicate(timeout=max(.001,deadline-time.monotonic()))
+            process.wait(timeout=max(.001,deadline-time.monotonic()))
+            for stream in streams:stream.flush()
+            assert stdout_path.stat().st_size<=4*1024*1024 and stderr_path.stat().st_size<=4*1024*1024
+            stdout,stderr=stdout_path.read_bytes(),stderr_path.read_bytes()
             session['client_exit_code']=process.returncode
             return subprocess.CompletedProcess(argv,process.returncode,stdout,stderr)
         except BaseException as error:primary=error;raise
         finally:
+            errors=[]
             try:
                 self.stop_session(session,hard=primary is not None and session['custody'] is not None)
                 if primary is None:assert target.last_exit_code==session['client_exit_code']
-            except BaseException as cleanup:
-                if primary is not None:primary.add_note('Component image cleanup failure: '+type(cleanup).__name__)
-                else:raise
+            except BaseException as cleanup:errors.append(cleanup)
+            for stream in streams:
+                try:stream.close()
+                except BaseException as cleanup:errors.append(cleanup)
+            try:
+                diagnostic={}
+                for label,path in [('stdout',stdout_path),('stderr',stderr_path)]:
+                    if path.exists():
+                        assert path.is_file() and not path.is_symlink()
+                        size=path.stat().st_size
+                        with path.open('rb') as handle:data=handle.read(4*1024*1024+1)
+                        diagnostic[label]={'bytes':size,'sha256':hashlib.sha256(data).hexdigest() if len(data)==size and size<=4*1024*1024 else None,
+                            'prefix_sha256':hashlib.sha256(data[:4*1024*1024]).hexdigest(),'truncated':size>4*1024*1024}
+                session['output_diagnostics']=diagnostic
+            except BaseException as cleanup:errors.append(cleanup)
+            if errors:
+                if primary is not None:
+                    for cleanup in errors:primary.add_note('Component image cleanup/diagnostic failure: '+type(cleanup).__name__)
+                else:raise errors[0]
+
 
 
 def qualify_output(job,result):
@@ -151,7 +177,6 @@ def main():
     runtime=ImageComponentRuntime(args,work);primary=None;result=None;checks={}
     try:
         result=runtime.run_component(job['script'],job['arguments'],job['readonly_mounts'],job['outer_timeout_seconds'],job['cwd'])
-        (work/'stdout.log').write_bytes(result.stdout);(work/'stderr.log').write_bytes(result.stderr)
         checks=qualify_output(job,result)
     except BaseException as error:primary=error;raise
     finally:

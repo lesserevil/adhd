@@ -1,4 +1,4 @@
-"""Prepare serial deployed Compose/Kind model-only qualification; no automatic execution."""
+"""Prepare serial compiled Compose/Kind baseline or model-only qualification; no automatic execution."""
 import sys
 _STAGED=__file__.rsplit('/',1)[-1]=='driver.py'
 if _STAGED:
@@ -81,6 +81,7 @@ def verify(work,plan,preflight=True):
     assert compiled_admission(work/'context',work/'bound/admission.json',plan['admission_sha256'],plan['image'],plan['artifact_sha256'],required=True)==plan['compiled_binding']
     assert json_kube_endpoint(work/'bound/kubeconfig',plan['facts']['node']['cluster'])==plan['kube_endpoint']
     if preflight:
+        if plan.get('baseline'):assert upgrade_images()==plan['upgrade_images']
         for job in plan['jobs']:
             for port in (job['port'],job['relay_port']):free_port(port)
         assert cluster_facts(plan['tools']['kubectl']['path'],work/'bound/kubeconfig',plan['facts']['node']['name'],plan['cluster_image'],plan['broker_image'],plan['proxy_image'],plan['jobs'][1]['owned_name'])==plan['facts']
@@ -91,10 +92,22 @@ def verify(work,plan,preflight=True):
     return True
 
 
+def upgrade_images():
+    pins=['confluentinc/cp-kafka@sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e',
+        'confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f']
+    result={}
+    for pin in pins:
+        rows=json.loads(subprocess.check_output(['docker','image','inspect',pin],timeout=30));assert len(rows)==1
+        result[pin]={'id':rows[0]['Id'],'layers':rows[0]['RootFS']['Layers']}
+    assert len({r['id'] for r in result.values()})==2
+    return result
+
+
 def prepare(a):
     work=a.work.absolute();assert not work.exists() and work.parent.resolve(strict=True)==work.parent
     assert re.fullmatch('adhd-final-[a-z0-9-]{1,30}',a.name)
-    assert a.lease_path.is_absolute() and a.lease_path.resolve()==a.lease_path
+    baseline=getattr(a,'baseline',False)
+    if not baseline:assert a.lease_path.is_absolute() and a.lease_path.resolve()==a.lease_path
     ports=[a.compose_port,a.kind_port,a.compose_relay_port,a.kind_relay_port];assert len(set(ports))==4
     for port in ports:free_port(port)
     basis=json.loads(a.platform_plan.read_text());tag=selected_cluster_image(a,basis)
@@ -107,6 +120,7 @@ def prepare(a):
     tree(a.repo_root/'deploy');shutil.copytree(a.repo_root/'deploy',work/'frozen/deploy')
     # Current root helpers plus explicitly authored driver; no ambient imports.
     shutil.copyfile(__file__,work/'frozen/tests/kafka_deployed_model_matrix.py')
+    for name in ('kafka_final_platform.py','kafka_platform_vm.py'):shutil.copyfile(Path(__file__).with_name(name),work/'frozen/tests'/name)
     shutil.copyfile(Path(__file__).with_name('kafka_oauth_k8s_matrix.py'),work/'frozen/tests/kafka_oauth_k8s_matrix.py')
     assert (work/'frozen/tests/model_service_lease.py').is_file()
     for p in a.context.iterdir():assert p.is_file() and not p.is_symlink();shutil.copyfile(p,work/'context'/p.name)
@@ -133,7 +147,11 @@ def prepare(a):
         name=a.name+('-compose' if platform=='compose' else '-kind')
         argv=[str(a.python),'-s','-B',str(work/'frozen/tests/kafka_final_platform.py'),'--platform',platform,'--name',name,'--image',a.image,
             '--context',str(work/'context'),'--acceptance-report',str(work/'bound/admission.json'),'--work',str(work/(platform+'-work')),
-            '--report',str(work/(platform+'.json')),'--port',str(port),'--model-only','--model-relay-port',str(relay)]
+            '--report',str(work/(platform+'.json')),'--port',str(port),'--require-compiled-vm-custody']
+        if baseline:
+            argv+=['--selective-recovery']
+            if platform=='compose':argv+=['--broker-patch-upgrade']
+        else:argv+=['--model-only','--model-relay-port',str(relay)]
         if platform=='k8s':argv+=['--kubectl',tools['kubectl']['path'],'--kubeconfig',str(work/'bound/kubeconfig'),'--kind-node',basis['kind_node'],
             '--cluster-image',tag,'--broker-image',a.broker_image,'--proxy-image',a.proxy_image]
         jobs.append({'name':platform,'owned_name':name,'port':port,'relay_port':relay,'argv':argv})
@@ -144,16 +162,25 @@ def prepare(a):
         'tools':tools,'static_tool_elf':tool_elf,'docker_socket':{'path':'/run/docker.sock','identity':[sock.st_dev,sock.st_ino]},'env':env,
         'facts':facts,'kube_endpoint':json_kube_endpoint(work/'bound/kubeconfig',basis['kind_cluster']),'cluster_image':tag,'broker_image':a.broker_image,'proxy_image':a.proxy_image,
         'jobs':jobs,'parallelism':1,'automatic_retries':0,'original_corpus_child_timeout':240,'maximum_upstream_posts_per_platform':12,'maximum_upstream_posts_total':24,
-        'lease_path':str(a.lease_path),'expected_model':{'container_id':'190996d1327f998b8f6a50510421800b7cf16f1cba8484baeba0ecd4b94e8cdd','image_config_identity':'sha256:3d8ebe07d1b64ceab33030e09a9076e77754d3ed70a19fb0c36b0168d6b94d6f','name':'/adhd-model-model-1'},
+        'baseline':baseline,'lease_path':None if baseline else str(a.lease_path),'expected_model':{'container_id':'190996d1327f998b8f6a50510421800b7cf16f1cba8484baeba0ecd4b94e8cdd','image_config_identity':'sha256:3d8ebe07d1b64ceab33030e09a9076e77754d3ed70a19fb0c36b0168d6b94d6f','name':'/adhd-model-model-1'},
         'live_specification_drift':drift,'cooperative_all_agent_handoff_required':True,'resources_apps_compilers_providers_started_during_preparation':0,
         'scope':'Actual compiled packaged app Compose then Kind: original hot filtered match/nonmatch/offline-resume, backend cited fact query, BLUE raw progress and foreign/private canaries. Separate from baseline21, SDK69, secured TLS, production/HA. Cooperative lease is not egress isolation.'}
+    if baseline:
+        plan.update(upgrade_images=upgrade_images(),schema='adhd/compiled-platform-baseline-plan@1',status='UNSTARTED_ROOT_REVIEW_REQUIRED',expected_model=None,cooperative_all_agent_handoff_required=False,maximum_upstream_posts_per_platform=0,maximum_upstream_posts_total=0,scope='Actual compiled packaged app Compose11 then Kind10: original full replacement/restart, same-volume broker patch upgrade Compose, complete cold backup/restore and target-only selective restore preserving current Blue/global config/security/broker state/cluster identity. Model-free; no provider lease/contact, no live-model/securedTLS/CNI/HA/release claim.')
     dump(work/'plan.json',plan);print(json.dumps({'plan':str(work/'plan.json'),'sha256':sha(work/'plan.json'),'frozen_files':len(plan['frozen_inputs'])}))
 
 
 def qualified(child,plan):
-    assert child['passed'] is True and child['model_only_requested'] is True
+    assert child['passed'] is True
+    if plan.get('baseline'):
+        assert child['model_only_requested'] is False and child['selective_recovery_requested'] is True
+        assert 'optional_model' not in child
+    else:assert child['model_only_requested'] is True
     assert child['artifact_sha256']==plan['artifact_sha256'] and child['image_config_digest']==child['runtime_hub_image_config_digest']==plan['image']
     assert child['cleanup']['resources_independently_absent'] is True and not child['cleanup']['failures']
+    assert len(child['compiled_vm_custody'])==2
+    assert all(v['image']==plan['image'] and v['process']['actual_compiled_boot_and_app_arguments'] for v in child['compiled_vm_custody'])
+    if plan.get('baseline'):return True
     model=child['optional_model'];assert model['passed'] and model['same_packaged_vm_before_after_hot_changes']
     assert model['image_config_digest']==plan['image'] and model['artifact_sha256']==plan['artifact_sha256']
     assert model['budget']['upstream_attempts']<=12 and model['cleanup']['listener_independently_absent']
@@ -163,11 +190,13 @@ def qualified(child,plan):
 
 def execute(work,expected):
     assert sha(work/'plan.json')==expected;plan=json.loads((work/'plan.json').read_text());verify(work,plan)
-    from model_service_lease import acquire,inspect_model,regular
+    if not plan.get('baseline'):
+        from model_service_lease import acquire,inspect_model,regular
     # Root's separate all-agent handoff is still required. Never probe/warmup the model.
     fd=None;inode=None;before=None;after=None;rows=[];primary=None;cleanup=[]
     try:
-        fd,inode=acquire(Path(plan['lease_path']));before=inspect_model(plan['expected_model'],plan['tools']['docker']['path'])
+        if not plan.get('baseline'):
+            fd,inode=acquire(Path(plan['lease_path']));before=inspect_model(plan['expected_model'],plan['tools']['docker']['path'])
         claim_execution(work,expected,plan['driver_sha256'])
         for job in plan['jobs']:
             verify(work,plan,preflight=False);row={'name':job['name'],'attempted':True,'started':False,'exit_code':None,'passed':False};rows.append(row)
@@ -209,6 +238,7 @@ def main():
     p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
     for name in ('repo-root','context','admission','original-plan','platform-plan','lease-path'):p.add_argument('--'+name,type=Path)
     for name in ('image','admission-sha256','broker-image','proxy-image','cluster-image','name'):p.add_argument('--'+name)
+    p.add_argument('--baseline',action='store_true',help='Original full model-free Compose11/Kind10 programs; default remains separate model-only gate')
     p.add_argument('--python',type=Path,default=Path(sys.executable).absolute())
     for name,default in [('compose-port',18970),('kind-port',18971),('compose-relay-port',18972),('kind-relay-port',18973)]:p.add_argument('--'+name,type=int,default=default)
     a=p.parse_args()

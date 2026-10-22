@@ -11,7 +11,7 @@ import kafka_deployed_model_matrix as runner
 
 def child():
     return {'passed':True,'model_only_requested':True,'artifact_sha256':'a'*64,'image_config_digest':'sha256:'+'b'*64,
-        'runtime_hub_image_config_digest':'sha256:'+'b'*64,'cleanup':{'resources_independently_absent':True,'failures':[]},
+        'runtime_hub_image_config_digest':'sha256:'+'b'*64,'compiled_vm_custody':[{'image':'sha256:'+'b'*64,'process':{'actual_compiled_boot_and_app_arguments':True}}]*2,'cleanup':{'resources_independently_absent':True,'failures':[]},
         'optional_model':{'passed':True,'same_packaged_vm_before_after_hot_changes':True,'image_config_digest':'sha256:'+'b'*64,'artifact_sha256':'a'*64,
             'budget':{'upstream_attempts':6},'cleanup':{'listener_independently_absent':True}},'model_relay_cleanup':{'confirmed':True}}
 
@@ -20,6 +20,7 @@ def scenario(root,mode):
     work=root/mode;work.mkdir();(work/'results').mkdir()
     plan={'image':'sha256:'+'b'*64,'artifact_sha256':'a'*64,'driver_sha256':'c'*64,'lease_path':'/owned/cooperative.lock',
         'expected_model':{},'tools':{'docker':{'path':'/docker'}},'jobs':[{'name':name,'argv':[name]} for name in ('compose','k8s')],'env':{},'scope':'diagnostic unit'}
+    if mode=='baseline':plan['baseline']=True
     runner.dump(work/'plan.json',plan);events=[]
     def acquire(path):
         events.append('lease')
@@ -30,6 +31,8 @@ def scenario(root,mode):
         name=argv[0];events.append(name)
         if mode=='creation':raise OSError('original create failure')
         value=child()
+        if mode=='baseline':
+            value.update(model_only_requested=False,selective_recovery_requested=True);value.pop('optional_model');value.pop('model_relay_cleanup')
         if mode=='invalid':value['optional_model']['budget']['upstream_attempts']=13
         runner.dump(work/(name+'.json'),value)
         return SimpleNamespace(pid=42)
@@ -42,8 +45,9 @@ def scenario(root,mode):
         try:runner.execute(work,runner.sha(work/'plan.json'))
         except BaseException as error:failure=error
     report=json.loads((work/'matrix.json').read_text())
-    assert report['passed']==(mode=='success')
+    assert report['passed']==(mode in ('success','baseline'))
     if mode=='success':assert events==['lease','inspect','once','compose','k8s','inspect','release'] and not report['unrun_platforms']
+    elif mode=='baseline':assert events==['once','compose','k8s'] and not report['lease_acquired'] and report['model_before'] is None
     elif mode=='busy':assert isinstance(failure,BlockingIOError) and events==['lease'] and report['unrun_platforms']==['compose','k8s']
     elif mode=='creation':assert isinstance(failure,OSError) and report['rows'][0]['attempted'] and not report['rows'][0]['started'] and report['unrun_platforms']==['compose','k8s']
     elif mode=='invalid':assert isinstance(failure,AssertionError) and report['rows'][0]['started'] and report['rows'][0]['exit_code']==0 and report['unrun_platforms']==['k8s']
@@ -68,8 +72,8 @@ def main():
         except AssertionError as error:assert 'reviewed frozen driver.py' in str(error)
         else:raise AssertionError('Authored execute admitted')
     with tempfile.TemporaryDirectory() as temp:
-        for mode in ('success','busy','creation','invalid','cleanup'):scenario(Path(temp),mode)
-    print(json.dumps({'passed':True,'checks':14,'apps_models_compilers_sockets_started':False}))
+        for mode in ('success','baseline','busy','creation','invalid','cleanup'):scenario(Path(temp),mode)
+    print(json.dumps({'passed':True,'checks':15,'apps_models_compilers_sockets_started':False}))
 
 
 if __name__=='__main__':main()

@@ -84,6 +84,14 @@ async def main(args):
         if args.platform=='compose':
             return {name:command(compose+['ps','-q',name],capture=True).decode().strip() for name in ['hub','kafka','kafka-rest']}
         return {name:obj(['get','pods','-l','app='+name])['items'][0]['metadata']['uid'] for name in ['hub','kafka','kafka-rest']}
+    def record_vm_custody():
+        from kafka_platform_vm import compose as compose_vm,kind as kind_vm
+        if args.platform=='compose':
+            identifier=command(compose+['ps','-q','hub'],capture=True).decode().strip()
+            proof=compose_vm(command,identifier,args.image)
+        else:proof=kind_vm(command,args.kind_node,obj(['get','pods','-l','app=hub'])['items'][0],args.image)
+        evidence.value.setdefault('compiled_vm_custody',[]).append(proof)
+        evidence.value['runtime_hub_image_config_digest']=proof['image']
     def vm_identity():
         if args.platform=='compose':
             identifier=command(compose+['ps','-q','hub'],capture=True).decode().strip()
@@ -414,6 +422,7 @@ async def main(args):
             assert runtime_config==args.image
             evidence.value['runtime_hub_image_config_digest']=runtime_config
         await ready()
+        if args.require_compiled_vm_custody:record_vm_custody()
         password=re.search(r'^Password: (.+)$',(config_dir/'initial-admin-password.txt').read_text(),re.M)[1]
         credentials=root/'credentials.json';credentials.write_text(json.dumps({'agents':tokens,'admin':{'username':'admin','password':password}}));credentials.chmod(0o600)
         args.rest_url=base;args.credentials=credentials;args.with_model=False;args.keep_work=root/'client'
@@ -448,6 +457,7 @@ async def main(args):
                     {'platform':'k8s','node_id':node['Id'],'hub_pod_uid':pod['metadata']['uid'],'network_id':network['NetworkID']})
             await run_deployed_model(args,root=root,repo=repo,base=base,credentials=credentials,
                 expected=expected,command=command,vm_identity=vm_identity,scope=actual_scope,admin=admin,evidence=evidence)
+            if args.require_compiled_vm_custody:record_vm_custody()
             completed=True
             return
         await b.call(scoped('project-red','subscribe',mode='raw'))
@@ -675,6 +685,7 @@ async def main(args):
             evidence.record('actual-accepted-image-hot-model-enable-filter-match-nonmatch-semantic-history-citations-independent-blue-raw-and-disable')
         # Retain no raw IDs/tokens; input and output identities are digest-bound.
         evidence.value['replaced_resources']=list(before)
+        if args.require_compiled_vm_custody:record_vm_custody()
         completed=True
     except BaseException as error:
         primary_error=error
@@ -761,6 +772,7 @@ if __name__=='__main__':
     p.add_argument('--port',type=int,default=18890)
     p.add_argument('--kubectl',type=Path)
     p.add_argument('--kubeconfig',type=Path)
+    p.add_argument('--require-compiled-vm-custody',action='store_true',help='Bind actual BEAM PID/cmdline and packaged compiled entrypoint without overrides')
     p.add_argument('--model-only',action='store_true',help='Separate profile2.1 live-filter/backend gate; skips already qualified baseline replacement/backup scenarios')
     p.add_argument('--model-relay-port',type=int,default=18960,help='Fresh private owned relay port; only used with --model-only')
     p.add_argument('--model-url',help='Optional live short-response endpoint reachable by this deployed hub')

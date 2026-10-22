@@ -135,7 +135,7 @@ def run_stopped_copy(args, origin, destination, expected_leaf, issuer_root, orig
         value['checks'].append({'name':'public rebind preserves all account/certificate/key/state and product bytes',
                                 'passed':True,'unchanged_acme_files':sum(k.startswith('acme/')and k!='acme/owner.json'for k in before)})
         runtime.start()
-        admin = PublicClient(runtime.base)
+        admin = PublicClient('https://one.acme.test:18443',trust=issuer_root)
         password = re.search(r'^Password: (.+)$',(destination/'initial-admin-password.txt').read_text(),re.M)[1]
         assert admin.login('admin',password)['role'] == 'Admin'
         status = admin.api({'op':'tls_status'})

@@ -287,7 +287,7 @@ def run(args):
 
         runtime.stop()
         runtime.start()
-        admin = PublicClient(runtime.base)
+        admin = PublicClient('https://one.acme.test:18443',trust=ca['issuer_root'])
         admin.login('admin', password)
         persisted = status()
         assert persisted['certificate']['sha256'] == automatic['certificate']['sha256']

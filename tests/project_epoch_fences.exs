@@ -1,6 +1,6 @@
 [source] = System.argv()
 Code.compiler_options(no_warn_undefined: :all)
-for file <- ~w(domain projects directory project_backup storage_registry config resources store) do
+for file <- ~w(domain projects directory project_backup storage_registry config resources storage store) do
   Code.require_file(Path.join(source, file <> ".exs"))
 end
 ExUnit.start()

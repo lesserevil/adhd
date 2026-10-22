@@ -1,0 +1,482 @@
+{
+  "schema": "adhd/cni11-independent-terminal-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "raw_plan_sha256": "e26d154c37131254c629ea686b1e52ae79878ec20918b0b45767687def0bb82c",
+  "raw_result_sha256": "a99de148ecec8f48ea709c2a99935ac3adeaa21f8a9cec202e356732b5d66ecf",
+  "full_closure_unchanged": true,
+  "original_rollout_seconds": 300,
+  "policy_routes_qualified": 0,
+  "failure": "Controller rollout0/1 after Calico-node became ready; previous controller log establishes Kubernetes serviceVIP TCP timeout before fatal datastore initialization.",
+  "cause_scope": "Immediate controller datastore GET to service VIP10.96.0.1:443 times out. Underlying service routing cause unknown. /status permission and node inotify/DNS telemetry warnings are observed separately, not proven fatal causes.",
+  "direct_endpoint": {
+    "address": "10.240.240.2",
+    "port": 6443,
+    "namespace_uid": "adb89bab-10d9-48f1-81d8-be1f402cb3bf",
+    "node_uid": "c46554f9-8cf1-480f-8aed-1e32612ea117",
+    "configmap_uid": "cd7656a6-beb1-4145-bc7d-a09215af6fd0",
+    "owner_nonce": "2ba3e10e2d6b73068be2e4230cafdc7f",
+    "tls": {
+      "authority_sha256": "b116f6244e61694d5a3d3922f4f316a56db19a50f0618e9b859d4237e1c0ec79",
+      "server_certificate_sha256": "1f65b937f006b2030dc6770c61086ec3f7e48dc9d6178f93d2140f5a50a2b817",
+      "verify_peer": true,
+      "hostname_checked": "10.240.240.2",
+      "port": 6443,
+      "timeout_seconds": 5
+    },
+    "inside_own_node_verified": true,
+    "host_direct_API_verified": true,
+    "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+    "separate_configmap_sha256": "0b2e701135763d275553c6aa4d65412071ae8bfa11c1e2dced3c3bdbe5097d09"
+  },
+  "controller_environment": {
+    "explicit_names": [
+      "ENABLED_CONTROLLERS",
+      "DATASTORE_TYPE"
+    ],
+    "envFrom_present": false,
+    "hostNetwork": false
+  },
+  "private_controller_log_sha256": "49ec1eb31487f5e30f0c17814d59752ce9b0cff045782babe44361a5db799439",
+  "sanitized_statuses": [
+    {
+      "role": "calico-node",
+      "pod_uid": "1415243e-6117-41e8-b3ac-2d6c7f479fb7",
+      "hostNetwork": true,
+      "phase": "Running",
+      "conditions": [
+        {
+          "type": "PodReadyToStartContainers",
+          "status": "True",
+          "reason": null
+        },
+        {
+          "type": "Initialized",
+          "status": "True",
+          "reason": null
+        },
+        {
+          "type": "Ready",
+          "status": "True",
+          "reason": null
+        },
+        {
+          "type": "ContainersReady",
+          "status": "True",
+          "reason": null
+        },
+        {
+          "type": "PodScheduled",
+          "status": "True",
+          "reason": null
+        }
+      ],
+      "containers": [
+        {
+          "name": "upgrade-ipam",
+          "restartCount": 0,
+          "ready": true,
+          "current_state": "terminated",
+          "last_exit_code": null,
+          "exit_code": 0
+        },
+        {
+          "name": "cni-plugins",
+          "restartCount": 0,
+          "ready": true,
+          "current_state": "terminated",
+          "last_exit_code": null,
+          "exit_code": 0
+        },
+        {
+          "name": "install-cni",
+          "restartCount": 0,
+          "ready": true,
+          "current_state": "terminated",
+          "last_exit_code": null,
+          "exit_code": 0
+        },
+        {
+          "name": "ebpf-bootstrap",
+          "restartCount": 0,
+          "ready": true,
+          "current_state": "terminated",
+          "last_exit_code": null,
+          "exit_code": 0
+        },
+        {
+          "name": "calico-node",
+          "restartCount": 0,
+          "ready": true,
+          "current_state": "running",
+          "last_exit_code": null,
+          "exit_code": null
+        }
+      ]
+    },
+    {
+      "role": "calico-kube-controllers",
+      "pod_uid": "23926181-f328-42e8-a670-8d17a3dae540",
+      "hostNetwork": false,
+      "phase": "Running",
+      "conditions": [
+        {
+          "type": "PodReadyToStartContainers",
+          "status": "True",
+          "reason": null
+        },
+        {
+          "type": "Initialized",
+          "status": "True",
+          "reason": null
+        },
+        {
+          "type": "Ready",
+          "status": "False",
+          "reason": "ContainersNotReady"
+        },
+        {
+          "type": "ContainersReady",
+          "status": "False",
+          "reason": "ContainersNotReady"
+        },
+        {
+          "type": "PodScheduled",
+          "status": "True",
+          "reason": null
+        }
+      ],
+      "containers": [
+        {
+          "name": "calico-kube-controllers",
+          "restartCount": 3,
+          "ready": false,
+          "current_state": "running",
+          "last_exit_code": 1,
+          "exit_code": null
+        }
+      ]
+    }
+  ],
+  "private_raw_metadata": {
+    "01-namespace-pin.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "01-namespace-pin.stdout": {
+      "sha256": "cc61632881bfd2ba541d464c2e85b24a89c8c88aacc8988c084a1c93724aa8aa",
+      "bytes": 464
+    },
+    "02-node-pin.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "02-node-pin.stdout": {
+      "sha256": "60ad1f6afcb46f2a6a1cd0e65a78eda4334887d70f89dbac1a3eb5f6135902d3",
+      "bytes": 8094
+    },
+    "03-calico-node-pin.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "03-calico-node-pin.stdout": {
+      "sha256": "965a85b8870b02bb741f0d8ae2285715816c01ace16aee7fc04ab49b494f5582",
+      "bytes": 23330
+    },
+    "04-calico-kube-controllers-pin.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "04-calico-kube-controllers-pin.stdout": {
+      "sha256": "91a4a2fa0aa20b6602431fe58bcca5cf9e062d9ba52eb71bd3a39e2ab3ca4acc",
+      "bytes": 5769
+    },
+    "05-namespace-check.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "05-namespace-check.stdout": {
+      "sha256": "cc61632881bfd2ba541d464c2e85b24a89c8c88aacc8988c084a1c93724aa8aa",
+      "bytes": 464
+    },
+    "06-node-status.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "06-node-status.stdout": {
+      "sha256": "6e05ef0ff2ab42d20ad97668d1ea41d1356b4be3fa9067f5fc85a4f812db4866",
+      "bytes": 8390
+    },
+    "07-calico-node-status.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "07-calico-node-status.stdout": {
+      "sha256": "75b6defe75aaddade3afc5c991a171987578e9acb9c7a2a9031c3835551dc887",
+      "bytes": 23328
+    },
+    "08-calico-node-pods.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "08-calico-node-pods.stdout": {
+      "sha256": "b3569e60a702b539ef39600fb79eaa27cb967be9f82c9c94d79fc90a752ebddb",
+      "bytes": 44336
+    },
+    "09-pod-events-1.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "09-pod-events-1.stdout": {
+      "sha256": "df6fe056361dcfd9a80ef9b7e4dc9ffa1ecf88f5b34e476f5b41c1562ab8db65",
+      "bytes": 24233
+    },
+    "10-pod-fence-1.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "10-pod-fence-1.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "11-container-log-1.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "11-container-log-1.stdout": {
+      "sha256": "1aaf7ecb69e592edb8eed2056a7f13998717e575836a252a0f9ca3bc11744fdf",
+      "bytes": 1072
+    },
+    "12-pod-after-1.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "12-pod-after-1.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "13-pod-fence-2.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "13-pod-fence-2.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "14-container-log-2.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "14-container-log-2.stdout": {
+      "sha256": "2b2e703a04fee3fb14845660145e8ff33b2790d4c27a1155e93ecfcfc1aaf67e",
+      "bytes": 383
+    },
+    "15-pod-after-2.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "15-pod-after-2.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "16-pod-fence-3.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "16-pod-fence-3.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "17-container-log-3.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "17-container-log-3.stdout": {
+      "sha256": "59f67fc946ce01aefef7180845687e22b626ecc86004a7fb3af55938b7865a87",
+      "bytes": 2098
+    },
+    "18-pod-after-3.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "18-pod-after-3.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "19-pod-fence-4.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "19-pod-fence-4.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "20-container-log-4.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "20-container-log-4.stdout": {
+      "sha256": "3f3386b933fb9cf0332776796eb025bda74d70de609ee03b165e2202b71248ba",
+      "bytes": 1200
+    },
+    "21-pod-after-4.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "21-pod-after-4.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "22-pod-fence-5.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "22-pod-fence-5.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "23-container-log-5.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "23-container-log-5.stdout": {
+      "sha256": "ebbf5fe60b9a72f34966d9856d626bad7d61124661cf250e55d0123bc67d4584",
+      "bytes": 56343
+    },
+    "24-pod-after-5.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "24-pod-after-5.stdout": {
+      "sha256": "98171f1df88e31e718b0fa0daac63cceabdc0b7292f2088c4dd6855e2a36eead",
+      "bytes": 36284
+    },
+    "25-calico-kube-controllers-status.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "25-calico-kube-controllers-status.stdout": {
+      "sha256": "91a4a2fa0aa20b6602431fe58bcca5cf9e062d9ba52eb71bd3a39e2ab3ca4acc",
+      "bytes": 5769
+    },
+    "26-controller-replicas.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "26-controller-replicas.stdout": {
+      "sha256": "8462934ebe5591362a54a088208d9bf9fdc2757a4547c603d15803ca71097a68",
+      "bytes": 6749
+    },
+    "27-calico-kube-controllers-pods.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "27-calico-kube-controllers-pods.stdout": {
+      "sha256": "35e6fca78adaa10e6de8b52d7bbd10a7064881d04c8d183aed4d1847e33928eb",
+      "bytes": 12767
+    },
+    "28-pod-events-2.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "28-pod-events-2.stdout": {
+      "sha256": "76eb73554018c2af2c06f49657bd2a58cae69e769dcb8c0d4a57e6a88def6bac",
+      "bytes": 11241
+    },
+    "29-pod-fence-6.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "29-pod-fence-6.stdout": {
+      "sha256": "70f0b260c3fe7e76a7c089ae52d3e721aed81bf15038a46665c64fbcee5a93e3",
+      "bytes": 10363
+    },
+    "30-container-log-6.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "30-container-log-6.stdout": {
+      "sha256": "ef77cc8b80a4a1db9ade3e922b49db47c1010b3b9ad97efb789d14e72547f5f0",
+      "bytes": 623
+    },
+    "31-pod-after-6.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "31-pod-after-6.stdout": {
+      "sha256": "70f0b260c3fe7e76a7c089ae52d3e721aed81bf15038a46665c64fbcee5a93e3",
+      "bytes": 10363
+    },
+    "32-pod-fence-7.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "32-pod-fence-7.stdout": {
+      "sha256": "70f0b260c3fe7e76a7c089ae52d3e721aed81bf15038a46665c64fbcee5a93e3",
+      "bytes": 10363
+    },
+    "33-container-log-7.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "33-container-log-7.stdout": {
+      "sha256": "49ec1eb31487f5e30f0c17814d59752ce9b0cff045782babe44361a5db799439",
+      "bytes": 10761
+    },
+    "34-pod-after-7.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "34-pod-after-7.stdout": {
+      "sha256": "70f0b260c3fe7e76a7c089ae52d3e721aed81bf15038a46665c64fbcee5a93e3",
+      "bytes": 10363
+    }
+  },
+  "current_strict_absence": [
+    {
+      "kind": "container",
+      "identifier": "e52e3668b429e749bf8966928340317403f89c47d4aa225ea233bde403b51077",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "413776a21d712022d0deb5dc1ccb3bcf2774db0197839b1ce97475a5a85b50e0",
+      "observed_absent": true
+    },
+    {
+      "kind": "container",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "10c65dbff792d16ce2df29e4d7922b03ca6b03fc8856925e845460c9912f2366",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "258ae9276fc6370adf1336f2e7403d685a022cb1ca97cbed2c7a02883f87ef66",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "c33d2ad6206b7aaf703c2a81e31669b6c6bfb0d12b5bcd25b007f03e4313cbc0",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "31e2083bb8a1588362a3c4bede5ec23c35f9165fb21b7dfadbfca9e94f59b6c9",
+      "observed_absent": true
+    },
+    {
+      "kind": "volume",
+      "identifier": "390df95432c5b0af8767f487efac181284e50a089f79a7e81b3c14713ccfb40e",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "23cc39a5caf8f00dbada25072f6fccb0a579c9ff80519121f2b79a99d2488da4",
+      "observed_absent": true
+    }
+  ],
+  "protected_cluster_before_after_IDS_equal": true,
+  "current_protected_cluster_running_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "root_authoritative_exit_code": 1,
+  "audit_runtime_or_model_starts": 0,
+  "scope": "Diagnostic-only pinned Calico setup; no18route/hub/Kafka/platform qualification. All raw API/log contents remain private ignored."
+}

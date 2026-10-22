@@ -1,0 +1,118 @@
+{
+  "suite": "multi-agent-retirement-snapshot-faults",
+  "started_at": "2026-10-22T15:21:25.830142+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "fresh-developer-creation-succeeds-with-complete-snapshot-evidence",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-missing-snapshot-restoration",
+      "passed": true
+    },
+    {
+      "name": "identity-creation-fails-closed-and-recovers-after-corrupt-snapshot-restoration",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "File faults qualify ownership evidence unavailability, not semantic model quality or replicated Kafka durability."
+  ],
+  "transport": "official-a2a-sdk-1.1.0-jsonrpc",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_39bc59d21bbed0a82ead732a979a710a_1",
+      "operation_id": "restore_39bc59d21bbed0a82ead732a979a710a_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_39bc59d21bbed0a82ead732a979a710a_3",
+      "operation_id": "restore_39bc59d21bbed0a82ead732a979a710a_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_39bc59d21bbed0a82ead732a979a710a_5",
+      "operation_id": "restore_39bc59d21bbed0a82ead732a979a710a_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ],
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "63b63d28cc51f852363834b8458a1d05c51c3e1c87cd2b019ed312d562a71a74",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "63b63d28cc51f852363834b8458a1d05c51c3e1c87cd2b019ed312d562a71a74",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-0cd839c751174c4a",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-20501919ffb64a21",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd"
+  },
+  "image_id": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "harness_sha256": "0764a2bcee3f32dc31a717b9c0976d16cfe97fe52f21a2bc6defbe459e3c95f2",
+  "fault_observations": [
+    {
+      "fault": "missing",
+      "http_status": 400,
+      "error_code": "INVALID_PARAMS",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "shared_runtime_unchanged": true,
+      "unrelated_blue_original_and_progress_preserved": true,
+      "original_snapshot_sha256": "027b58ffdc08d3d0b2e9d8e0fcf32772cfa3bbd071a326ee37b229a681be7873"
+    },
+    {
+      "fault": "corrupt",
+      "http_status": 503,
+      "error_code": "CONFIG_WRITE_FAILED",
+      "configuration_unchanged": true,
+      "new_token_denied": true,
+      "shared_runtime_unchanged": true,
+      "unrelated_blue_original_and_progress_preserved": true,
+      "original_snapshot_sha256": "027b58ffdc08d3d0b2e9d8e0fcf32772cfa3bbd071a326ee37b229a681be7873"
+    }
+  ],
+  "finished_at": "2026-10-22T15:21:42.601157+00:00"
+}

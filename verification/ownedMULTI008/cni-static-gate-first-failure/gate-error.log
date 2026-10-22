@@ -1,0 +1,15 @@
+
+STDERR
+time="2026-10-22T13:31:07Z" level=fatal msg="no such image \"docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad\" present"
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/netpol-static-e2-prepare01/frozen/tests/kafka_network_policy.py", line 326, in <module>
+    main(p.parse_args())
+  File "/home/horde/src/adhd/.worktrees/deployment/_build/netpol-static-e2-prepare01/frozen/tests/kafka_network_policy.py", line 227, in main
+    actual_image = json.loads(subprocess.check_output(['docker', 'exec', args.kind_node,
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['docker', 'exec', 'adhd-netpol-qa40-control-plane', 'crictl', 'inspecti', 'docker.io/library/import-2026-10-22@sha256:1038644c7a06c6171a9ee3382f774511387b43f5aae810d1e02a92054a15e5ad']' returned non-zero exit status 1.

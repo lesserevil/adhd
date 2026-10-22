@@ -59,8 +59,11 @@ retains nine whole suites/44 checks; the no-default-project crash case failed
 with `RESTORE_IO_ERROR` before reaching its requested boundary. Its partial
 check is excluded and15 later suites remain unrun. Next: trace only the bounded
 staging/checkpoint/transport interval to identify the underlying failure. The
-proper documentation receipt lifecycle remains running; no parent item is closed
-by these partial results.
+[proper documentation lifecycle and image bridge](../../verification/ownedMULTI008/final-documentation-compiled05-bridge/manifest.json)
+now pass:18 native tests, current receipt verification and exact equality of all
+five staged container files,59 application files and33 canonical specifications.
+The new receipt is retained separately from the original admission; the compiled
+image remains unchanged. No parent item is closed by these partial results.
 
 The [leaf-by-leaf closure review](../../verification/final05-leaf-closure-proposal/review.json)
 supports49 additional implementation/evidence checklist closures across the
@@ -72,7 +75,8 @@ Kafka federation and callback proofs. The
 [compiled configuration crash gate](../../verification/ownedMULTI008/compiled05-config-crash3-positive/manifest.json)
 passes all three cases/13 original assertions with unchanged bounds. Two full
 selective-recovery leaves remain open, together with the separate integrated
-deployment, documentation and parent completion gates.
+deployment and parent completion gates. The documentation receipt/context bridge
+is now independently complete; selective recovery and CNI enforcement remain open.
 
 The user has now authorized implementation of all outstanding roadmap work,
 grouped in branches with parallel agents. MULTI-001 through MULTI-008 and

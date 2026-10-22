@@ -1056,6 +1056,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   The complete regression, migration and final consolidation gates remain open.
 
 - **Successor readiness qualification:** Run all original23 real-broker readiness cases on the new admitted compiled image, preserving every deadline and capacity premise. Bind each actual VM to the source/cache payload and prove complete owned cleanup; the native23 result alone cannot qualify the image. The separate committed-retention recovery companion remains independently required.
+- **Core fixture revision premise:** The reviewed foundation fixture now captures its full accepted private configuration after public external-reload acceptance, before the invalid-file exercise. Actual-AST regression checks preserve every original assertion, call and deadline and demonstrate that the predecessor can restore stale revision bytes. Application source and conflict-denial behavior are unchanged. Keep the [original partial failure](../../verification/eventing-readiness-core13-first-failure/manifest.json) false; the [fresh full13 preparation](../../verification/eventing-readiness-core13-second-preparation/manifest.json) borrows no partial prefix and requires separate execution and cleanup qualification.
 - **Priority:** P1
 - **Owner:** hub acceptance harnesses, protocol documentation and operator/client guides
 - **Direction:** Finish the program only with independent evidence for isolation, compatibility and operation.

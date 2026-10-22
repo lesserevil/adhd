@@ -30,8 +30,8 @@ def reviewed_plan(work, expected, running_driver):
     return plan
 
 
-def claim_execution(work, plan_sha256, driver_sha256):
-    descriptor = os.open(work / 'execution-started.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600)
+def claim_execution(work, plan_sha256, driver_sha256, marker_name="execution-started.json"):
+    descriptor = os.open(work / marker_name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600)
     with os.fdopen(descriptor, 'w') as receipt:
         json.dump({'plan_sha256': plan_sha256, 'driver_sha256': driver_sha256}, receipt)
         receipt.flush()

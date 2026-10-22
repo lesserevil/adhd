@@ -33,19 +33,27 @@ checks, yielding29 suites/176 checks without relabeling the earlier failed runs.
 pass21 whole checks, and [secured Kind](../../verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json)
 passes seven scenarios/51 assertions, including actual credential/certificate and
 broker/proxy replacement. The [Calico bootstrap](../../verification/network-policy-kind40-bootstrap12-positive/audit.json)
-passes both rollouts; route enforcement remains a separate running gate.
+passes both rollouts; route enforcement remains a separate unqualified gate.
 
 The [compiled05 core attempt](../../verification/final05-core13-first-failure/manifest.json)
 remains failed: foundation, wire and store-move passed whole; multi-project passed
 eight partial checks before the fixture tried to initialize an unrelated newly
 registered project during restart. That additional operation returned
-`RESTORE_IO_ERROR`; its underlying cause is unproven. The required original
-restart assertions and nine later suites are unqualified. Restrict fixture
-bootstrap to its initial project inventory, preserving explicit admission for
-later projects and all original assertions/deadlines, then qualify the ten-suite
-remainder. Current native browser, Kafka and enforcing-CNI route matrices are
-running. Updated operating guides still require the proper documentation-authority
-and receipt lifecycle; no parent item is closed by these partial results.
+`RESTORE_IO_ERROR`; its underlying cause is unproven. That attempt did not qualify
+the original restart assertions. Fixture bootstrap is now restricted to its
+initial inventory, preserving explicit admission for later projects and all
+original assertions/deadlines. The fresh ten-suite continuation has passed the
+multi-project restart and is running the remaining suites.
+[Native browser qualification](../../verification/native40-ui-whole86-positive/manifest.json)
+passes nine whole programs/86 assertions, matching the independently qualified
+container browser scope. [Kafka qualification](../../verification/final05-kafka-whole68-positive/manifest.json)
+passes all14 whole programs/68 checks. The first full NetworkPolicy route run
+[failed before traffic](../../verification/network-policy-kind40-route13-negative/audit.json)
+on broker fixture readiness; its underlying Pod cause is unknown. A bounded
+failure-only readiness observer is prepared, with the isolated import preflight
+corrected before any new runtime start. Full-application recovery and the proper
+documentation receipt lifecycle remain running; no parent item is closed by these
+partial results.
 
 The user has now authorized implementation of all outstanding roadmap work,
 grouped in branches with parallel agents. MULTI-001 through MULTI-008 and
@@ -852,20 +860,25 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 ### [ ] MULTI-006 — Manage multiple projects through the hot Admin console
 
+- **Leaf qualification:** All seven implementation/evidence leaves are supported
+  by [the exact requirement map](../../verification/admin-roadmap-closure-review05/review.json),
+  current native and container browser9/86, and the mapped core/API evidence.
+  The parent remains open pending its independent dependencies.
+
 - **Priority:** P1
 - **Owner:** hub management, presentation and configuration contracts
 - **Direction:** Make all project and server configuration available through Admin without restarting the hub.
 - **Conclusion:** Separate server settings from selected-project settings, using explicit forms and revisioned transactions. Keep configuration-file location as the sole restart exception; project creation, archival, membership, source ownership, federation, model policy and OIDC remain hot.
 - **Depends on:** MULTI-002, MULTI-003, MULTI-004, MULTI-005
 - **Implementation:**
-  - [ ] Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.
-  - [ ] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.
-  - [ ] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.
-  - [ ] Repair first-time OIDC setup so the Admin connection test is available for proposed settings before initial save; the inherited browser regression found the button hidden until a provider was already configured. Requalify the corrected artifact and image.
-  - [ ] Diagnose and repair the [unexpected HTTP401 in the exact-image foundation browser flow](../../verification/multi-eventing/foundation-browser-34-failure.json). A [deterministic actual-service probe](../../verification/multi-eventing/admin-stale401-34/manifest.json) now proves that an old list_projects HTTP401 resets a newly authenticated workspace while its server session remains valid. Fence stale auth responses and cancel old-context requests; requalify normal desktop/mobile OIDC setup, linking and logout without ignoring unexpected errors. The original untraced401 is not definitively attributed. [Native development35ui qualification](../../verification/multi-eventing/admin-session-35/manifest.json) now passes the strict race regression on both viewports, current-session revocation, the unchanged accounts/OIDC browser suite and18 native cases; the same race harness fails actualimage34. Successor artifact admission and image/browser qualification remain required.
-  - [ ] Wrap complete namespaced object IDs in Events replay subscription labels and replay-status paragraphs within the 390px mobile viewport. The [admitted38 browser run](../../verification/native38-ui-initial/manifest.json) fails on document overflow; subsequent painted-text measurements identify these two unwrapped text regions, while navigation remains correctly clipped inside its own scroller. Preserve full IDs, accessible labels, desktop layout and the unchanged replay/acknowledgement assertions; qualify the repair on native and container runtimes before closing this follow-up.
+  - [x] Add accessible project creation/switching/rename/archive forms, user/agent access management and per-project catalog/export controls.
+  - [x] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.
+  - [x] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.
+  - [x] Repair first-time OIDC setup so the Admin connection test is available for proposed settings before initial save; the inherited browser regression found the button hidden until a provider was already configured. Requalify the corrected artifact and image.
+  - [x] Diagnose and repair the [unexpected HTTP401 in the exact-image foundation browser flow](../../verification/multi-eventing/foundation-browser-34-failure.json). A [deterministic actual-service probe](../../verification/multi-eventing/admin-stale401-34/manifest.json) now proves that an old list_projects HTTP401 resets a newly authenticated workspace while its server session remains valid. Fence stale auth responses and cancel old-context requests; requalify normal desktop/mobile OIDC setup, linking and logout without ignoring unexpected errors. The original untraced401 is not definitively attributed. [Native development35ui qualification](../../verification/multi-eventing/admin-session-35/manifest.json) now passes the strict race regression on both viewports, current-session revocation, the unchanged accounts/OIDC browser suite and18 native cases; the same race harness fails actualimage34. Successor artifact admission and image/browser qualification remain required.
+  - [x] Wrap complete namespaced object IDs in Events replay subscription labels and replay-status paragraphs within the 390px mobile viewport. The [admitted38 browser run](../../verification/native38-ui-initial/manifest.json) fails on document overflow; subsequent painted-text measurements identify these two unwrapped text regions, while navigation remains correctly clipped inside its own scroller. Preserve full IDs, accessible labels, desktop layout and the unchanged replay/acknowledgement assertions; qualify the repair on native and container runtimes before closing this follow-up.
 - **Evidence:**
-  - [ ] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.
+  - [x] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.
 
 ### [ ] MULTI-007 — Bound shared resources and operate project lifecycles
 
@@ -996,19 +1009,24 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 ### [ ] KAFKA-006 — Expose hot Kafka and subscription controls in Admin
 
+- **Leaf qualification:** All six implementation/evidence leaves are supported
+  by [the exact requirement map](../../verification/admin-roadmap-closure-review05/review.json),
+  both current browser runtimes, Kafka14/68 and actual secured Kind7/51.
+  This includes live credential rotation; parent dependencies remain open.
+
 - **Priority:** P1
 - **Owner:** hub configuration, identity and management contracts
 - **Direction:** Manage eventing, subscriptions and optional model filtering from Admin without restarting the hub.
 - **Conclusion:** All hub-managed broker connections, secret references, topic policy, subscription selectors/filters, model enablement and project settings use hot revisioned Admin changes. Distinguish broker infrastructure rollouts from hub restarts; preserve existing server roles and project admission.
 - **Depends on:** KAFKA-003, KAFKA-004, KAFKA-005, MULTI-006
 - **Implementation:**
-  - [ ] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation. Provide confirmed revisioned subscription edits, pause/resume and selector/filter changes through Admin; preserve queued deliveries and acknowledgements.
-  - [ ] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation. Current integration is completing partial per-project topic-prefix, retention and backlog-policy overrides with explicit inheritance; broker endpoint, security and enabled state remain server-wide. Qualify failed multi-project retention proposals against actual broker state before closing this control gate.
-  - [ ] Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.
-  - [ ] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.
+  - [x] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation. Provide confirmed revisioned subscription edits, pause/resume and selector/filter changes through Admin; preserve queued deliveries and acknowledgements.
+  - [x] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation. Current integration is completing partial per-project topic-prefix, retention and backlog-policy overrides with explicit inheritance; broker endpoint, security and enabled state remain server-wide. Qualify failed multi-project retention proposals against actual broker state before closing this control gate.
+  - [x] Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.
+  - [x] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.
 - **Evidence:**
-  - [ ] Inspect desktop/mobile role-scoped flows, stale revisions, CSRF, access revocation and model on/off transitions.
-  - [ ] Rotate broker credentials and change connection/filter settings live under load; prove no hub restart, lost accepted work or cross-project exposure.
+  - [x] Inspect desktop/mobile role-scoped flows, stale revisions, CSRF, access revocation and model on/off transitions.
+  - [x] Rotate broker credentials and change connection/filter settings live under load; prove no hub restart, lost accepted work or cross-project exposure.
 
 ### [ ] KAFKA-007 — Package per-server Kafka for containers and Kubernetes
 

@@ -26,6 +26,13 @@ def main():
         assert '--rm' not in argv and argv[argv.index('--network')+1]=='bridge'
         assert argv[-3:]==['--publish','127.0.0.1:32123:32123',base[-1]] and base[3]=='--network'
         assert json.loads(config.read_text())==paused
+        target.cleanup_blocked=True
+        with patch.object(OwnedImage,'argv',side_effect=AssertionError('Underlying argv must remain untouched')) as parent:
+            try:target.argv(root/'missing-config-must-not-be-read.json')
+            except AssertionError as error:assert str(error)=='Prior owned cleanup remains unconfirmed'
+            else:raise AssertionError('Replacement admitted after unconfirmed cleanup')
+            assert parent.call_count==0
+        target.cleanup_blocked=False
         target.name='synthetic-owned-name';target.image_id='sha256:'+'b'*64
         row={'Id':'c'*64,'Image':target.image_id,'State':{'Running':True,'Pid':992999},
             'HostConfig':{'NetworkMode':'bridge','PidMode':'private','Privileged':False,
@@ -48,7 +55,7 @@ def main():
         try:target.isolation_endpoints({**paused,'projects':[{'id':'hidden','settings':{'archive':{'url':'http://external.invalid:18770'}}}]})
         except AssertionError:pass
         else:raise AssertionError('Non-loopback effective target route admitted')
-    print('PASS learned image preparation6: historical/effective endpoint union, paused config unchanged, private bridge/local mapping, retained lifecycle, VM namespace/cmdline/refusal evidence, unsafe route rejected; app/compiler/process attempts0')
+    print('PASS learned image preparation7: historical/effective endpoint union, paused config unchanged, private bridge/local mapping, retained lifecycle, VM namespace/cmdline/refusal evidence, unsafe route rejected, unknown-cleanup replacement denied; app/compiler/process attempts0')
 
 
 if __name__=='__main__':main()

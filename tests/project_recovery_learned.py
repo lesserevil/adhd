@@ -39,6 +39,7 @@ class IsolatedRecoveryImage(IsolatedWorkflowImage):
         self.armed=False;self.last_exit_code=None
 
     def argv(self,config_file):
+        assert not getattr(self,'cleanup_blocked',False), 'Prior owned cleanup remains unconfirmed'
         result=super().argv(config_file);result.remove('--rm');return result
 
     def identity(self):

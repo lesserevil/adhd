@@ -23,7 +23,7 @@ from urllib.error import URLError
 from jsonschema import Draft202012Validator, FormatChecker
 from acme_acceptance_fixtures import certificate_facts, challenge_request_vectors, TOKEN, raw_challenge_get, active_private_key_facts
 from acme_challenge_relay import ChallengeRelay
-from acme_runtime import NativeDiagnostic, PublicClient, sha, regular
+from acme_runtime import NativeDiagnostic, PublicClient, sha, regular, wait_managed_https
 from acme_continuity import OIDCContinuity, FederationContinuity
 from acme_rebind_acceptance import run_stopped_copy
 
@@ -288,6 +288,7 @@ def run(args):
         runtime.stop()
         runtime.start()
         admin = PublicClient('https://one.acme.test:18443',trust=ca['issuer_root'])
+        wait_managed_https(admin,runtime)
         admin.login('admin', password)
         persisted = status()
         assert persisted['certificate']['sha256'] == automatic['certificate']['sha256']

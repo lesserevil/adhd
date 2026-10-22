@@ -1,0 +1,24 @@
+{
+  "schema": "adhd/acme-real-flow-negative@1",
+  "passed": false,
+  "whole_groups": 11,
+  "failure": "First configured HTTPS login after cold privateHTTP readiness got ECONNREFUSED. No Admin mutation retried.",
+  "actual_evidence": "Two CLIready lines (including finalHTTPS public_url) and no stderr; original native second-start privatehealth arrived after1.17s, but managedTLS readiness was not separately observed before login.",
+  "diagnosis_scope": "Source orders private Server before TLS initialization; privatehealth readiness does not prove managed listener readiness. Startup race is a source-based explanation consistent with observed refusal, not a proved certificate rejection or exact clock chronology.",
+  "approved_fixture_refinement": "Verify HTTPS GET/health inside SAME original VM start_monotonic+45s. Retry only ECONNREFUSED; reject TLS verification/name errors or HTTPwrongstatus immediately. Record each observation. No new timeout or Admin retry.",
+  "report_sha256": "5f3bab43b3c3ffe4261c34d6e59c1c2227cac37833e1f0d3c88cd20a9e7181f8",
+  "private_logs": [
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance06/hub/stdout.log",
+      "sha256": "f02ea2327339633a60ad0e3767141d712e22910a41cd8b83f66509b0ab6c6098",
+      "bytes": 541
+    },
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance06/hub/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ],
+  "cleanup": "Both actual VMs and every observed child PID/start independently absent; relayclosed handlers0; no errors. No coldreuse/rebind pass inferred.",
+  "next_run": "HOLD until parent reviewed boundedIO/futureclock source changes and refreshed cache; no retry under unchanged inputs."
+}

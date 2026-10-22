@@ -6,10 +6,33 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from acme_runtime import NativeDiagnostic, PublicClient
+from acme_runtime import NativeDiagnostic, PublicClient, wait_managed_https
 
 
 class RuntimeChecks(unittest.TestCase):
+    def test_managed_readiness_keeps_original_bound_and_only_retries_refusal(self):
+        from urllib.error import URLError
+        import ssl
+        clock={'now':144.5}
+        runtime=SimpleNamespace(identities=[{'started_monotonic':100}])
+        client=Mock();client.request.side_effect=[URLError(ConnectionRefusedError(111,'owned refused')),(200,{},None)]
+        with patch('acme_runtime.time.monotonic',side_effect=lambda:clock['now']),patch('acme_runtime.time.sleep',side_effect=lambda duration:clock.update(now=clock['now']+duration)):
+            wait_managed_https(client,runtime)
+        self.assertEqual(client.request.call_count,2)
+        self.assertTrue(all(call.kwargs['timeout']<=.5 for call in client.request.call_args_list))
+        self.assertLessEqual(runtime.identities[0]['managed_https_ready_monotonic'],145)
+        for bad in (URLError(ssl.SSLCertVerificationError('must fail')),(503,{},None)):
+            client=Mock();client.request.side_effect=[bad] if isinstance(bad,Exception)else None
+            if not isinstance(bad,Exception):client.request.return_value=bad
+            with patch('acme_runtime.time.monotonic',return_value=144),patch('acme_runtime.time.sleep')as sleep:
+                with self.assertRaises((URLError,AssertionError)):
+                    wait_managed_https(client,SimpleNamespace(identities=[{'started_monotonic':100}]))
+            self.assertEqual(client.request.call_count,1);sleep.assert_not_called()
+        client=Mock()
+        with patch('acme_runtime.time.monotonic',return_value=145):
+            with self.assertRaises(AssertionError):wait_managed_https(client,SimpleNamespace(identities=[{'started_monotonic':100}]))
+        client.request.assert_not_called()
+
     def test_constructor_is_inert_and_failed_spawn_closes_logs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

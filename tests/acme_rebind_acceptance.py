@@ -16,7 +16,7 @@ import subprocess
 import time
 from uuid import uuid4
 
-from acme_runtime import NativeDiagnostic, PublicClient, regular, sha, ticks
+from acme_runtime import NativeDiagnostic, PublicClient, regular, sha, ticks, wait_managed_https
 from acme_acceptance_fixtures import certificate_facts
 
 
@@ -136,6 +136,7 @@ def run_stopped_copy(args, origin, destination, expected_leaf, issuer_root, orig
                                 'passed':True,'unchanged_acme_files':sum(k.startswith('acme/')and k!='acme/owner.json'for k in before)})
         runtime.start()
         admin = PublicClient('https://one.acme.test:18443',trust=issuer_root)
+        wait_managed_https(admin,runtime)
         password = re.search(r'^Password: (.+)$',(destination/'initial-admin-password.txt').read_text(),re.M)[1]
         assert admin.login('admin',password)['role'] == 'Admin'
         status = admin.api({'op':'tls_status'})

@@ -4,6 +4,7 @@ No service starts on import. This cache launcher is diagnostic, never a substitu
 for the later official exported-artifact and packaged-image acceptance gates.
 """
 import hashlib
+import errno
 import http.client
 from http.cookiejar import CookieJar
 import json
@@ -16,7 +17,7 @@ import ssl
 import stat
 import subprocess
 import time
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import (Request, build_opener, ProxyHandler, HTTPSHandler,
                             HTTPCookieProcessor, HTTPRedirectHandler)
@@ -39,6 +40,38 @@ def ticks(pid):
         return Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()[19]
     except FileNotFoundError:
         return None
+
+
+def wait_managed_https(client, runtime):
+    """Managed service readiness inside the original VM start's 45s budget.
+
+    Private HTTP health is deliberately available for bootstrap before TLS init
+    completes. Only refused TCP availability is retried; TLS trust/name errors,
+    other transport errors and wrong HTTP statuses remain immediate failures.
+    """
+    row = runtime.identities[-1]
+    attempts = row.setdefault('managed_https_readiness',[])
+    deadline = row['started_monotonic']+45
+    while time.monotonic()<deadline:
+        remaining = deadline-time.monotonic()
+        if remaining<=0:
+            break
+        observed = {'at_monotonic':time.monotonic()}
+        try:
+            status,_,_ = client.request('/health',timeout=min(1,remaining))
+            observed['http_status'] = status
+            attempts.append(observed)
+            assert status==200, 'Managed HTTPS readiness returned wrong HTTP status'
+            row['managed_https_ready_monotonic'] = time.monotonic()
+            assert row['managed_https_ready_monotonic']<=deadline
+            return
+        except URLError as error:
+            observed['exception_type'] = type(error.reason).__name__
+            attempts.append(observed)
+            if not isinstance(error.reason,OSError)or error.reason.errno!=errno.ECONNREFUSED:
+                raise
+        time.sleep(min(.05,max(0,deadline-time.monotonic())))
+    raise AssertionError('Managed HTTPS not ready inside original 45 second startup bound')
 
 
 class NoRedirect(HTTPRedirectHandler):

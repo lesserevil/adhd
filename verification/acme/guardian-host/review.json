@@ -1,0 +1,41 @@
+{
+  "schema": "adhd/acme-guardian-host-process-review@1",
+  "scope": "Host localprocess tests only, not image/musl/ACME protocol qualification",
+  "source_sha256": "eca4fd73b1f6ee72533df508fbb5098548910a6f83cb202658c29bef3146262b",
+  "test_sha256": "cc635ed0ec6b5791817d6b3e84f900c3260e1062ad01af50fb2ae05af6962be4",
+  "actual_command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "acme_guard_test.py",
+    "-v"
+  ],
+  "cases": 11,
+  "passed": true,
+  "features": [
+    "EOF cancellation",
+    "owner SIGKILL",
+    "resistant child+grandchild group cleanup/reap",
+    "deadline not reset by stdin",
+    "normal exit status",
+    "successfulchild cannot leave descendants",
+    "no shell interpolation",
+    "private lock symlink/path denial",
+    "nonblocking lockbusy and safe reuse",
+    "probe actualbusy/acquired nochild"
+  ],
+  "public_ca_calls": 0,
+  "hub_or_model_started": false,
+  "original_test01_resourcewarnings_preserved_privately": true,
+  "proof_scope_limit": "Native host cc build; immutable-image/staticmusl/client dependencies pending separately.",
+  "additional_static_musl_host_run": {
+    "passed": true,
+    "cases": 11,
+    "binary_sha256": "16cc77fe9f991b7167617ab251b573519558ebb4eb4e0852a43209b33fd7d882",
+    "proof_scope": "Host execution of staticmusl helper; pinnedcompilerbefore/after buildclosure and targetimage still pending. First muslbuild diagnostic only."
+  }
+}

@@ -1,0 +1,544 @@
+{
+  "schema": "adhd/enforcing-cni-kind-result@1",
+  "passed": false,
+  "plan_sha256": "8a78147ccf4ff6f99abe4a57e4ebf627f77480fb765c33530b5b1d11e5647c18",
+  "image": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "scope": "Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.",
+  "failure_type": "AssertionError",
+  "cleanup_failure_types": [],
+  "cleanup": [
+    {
+      "kind": "node",
+      "known_id": "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4",
+      "issued_name": "adhd-netpol-qa40-control-plane",
+      "observed_absent": true,
+      "exit_code": 137,
+      "foreign_object_not_removed": false,
+      "failure_types": []
+    },
+    {
+      "kind": "network",
+      "known_id": "fca5d23c1f0d75ccf4f0e2c3ca7eac338c58fd309e263380ecbff0b78b1fbaae",
+      "issued_name": "adhd-netpol-qa40-net",
+      "observed_absent": true,
+      "exit_code": null,
+      "foreign_object_not_removed": false,
+      "failure_types": []
+    },
+    {
+      "kind": "anonymous-volume",
+      "name": "6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d",
+      "observed_absent": true
+    }
+  ],
+  "owned_anonymous_volumes": [
+    {
+      "name": "6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d",
+      "destination": "/var",
+      "driver": "local",
+      "scope": "local",
+      "created_at": "2026-10-22T08:12:49Z",
+      "mountpoint": "/var/lib/docker/volumes/6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d/_data"
+    }
+  ],
+  "anonymous_volume_candidates": [
+    "6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d"
+  ],
+  "events": [
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "kind"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2717149,
+      "log_sha256": "8fd6b380e6bc7bbcf8e602b837febc200c23bf09a0ed3d10130738e6a48ab0bb"
+    },
+    {
+      "name": "protected-cluster",
+      "argv": [
+        "/usr/bin/docker",
+        "ps",
+        "-a",
+        "--no-trunc",
+        "--filter",
+        "label=io.x-k8s.kind.cluster=adhd-event-qual",
+        "--format",
+        "{{.ID}}"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2717573,
+      "log_sha256": "048842502e26c8f1c1778bc001af77fa53af03e1bca0fbafd9d017d2fa9e7b79"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "adhd-netpol-qa40-control-plane"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2717800,
+      "log_sha256": "6b56a8ee586aa6a8f7affe3bbcc6cc2c7fd6e3a276f58412907ecedf87a9bc27"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2718172,
+      "log_sha256": "4c2551f330a9036103297daf1456c087adb1cc5200582c7a4e8da8388cc284f5"
+    },
+    {
+      "name": "networks",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "ls",
+        "-q"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2718910,
+      "log_sha256": "2f5d7b0ae8fd23830125533b3099f758d934078513e63ecbeff3355cc1aa7561"
+    },
+    {
+      "name": "network-subnets",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "6d7a5cf94b8e",
+        "3b8e5cbd616e",
+        "a01e0e064157",
+        "373eeec8bac8",
+        "43358bab6379",
+        "d321f9e34ff2",
+        "687d5140b5be",
+        "cc74dd977182",
+        "2908ae5f4a3f",
+        "05ce5f74532d",
+        "987ecdf2bc1f",
+        "52cbe8c44e21",
+        "05fb3b88c4a0",
+        "eea9a47007d0",
+        "86b090a5e853",
+        "26b3643d8a75",
+        "92446e1efdbe"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2719503,
+      "log_sha256": "edd82190d268e0227b25839562c783e5cfe8f87569688975b52b31d599de08cc"
+    },
+    {
+      "name": "host-routes",
+      "argv": [
+        "/usr/sbin/ip",
+        "-j",
+        "-4",
+        "route",
+        "show",
+        "table",
+        "main"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2719800,
+      "log_sha256": "ac43b768726c2d35f5a9520c440582ceaecb99c15c37bd545fcfd003bfdb0e0f"
+    },
+    {
+      "name": "qa40-image",
+      "argv": [
+        "/usr/bin/docker",
+        "image",
+        "inspect",
+        "adhd-hub:qa40"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2720312,
+      "log_sha256": "9f27c9759cbcf486510afb6a15bb624524d6618129190b48cd8f44d463bcb725"
+    },
+    {
+      "name": "pull-node",
+      "argv": [
+        "/usr/bin/docker",
+        "pull",
+        "--platform",
+        "linux/amd64",
+        "kindest/node@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2720901,
+      "log_sha256": "78e716a86e8a2e31d4a6bd237432de21f4b1da31fc2b82a31bad8d0e10712d2c"
+    },
+    {
+      "name": "node-image",
+      "argv": [
+        "/usr/bin/docker",
+        "image",
+        "inspect",
+        "kindest/node@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2721374,
+      "log_sha256": "9ec9d355e40c2dfa8649114e45ff34b3221639f1f63852874de8c696890f0c76"
+    },
+    {
+      "name": "create-network",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "create",
+        "--driver",
+        "bridge",
+        "--subnet",
+        "10.240.240.0/24",
+        "--label",
+        "adhd-policy-owner=a9d3d5405bde3e34517e43c9fe971b1b",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2721629,
+      "log_sha256": "fb64df0c0cdb82b60b00a7ed931ab2b0cbd5339dab6eeea87a31b2d0d01bc0a6"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2722107,
+      "log_sha256": "8b01b692eff0f9975787b28047ca414494369f0614f444a82aa4ccd5be15c920"
+    },
+    {
+      "name": "volumes-before-create",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "ls",
+        "--format",
+        "{{.Name}}"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2722489,
+      "log_sha256": "c7185fd32752ed339b5a09e9a5723152435d128fe5d701d2751e6c3a7501f978"
+    },
+    {
+      "name": "create-kind",
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+        "create",
+        "cluster",
+        "--name",
+        "adhd-netpol-qa40",
+        "--config",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-executor07/bound/kind.yaml",
+        "--kubeconfig",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-executor07/runtime/owned.kubeconfig",
+        "--wait",
+        "0s"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2722719,
+      "log_sha256": "2cd9a999c5575f74985cb803ce8ddc43d653d9401b8a45370a20c7fc82561b79"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "adhd-netpol-qa40-control-plane"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2728918,
+      "log_sha256": "2d51ea79ad8db9a61e7be85e0007c438dc5a998bb7557d1d41fd589e45df3b46"
+    },
+    {
+      "name": "inspect-owned-volume",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "inspect",
+        "6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2729796,
+      "log_sha256": "d5ae28f362ffe7a0f9415cc949e23925ca2c59a2cb991dbaf4c94f4fd3024e4b"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2730186,
+      "log_sha256": "2d51ea79ad8db9a61e7be85e0007c438dc5a998bb7557d1d41fd589e45df3b46"
+    },
+    {
+      "name": "node-containerd-version",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4",
+        "ctr",
+        "version"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2730495,
+      "log_sha256": "d77a2ee49dd6eb12207b55b5d669a0c2c370f8a73f21583d154cf57303bb52df"
+    },
+    {
+      "name": "copy-cni-archive0",
+      "argv": [
+        "/usr/bin/docker",
+        "cp",
+        "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-executor07/bound/oci-archives/0.oci.tar",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4:/tmp/cni-exact-0.oci.tar"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2731051,
+      "log_sha256": "a3680b6601c39b586ea892ad2bbaa58a7f72b62a64f73917b09aa8c5f188110e"
+    },
+    {
+      "name": "archive-cni0",
+      "argv": [
+        "/usr/bin/docker",
+        "exec",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4",
+        "sha256sum",
+        "/tmp/cni-exact-0.oci.tar"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2731809,
+      "error_type": "AssertionError",
+      "owned_client_joined_after_failure": true,
+      "log_sha256": "0bcdc925a57b9383658c663bb7026ed18ac55944986d42afe5a6188b7f45edc7"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2732357,
+      "log_sha256": "2d51ea79ad8db9a61e7be85e0007c438dc5a998bb7557d1d41fd589e45df3b46"
+    },
+    {
+      "name": "inspect-owned-volume",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "inspect",
+        "6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2733149,
+      "log_sha256": "d5ae28f362ffe7a0f9415cc949e23925ca2c59a2cb991dbaf4c94f4fd3024e4b"
+    },
+    {
+      "name": "kill-owned-node",
+      "argv": [
+        "/usr/bin/docker",
+        "kill",
+        "--signal",
+        "KILL",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2733397,
+      "log_sha256": "49d0147e7bc522b5c71a6f92bf5a88dc507a0ea6ba883a53949024242568f96c"
+    },
+    {
+      "name": "wait-owned-node",
+      "argv": [
+        "/usr/bin/docker",
+        "wait",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2734443,
+      "log_sha256": "d02a7e4abf9cb8423bdadc7f0909e9121e9de22e70b5faf8ac04b29e5f8a0212"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2734811,
+      "log_sha256": "10371fa9f427326e2f67b4c6ae45f309cf6808b2885ae642b60c02e30dd2920d"
+    },
+    {
+      "name": "remove-owned-node",
+      "argv": [
+        "/usr/bin/docker",
+        "rm",
+        "--volumes",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2735096,
+      "log_sha256": "49d0147e7bc522b5c71a6f92bf5a88dc507a0ea6ba883a53949024242568f96c"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2735655,
+      "log_sha256": "205da7e02b0a485e1e0847c6efe0afc665fdabc7cc34dca5f0b7c6165f2107a3"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "inspect",
+        "adhd-netpol-qa40-control-plane"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2736217,
+      "log_sha256": "6b56a8ee586aa6a8f7affe3bbcc6cc2c7fd6e3a276f58412907ecedf87a9bc27"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "fca5d23c1f0d75ccf4f0e2c3ca7eac338c58fd309e263380ecbff0b78b1fbaae"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2736644,
+      "log_sha256": "8b01b692eff0f9975787b28047ca414494369f0614f444a82aa4ccd5be15c920"
+    },
+    {
+      "name": "remove-owned-network",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "rm",
+        "fca5d23c1f0d75ccf4f0e2c3ca7eac338c58fd309e263380ecbff0b78b1fbaae"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2736985,
+      "log_sha256": "fb64df0c0cdb82b60b00a7ed931ab2b0cbd5339dab6eeea87a31b2d0d01bc0a6"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "fca5d23c1f0d75ccf4f0e2c3ca7eac338c58fd309e263380ecbff0b78b1fbaae"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2737662,
+      "log_sha256": "3cfa896bc26756f4d71d32ace9377ffba2dfad03c8e36a00ff84022d178983ac"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "adhd-netpol-qa40-net"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2738026,
+      "log_sha256": "4c2551f330a9036103297daf1456c087adb1cc5200582c7a4e8da8388cc284f5"
+    },
+    {
+      "name": "verify-volume-absence",
+      "argv": [
+        "/usr/bin/docker",
+        "volume",
+        "inspect",
+        "6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d"
+      ],
+      "started": true,
+      "returncode": 1,
+      "host_client_pid": 2738705,
+      "log_sha256": "6c80c87def5a7bd2887ccf44615063062ffe52e811cbf54019436a60e228e72f"
+    },
+    {
+      "name": "inspect",
+      "argv": [
+        "/usr/bin/docker",
+        "network",
+        "inspect",
+        "kind"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2739652,
+      "log_sha256": "8fd6b380e6bc7bbcf8e602b837febc200c23bf09a0ed3d10130738e6a48ab0bb"
+    },
+    {
+      "name": "protected-cluster",
+      "argv": [
+        "/usr/bin/docker",
+        "ps",
+        "-a",
+        "--no-trunc",
+        "--filter",
+        "label=io.x-k8s.kind.cluster=adhd-event-qual",
+        "--format",
+        "{{.ID}}"
+      ],
+      "started": true,
+      "returncode": 0,
+      "host_client_pid": 2740271,
+      "log_sha256": "048842502e26c8f1c1778bc001af77fa53af03e1bca0fbafd9d017d2fa9e7b79"
+    }
+  ],
+  "inputs_unchanged": true
+}

@@ -1,0 +1,91 @@
+{
+  "schema": "adhd/network-policy07-independent-negative-audit@1",
+  "original_run_passed": false,
+  "audit_passed": true,
+  "root_launch_session": 96032,
+  "root_reported_copy_visibility_failure": true,
+  "plan_sha256": "8a78147ccf4ff6f99abe4a57e4ebf627f77480fb765c33530b5b1d11e5647c18",
+  "result_sha256": "dd1dfe28b63cda614963f65638cfb5e0000e6d57f14e4736944862ed2bf46139",
+  "full_inputs_unchanged": true,
+  "frozen_files": 368,
+  "bound_files": 29,
+  "external_inputs": 14,
+  "tool_files": 6403,
+  "normal_anonymous_volume_guard_and_kill_wait_remove_volumes_cleanup_passed": true,
+  "current_strict_absence": [
+    {
+      "kind": "node",
+      "identifier": "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4\n",
+      "strictly_absent": true
+    },
+    {
+      "kind": "node",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "error: no such object: adhd-netpol-qa40-control-plane\n",
+      "strictly_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "fca5d23c1f0d75ccf4f0e2c3ca7eac338c58fd309e263380ecbff0b78b1fbaae",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: network fca5d23c1f0d75ccf4f0e2c3ca7eac338c58fd309e263380ecbff0b78b1fbaae not found\n",
+      "strictly_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: network adhd-netpol-qa40-net not found\n",
+      "strictly_absent": true
+    },
+    {
+      "kind": "anonymous-volume",
+      "identifier": "6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d",
+      "returncode": 1,
+      "stdout": "[]\n",
+      "stderr": "Error response from daemon: get 6850d9711275c6f755e52aead9a4dc126000c650844fe37bb17bdbcc91d0aa6d: no such volume\n",
+      "strictly_absent": true
+    }
+  ],
+  "protected_network_and_member_before_after_current_equal": true,
+  "protected_network_id": "26b3643d8a75a1d90eaea327bae0c609aa0672f07079e36dff40dd47e68d171c",
+  "protected_cluster_ids": [
+    "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60"
+  ],
+  "calico_installed": false,
+  "policy_route_checks": 0,
+  "copy_observation": "Docker cp returned0, then exec sha256sum in same node reports exact target missing; neither namespace mismatch nor tmpfiles cleanup is proven from unavailable live file state",
+  "scope": "Failed offline archive transfer only; no actual import, Calico install, or route test; original false result unchanged. Audit is read-only, no cleanup, retry, CNI install, or policy execution. Root owns runtime lifecycle.",
+  "retained_node_tmpfs_declarations": {
+    "/run": "",
+    "/tmp": ""
+  },
+  "original_copy_argv": [
+    "/usr/bin/docker",
+    "cp",
+    "/home/horde/src/adhd/.worktrees/contracts/_build/netpol-kind40-executor07/bound/oci-archives/0.oci.tar",
+    "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4:/tmp/cni-exact-0.oci.tar"
+  ],
+  "original_checksum_argv": [
+    "/usr/bin/docker",
+    "exec",
+    "fc2a012777fdb700cfd7c01089d7a51d41867dbf08bba05d479ef948ad2eccd4",
+    "sha256sum",
+    "/tmp/cni-exact-0.oci.tar"
+  ],
+  "source_archive_sha256": "1c1e83c09861126a191aad5cd216d3e64d53f414543cb5346eef651cc765a710",
+  "actual_import_executed": false,
+  "documentation": [
+    {
+      "url": "https://docs.docker.com/reference/cli/docker/container/cp/#corner-cases",
+      "fact": "Docker documents restrictions for tmpfs/user mounts and recommends exec-based streaming."
+    }
+  ]
+}

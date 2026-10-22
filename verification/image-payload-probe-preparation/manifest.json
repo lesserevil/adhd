@@ -1,0 +1,45 @@
+{
+  "schema": "adhd/payload-probe-custody-preparation@1",
+  "passed": true,
+  "scope": "OwnedImage payload-probe cleanup and pure mocked checks only; no new actual runtime/observer/app qualification",
+  "docker_app_loader_compiler_provider_starts": 0,
+  "pure_checks": {
+    "payload_probe": 14,
+    "existing_startup_cleanup": 11,
+    "existing_offline_cleanup": 6,
+    "existing_eventing_argv": 3,
+    "existing_filesystem_observer_admission": 11,
+    "process_custody": 15,
+    "abi_driver": 10
+  },
+  "pure_total": 70,
+  "files": {
+    "tests/container_fixture.py": "93397ada05d9873de1f9f045f964cc74c55e163f1854e997f9e4c6787da5f42b",
+    "tests/image_payload_probe_unit.py": "edb6953a9a6e1e143f68297c07ad67c2c419d59a83594583a231c63cadc42ef8"
+  },
+  "behavior": [
+    "Original read-only synchronous docker run --rm argv preserved",
+    "Each issued probe name recorded; actual knownID only when successful inspect binds exact image and issued name",
+    "Remove by knownID after binding; random issued-name fallback only when inspection failed without positively foreign identification",
+    "Never remove a positively foreign object or a name that was already authoritatively absent",
+    "Cleanup inspect/removal and final knownID/name absence independent of run success/failure/timeout",
+    "Strict absence requires rc1, empty-or-[] stdout, exactly one case-insensitive Docker missing-object/container error matching the requested identifier",
+    "Primary run error preserved with cleanup notes; daemon/malformed/removal/foreign conditions never qualify as successful probes",
+    "Unknown absence latches separate probe_cleanup_blocked state; next probe, verify and writer all denied; active handles reset",
+    "Identity exposes issued name/knownID/closure and payload_verified without retrying failed verification"
+  ],
+  "negative_cases": [
+    "run timeout",
+    "run nonzero",
+    "run creation error",
+    "initial daemon/transport failure",
+    "unknown final cleanup",
+    "foreign image/name",
+    "primary with secondary cleanup failures",
+    "removal error despite subsequent absence",
+    "name reuse after auto-removal",
+    "mixed/foreign/daemon/non-rc1 missing diagnostics"
+  ],
+  "retained_evidence": "Original plan03 negative, raw source/helpers and ABI05 remain immutable; no retry, fresh plan or snapshot prepared",
+  "next_gate": "Root independent review/import before any fresh runtime/fault/probe/Kafka plan"
+}

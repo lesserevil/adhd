@@ -26,20 +26,97 @@ class OwnedImage:
         self.container_id = None
         self.events = []
         self.verified = False
+        self.probe_events = []
+        self.probe_active_name = self.probe_active_id = None
+        self.probe_cleanup_blocked = False
 
     def docker(self, *args, check=True):
         return subprocess.run(["docker", *args], capture_output=True, check=check, timeout=30)
 
+    @staticmethod
+    def probe_absence(result, identifier):
+        """Only one exact Docker missing-object error proves probe absence."""
+        return (result.returncode == 1 and result.stdout.strip() in (b'', b'[]') and
+            re.fullmatch(r'(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*'
+                + re.escape(identifier), result.stderr.decode(errors='replace').strip(), re.IGNORECASE) is not None)
+
     def probe(self, entrypoint, *args):
+        assert not getattr(self, 'probe_cleanup_blocked', False), 'Prior payload probe cleanup remains unconfirmed'
+        assert getattr(self, 'probe_active_name', None) is None, 'Payload probe already active'
         name = "adhd-accept-probe-" + uuid4().hex[:16]
+        identifier = None
+        result = None
+        primary = None
+        cleanup_errors = []
+        absent = False
+        foreign = False
+        initial_absent = False
+        self.probe_active_name = name
+        if not hasattr(self, 'probe_events'):
+            self.probe_events = []
         try:
-            return self.docker("run", "--rm", "--name", name, "--network", "none", "--read-only",
+            result = self.docker("run", "--rm", "--name", name, "--network", "none", "--read-only",
                 "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--entrypoint", entrypoint,
-                self.image_id, *args).stdout
+                self.image_id, *args)
+            assert result.returncode == 0
+            return result.stdout
+        except BaseException as error:
+            primary = error
+            raise
         finally:
-            self.docker("rm", "--force", name, check=False)
+            # Inspect/remove are independent from the run outcome. A known
+            # positively foreign object is never removed. On a transport error,
+            # the random name issued by this call remains its cleanup handle.
+            try:
+                initial = self.docker('inspect', name, check=False)
+                initial_absent = self.probe_absence(initial, name)
+                if not initial_absent:
+                    assert initial.returncode == 0, 'Probe inspection did not prove absence'
+                    rows = json.loads(initial.stdout)
+                    assert len(rows) == 1
+                    row = rows[0]
+                    foreign = row['Image'] != self.image_id or row['Name'] != '/' + name
+                    assert not foreign, 'Inspected payload probe is foreign'
+                    assert re.fullmatch('[a-f0-9]{64}', row['Id'])
+                    identifier = row['Id']
+                    self.probe_active_id = identifier
+            except BaseException as error:
+                cleanup_errors.append(error)
+            if not foreign and not initial_absent:
+                try:
+                    removed = self.docker('rm', '--force', identifier or name, check=False)
+                    assert removed.returncode == 0 or self.probe_absence(removed, identifier or name), 'Payload probe removal failed'
+                except BaseException as error:
+                    cleanup_errors.append(error)
+            # A known ID and its issued name are both checked, so a name reused
+            # after removal cannot be mistaken for an absent owned object.
+            observations = []
+            for key in dict.fromkeys([identifier or name, name]):
+                try:
+                    final = self.docker('inspect', key, check=False)
+                    missing = self.probe_absence(final, key)
+                    observations.append(missing)
+                    assert missing, 'Payload probe absence remains unconfirmed'
+                except BaseException as error:
+                    observations.append(False)
+                    cleanup_errors.append(error)
+            absent = bool(observations) and all(observations)
+            self.probe_cleanup_blocked = not absent
+            self.probe_events.append({'owned_name': name, 'container_id': identifier,
+                'image_config_identity': self.image_id, 'entrypoint': entrypoint,
+                'run_exit_code': result.returncode if result is not None else getattr(primary, 'returncode', None),
+                'run_failure_type': type(primary).__name__ if primary else None,
+                'foreign_object_not_removed': foreign, 'observed_absent': absent,
+                'cleanup_failure_types': [type(error).__name__ for error in cleanup_errors]})
+            self.probe_active_name = self.probe_active_id = None
+            if primary is not None:
+                primary.add_note('Payload probe cleanup: observed_absent=' + str(absent) +
+                    '; failures=' + ','.join(type(error).__name__ for error in cleanup_errors))
+            elif cleanup_errors:
+                raise cleanup_errors[0]
 
     def verify(self):
+        assert not getattr(self, 'probe_cleanup_blocked', False), 'Prior payload probe cleanup remains unconfirmed'
         if self.verified:
             return
         inspection = json.loads(self.docker("image", "inspect", self.requested).stdout)
@@ -52,6 +129,7 @@ class OwnedImage:
         self.verified = True
 
     def argv(self, config_file):
+        assert not getattr(self, 'probe_cleanup_blocked', False), 'Prior payload probe cleanup remains unconfirmed'
         self.verify()
         assert self.name is None
         self.name = "adhd-multi-accept-" + uuid4().hex[:16]
@@ -114,8 +192,12 @@ class OwnedImage:
         self.name = self.container_id = None
 
     def identity(self):
-        self.verify()
+        # Failed verification must remain observable without an implicit retry.
+        if not getattr(self, 'probe_events', []):
+            self.verify()
         return {"kind": "docker", "image_config_identity": self.image_id,
             "canonical_manifest_sha256": hashlib.sha256(self.manifest_bytes).hexdigest(),
             "container_helper_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-            "artifact_sha256": self.manifest["files"]["hub.exs"], "container_lifecycle": self.events}
+            "artifact_sha256": self.manifest["files"]["hub.exs"], "container_lifecycle": self.events,
+            "payload_verified": self.verified, "payload_probe_lifecycle": getattr(self, "probe_events", []),
+            "probe_cleanup_blocked": getattr(self, "probe_cleanup_blocked", False)}

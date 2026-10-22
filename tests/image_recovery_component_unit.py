@@ -39,11 +39,19 @@ def main():
             try:write_report(out/'failed.json',{'passed':True},None)
             except OSError:pass
             else:raise AssertionError('Successful qualification masked report failure')
-        assert qualify_output({'kind':'exunit'},SimpleNamespace(returncode=0,stdout=b'Finished\n12 tests, 0 failures\n'))['tests']==12
-        for raw in [b'0 tests, 0 failures',b'12 tests, 1 failures',b'PASS']:
-            try:qualify_output({'kind':'exunit'},SimpleNamespace(returncode=0,stdout=raw))
+        assert qualify_output({'kind':'exunit','expected_tests':12},SimpleNamespace(returncode=0,stdout=b'Finished\n12 tests, 0 failures\n'))['tests']==12
+        for raw in [b'0 tests, 0 failures',b'12 tests, 1 failures',b'PASS',b'Result: 12 passed, 1 failed',b'Result: 12 passed, 1 skipped',b'Result: 12 passed, 1 pending',b'Result: 0 passed',b'Result: 11 passed',b'Result: 12 passed\nResult: 12 passed',b'12 tests, 0 failures\nResult: 12 passed',b'Result: 12 passed extra']:
+            try:qualify_output({'kind':'exunit','expected_tests':12},SimpleNamespace(returncode=0,stdout=raw))
             except AssertionError:pass
             else:raise AssertionError('Invalid test outcome accepted')
+        assert qualify_output({'kind':'exunit','expected_tests':5},SimpleNamespace(returncode=0,stdout=b'Running ExUnit\n.....\nResult: 5 passed\n'))['tests']==5
+        try:qualify_output({'kind':'exunit','expected_tests':5},SimpleNamespace(returncode=1,stdout=b'Result: 5 passed\n'))
+        except AssertionError:pass
+        else:raise AssertionError('Nonzero child with passing-looking summary accepted')
+        validate_job({'application_integration_claim':False,'kind':'exunit','name':'primitive-allocator','expected_tests':5,'outer_timeout_seconds':600},out)
+        try:validate_job({'application_integration_claim':False,'kind':'exunit','name':'primitive-allocator','expected_tests':4,'outer_timeout_seconds':600},out)
+        except AssertionError:pass
+        else:raise AssertionError('Original vector count changed')
         runtime=object.__new__(ImageComponentRuntime);runtime.args=SimpleNamespace(image='sha256:'+'a'*64,image_manifest=root/'manifest.json');runtime.root=out
         runtime.active=None;runtime.cleanup_blocked=False;runtime.sessions=[]
         target=SimpleNamespace(argv=lambda _:base,last_exit_code=0,name='synthetic-owned',cleanup_blocked=False)

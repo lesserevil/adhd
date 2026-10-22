@@ -14,6 +14,12 @@ TRANSPORT=('schema-export','openapi-export','contract','combined-protocol','wire
 CALLBACKS=('pending-model','pending-kafka','outgoing-queries','incoming-queries','peer-epoch')
 HTTP=('admission','rejections','private','agent-admission','uninitialized-move','mixed','federation-errors')
 
+# Exact original component vectors; loop bodies do not generate additional tests.
+EXUNIT_CASE_COUNTS={'primitive-allocator':5,'primitive-epoch':3,'primitive-http-epoch':2,
+    'primitive-transport':3,'primitive-work':3,'primitive-registry':3,'primitive-files':4,
+    'primitive-routes':2,'primitive-install':4,'primitive-handoff':2,'primitive-capacity':1,
+    'primitive-journal':3}
+
 
 EPOCH_BEFORE=b"~w(domain projects directory project_backup storage_registry config resources store)"
 EPOCH_AFTER=b"~w(domain projects directory project_backup storage_registry config resources storage store)"
@@ -66,6 +72,7 @@ def layout(plan):
                 'script':row['argv'][1],'arguments':arguments,'outer_timeout_seconds':timeout,'cwd':str(origin),
                 'readonly_mounts':[['${COMPONENT_SNAPSHOT}',str(origin)]],
                 'work':'${RESULTS}/'+name+'-capsule-work'})
+            if row['kind']=='exunit':descriptor['component_job']['expected_tests']=EXUNIT_CASE_COUNTS[name]
             if row.get('report'):descriptor['component_job']['report']='${RESULTS}/'+name+'-capsule-work'+row['report'][len(str(results)):]
             if name=='primitive-journal':
                 journal=Path(row['argv'][-1]);descriptor['component_job']['readonly_mounts'] += [

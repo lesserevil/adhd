@@ -12,6 +12,7 @@ import re
 import subprocess
 import time
 
+from image_recovery_remaining_layout import EXUNIT_CASE_COUNTS
 from image_filesystem_fault import RetainedImage
 from image_rebind_runtime import ImageRebindRuntime
 
@@ -102,9 +103,19 @@ class ImageComponentRuntime(ImageRebindRuntime):
 def qualify_output(job,result):
     assert result.returncode==0,'Component image exited unsuccessfully'
     if job['kind']=='exunit':
-        matches=re.findall(rb'(\d+) tests?, (\d+) failures?',result.stdout)
-        assert matches and int(matches[-1][0])>0 and int(matches[-1][1])==0
-        return {'tests':int(matches[-1][0]),'failures':0}
+        expected=job['expected_tests']
+        assert type(expected) is int and expected>0
+        text=result.stdout.decode('utf-8')
+        summaries=[line.strip() for line in text.splitlines() if re.match(r'^\s*(?:Result:|[0-9]+ tests?\b)',line)]
+        assert len(summaries)==1,'Missing or multiple ExUnit summaries'
+        summary=summaries[0]
+        legacy=re.fullmatch(r'(\d+) tests?, (\d+) failures?',summary)
+        modern=re.fullmatch(r'Result: (\d+) passed',summary)
+        assert legacy or modern,'Failed/skipped/pending/unknown ExUnit summary'
+        count=int((legacy or modern).group(1))
+        assert count==expected and (legacy is None or int(legacy.group(2))==0)
+        return {'tests':count,'failures':0,'expected_tests':expected,
+                'summary_format':'legacy' if legacy else 'elixir1.20'}
     value=json.loads(Path(job['report']).read_text());assert value['passed'] is True
     return {'child_report_sha256':sha(job['report'])}
 
@@ -112,6 +123,8 @@ def qualify_output(job,result):
 def validate_job(job,work):
     assert job['application_integration_claim'] is False and job['kind'] in ('exunit','json')
     assert type(job['outer_timeout_seconds']) is int and 0<job['outer_timeout_seconds']<=900
+    if job['kind']=='exunit':
+        assert job['name'] in EXUNIT_CASE_COUNTS and job['expected_tests']==EXUNIT_CASE_COUNTS[job['name']]
     if job['kind']=='json':
         report=Path(job['report']);assert report.is_absolute() and '..' not in report.parts
         assert report.is_relative_to(work) and report!=work

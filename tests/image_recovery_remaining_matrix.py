@@ -124,14 +124,18 @@ def verify_empty_cache(path,required):
 
 def remainder_names(basis,matrix,artifact,image):
     names=[job['name'] for job in basis['jobs']]
-    assert len(names)==42 and len(set(names))==42
+    assert len(names) in (42,34) and len(set(names))==len(names)
     assert matrix['passed'] is False and matrix['artifact_sha256']==artifact and matrix['image_config_identity']==image
-    rows=matrix['rows'];assert len(rows)==9
-    assert [row['name'] for row in rows]==names[:9]
-    assert all(row['passed'] is True and row['exit_code']==0 and row['started'] for row in rows[:8])
-    assert rows[-1]['name']=='crash-damaged-after-install-snapshot' and rows[-1]['passed'] is False and rows[-1]['exit_code']==1 and rows[-1]['started']
-    assert matrix['unrun']==names[9:] and matrix['executed']==names[:9] and matrix['attempted']==names[:9]
-    return names[8:]
+    whole=8 if len(names)==42 else 15
+    failed='crash-damaged-after-install-snapshot' if len(names)==42 else 'primitive-allocator'
+    rows=matrix['rows'];assert len(rows)==whole+1 and matrix['planned']==len(names)
+    assert [row['name'] for row in rows]==names[:whole+1]
+    assert all(row['passed'] is True and row['exit_code']==0 and row['started'] for row in rows[:whole])
+    assert rows[-1]['name']==failed and rows[-1]['passed'] is False and rows[-1]['exit_code']==1 and rows[-1]['started']
+    if len(names)==34:assert all(name.startswith('crash-') for name in names[:15])
+    assert matrix['unrun']==names[whole+1:] and matrix['executed']==names[:whole+1] and matrix['attempted']==names[:whole+1]
+    return names[whole:]
+
 
 
 def verify(work,plan):
@@ -152,8 +156,8 @@ def verify(work,plan):
     if plan.get('resume_basis'):
         prior=json.loads((work/'bound/prior-plan.json').read_text());matrix=json.loads((work/'bound/prior-matrix.json').read_text())
         names=remainder_names(prior,matrix,plan['artifact_sha256'],plan['image_config_identity'])
-        assert [job['name'] for job in plan['jobs']]==names and len(names)==34
-        expected=34
+        assert [job['name'] for job in plan['jobs']]==names and len(names) in (34,19)
+        expected=len(names)
     assert len(plan['jobs'])==expected and len({j['name'] for j in plan['jobs']})==expected
     assert sha(work/'frozen/tests/image_recovery_remaining_matrix.py')==plan['driver_sha256']
     return True
@@ -177,7 +181,8 @@ def prepare(args):
     descriptor=layout(original)
     work.mkdir(mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700)
     inputs,drift=freeze_inputs(args.helper_root,frozen,selected['specifications'])
-    shutil.copyfile(__file__,frozen/'tests/image_recovery_remaining_matrix.py')
+    for name in ('image_recovery_remaining_matrix.py','image_recovery_component.py','image_recovery_remaining_layout.py'):
+        shutil.copyfile(Path(__file__).with_name(name),frozen/'tests'/name)
     shutil.copytree(origin/'fixtures',frozen/'fixtures',copy_function=shutil.copy2)
     # Complete original component fixtures are copied without modifying their
     # source directory, and mounted later at that original absolute path.
@@ -232,7 +237,15 @@ def prepare(args):
         for name,row in basis['external_inputs'].items():
             assert Path(name).resolve(strict=True)==Path(row['realpath']) and sha(name)==row['sha256']
         selected_names=remainder_names(basis,matrix,artifact,args.image)
-        assert [row['name'] for row in descriptor['selected_rows']]==[job['name'] for job in basis['jobs']]
+        full_names=[row['name'] for row in descriptor['selected_rows']]
+        assert [job['name'] for job in basis['jobs']] in (full_names,full_names[8:])
+        if len(basis['jobs'])==34:
+            from image_recovery_component import qualify_output
+            failed=prior/'results/primitive-allocator-capsule-work/stdout.log'
+            result=json.loads((prior/'results/primitive-allocator.json').read_text())
+            assert result['runtime']['sessions'][0]['client_exit_code']==0
+            assert qualify_output({'kind':'exunit','expected_tests':5},subprocess.CompletedProcess([],0,failed.read_bytes(),b''))['tests']==5
+            shutil.copyfile(failed,bound/'prior-primitive-allocator-actual-vm.stdout')
         for name in ('plan.json','matrix.json'):shutil.copyfile(prior/name,bound/('prior-'+name))
         for row in matrix['rows']:
             for suffix,key in [('.json','report_sha256'),('-cleanup.json','cleanup_report_sha256')]:
@@ -243,7 +256,7 @@ def prepare(args):
                     assert value['owned_native_processes_absent'] and not value['cleanup_failure_types'] and all(image['closed'] for image in value['images'])
                     assert value['passed']==row['passed']
                 shutil.copyfile(file,bound/('prior-'+row['name']+suffix))
-        resume_basis={'original_plan_sha256':args.resume_plan_sha256,'original_matrix_sha256':sha(prior/'matrix.json'),'previous_whole_passes':[row['name'] for row in matrix['rows'][:8]],'selected_failed_and_unrun':selected_names,'original_aggregate_stays_false':True}
+        resume_basis={'original_plan_sha256':args.resume_plan_sha256,'original_matrix_sha256':sha(prior/'matrix.json'),'previous_whole_passes':[row['name'] for row in matrix['rows'] if row['passed']],'selected_failed_and_unrun':selected_names,'original_aggregate_stays_false':True}
     jobs=[]
     for row in descriptor['selected_rows']:
         if selected_names is not None and row['name'] not in selected_names:continue
@@ -273,7 +286,7 @@ def prepare(args):
         external[str(executable)]={'realpath':str(real),'sha256':sha(real)}
     socket=args.docker_socket.stat();assert stat.S_ISSOCK(socket.st_mode)
     plan={'schema':'adhd/image-recovery42-plan@1','execution_ready':args.execution_ready,'execution_started':False,
-        'scope':('Failed+unrun34 of original recovery42; original8wholepasses remain separate preserved evidence.' if resume_basis else 'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.'),'resume_basis':resume_basis,
+        'scope':('Failed+unrun'+str(len(selected_names))+' of original recovery42; prior whole passes remain separate preserved evidence.' if resume_basis else 'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.'),'resume_basis':resume_basis,
         'known38_ownership_gap':args.image==BASELINE,'image_config_identity':args.image,'artifact_sha256':artifact,
         'admission_manifest_sha256':args.admission_sha256,'canonical_manifest_sha256':sha(work/'context/manifest.json'),
         'payload_tar_sha256':selected['payload_sha256'],'original_plan_sha256':args.original_sha256,

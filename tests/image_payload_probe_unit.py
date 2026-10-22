@@ -93,6 +93,12 @@ class Probe(unittest.TestCase):
   self.transport(initial=OSError('mock daemon'),final=OSError('mock daemon'))
   with self.assertRaises(OSError):self.target.probe('cat','/app/manifest.json')
   count=len(self.calls);identity=self.target.identity();self.assertEqual(len(self.calls),count);self.assertFalse(identity['payload_verified']);self.assertTrue(identity['probe_cleanup_blocked']);self.assertEqual(identity['payload_probe_lifecycle'][0]['owned_name'],NAME)
+ def test_missing_identifier_remains_case_sensitive(self):
+  for key in ('adhd-accept-probe-aBcD1234', 'aBcD'*16):
+   self.assertTrue(m.OwnedImage.probe_absence(reply(1,err=('error: no such object: '+key).encode()),key))
+   self.assertTrue(m.OwnedImage.probe_absence(reply(1,err=('ERROR: NO SUCH CONTAINER: '+key).encode()),key))
+   for wrong in (key.lower(),key.upper()):
+    self.assertFalse(m.OwnedImage.probe_absence(reply(1,err=('error: no such object: '+wrong).encode()),key))
  def test_strict_exact_missing_classifier(self):
   for out in (b'',b'[]'):
    for text in ('error: no such object: '+NAME,'Error response from daemon: No such container: '+NAME):self.assertTrue(m.OwnedImage.probe_absence(reply(1,out,text.encode()),NAME))

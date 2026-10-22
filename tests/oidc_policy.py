@@ -4,22 +4,29 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 import tempfile
-from foundation_acceptance import Runtime, Client, Provider, free_port
+from foundation_acceptance import Client, Provider, free_port
+from multi_workflow_upgrade import UpgradeRuntime
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--command',required=True)
+    target=p.add_mutually_exclusive_group(required=True)
+    target.add_argument('--command')
+    target.add_argument('--image')
+    p.add_argument('--image-manifest',type=Path)
     p.add_argument('--report',default='verification/oidc-policy.json')
-    args=p.parse_args();command=json.loads(args.command)
+    args=p.parse_args();command=json.loads(args.command) if args.command else []
     parent=Path('_build/roadmap/oidc-policy').resolve();parent.mkdir(parents=True,exist_ok=True)
-    root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));r=Runtime(root/'hub',command)
+    root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));r=UpgradeRuntime(root/'hub',command,args.image,args.image_manifest)
     seed=root/'seed'
-    subprocess.run(['python3','scripts/configure_hub.py','--directory',str(seed),
+    subprocess.run([sys.executable,'scripts/configure_hub.py','--directory',str(seed),
         '--port',str(free_port()),'--store-path',str(r.root/'hub.dets')],check=True,stdout=subprocess.DEVNULL)
     r.file.write_bytes((seed/'hub.json').read_bytes());r.file.chmod(0o600)
+    shutil.copy2(seed/'initial-admin-password.txt',r.root/'initial-admin-password.txt')
     password=(seed/'initial-admin-password.txt').read_text().split('Password: ')[1].strip()
     provider=Provider(root);cases=[]
     def record(name):cases.append({'case':name,'passed':True});print('PASS',name,flush=True)
@@ -79,9 +86,16 @@ def main():
         assert u['id']==initial_admin['id'] and u['provider']=='local' and 'built_in' not in u
         admin.api({'op':'link_oidc','user_id':u['id'],'expected_revision':r.config['config_revision'],'confirm':True},expected=409)
         record('renamed-bootstrap-account-remains-local-and-unlinkable-after-hard-restart')
-        Path(args.report).write_text(json.dumps({'schema':'adhd/oidc-policy@1','passed':True,'cases':cases,
-            'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest()},indent=2)+'\n')
-    finally:r.stop();provider.close()
+        result={'schema':'adhd/oidc-policy@1','passed':True,'cases':cases,
+                'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest() if command else None}
+    finally:
+        try:r.stop()
+        finally:provider.close()
+    if args.image:
+        result['runtime']=r.owned_image.identity()
+        result['artifact_sha256']=result['runtime']['artifact_sha256']
+        result['image_id']=result['runtime']['image_config_identity']
+    Path(args.report).write_text(json.dumps(result,indent=2)+'\n')
 
 
 if __name__=='__main__':main()

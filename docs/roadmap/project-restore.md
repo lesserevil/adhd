@@ -2,7 +2,7 @@
 
 - **Status:** partial
 - **Owning queue item:** [MULTI-007](active-work.md#multi-007-bound-shared-resources-and-operate-project-lifecycles)
-- **Completion / archival evidence:** pending; native development restore is implemented, complete qualification remains open
+- **Completion / archival evidence:** pending; selective recovery is implemented, final composed qualification and owning dependencies remain open
 
 ## Required outcome
 
@@ -93,15 +93,34 @@ allocators. Restoring a backup does not claim to recover missing post-backup dat
 
 ## Required evidence
 
-The [native private-delivery restore](../../verification/project-recovery-private/manifest.json)
-passes five checks on a frozen development artifact: a known missing target is
-restored under its original identity, acknowledgements stay acknowledged, newer
-unrelated data and global configuration survive, and the restored generation opens
-after a cold restart. This run used no Kafka or model and does not satisfy the
-complete evidence list below. [Offline backup validation](../../verification/project-recovery/backup-validator.json)
-and [real HTTP epoch checks](../../verification/project-recovery/http-epoch/manifest.json)
-provide separate bounded evidence. The next action is complete native Kafka,
-feature-family and syscall-fault qualification. Guarded portable full-server rebind now passes12 native CLI/cold-start/crash groups, with six additional hostile-checkpoint rejection cases; these remain distinct from selective recovery. The [pending-model service witness](../../verification/project-recovery-pending-model/manifest.json) proves actual cancellation across a live restore; late peer and Kafka callbacks still require their own full flows.
+The [native private-delivery checkpoint](../../verification/project-recovery-private/manifest.json)
+and [offline validation](../../verification/project-recovery/backup-validator.json)
+remain historical development evidence. They are no longer the complete progress
+summary. Current source41 evidence includes
+[23 whole programs /110 checks from the first full25 run](../../verification/recovery41-full25-first-failure/audit.json):
+seven HTTP programs, one learned-state program and all fifteen crash variants.
+That aggregate remains false because the offline rebind program failed and its
+hostile companion was unrun; the whole passing prefix is not a full25 pass.
+
+[All five late-callback programs /28 checks](../../verification/recovery-callback41-positive/manifest.json)
+now cover model, Kafka, outgoing/incoming query and peer epoch boundaries through
+actual instrumented compiled boot. Default startup is separately exercised by
+[Compose11/Kind10](../../verification/ownedMULTI008/source41-baseline-platform-positive/audit.json),
+including target-only loss/restore, preserved newer Blue/global state and a later
+hub-only replacement. The [focused recovery browser program](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json)
+passes both original viewport checks alongside Admin/Events; its scope is not a
+fresh full86 browser matrix.
+
+The [current property join](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
+keeps original native/parser/allocator/ownership and local-legacy evidence bound
+to their actual unchanged modules and runtimes. Scalar observer ABI probes are
+compatibility evidence, not durability tests. Remaining full current regression
+programs, the separate offline rebind/hostile regression, final evidence
+composition and documentation/receipt/context bridge stay open. Full-server
+backup/rebind neither replaces selective recovery nor authorizes populated rollback.
+Keep pre-upgrade compatible backups and the matching prior image for rollback;
+never open a newer store with an older binary or overwrite a populated current
+project under this operation.
 
 - Restore an empty and an explicitly missing target from a hash-bound backup while
   another project retains newer originals, acknowledgements, jobs, receipts and

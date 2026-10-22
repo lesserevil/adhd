@@ -2,22 +2,35 @@
 
 - **Status:** partial
 - **Owning queue item:** [MULTI-001](active-work.md#multi-001-define-multiple-project-identity-boundaries-and-compatibility)
-- **Completion / archival evidence:** pending while MULTI-001 through MULTI-008 remain open
+- **Completion / archival evidence:** pending while MULTI-007/MULTI-008 and their integrated dependencies remain open
 
 ## Direction and current boundary
 
-Each ADHD server must support multiple projects while continuing to federate with
-other servers. One server per project remains a valid deployment, rather than a
-product restriction. This program has integrated multi-project contracts and an
-initially admitted implementation. Final qualification remains open; the execution
-order and acceptance gates below still govern completion. Historical single-project
-results do not attest the combined architecture.
+Each ADHD server supports multiple projects while continuing to federate with
+other servers. One server per project remains a valid deployment. The contracts
+and implementation are admitted; final combined qualification remains open under
+MULTI-007/MULTI-008 and their dependencies. Historical results keep their original
+artifact and runtime scope.
 
 The `components/hub/multi/spec.md` contract and
-[scope inventory](../protocol/scopes.json) own the replacement boundaries.
-Current artifact-bound results are linked from the [project/migration proof](../../verification/multi-eventing/native-project-migration-30.json)
-and [eventing/federation proof](../verification/native-eventing.json). Container,
-deployment and remaining regression qualification are still in progress.
+[scope inventory](../protocol/scopes.json) own the boundaries. The current
+[source41 evidence join](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
+distinguishes changed Eventing/recovery paths from unchanged subsystems. The
+[compiled-image admission](../../verification/ownedMULTI008/source41-compiled-image-positive/audit.json)
+binds source `d41ecddd…` and image `207ad8e3…`; it does not itself close runtime gates.
+
+Current scoped positives include [Compose11/Kind10](../../verification/ownedMULTI008/source41-baseline-platform-positive/audit.json),
+[secured Kind](../../verification/ownedMULTI008/source41-secured-kind-positive/audit.json)
+with seven reported checks and 51 assertion sites, and
+[Admin/Events/recovery32](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json)
+with [root's named capture review](../../verification/ownedMULTI008/source41-focused-ui-manual-review/review.json).
+The separate [deployed-model programs](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
+pass on both platforms: eight outer checks and twelve actual POSTs total, with the
+original filtering, cited-query, Blue-progress, privacy and hot disable/resume gates.
+These are separate programs, not one fresh full historical matrix. Complete current
+core, federation and offline-rebind regressions, final requirement composition and
+the documentation/receipt/context bridge remain open; retained failed aggregates
+stay false.
 
 This program belongs to ADHD's hub Component, tests, tooling and guides. It does
 not require a framework pin upgrade, a new model or a database replacement. The
@@ -27,7 +40,7 @@ federation transport. BUILD-001's upstream publication/adoption remains separate
 Implementation proceeds in authorized local feature branches; external publication
 remains separately governed.
 
-## Proposed target model
+## Selected identity and admission model
 
 | Entity | Identity and boundary |
 | --- | --- |
@@ -39,7 +52,7 @@ remains separately governed.
 | Project data/job | Explicit project ID plus existing actor/resource identity; no ownership inferred from an ID prefix, display label, browser selection or model output. |
 
 Keep Admin, Developer and Viewer as server-wide roles. Admin retains full access
-to every project. The proposed admission model adds an Admin-managed set of
+to every project. The admission model adds an Admin-managed set of
 projects for non-Admin users without introducing project roles: Developer keeps
 the existing ability to create agents only on their own behalf, within admitted
 projects; Viewer stays read-only. An agent's grants cannot exceed its owner's
@@ -72,6 +85,11 @@ operations. Archive must preserve originals and define the disposition of accept
 work, existing deliveries and canonical claims; it must not silently delete data.
 Hard deletion, project transfer between servers and high-availability replication
 are outside this first program and require separately specified policies.
+
+A newly configured project stays uninitialized until an authenticated Admin plans
+and applies explicit initialization. A known missing initialized store requires
+recovery; it must never be silently recreated. See the operator's
+[project initialization and recovery guidance](../admin/operations.md).
 
 ## Required scope inventory
 

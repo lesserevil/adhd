@@ -2,7 +2,7 @@
 
 - **Status:** partial
 - **Owning queue item:** [KAFKA-001](active-work.md#kafka-001-specify-kafka-eventing-and-optional-subscription-filters)
-- **Completion / archival evidence:** pending while KAFKA-001 through KAFKA-009 remain open
+- **Completion / archival evidence:** pending while KAFKA-007/KAFKA-008/KAFKA-009 and their dependencies remain open
 
 ## Direction and implementation boundary
 
@@ -14,13 +14,27 @@ or narrow that stream using an optional plain-text Jev-like model filter.
 Backend facts remain searchable independently of subscriptions. Models may support
 semantic search and optional filtering; raw pub/sub must work without a model.
 
-The combined implementation has an [initial lifecycle admission](../../verification/multi-eventing/lifecycle-admission-30.json).
-The eventing contracts select the pinned Kafka REST Proxy adapter; the deployment
-artifacts provide Compose and Kubernetes packaging. [Native eventing and federation
-qualification](../verification/native-eventing.json) covers the current artifact.
-Final program qualification remains open for the complete container, deployment,
-recovery and regression matrix. Existing closed work retains its historical
-evidence and cannot attest this architecture.
+The implementation uses the reviewed profile 2.1 Kafka REST Proxy contract and
+shipped Compose/Kubernetes packaging. Historical
+[native eventing evidence](../verification/native-eventing.json) and the
+[initial lifecycle admission](../../verification/multi-eventing/lifecycle-admission-30.json)
+retain their original artifact scope. The current
+[source41 conservation and integration review](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
+binds the readiness successor and identifies the remaining compound gates.
+
+On source41 image `207ad8e3…`, the complete model-free
+[Compose11/Kind10 baseline](../../verification/ownedMULTI008/source41-baseline-platform-positive/audit.json)
+covers real hub/broker replacement, full cold restore and target-only restore
+preserving newer Blue/global state. The separate
+[secured Kind program](../../verification/ownedMULTI008/source41-secured-kind-positive/audit.json)
+passes seven reported checks with all 48 original assertions retained in the
+51-site program, including TLS/OAuth and live credential/keystore/pod rotation.
+The [deployed-model programs](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
+pass eight outer checks across Compose and Kind with twelve actual POSTs total;
+the inner reports retain the original semantic gates rather than a twelve-case array.
+[Focused browser qualification](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json)
+passes the complete Admin18/Events12/recovery2 programs. These positives do not
+close the remaining full core/federation/rebind and final evidence/receipt gates.
 
 The pivot composes with [multiple projects per server](multi-project.md). Kafka
 is per server, not per project or per agent. A Kafka service can be one development
@@ -32,7 +46,7 @@ apply before any remote information is disclosed. A future cross-server event
 subscription bridge needs its own exact contract; this program does not silently
 replicate every local project into peer brokers.
 
-## Proposed flow and subscription contract
+## Selected flow and subscription contract
 
 ```mermaid
 flowchart LR
@@ -49,8 +63,8 @@ flowchart LR
 ```
 
 This is a logical separation, not a claim that Kafka and the backend share a
-transaction. KAFKA-001/002 must specify the authoritative commit point and durable
-handoff, such as a backend transaction with an outbox and idempotent publication.
+transaction. KAFKA-001/002 specify the authoritative commit point and durable
+backend outbox with idempotent publication.
 The backend retains originals; Kafka carries project events; ADHD retains
 subscription identity, delivery/ack state and retry/deduplication authority.
 
@@ -71,8 +85,8 @@ Subscription schemas must distinguish an absent filter from invalid/blank filter
 text and preserve old described subscriptions as filtered mode. New unfiltered
 subscriptions require no dummy description or model endpoint. For example, an
 agent can subscribe to every event in project P, then optionally add “Only API
-compatibility changes or blocked releases.” The exact wire fields belong to the
-normative contract phase rather than this illustrative prose.
+compatibility changes or blocked releases.” The exact wire fields are in the
+[published protocol inventory](../protocol/README.md); this prose remains illustrative.
 
 Define the activation watermark atomically relative to publication acceptance.
 Preserve the existing default of new events only; historical replay is explicit,
@@ -169,9 +183,10 @@ Ship both a Docker Compose application and a Kubernetes application. Each includ
 the hub, private Kafka/KRaft service, persistent broker and backend volumes,
 secret handling, resource limits and health/ready probes. A model-free baseline
 must boot successfully with no GPU; an optional model profile uses the existing
-decision service or a configured endpoint. Select pinned broker/client artifacts,
-licenses and supported compatibility ranges during implementation. Decide plain
-manifests versus a maintained chart/operator explicitly. K8s packaging does not
+decision service or a configured endpoint. The shipped packages use digest-pinned
+Kafka/REST Proxy 8.3.2 and plain Kubernetes manifests;
+[the event-service guide](../admin/event-service.md) records supported settings and
+artifact/license boundaries. K8s packaging does not
 authorize multiple hub replicas against the current single-writer store: retain
 one replica until a separate concurrency/HA contract is qualified.
 
@@ -179,6 +194,24 @@ Document startup/shutdown dependency behavior, unavailable broker admission,
 backpressure, metrics, backups, volume restore, replacement and broker upgrades.
 Distinguish single-node development durability from replicated Kafka durability.
 Test broker and hub recovery independently and in combination.
+
+Qualification is scoped to one hub writer and one broker. The secured profile uses
+TLS/OAuth at REST Proxy and a private plaintext proxy-to-broker lane; it does not
+qualify SASL_SSL, replicated availability or production entitlement. The
+[CNI eighteen-route proof](../../verification/ownedMULTI008/cni-static-gate-positive/audit.json)
+is a separately bound network-only fixture on its original admitted image, not a
+source41 app/Kafka run. It remains distinct from the actual deployment programs.
+
+The reviewed conservation join preserves the unchanged third-party base layers
+and runtime environment, while the successor app/cache layers have independent
+admission. The [runtime/dependency inventory](../admin/operations.md#runtime-and-dependency-licenses),
+[REST Proxy security/license scope](../admin/event-service.md#artifact-and-license-inventory)
+and [optional serving-source/weights/CUDA inventory](../admin/model-service.md#dependency-and-license-inventory)
+keep their own terms. Optional operator-supplied weights are outside the hub image;
+the captured checkpoint README declares Nemotron terms but supplies no full license
+text or version. These inventories are traceability, not legal clearance or a full
+transitive BOM. No new dependency entitlement or current model-quality result is
+inferred from a successful transport or deployed-filter run.
 
 Coordinate one migration with MULTI-002: preserve prior project identity, users,
 agent credentials, originals, descriptions/filters, pending model jobs, delivery

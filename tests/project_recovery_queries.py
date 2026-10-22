@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Real source/discovery query identities and callbacks across target recovery.
 
-Two native hubs and distinct real brokers; a transparent bounded relay holds
+Two owned hubs and distinct real brokers; a transparent bounded relay holds
 actual successful peer responses. The model is a local typed fixture, never a
 provider. Live writer loss uses the existing test-only Store DOWN observer.
 """
@@ -27,6 +27,7 @@ from project_recovery_acceptance import Recovery, RED, BLUE
 from project_recovery_allocators import require
 from project_recovery_restore import offline_bundle
 from project_recovery_state import digest, route
+from recovery_image_runtime import RecoveryImageRuntime, bind_down, same_vm
 
 
 
@@ -210,11 +211,14 @@ async def scenario(args,a,b,ar,relay,model,e,scope,private,label):
     blue_message=(await actor.call(scoped(BLUE,'send',recipient_id='blue-b',text='Blue pending-query recovery sentinel')))['delivery']
     e.record('accepted-pending-source-and-discovery-queries-backed-up-with-real-pinned-remote-jobs',
              scenario=label,retained_ids={k:v['id'] for k,v in retained.items()},lost_ids={k:v['id'] for k,v in lost.items()},provider_posts=0)
+    owner_vm=a.watched_vm() if args.image else None
     _,anchor=route(a.file,RED);nonce=uuid4().hex
     Path(str(a.file)+'.target-down').unlink(missing_ok=True)
     Path(str(a.file)+'.kill-target').write_text(json.dumps({'project_id':RED,'nonce':nonce}))
     witness_path=Path(str(a.file)+'.target-down');await until(witness_path.exists,'Actual target Store DOWN was not witnessed',5)
-    witness=json.loads(witness_path.read_text());assert witness['nonce']==nonce and witness['reason']=='killed' and int(witness['vm_pid'])==a.process.pid
+    witness=json.loads(witness_path.read_text())
+    if args.image:bind_down(owner_vm,witness,nonce,RED);same_vm(owner_vm,a.watched_vm())
+    else:assert witness['nonce']==nonce and witness['reason']=='killed' and int(witness['vm_pid'])==a.process.pid
     lost_pair=a.root/('lost-query-pair-'+label);lost_pair.mkdir(mode=0o700)
     for path in [anchor,Path(str(anchor)+'.snapshot')]:assert path.is_file();os.replace(path,lost_pair/path.name)
     assert ar.status(RED)['availability']=='recovery_required'
@@ -226,6 +230,7 @@ async def scenario(args,a,b,ar,relay,model,e,scope,private,label):
     accepted=ar.call(RED,'project_restore_apply',plan_id=plan['plan_id'],plan_sha256=plan['plan_sha256'],
                     expected_revision=revision,confirm=True,message_id='query-apply-'+label)
     await ar.settle(RED,accepted,{'complete'})
+    if args.image:same_vm(owner_vm,a.watched_vm())
     assert ar.status(RED)['route']['allocation_epoch']!=before['allocation_epoch']
     relay.release['old'].set();await asyncio.sleep(.5)
     for kind,q in retained.items():
@@ -281,17 +286,19 @@ async def main():
     parser=arguments(__doc__);parser.add_argument('--recovery-schema',type=Path,required=True)
     parser.add_argument('--loss-runner',type=Path,required=True)
     parser.add_argument('--peer-eventing-rest-url',default='http://127.0.0.1:18085')
-    args=parser.parse_args();assert args.hub and not args.rest_url and not args.image and not args.with_model
+    args=parser.parse_args();assert (args.hub or args.image) and not args.rest_url and not args.with_model and not args.command
     args.keep_work.mkdir(parents=True,mode=0o700,exist_ok=True)
     aa,ba=copy.copy(args),copy.copy(args);aa.keep_work=args.keep_work/'origin';ba.keep_work=args.keep_work/'peer'
-    aa.command=json.dumps(['elixir',str(args.loss_runner.resolve()),str(args.hub.resolve())]);ba.command=None
+    if not args.image:aa.command=json.dumps(['elixir',str(args.loss_runner.resolve()),str(args.hub.resolve())]);ba.command=None
     ba.eventing_rest_url=args.peer_eventing_rest_url
-    a,b=NativeFixture(aa,initialize_projects=False),NativeFixture(ba,initialize_projects=False)
+    if args.image:
+        a,b=(RecoveryImageRuntime(v,args.loss_runner.resolve(),startup_seconds=150) for v in (aa,ba))
+    else:a,b=NativeFixture(aa,initialize_projects=False),NativeFixture(ba,initialize_projects=False)
     model=PeerModel();relay=QueryRelay(b.base);e=Evidence(args.report,'project-recovery-source-discovery-queries')
-    e.value.update(artifact_sha256=digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),
+    e.value.update(artifact_sha256=a.image_runtime.manifest['files']['hub.exs'] if args.image else digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),
         dependency_sha256={str(p):digest(p.read_bytes()) for p in [args.loss_runner,args.recovery_schema,Path(__file__).with_name('project_recovery_restore.py'),Path(__file__).with_name('multi_support.py')]},
         limits={'relay_slots':12,'relay_requests':512,'held_response_seconds':30,'query_deadline_ms':120000},
-        scope='Native actual two-hub/two-broker pending source/discovery and callback fencing; local controlled model only, not semantic quality or release admission.')
+        scope='Actual two-hub/two-broker pending source/discovery and callback fencing; runtime custody separately bound; local controlled model only, not semantic quality or release admission.')
     for f in (a,b):
         f.config.update(server_id=uuid4().hex,project_id=BLUE,matcher={'url':model.url,'model':'controlled-peer','timeout_ms':1000,'retry_ms':100},
             federation={'description':'We maintain image decoders.','peers':[],'timeout_ms':10000,'retry_ms':100,'catalog':{'visible':True,'entries':[]}},
@@ -316,7 +323,13 @@ async def main():
             except BaseException as error:cleanup_errors.append(error)
         e.value.update(relay_errors=relay.errors,relay_observations=relay.rows,controlled_model_requests=model.calls,provider_posts=0)
         if cleanup_errors:e.value['cleanup_failure_types']=[type(error).__name__ for error in cleanup_errors]
-        a.bind_evidence(e);e.finish(failure or (cleanup_errors[0] if cleanup_errors else None))
+        if args.image:
+            for label,f in [('origin',a),('peer',b)]:
+                try:f.bind_evidence(e,'runtime_'+label)
+                except BaseException as error:cleanup_errors.append(error)
+        else:a.bind_evidence(e)
+        if cleanup_errors:e.value['cleanup_failure_types']=[type(error).__name__ for error in cleanup_errors]
+        e.finish(failure or (cleanup_errors[0] if cleanup_errors else None))
         if cleanup_errors and failure is None:raise cleanup_errors[0]
 
 

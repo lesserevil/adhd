@@ -24,6 +24,7 @@ from multi_support import Evidence,arguments,scoped
 from project_recovery_acceptance import Recovery,RED,BLUE
 from project_recovery_allocators import require
 from project_recovery_queries import NativeFixture,PeerModel,until,patch
+from recovery_image_runtime import RecoveryImageRuntime, bind_down, same_vm
 from project_recovery_restore import offline_bundle
 from project_recovery_state import digest,exact,route,snapshot
 
@@ -103,15 +104,18 @@ def compare_accepted(actual,original):
 
 
 async def lose_and_restore(args,b,r,backup_id,backup_sha,label,gate):
+    owner_vm=b.watched_vm() if args.image else None
     _,anchor=route(b.file,RED);nonce=uuid4().hex
     witness=Path(str(b.file)+'.target-down');witness.unlink(missing_ok=True)
     Path(str(b.file)+'.kill-target').write_text(json.dumps({'project_id':RED,'nonce':nonce}))
     def down():
         try:value=json.loads(witness.read_text())
         except (FileNotFoundError,json.JSONDecodeError):return None
-        assert value['nonce']==nonce and value['reason']=='killed' and int(value['vm_pid'])==b.process.pid
+        if args.image:bind_down(owner_vm,value,nonce,RED)
+        else:assert value['nonce']==nonce and value['reason']=='killed' and int(value['vm_pid'])==b.process.pid
         return value
     observed=await until(down,'Complete actual incoming target Store DOWN witness absent',5)
+    if args.image:same_vm(owner_vm,b.watched_vm())
     held=b.root/('lost-incoming-'+label);held.mkdir(mode=0o700)
     for p in [anchor,Path(str(anchor)+'.snapshot')]:assert p.is_file();os.replace(p,held/p.name)
     assert r.status(RED)['availability']=='recovery_required'
@@ -122,6 +126,7 @@ async def lose_and_restore(args,b,r,backup_id,backup_sha,label,gate):
     accepted=r.call(RED,'project_restore_apply',plan_id=plan['plan_id'],plan_sha256=plan['plan_sha256'],
         expected_revision=revision,confirm=True,message_id='incoming-apply-'+label)
     await r.settle(RED,accepted,{'complete'})
+    if args.image:same_vm(owner_vm,b.watched_vm())
     return observed,plan
 
 
@@ -213,14 +218,17 @@ async def main():
     parser=arguments(__doc__);parser.add_argument('--recovery-schema',type=Path,required=True)
     parser.add_argument('--loss-runner',type=Path,required=True);parser.add_argument('--peer-eventing-rest-url',default='http://127.0.0.1:18085')
     parser.add_argument('--revocation-only',action='store_true',help='Run only fresh pending backup plus current grant denial restore control')
-    args=parser.parse_args();assert args.hub and not args.image and not args.rest_url and not args.with_model
+    args=parser.parse_args();assert (args.hub or args.image) and not args.rest_url and not args.with_model and not args.command
     aa,ba=copy.copy(args),copy.copy(args);aa.keep_work=args.keep_work/'origin';ba.keep_work=args.keep_work/'peer'
-    for target in [aa,ba]:target.command=json.dumps(['elixir',str(args.loss_runner.resolve()),str(args.hub.resolve())])
+    if not args.image:
+        for target in [aa,ba]:target.command=json.dumps(['elixir',str(args.loss_runner.resolve()),str(args.hub.resolve())])
     ba.eventing_rest_url=args.peer_eventing_rest_url
-    a,b=NativeFixture(aa,initialize_projects=False),NativeFixture(ba,initialize_projects=False)
+    if args.image:
+        a,b=(RecoveryImageRuntime(v,args.loss_runner.resolve(),startup_seconds=150) for v in (aa,ba))
+    else:a,b=NativeFixture(aa,initialize_projects=False),NativeFixture(ba,initialize_projects=False)
     model=PeerModel();gate=ModelGate(model.url);e=Evidence(args.report,'project-recovery-incoming-peer-jobs')
-    e.value.update(artifact_sha256=digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),
-        scope='Native incoming accepted source/discovery snapshot preservation, actual model callback epochs and current peer authorization; local controlled typed model only, not provider quality, Docker or release admission.',
+    e.value.update(artifact_sha256=a.image_runtime.manifest['files']['hub.exs'] if args.image else digest(args.hub.read_bytes()),harness_sha256=digest(Path(__file__).read_bytes()),
+        scope='Incoming accepted source/discovery snapshot preservation, actual model callback epochs and current peer authorization; runtime custody separately bound; local controlled typed model only, not provider quality or release admission.',
         case_selection='revocation-only' if args.revocation_only else 'all',
         limits={'native_startup_seconds':150,'original_query_deadline_ms':120000,'model_hold_seconds':30,'model_slots':8,'model_inventory':1024},
         dependency_sha256={str(p):digest(p.read_bytes()) for p in [args.loss_runner,args.recovery_schema,Path(__file__).with_name('project_recovery_queries.py'),Path(__file__).with_name('project_recovery_restore.py'),Path(__file__).with_name('multi_support.py')]})
@@ -286,7 +294,13 @@ async def main():
             except BaseException as error:cleanup.append(error)
         e.value.update(model_observations=gate.rows,model_relay_errors=gate.errors,controlled_model_requests=model.calls,provider_posts=0)
         if cleanup:e.value['cleanup_failure_types']=[type(error).__name__ for error in cleanup]
-        a.bind_evidence(e);e.finish(failure or (cleanup[0] if cleanup else None))
+        if args.image:
+            for label,f in [('origin',a),('peer',b)]:
+                try:f.bind_evidence(e,'runtime_'+label)
+                except BaseException as error:cleanup.append(error)
+        else:a.bind_evidence(e)
+        if cleanup:e.value['cleanup_failure_types']=[type(error).__name__ for error in cleanup]
+        e.finish(failure or (cleanup[0] if cleanup else None))
         if cleanup and failure is None:raise cleanup[0]
 
 

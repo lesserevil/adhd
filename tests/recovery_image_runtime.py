@@ -127,9 +127,11 @@ class ObserverImage(OwnedImage):
 
 
 class RecoveryImageRuntime(Fixture):
-    """45s readiness and unchanged public semantics; real owned image lifecycle."""
-    def __init__(self,args,observer):
+    """Existing declared45/150s readiness; real owned image lifecycle."""
+    def __init__(self,args,observer,*,startup_seconds=45):
         assert args.image and not args.with_model and not args.hub and not args.command and not args.rest_url
+        assert startup_seconds in (45,150)
+        self.startup_seconds=startup_seconds
         super().__init__(args,initialize_projects=False)
         self.image_runtime=ObserverImage(args.image,args.image_manifest,self.root,observer)
         self.vm_observations=[];self.log_identities={};self.cleanup_failure_types=[]
@@ -146,7 +148,7 @@ class RecoveryImageRuntime(Fixture):
             command=self.image_runtime.argv(self.file)
             self.process=subprocess.Popen(command+[json.dumps(['serve',str(self.file)])],
                 stdout=self.logs[0],stderr=self.logs[1],start_new_session=True)
-            deadline=time.monotonic()+45
+            deadline=time.monotonic()+self.startup_seconds
             async with httpx.AsyncClient() as http:
                 while time.monotonic()<deadline:
                     assert self.process.poll() is None, 'Owned image exited during startup'
@@ -205,7 +207,7 @@ class RecoveryImageRuntime(Fixture):
                 'payload_verified':False,'container_lifecycle':self.image_runtime.events}
         value=evidence.value[key]
         value.update(observer_sha256=self.image_runtime.observer_sha256,observer_mount=OBSERVER,
-            recovery_image_helper_sha256=digest(__file__),watched_vm_observations=self.vm_observations,
+            recovery_image_helper_sha256=digest(__file__),startup_seconds=self.startup_seconds,watched_vm_observations=self.vm_observations,
             payload_probe_lifecycle=self.image_runtime.probe_lifecycle,cleanup_failure_types=self.cleanup_failure_types,
             docker_client_pid=None if self.process is None else self.process.pid,
             owned_docker_client_exited=self.process is None or self.process.poll() is not None,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Actual v2 catalog replies cannot cross a selective-project recovery epoch.
 
-Two owned hubs, transparent real-peer relay, no Kafka or model. Native only: the
+Two owned hubs, transparent real-peer relay, no Kafka or model. The
 existing test-only live-loss runner kills one actual nondefault Store, without
 adding a product API or fabricating accepted state.
 """
@@ -16,6 +16,7 @@ from multi_support import Evidence,Fixture,arguments,scoped
 from project_recovery_acceptance import Recovery,RED,BLUE
 from project_recovery_restore import offline_bundle
 from project_recovery_state import route,registry
+from recovery_image_runtime import RecoveryImageRuntime,bind_down,same_vm
 
 class NativeFixture(Fixture):
  async def start(self):
@@ -93,15 +94,17 @@ def patch(f,value):
 
 async def main():
  parser=arguments(__doc__);parser.add_argument('--recovery-schema',type=Path,default=Path(__file__).resolve().parents[1]/'components/hub/project-recovery/interface.schema.json');parser.add_argument('--loss-runner',type=Path,required=True)
- args=parser.parse_args();assert args.hub and not args.with_model and not args.rest_url and not args.image,'Native exact-artifact/no-provider fixture only'
+ args=parser.parse_args();assert (args.hub or args.image) and not args.with_model and not args.rest_url and not args.command,'Exact-artifact/no-provider fixture only'
  work=args.keep_work.resolve();work.mkdir(mode=0o700,parents=True,exist_ok=True)
- aargs=copy.copy(args);aargs.keep_work=work/'origin';aargs.command=json.dumps(['elixir',str(args.loss_runner.resolve()),str(args.hub.resolve())])
+ aargs=copy.copy(args);aargs.keep_work=work/'origin'
+ if not args.image:aargs.command=json.dumps(['elixir',str(args.loss_runner.resolve()),str(args.hub.resolve())])
  bargs=copy.copy(args);bargs.keep_work=work/'peer';bargs.command=None
- a,b=NativeFixture(aargs,initialize_projects=False),NativeFixture(bargs,initialize_projects=False)
+ if args.image:a,b=(RecoveryImageRuntime(v,args.loss_runner.resolve(),startup_seconds=150) for v in (aargs,bargs))
+ else:a,b=NativeFixture(aargs,initialize_projects=False),NativeFixture(bargs,initialize_projects=False)
  relay=CatalogRelay(b.base);e=Evidence(args.report,'project-recovery-peer-catalog-epoch')
- e.value['limitations']=['Native model-free/eventing-disabled two-hub cache/epoch case; no Kafka, semantic provider, container or lifecycle admission claim.']
+ e.value['limitations']=['Model-free/eventing-disabled two-hub cache/epoch case; runtime custody separately bound; no Kafka, semantic provider or release completion claim.']
  e.value['prior_attempts']=[{'report':'recovery-peer13.json','report_sha256':'f10ec12f9c0d2885090c6b82c336f876f083ebf99fc0c3ed5c45c903cd51fdf3','result':'Harness waited for fresh request before releasing old synchronous worker request; failure retained, corrected ordering does not change old-result rejection expectation.'},{'report':'recovery-peer13b.json','report_sha256':'445de0d95b8dbcb822aff25579ed8cc132205bf54c367701a55ec54d1d3885af','result':'Harness fresh-refresh3s deadline shorter than configured10s network timeout; corrected to10s+2s scheduling, immediate old-directory-empty assertion preserved.'}]
- e.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest(),harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),scope='Actual native v2 peer HTTP catalog refresh across live target writer loss/restore; no Kafka/model/provider or container claim',limits={'startup_seconds':150,'relay_slots':4,'relay_requests':128,'hold_seconds':10,'epoch_transition_seconds':8,'fresh_refresh_seconds':12},dependency_sha256={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in [args.loss_runner,Path(sys.modules['multi_support'].__file__),Path(sys.modules['project_recovery_restore'].__file__),args.recovery_schema]})
+ e.value.update(artifact_sha256=a.image_runtime.manifest['files']['hub.exs'] if args.image else hashlib.sha256(args.hub.read_bytes()).hexdigest(),harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),scope='Actual v2 peer HTTP catalog refresh across live target writer loss/restore; runtime custody separately bound; no Kafka/model/provider',limits={'startup_seconds':150,'relay_slots':4,'relay_requests':128,'hold_seconds':10,'epoch_transition_seconds':8,'fresh_refresh_seconds':12},dependency_sha256={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in [args.loss_runner,Path(sys.modules['multi_support'].__file__),Path(sys.modules['project_recovery_restore'].__file__),args.recovery_schema]})
  token_ab,token_ba=secrets.token_urlsafe(32),secrets.token_urlsafe(32)
  scope={'provider':'github','host':'github.com','tenant':'fixture','resource':'held-catalog'}
  for f in [a,b]:
@@ -110,6 +113,7 @@ async def main():
  b.config['projects']=copy.deepcopy(b.config['projects'])
  next(p for p in b.config['projects'] if p['id']==RED)['settings']={'federation':{'catalog':{'visible':True,'entries':[{'scope':scope,'aliases':['held-catalog'],'description':'Actual peer canonical catalog marker','relationship':'contained','canonical':True,'export_publication_ids':[]}]}}}
  b.config['federation']['peers']=[{'server_id':a.config['server_id'],'url':a.base,'token':token_ba,'inbound_token':token_ab,'project_pairs':[{'local_project_id':RED,'remote_project_id':RED}]}]
+ failure=None
  try:
   await asyncio.gather(a.start(),b.start());ar,br=Recovery(a,args.recovery_schema),Recovery(b,args.recovery_schema)
   for f,r in [(a,ar),(b,br)]:
@@ -122,9 +126,12 @@ async def main():
   assert await until(relay.held[0].is_set,'No real old-epoch catalog response was held',12)
   old_row=next(row for row in relay.rows if row['held_index']==0);assert old_row['status']==200 and old_row['response']['items'][0]['scope']==scope
   e.record('actual-authenticated-v2-peer-catalog-success-held-before-target-loss',response_sha256=old_row['response_sha256'])
+  owner_vm=a.watched_vm() if args.image else None
   cutoff=time.monotonic();nonce=uuid4().hex;Path(str(a.file)+'.kill-target').write_text(json.dumps({'project_id':RED,'nonce':nonce}))
   witness_path=Path(str(a.file)+'.target-down');await until(witness_path.exists,'Live loss hook did not observe actual Store DOWN')
-  witness=json.loads(witness_path.read_text());assert witness['nonce']==nonce and witness['reason']=='killed' and int(witness['vm_pid'])==a.process.pid
+  witness=json.loads(witness_path.read_text())
+  if args.image:bind_down(owner_vm,witness,nonce,RED);same_vm(owner_vm,a.watched_vm())
+  else:assert witness['nonce']==nonce and witness['reason']=='killed' and int(witness['vm_pid'])==a.process.pid
   held=a.root/'lost-pair';held.mkdir(mode=0o700)
   for p in [anchor,Path(str(anchor)+'.snapshot')]:assert p.is_file();os.replace(p,held/p.name)
   assert a.process.poll() is None and ar.status(RED)['availability']=='recovery_required'
@@ -133,6 +140,7 @@ async def main():
   plan=(await ar.settle(RED,receipt,{'ready'}))['plan'];ar.assert_plan(plan,RED,'restore')
   accepted=ar.call(RED,'project_restore_apply',plan_id=plan['plan_id'],plan_sha256=plan['plan_sha256'],expected_revision=revision,confirm=True,message_id='peer-apply')
   await ar.settle(RED,accepted,{'complete'});assert a.process.poll() is None
+  if args.image:same_vm(owner_vm,a.watched_vm())
   assert ar.status(RED)['route']['project_epoch']!=old_entry['project_epoch'] and ar.status(BLUE)['route']==before_blue
   assert time.monotonic()-cutoff<8,'Declared live recovery/hold transition bound exhausted'
   e.record('same-vm-target-restored-to-new-epoch-while-blue-remains-current',loss_witness=witness,old_epoch=old_entry['project_epoch'],new_epoch=plan['selected']['project_epoch'])
@@ -157,9 +165,23 @@ async def main():
   assert not relay.errors,relay.errors
   e.value['relay_observations']=[{k:v for k,v in row.items() if k!='request'} for row in relay.rows]
   e.record('fresh-epoch-real-peer-refresh-succeeds-and-blue-originals-remain-usable',fresh_response_sha256=fresh['response_sha256'],peer_catalog_revision=ready['revision'])
-  e.finish()
  except BaseException as error:
-  e.value['relay_errors']=relay.errors;e.value['relay_observations']=relay.rows;e.finish(error);raise
+  failure=error
+  e.value['relay_errors']=relay.errors;e.value['relay_observations']=relay.rows
  finally:
-  relay.close();await a.close();await b.close()
-asyncio.run(main())
+  cleanup=[]
+  for close in [relay.close,a.close,b.close]:
+   try:
+    result=close()
+    if asyncio.iscoroutine(result):await result
+   except BaseException as error:cleanup.append(error)
+  if args.image:
+   for label,f in [('origin',a),('peer',b)]:
+    try:f.bind_evidence(e,'runtime_'+label)
+    except BaseException as error:cleanup.append(error)
+  else:a.bind_evidence(e)
+  if cleanup:e.value['cleanup_failure_types']=[type(error).__name__ for error in cleanup]
+  e.finish(failure or (cleanup[0] if cleanup else None))
+  if failure:raise failure
+  if cleanup:raise cleanup[0]
+if __name__=='__main__':asyncio.run(main())

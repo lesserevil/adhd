@@ -1,0 +1,53 @@
+{
+  "schema": "adhd/recovery-peer-image-preparation@1",
+  "status": "PREPARATION_ONLY_NO_RUNTIME_QUALIFICATION",
+  "parent_commit": "f8dd905",
+  "files": {
+    "tests/recovery_image_runtime.py": "0ba13d11979b3bd10ae19d502d6e48207e05b2e248eb98c4bb81ce94d8eda4fb",
+    "tests/project_recovery_queries.py": "9e6a9801d761f28e9f28b4a5879ea1f4a5a298b3e5b049a311e3831e472dc79f",
+    "tests/project_recovery_incoming.py": "a5e746e3ac0915266d8c6c8a3b763a25e4263854893b3d76befb205e0e73ab83",
+    "tests/project_recovery_peer_epoch.py": "60e359bbab842bfe65994ea70d1ebc783ebfb79d8d8625bfb15b21e099bcb40c",
+    "tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447"
+  },
+  "checks": {
+    "syntax": "passed",
+    "pure_custody_tests": 8,
+    "pure_custody_tests_passed": 8,
+    "prior_assertion_ast_inventory": {
+      "queries": {
+        "prior_assertions": 36,
+        "current_assertions": 36,
+        "replaced_entry_guard": 1,
+        "prior_scenario_assertions_retained": 35
+      },
+      "incoming": {
+        "prior_assertions": 29,
+        "current_assertions": 29,
+        "replaced_entry_guard": 1,
+        "prior_scenario_assertions_retained": 28
+      },
+      "peer_epoch": {
+        "prior_assertions": 22,
+        "current_assertions": 22,
+        "replaced_entry_guard": 1,
+        "prior_scenario_assertions_retained": 21
+      }
+    }
+  },
+  "execution": {
+    "hubs_started": 0,
+    "containers_started": 0,
+    "http_fixtures_started": 0,
+    "provider_calls": 0
+  },
+  "readiness_seconds": {
+    "existing_peer_suites": 150,
+    "existing_callback_suites": 45
+  },
+  "scope": "Image entry branches reuse full existing source/discovery outgoing, incoming callbacks/current grants and catalog TTL/epoch scenarios. Native assertions and all original deadlines remain; inspected container VM binds image Store DOWN witnesses and same-VM restoration.",
+  "deferred_import_required": [
+    "tests/project_recovery_queries.py"
+  ],
+  "root_optimizer_pins_intact_at_review": 23,
+  "warning": "queries.py is optimizer-pinned: branch-only change; do not import while root provider pair runs. No product/authority changes. Actual image qualification requires separate GO."
+}

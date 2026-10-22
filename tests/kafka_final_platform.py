@@ -22,6 +22,9 @@ import time
 import httpx
 
 from multi_support import Evidence, Fixture, MEMBERSHIPS, PROJECTS, poll_until, reject, scoped
+from kafka_selective_platform import (prepare_bundle, bundle_tar, exercise_selective_restore,
+    verify_selective_restore, missing_target_anchor, MISSING_TARGET_SCRIPT, helper_absent)
+from project_recovery_acceptance import Recovery
 
 
 BROKER_OLD='confluentinc/cp-kafka@sha256:a94c13ba5e60501dbd82effb4df7056552e3a6c5d077c6b39adbec725f87a23e'
@@ -36,6 +39,8 @@ async def main(args):
     repo=Path(__file__).resolve().parents[1]
     if args.broker_patch_upgrade and args.platform!='compose':
         raise ValueError('Broker patch upgrade is a Compose-only qualification')
+    if not 0 < args.recovery_deadline <= 300:
+        raise ValueError('Recovery fixture deadline must be positive and at most300seconds')
     root=args.work.resolve()
     if root.exists() or not args.name.startswith('adhd-final-'):
         raise ValueError('Fresh work directory and owned adhd-final-* name required')
@@ -43,12 +48,15 @@ async def main(args):
     operations=(root/'operations.log').open('ab')
     evidence=Evidence(args.report,'adhd/accepted-kafka-platform@1')
     evidence.value.update(platform=args.platform,release_qualified=False,
+        selective_recovery_requested=args.selective_recovery,
+        required_application_profile='2.1.0' if args.selective_recovery else None,
         limitations=['One broker and one hub; no replicated availability qualification.',
                     'Baseline private network, no OAuth/SASL qualification in this probe.',
                     'Kubernetes CNI NetworkPolicy enforcement requires a separate enforcing-cluster gate.'])
-    evidence.value['harness_dependencies_sha256']={name+'.py': hashlib.sha256(Path(sys.modules[name].__file__).read_bytes()).hexdigest() for name in ['multi_support','foundation_acceptance','hub_acceptance']}
+    evidence.value['harness_dependencies_sha256']={name+'.py': hashlib.sha256(Path(sys.modules[name].__file__).read_bytes()).hexdigest() for name in ['multi_support','foundation_acceptance','hub_acceptance','kafka_selective_platform','project_recovery_acceptance','project_recovery_state']}
     env={**os.environ}; owned=False; fixture=forward=None
-    image_check=None; completed=False
+    image_check=None; completed=False; primary_error=None
+    sensitive_values=[]
     context=args.context.resolve()
     manifest=json.loads((context/'manifest.json').read_text())
     acceptance=json.loads(args.acceptance_report.read_text())
@@ -70,6 +78,18 @@ async def main(args):
         if args.platform=='compose':
             return {name:command(compose+['ps','-q',name],capture=True).decode().strip() for name in ['hub','kafka','kafka-rest']}
         return {name:obj(['get','pods','-l','app='+name])['items'][0]['metadata']['uid'] for name in ['hub','kafka','kafka-rest']}
+    def vm_identity():
+        if args.platform=='compose':
+            identifier=command(compose+['ps','-q','hub'],capture=True).decode().strip()
+            row=json.loads(command(['docker','inspect',identifier],capture=True))[0]
+            assert row['Image']==args.image and row['State']['Running']
+            return {'container_id':row['Id'],'vm_host_pid':row['State']['Pid'],
+                    'started_at':row['State']['StartedAt'],'restart_count':row['RestartCount']}
+        pod=obj(['get','pods','-l','app=hub'])['items'][0]
+        row=next(v for v in pod['status']['containerStatuses'] if v['name']=='hub')
+        assert row['ready'] and 'running' in row['state']
+        return {'pod_uid':pod['metadata']['uid'],'container_id':row['containerID'],
+                'started_at':row['state']['running']['startedAt'],'restart_count':row['restartCount']}
     def group_offset(topic, expected):
         # Delivery materialization can precede the asynchronous broker commit.
         # Observe the actual checkpoint, bounded, instead of assuming simultaneity.
@@ -141,6 +161,88 @@ async def main(args):
                 kn(['rollout','status',resource,'--timeout=180s'],timeout=210)
             await start_forward()
         await ready()
+
+    async def lose_red_target():
+        """Supported stopped-fixture loss setup; Kafka/proxy stay current."""
+        nonlocal fixture
+        before=identities();old_vm=vm_identity()
+        await fixture.close();fixture=None
+        stop_forward()
+        helper='target-loss-'+secrets.token_hex(6)
+        helper_name=args.name+'-'+helper
+        helper_label=secrets.token_hex(16)
+        def inspect_helper():
+            result=subprocess.run(['docker','inspect',helper_name],env=env,capture_output=True,timeout=30)
+            if result.returncode==0:
+                rows=json.loads(result.stdout);assert len(rows)==1
+                row=rows[0]
+                assert row['Image']==args.image and row['Name']=='/'+helper_name
+                assert row['Config']['Labels'].get('adhd.platform.loss')==helper_label
+                return row
+            assert helper_absent(result,helper_name), 'Unconfirmed helper absence'
+            return None
+        if args.platform=='compose':
+            command(compose+['stop','hub'],timeout=120)
+            row=json.loads(command(['docker','inspect',before['hub']],capture=True))[0]
+            assert not row['State']['Running']
+            assert inspect_helper() is None
+            argv=['docker','run','--rm','--name',helper_name,'--label','adhd.platform.loss='+helper_label,'--network','none',
+                '--read-only','--user',str(os.getuid())+':'+str(os.getgid()),'--cap-drop','ALL',
+                '--security-opt','no-new-privileges:true','--memory','128m','--cpus','1','--pids-limit','32',
+                '--mount','type=bind,source='+str(config_dir)+',target=/config,readonly',
+                '--mount','type=bind,source='+str(data_dir)+',target=/data',
+                '--entrypoint','sh',args.image,'-ec']
+        else:
+            kn(['scale','deployment/hub','--replicas=0'])
+            kn(['wait','--for=delete','pod','-l','app=hub','--timeout=120s'],timeout=140)
+            assert not obj(['get','pods','-l','app=hub'])['items']
+            payload={'apiVersion':'v1','kind':'Pod','metadata':{'name':helper,'namespace':args.name},
+                'spec':{'restartPolicy':'Never','automountServiceAccountToken':False,'enableServiceLinks':False,
+                    'nodeSelector':{'kubernetes.io/arch':'amd64'},
+                    'securityContext':{'runAsUser':10001,'runAsGroup':10001,'runAsNonRoot':True},
+                    'containers':[{'name':'loss','image':args.cluster_image,'imagePullPolicy':'IfNotPresent',
+                        'command':['sh','-ec','sleep 3600'],
+                        'securityContext':{'allowPrivilegeEscalation':False,'readOnlyRootFilesystem':True,
+                            'capabilities':{'drop':['ALL']}},
+                        'resources':{'requests':{'cpu':'100m','memory':'32Mi'},'limits':{'cpu':'1','memory':'128Mi'}},
+                        'volumeMounts':[{'name':'hub','mountPath':'/config','subPath':'config','readOnly':True},
+                                        {'name':'hub','mountPath':'/data','subPath':'data'}]}],
+                    'volumes':[{'name':'hub','persistentVolumeClaim':{'claimName':'hub-data'}}]}}
+            assert not kn(['get','pod',helper,'--ignore-not-found','-o','json'],capture=True).strip()
+            argv=kubectl+['-n',args.name,'exec',helper,'--','sh','-ec']
+        try:
+            if args.platform=='k8s':
+                k(['apply','-f','-'],data=json.dumps(payload).encode())
+                kn(['wait','--for=condition=Ready','pod/'+helper,'--timeout=90s'],timeout=110)
+            registry=command(argv+['cat /config/hub.json.stores'],capture=True,timeout=30)
+            anchor=missing_target_anchor(registry,config['server_id'],'project-red')
+            witness=command(argv+[MISSING_TARGET_SCRIPT,'platform-loss',anchor,'.platform-lost-'+secrets.token_hex(12)],capture=True,timeout=30).decode().splitlines()
+            assert len(witness)==4 and all(re.fullmatch('[a-f0-9]{64}',v) for v in witness[:2])
+            assert all(re.fullmatch(r'[0-9]+:[0-9]+:[0-9]+:[0-9]+:[0-7]+:[0-9]+',v) for v in witness[2:])
+        finally:
+            if args.platform=='k8s':
+                kn(['delete','pod',helper,'--ignore-not-found','--wait=true','--timeout=90s'],timeout=110)
+                assert not kn(['get','pod',helper,'--ignore-not-found','-o','json'],capture=True).strip()
+            else:
+                row=inspect_helper()
+                if row is not None:
+                    command(['docker','rm','-f',row['Id']],timeout=30)
+                assert inspect_helper() is None
+        if args.platform=='compose':
+            command(compose+['up','-d','--no-deps','hub'],timeout=180)
+        else:
+            kn(['scale','deployment/hub','--replicas=1'])
+            kn(['rollout','status','deployment/hub','--timeout=180s'],timeout=210)
+            await start_forward()
+        await ready()
+        after=identities()
+        assert all(after[name]==before[name] for name in ['kafka','kafka-rest'])
+        assert vm_identity()!=old_vm
+        fixture=Fixture(argparse.Namespace(**{**vars(args),'image':None}));await fixture.start()
+        evidence.record('stopped-hub-target-only-loss-preserves-bytes-and-leaves-broker-and-proxy-running',
+                        checkpoint_sha256=witness[0],snapshot_sha256=witness[1],
+                        original_file_identities=witness[2:],registry_sha256=hashlib.sha256(registry).hexdigest())
+        return fixture
 
     def cold_transfer(restore=False):
         helper='cold-backup'
@@ -224,6 +326,8 @@ async def main(args):
         config_file=config_dir/'hub.json';config=json.loads(config_file.read_text())
         tokens={name:secrets.token_urlsafe(32) for name in MEMBERSHIPS}
         config.update(projects=PROJECTS,agents=tokens,agent_projects=MEMBERSHIPS)
+        if args.selective_recovery:
+            config['recovery']={'backup_root':'/config/hub.json.backups'}
         config_file.write_text(json.dumps(config));config_file.chmod(0o600)
         if args.platform=='k8s':
             assert args.cluster_image and json.loads(command(['docker','image','inspect',args.cluster_image],capture=True))[0]['Id']==args.image
@@ -304,7 +408,19 @@ async def main(args):
         password=re.search(r'^Password: (.+)$',(config_dir/'initial-admin-password.txt').read_text(),re.M)[1]
         credentials=root/'credentials.json';credentials.write_text(json.dumps({'agents':tokens,'admin':{'username':'admin','password':password}}));credentials.chmod(0o600)
         args.rest_url=base;args.credentials=credentials;args.with_model=False;args.keep_work=root/'client'
+        args.deadline=args.recovery_deadline
+        args.initialize_projects=args.selective_recovery
+        if args.selective_recovery:
+            async with httpx.AsyncClient(trust_env=False) as http:
+                response=await http.get(base+'/protocol/schema',timeout=5)
+                response.raise_for_status()
+                assert response.json()['$id']=='urn:adhd:protocol:2.1'
         fixture=Fixture(argparse.Namespace(**{**vars(args), "image":None}));await fixture.start()
+        if args.selective_recovery:
+            assert len(fixture.initializations)==len(PROJECTS)
+            evidence.record('actual-profile21-explicit-admin-initialization-of-all-platform-projects',
+                            initialized_projects=len(fixture.initializations))
+            args.initialize_projects=False
         admin=fixture.admin();a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
         assert admin.call({'op':'config_get'})['config']['matcher'] is None
         await b.call(scoped('project-red','subscribe',mode='raw'))
@@ -396,6 +512,12 @@ async def main(args):
         blue_offset=blue_status['next_offset']
         assert blue_offset>=1 and group_offset(blue_status['topic'],blue_offset)==blue_offset
         config_before_backup=admin.call({'op':'config_get'})['config']
+        if args.selective_recovery:
+            # Ensure this fixture really has a durable configuration journal;
+            # revision-one archives may legitimately have none.
+            current=config_before_backup['resources']['max_waiters']
+            admin.call({'op':'config_update','patch':{'resources':{'max_waiters':603 if current!=603 else 604}}},mutation=True)
+            config_before_backup=admin.call({'op':'config_get'})['config']
         red_rows=[row for row in (await b.call(scoped('project-red','poll')))['deliveries'] if row.get('publication_id')==new['id']]
         assert len(red_rows)==1
         assert broker_end(status['topic'])==final and broker_end(blue_status['topic'])==blue_offset
@@ -406,6 +528,16 @@ async def main(args):
             'server_id':config['server_id'],'project_ids':[row['id'] for row in config['projects']],
             'configuration_revision':config_before_backup['config_revision'],'archives_sha256':archives,
             'project_next_offsets':{'project-red':final,'project-blue':blue_offset}}
+        selective_bundle=None
+        if args.selective_recovery:
+            selective_schema=root/'image-app/specification/project-recovery/interface.schema.json'
+            selective_bundle=prepare_bundle(root/'hub-state.tgz',root/'selective-bundle',
+                config['server_id'],'project-red',selective_schema)
+            assert selective_bundle['source_archive_sha256']==archives['hub-state.tgz']
+            recovery['current_project_files']=selective_bundle['current_project_files']
+            recovery['external_recovery_journals']=selective_bundle['external_journals']
+            recovery['shared_metadata']=selective_bundle['shared_metadata']
+            recovery['storage_registry_included']=True
         recovery_file=root/'recovery-set.json';recovery_file.write_text(json.dumps(recovery,indent=2)+'\n');recovery_file.chmod(0o600)
         evidence.record('consistent-offline-config-all-project-stores-and-kafka-recovery-set-created',archives_sha256=archives,recovery_manifest_sha256=sha(recovery_file))
         await online()
@@ -445,6 +577,45 @@ async def main(args):
         await poll_until(b,'project-red',{after_restore['id']},45)
         assert admin.call(scoped('project-red','eventing_status'))['next_offset']>final
         evidence.record('actual-cold-restore-recovers-both-projects-config-credentials-acks-delivery-identities-and-broker-cursors-then-advances',red_offset=final,blue_offset=blue_offset,intentional_postbackup_sentinel_absent=True)
+        if args.selective_recovery:
+            target='/config/hub.json.backups/'+selective_bundle['backup_id']
+            # Only a fresh three-file bundle derived from the stopped archive is
+            # written. Live config, registry, stores and broker files are untouched.
+            script='umask 077; mkdir -p /config/hub.json.backups; mkdir '+target+'; tar -xf - -C '+target+'; chmod 600 '+target+'/*'
+            if args.platform=='compose':
+                upload=compose+['exec','-T','hub','sh','-ec',script]
+            else:
+                pod=obj(['get','pods','-l','app=hub'])['items'][0]['metadata']['name']
+                upload=kubectl+['-n',args.name,'exec','-i',pod,'--','sh','-ec',script]
+            command(upload,data=bundle_tar(root/'selective-bundle'),timeout=90)
+            selected=await exercise_selective_restore(fixture,Recovery(fixture,selective_schema),
+                selective_bundle,broker_end,vm_identity,evidence,lose_red_target,group_offset,sensitive_values)
+            prior_vm=vm_identity()
+            if args.platform=='compose':
+                command(compose+['up','-d','--force-recreate','--no-deps','hub'],timeout=180)
+                command(compose+['up','-d','--wait','--wait-timeout','180'],timeout=220)
+            else:
+                stop_forward()
+                kn(['rollout','restart','deployment/hub'])
+                kn(['rollout','status','deployment/hub','--timeout=180s'],timeout=210)
+                await start_forward()
+            await ready()
+            assert vm_identity()!=prior_vm
+            await fixture.close()
+            fixture=Fixture(argparse.Namespace(**{**vars(args),"image":None}));await fixture.start()
+            await verify_selective_restore(fixture,Recovery(fixture,selective_schema),selected,broker_end)
+            a,b=await fixture.agent('red-a'),await fixture.agent('red-b')
+            admin=fixture.admin()
+            assert await a.call(publication_command,mid)==result
+            assert (await a.call(scoped('project-red','get',publication_id=original['id'])))['publication']==original
+            restored_rows=(await b.call(scoped('project-red','poll')))['deliveries']
+            assert not any(row.get('publication_id')==original['id'] for row in restored_rows)
+            assert [row for row in restored_rows if row.get('publication_id')==new['id']]==red_rows
+            resumed=(await a.call(scoped('project-red','publish',text='Selective restored platform continues after replacement')))['publication']
+            assert resumed['id']!=selected['discarded_red']
+            await poll_until(b,'project-red',{resumed['id']},args.recovery_deadline)
+            assert admin.call(scoped('project-red','eventing_status'))['topic']==selected['restored_red_topic']
+            evidence.record('selective-restored-route-current-blue-and-global-config-survive-hub-only-replacement-and-advance')
         if args.model_url:
             if args.model_window_file:
                 (root/'waiting-model-window').touch(mode=0o600)
@@ -479,39 +650,65 @@ async def main(args):
         evidence.value['replaced_resources']=list(before)
         completed=True
     except BaseException as error:
+        primary_error=error
         evidence.finish(error);raise
     finally:
-        if fixture: await fixture.close()
-        stop_forward()
-        if image_check:
-            with suppress(Exception):command(['docker','rm',image_check])
-        if owned:
-            if args.platform=='compose':
-                with suppress(Exception):command(compose+['logs','--no-color'])
-                with suppress(Exception):command(compose+['down','--volumes','--remove-orphans'],timeout=180)
+        cleanup_failures=[]
+        resources_absent=not owned
+        def cleanup(stage, action):
+            try:
+                return action()
+            except BaseException as error:
+                cleanup_failures.append((stage,error))
+        try:
+            if fixture:
+                try: await fixture.close()
+                except BaseException as error:cleanup_failures.append(('clients',error))
+            cleanup('port-forward',stop_forward)
+            if image_check:
+                cleanup('payload-probe',lambda:command(['docker','rm',image_check]))
+            if owned:
+                if args.platform=='compose':
+                    with suppress(Exception):command(compose+['logs','--no-color'])
+                    cleanup('compose-down',lambda:command(compose+['down','--volumes','--remove-orphans'],timeout=180))
+                else:
+                    for label in ['hub','kafka','kafka-rest']:
+                        with suppress(Exception):kn(['logs','-l','app='+label,'--all-containers=true','--prefix=true'])
+                    cleanup('namespace-delete',lambda:k(['delete','namespace',args.name,'--wait=true','--timeout=120s'],timeout=140))
+                try:
+                    if args.platform=='compose':
+                        for kind in ['container','network','volume']:
+                            argv=['docker','ps','-aq'] if kind=='container' else ['docker',kind,'ls','-q']
+                            assert not command(argv+['--filter','label=com.docker.compose.project='+args.name],capture=True).strip()
+                    else:
+                        assert args.name not in [r['metadata']['name'] for r in json.loads(k(['get','namespaces','-o','json'],capture=True))['items']]
+                        deadline=time.monotonic()+30
+                        while True:
+                            remaining=json.loads(k(['get','pv','-o','json'],capture=True))['items']
+                            if all(row.get('spec',{}).get('claimRef',{}).get('namespace')!=args.name for row in remaining):
+                                break
+                            assert time.monotonic()<deadline
+                            await asyncio.sleep(.3)
+                    resources_absent=True
+                except BaseException as error:cleanup_failures.append(('independent-absence',error))
+            evidence.value['cleanup']={'owned_platform':owned,'resources_independently_absent':resources_absent,
+                'failures':[{'stage':stage,'error_type':type(error).__name__} for stage,error in cleanup_failures]}
+            if completed and not cleanup_failures:
+                logs=(root/'operations.log').read_bytes()
+                assert all(value.encode() not in logs for value in list(tokens.values())+[password])
+                assert all(value.encode() not in logs for value in sensitive_values)
+                evidence.record('owned-platform-services-and-durable-volumes-removed-with-redacted-logs')
+                evidence.finish()
             else:
-                for label in ['hub','kafka','kafka-rest']:
-                    with suppress(Exception):kn(['logs','-l','app='+label,'--all-containers=true','--prefix=true'])
-                with suppress(Exception):k(['delete','namespace',args.name,'--wait=true','--timeout=120s'],timeout=140)
-        if completed:
-            if args.platform=='compose':
-                for kind in ['container','network','volume']:
-                    argv=['docker','ps','-aq'] if kind=='container' else ['docker',kind,'ls','-q']
-                    assert not command(argv+['--filter','label=com.docker.compose.project='+args.name],capture=True).strip()
+                evidence.finish(primary_error or (cleanup_failures[0][1] if cleanup_failures else RuntimeError('Incomplete platform run')))
+        finally:
+            operations.close()
+        if cleanup_failures:
+            if primary_error is not None:
+                primary_error.add_note('Owned cleanup failures: '+', '.join(stage+':'+type(error).__name__ for stage,error in cleanup_failures))
             else:
-                assert args.name not in [r['metadata']['name'] for r in json.loads(k(['get','namespaces','-o','json'],capture=True))['items']]
-                deadline=time.monotonic()+30
-                while True:
-                    remaining=json.loads(k(['get','pv','-o','json'],capture=True))['items']
-                    if all(row.get('spec',{}).get('claimRef',{}).get('namespace')!=args.name for row in remaining):
-                        break
-                    assert time.monotonic()<deadline
-                    await asyncio.sleep(.3)
-            logs=(root/'operations.log').read_bytes()
-            assert all(value.encode() not in logs for value in list(tokens.values())+[password])
-            evidence.record('owned-platform-services-and-durable-volumes-removed-with-redacted-logs')
-            evidence.finish()
-        operations.close()
+                raise cleanup_failures[0][1]
+
 
 
 if __name__=='__main__':
@@ -532,6 +729,8 @@ if __name__=='__main__':
     p.add_argument('--kind-node',help='Explicit owned Kind Docker node for read-only runtime config identity verification')
     p.add_argument('--cluster-image',help='Unique immutable-derived local name for the previously loaded verified hub image')
     p.add_argument('--broker-patch-upgrade',action='store_true',help='Compose: start pinned8.3.1 then qualify actual8.3.2 rollout on same volume')
+    p.add_argument('--selective-recovery',action='store_true',help='Require profile2.1; additionally qualify target-only restore from the stopped recovery set')
+    p.add_argument('--recovery-deadline',type=float,default=20,help='Explicit bounded asynchronous recovery fixture deadline in seconds')
     p.add_argument('--broker-image',default='confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f')
     p.add_argument('--proxy-image',default='confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058')
     asyncio.run(main(p.parse_args()))

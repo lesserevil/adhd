@@ -205,7 +205,11 @@ POST /admin/api extends pure validate-admin for all operation shapes:
   IDEMPOTENCY_CONFLICT without changing configuration or exposing the retained
   project/data. Check all project stores, including projects not admitted to that
   Developer, without opening a live checkpoint for a second writer. Missing or
-  unverifiable durable identity evidence fails closed. An Admin may explicitly
+  unverifiable durable identity evidence fails closed with a published redacted
+  error, without changing configuration, revision or credentials. Keep the shared
+  configuration service and unrelated projects usable; verification failure must
+  not terminate or restart the hub. Exact snapshot restoration permits a fresh
+  authorized creation under the current policy. An Admin may explicitly
   restore/reassign that retained identity; its original private queues, receipts
   and acknowledgements remain intact. This is an Admin access grant, never an
   automatic claim by matching a formerly used identifier. Return

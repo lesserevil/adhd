@@ -47,6 +47,9 @@ async def checks(f, evidence):
     held = snapshot.with_name(snapshot.name + ".ownership-fault-held")
     assert snapshot.is_file() and not held.exists()
     observations = []
+    blue = await f.agent("blue-a")
+    blue_original = (await blue.call(scoped("project-blue", "publish", text="Healthy Blue ownership-fault control")))["publication"]
+    live_process = f.process
     for mode in ("missing", "corrupt"):
         agent_id, token = "fresh-during-" + mode, secrets.token_urlsafe(32)
         before = admin.call({"op": "config_get"})
@@ -64,11 +67,18 @@ async def checks(f, evidence):
             # passing fail-closed observation.
             assert not snapshot.exists() if mode == "missing" else snapshot.read_bytes() == b"deliberate ownership-evidence corruption"
             after = admin.call({"op": "config_get"})
+            assert f.process is live_process and f.process.poll() is None
+            if f.image_runtime:
+                f.image_runtime.observe()
+            assert (await blue.call(scoped("project-blue", "get", publication_id=blue_original["id"])))['publication'] == blue_original
+            blue_progress = (await blue.call(scoped("project-blue", "publish", text="Healthy Blue during " + mode + " ownership evidence fault")))["publication"]
+            assert (await blue.call(scoped("project-blue", "get", publication_id=blue_progress["id"])))['publication'] == blue_progress
             f.tokens[agent_id] = token
             unauthorized = (await f.raw(agent_id, scoped("project-red", "whoami"))).status_code == 401
             row = {"fault": mode, "http_status": status,
                 "error_code": response.get("error", {}).get("code"),
                 "configuration_unchanged": before == after, "new_token_denied": unauthorized,
+                "shared_runtime_unchanged": True, "unrelated_blue_original_and_progress_preserved": True,
                 "original_snapshot_sha256": hashlib.sha256(original).hexdigest()}
             observations.append(row)
             evidence.value["fault_observations"] = observations

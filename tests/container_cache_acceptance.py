@@ -264,6 +264,8 @@ class Runner:
             manifest = json.loads(result['adhd/manifest.json'][0])
             assert manifest['source_sha256'] == self.plan['artifact_sha256']
             assert manifest['payload_manifest_sha256'] == self.plan['context_files']['manifest.json']
+            if self.plan.get('admission'):
+                assert sha(result['adhd/manifest.json'][0]) == self.plan['admission']['cache_manifest_sha256']
             assert manifest['modules'] == self.plan['expected_modules'] and len(manifest['modules']) == 59
             expected = {'adhd', 'adhd/ebin', 'adhd/boot.exs', 'adhd/build.exs', 'adhd/inputs.json', 'adhd/manifest.json'}
             expected |= {'adhd/ebin/' + name + '.beam' for name in manifest['modules']}
@@ -372,8 +374,25 @@ def verify(work, plan):
     socket = Path(plan['docker_socket']['path']); info = socket.stat()
     assert socket.resolve() == socket and stat.S_ISSOCK(info.st_mode)
     assert [info.st_dev, info.st_ino] == plan['docker_socket']['identity']
+    if plan.get('admission'):
+        assert {p.name: sha(read(p)) for p in (work / 'admission').iterdir()} == plan['admission']['files']
     if plan.get('prefix'):
         assert {p.name: sha(read(p)) for p in (work / 'prefix').iterdir()} == plan['prefix']['files']
+
+
+def validate_compiled_admission(admission, image, artifact, context):
+    assert admission['schema'] == 'adhd/compiled40-admission-and-image-binding@1'
+    assert admission['passed'] is True and admission['image_config_identity'] == image
+    assert admission['artifact_sha256'] == artifact and admission['canonical_manifest_sha256'] == context
+    audit = admission['compiled_runtime_audit']
+    assert audit['passed'] is True and audit['image_id'] == image
+    assert audit['artifact_sha256'] == artifact and audit['canonical_manifest_sha256'] == context
+    assert audit['cache_modules'] == 59 and audit['cache_entries'] == 65
+    files = admission['files']
+    assert 'manifest.json' not in files and files['cache-manifest.json'] == audit['cache_manifest_sha256']
+    assert all(Path(name).name == name and name not in ('.', '..') and
+               re.fullmatch('[a-f0-9]{64}', expected) for name, expected in files.items())
+    return audit
 
 
 def prepare(args):
@@ -409,6 +428,22 @@ def prepare(args):
             'SDK30_and_fault_custody': 'Separate unchanged original harness gates; not covered by this cache driver',
             'negative_scope': 'RW rootfs ONLY for offline tamper; fixed missing-file setup additionally user0 then original boot/non-serving sentinel. Other cases remain user10001. No host mounts, models or brokers.',
             'parallelism': 1, 'automatic_retries': 0}
+    if args.admission_manifest:
+        original_admission = args.admission_manifest.absolute()
+        assert sha(read(original_admission)) == args.admission_sha256
+        admission = json.loads(read(original_admission))
+        audit = validate_compiled_admission(admission, args.image, sha(source), files['manifest.json'])
+        (work / 'admission').mkdir()
+        selected = {'manifest.json': args.admission_sha256, **admission['files']}
+        for name, expected in selected.items():
+            assert Path(name).name == name and name not in ('.', '..')
+            data = read(original_admission.parent / name); assert sha(data) == expected
+            (work / 'admission' / name).write_bytes(data)
+        assert sha(read(work / 'admission/cache-manifest.json')) == audit['cache_manifest_sha256']
+        plan['admission'] = {'manifest_sha256': args.admission_sha256, 'files': selected,
+                             'cache_manifest_sha256': audit['cache_manifest_sha256']}
+    else:
+        assert args.admission_sha256 is None
     if args.prefix_work:
         old = args.prefix_work.absolute()
         old_plan = json.loads(read(old / 'plan.json')); old_result = json.loads(read(old / 'result.json'))
@@ -490,6 +525,7 @@ def main():
     mode.add_argument('--prepare', action='store_true'); mode.add_argument('--execute', action='store_true')
     p.add_argument('--image'); p.add_argument('--context', type=Path)
     p.add_argument('--prefix-work', type=Path)
+    p.add_argument('--admission-manifest', type=Path); p.add_argument('--admission-sha256')
     p.add_argument('--cache-root-mode', type=lambda value: int(value, 8), choices=(0o555, 0o755))
     p.add_argument('--work', type=Path, required=True); p.add_argument('--plan-sha256')
     args = p.parse_args()

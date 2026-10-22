@@ -85,6 +85,21 @@ def compile_caller(source,target):
          'sections_sha256':{k:hashlib.sha256(v.encode()).hexdigest() for k,v in sections.items()},'compiler_version':subprocess.check_output(['cc','--version'],text=True).splitlines()[0],'actual_image_loaded':False}
 
 
+def validate_compiled_admission(admission, image, artifact, context):
+    assert admission['schema'] == 'adhd/compiled40-admission-and-image-binding@1'
+    assert admission['passed'] is True and admission['image_config_identity'] == image
+    assert admission['artifact_sha256'] == artifact and admission['canonical_manifest_sha256'] == context
+    audit = admission['compiled_runtime_audit']
+    assert audit['passed'] is True and audit['image_id'] == image
+    assert audit['artifact_sha256'] == artifact and audit['canonical_manifest_sha256'] == context
+    assert audit['cache_modules'] == 59 and audit['cache_entries'] == 65
+    files = admission['files']
+    assert 'manifest.json' not in files and files['cache-manifest.json'] == audit['cache_manifest_sha256']
+    assert all(Path(name).name == name and name not in ('.', '..') and
+               re.fullmatch('[a-f0-9]{64}', expected) for name, expected in files.items())
+    return audit
+
+
 def prepare(args):
  families=selected_families(getattr(args,'family',None))
  assert re.fullmatch('sha256:[a-f0-9]{64}',args.image)
@@ -102,6 +117,17 @@ def prepare(args):
   shutil.copyfile(plain(origin),inputs/name)
  shutil.copyfile(plain(Path(__file__).with_name('image_filesystem_abi_caller.c')),inputs/'image_filesystem_abi_caller.c')
  shutil.copyfile(plain(Path(__file__)),work/'run.py');shutil.copyfile(manifest,inputs/'manifest.json')
+ admission_binding=None
+ assert bool(getattr(args,'admission_manifest',None)) == bool(getattr(args,'admission_sha256',None))
+ if getattr(args,'admission_manifest',None):
+  admission_path=plain(args.admission_manifest);assert sha(admission_path)==args.admission_sha256
+  admission=json.loads(admission_path.read_text())
+  audit=validate_compiled_admission(admission,args.image,meta['files']['hub.exs'],hashlib.sha256(raw).hexdigest())
+  (inputs/'admission').mkdir()
+  for name,expected in {'manifest.json':args.admission_sha256,**admission['files']}.items():
+   assert Path(name).name==name and name not in ('.','..')
+   original=plain(admission_path.parent/name);assert sha(original)==expected;shutil.copyfile(original,inputs/'admission'/name)
+  admission_binding={'manifest_sha256':args.admission_sha256,'cache_manifest_sha256':audit['cache_manifest_sha256']}
  helper,_=load_helpers(inputs)
  builds={}
  for source in families:
@@ -113,7 +139,7 @@ def prepare(args):
        'artifact_sha256':meta['files']['hub.exs'],'work':str(work),'driver_sha256':sha(work/'run.py'),'inventory':inventory,
        'directories':sorted(str(f.relative_to(work)) for f in work.rglob('*') if f.is_dir()),
        'observer_builds':builds,'caller':{'library':str(caller),'audit':caller_audit},
-       'selected_families':list(families),
+       'selected_families':list(families),'compiled_admission':admission_binding,
        'cases':[{'source':s,'op':op} for s,ops in families.items() for op in ops],
        'limits':{'cases':sum(map(len,families.values())),'serial_containers':1,'boundary_seconds':10,'kernel_stop_seconds':2,'docker_seconds':30,
                  'network':'none','memory':'128m','cpus':1,'pids':32,'case_seconds':120,'cleanup_seconds':45,'provider_calls':0,'app_starts':0,'broker_calls':0},
@@ -361,6 +387,7 @@ def execute(args):
 def main():
  p=argparse.ArgumentParser(description=__doc__);sub=p.add_subparsers(dest='op',required=True)
  a=sub.add_parser('prepare');a.add_argument('--helpers-root',type=Path,required=True);a.add_argument('--work',type=Path,required=True);a.add_argument('--image',required=True);a.add_argument('--image-manifest',type=Path,required=True)
+ a.add_argument('--admission-manifest',type=Path);a.add_argument('--admission-sha256')
  a.add_argument('--family',action='append',choices=list(FAMILIES)+list(OPTIONAL_FAMILIES),help='Explicit source ABI closure; default preserves the original18 cases')
  a=sub.add_parser('execute');a.add_argument('--plan',type=Path,required=True);a.add_argument('--reviewed-plan-sha256',required=True)
  args=p.parse_args();prepare(args) if args.op=='prepare' else execute(args)

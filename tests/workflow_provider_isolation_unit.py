@@ -1,5 +1,7 @@
 """Pure preparation checks; never compiles/starts a runtime or opens a socket."""
 from pathlib import Path
+import json
+import tempfile
 from workflow_provider_isolation import model_endpoints, NativeProviderFence, isolated_image_argv, stop_independently
 
 
@@ -46,7 +48,18 @@ def main():
                 raise original
     errors = stop_independently((('target', FakeRuntime('target')), ('producer', FakeRuntime('producer'))))
     assert calls == ['target', 'producer'] and errors == [('target', original)]
-    print('PASS workflow isolation7: effective routes, bridge mapping, unsafe routes, complete native port coverage')
+    from multi_workflow_upgrade import UpgradeRuntime
+    from container_fixture import OwnedImage
+    from workflow_provider_isolation import IsolatedWorkflowImage
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        manifest = root / 'manifest.json'
+        manifest.write_text(json.dumps({'schema': 'adhd/container-inputs@1', 'files': {'hub.exs': 'a' * 64}}))
+        default = UpgradeRuntime(root / 'auth-bootstrap', [], 'sha256:' + 'b' * 64, manifest)
+        isolated = UpgradeRuntime(root / 'workflow-only', [], 'sha256:' + 'b' * 64, manifest, isolate_provider=True)
+        assert type(default.owned_image) is OwnedImage and not default.file.exists()
+        assert type(isolated.owned_image) is IsolatedWorkflowImage
+    print('PASS workflow isolation8: effective routes, bridge mapping, unsafe routes, complete native port coverage')
 
 
 if __name__ == '__main__':

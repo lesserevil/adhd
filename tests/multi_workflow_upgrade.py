@@ -14,14 +14,16 @@ import tempfile
 import time
 
 from foundation_acceptance import Runtime, Client, free_port
+from container_fixture import OwnedImage
 from workflow_provider_isolation import NativeProviderFence, IsolatedWorkflowImage, stop_independently
 
 
 class UpgradeRuntime(Runtime):
     """Own the actual container, keeping native legacy producers independent."""
-    def __init__(self, root, command, image=None, manifest=None):
+    def __init__(self, root, command, image=None, manifest=None, *, isolate_provider=False):
         super().__init__(root, command)
-        self.owned_image = IsolatedWorkflowImage(image, manifest, self.root) if image else None
+        image_class = IsolatedWorkflowImage if isolate_provider else OwnedImage
+        self.owned_image = image_class(image, manifest, self.root) if image else None
 
     def start(self):
         if self.owned_image:
@@ -86,7 +88,7 @@ def main():
     provider_fence = NativeProviderFence(producer.root, config)
     fence_prefix = provider_fence.prepare()
     producer.command = fence_prefix + producer.command
-    target = UpgradeRuntime(root / "target", fence_prefix + ["elixir", str(args.hub.resolve())] if args.hub else [], args.image, args.image_manifest)
+    target = UpgradeRuntime(root / "target", fence_prefix + ["elixir", str(args.hub.resolve())] if args.hub else [], args.image, args.image_manifest, isolate_provider=bool(args.image))
     for name in original_files:
         shutil.copy2(original_root / name, producer.root / name)
     config.update(store_path=str(producer.root / original_store.name), port=free_port())

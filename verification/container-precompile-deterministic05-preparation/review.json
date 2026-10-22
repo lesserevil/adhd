@@ -1,0 +1,29 @@
+{
+  "schema": "adhd/compiled05-deterministic-preparation@1",
+  "passed": true,
+  "prepared_only": true,
+  "image_builds": 0,
+  "application_or_container_or_compiler_or_provider_starts": 0,
+  "pure_tests": 12,
+  "changed_files": {
+    "deploy/Dockerfile": "9ded107e56e6d142c629632d9eae514fb15c34aca689de73a07eeeddec5f9efa",
+    "tests/container_precompile_unit.py": "7dee4867810688b78cbc14de9d7fd7a50517cf0e5b48eb98b058c646903582f4"
+  },
+  "change": "Only compiler-stage RUN invokes env ERL_COMPILER_OPTIONS=[deterministic] before fresh Elixir VM. Final stage runtime ENV/entrypoint, source, module/tail handling unchanged; no BEAM rewriting.",
+  "binding": "Dockerfile SHA in payload manifest; payload manifest SHA in compiler inputs. Pure test checks this complete link.",
+  "primary_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/elixir-lang/elixir/v1.20.4/lib/elixir/src/elixir_erl.erl",
+      "full_source_sha256": "3a0eaea352e22c65963e62088f21c6b00759294df683aae164a85800807787f5",
+      "excerpt_sha256": "7d604fc9db09423e5dc6fe323c59e697c0bb75c839f279367301e59ea3ff42a8"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/elixir-lang/elixir/v1.20.4/lib/elixir/src/elixir_erl_compiler.erl",
+      "full_source_sha256": "7e326f4cf153fecd44d968429b5376d83acd0dfb0fe5916fc458a1c4623164b7",
+      "excerpt_sha256": "7213e493d345cb97c4fa0f84e33c8402fbab02d1b08847afbd285d0dbcb62199"
+    }
+  ],
+  "actual_two_independent_builds_required": true,
+  "previous04_negative_preserved": true,
+  "previous04_unstarted_plans_preserved": true
+}

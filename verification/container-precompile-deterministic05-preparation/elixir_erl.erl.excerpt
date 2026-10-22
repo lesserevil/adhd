@@ -1,0 +1,23 @@
+%% Primary upstream Elixir v1.20.4; SPDX-License-Identifier: Apache-2.0
+
+% Original lines 152..158
+compile(#{module := Module, anno := Anno} = BaseMap, Signatures) ->
+  Map =
+    case elixir_erl_compiler:env_compiler_options() of
+      [] -> BaseMap;
+      EnvOptions -> BaseMap#{compile_opts := ?key(BaseMap, compile_opts) ++ EnvOptions}
+    end,
+
+
+% Original lines 177..181
+chunk_opts(Map) ->
+  case lists:member(deterministic, ?key(Map, compile_opts)) of
+    true -> [deterministic];
+    false -> []
+  end.
+
+% Original lines 145..148
+checker_chunk(nil, _ChunkOpts) ->
+  [];
+checker_chunk(Contents, ChunkOpts) ->
+  [{<<"ExCk">>, term_to_binary({checker_version(), Contents}, ChunkOpts)}].

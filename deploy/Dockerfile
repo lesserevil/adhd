@@ -3,7 +3,7 @@ FROM elixir:1.20.4-otp-29-alpine@sha256:f1a8c06b332cacc7239381a25331a807fb63962f
 ADD payload.tar /
 ADD packaging.tar /
 ENV ERL_FLAGS="+S 2:2" HOME=/tmp
-RUN ["elixir", "/packaging/build.exs"]
+RUN ["env", "ERL_COMPILER_OPTIONS=[deterministic]", "elixir", "/packaging/build.exs"]
 
 FROM elixir:1.20.4-otp-29-alpine@sha256:f1a8c06b332cacc7239381a25331a807fb63962f8221dff545ea4d8f78b0f50c
 LABEL org.opencontainers.image.title="ADHD coordination hub"

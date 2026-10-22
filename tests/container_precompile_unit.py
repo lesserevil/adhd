@@ -112,6 +112,27 @@ class Packaging(unittest.TestCase):
         final_stage = dockerfile.split('FROM ')[-1]
         self.assertFalse(any(line.startswith('RUN ') for line in final_stage.splitlines()))
 
+    def test_deterministic_option_is_only_fresh_compiler_process(self):
+        dockerfile = (ROOT / 'deploy/Dockerfile').read_text()
+        stages = dockerfile.split('FROM ')[1:]
+        self.assertEqual(len(stages), 2)
+        commands = [json.loads(line.removeprefix('RUN '))
+                    for line in stages[0].splitlines() if line.startswith('RUN ')]
+        self.assertEqual(commands, [['env', 'ERL_COMPILER_OPTIONS=[deterministic]',
+                                     'elixir', '/packaging/build.exs']])
+        self.assertNotIn('ERL_COMPILER_OPTIONS', stages[1])
+        self.assertEqual([line for line in stages[1].splitlines() if line.startswith('ENV ')],
+                         ['ENV ERL_FLAGS="+S 2:2" HOME=/tmp'])
+        self.assertEqual(dockerfile.count('ERL_COMPILER_OPTIONS'), 1)
+        self.files['Dockerfile'] = dockerfile.encode()
+        output = self.stage()
+        manifest = json.loads((output / 'manifest.json').read_bytes())
+        self.assertEqual(manifest['files']['Dockerfile'],
+                         hashlib.sha256(dockerfile.encode()).hexdigest())
+        inputs = json.loads((output / 'compiler-inputs.json').read_bytes())
+        self.assertEqual(inputs['payload_manifest_sha256'],
+                         hashlib.sha256((output / 'manifest.json').read_bytes()).hexdigest())
+
     def test_same_pinned_runtime_and_visible_original_argv(self):
         lines = (ROOT / 'deploy/Dockerfile').read_text().splitlines()
         bases = [line.split()[1] for line in lines if line.startswith('FROM ')]

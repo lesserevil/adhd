@@ -93,6 +93,38 @@ one serialized server transaction coordinator. Full backup includes configuratio
 configuration journal, route registry, external recovery journal and all selected
 project generations; historical offline copies are not current stores.
 
+## Local legacy adoption compatibility
+
+Ordinary first startup and continuation of a previously decided legacy upgrade may
+encounter locally created schema1..3 stores from a supported producer whose normal
+umask produced checkpoint/snapshot modes0640,0644,0660 or0664 instead of0600.
+This is a local adoption path, never an imported backup/bundle permission exception.
+The source must be owned by the running server UID, regular, singly linked and
+readable, with no symlink path component. Historical permission acceptance excludes
+execute/special bits and world-write permission; current schema4 stores retain the
+normal private-file requirement. Unknown layouts or unsafe metadata fail closed.
+
+Read the entire bounded local source through an opened handle, checking its exact
+identity against lstat before and after reading; reject changed identities, lengths
+or bytes. Preflight checkpoint structure and safe ETF before any native DETS opener;
+validate snapshot framing/checksum/safe terms and project/aliases/server consistency.
+A closed checkpoint-only source is supported; an unclosed checkpoint requires the
+independently validated authoritative matching snapshot under ordinary interrupted
+write recovery. Full native-state validation must precede adoption staging/decision.
+Do not infer fresh identity from a malformed, foreign or wrong-project survivor.
+
+Do not chmod an unverified configured path or open historical files natively to
+secure them. Use the verified bytes/state to create owner-private staging and active
+generations through the existing durable adoption transaction, with closed checkpoint
+preflight before native reads. Retain original source bytes/modes/inodes and all
+existing rollback backups unchanged. Bind adoption proofs to the verified source
+identities/content, rechecking before decision; startup still requires exclusive
+ownership of the storage set. Symlinks, hardlinks, non-owned files, malformed state,
+identity conflicts and concurrent source changes reject without changing those inputs
+or admitting a writer. Imported/offline bundles remain subject to strict private
+ownership, mode and hardlink rules above and below; the generic private reader is
+not relaxed by this local-only compatibility path.
+
 ## Backup bundle and verification
 
 An operator places an offline bundle in recovery.backup_root/BACKUP_ID. Admin

@@ -33,8 +33,10 @@ the required test manifest and source SBOM. The [validated metadata repair](../.
 and fresh 58-file snapshot now pass that gate. The [second lifecycle attempt](../../verification/eventing-readiness-lifecycle41-oracle-failure/manifest.json)
 built the exact successor export, then stopped because the independent oracle
 still referenced the previous specification set; no new receipt was issued.
-Next: review and rebind the oracle expectations against the changed specifications,
-then rerun the proper lifecycle and independent readiness faults.
+The [oracle review](../../verification/eventing-readiness-oracle-review41/review.json)
+preserves all 106 arguments and expected results and updates only their specification
+binding. Next: finish the proper lifecycle rerun, then run the independent readiness
+faults against its actual passing export and receipt.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

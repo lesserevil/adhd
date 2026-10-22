@@ -17,6 +17,26 @@
 +		os.Exit(1)
  	}
  }
+--- a/cmd/cmd_run.go
++++ b/cmd/cmd_run.go
+@@ -8,6 +8,7 @@
+ 	"sync"
+ 
+ 	"github.com/go-acme/lego/v5/certcrypto"
++	"github.com/go-acme/lego/v5/cmd/internal"
+ 	"github.com/go-acme/lego/v5/cmd/internal/flags"
+ 	"github.com/go-acme/lego/v5/cmd/internal/storage"
+ 	"github.com/go-acme/lego/v5/internal/dotenv"
+@@ -27,6 +28,9 @@
+ }
+ 
+ func run(ctx context.Context, cmd *cli.Command) error {
++	if err := internal.PreflightACMERetryFile(); err != nil {
++		return errors.New("private retry metadata preflight failed")
++	}
+ 	keyType, err := certcrypto.ToKeyType(cmd.String(flags.FlgKeyType))
+ 	if err != nil {
+ 		return err
 --- a/cmd/internal/retryable.go
 +++ b/cmd/internal/retryable.go
 @@ -7,6 +7,7 @@
@@ -27,22 +47,37 @@
  
  	"github.com/go-acme/lego/v5/acme"
  	"github.com/go-acme/lego/v5/log"
-@@ -63,6 +64,12 @@
- 				}
- 			}
+@@ -27,7 +28,26 @@
+ 	return retryClient.StandardClient()
+ }
  
-+		case acme.RateLimitedErrorType:
-+			if resp.StatusCode == http.StatusTooManyRequests {
-+				return rt, NewACMERateLimitError(errorDetails, resp.Header.Get("Retry-After"), time.Now())
-+			}
-+			return rt, errorDetails
-+
- 		default:
- 			log.Warnf(log.LazySprintf("retry: %v", errorDetails))
- 
+-func checkRetry(ctx context.Context, resp *http.Response, err error) (bool, error) {
++func checkRetry(ctx context.Context, resp *http.Response, err error) (shouldRetry bool, resultError error) {
++	// Preserve issuer minimums even for the last failed response or malformed body.
++	// Returning the existing retry boolean keeps maintained retry semantics intact.
++	if resp != nil && (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable) {
++		header, observed, status := resp.Header.Get("Retry-After"), time.Now(), resp.StatusCode
++		observedError := NewACMERetryError(nil, header, observed, status)
++		record, writeError := StoreACMERetry(ACMERetryRecord{Code: observedError.Code, RetryAt: observedError.RetryAt})
++		if writeError != nil {
++			observedError.Code = "ACME_PROCESS"
++			observedError.Cause = fmt.Errorf("private retry metadata persistence failed")
++			EmitACMERetry(ACMERetryRecord{Code: observedError.Code, RetryAt: observedError.RetryAt}, os.Stderr)
++			return false, observedError
++		}
++		EmitACMERetry(record, os.Stderr)
++		defer func() {
++			observedError.Cause = resultError
++			observedError.RetryAt = record.RetryAt
++			resultError = observedError
++		}()
++	}
+ 	rt, err := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
+ 	if err != nil {
+ 		return rt, err
 --- /dev/null
 +++ b/cmd/internal/acme_retry_metadata.go
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,62 @@
 +// ADHD integration: preserve issuer retry metadata without serializing CA details.
 +// The underlying maintained client's request/retry/validation behavior is unchanged.
 +package internal
@@ -55,15 +90,24 @@
 +	"time"
 +)
 +
-+type ACMERateLimitError struct {
++type ACMERetryError struct {
 +	Cause   error
++	Code    string
 +	RetryAt *int64
 +}
 +
-+func (e *ACMERateLimitError) Error() string { return e.Cause.Error() }
-+func (e *ACMERateLimitError) Unwrap() error { return e.Cause }
-+func NewACMERateLimitError(cause error, header string, observed time.Time) *ACMERateLimitError {
-+	result := &ACMERateLimitError{Cause: cause}
++func (e *ACMERetryError) Error() string {
++	if e.Cause == nil {
++		return "ACME failed response"
++	}
++	return e.Cause.Error()
++}
++func (e *ACMERetryError) Unwrap() error { return e.Cause }
++func NewACMERetryError(cause error, header string, observed time.Time, status int) *ACMERetryError {
++	result := &ACMERetryError{Cause: cause, Code: "ACME_PROCESS"}
++	if status == http.StatusTooManyRequests {
++		result.Code = "ACME_RATE_LIMIT"
++	}
 +	header = strings.TrimSpace(header)
 +	if header == "" {
 +		return result
@@ -97,8 +141,210 @@
 +	return result
 +}
 --- /dev/null
++++ b/cmd/internal/acme_retry_file.go
+@@ -0,0 +1,199 @@
++// ADHD's app-owned durable issuer floor. The guardian provides single-writer locking.
++package internal
++
++import (
++	"bytes"
++	"crypto/rand"
++	"encoding/json"
++	"errors"
++	"fmt"
++	"io"
++	"os"
++	"path/filepath"
++	"strconv"
++	"syscall"
++)
++
++type ACMERetryRecord struct {
++	Code    string `json:"code"`
++	RetryAt *int64 `json:"retry_at"`
++}
++
++func EmitACMERetry(record ACMERetryRecord, writer io.Writer) {
++	payload, err := json.Marshal(record)
++	if err == nil {
++		_, _ = io.WriteString(writer, "ADHD_ACME_RESULT "+string(payload)+"\n")
++	}
++}
++func retryDirectory() (int, error) {
++	path := os.Getenv("ADHD_ACME_RETRY_FILE")
++	if !filepath.IsAbs(path) || filepath.Clean(path) != path || filepath.Base(path) != "issuer-retry.json" {
++		return -1, errors.New("invalid private retry path")
++	}
++	directory, err := syscall.Open("/", syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_CLOEXEC, 0)
++	if err != nil {
++		return -1, err
++	}
++	parent := filepath.Dir(path)
++	if parent != "/" {
++		parts := splitRetryPath(parent)
++		for _, part := range parts {
++			next, e := syscall.Openat(directory, part, syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
++			syscall.Close(directory)
++			if e != nil {
++				return -1, e
++			}
++			directory = next
++		}
++	}
++	var stat syscall.Stat_t
++	if syscall.Fstat(directory, &stat) != nil || stat.Uid != uint32(os.Geteuid()) || stat.Mode&0077 != 0 {
++		syscall.Close(directory)
++		return -1, errors.New("unsafe retry directory")
++	}
++	return directory, nil
++}
++func splitRetryPath(path string) []string {
++	var out []string
++	for path != "/" && path != "." {
++		parent, part := filepath.Split(path)
++		if part != "" {
++			out = append([]string{part}, out...)
++		}
++		path = filepath.Clean(parent)
++	}
++	return out
++}
++func readACMERetry(directory int) (*ACMERetryRecord, error) {
++	fd, err := syscall.Openat(directory, "issuer-retry.json", syscall.O_RDONLY|syscall.O_NONBLOCK|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
++	if err == syscall.ENOENT {
++		return nil, nil
++	}
++	if err != nil {
++		return nil, err
++	}
++	file := os.NewFile(uintptr(fd), "issuer-retry.json")
++	defer file.Close()
++	var stat syscall.Stat_t
++	if syscall.Fstat(fd, &stat) != nil || stat.Mode&syscall.S_IFMT != syscall.S_IFREG || stat.Uid != uint32(os.Geteuid()) || stat.Nlink != 1 || stat.Mode&07777 != 0600 || stat.Size > 256 {
++		return nil, errors.New("unsafe retry file")
++	}
++	data, err := io.ReadAll(io.LimitReader(file, 257))
++	if err != nil || len(data) > 256 {
++		return nil, errors.New("invalid retry file")
++	}
++	return decodeACMERetry(data)
++}
++func decodeACMERetry(data []byte) (*ACMERetryRecord, error) {
++	decoder := json.NewDecoder(bytes.NewReader(data))
++	decoder.UseNumber()
++	token, err := decoder.Token()
++	if err != nil || token != json.Delim('{') {
++		return nil, errors.New("invalid retry object")
++	}
++	values := map[string]any{}
++	for decoder.More() {
++		key, e := decoder.Token()
++		if e != nil {
++			return nil, e
++		}
++		name, ok := key.(string)
++		if !ok {
++			return nil, errors.New("retry key")
++		}
++		if _, exists := values[name]; exists {
++			return nil, errors.New("duplicate retry key")
++		}
++		var value any
++		if e = decoder.Decode(&value); e != nil {
++			return nil, e
++		}
++		values[name] = value
++	}
++	if _, err = decoder.Token(); err != nil {
++		return nil, err
++	}
++	if _, err = decoder.Token(); err != io.EOF {
++		return nil, errors.New("trailing retry data")
++	}
++	if len(values) != 2 {
++		return nil, errors.New("retry fields")
++	}
++	code, ok := values["code"].(string)
++	if !ok || (code != "ACME_RATE_LIMIT" && code != "ACME_PROCESS") {
++		return nil, errors.New("retry code")
++	}
++	raw, exists := values["retry_at"]
++	if !exists {
++		return nil, errors.New("retry time")
++	}
++	result := &ACMERetryRecord{Code: code}
++	if raw != nil {
++		number, ok := raw.(json.Number)
++		if !ok {
++			return nil, errors.New("retry integer")
++		}
++		at, e := strconv.ParseInt(string(number), 10, 64)
++		if e != nil || at < 0 {
++			return nil, errors.New("retry integer")
++		}
++		result.RetryAt = &at
++	}
++	return result, nil
++}
++func PreflightACMERetryFile() error {
++	directory, err := retryDirectory()
++	if err != nil {
++		return err
++	}
++	defer syscall.Close(directory)
++	if _, err = readACMERetry(directory); err != nil {
++		return err
++	}
++	return syscall.Fsync(directory)
++}
++func StoreACMERetry(record ACMERetryRecord) (ACMERetryRecord, error) {
++	directory, err := retryDirectory()
++	if err != nil {
++		return record, err
++	}
++	defer syscall.Close(directory)
++	old, err := readACMERetry(directory)
++	if err != nil {
++		return record, err
++	}
++	if old != nil && old.RetryAt != nil && (record.RetryAt == nil || *old.RetryAt > *record.RetryAt) {
++		record.RetryAt = old.RetryAt
++	}
++	payload, err := json.Marshal(record)
++	if err != nil {
++		return record, err
++	}
++	var random [12]byte
++	if _, err = rand.Read(random[:]); err != nil {
++		return record, err
++	}
++	temp := fmt.Sprintf(".issuer-retry-%x.tmp", random[:])
++	fd, err := syscall.Openat(directory, temp, syscall.O_WRONLY|syscall.O_CREAT|syscall.O_EXCL|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0600)
++	if err != nil {
++		return record, err
++	}
++	file := os.NewFile(uintptr(fd), temp)
++	defer func() { file.Close(); syscall.Unlinkat(directory, temp) }()
++	if _, err = file.Write(payload); err != nil {
++		return record, err
++	}
++	if err = file.Sync(); err != nil {
++		return record, err
++	}
++	if err = file.Close(); err != nil {
++		return record, err
++	}
++	if err = syscall.Renameat(directory, temp, directory, "issuer-retry.json"); err != nil {
++		return record, err
++	}
++	if err = syscall.Fsync(directory); err != nil {
++		return record, err
++	}
++	return record, nil
++}
+--- /dev/null
 +++ b/cmd/internal/acme_retry_metadata_test.go
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,73 @@
 +package internal
 +
 +import (
@@ -121,7 +367,7 @@
 +		{"Thu, 22 Oct 2026 11:02:00 GMT", true, 0}, {"", false, 0}, {"bad", false, 0},
 +		{"-1", false, 0}, {"+1", false, 0}, {"18446744073709551615", false, 0},
 +	} {
-+		value := NewACMERateLimitError(errors.New("private CA detail"), c.header, now)
++		value := NewACMERetryError(errors.New("private CA detail"), c.header, now, 429)
 +		if (value.RetryAt != nil) != c.known {
 +			t.Fatalf("header %q known", c.header)
 +		}
@@ -131,7 +377,11 @@
 +	}
 +}
 +
-+type ACMEFinal429Transport struct{ Calls int }
++type ACMEFinal429Transport struct {
++	Calls  int
++	Status int
++	Body   string
++}
 +
 +func (f *ACMEFinal429Transport) RoundTrip(request *http.Request) (*http.Response, error) {
 +	f.Calls++
@@ -139,21 +389,121 @@
 +	if f.Calls == 6 {
 +		header = "120"
 +	}
-+	return &http.Response{StatusCode: 429, Header: http.Header{"Retry-After": []string{header}},
-+		Body:    io.NopCloser(strings.NewReader(`{"type":"urn:ietf:params:acme:error:rateLimited","status":429,"detail":"private"}`)),
++	return &http.Response{StatusCode: f.Status, Header: http.Header{"Retry-After": []string{header}},
++		Body:    io.NopCloser(strings.NewReader(f.Body)),
 +		Request: request}, nil
 +}
-+func TestACMEFinalExhausted429PreservesLastHeader(t *testing.T) {
-+	transport := &ACMEFinal429Transport{}
-+	client := NewRetryableClient(&http.Client{Transport: transport})
-+	before := time.Now().UnixMilli()
-+	_, err := client.Get("https://no-network.invalid/directory")
-+	var metadata *ACMERateLimitError
-+	if transport.Calls != 6 || !errors.As(err, &metadata) || metadata.RetryAt == nil {
-+		t.Fatal("final retry metadata lost")
++func TestACMEFinalExhaustedResponsesPreserveLastHeader(t *testing.T) {
++	retryTestPath(t)
++	for _, test := range []struct {
++		status int
++		body   string
++		code   string
++	}{
++		{429, `{"type":"urn:ietf:params:acme:error:rateLimited","status":429,"detail":"private"}`, "ACME_RATE_LIMIT"},
++		{503, `{"type":"urn:ietf:params:acme:error:serverInternal","status":503,"detail":"private"}`, "ACME_PROCESS"},
++		{429, `<html>private</html>`, "ACME_RATE_LIMIT"},
++		{503, `<html>private</html>`, "ACME_PROCESS"},
++	} {
++		transport := &ACMEFinal429Transport{Status: test.status, Body: test.body}
++		client := NewRetryableClient(&http.Client{Transport: transport})
++		before := time.Now().UnixMilli()
++		_, err := client.Get("https://no-network.invalid/directory")
++		var metadata *ACMERetryError
++		if transport.Calls != 6 || !errors.As(err, &metadata) || metadata.RetryAt == nil || metadata.Code != test.code {
++			t.Fatalf("final retry metadata lost for %d", test.status)
++		}
++		if *metadata.RetryAt < before+120000 || *metadata.RetryAt > time.Now().UnixMilli()+120000 {
++			t.Fatal("wrong final delay")
++		}
 +	}
-+	if *metadata.RetryAt < before+120000 || *metadata.RetryAt > time.Now().UnixMilli()+120000 {
-+		t.Fatal("wrong final delay")
++}
+--- /dev/null
++++ b/cmd/internal/acme_retry_file_test.go
+@@ -0,0 +1,85 @@
++package internal
++
++import (
++	"context"
++	"io"
++	"net/http"
++	"os"
++	"path/filepath"
++	"strings"
++	"testing"
++	"time"
++)
++
++func retryTestPath(t *testing.T) string {
++	t.Helper()
++	directory := t.TempDir()
++	if err := os.Chmod(directory, 0700); err != nil {
++		t.Fatal(err)
++	}
++	path := filepath.Join(directory, "issuer-retry.json")
++	t.Setenv("ADHD_ACME_RETRY_FILE", path)
++	return path
++}
++func TestACMEDurableFloorBeforeBackoff(t *testing.T) {
++	path := retryTestPath(t)
++	now := time.Now().UnixMilli()
++	response := &http.Response{StatusCode: 429, Header: http.Header{"Retry-After": []string{"120"}}, Body: io.NopCloser(strings.NewReader(`{"type":"urn:ietf:params:acme:error:rateLimited","status":429}`)), Request: &http.Request{Method: "GET"}}
++	retry, err := checkRetry(context.Background(), response, nil)
++	if !retry || err == nil {
++		t.Fatal("maintained retry semantics")
++	}
++	data, e := os.ReadFile(path)
++	if e != nil {
++		t.Fatal(e)
++	}
++	record, e := decodeACMERetry(data)
++	if e != nil || record.RetryAt == nil || *record.RetryAt < now+120000 {
++		t.Fatal("floor not durable before retry decision")
++	}
++	stat, e := os.Stat(path)
++	if e != nil || stat.Mode().Perm() != 0600 {
++		t.Fatal("private floor")
++	}
++	earlier := now + 1000
++	got, e := StoreACMERetry(ACMERetryRecord{Code: "ACME_PROCESS", RetryAt: &earlier})
++	if e != nil || got.RetryAt == nil || *got.RetryAt != *record.RetryAt {
++		t.Fatal("earlier response overwrote issuer floor")
++	}
++	got, e = StoreACMERetry(ACMERetryRecord{Code: "ACME_RATE_LIMIT"})
++	if e != nil || got.RetryAt == nil || *got.RetryAt != *record.RetryAt {
++		t.Fatal("unknown response overwrote issuer floor")
++	}
++	entries, e := os.ReadDir(filepath.Dir(path))
++	if e != nil || len(entries) != 1 {
++		t.Fatal("temporary file leak")
++	}
++}
++func TestACMERetryPersistenceFailureStopsRetry(t *testing.T) {
++	path := retryTestPath(t)
++	if err := os.Symlink("missing", path); err != nil {
++		t.Fatal(err)
++	}
++	response := &http.Response{StatusCode: 503, Header: http.Header{"Retry-After": []string{"120"}}, Body: io.NopCloser(strings.NewReader("private"))}
++	retry, err := checkRetry(context.Background(), response, nil)
++	if retry || err == nil {
++		t.Fatal("unsafe persistence must stop retry")
++	}
++	if target, e := os.Readlink(path); e != nil || target != "missing" {
++		t.Fatal("unsafe input changed")
++	}
++}
++func TestACMERetryFileClosedSchema(t *testing.T) {
++	for _, data := range []string{`{"code":"ACME_PROCESS","retry_at":null,"extra":1}`, `{"code":"ACME_PROCESS","code":"ACME_PROCESS","retry_at":null}`, `{"code":"ACME_PROCESS","retry_at":true}`, `{"code":"ACME_PROCESS","retry_at":1.5}`, `{"code":"ACME_PROCESS","retry_at":-1}`, `{"code":"ACME_PROCESS","retry_at":null} {}`} {
++		if _, err := decodeACMERetry([]byte(data)); err == nil {
++			t.Fatal("accepted open schema")
++		}
++	}
++	path := retryTestPath(t)
++	if err := os.WriteFile(path, []byte(`{"code":"ACME_PROCESS","retry_at":null}`), 0644); err != nil {
++		t.Fatal(err)
++	}
++	if err := PreflightACMERetryFile(); err == nil {
++		t.Fatal("accepted nonprivate file")
 +	}
 +}
 --- /dev/null
@@ -177,9 +527,9 @@
 +		Code    string `json:"code"`
 +		RetryAt *int64 `json:"retry_at"`
 +	}{Code: "ACME_PROCESS"}
-+	var rate *internal.ACMERateLimitError
++	var rate *internal.ACMERetryError
 +	if errors.As(err, &rate) {
-+		result.Code = "ACME_RATE_LIMIT"
++		result.Code = rate.Code
 +		result.RetryAt = rate.RetryAt
 +	}
 +	payload, marshalErr := json.Marshal(result)
@@ -210,8 +560,8 @@
 +		want string
 +	}{
 +		{errors.New("secret=https://account/private"), `ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":null}` + "\n"},
-+		{fmt.Errorf("private wrapper: %w", internal.NewACMERateLimitError(errors.New("secret"), "120", now)), `ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1700000120000}` + "\n"},
-+		{internal.NewACMERateLimitError(errors.New("secret"), "bad", now), `ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":null}` + "\n"},
++		{fmt.Errorf("private wrapper: %w", internal.NewACMERetryError(errors.New("secret"), "120", now, 429)), `ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1700000120000}` + "\n"},
++		{internal.NewACMERetryError(errors.New("secret"), "bad", now, 429), `ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":null}` + "\n"},
 +	} {
 +		var out bytes.Buffer
 +		WriteACMEResult(c.err, &out)

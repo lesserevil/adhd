@@ -1,0 +1,22 @@
+=== RUN   TestACMEResultClosedProtocol
+--- PASS: TestACMEResultClosedProtocol (0.00s)
+PASS
+ok  	github.com/go-acme/lego/v5/cmd	0.015s
+=== RUN   TestACMEDurableFloorBeforeBackoff
+ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1792711996707}
+time=2026-10-22T23:31:16.722Z level=WARN msg="retry: acme: error: 429 :: urn:ietf:params:acme:error:rateLimited :: "
+--- PASS: TestACMEDurableFloorBeforeBackoff (0.06s)
+=== RUN   TestACMERetryPersistenceFailureStopsRetry
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792711996764}
+--- PASS: TestACMERetryPersistenceFailureStopsRetry (0.00s)
+=== RUN   TestACMERetryFileClosedSchema
+--- PASS: TestACMERetryFileClosedSchema (0.00s)
+=== RUN   TestACMERetryMetadata
+--- PASS: TestACMERetryMetadata (0.00s)
+=== RUN   TestACMEFinalExhaustedResponsesPreserveLastHeader
+ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":1792711876765}
+    acme_retry_metadata_test.go:68: final retry metadata lost for 429
+--- FAIL: TestACMEFinalExhaustedResponsesPreserveLastHeader (0.00s)
+FAIL
+FAIL	github.com/go-acme/lego/v5/cmd/internal	0.062s
+FAIL

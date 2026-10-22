@@ -1,0 +1,24 @@
+{
+  "schema": "adhd/acme-client-retry-review@1",
+  "passed": true,
+  "tests": 6,
+  "network_requests": 0,
+  "upstream_source_commit": "452dc82113609488fb680acf8fc72712b1794f8d",
+  "patch_sha256": "63bbe0fe962c58c5f469ac1f0b77f7beb91db1436a70ef538bb387f7a5cc0265",
+  "files": {
+    "deploy/runtime/lego-retry-metadata.patch": "63bbe0fe962c58c5f469ac1f0b77f7beb91db1436a70ef538bb387f7a5cc0265",
+    "deploy/runtime/acme-pins.json": "dbcd740850d660c2eb2b6264f76e02e86de2b133a3a64548d5baff13fcfd7d2b"
+  },
+  "diagnostic_binary_sha256": "48fbeef256974c88ecd301b9671c838e8d246a30c02a1b63fe60d918bd191367",
+  "boundary": "Host fake-transport tests; no CA/app/image qualification; final trimpath/compiler closure pending",
+  "first_negative": "Test fixture directory lacked required private0700; explicit fixture mode corrected; unsafe product persistence stayed failclosed",
+  "properties": [
+    "429 and503 seconds/date/null metadata",
+    "final exhausted JSON and nonJSON responses",
+    "closed sentinel omits raw CA details",
+    "floor durable before returning to client backoff",
+    "max prior floor survives shorter or unknown future response",
+    "symlink/unsafe floor stops internal retry without changing input",
+    "closed schema, private0600 and atomic temporary-file cleanup"
+  ]
+}

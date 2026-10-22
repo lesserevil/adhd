@@ -36,21 +36,24 @@
     }
   },
   "patched_client": {
-    "purpose": "Fixed bounded Retry-After result protocol; stock binaries are diagnostic only until patched build accepted",
+    "purpose": "Durable issuer Retry-After floor before internal retries plus fixed bounded closed result protocol; original release assets remain separately pinned",
     "source_archive_sha256": "f2a3f956ccf49ba8b247559825f82acce58f3ded725c74bd5b004e200d8e1cd5",
     "go_mod_sha256": "bbad4d92aeeb16cdb801adf72fab44bc4ddeac7534a9a0295c66c301ab05519c",
     "go_sum_sha256": "25b823864244974dd987a639e6d1b526fab612002e834881b2ff51d33b7747f0",
     "go_version": "go1.27.3",
     "go_linux_amd64_url": "https://go.dev/dl/go1.27.3.linux-amd64.tar.gz",
     "go_linux_amd64_sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
-    "patch_sha256": "4352e9ec992c4388780c298c762a9de0f426f089b9e0bf0461c824d465886e4d",
+    "patch_sha256": "63bbe0fe962c58c5f469ac1f0b77f7beb91db1436a70ef538bb387f7a5cc0265",
     "patched_files_sha256": {
       "main.go": "b95096c1ddd7198ffdefe75fed5a1532a2bb2afaf47cfd761760eff783c74ebe",
-      "cmd/internal/retryable.go": "dea7139761d51742ff5f42444cec60686cc394082fc0b8f846c61fe7afb9b108",
-      "cmd/internal/acme_retry_metadata.go": "203e0cff5918403a2ed812c5fd8279f54089da45f2cfab36b45704f327ccfd24",
-      "cmd/internal/acme_retry_metadata_test.go": "38663995c42b37587ddf89150693fe84fa50027c15d6933fd90cadcaa29a18f4",
-      "cmd/acme_result.go": "91dfd3f88fd9bef846d893b12778a28fd1595777b584d76f95bfcee2e06e4d22",
-      "cmd/acme_result_test.go": "0a98cf24916a24dc72f9b067c77cec54bc9077851a6a87c7e21e644941bd3b29"
+      "cmd/cmd_run.go": "f585685da83961fd36af2e99fd84e2f72c6f91ac0182047fe3530e5576d77858",
+      "cmd/internal/retryable.go": "ac101a818f199b27e96fa769781a56025bcaeff773f1ef970654b254893197fb",
+      "cmd/internal/acme_retry_metadata.go": "cdeef132357a8b44d848af5858b08887fd1994ed322c9e302ecc2a3143837d1e",
+      "cmd/internal/acme_retry_file.go": "27d2cd6a84dbfb9709c1e68f2cef3114a993b83b6580265a8b58085a2c59aa33",
+      "cmd/internal/acme_retry_metadata_test.go": "94bd6b7048aa896ee1104167cb74e45f1a14c0749d629979cd43f6de5367bfca",
+      "cmd/internal/acme_retry_file_test.go": "c522e6dada592df30dcbd40336cece2d12f38d0e931131ec7564ca9224c1a954",
+      "cmd/acme_result.go": "83e784a26d90f37479ce80caaf712b2aa49b1d1adb8ddf06084491072a73e844",
+      "cmd/acme_result_test.go": "0340fc52925981a14454f493c8058689a58a84132a6c948c3c9e5c7e40c538de"
     },
     "metadata_protocol": "ADHD_ACME_RESULT {\"code\": \"ACME_RATE_LIMIT|ACME_PROCESS\", \"retry_at\": \"null|unix milliseconds\"}"
   },

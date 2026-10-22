@@ -110,7 +110,11 @@ def cli_command(value):
     return command
 
 
-def write_context(files, output):
+def write_context(files, output, packaging=None):
+    if b'ADD packaging.tar /' in files['Dockerfile'] and packaging is None:
+        raise SystemExit('Precompiled Dockerfile requires compiler helpers')
+    if packaging is not None and set(packaging) != {'build.exs', 'boot.exs'}:
+        raise SystemExit('Expected exact precompiler helper closure')
     manifest = {'schema': 'adhd/container-inputs@1', 'files': {
         name: hashlib.sha256(content).hexdigest() for name, content in sorted(files.items())}}
     output = Path(output)
@@ -132,6 +136,22 @@ def write_context(files, output):
             info.mode = 0o644
             info.size = len(content)
             archive.addfile(info, io.BytesIO(content))
+    if packaging is not None:
+        inputs = {'schema': 'adhd/container-compiler-inputs@1',
+                  'source_sha256': hashlib.sha256(files['hub.exs']).hexdigest(),
+                  'payload_manifest_sha256': hashlib.sha256(manifest_bytes).hexdigest(),
+                  'files': {name: hashlib.sha256(value).hexdigest()
+                            for name, value in sorted(packaging.items())}}
+        compiler_bytes = (json.dumps(inputs, sort_keys=True, separators=(',', ':'))).encode()
+        with tarfile.open(output / 'packaging.tar', 'w', format=tarfile.USTAR_FORMAT) as archive:
+            directory = tarfile.TarInfo('packaging')
+            directory.type, directory.mode = tarfile.DIRTYPE, 0o755
+            archive.addfile(directory)
+            for name, content in sorted({**packaging, 'inputs.json': compiler_bytes}.items()):
+                info = tarfile.TarInfo('packaging/' + name)
+                info.mode, info.size = 0o444, len(content)
+                archive.addfile(info, io.BytesIO(content))
+        (output / 'compiler-inputs.json').write_bytes(compiler_bytes)
     (output / 'Dockerfile').write_bytes(files['Dockerfile'])
     (output / 'manifest.json').write_bytes(manifest_bytes)
     for path in output.iterdir():
@@ -216,7 +236,9 @@ def main():
              'archive-interface.md': read_regular(root / 'components/hub/archive/interface.md'),
              'evidence-spec.md': read_regular(root / 'components/hub/evidence/spec.md')}
     files.update(specification_files(root / "components/hub"))
-    write_context(files, args.output)
+    packaging = {name: read_regular(root / 'deploy/runtime' / name)
+                 for name in ('build.exs', 'boot.exs')}
+    write_context(files, args.output, packaging)
     output = Path(args.output)
     print(json.dumps({'context': str(output.resolve()), 'artifact_sha256': digest}))
 

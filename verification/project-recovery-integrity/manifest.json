@@ -1,0 +1,23 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "checks": 6,
+  "lifecycle_admitted": false,
+  "artifact_sha256": "e1613307b2bb7c59499e16353fce1720cbf0bb516c0f41dac15084e6e300b85e",
+  "scope": "Actual six per-project corrupt-state/native-recovery cases with global Admin and separately accepted healthy Blue evidence; unchanged target bytes, exact restored data, missing checkpoint reconstruction and symlink non-following. No kernel crash or image claim.",
+  "harness": {
+    "path": "tests/storage_recovery.py",
+    "sha256": "e3ebe1b538cb7fe6fd496f3a30a810dc5c99e0bc53cfc857e50d77c841e89f39"
+  },
+  "inputs": {
+    "tests/foundation_acceptance.py": "b2b3448b89f46e4dc2745f0526f14f5d8121e1d2d7f75ea6db520b133f988448",
+    "tests/hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e",
+    "tests/project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa"
+  },
+  "report": {
+    "path": "verification/project-recovery-integrity/native15.json",
+    "sha256": "1dc3ecdba2bc90f8a7a2f5f2ca0236ab3e2d923a989e4f69c241e75ca448dbd4"
+  },
+  "command": "python tests/storage_recovery.py --command JSON_ARGV --integrity-only --report REPORT",
+  "runtime": "retained Elixir1.18.4 / OTP27"
+}

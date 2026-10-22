@@ -1,0 +1,26 @@
+{
+  "schema": "adhd/development-evidence@1",
+  "passed": true,
+  "checks": 5,
+  "lifecycle_admitted": false,
+  "artifact_sha256": "e1613307b2bb7c59499e16353fce1720cbf0bb516c0f41dac15084e6e300b85e",
+  "scope": "Public Admin hot relocation, old and new foreign-file rejection, uninitialized namespace preservation and actual initialization/coldrestart with old storage mode000 inaccessible. No Kafka/model/crash/image claim.",
+  "harness": {
+    "path": "tests/project_recovery_uninitialized_move.py",
+    "sha256": "6ac51684d18de343beda89c5fc00f26fa21fac9920aa1d1aa9b3336387401b14"
+  },
+  "inputs": {
+    "tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "tests/project_recovery_acceptance.py": "3d07ea75423399449717ab5244a739de4e0e69b966024743c8cbe100933c36ab",
+    "tests/project_recovery_state.py": "40353d57db48d23a5b2e0aaf3e2a42e5c50962f2015f43f080903695bae642fa",
+    "tests/foundation_acceptance.py": "b2b3448b89f46e4dc2745f0526f14f5d8121e1d2d7f75ea6db520b133f988448",
+    "tests/hub_acceptance.py": "d91778e412244e41278fb6c7a43430eff498e0d60115082881b79d95e2a38a0e",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "report": {
+    "path": "verification/project-recovery-uninitialized-move/native15.json",
+    "sha256": "2dd8e7008d8bfee7b2228a3a0c50fab889877f88b0d6c1bae44ce6e5b0ffa043"
+  },
+  "command": "PYTHONPATH=ROOT/tests python tests/project_recovery_uninitialized_move.py --hub HUB --recovery-schema SCHEMA --report REPORT --keep-work PRIVATE_DIR --deadline 30",
+  "runtime": "retained Elixir1.18.4 / OTP27"
+}

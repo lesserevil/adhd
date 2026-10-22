@@ -185,6 +185,16 @@ async def scenario(args,a,b,ar,relay,model,e,scope,private,label):
     a.hard_stop();_,backup_sha,_=offline_bundle(a,ar,'pending-query-backup-'+label);await a.start()
     actor=await a.agent('bridge');blue=await a.agent('blue-b')
     await until(ready,'Directory did not recover after actual offline backup')
+    for kind,q in retained.items():
+        current=await read(kind,q)
+        e.value.setdefault('cold_restart_pending_queries',[]).append({
+            'scenario':label,'kind':kind,'query_id':q['id'],
+            'original_deadline_at':q['deadline_at'],'status':current['status'],
+            'source_result_statuses':[v['status'] for v in current.get('results',[])]})
+        e.write()
+        assert current['status']=='pending','A nonterminal accepted query stopped before its original deadline during cold restart'
+        for field in ('id','project_id','owner_id','question','created_at','deadline_at'):
+            assert current[field]==q[field],field
     model.blocked=model.blocked|frozenset('lost-'+label+' '+command['question'] for command in commands.values())
     lost=await create('lost-'+label);await until(lambda:submitted(lost),'Postbackup remote jobs were not actually accepted')
     relay.targets={retained[label]['id']}

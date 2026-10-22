@@ -29,9 +29,12 @@ The [readiness successor](../../verification/eventing-readiness-candidate01/root
 changes only Eventing and ProjectRestore; it is not yet qualified. The proper
 lock and documentation-authority gates pass. Its [first lifecycle attempt](../../verification/eventing-readiness-lifecycle41-first-failure/manifest.json)
 stopped before application compilation because the retained snapshot omitted
-the required test manifest and source SBOM. Next: regenerate those recipe-bound
-sidecars with the pinned framework, obtain fresh source authorization and run
-the native lifecycle and independent readiness faults.
+the required test manifest and source SBOM. The [validated metadata repair](../../verification/ownedMULTI008/eventing41-sidecar-capture/manifest.json)
+and fresh 58-file snapshot now pass that gate. The [second lifecycle attempt](../../verification/eventing-readiness-lifecycle41-oracle-failure/manifest.json)
+built the exact successor export, then stopped because the independent oracle
+still referenced the previous specification set; no new receipt was issued.
+Next: review and rebind the oracle expectations against the changed specifications,
+then rerun the proper lifecycle and independent readiness faults.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

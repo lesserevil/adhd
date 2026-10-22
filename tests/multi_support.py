@@ -91,6 +91,7 @@ class Fixture:
         self.initialize_projects = initialize_projects
         self.protocol_profile = None
         self.initializations = []
+        self.bootstrap_project_ids = None
         self.temp = None
         self.root = args.keep_work.resolve() if args.keep_work else None
         if self.root is None:
@@ -178,8 +179,15 @@ class Fixture:
             return
         admin = self.admin()
         projects = admin.call({"op": "list_projects"})["projects"]
+        # The first admitted inventory is the fixture's bootstrap scope. A
+        # restart must not implicitly initialize projects created later by a
+        # scenario: those require that scenario's explicit Admin action.
+        if self.bootstrap_project_ids is None:
+            self.bootstrap_project_ids = frozenset(project["id"] for project in projects)
         for project in projects:
             project_id = project["id"]
+            if project_id not in self.bootstrap_project_ids:
+                continue
             status = admin.call(scoped(project_id, "project_restore_status"))
             availability = status["availability"]
             if availability == "ready":

@@ -1,0 +1,306 @@
+{
+  "schema": "adhd/cni15-independent-route-negative@1",
+  "passed": false,
+  "audit_passed": true,
+  "scope": "Both Calico rollouts passed but first broker Ready30s timed out before any baseline or policy route measurement; Bounded owned Pod diagnostics report Failed/Error/exit137 and empty logs; no OOMKilled reason or causal kernel witness. Cause remains unknown. No route/app/Kafka/model qualification.",
+  "root_authoritative_exit_code": 1,
+  "plan_sha256": "2f9c18618e005158fbb7a594985bd5e291cdabe624fa0fb3bf415b4655bf20d6",
+  "result_sha256": "e5b94a382a420a69b4996f6360212a1b9a7a04b90d3727372d6eccf95a133f58",
+  "driver_sha256": "1bb0cae591d8e47b3a202e22736da3b2acd2f02cc0b47a401b7e5422b2d8763a",
+  "full_input_closure_unchanged": true,
+  "original_rollout_seconds": 300,
+  "both_calico_rollouts_passed": true,
+  "controller_overlay_guard_passed": true,
+  "direct_api_endpoint_proof": {
+    "address": "10.240.240.2",
+    "port": 6443,
+    "namespace_uid": "54ed3e8c-632b-4209-92cc-b85b25f21e5b",
+    "node_uid": "203c7d42-2861-4e47-a23a-84089b6d20ad",
+    "configmap_uid": "88dc5436-d518-4684-aca2-21ad73137e33",
+    "owner_nonce": "d8b62aaeca53a4f344b6c6361de83786",
+    "tls": {
+      "authority_sha256": "2544025bdd4cf445d7cdc159d8d9fc93859dea09e93a790ae03bdde3eb75ba14",
+      "server_certificate_sha256": "f812788f88273e536387ff66a7a7f396dea41d8f3595bfd88d833a73e25b7322",
+      "verify_peer": true,
+      "hostname_checked": "10.240.240.2",
+      "port": 6443,
+      "timeout_seconds": 5
+    },
+    "inside_own_node_verified": true,
+    "host_direct_API_verified": true,
+    "pinned_calico_manifest_sha256": "98898cd2781d761cfd00bbdacb49345779b489d14f85bcd53c7ab847e0308df8",
+    "separate_configmap_sha256": "bb75db10134b1ab2bb6fc141f445b5f4a47a8b6474ca386b9f9ea7984ead7579",
+    "controller_overlay": {
+      "deployment_uid": "b7c15a9b-c2f6-4adc-b0fd-fbd74405ea85",
+      "configmap_uid": "88dc5436-d518-4684-aca2-21ad73137e33",
+      "patch_sha256": "b8879526ab342f4085c2316d43d198ebc1ab1e85acaad0c9bd21b1a30944da36",
+      "guarded_json_patch": true,
+      "container": "calico-kube-controllers",
+      "pinned_manifest_unchanged": true
+    }
+  },
+  "rollout_log_sha256": {
+    "ready-calico": "3fb5195d51e5ae0ef86b18f63b0e38c35102b835031d5d19fb180d165b591523",
+    "ready-controller": "c2d94e4ffb2d5a00aef5639ecbbe8315a279c6f66a99f38b2582909d0e6df216"
+  },
+  "current_strict_absence": [
+    {
+      "kind": "container",
+      "identifier": "a42aa3f92e1e80e711022ae4aae23c4195e6e7fbaa8e25afc0ddad0c175fdbc3",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "522488e1c8104577b08d11c634487c103d33089a506bed47685ad2028016166b",
+      "observed_absent": true
+    },
+    {
+      "kind": "container",
+      "identifier": "adhd-netpol-qa40-control-plane",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "10c65dbff792d16ce2df29e4d7922b03ca6b03fc8856925e845460c9912f2366",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "920ce0291c27b874faac9dc85d2ffba6cf3958a4d3ea6d1de3f5d21a3cde16cf",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "2ec318495df4d6c009485a6970da310560960abd42ad7ac2ef868e751d947ff1",
+      "observed_absent": true
+    },
+    {
+      "kind": "network",
+      "identifier": "adhd-netpol-qa40-net",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "31e2083bb8a1588362a3c4bede5ec23c35f9165fb21b7dfadbfca9e94f59b6c9",
+      "observed_absent": true
+    },
+    {
+      "kind": "volume",
+      "identifier": "a431cf604970d34c6978526d77ad38106dafc747049dfc4ceaf990710ebc8a88",
+      "returncode": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "efbe4833da5da50fa136f418c26ea230d2e1c8af7e15ef0e29f219be789f54f1",
+      "observed_absent": true
+    }
+  ],
+  "protected_cluster_before_after_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "protected_cluster_currently_running_same_ID": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+  "policy_routes_qualified": 0,
+  "audit_resource_or_provider_starts": 0,
+  "files": {
+    "plan.json": "2f9c18618e005158fbb7a594985bd5e291cdabe624fa0fb3bf415b4655bf20d6",
+    "result.json": "e5b94a382a420a69b4996f6360212a1b9a7a04b90d3727372d6eccf95a133f58"
+  },
+  "gate_report_sha256": "d8c1c7fb5d5e04c30ddd104a6f003acd0fb4c32ab02c6251613777b8781a30f5",
+  "raw_kubectl_log_sha256": "d0b69d10b48d919d0869d0336420b6f544944829a358d9fccd5fa04aa0bfee2e",
+  "original_ready_seconds": 30,
+  "pod_status_or_events_or_logs_survived": true,
+  "namespace_cleanup_original_UID_fenced": [
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "observed_absent": true,
+      "uid": "734ffc37-65c1-4072-a866-2881709df036"
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "observed_absent": true,
+      "uid": "a113c77d-f67a-49a0-8123-01e7f4dee4a8"
+    }
+  ],
+  "diagnostics": {
+    "capture_passed": true,
+    "commands": 17,
+    "bytes": 76533,
+    "logs": 1,
+    "namespace_uid": "a113c77d-f67a-49a0-8123-01e7f4dee4a8",
+    "pod_uid": "489c9f2a-bad3-4070-9a0f-af1fabc98977",
+    "phase": "Failed",
+    "container": {
+      "name": "fixture",
+      "exit_code": 137,
+      "reason": "Error",
+      "started_at": "2026-10-22T10:45:12Z",
+      "finished_at": "2026-10-22T10:45:12Z",
+      "restart_count": 0,
+      "current_log_stdout_bytes": 0,
+      "current_log_stderr_bytes": 0
+    },
+    "events": [
+      {
+        "reason": "Scheduled",
+        "type": "Normal",
+        "count": 1
+      },
+      {
+        "reason": "Pulled",
+        "type": "Normal",
+        "count": 1
+      },
+      {
+        "reason": "Created",
+        "type": "Normal",
+        "count": 1
+      },
+      {
+        "reason": "Started",
+        "type": "Normal",
+        "count": 1
+      }
+    ],
+    "resources": {
+      "limits": {
+        "cpu": "1",
+        "memory": "192Mi"
+      },
+      "requests": {
+        "cpu": "50m",
+        "memory": "48Mi"
+      }
+    },
+    "raw_private_hashes": {
+      "describe.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "describe.stdout": {
+        "sha256": "c103f89b2c76d28122afe8c91de90164e1d63527ea85aa8ec74387d52489059e",
+        "bytes": 3261
+      },
+      "events.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "events.stdout": {
+        "sha256": "c94d8ac448fcc6e4ba09183ccd68f776d9a3970f963bd1f7369607056947657a",
+        "bytes": 5204
+      },
+      "index.json": {
+        "sha256": "ba7f44c074638c5aea11a752fd46751fd0904030d865df7baef83c4212312210",
+        "bytes": 6374
+      },
+      "log-current.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "log-current.stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-describe-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-describe-after.stdout": {
+        "sha256": "10da477f76caeca58a35130ba02d7d764dba8a43840faa3ea436601c65cb93ed",
+        "bytes": 549
+      },
+      "namespace-describe-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-describe-before.stdout": {
+        "sha256": "10da477f76caeca58a35130ba02d7d764dba8a43840faa3ea436601c65cb93ed",
+        "bytes": 549
+      },
+      "namespace-events-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-events-after.stdout": {
+        "sha256": "10da477f76caeca58a35130ba02d7d764dba8a43840faa3ea436601c65cb93ed",
+        "bytes": 549
+      },
+      "namespace-events-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-events-before.stdout": {
+        "sha256": "10da477f76caeca58a35130ba02d7d764dba8a43840faa3ea436601c65cb93ed",
+        "bytes": 549
+      },
+      "namespace-initial.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-initial.stdout": {
+        "sha256": "10da477f76caeca58a35130ba02d7d764dba8a43840faa3ea436601c65cb93ed",
+        "bytes": 549
+      },
+      "namespace-log-current-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-log-current-after.stdout": {
+        "sha256": "10da477f76caeca58a35130ba02d7d764dba8a43840faa3ea436601c65cb93ed",
+        "bytes": 549
+      },
+      "namespace-log-current-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "namespace-log-current-before.stdout": {
+        "sha256": "10da477f76caeca58a35130ba02d7d764dba8a43840faa3ea436601c65cb93ed",
+        "bytes": 549
+      },
+      "pod-describe-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-describe-after.stdout": {
+        "sha256": "3d700878bc41f41d1a7dd3c29c81ca271bee005b745526ca55aaee9b0848a6a3",
+        "bytes": 9175
+      },
+      "pod-describe-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-describe-before.stdout": {
+        "sha256": "3d700878bc41f41d1a7dd3c29c81ca271bee005b745526ca55aaee9b0848a6a3",
+        "bytes": 9175
+      },
+      "pod-events-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-events-after.stdout": {
+        "sha256": "3d700878bc41f41d1a7dd3c29c81ca271bee005b745526ca55aaee9b0848a6a3",
+        "bytes": 9175
+      },
+      "pod-events-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-events-before.stdout": {
+        "sha256": "3d700878bc41f41d1a7dd3c29c81ca271bee005b745526ca55aaee9b0848a6a3",
+        "bytes": 9175
+      },
+      "pod-initial.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-initial.stdout": {
+        "sha256": "3d700878bc41f41d1a7dd3c29c81ca271bee005b745526ca55aaee9b0848a6a3",
+        "bytes": 9175
+      },
+      "pod-log-current-after.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-log-current-after.stdout": {
+        "sha256": "3d700878bc41f41d1a7dd3c29c81ca271bee005b745526ca55aaee9b0848a6a3",
+        "bytes": 9175
+      },
+      "pod-log-current-before.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "pod-log-current-before.stdout": {
+        "sha256": "3d700878bc41f41d1a7dd3c29c81ca271bee005b745526ca55aaee9b0848a6a3",
+        "bytes": 9175
+      }
+    },
+    "cause": "UNKNOWN: exit137/Error alone is not OOM or proof of kill source; no OOMKilled reason or node/kernel/cgroup witness captured."
+  }
+}

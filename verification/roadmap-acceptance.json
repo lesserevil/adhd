@@ -1,0 +1,282 @@
+{
+  "schema": "adhd/roadmap-acceptance@1",
+  "passed": true,
+  "cases": [
+    {
+      "case": "context-roundtrip-immutable-correction-source-retry-and-privacy",
+      "passed": true
+    },
+    {
+      "case": "grounded-query-jobs-ownership-attempt-isolation-and-snapshot-replay",
+      "passed": true
+    },
+    {
+      "case": "budget-continuation-and-query-checkpoint-hard-restart",
+      "passed": true
+    },
+    {
+      "case": "query-cancellation-discards-stale-inflight-results",
+      "passed": true
+    },
+    {
+      "case": "malformed-ungrounded-and-unavailable-evaluator-never-fabricate-success",
+      "passed": true
+    },
+    {
+      "case": "search-to-scan-audit-index-observation-and-idempotent-rebuild",
+      "passed": true
+    },
+    {
+      "case": "journal-recovers-unclean-image-and-rejects-checksum-corruption-without-history-loss",
+      "passed": true
+    },
+    {
+      "case": "real-generative-current-facts-completion-late-report-independent-activity-and-history",
+      "passed": true
+    },
+    {
+      "case": "real-generative-contextual-yes-explicit-species-color-and-uncertain-distinct-count",
+      "passed": true
+    }
+  ],
+  "live_evaluator": {
+    "model": "gpt_sol",
+    "results": [
+      {
+        "coverage": {
+          "total_records": 4.0,
+          "gaps": [],
+          "watermark": 7.0,
+          "examined_records": 4.0
+        },
+        "answer": "Agent-a is currently working on branch 'bar' on project 'baz'. Work on branch 'foo' was completed.",
+        "outcome": "supported",
+        "uncertainties": [],
+        "evidence": [
+          {
+            "stance": "supports",
+            "publication_id": "pub-6",
+            "excerpt": "I am working on branch 'bar' on project 'baz'."
+          },
+          {
+            "stance": "context",
+            "publication_id": "pub-5",
+            "excerpt": "I am done with branch 'foo' on project 'baz'."
+          },
+          {
+            "stance": "context",
+            "publication_id": "pub-3",
+            "excerpt": "I am working on branch 'foo' on project 'baz'."
+          },
+          {
+            "stance": "context",
+            "publication_id": "pub-7",
+            "excerpt": "I am working on branch 'foo' on project 'baz'."
+          }
+        ],
+        "requires_exhaustive": true,
+        "complete": true,
+        "facts": [
+          {
+            "statement": "Agent-a is working on branch 'bar' on project 'baz'.",
+            "publication_ids": [
+              "pub-6"
+            ]
+          },
+          {
+            "statement": "Agent-a completed work on branch 'foo' on project 'baz'.",
+            "publication_ids": [
+              "pub-5"
+            ]
+          }
+        ]
+      },
+      {
+        "coverage": {
+          "total_records": 4.0,
+          "gaps": [],
+          "watermark": 9.0,
+          "examined_records": 4.0
+        },
+        "answer": "No one is currently evidenced as working on branch 'foo' on project 'baz'. Agent-a reported completing that work at 13:00; the later-ingested report of starting it occurred earlier and does not resurrect the completed activity.",
+        "outcome": "supported",
+        "uncertainties": [
+          "Execution coverage is not established by this evaluation."
+        ],
+        "evidence": [
+          {
+            "stance": "context",
+            "publication_id": "pub-3",
+            "excerpt": "I am working on branch 'foo' on project 'baz'."
+          },
+          {
+            "stance": "supports",
+            "publication_id": "pub-5",
+            "excerpt": "I am done with branch 'foo' on project 'baz'."
+          },
+          {
+            "stance": "context",
+            "publication_id": "pub-6",
+            "excerpt": "I am working on branch 'bar' on project 'baz'."
+          },
+          {
+            "stance": "context",
+            "publication_id": "pub-7",
+            "excerpt": "I am working on branch 'foo' on project 'baz'."
+          }
+        ],
+        "requires_exhaustive": true,
+        "complete": true,
+        "facts": [
+          {
+            "statement": "Agent-a reported completing branch 'foo' on project 'baz' at 2026-10-19T13:00:00Z.",
+            "publication_ids": [
+              "pub-5"
+            ]
+          },
+          {
+            "statement": "Agent-a subsequently reported working on branch 'bar' on project 'baz' at 2026-10-19T13:01:00Z.",
+            "publication_ids": [
+              "pub-6"
+            ]
+          }
+        ]
+      }
+    ],
+    "bird_results": [
+      {
+        "coverage": {
+          "total_records": 4.0,
+          "gaps": [],
+          "watermark": 19.0,
+          "examined_records": 4.0
+        },
+        "answer": "A cardinal was explicitly reported for acceptance-tree-42.",
+        "outcome": "supported",
+        "uncertainties": [],
+        "evidence": [
+          {
+            "stance": "supports",
+            "publication_id": "pub-17",
+            "excerpt": "I see a cardinal in that tree."
+          }
+        ],
+        "requires_exhaustive": false,
+        "complete": true,
+        "facts": [
+          {
+            "statement": "Agent-a explicitly reported seeing a cardinal in acceptance-tree-42.",
+            "publication_ids": [
+              "pub-17"
+            ]
+          }
+        ]
+      },
+      {
+        "coverage": {
+          "total_records": 4.0,
+          "gaps": [],
+          "watermark": 21.0,
+          "examined_records": 4.0
+        },
+        "answer": "Red.",
+        "outcome": "supported",
+        "uncertainties": [],
+        "evidence": [
+          {
+            "stance": "supports",
+            "publication_id": "pub-19",
+            "excerpt": "There is a red bird on the branch of that same tree."
+          }
+        ],
+        "requires_exhaustive": false,
+        "complete": true,
+        "facts": [
+          {
+            "statement": "A bird in acceptance-tree-42 was explicitly reported as red.",
+            "publication_ids": [
+              "pub-19"
+            ]
+          }
+        ]
+      },
+      {
+        "coverage": {
+          "total_records": 3.0,
+          "gaps": [],
+          "watermark": 23.0,
+          "examined_records": 3.0
+        },
+        "answer": "Agent-a did not explicitly report a color for the cardinal.",
+        "outcome": "no_evidence",
+        "uncertainties": [],
+        "evidence": [
+          {
+            "stance": "context",
+            "publication_id": "pub-17",
+            "excerpt": "I see a cardinal in that tree."
+          }
+        ],
+        "requires_exhaustive": false,
+        "complete": true,
+        "facts": []
+      },
+      {
+        "coverage": {
+          "total_records": 4.0,
+          "gaps": [],
+          "watermark": 25.0,
+          "examined_records": 4.0
+        },
+        "answer": "One distinct bird can be concluded. The cardinal and red-bird reports may refer to the same bird, so a second distinct bird is not established.",
+        "outcome": "supported",
+        "uncertainties": [
+          "It is unclear whether the cardinal and the red bird are the same individual or different individuals."
+        ],
+        "evidence": [
+          {
+            "stance": "context",
+            "publication_id": "pub-12",
+            "excerpt": "Is there a bird in that tree?"
+          },
+          {
+            "stance": "supports",
+            "publication_id": "pub-14",
+            "excerpt": "Yes"
+          },
+          {
+            "stance": "supports",
+            "publication_id": "pub-17",
+            "excerpt": "I see a cardinal in that tree."
+          },
+          {
+            "stance": "supports",
+            "publication_id": "pub-19",
+            "excerpt": "There is a red bird on the branch of that same tree."
+          }
+        ],
+        "requires_exhaustive": true,
+        "complete": true,
+        "facts": [
+          {
+            "statement": "At least one bird was reported in acceptance-tree-42.",
+            "publication_ids": [
+              "pub-14",
+              "pub-17",
+              "pub-19"
+            ]
+          },
+          {
+            "statement": "The reports do not explicitly identify the cardinal and the red bird as separate birds.",
+            "publication_ids": [
+              "pub-17",
+              "pub-19"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "artifact_sha256": "b533b59f70b971dcbf44dd4e96e81b28972485246da99fcace40862a10749133",
+  "platform": "Linux"
+}

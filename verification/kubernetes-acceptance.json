@@ -1,0 +1,73 @@
+{
+  "schema": "adhd/kubernetes-acceptance@1",
+  "passed": true,
+  "namespace": "adhd",
+  "node_port": 30866,
+  "hub_image": "sha256:d665a77c58d70ba112d596473bb6abeca8b880fb81ec06210ec710807ae7e864",
+  "artifact_sha256": "d51a84ce99e10046c56063f45f6b9546869e341b1ba30dd4e472d272fa4e60e1",
+  "proxy_image": "sha256:4ff102c5d78d254a6f0da062b3cf39eaf07f01eec0927fd21e219d0af8bc0591",
+  "storage_class": "local-path",
+  "cases": [
+    {
+      "case": "two-agent-authenticated-identities-through-nodeport",
+      "passed": true
+    },
+    {
+      "case": "unauthenticated-a2a-rejected",
+      "passed": true
+    },
+    {
+      "case": "agent-cannot-access-administrator-api",
+      "passed": true
+    },
+    {
+      "case": "publication-idempotency",
+      "passed": true
+    },
+    {
+      "case": "live-nemotron-publication-matching-and-delivery",
+      "passed": true
+    },
+    {
+      "case": "pod-replacement-preserves-publication-deliveries-and-idempotency",
+      "passed": true
+    },
+    {
+      "case": "second-pod-replacement-preserves-acknowledgements-and-history",
+      "passed": true
+    },
+    {
+      "case": "same-origin-administrator-overview-and-real-matcher-ready",
+      "passed": true
+    },
+    {
+      "case": "foreign-origin-administrator-request-rejected-through-proxy",
+      "passed": true
+    },
+    {
+      "case": "nodeport-health-reachable-from-another-cluster-node",
+      "passed": true
+    },
+    {
+      "case": "running-artifact-hash-matches-accepted-artifact",
+      "passed": true
+    }
+  ],
+  "live_match_evidence": [
+    {
+      "model": "Nemotron-Deciffusion-8B-v2.1",
+      "probability_ppm": 994089,
+      "subscription_id": "sub-1",
+      "threshold_ppm": 900000
+    }
+  ],
+  "framework_build_rerun": false,
+  "backup_restore_exercised": false,
+  "verified_at": "2026-10-19T19:46:14.369410+00:00",
+  "manifest_sha256": "e9cab715fa6a799a7371061d4404338d5f9d1c6c42b54b41c05497c7c515ae25",
+  "validation": {
+    "server_dry_run": true,
+    "documentation_links": true,
+    "framework_receipt": "stale after documentation authority changes; no new lifecycle build claimed"
+  }
+}

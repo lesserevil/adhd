@@ -1,0 +1,114 @@
+{
+  "schema": "adhd/upstream-main-divergence-readonly-review@1",
+  "base": "19cd2c27860739dc8962b3007ec578ded583745b",
+  "incoming_commit": "592727a04f7ed2d724091fa8bdac5fa10ea1143d",
+  "upstream_main": "b2c861408c05af2c14d36e6757b3be4710e6140e",
+  "integration": "239d4bea3385b57dfd221335e198b1d76bb48a5d",
+  "changed_incoming_paths": 139,
+  "blob_relationship_counts": {
+    "incoming_only_path_and_blob": 102,
+    "divergent_blob_at_existing_path": 31,
+    "identical_current_path": 6
+  },
+  "same_path_same_blob": [
+    "flavors/os-linux/flavor.md",
+    "flavors/os-linux/host-install/linux-debian/arm64/none.cdx.json",
+    "flavors/os-linux/host-install/linux-debian/x86_64/none.cdx.json",
+    "flavors/os-linux/openspec/spec.md",
+    "flavors/os-linux/standard-command-profile.json",
+    "samples/hello-component/component.lock.json"
+  ],
+  "no_other_changed_incoming_blob_reachable_in_integration_history": true,
+  "git_cherry": "592727a is +, no patch-equivalent commit in integration",
+  "incoming_only_queue_ids": [
+    "AGENT-001",
+    "DEPLOY-002",
+    "DOCS-002",
+    "INFO-003"
+  ],
+  "category_counts": {
+    ".gitattributes": 1,
+    ".gitignore": 1,
+    "AGENTS.md": 1,
+    "CHANGELOG.md": 1,
+    "CLAUDE.md": 1,
+    "PROJECT.md": 1,
+    "README.md": 1,
+    "components": 11,
+    "deploy": 1,
+    "docs": 18,
+    "flavors": 5,
+    "generated_cache": 65,
+    "literate.project.json": 1,
+    "samples": 2,
+    "scripts": 4,
+    "skills": 1,
+    "tests": 8,
+    "verification": 16
+  },
+  "findings": [
+    {
+      "scope": "Unique information contracts/API/runtime lineage",
+      "paths": [
+        "components/hub/information/current-facts.md",
+        "components/hub/information/queries.md",
+        "components/hub/information/context.md",
+        "components/hub/information/retrieval.md",
+        "components/hub/information/adaptation.md"
+      ],
+      "finding": "Incoming is separately implemented API surface, not an already cherry-picked root feature. Generic query with default current view, query_continue/attempts/replay, current/history projections and index-ID operations differ from current history/retrieval/archive/feedback/proposal APIs. INFO-003 current-state reconciliation after completion/late events/independent concurrent activity has no current standalone owner or exact contract. Original immutable facts/context/query/optimizer principles overlap but do not prove wire/semantic equivalence.",
+      "disposition": "Preserve incoming authority/runtime/evidence lineage and explicitly reconcile user requirement; do not silently enable overlapping specification_roots or erase as superseded. Current D41 receipt/image cannot qualify merged new API."
+    },
+    {
+      "scope": "OIDC and documentation overlap",
+      "paths": [
+        "components/hub/management/oidc.md",
+        "docs/admin/oidc.md",
+        "docs/user/querying.md",
+        "docs/user/documentation-policy.md",
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "finding": "Incoming optional administrator OIDC realRSA/PKCE/JWKS tests overlap current fuller users/roles/hotAdmin/OIDC contract, but operation/profile boundaries differ. Conditional local hub coordination and documentation-review instructions are genuinely absent current content; retaining operational intent requires semantic text integration, not blanket ours.",
+      "disposition": "Retain unique guidance with correct current contract links; do not activate old OIDC roots/routes over current identity profile."
+    },
+    {
+      "scope": "Existing Kubernetes deployment and agent attachment",
+      "paths": [
+        "deploy/k8s/adhd.yaml",
+        "docs/admin/kubernetes.md",
+        "verification/kubernetes-acceptance.json",
+        "verification/agent-connection.json"
+      ],
+      "finding": "Upstream DEPLOY-002/AGENT-001 are unique explicit requests/evidence concerning an existing namespace adhd/NodePort deployment and agent-a private connection, not equivalent to disposable current Compose/Kind Kafka qualification. No Kubernetes backup/failover claim.",
+      "disposition": "Preserve existing-deployment/agent evidence and private-operational-state references as historical exact identities; do not replace or mutate services. Current image deployment gate cannot be relabeled that old operational run."
+    },
+    {
+      "scope": "Pinned configuration/receipt/build tooling",
+      "paths": [
+        "literate.project.json",
+        "components/hub/component.lock.json",
+        "components/hub/component.resolution-audit.host.json",
+        "verification/current.json",
+        "scripts/build_hub.py",
+        "scripts/elixir_front.c",
+        "scripts/elixir_front.py",
+        "scripts/stage_container.py"
+      ],
+      "finding": "Incoming pin cd417 differs current2a8303; incoming artifactb533/receipt3226/image97dd differs currentD41/receipt6357/image207. Current staging is significantly hardened/compiled and incoming build_hub auto-lock/build/CWD/tools are separate old flow.",
+      "disposition": "Do not overwrite current pin/receipt/lock or compilecache/probe/staging guards. Keep historical build/export/caches bound their original authority; any integrated authority change requires proper fresh lifecycle, never manual receipt reconciliation."
+    },
+    {
+      "scope": "Immutable source cache/history",
+      "paths": [
+        "generated/committed-source-cache",
+        ".gitattributes",
+        "verification/roadmap-completion.json"
+      ],
+      "finding": "Incoming cache content and completion records are unique blobs not in integration;6current-byte-equal paths exclude these. .gitattributes prevents newline conversion of hash-bound blobs and disables whitespace warnings only for those immutable blobs.",
+      "disposition": "Retain incoming CAS/entries/keys as original content-addressed history; never edit bytes or transplant entries to qualify current component lock. .gitattributes is useful unique integrity policy and should be reviewed/retained explicitly."
+    }
+  ],
+  "provenance_note": "Incoming merge592 has parent19cd2c2 and no integration commits in ancestry; shared earlier goal history does not imply equality of later implementation. Stored evidence arrays are actual incoming historical claims, not rerun or verified current product acceptance by this audit.",
+  "no_merges_edits_of_tracked_files_pushes_or_runtimes": true
+}

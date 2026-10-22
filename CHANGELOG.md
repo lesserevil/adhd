@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Hub API: replace the alternative single-project query/OIDC profile with the
+  qualified multi-project Kafka/A2A interfaces, hot Admin authentication and
+  scoped history/retrieval/archive operations. Retain the repository's generic
+  documentation policy and original source/test evidence.
+
 - Qualification: the source41 compiled candidate passes core13/94, model-free
   Compose11/Kind10, secured Kind7 and focused Admin/Events/recovery UI32. Both
   deployed-model programs pass eight outer checks with 12 actual inference POSTs;
@@ -21,17 +26,17 @@
 - Hub: support isolated projects, project-scoped agents and federation, Kafka-backed
   raw subscriptions and optional text filters, and hot Admin controls. Keep original
   facts and search independent of subscription filters and broker retention.
-  Integrated selective-recovery and deployment qualification remains in progress.
+  Integrated selective-recovery and deployment qualification is complete within the final property composition.
 
 - Protocol: publish the reviewed application 2.1 schema/OpenAPI with selective
   recovery contracts, examples and conformance evidence. Retain exact 2.0 exports
   and separate historical profile-1 semantics from current project/Kafka rules.
-  Integrated runtime and deployment qualification remains in progress.
+  Integrated runtime and deployment qualification is complete within the final property composition.
 
 - Hub storage: validate supported historical local checkpoints before migration,
   preserve original files and rollback backups, and adopt verified pre-federation
   identities into private generations. Imported backups retain strict ownership
-  and permission checks. Successor lifecycle and deployment qualification continue.
+  and permission checks. Successor lifecycle and deployment qualification are complete within their retained scopes.
 
 - Container staging includes the complete locked specification closure, including recovery JSON Schema, and accepts an explicitly selected verifier CLI.
 
@@ -39,7 +44,7 @@
   project-qualified federation and Kafka-backed raw/filtered subscriptions. Publish
   complete scope inventories, closed schemas/OpenAPI and compatibility rules with
   independent admitted-artifact wire conformance. Combined runtime and deployment
-  qualification remains in progress.
+  qualification is complete within the final property composition.
 
 - Build tooling: prepare and test a local upstream fix for qualified retained-source
   export without a coding agent or original input path. Preserve current acceptance,

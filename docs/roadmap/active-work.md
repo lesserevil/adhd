@@ -43,6 +43,16 @@ own prior checkpoints; this queue and its final linked evidence give the current
 completion state. Their behavioral requirements and documented operating limits
 remain applicable.
 
+**Landing reconciliation:** The user selected the integration API profile to
+replace the conflicting single-project query/OIDC profile on main. The
+[merge record](../../verification/main-merge-reconciliation/manifest.json) preserves
+per-path resolution, incoming neutral policies and immutable historical evidence.
+The 47 completed implementation items retain their original scope. The reconciled
+policy and status documentation passed the proper authority/receipt lifecycle,
+current declared verification and complete container-context byte comparison.
+[PR #2](https://github.com/lesserevil/adhd/pull/2) records the selected API profile
+and landing of this verified reconciliation.
+
 ### Historical execution narrative — prior states, not current directions
 
 The following records describe their own earlier checkpoints. Their failures,

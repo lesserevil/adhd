@@ -1,0 +1,40 @@
+defmodule Hub.UI do
+  def html do
+    Hub.Assets.html()
+    |> String.replace("Back up the DETS file offline with the service stopped.", "Back up the entire data directory, including the DETS image and its .journal recovery file, offline with the service stopped.")
+    |> String.replace("schema 2 retains original source-event deduplication", "schema 3 adds contextual evidence, durable query jobs and replaceable indexes while retaining original source-event deduplication")
+    |> String.replace("and an optional administrator token of 32–65536 bytes", "and either an administrator token of 32–65536 bytes or explicitly configured OIDC administrator sign-in")
+  end
+  def js do
+    Hub.Assets.js()
+    |> String.replace("let token='',view=", "let authMode='key',csrf='',token='',view=")
+    |> String.replace("\'Sign in with a valid administrator token.\'", "(authMode===\'oidc\'?\'Sign in again.\':\'Sign in with a valid administrator token.\')")
+    |> String.replace("function logout(){token='';", "function logout(){csrf='';token='';")
+    |> String.replace("headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}", "credentials:'same-origin',headers:{'Content-Type':'application/json',...(authMode==='oidc'?{'X-CSRF-Token':csrf}:{'Authorization':'Bearer '+token})}")
+    |> String.replace("if(!token)return;", "if(!token&&!(authMode==='oidc'&&csrf))return;")
+    |> String.replace("selected!==view||!token", "selected!==view||(!token&&!(authMode==='oidc'&&csrf))")
+    |> String.replace("async e=>{e.preventDefault();token=$('token').value;", "async e=>{e.preventDefault();if(authMode==='oidc'){location.assign('/admin/login');return;}token=$('token').value;")
+    |> String.replace("$('logout').addEventListener('click',logout);", "$('logout').addEventListener('click',async()=>{if(authMode==='oidc'&&csrf){try{const r=await fetch('/admin/logout',{method:'POST',headers:{'X-CSRF-Token':csrf}});if(!r.ok&&r.status!==401){$('error').textContent='Logout could not be completed. Retry.';return;}}catch(e){$('error').textContent='Logout could not be completed. Retry.';return;}}logout();});")
+    |> String.replace("result=await Promise.all([api({op:'deliveries'}),api({op:'jobs'})])", "result=await Promise.all([api({op:'deliveries'}),api({op:'jobs'}),api({op:'indexes'}),api({op:'index_jobs'}),api({op:'query_jobs'})])")
+    |> String.replace("function activity(ds,js){", "function activity(ds,js,indexes,indexJobs,queryJobs){")
+    |> String.replace("trunc(js);}", "trunc(js);indexActivity(indexes,indexJobs,queryJobs);}")
+    |> String.replace("})();", helpers() <> "\n})();")
+  end
+  defp helpers do
+    ~S"""
+    function indexActivity(indexes,jobs,queries){
+      const rebuild=button('Rebuild index',()=>{if(window.confirm('Rebuild the current contextual index from retained publications?'))mutate({op:'rebuild_index',confirm:true});});rebuild.dataset.mutation='true';
+      const propose=button('Propose retrieval improvement',()=>{if(window.confirm('Propose a bounded recipe from measured retrieval failures? Insufficient evidence keeps the index unchanged.'))mutate({op:'propose_index',confirm:true});});propose.dataset.mutation='true';content.append(rebuild,propose);
+      table('Indexes',['Version','State','Records','Indexed through','Bytes'],indexes.items.map(i=>[i.id,i.state,i.indexed_records+'/'+i.total_records,i.indexed_through,i.size_bytes]));trunc(indexes);
+      indexes.items.forEach(i=>{const details=node('details');details.append(node('summary','Recipe and evaluation: '+i.id),node('pre',JSON.stringify({recipe:i.recipe,evaluation:i.evaluation},null,2)));const actions=node('div',undefined,'actions');
+        if(['ready','rejected','failed'].includes(i.state)){const b=button('Qualify '+i.id,()=>{if(window.confirm('Evaluate candidate '+i.id+' against saved, disjoint query cohorts?'))mutate({op:'qualify_index',index_id:i.id,confirm:true});});b.dataset.mutation='true';actions.append(b);}
+        if(i.state==='ready'&&i.evaluation&&i.evaluation.passed){const b=button('Promote '+i.id,()=>{if(window.confirm('Promote qualified index '+i.id+' after corpus catch-up?'))mutate({op:'promote_index',index_id:i.id,confirm:true});});b.dataset.mutation='true';actions.append(b);}
+        if(i.state==='ready'&&i.qualified){const b=button('Rollback to '+i.id,()=>{if(window.confirm('Switch to retained index '+i.id+' after catch-up?'))mutate({op:'rollback_index',index_id:i.id,confirm:true});});b.dataset.mutation='true';actions.append(b);}
+        if(i.state!=='active'&&i.state!=='retired'){const b=button('Retire '+i.id,()=>{if(window.confirm('Retire derived index '+i.id+'? Original publications and evaluation evidence remain stored.'))mutate({op:'retire_index',index_id:i.id,confirm:true});});b.dataset.mutation='true';actions.append(b);}details.append(actions);content.append(details);});
+      table('Index jobs',['Job','Version','Kind','State','Retries'],jobs.items.map(j=>[j.id,j.index_id,j.kind,j.status,j.retries]));trunc(jobs);
+      table('Query jobs',['Query','Owner','State','Stage','Examined','Remaining'],queries.items.map(q=>[q.id,q.owner_id,q.status,q.stage,q.examined_records,q.remaining_records]));trunc(queries);
+    }
+    (async()=>{try{const response=await fetch('/admin/auth');if(!response.ok)throw new Error();const auth=await response.json();authMode=auth.mode;if(authMode==='oidc'){$('token').required=false;$('token').hidden=true;document.querySelector('label[for=token]').hidden=true;$('login-form').querySelector('button').textContent='Sign in with identity provider';const session=await fetch('/admin/session');if(session.ok){csrf=(await session.json()).csrf;$('login').hidden=true;$('console').hidden=false;await refresh();}else if(session.status!==401){$('login-error').textContent='Sign-in status is unavailable. Retry when the service is reachable.';}}}catch(e){$('login-error').textContent='Sign-in configuration is unavailable. Refresh to retry.';}})();
+    """
+  end
+end

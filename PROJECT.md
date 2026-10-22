@@ -83,9 +83,9 @@ Agents in separate rigs should communicate through a shared ADHD hub or federate
 hubs using the A2A boundary, with an adapter or skill where needed. Preserve project
 access and provenance, and allow participation by agents outside OpenRig.
 [INTEROP-001](docs/roadmap/active-work.md#interop-001-support-openrig-cross-rig-communication-through-adhd)
-records the integration and actual-rig acceptance. Its pinned adapter has passed
-the item-specific cross-rig checks; final program closure still depends on the
-integrated multi-project and Kafka qualification.
+records the integration and actual-rig acceptance. Its pinned adapter and the
+integrated multi-project/Kafka program are qualified within the scopes retained
+in the [final property composition](verification/ownedMULTI008/source41-final-composition-after-full25/review.json).
 
 An agent can submit a message addressed to another agent through the hub's A2A
 interface. The hub queues it for the recipient rather than requiring a direct
@@ -128,11 +128,12 @@ acknowledgements, hot Admin configuration and canonical federation routing.
 [Kafka pub/sub plan](docs/roadmap/kafka-pubsub.md) scope contracts, Kafka handoff,
 A2A delivery, optional filters, fact search, Admin controls, deployments,
 migration and qualification. Integrate these with MULTI-001 through MULTI-008.
-Implementation proceeds in local feature branches. The current multi-project
-candidate implements Kafka streams with optional model filtering; model-free and
-optional-model Compose/Kubernetes integration have scoped qualification evidence.
-Final qualification remains open for the recorded topic-readiness repair,
-successor recovery checks and enforcing network policy. Earlier model-matched
+The qualified multi-project implementation uses Kafka streams with optional model
+filtering. Model-free and optional-model Compose/Kubernetes integration, topic
+readiness and successor recovery have scoped qualification evidence in the
+[final property composition](verification/ownedMULTI008/source41-final-composition-after-full25/review.json).
+The enforcing network-policy check qualifies its separate network fixture; it
+does not substitute for actual hub/Kafka deployment checks. Earlier model-matched
 local-queue results remain historical evidence for their original runtime.
 
 ### Optional plain-text semantic subscriptions
@@ -218,12 +219,13 @@ SEARCH-003 and INDEX-001 provide separately qualified
 
 Each server must support multiple projects while continuing to federate with
 other ADHD servers. This supersedes the earlier one-server-per-project product
-restriction; a single-project deployment remains supported. The current candidate
+restriction; a single-project deployment remains supported. The qualified runtime
 implements multiple projects. The [multiple-project roadmap](docs/roadmap/multi-project.md)
 and MULTI-001 through MULTI-008 in [active work](docs/roadmap/active-work.md)
 record the contract, storage/migration, access, agent workflow, federation,
-hot Admin, resource isolation and qualification tasks. Implementation is now
-authorized and underway; acceptance is not yet complete.
+hot Admin, resource isolation and qualification tasks. Their implementation and
+scoped acceptance are complete; original runtime identities and operating limits
+are retained in the [completion evidence](verification/final-roadmap-completion/manifest.json).
 
 Keep stable server and project identities distinct, preserve existing installations,
 and make project context explicit in data, credentials, jobs and protocols. Preserve
@@ -317,20 +319,20 @@ These are product acceptance requirements, not evidence of an implemented servic
   JSON-RPC SendMessage operations.
 - Containerized service operation is required. The first deployment recipe uses
   a Linux Docker host, a pinned Elixir runtime, private configuration mounts, and
-  durable data outside the container. Production orchestration remains open.
-- The production deployment environment. A private GPU test endpoint now serves
-  the selected checkpoint and has passed two relevance smoke checks. Initial
-  interoperability testing will use the official A2A Python Hello World sample
-  and SDK client as a starting point, followed by two scripted agent identities
-  exercising the hub's coordination operations. No specific agent framework is
-  required of product users.
-- Credential management beyond per-agent bearer tokens in a private configuration
-  and any future multi-project access model.
+  durable data outside the container. Compose and Kubernetes packages are qualified;
+  production rollout, capacity and availability choices remain operator decisions.
+- The production deployment environment and broader model quality evaluation.
+  The private test environment qualifies the retained model/deployment cases,
+  official A2A SDK clients and independently authenticated agent workflows. No
+  specific agent framework is required of product users.
+- Credential management and organization integration beyond the implemented local
+  accounts, OIDC, server roles and explicit project/agent admissions.
 - Retention, migration, and scaling beyond the prototype's single-process OTP
   disk store, stable delivery identifiers, explicit acknowledgements, and retries.
-- Concrete evaluator/retrieval adapters, query-job API, resource budgets and
-  promotion thresholds for the accepted adaptive retrieval direction. Domain
-  schemas and advance prediction of required indexes are not user prerequisites.
+- Additional evaluator/retrieval adapters and broader production calibration beyond
+  the implemented typed SystemOne interfaces, bounded jobs and independently
+  qualified native recipe promotion. Domain schemas and advance prediction of
+  required indexes are not user prerequisites.
 
 Push notifications, automatic subscription history replay, multi-organization
 hosting, and non-agent ingestion adapters are outside the first working version.
@@ -351,6 +353,20 @@ hosting, and non-agent ingestion adapters are outside the first working version.
   `docs/architecture/model-integration.md`.
 
 ## Current status
+
+The multiple-project Kafka/A2A implementation and scoped recovery, federation,
+optional-model, Admin, protocol and Compose/Kubernetes gates are complete. The
+[final property composition](verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
+and [completion record](verification/final-roadmap-completion/manifest.json) retain
+actual evidence and limits. The current API profile replaces the alternative
+single-project query/OIDC profile formerly on main; history, retrieval and archive
+contracts own the supported query interfaces. Original alternative-profile source
+and reports remain historical and do not qualify the current runtime.
+
+### Earlier qualification records
+
+The following records retain their own original runtime and deployment scope.
+They describe earlier checkpoints rather than replacing the current evidence above.
 
 The Elixir MVP supports durable message/status history, source provenance, event
 and ingestion timestamps, arbitrary JSON publication content, retrieval by ID,

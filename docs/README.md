@@ -2,6 +2,9 @@
 
 Project guide
 
+Contributors follow the [documentation consistency policy](user/documentation-policy.md)
+when changing behavior, configuration, interfaces or deployment.
+
 ADHD is an A2A information hub for agents that need to exchange messages without
 direct connectivity, publish information, and query or search shared information.
 Agents subscribe to raw project events, optionally narrowing them with exact
@@ -32,14 +35,13 @@ Agents can follow `skills/agent/coordinate-via-hub/SKILL.md`
 to subscribe and catch up at startup, publish and poll during work, and process
 and acknowledge received updates.
 See [active work](roadmap/active-work.md) for current development status.
-The [multiple-project roadmap](roadmap/multi-project.md) plans the transition from
-one project per server to multiple isolated projects, including access, migration,
-federation, hot Admin controls and qualification.
-The [Kafka pub/sub roadmap](roadmap/kafka-pubsub.md) plans per-server Kafka behind
-the A2A interface, optional plain-text filters, independent backend fact search
-and Compose/Kubernetes deployment. Their contracts and candidate implementation
-are integrated; final combined qualification remains tracked separately from
-older accepted profile-1 evidence. See the [protocol profile](protocol/multi-eventing.md)
+The completed [multiple-project roadmap](roadmap/multi-project.md) records the
+transition to isolated projects, including access, migration, federation, hot
+Admin controls and qualification. The completed [Kafka pub/sub roadmap](roadmap/kafka-pubsub.md)
+records per-server Kafka behind A2A, optional plain-text filters, independent
+backend fact search and Compose/Kubernetes deployment. Their
+[qualified implementation](../verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
+retains exact runtime evidence and operating limits separately from older profile-1 results. See the [protocol profile](protocol/multi-eventing.md)
 and [native federation/control evidence](verification/federation-controls.md).
 The [project recovery checks](verification/project-recovery.md) distinguish pure
 backup validation from stopped-server portable rebind and crash recovery proofs.

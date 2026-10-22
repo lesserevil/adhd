@@ -1,5 +1,5 @@
 # Independent raw-checkpoint vectors. Rejected bytes never reach native DETS.
-[baseline, parser, image_table, product_table, work, report] = System.argv()
+[baseline, parser, image_table, product_table, work, report | extra] = System.argv()
 [modules | _] = String.split(File.read!(baseline), "unless Code.ensure_loaded?(ADHD.CLI)", parts: 2)
 Code.compile_string(modules)
 Code.compile_file(parser)
@@ -61,7 +61,22 @@ defmodule CheckpointVectors do
     IO.puts("PASS " <> name)
     %{"id" => name, "passed" => true, "result" => inspect(actual), "bytes" => byte_size(b), "sha256" => sha(b), "native_opener_calls" => length(calls)}
   end
-  def run(native, image, product, work) do
+  def append_free(b, block) do
+    fl = word(b, 0)
+    out = binary_part(b, 0, fl) <> block <> binary_part(b, fl, byte_size(b) - fl - 4)
+    out <> <<(byte_size(out) + 4 - word(b, 184))::32>>
+  end
+  def sequence(work) do
+    path = Path.join(work, "actual-rewrite-sequence.dets")
+    Enum.with_index([64, 6000, 128, 20000, 32, 50000, 1200, 8000]) |> Enum.map(fn {size, i} ->
+      {:ok, table} = :dets.open_file(:actual_rewrite_sequence, [file: String.to_charlist(path), type: :set])
+      :ok = :dets.insert(table, {:state, %{schema: 4, seq: i, payload: String.duplicate("x", size)}})
+      :ok = :dets.sync(table)
+      :ok = :dets.close(table)
+      {"actual-reopen-grow-shrink-close-#{i}", File.read!(path)}
+    end)
+  end
+  def run(native, image, product, work, fixtures) do
     seed = File.read!(native)
     old = File.read!(image)
     [{slot, slot_pos, ptr}] = slot(seed)
@@ -71,11 +86,16 @@ defmodule CheckpointVectors do
     small = object(seed, :erlang.term_to_binary({:state, %{schema: 4, seq: 1}}))
     # Read-only snapshots of actual source36 product tables are included as a
     # separate fixture; simple native/image tables isolate format compatibility.
+    rewrites = sequence(work)
     tracer = spawn(fn -> trace_loop([]) end)
     Code.ensure_loaded!(:dets)
     true = (:erlang.trace_pattern({:dets, :open_file, :_}, true, [:local]) > 0)
     :erlang.trace(self(), true, [:call, {:tracer, tracer}])
     try do
+      small_fl = word(small, 0)
+      first_class = word(small, small_fl + 8)
+      missing = binary_part(seed, 0, fl) <> binary_part(seed, fl + 16, byte_size(seed) - fl - 20)
+      missing = missing <> <<(byte_size(missing) + 4 - word(seed, 184))::32>>
       checked = [
         check("actual-current-runtime-table", seed, :ok, work, tracer),
         check("actual-complete-source36-product-checkpoint", File.read!(product), :ok, work, tracer),
@@ -120,6 +140,11 @@ defmodule CheckpointVectors do
         check("non-map-state", object(seed, :erlang.term_to_binary({:state, []})), {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
         check("etf-trailing-byte", object(seed, :erlang.term_to_binary({:state, %{}}) <> <<0>>), {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
         check("etf-huge-map-count", object(seed, <<131,104,2,119,5,"state",116,0xFFFFFFFF::32>>), {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
+        check("omitted-free-block", missing, {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
+        check("free-block-inside-live-padding", append_free(small, <<16::32,0x03ABCDEF::32,5::32,(ptr + 48)::32>>), {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
+        check("misaligned-buddy-exact-cover", small |> put(small_fl + 12, ptr + 192) |> put(small_fl + 28, ptr + 64), {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
+        check("forged-arena-base", seed |> put(184, 5448) |> put(byte_size(seed) - 4, byte_size(seed) - 5448), {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
+        check("unsupported-custom-minimum", seed |> put(20, 512) |> put(24, 512) |> put(40, 512) |> seal(), {"RESTORE_INVALID_BACKUP", "schema"}, work, tracer),
         check("encoded-byte-limit", seed, {"RESTORE_INVALID_BACKUP", "limits"}, work, tracer, %{"max_backup_bytes" => 1}),
         check("expired-deadline", seed, {"RESTORE_TIMEOUT", "timeout"}, work, tracer, %{"deadline_ms" => System.monotonic_time(:millisecond) - 1})
       ]
@@ -129,7 +154,10 @@ defmodule CheckpointVectors do
       legacy_slot = rem(apply(:erlang, :phash, [:state, 0x03FFFFFF]) - 1, 256)
       legacy = small |> put(48, 0) |> put(old_pos, 0) |> put(old_pos + 4, 0) |> put(seg + legacy_slot * 8, word(small, old_pos)) |> put(seg + legacy_slot * 8 + 4, ptr) |> seal()
       true = (old_slot in 0..255)
-      checked ++ [check("legacy-phash-native-equivalence", legacy, :ok, work, tracer)]
+      true = (first_class == 7)
+      more = Enum.map(rewrites, fn {name, b} -> check(name, b, :ok, work, tracer) end)
+      retained = Enum.with_index(fixtures) |> Enum.map(fn {path, i} -> check("actual-retained-product-#{i}", File.read!(path), :ok, work, tracer) |> Map.put("fixture", path) end)
+      checked ++ [check("legacy-phash-native-equivalence", legacy, :ok, work, tracer)] ++ more ++ retained
     after
       :erlang.trace(self(), false, [:call])
       :erlang.trace_pattern({:dets, :open_file, :_}, false, [:local])
@@ -143,7 +171,11 @@ native = Path.join(work, "native-production.dets")
 :ok = :dets.insert(table, {:state, %{schema: 4, project: "actual-otp27-checkpoint", seq: 1, values: [1,2,"three"]}})
 :ok = :dets.sync(table)
 :ok = :dets.close(table)
-checks = CheckpointVectors.run(native, image_table, product_table, work)
+fixtures = case extra do
+  [path] -> ADHD.JSON.decode!(File.read!(path))
+  [] -> []
+end
+checks = CheckpointVectors.run(native, image_table, product_table, work, fixtures)
 try do
   :erlang.binary_to_existing_atom("never_create_this_untrusted_atom_x", :utf8)
   raise "untrusted atom unexpectedly exists"

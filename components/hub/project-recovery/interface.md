@@ -271,8 +271,12 @@ old location strings embedded in copied metadata. Snapshot suffix remains
 registry, marker, recovery journal and configuration-receipt consistency. Apply
 recovery byte/record/deadline bounds per project, one verification table at a time;
 there is no unbounded archive extraction or directory discovery. Native checkpoint
-preflight supports checksummed DETSv9 set/key-position1 with one {:state,map}
-row; unsupported layouts fail closed. Validate the full pointer/free-list graph,
+preflight supports the checksummed ordinary hub-writer DETSv9 set/key-position1
+subset: min=m=next=256,n=0, fixed permanent part1336/segment3384, arena origin5432,
+one {:state,map} row. Prove complete padded live/free allocation partition and
+original5432/reloaded1336 buddy alignment. Custom-minimum, grown/import/bchunk
+physical layouts fail closed; supported legacy logical snapshots remain eligible
+for a newly created ordinary checkpoint. Validate the full pointer/free-list graph,
 header/trailer and bounded safe ETF before any read-only native table open, then
 compare the native lookup exactly. A structurally recognized unclosed header is
 needs-repair and cannot satisfy a byte-preserving rebind request.

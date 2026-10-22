@@ -124,13 +124,22 @@ rejects executable/function/PID/port/reference terms and unknown atoms; no
 untrusted dynamic atom creation. Reject compressed ETF in this bundle version.
 
 Closed native checkpoint verification must preflight untrusted bytes before any
-native DETS opener. Support the modern checksummed DETS version9 set/key-position1
-layout emitted by the supported OTP runtimes, with exactly one {:state,map}
-object. Bound the entire encoded file, structural walk and term scan by the frozen
+native DETS opener. Support the modern checksummed DETS version9 ordinary hub-writer layout emitted
+by the supported OTP runtimes: set/key-position1, min=m=next=256, n=0, one
+permanent2048-byte directory part at1336 and segment at3384,
+ordinary buddy-arena origin5432 and exactly one {:state,map} object. This is a
+physical-format subset; custom-minimum, grown-key-directory, bulk/import/bchunk
+layouts are unsupported and fail closed. Complete supported legacy1..3 logical
+snapshot bundles remain restorable by creating a fresh ordinary checkpoint.
+Bound the entire encoded file, structural walk and term scan by the frozen
 byte/deadline/batch limits. Verify header hash and counts, file trailer, reachable
 segment/slot/bucket pointers, disjoint live allocations, free-list structure and
-nonoverlapping free allocations; reject unsupported layouts, unknown versions,
-cycles, overlaps, trailing structures, compressed or unsafe ETF and unknown atoms.
+nonoverlapping free allocations. Count the entire power-of-two live bucket
+allocation including padding. Verify exact partition of [0,5432+2^31), with free
+and live bucket alignment to the original5432 or reloaded1336 allocator bases;
+reject missing free blocks, free blocks within live padding, forged arena bases,
+unsupported layouts, unknown versions, cycles, overlaps, trailing structures,
+compressed or unsafe ETF and unknown atoms.
 Only after exact safe term decoding may a read-only repair:false native opener
 run, and its single lookup must equal the preflight-decoded object. A matching
 operator-supplied hash is never a substitute for this validation. A recognized

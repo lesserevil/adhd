@@ -40,3 +40,14 @@ synthetic-fixture mistakes (nonzero-base trailer and hostile-atom length) remain
 identified in the reports; their weaker results are not substituted for these
 corrected checks. Full integrated recovery/CLI qualification remains a separate
 gate after the guard is wired into every relevant native opener.
+
+The subsequent [complete-allocation OTP27 report](../../verification/project-recovery/checkpoint-complete-native.json)
+and [OTP29 counterpart](../../verification/project-recovery/checkpoint-complete-otp29.json)
+bind the strengthened parser, with82 checks each. These add exact allocator-arena
+coverage including live bucket padding, omitted free-block rejection, buddy
+alignment, forged-arena rejection,23 actual retained product checkpoints and
+eight actual reopen/value-growth/shrink/close stages on each runtime. This proof
+supports the precise ordinary one-key physical subset stated in the recovery
+interface; it does not claim generic DETS, imported/bchunk or custom-directory
+compatibility. The earlier46-check reports remain historical evidence for their
+earlier parser digest. Integrated service/CLI recovery remains independently gated.

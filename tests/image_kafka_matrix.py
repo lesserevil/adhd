@@ -128,6 +128,25 @@ def complete_jobs(native):
  return rows[:-1]+[optional,rows[-1]]
 
 
+def owned_rest_port(value):
+ assert type(value) is int and 1024<=value<=65535 and value not in (18082,18085), 'Private REST port must not overlap healthy baseline services'
+ return value
+
+
+def private_rest_arguments(arguments,port):
+ """Change only the historical private REST URL; preserve healthy cluster URLs."""
+ port=owned_rest_port(port);arguments=list(arguments)
+ old='http://127.0.0.1:18088';new='http://127.0.0.1:'+str(port)
+ if '--eventing-rest-url' in arguments:
+  i=arguments.index('--eventing-rest-url')+1
+  if arguments[i]==old:arguments[i]=new
+ if '--eventing-rest-urls' in arguments:
+  i=arguments.index('--eventing-rest-urls')+1;urls=json.loads(arguments[i])
+  assert urls==['http://127.0.0.1:18082','http://127.0.0.1:18085',old], 'Unexpected historical federation cluster URLs'
+  if port!=18088:arguments[i]=json.dumps(urls[:2]+[new])
+ return arguments
+
+
 def optional_filter_arguments(arguments):
  arguments=list(arguments)
  assert '--with-model' not in arguments and '--deadline' in arguments
@@ -138,6 +157,7 @@ def optional_filter_arguments(arguments):
 def prepare(args):
  root=Path(args.repo_root).absolute();assert root.resolve(strict=True)==root
  image,artifact,admission_sha=target_bindings({'image_config_identity':args.image,'artifact_sha256':args.artifact_sha256,'admission_sha256':args.admission_sha256})
+ port=owned_rest_port(args.owned_rest_port)
  project=args.owned_compose_project;assert isinstance(project,str) and re.fullmatch('[a-z0-9][a-z0-9-]{0,62}',project)
  work=Path(args.work).absolute();assert work.resolve()==work and not work.exists();work.mkdir(parents=True,mode=0o700)
  # Read only the current-root pure payload reader; no runtime or compiler entry.
@@ -181,6 +201,7 @@ def prepare(args):
   original=list(row['arguments']);script=row['script'];arguments=[str(work)+v[len(str(native.parent)):] if v.startswith(str(native.parent)) else v for v in original]
   for flag,value in [('--image',image),('--owned-broker-container',project+'-kafka-1'),('--broker-container',project+'-kafka-1'),('--image-manifest',str(bound/'image-manifest.json')),('--image-fault-library',proofbindings['multi_fault.c']['library']),('--image-fault-proof',proofbindings['multi_fault.c']['proof'])]:
    if flag in arguments:arguments[arguments.index(flag)+1]=value
+  arguments=private_rest_arguments(arguments,port)
   if row['name']=='optional-filter':arguments=optional_filter_arguments(arguments)
   jobs.append({'name':row['name'],'script':script,'native_basis_arguments':original,'arguments':arguments,'expected_check_count':COUNTS[row['name']],
    'observer_source':'multi_fault.c' if '--crash-at' in arguments else None,'argv':[tools['python']['path'],str(frozen/'tests'/script)]+arguments+['--report',str(work/(row['name']+'.json'))]})
@@ -197,7 +218,7 @@ def prepare(args):
   'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'observer_bindings':proofbindings,'jobs':jobs,'parallelism':1,'runs_per_case':1,'automatic_retries':0,'first_failure_stops':True,
   'runtime_cwd':str(runtime),'outer_timeout_seconds':None,'timeout_policy':'Original unchanged harness deadlines only; no invented driver timeout that skips finally cleanup',
   'lane_lock':str(root/'_build/roadmap/image-kafka.lane.lock'),'historical_basis':{'native_plan_sha256':BASIS,'artifact_sha256':BASIS_ARTIFACT,'legacy_producer_sha256':LEGACY},
-  'provider_calls_authorized':0,'preparation_app_compiler_or_service_starts':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED','private_service':{'project':project,'broker':project+'-kafka-1','rest':project+'-kafka-rest-1','port':'18088','urls':['http://127.0.0.1:18082','http://127.0.0.1:18085','http://127.0.0.1:18088']}}
+  'provider_calls_authorized':0,'preparation_app_compiler_or_service_starts':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED','private_service':{'project':project,'broker':project+'-kafka-1','rest':project+'-kafka-rest-1','port':str(port),'urls':['http://127.0.0.1:18082','http://127.0.0.1:18085','http://127.0.0.1:'+str(port)]}}
  save(work/'plan.json',plan);verify(work,plan);print(json.dumps({'prepared':True,'executed':False,'plan_sha256':sha(work/'plan.json'),'work':str(work),'jobs':len(jobs)}))
 
 
@@ -242,6 +263,8 @@ def qualify(value,job,plan):
 def preflight(plan,env):
  import urllib.request
  service=plan['private_service'];observed={}
+ port=owned_rest_port(int(service['port']));assert service['port']==str(port)
+ assert service['urls']==['http://127.0.0.1:18082','http://127.0.0.1:18085','http://127.0.0.1:'+str(port)]
  for name,kind in [(service['broker'],'kafka'),(service['rest'],'kafka-rest')]:
   result=subprocess.run([plan['tools']['docker']['path'],'inspect',name],env=env,capture_output=True,check=True,timeout=30)
   rows=json.loads(result.stdout);assert len(rows)==1;row=rows[0]
@@ -312,6 +335,7 @@ def main():
  parser.add_argument('--work',type=Path,required=True);parser.add_argument('--plan-sha256')
  for name in ('repo-root','native-plan','abi-root','context','admission-manifest','basis-artifact'):parser.add_argument('--'+name,type=Path)
  for name in ('image','artifact-sha256','admission-sha256','owned-compose-project'):parser.add_argument('--'+name)
+ parser.add_argument('--owned-rest-port',type=int,default=18088)
  args=parser.parse_args()
  if args.prepare:prepare(args)
  else:assert _STAGED;sys.exit(execute(args.work.absolute(),args.plan_sha256))

@@ -1,0 +1,27 @@
+{
+  "schema": "adhd/kafka-owned-rest-port-preparation@1",
+  "scope": "Existing KAFKA009 successor Kafka14 fixture follow-up; metadata preparation only, no service or application starts.",
+  "reason": "Read-only current Docker/listener census showed18088 belongs to existing adhd-qa40-image-events; preserve it and select fresh project adhd-qa41-image-events/18089.",
+  "default_port": 18088,
+  "selected_port": 18089,
+  "healthy_ports_unchanged": [
+    18082,
+    18085
+  ],
+  "original_programs": 14,
+  "original_check_count": 68,
+  "pure_tests": 25,
+  "passed": true,
+  "first_pure_failure": "New test initially omitted optional-filter from the expected changed private URLs. Implementation correctly changed it; test expectation corrected to retain its copied outage private endpoint. No runtime failure or scenario assertion relaxation.",
+  "changed_private_programs": [
+    "retention",
+    "outage",
+    "optional-filter",
+    "federation"
+  ],
+  "unchanged": "All other original arguments, program ordering, assertions, counts, deadlines and default18088 behavior. Runtime preflight retains exact project/service labels, loopback port and three distinct actual cluster IDs.",
+  "files": {
+    "tests/image_kafka_matrix.py": "fa53c7af128827ac79909d890cc8e27b2836beaa733afc520e69c343b9243861",
+    "tests/image_kafka_matrix_unit.py": "58e619fa6845f45fec54549198a3ca77d56eb24dcc44c6c1ebfa0049e6234bdf"
+  }
+}

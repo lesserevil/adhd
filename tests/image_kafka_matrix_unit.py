@@ -58,6 +58,23 @@ class Guards(unittest.TestCase):
   self.assertNotIn('--with-model',outage['arguments']);self.assertEqual(native,before)
   self.assertEqual(m.COUNTS['outage'],7);self.assertEqual(m.COUNTS['optional-filter'],2)
   self.assertEqual(sum(m.COUNTS.values()),68)
+ def test_owned_rest_port_preserves_default_and_all_original_program_arguments(self):
+  native=json.loads(Path('/home/horde/src/adhd/.worktrees/deployment/_build/image38-reviewed-preparation/eventing/plan.json').read_text())
+  rows=m.complete_jobs(native)
+  for row in rows:
+   original=row['arguments'];self.assertEqual(m.private_rest_arguments(original,18088),original)
+   changed=m.private_rest_arguments(original,18089)
+   differences=[(a,b) for a,b in zip(original,changed) if a!=b]
+   if row['name'] in ('retention','outage','optional-filter','federation'):
+    self.assertEqual(len(differences),1);self.assertIn('18088',differences[0][0]);self.assertIn('18089',differences[0][1])
+   else:self.assertEqual(changed,original)
+   self.assertEqual(len(changed),len(original))
+  self.assertEqual(sum(m.COUNTS.values()),68);self.assertEqual(len(rows),14)
+ def test_private_port_rejects_collision_bad_types_and_foreign_federation_urls(self):
+  for value in (True,'18089',0,1023,65536,18082,18085):
+   with self.assertRaises(AssertionError):m.private_rest_arguments([],value)
+  for urls in (["http://foreign:18088"],['http://127.0.0.1:18085','http://127.0.0.1:18082','http://127.0.0.1:18088']):
+   with self.assertRaises(AssertionError):m.private_rest_arguments(['--eventing-rest-urls',json.dumps(urls)],18089)
  def test_authoritative_absence_only(self):
   id='a'*64
   good=subprocess.CompletedProcess([],1,b'[]',('error: no such object: '+id).encode())

@@ -1,0 +1,25 @@
+PASS corrupt-checksum-fails-closed-without-reset-and-matched-restore-works {}
+PASS stale-snapshot-cannot-roll-back-a-newer-acknowledged-checkpoint {}
+PASS validly-checksummed-foreign-identity-snapshot-is-rejected {}
+PASS missing-checkpoint-reconstructed-from-complete-valid-snapshot {}
+PASS unrelated-checkpoint-corruption-is-not-silently-treated-as-an-interrupted-write {}
+Traceback (most recent call last):
+  File "WORKTREE/tests/storage_recovery.py", line 41, in rejected
+    r.start()
+  File "WORKTREE/tests/foundation_acceptance.py", line 73, in start
+    raise AssertionError('Runtime exited; inspect private work directory')
+AssertionError: Runtime exited; inspect private work directory
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "WORKTREE/tests/storage_recovery.py", line 131, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "WORKTREE/tests/storage_recovery.py", line 123, in main
+    target=r.root/'operator-file';target.write_bytes(b'untouched operator data');snapshot.unlink();snapshot.symlink_to(target);rejected(r);assert target.read_bytes()==b'untouched operator data'
+                                                                                                                               ^^^^^^^^^^^
+  File "WORKTREE/tests/storage_recovery.py", line 53, in rejected
+    assert not r.profile21, 'Profile2.1 target corruption killed global control or failed an isolation assertion'
+           ^^^^^^^^^^^^^^^
+AssertionError: Profile2.1 target corruption killed global control or failed an isolation assertion

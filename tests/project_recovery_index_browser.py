@@ -56,9 +56,9 @@ async def viewport(args, browser, name, width, height, evidence):
             # Allow the fulfilled fetch promise and its catch to run in-browser.
             await page.evaluate('()=>new Promise(resolve=>setTimeout(resolve,100))')
             alert=await page.get_by_role('alert').inner_text()
-            observation={'phase':phase,'project':await page.get_by_label('Project',exact=True).input_value(),'alert_text':alert}
+            observation={'viewport':name,'phase':phase,'project':await page.get_by_label('Project',exact=True).input_value(),'alert_text':alert}
             evidence.value.setdefault('observations',[]).append(observation)
-            captures.append(await capture(page,f.root,phase));evidence.write()
+            captures.append(await capture(page,f.root,phase));evidence.value.setdefault('captures',[]).append(captures[-1]);evidence.write()
             assert alert=='' and observation['project']==BLUE
             if phase=='view-switch':
                 await expect(page.locator('#content').get_by_role('heading',name='Retrieval index',exact=True)).to_have_count(0)
@@ -70,7 +70,7 @@ async def viewport(args, browser, name, width, height, evidence):
         # admission after the overview succeeded, before its actual index request.
         user=f.admin().call({'op':'save_user','user':{'username':'index-viewer','name':'Index viewer',
             'email':'index-viewer@example.invalid','password':'private-index-viewer-password','role':'Viewer','project_ids':[BLUE]}},mutation=True)['user']
-        viewer=await context.browser.new_context(viewport={'width':width,'height':height})
+        viewer=await browser.new_context(viewport={'width':width,'height':height})
         try:
             child=await viewer.new_page();child.on('pageerror',lambda error:errors.append(str(error)))
             await login(child,f.base,'index-viewer','private-index-viewer-password')
@@ -96,11 +96,10 @@ async def viewport(args, browser, name, width, height, evidence):
             evidence.write()
             await expect(child.get_by_role('alert')).to_have_text(code)
             await expect(child.get_by_role('heading',name='Overview',exact=True)).to_be_visible()
-            captures.append(await capture(child,f.root,'current-context-error'))
+            captures.append(await capture(child,f.root,'current-context-error'));evidence.value.setdefault('captures',[]).append(captures[-1])
             evidence.record(name+'-actual-current-context-index-denial-remains-visible',http_status=status,error=code)
         finally:await viewer.close()
         assert not errors,errors
-        evidence.value.setdefault('captures',[]).extend(captures)
     finally:
         if release is not None:release.set()
         try:await context.close()

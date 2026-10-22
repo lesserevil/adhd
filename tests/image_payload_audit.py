@@ -123,7 +123,7 @@ def inspect_payload(app_body, cache_body, runtime_body, context, expected_source
     assert manifest['files']['hub.exs'] == expected_source
     binding = compiled_context(context, digest(expected), expected_source)
     assert len(app_body) <= 32 * 1024 * 1024
-    assert len(cache_body) <= 64 * 1024 * 1024 and len(runtime_body) <= 64 * 1024 * 1024
+    assert len(cache_body) <= 128 * 1024 * 1024 and len(runtime_body) <= 128 * 1024 * 1024
     files = {}
     seen = set()
     with tarfile.open(fileobj=io.BytesIO(app_body)) as archive:
@@ -144,7 +144,8 @@ def inspect_payload(app_body, cache_body, runtime_body, context, expected_source
     assert all(digest(files[k]) == value for k, value in targets.items())
     assert digest(regular(context / 'Dockerfile')) == manifest['files']['Dockerfile']
     specifications = sum(key.startswith('specification/') for key in files)
-    assert specifications == 33 and len(files) == 59
+    counts=binding["payload_counts"]
+    assert specifications == (counts["specifications"] if counts else 33) and len(files) == (counts["app_files"] if counts else 59)
     with tarfile.open(fileobj=io.BytesIO(runtime_body)) as archive:
         parents = [item for item in archive.getmembers() if item.name == 'runtime']
         assert len(parents) == 1
@@ -158,7 +159,7 @@ def inspect_payload(app_body, cache_body, runtime_body, context, expected_source
             assert not path.is_absolute() and '..' not in path.parts
             assert item.name not in cache and item.uid == item.gid == 0
             assert item.isdir() or item.isfile()
-            assert item.mode == (0o555 if item.isdir() else 0o444)
+            assert item.mode == (0o555 if item.isdir() or item.name in ["adhd/lego", "adhd/acme-guard"] else 0o444)
             assert item.mtime == 0
             cache[item.name] = archive.extractfile(item).read() if item.isfile() else None
             metadata[item.name] = {'mode': oct(item.mode), 'mtime': item.mtime,
@@ -166,11 +167,15 @@ def inspect_payload(app_body, cache_body, runtime_body, context, expected_source
     cm = json.loads(cache['adhd/manifest.json'])
     assert cm['source_sha256'] == targets['hub.exs'] and cm['payload_manifest_sha256'] == digest(expected)
     names = ['Elixir.' + n for n in re.findall(r'^defmodule ([A-Za-z0-9_.]+) do$', files['hub.exs'].decode(), re.M)]
-    assert cm['modules'] == names and len(names) == len(set(names)) == 59
-    assert set(cache) == {'adhd', 'adhd/ebin', 'adhd/manifest.json', 'adhd/inputs.json', 'adhd/boot.exs', 'adhd/build.exs'} | {'adhd/ebin/' + n + '.beam' for n in names}
+    assert cm['modules'] == names and len(names) == len(set(names)) == (len(counts["modules"]) if counts else 59)
+    assert set(cache) == {'adhd', 'adhd/ebin', 'adhd/manifest.json', 'adhd/inputs.json', 'adhd/boot.exs', 'adhd/build.exs'} | {'adhd/ebin/' + n + '.beam' for n in names} | {'adhd/'+n for n in binding['acme_files']}
     assert set(cm['beams']) == {n + '.beam' for n in names}
     for name in names:
         assert digest(cache['adhd/ebin/' + name + '.beam']) == cm['beams'][name + '.beam']
+    if binding['acme_files']:
+        assert cm['schema']=='adhd/precompiled-cache@2' and cm['acme']=={n:binding['packaging_files_sha256'][n] for n in binding['acme_files']}
+        for name, value in cm['acme'].items():assert digest(cache['adhd/'+name])==value
+    else:assert cm['schema']=='adhd/precompiled-cache@1'
     runtime_helpers = checked_directory(runtime_helpers)
     for name in ('boot', 'build'):
         assert digest(cache['adhd/' + name + '.exs']) == cm[name + '_sha256'] == digest(regular(runtime_helpers / (name + '.exs')))

@@ -50,25 +50,32 @@ def cache_binding(context, image, artifact, expected_context, audit_bytes, expec
     assert audit['artifact_sha256'] == artifact and audit['canonical_manifest_sha256'] == expected_context
     assert audit['container_started'] is False and audit['owned_container_absent'] is True
     assert audit['runtime_parent_mtime'] == 0 and audit['cache_all_zero_timestamps'] is True
-    assert audit['actual_app_files'] == 59 and audit['canonical_specifications'] == 33
-    assert audit['cache_modules'] == 59 and audit['cache_entries'] == 65
     binding = compiled_context(context, expected_context, artifact)
+    counts=binding['payload_counts']
+    module_count=len(counts['modules']) if counts else 59
+    assert audit['actual_app_files'] == (counts['app_files'] if counts else 59) and audit['canonical_specifications'] == (counts['specifications'] if counts else 33)
+    assert audit['cache_modules'] == module_count and audit['cache_entries'] == module_count+6+len(binding['acme_files'])
     cache = json.loads(cache_bytes)
     metadata = json.loads(metadata_bytes)
-    assert len(cache['modules']) == len(set(cache['modules'])) == 59 and len(metadata) == 66
+    assert len(cache['modules']) == len(set(cache['modules'])) == module_count and len(metadata) == module_count+7+len(binding['acme_files'])
+    if counts:assert cache['modules']==counts['modules']
     assert cache['source_sha256'] == artifact and cache['payload_manifest_sha256'] == expected_context
     assert cache['inputs_sha256'] == binding['compiler_inputs_sha256']
     assert digest(cache_bytes) == metadata['adhd/manifest.json']['sha256']
     names = cache['modules']
     directories = {'adhd', 'adhd/ebin'}
-    files = {'adhd/manifest.json', 'adhd/inputs.json', 'adhd/boot.exs', 'adhd/build.exs'} | {'adhd/ebin/' + n + '.beam' for n in names}
+    files = {'adhd/manifest.json', 'adhd/inputs.json', 'adhd/boot.exs', 'adhd/build.exs'} | {'adhd/ebin/' + n + '.beam' for n in names} | {'adhd/'+n for n in binding['acme_files']}
     assert set(metadata) == {'/runtime'} | directories | files
     assert metadata['/runtime'] == {'mode': '0o755', 'mtime': 0, 'sha256': None}
     for name in directories:
         assert metadata[name] == {'mode': '0o555', 'mtime': 0, 'sha256': None}
     for name in files:
-        assert metadata[name]['mode'] == '0o444' and metadata[name]['mtime'] == 0
+        assert metadata[name]['mode'] == ('0o555' if name in ['adhd/lego','adhd/acme-guard'] else '0o444') and metadata[name]['mtime'] == 0
         assert re.fullmatch('[a-f0-9]{64}', metadata[name]['sha256'])
+    if binding['acme_files']:
+        assert cache['schema']=='adhd/precompiled-cache@2' and cache['acme']=={n:binding['packaging_files_sha256'][n] for n in binding['acme_files']}
+        for name,value in cache['acme'].items():assert metadata['adhd/'+name]['sha256']==value
+    else:assert cache['schema']=='adhd/precompiled-cache@1'
     assert set(cache['beams']) == {n + '.beam' for n in names}
     for name in names:
         assert metadata['adhd/ebin/' + name + '.beam']['sha256'] == cache['beams'][name + '.beam']
@@ -122,7 +129,7 @@ def capture(args, docker=None):
         'passed': True, 'image_id': args.image, 'artifact_sha256': args.artifact_sha256,
         'canonical_manifest_sha256': args.context_sha256,
         'cache_manifest_sha256': digest(cache_bytes), 'cache_metadata_sha256': digest(metadata_bytes),
-        'compiler_inputs_sha256': cache['inputs_sha256'], 'cache_modules': 59, 'cache_entries': 65,
+        'compiler_inputs_sha256': cache['inputs_sha256'], 'cache_modules': audit['cache_modules'], 'cache_entries': audit['cache_entries'],
         'entrypoint': config['Entrypoint'], 'container_started': False, 'owned_container_absent': True}
     report['files'] = {name: digest(body) for name, body in files.items()}
     report['scope'] = ('Actual formal source receipt/rebuild and exact compiled image offline payload/cache/entrypoint audit. '

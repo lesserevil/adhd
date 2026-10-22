@@ -25,6 +25,30 @@ def closed_object(raw):
     return json.loads(raw,object_pairs_hook=unique)
 
 
+ACME_FILES = {'LICENSE.lego','LICENSE.musl','acme-build.json','acme-bundle.json','acme-guard','acme-pins.json','lego','lego-sbom.json'}
+
+
+def payload_counts(context, manifest):
+    targets={k:v for k,v in manifest['files'].items() if k!='Dockerfile'}
+    observed={}
+    with tarfile.open(Path(context)/'payload.tar',mode='r:') as archive:
+        seen=set()
+        for member in archive.getmembers():
+            assert member.name not in seen;seen.add(member.name)
+            assert not member.name.startswith('/') and '..' not in Path(member.name).parts
+            if member.isdir():continue
+            assert member.isfile() and 0<=member.size<=8*1024*1024
+            key=member.name.removeprefix('app/')
+            raw=archive.extractfile(member).read()
+            if key=='manifest.json':assert digest(raw)==digest((Path(context)/'manifest.json').read_bytes())
+            else:observed[key]=digest(raw)
+            if key=='hub.exs':source=raw
+    assert observed==targets
+    modules=['Elixir.'+n for n in re.findall(r'^defmodule ([A-Z][A-Za-z0-9_.]*) do\s*$',source.decode(),re.M)]
+    assert modules and len(modules)==len(set(modules))
+    return {'app_files':len(targets),'specifications':sum(k.startswith('specification/') for k in targets),'modules':modules}
+
+
 def compiled_context(context,expected_manifest,expected_artifact):
     context=Path(context).absolute()
     assert context.resolve(strict=True)==context and context.is_dir()
@@ -41,30 +65,40 @@ def compiled_context(context,expected_manifest,expected_artifact):
     inputs_path=context/'compiler-inputs.json';assert inputs_path.stat().st_size<=65536
     raw=inputs_path.read_bytes();inputs=closed_object(raw)
     assert set(inputs)=={'schema','source_sha256','payload_manifest_sha256','files'}
-    assert inputs['schema']=='adhd/container-compiler-inputs@1'
+    has_acme=inputs['schema']=='adhd/container-compiler-inputs@2'
+    assert inputs['schema'] in ['adhd/container-compiler-inputs@1','adhd/container-compiler-inputs@2']
     assert inputs['source_sha256']==expected_artifact and inputs['payload_manifest_sha256']==expected_manifest
-    assert set(inputs['files'])=={'build.exs','boot.exs'}
+    expected_helpers={'build.exs','boot.exs'}|(ACME_FILES if has_acme else set())
+    assert set(inputs['files'])==expected_helpers
     assert all(re.fullmatch('[a-f0-9]{64}',v) for v in inputs['files'].values())
-    packaging=context/'packaging.tar';assert packaging.stat().st_size<=1024*1024
+    packaging=context/'packaging.tar';assert packaging.stat().st_size <= (96*1024*1024 if has_acme else 1024*1024)
     content={};seen=set()
     with tarfile.open(packaging,mode='r:') as archive:
-        members=archive.getmembers();assert len(members)==4
+        members=archive.getmembers();assert len(members)==len(expected_helpers)+2
         for member in members:
             assert member.name not in seen;seen.add(member.name)
             if member.name=='packaging':assert member.isdir() and member.mode==0o755
             else:
-                assert member.name in {'packaging/boot.exs','packaging/build.exs','packaging/inputs.json'}
-                assert member.isfile() and member.mode==0o444 and 0<=member.size<=65536
+                assert member.name in {'packaging/'+n for n in expected_helpers|{'inputs.json'}}
+                assert member.isfile() and member.mode==0o444 and 0<=member.size <= (80*1024*1024 if member.name in ['packaging/lego','packaging/acme-guard'] else 1024*1024)
                 content[member.name.removeprefix('packaging/')]=archive.extractfile(member).read()
-    assert set(content)=={'boot.exs','build.exs','inputs.json'} and content['inputs.json']==raw
+    assert set(content)==expected_helpers|{'inputs.json'} and content['inputs.json']==raw
     assert all(digest(content[name])==value for name,value in inputs['files'].items())
+    counts=payload_counts(context,manifest) if has_acme else None
+    if has_acme:
+        assert 'Elixir.ADHD.ACMEClient' in counts['modules']
+        bundle=closed_object(content['acme-bundle.json'])
+        assert set(bundle)=={'schema','platform','files'} and bundle['schema']=='adhd/acme-runtime-bundle@1' and bundle['platform']=='linux_amd64'
+        assert bundle['files']=={n:inputs['files'][n] for n in ACME_FILES-{'acme-bundle.json'}}
+        pins=closed_object(content['acme-pins.json'])
+        assert pins['runtime_bundle']['files']=={n:inputs['files'][n] for n in ACME_FILES-{'acme-bundle.json','acme-pins.json'}}
     # This is a declarative expected entrypoint, never an inference that the
     # actual image obeys it. Root must bind its actual inspect/cache audit too.
     expected_entrypoint=['elixir','/runtime/adhd/boot.exs','/app/hub.exs']
     assert b'ENTRYPOINT ["elixir", "/runtime/adhd/boot.exs", "/app/hub.exs"]' in dockerfile
     return {'schema':'adhd/compiled-context-binding@1','source_sha256':expected_artifact,
         'canonical_manifest_sha256':expected_manifest,'compiler_inputs_sha256':digest(raw),
-        'packaging_files_sha256':inputs['files'],'expected_entrypoint':expected_entrypoint,
+        'packaging_files_sha256':inputs['files'],'acme_files':sorted(ACME_FILES) if has_acme else [],'payload_counts':counts,'expected_entrypoint':expected_entrypoint,
         'context_files_sha256':{name:digest((context/name).read_bytes())for name in sorted(expected)},
         'actual_runtime_or_cache_qualified':False}
 
@@ -89,8 +123,9 @@ def retained_cache_files(admission_path, admission, audit, binding, context):
         assert digest(raw)==expected
         raws[filename]=raw;values[filename]=closed_object(raw)
     cache=values['cache-manifest.json'];metadata=values['cache-metadata.json']
-    assert set(cache)=={'schema','source','source_sha256','payload_manifest_sha256','inputs_sha256','boot_sha256','build_sha256','modules','beams','toolchain'}
-    assert cache['schema']=='adhd/precompiled-cache@1' and cache['source']=='/app/hub.exs'
+    has_acme=bool(binding['acme_files'])
+    assert set(cache)=={'schema','source','source_sha256','payload_manifest_sha256','inputs_sha256','boot_sha256','build_sha256','modules','beams','toolchain'}|({'acme'} if has_acme else set())
+    assert cache['schema']==('adhd/precompiled-cache@2' if has_acme else 'adhd/precompiled-cache@1') and cache['source']=='/app/hub.exs'
     assert cache['source_sha256']==binding['source_sha256']
     assert cache['payload_manifest_sha256']==binding['canonical_manifest_sha256']
     assert cache['inputs_sha256']==binding['compiler_inputs_sha256']
@@ -117,12 +152,15 @@ def retained_cache_files(admission_path, admission, audit, binding, context):
     files={'adhd/boot.exs':cache['boot_sha256'],'adhd/build.exs':cache['build_sha256'],
            'adhd/inputs.json':cache['inputs_sha256'],'adhd/manifest.json':digest(raws['cache-manifest.json']),
            **{'adhd/ebin/'+name:sha for name,sha in cache['beams'].items()}}
+    if has_acme:
+        assert cache['acme']=={n:binding['packaging_files_sha256'][n] for n in ACME_FILES}
+        files.update({'adhd/'+n:h for n,h in cache['acme'].items()})
     directories={'/runtime':'0o755','adhd':'0o555','adhd/ebin':'0o555'}
     assert set(metadata)==set(files)|set(directories) and len(metadata)-1==audit['cache_entries']
     for name,row in metadata.items():
         assert set(row)=={'mode','mtime','sha256'} and type(row['mtime']) is int and row['mtime']==0
         if name in directories:assert row['mode']==directories[name] and row['sha256'] is None
-        else:assert row['mode']=='0o444' and row['sha256']==files[name]
+        else:assert row['mode']==('0o555' if name in ['adhd/lego','adhd/acme-guard'] else '0o444') and row['sha256']==files[name]
     return {'cache_manifest_sha256':digest(raws['cache-manifest.json']),
             'cache_metadata_sha256':digest(raws['cache-metadata.json']),
             'source_bound_module_order':modules,'cache_file_hashes_cross_checked':len(files),
@@ -153,8 +191,8 @@ def compiled_admission(context, admission_path, admission_sha256, image, artifac
     assert audit['compiler_inputs_sha256']==binding['compiler_inputs_sha256']
     for field in ('cache_manifest_sha256','cache_metadata_sha256'):
         assert isinstance(audit[field],str) and re.fullmatch('[a-f0-9]{64}',audit[field])
-    assert type(audit['cache_modules']) is int and audit['cache_modules']==59
-    assert type(audit['cache_entries']) is int and audit['cache_entries']==65
+    assert type(audit['cache_modules']) is int and audit['cache_modules']==(len(binding['payload_counts']['modules']) if binding['acme_files'] else 59)
+    assert type(audit['cache_entries']) is int and audit['cache_entries']==audit['cache_modules']+6+len(binding['acme_files'])
     assert audit['entrypoint']==binding['expected_entrypoint']
     assert audit['container_started'] is False and audit['owned_container_absent'] is True
     retained=retained_cache_files(admission_path,admission,audit,binding,context)

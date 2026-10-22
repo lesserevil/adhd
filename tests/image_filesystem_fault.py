@@ -157,7 +157,7 @@ class FilesystemFaultImage(RetainedImage):
         assert mount['Source']==str(self.library) and mount['Type']=='bind' and mount['RW'] is False
         assert sha(self.library)==self.library_sha256
         custody=stop_owned_process(row['Id'],self.image_id,trace,OBSERVER,'beam.smp',
-            ['/app/hub.exs',json.dumps(self.expected_public_command())])
+            ['/app/hub.exs',json.dumps(self.expected_public_command())],self.library_sha256)
         self.custody.append({'container_id':row['Id'],'source':self.source_name,'stage':self.stage,
             'observer_sha256':self.library_sha256,**custody})
         return custody

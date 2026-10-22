@@ -74,7 +74,7 @@ class EventingFaultImage(OwnedImage):
         assert mount['Source'] == str(self.library) and mount['RW'] is False and mount['Type'] == 'bind'
         assert digest(self.library) == self.library_sha256
         arguments = ['/app/hub.exs', json.dumps(['serve', str(self.config_file)])]
-        observed = stop_owned_process(row['Id'], self.image_id, trace, OBSERVER, 'beam.smp', arguments)
+        observed = stop_owned_process(row['Id'], self.image_id, trace, OBSERVER, 'beam.smp', arguments, self.library_sha256)
         self.custody.append({'container_id': row['Id'], 'image_config_identity': self.image_id,
             'stage': self.stage, 'observer_sha256': self.library_sha256, **observed})
         return observed

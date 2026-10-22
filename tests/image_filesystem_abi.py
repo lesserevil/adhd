@@ -293,7 +293,7 @@ def run_case(plan,case,index,helpers,custody):
   else:raise AssertionError('Actual image ABI boundary deadline')
   trace=json.loads(control['sentinel'].read_text());assert trace['stage']==control['stage'] and trace['pid']==1
   call=json.loads((root/'caller.json').read_text());validate_call(call,case['op'])
-  owned=custody.stop_owned_process(identifier,plan['image_config_identity'],trace,OBSERVER,'busybox',['/bin/true'])
+  owned=custody.stop_owned_process(identifier,plan['image_config_identity'],trace,OBSERVER,'busybox',['/bin/true'],sha(library))
   assert row['HostConfig']['NetworkMode']=='none' and row['HostConfig']['ReadonlyRootfs']
   mounts={v['Destination']:v for v in row['Mounts']}
   for destination,actual in [(OBSERVER,library),(CALLER,caller)]:

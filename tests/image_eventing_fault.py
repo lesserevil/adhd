@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import stat
 import subprocess
 import time
 from uuid import uuid4
@@ -63,13 +64,39 @@ def docker(*args, check=True, timeout=30):
     return subprocess.run(['docker', *args], capture_output=True, check=check, timeout=timeout)
 
 
-def stop_owned_process(container_id, image, sentinel, library, expected_executable, expected_arguments):
-    """Ancestor signal through a pidfd after binding the exact owned process."""
+def stop_owned_process(container_id, image, sentinel, library, expected_executable, expected_arguments,
+                       expected_library_sha256):
+    """Bind stable process/mapped-library identity, then STOP through its pidfd."""
+    assert re.fullmatch('[a-f0-9]{64}', expected_library_sha256)
     row = json.loads(docker('inspect', container_id).stdout)[0]
-    assert row['Id'] == container_id and row['Image'] == image and row['State']['Running']
-    assert row['HostConfig']['PidMode'] in ('', 'private') and row['HostConfig']['ReadonlyRootfs']
     host_pid = row['State']['Pid']
     assert type(host_pid) is int and host_pid > 1
+
+    def inspect_owned():
+        current = json.loads(docker('inspect', container_id).stdout)[0]
+        assert current['Id'] == container_id and current['Image'] == image and current['State']['Running']
+        assert current['State']['Pid'] == host_pid
+        assert current['HostConfig']['PidMode'] in ('', 'private') and current['HostConfig']['ReadonlyRootfs']
+        mounts = [m for m in current['Mounts'] if m['Destination'] == str(library)]
+        assert len(mounts) == 1 and mounts[0]['Type'] == 'bind' and mounts[0]['RW'] is False
+        source = Path(mounts[0]['Source'])
+        assert source.is_absolute() and source.resolve(strict=True) == source
+        fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW)
+        try:
+            before = os.fstat(fd)
+            assert stat.S_ISREG(before.st_mode) and before.st_uid == os.getuid() and before.st_nlink == 1
+            digest_value = hashlib.sha256()
+            while block := os.read(fd, 65536):
+                digest_value.update(block)
+            after = os.fstat(fd)
+            identity_fields = lambda v: (v.st_dev, v.st_ino, v.st_size, v.st_mtime_ns, v.st_ctime_ns)
+            assert identity_fields(before) == identity_fields(after) == identity_fields(source.lstat())
+            assert digest_value.hexdigest() == expected_library_sha256
+            return before.st_dev, before.st_ino
+        finally:
+            os.close(fd)
+
+    mapping_file = inspect_owned()
     descriptor = os.pidfd_open(host_pid)
     try:
         def identity():
@@ -86,15 +113,23 @@ def stop_owned_process(container_id, image, sentinel, library, expected_executab
             arguments = cmdline.split(b'\0')
             assert all(str(value).encode() in arguments for value in expected_arguments)
             maps = Path('/proc/' + str(host_pid) + '/maps').read_text()
-            assert str(library) in maps and '/lib/ld-musl-x86_64.so.1' in maps
-            stat = Path('/proc/' + str(host_pid) + '/stat').read_text()
-            start_time = stat.rsplit(')', 1)[1].split()[19]
-            return (start_time, namespace, executable, hashlib.sha256(cmdline).hexdigest(),
-                    hashlib.sha256(maps.encode()).hexdigest())
-        first = identity()
-        again = json.loads(docker('inspect', container_id).stdout)[0]
-        assert again['Id'] == container_id and again['Image'] == image and again['State']['Pid'] == host_pid
-        assert identity() == first
+            selected = []
+            for line in maps.splitlines():
+                parts = line.split(None, 5)
+                if len(parts) == 6 and parts[5] == str(library):
+                    major, minor = [int(v, 16) for v in parts[3].split(':')]
+                    assert (os.makedev(major, minor), int(parts[4])) == mapping_file
+                    selected.append(line)
+            assert selected and any('x' in line.split()[1] for line in selected)
+            assert '/lib/ld-musl-x86_64.so.1' in maps
+            process_stat = Path('/proc/' + str(host_pid) + '/stat').read_text()
+            start_time = process_stat.rsplit(')', 1)[1].split()[19]
+            stable = (start_time, namespace, executable, hashlib.sha256(cmdline).hexdigest())
+            return stable, tuple(selected), maps
+        first, first_mapping, _ = identity()
+        assert inspect_owned() == mapping_file
+        before_stop, before_mapping, _ = identity()
+        assert before_stop == first and before_mapping == first_mapping
         signal.pidfd_send_signal(descriptor, signal.SIGSTOP)
         deadline = time.monotonic() + 2
         while time.monotonic() < deadline:
@@ -104,10 +139,17 @@ def stop_owned_process(container_id, image, sentinel, library, expected_executab
             time.sleep(.005)
         else:
             raise AssertionError('Actual owned image process did not enter kernel STOP')
+        assert inspect_owned() == mapping_file
+        stopped, stopped_mapping, stopped_maps = identity()
+        assert stopped == first and stopped_mapping == first_mapping
         return {'host_process_pid': host_pid, 'namespace_pid': sentinel['pid'],
             'signal_method': 'ancestor-pidfd-SIGSTOP', 'pid_namespace': first[1],
             'executable_basename': expected_executable, 'cmdline_sha256': first[3],
-            'process_maps_sha256': first[4], 'kernel_state': 'stopped'}
+            'process_maps_sha256': hashlib.sha256(stopped_maps.encode()).hexdigest(),
+            'process_maps_witness_phase': 'kernel-stopped',
+            'observer_mapping_sha256': hashlib.sha256('\n'.join(stopped_mapping).encode()).hexdigest(),
+            'observer_library_sha256': expected_library_sha256,
+            'kernel_state': 'stopped'}
     finally:
         os.close(descriptor)
 
@@ -139,6 +181,7 @@ def probe_image(image, manifest, work):
             '--user', f'{os.getuid()}:{os.getgid()}', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
             '--memory', '128m', '--cpus', '1', '--pids-limit', '32',
             '--mount', 'type=bind,src=' + str(work) + ',dst=' + str(work),
+            '--mount', 'type=bind,src=' + str(library) + ',dst=' + str(library) + ',readonly',
             '--env', 'LD_PRELOAD=' + str(library), '--env', 'ADHD_CRASH_STAGE=after-snapshot',
             '--env', 'ADHD_CRASH_CONFIG=' + str(config), '--env', 'ADHD_CRASH_STORE=' + str(store),
             '--env', 'ADHD_CRASH_SENTINEL=' + str(sentinel), '--entrypoint', '/bin/mv', image,
@@ -152,7 +195,7 @@ def probe_image(image, manifest, work):
                 observed = json.loads(sentinel.read_text())
                 assert observed == {'stage': 'after-snapshot', 'pid': 1}
                 custody = stop_owned_process(identifier, image, observed, library, 'busybox',
-                                              ['/bin/mv', str(source), str(target)])
+                                              ['/bin/mv', str(source), str(target)], digest(library))
                 host_pid = custody['host_process_pid']
                 break
             assert inspected['State']['Running'], 'Image observer process exited without reaching the real boundary'

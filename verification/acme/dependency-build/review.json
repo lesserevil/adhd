@@ -1,0 +1,16 @@
+{
+  "scope": "Actual guardian static compile+12host process cases; source/tool/module-closed client build pending; no target-image claim",
+  "guardian_input_sha256": "5e5b5ea342b2de32b5bdec72d1a65412cc8e4669f4cae174c6370d1fea697a1d",
+  "guardian_result_sha256": "196d4ffe7fffabb8b2519537ccfa2b4f6fd186c73968a21a9b2d42dfef8217ae",
+  "client_warm_repeated_build_sha256": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+  "warm_build_scope": "Two separate output files, same offline trimpath command/cache; not independent clean builds",
+  "metadata_capture01": {
+    "passed": false,
+    "compiler_started": false,
+    "reason": "go mod download all had added go.sum hashes beyond original pinned source; exact source closure check refused",
+    "expanded_go_sum_sha256": "21c6cd08c1bcb792afada9b6b70c7f401e786d826e68c007f5ef1f596627018f",
+    "correction": "Restore exact original pinned go.sum; subsequent build uses -mod=readonly"
+  },
+  "packaging_bundle02": "Candidate only until actual fully closed client build matches; eight files,201linked modules with all module-root notices retained",
+  "host_guardian_limit": "Installed-musl tree was fully bound before/after guardian compile; earlier isolated musl source-build command/log exists, but its initial full host closure was not captured before execution. Target-image process tests remain required."
+}

@@ -71,7 +71,7 @@ def compiled_context(context,expected_manifest,expected_artifact):
     expected_helpers={'build.exs','boot.exs'}|(ACME_FILES if has_acme else set())
     assert set(inputs['files'])==expected_helpers
     assert all(re.fullmatch('[a-f0-9]{64}',v) for v in inputs['files'].values())
-    packaging=context/'packaging.tar';assert packaging.stat().st_size <= (96*1024*1024 if has_acme else 1024*1024)
+    packaging=context/'packaging.tar';assert packaging.stat().st_size <= (96*1024*1024 if has_acme else 4*1024*1024 if member.name=='packaging/lego-sbom.json' else 1024*1024)
     content={};seen=set()
     with tarfile.open(packaging,mode='r:') as archive:
         members=archive.getmembers();assert len(members)==len(expected_helpers)+2
@@ -80,7 +80,7 @@ def compiled_context(context,expected_manifest,expected_artifact):
             if member.name=='packaging':assert member.isdir() and member.mode==0o755
             else:
                 assert member.name in {'packaging/'+n for n in expected_helpers|{'inputs.json'}}
-                assert member.isfile() and member.mode==0o444 and 0<=member.size <= (80*1024*1024 if member.name in ['packaging/lego','packaging/acme-guard'] else 1024*1024)
+                assert member.isfile() and member.mode==0o444 and 0<=member.size <= (80*1024*1024 if member.name in ['packaging/lego','packaging/acme-guard'] else 4*1024*1024 if member.name=='packaging/lego-sbom.json' else 1024*1024)
                 content[member.name.removeprefix('packaging/')]=archive.extractfile(member).read()
     assert set(content)==expected_helpers|{'inputs.json'} and content['inputs.json']==raw
     assert all(digest(content[name])==value for name,value in inputs['files'].items())

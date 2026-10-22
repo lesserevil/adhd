@@ -135,7 +135,7 @@ Final qualification remains open for the recorded topic-readiness repair,
 successor recovery checks and enforcing network policy. Earlier model-matched
 local-queue results remain historical evidence for their original runtime.
 
-### Plain-text subscriptions in the current runtime
+### Optional plain-text semantic subscriptions
 
 An agent subscribes by supplying a plain-text description of the information it
 wants to receive. The server uses a relevance model to determine whether newly
@@ -157,7 +157,7 @@ The matching result is consumed directly by software without parsing generated
 prose. Independent subscription questions may be batched against the same publication.
 
 The initial model is Nemotron Deciffusion 8B v2.1; the interface remains replaceable.
-The threshold and inference deployment remain to be selected. A match probability expresses the
+The threshold and inference endpoint are configured through Admin. A match probability expresses the
 likelihood of relevance, not a graded measure of how relevant the item is.
 Its calibration must be evaluated on representative project updates rather than
 assumed from the shape of its output.

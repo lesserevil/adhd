@@ -1,0 +1,59 @@
+{
+  "schema": "adhd/image-filesystem-observer-elf@1",
+  "passed": true,
+  "scope": "Host compiler/readelf only; object never loaded",
+  "source": "config_rename_fault.c",
+  "source_sha256": "bc3c16ecf630dd401f9b4b5314e26c04a4f161dca9f30f9d2fdbb2e4a34238e5",
+  "library_sha256": "a06a551768954f4beece4ff5bfc44fe0d04eaf3d4d4a76196e815bb15a1235bb",
+  "compile_argv": [
+    "cc",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-shared",
+    "-fPIC",
+    "-nostdlib",
+    "-fno-stack-protector",
+    "-U_FORTIFY_SOURCE",
+    "-D_FORTIFY_SOURCE=0",
+    "-O2",
+    "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/inputs/config_rename_fault.c",
+    "-o",
+    "/home/horde/src/adhd/_build/roadmap/final/config-abi38-02/build/config_rename_fault/observer.so"
+  ],
+  "elf_machine": "x86_64",
+  "elf_class": "ELF64",
+  "undefined_scalar_symbols": [
+    "_exit",
+    "access",
+    "close",
+    "dlsym",
+    "fsync",
+    "getenv",
+    "getpid",
+    "kill",
+    "open",
+    "pause",
+    "snprintf",
+    "strcmp",
+    "write"
+  ],
+  "exported_symbols": [
+    "rename"
+  ],
+  "needed_libraries": [],
+  "glibc_symbol_versions": [],
+  "section_sha256": {
+    "dynamic": "56d306c029dec65413345ffc1e55529126180f6ada6e9bbac097c19159a5e65e",
+    "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+    "header": "1f43e798ac574d6dec8ed389ee5a0ae17aa80bf18d85d535f0ec33412bcc15a2",
+    "symbols": "2bbd6e3af7c713f27c5fbf2173213fa4e5853bd3aed6db6f8f7bed55ddc8a6de"
+  },
+  "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "actual_image_loader_qualified": false,
+  "application_started": false,
+  "required_actual_image_abi_cases": [
+    "rename"
+  ]
+}

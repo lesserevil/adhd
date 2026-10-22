@@ -1,0 +1,380 @@
+{
+  "schema": "adhd/kubernetes-ingress-policy@1",
+  "passed": false,
+  "scope": "TCP fixtures qualify exact shipped NetworkPolicy enforcement only; no Kafka, hub, OAuth, HA or application qualification.",
+  "policy_sha256": "bb2c39acf279a30bfe9f21c0df1ff4672872e8403a52cf3176efacd3e661940a",
+  "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "cluster_endpoint": "https://127.0.0.1:38159",
+  "before": [],
+  "after": [],
+  "fixture_runtime_images": [],
+  "owned_namespace_cleanup": [
+    {
+      "namespace": "adhd-netpol-gate40-peer",
+      "observed_absent": true,
+      "uid": "9107bb92-e2a4-4515-8cb0-6a2f3acbd14f"
+    },
+    {
+      "namespace": "adhd-netpol-gate40",
+      "observed_absent": true,
+      "uid": "9bbf4cd9-5a73-4b9b-98eb-77a4a219b788"
+    }
+  ],
+  "error_type": "AssertionError",
+  "readiness_diagnostics": {
+    "scope": "Failure-only owned fixture Pod diagnostics; readiness/routes remain failed",
+    "capture_passed": true,
+    "failure_type": null,
+    "limits": {
+      "seconds": 60,
+      "command_seconds": 10,
+      "total_bytes": 8388608,
+      "metadata_bytes": 524288,
+      "namespace_bytes": 65536,
+      "log_bytes": 65536,
+      "log_requests": 2,
+      "commands": 32,
+      "pods": 1,
+      "tail_lines": 200
+    },
+    "namespace_uid": "9bbf4cd9-5a73-4b9b-98eb-77a4a219b788",
+    "pod_uid": "88e9a64a-e762-401c-8ac7-a7f008d67c72",
+    "pod": "broker",
+    "commands": 26,
+    "bytes": 132572,
+    "log_requests": 1,
+    "records": [
+      {
+        "name": "namespace-initial",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-initial",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-events-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-events-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-events-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-events-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "events",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "3f06734f929d2c4ade46f68fc44185a3af5483ca1c1932d23a15ebc44a01354c",
+          "bytes": 5204
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-describe-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-describe-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-describe-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-describe-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "describe",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "abc472ab56ec36242a6678220a57c60dc76af39e8419c1ded191faa6c493dbbc",
+          "bytes": 3261
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-log-current-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-log-current-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-log-current-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-log-current-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "log-current",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-cri-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-cri-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "node-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "5f9cc1c770c796dbee6fc7e817ada91b637dfa1eade8466b283bdca617845ae4",
+          "bytes": 8962
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "network-before",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "0edcec92c2c33d8159acfd406e7c16427f3414b75a7822c22b48bbef088236b0",
+          "bytes": 1542
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "cri-container",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "b2f24eae187168ccb8eea21cb378d161f215d90abb283de7ede446be2e6c8f9c",
+          "bytes": 15583
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "node-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "5f9cc1c770c796dbee6fc7e817ada91b637dfa1eade8466b283bdca617845ae4",
+          "bytes": 8962
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "network-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "0edcec92c2c33d8159acfd406e7c16427f3414b75a7822c22b48bbef088236b0",
+          "bytes": 1542
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "namespace-cri-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "c22d630adcde3fd3fe2b1c2525ae4995c8223b5355b11df84259210f7ce59169",
+          "bytes": 549
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "pod-cri-after",
+        "returncode": 0,
+        "stdout": {
+          "sha256": "2dab6223e56e9162bc77b339b36187566304579f7bf744b57f83d89b62a8468f",
+          "bytes": 9175
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    ],
+    "raw_private": true,
+    "owned_node_observation": {
+      "enabled": true,
+      "available": true,
+      "container_id": "899ca1f20d1166ec8d5ed37792eb3702f546eceb890053458917c515c67dac1a",
+      "pod_uid": "88e9a64a-e762-401c-8ac7-a7f008d67c72",
+      "cri_state": {
+        "state": "CONTAINER_EXITED",
+        "reason": "Error",
+        "exitCode": 137,
+        "createdAt": "2026-10-22T11:19:32.185137322Z",
+        "startedAt": "2026-10-22T11:19:32.359752769Z",
+        "finishedAt": "2026-10-22T11:19:32.521634301Z"
+      },
+      "cgroup_layout_supported": false,
+      "cgroup_paths": null,
+      "container_parent_order": "Exact Pod parent first; preserve its counters even if container cgroup is destroyed.",
+      "cgroup_unavailable": "unsupported-closed-layout; no scan attempted"
+    }
+  }
+}

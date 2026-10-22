@@ -23,8 +23,8 @@ class SDKPreparationGuards(unittest.TestCase):
    'modules':modules,'beams':{n+'.beam':'f'*64 for n in modules},'inputs_sha256':'1'*64,'boot_sha256':'2'*64,'build_sha256':'3'*64,
    'toolchain':{'elixir':'1.20.4','otp':'29','anchors':anchors}}
   path=root/'cache-manifest.json';matrix.write(path,value);metadata=root/'cache-metadata.json';matrix.write(metadata,{'offline_only':True})
-  audit={'passed':True,'image_config_identity':image,'artifact_sha256':artifact,'canonical_manifest_sha256':manifest,'cache_manifest_sha256':matrix.sha(path),
-   'cache_metadata_sha256':matrix.sha(metadata),'inputs_sha256':value['inputs_sha256'],'entrypoint':['elixir','/runtime/adhd/boot.exs','/app/hub.exs']}
+  audit={'passed':True,'image_id':image,'artifact_sha256':artifact,'canonical_manifest_sha256':manifest,'cache_manifest_sha256':matrix.sha(path),
+   'cache_metadata_sha256':matrix.sha(metadata),'compiler_inputs_sha256':value['inputs_sha256'],'entrypoint':['elixir','/runtime/adhd/boot.exs','/app/hub.exs']}
   admission={'files':{'cache-manifest.json':matrix.sha(path),'cache-metadata.json':matrix.sha(metadata)},'compiled_runtime_audit':audit}
   return path,admission,image,artifact,manifest
  def test_optional_compiled_binding_rejects_foreign_or_incomplete_proof(self):
@@ -32,7 +32,7 @@ class SDKPreparationGuards(unittest.TestCase):
   with tempfile.TemporaryDirectory() as directory:
    args=self.compiled_fixture(Path(directory));binding=matrix.compiled_cache_binding(*args)
    self.assertEqual(len(binding['manifest']['modules']),59)
-   for key in ['image_config_identity','artifact_sha256','inputs_sha256','cache_manifest_sha256','cache_metadata_sha256','canonical_manifest_sha256','entrypoint']:
+   for key in ['image_id','artifact_sha256','compiler_inputs_sha256','cache_manifest_sha256','cache_metadata_sha256','canonical_manifest_sha256','entrypoint']:
     bad=copy.deepcopy(args[1]);bad['compiled_runtime_audit'][key]='wrong'
     with self.assertRaises(AssertionError):matrix.compiled_cache_binding(args[0],bad,*args[2:])
    bad=copy.deepcopy(args[1]);del bad['compiled_runtime_audit']
@@ -58,6 +58,17 @@ class SDKPreparationGuards(unittest.TestCase):
    with patch.object(runtime.base.Custody,'inspect_image',side_effect=lambda *a:calls.append(('original-source-custody',))):custody.inspect_image(obj,event)
    self.assertEqual(calls[0],('original-source-custody',));self.assertEqual(len(calls),4);self.assertNotIn('health',str(calls))
    self.assertEqual(event['compiled_cache']['modules'],59);self.assertEqual(event['compiled_cache']['extra_health_or_warmup_requests'],0)
+ def test_absolute_docker_selection_rejects_foreign_path_before_calls(self):
+  tool={'path':'/usr/bin/docker','sha256':'a'*64}
+  def parent(obj,*args,**kwargs):obj.plan={'tools':{'docker':tool}}
+  with patch.object(runtime.base.Custody,'__init__',parent),patch.object(runtime.base,'sha',return_value='a'*64):
+   with patch.object(runtime.shutil,'which',return_value='/foreign/docker'):
+    with self.assertRaises(AssertionError):runtime.SDKCustody({}, {}, None)
+   with patch.object(runtime.shutil,'which',return_value='/usr/bin/docker'):
+    custody=runtime.SDKCustody({}, {}, None)
+    with patch.object(runtime.subprocess,'run',return_value='observed') as call:
+     self.assertEqual(custody.docker('inspect','owned'), 'observed')
+     call.assert_called_once_with(['/usr/bin/docker','inspect','owned'],capture_output=True,check=True,timeout=30)
  def fake_custody(self):
   root=Path('/private/owned');image='sha256:'+'a'*64;cid='b'*64;name='adhd-test-000000000000'
   files={'hub.exs':'c'*64,**{'f'+str(i):'d'*64 for i in range(58)}};manifest={'files':{**files,'Dockerfile':'e'*64}}

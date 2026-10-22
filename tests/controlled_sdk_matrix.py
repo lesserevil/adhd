@@ -56,9 +56,9 @@ def compiled_cache_binding(path,admission,image,artifact,manifest_sha):
  assert len(anchors)==5 and all(re.fullmatch('[a-f0-9]{64}',v) for v in anchors.values())
  assert all(p=='/proc/self/exe' or p.startswith('/usr/local/lib/elixir/') and p.endswith('.beam') and '\x00' not in p and '\n' not in p for p in anchors)
  audit=admission['compiled_runtime_audit']
- assert audit['passed'] is True and audit['image_config_identity']==image
+ assert audit['passed'] is True and audit['image_id']==image
  assert audit['artifact_sha256']==artifact and audit['canonical_manifest_sha256']==manifest_sha
- assert audit['cache_manifest_sha256']==sha(path) and audit['inputs_sha256']==value['inputs_sha256']
+ assert audit['cache_manifest_sha256']==sha(path) and audit['compiler_inputs_sha256']==value['inputs_sha256']
  assert audit['entrypoint']==['elixir','/runtime/adhd/boot.exs','/app/hub.exs']
  metadata=path.with_name('cache-metadata.json');info=metadata.lstat()
  assert stat.S_ISREG(info.st_mode) and not metadata.is_symlink() and info.st_nlink==1
@@ -74,6 +74,7 @@ def prepare(a):
  selected=reader.reviewed_payload(a.context/'manifest.json',a.admission,a.admission_sha256,image,artifact_hash)
  compiled=compiled_cache_binding(a.compiled_cache_manifest,admission,image,artifact_hash,sha(a.context/'manifest.json')) if a.compiled_cache_manifest else None
  assert compiled is not None or 'compiled_runtime_audit' not in admission,'Compiled target requires explicit cache manifest binding'
+ docker=Path('/usr/bin/docker');assert docker.resolve()==docker and docker.is_file()
  work.mkdir(parents=True,mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700)
  for part in ['tests','scripts']:
   for path in (repo/part).rglob('*'):
@@ -108,8 +109,8 @@ def prepare(a):
   jobs.append({'name':name,'expected_groups':count,'test_argv':argv,'custody_report':str(work/(name+'-custody.json')),
     'launch_ledger':str(work/(name+'-launches.json')),'timeout_seconds':original['timeout_seconds'],'historical_producer_sha256':historical})
  for path in producers:externals[str(path)]=sha(path)
- for path in [Path(sys.executable).resolve(),elixir.resolve(),Path(shutil.which('cc')).resolve(),*list((repo/'_build/federation/native/erlang').glob('erts-*/bin/beam.smp'))]:externals[str(path)]=sha(path)
- tools={label:{'path':str(path.absolute()),'resolved':str(path.resolve()),'sha256':sha(path.resolve())} for label,path in [('python',Path(sys.executable)),('elixir',elixir),('compiler',Path(shutil.which('cc')))]}
+ for path in [docker,Path(sys.executable).resolve(),elixir.resolve(),Path(shutil.which('cc')).resolve(),*list((repo/'_build/federation/native/erlang').glob('erts-*/bin/beam.smp'))]:externals[str(path)]=sha(path)
+ tools={label:{'path':str(path.absolute()),'resolved':str(path.resolve()),'sha256':sha(path.resolve())} for label,path in [('python',Path(sys.executable)),('elixir',elixir),('compiler',Path(shutil.which('cc'))),('docker',docker)]}
  shutil.copyfile(__file__,work/'run.py')
  plan={'schema':'adhd/controlled-sdk-image-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','image_config_identity':image,'artifact_sha256':artifact_hash,
   'compiled_cache':compiled,'canonical_manifest_sha256':sha(work/'image-manifest.json'),'admission_sha256':a.admission_sha256,'actual_formal_native_export':str(artifact),
@@ -119,7 +120,7 @@ def prepare(a):
   'expected_app_files':selected['audit']['actual_app_files'],'specifications':len(selected['specifications']),
   'native_artifact_sha256':[artifact_hash]+sorted(sha(path) for path in producers),'jobs':jobs,'planned_suites':list(CASES),'expected_groups':17,
   'tools':tools,'python':sys.executable,'compiler':str(Path(shutil.which('cc')).resolve()),'runtime_cwd':str(runtime),'fence_library':str(work/'provider-fence.so'),'fence_audit':str(work/'provider-fence.audit'),
-  'path_prefix':parent['path_prefix'],'runs_per_suite':1,'automatic_retries':0,'parallelism':1,'maximum_owned_hubs':2,'stop_first_failure':True,
+  'path_prefix':parent['path_prefix'],'qualified_path':parent['path_prefix']+':/usr/bin:/bin','tool_closure_scope':'Exact declared inputs and top executables; no recursive tool-library closure claim','runs_per_suite':1,'automatic_retries':0,'parallelism':1,'maximum_owned_hubs':2,'stop_first_failure':True,
   'original_readiness_seconds':30,'health_observation':{'calls':'Only unchanged original Hub.start direct health calls','maximum_rows':512,'maximum_body_prefix_bytes':1024,'extra_health_requests':0,'request_timeout_seconds':1,'original_sleep_seconds':0.1},'startup_failure_diagnostic_collection_seconds':15,'startup_failure_diagnostic_reap_grace_seconds':3,'maximum_startup_failure_diagnostic_seconds':18,'parent_false_matrix_sha256':sha(a.parent_matrix),'historical_whole_prefix_groups':100,
   'provider_scope':parent['provider_scope'],'scope':'Explicit current admitted image SDK17 only. Original11-suite image38 prefix100 remains historical, source38 aggregate remains false. No single-artifact117, native full matrix or release claim.'}
  write(work/'plan.json',plan);load(work/'run.py','copied_sdk_driver').verify(plan,work)
@@ -138,6 +139,7 @@ def verify(plan,work):
  assert plan['planned_suites']==list(CASES) and [v['name'] for v in plan['jobs']]==list(CASES)
  assert [v['expected_groups'] for v in plan['jobs']]==list(CASES.values()) and plan['original_readiness_seconds']==30
  for row in plan['tools'].values():assert str(Path(row['path']).resolve())==row['resolved'] and sha(row['resolved'])==row['sha256']
+ assert shutil.which('docker',path=plan['qualified_path'])==plan['tools']['docker']['path']=='/usr/bin/docker'
  assert plan['expected_groups']==17 and plan['automatic_retries']==0 and plan['parallelism']==1
  return True
 
@@ -146,7 +148,7 @@ def execute(work,expected):
  assert sha(work/'plan.json')==expected;plan=json.loads((work/'plan.json').read_text());verify(plan,work)
  helper=load(work/'frozen/tests/controlled_image_matrix.py','reviewed_sdk_execution_helpers')
  assert not Path(plan['runtime_cwd']).exists();helper.durable_once_marker(work/'started.json',{'plan_sha256':expected,'started_at':time.time()})
- Path(plan['runtime_cwd']).mkdir(mode=0o700);env=dict(os.environ);env['PATH']=plan['path_prefix']+':'+env['PATH'];env['PYTHONDONTWRITEBYTECODE']='1'
+ Path(plan['runtime_cwd']).mkdir(mode=0o700);env=dict(os.environ);env['PATH']=plan['qualified_path'];env['PYTHONDONTWRITEBYTECODE']='1'
  env['LD_PRELOAD']=plan['fence_library'];env['ADHD_RECOVERY_DENY_PROVIDER_PORT']='18770';env['ADHD_RECOVERY_PROVIDER_FENCE_AUDIT']=plan['fence_audit'];env['ERL_FLAGS']='+S 2:2'
  rows=[];failure=None
  try:

@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import selectors
+import shutil
 import inspect
 import httpx
 import re
@@ -76,7 +77,7 @@ def startup_diagnostics(custody,obj,reader=bounded):
         try:
             remaining=deadline-time.monotonic()
             if remaining<=0:raise TimeoutError('Overall diagnostic deadline')
-            row=reader(['docker',*args],min(deadline,time.monotonic()+3))
+            row=reader([custody.plan.get('tools',{}).get('docker',{}).get('path','/usr/bin/docker'),*args],min(deadline,time.monotonic()+3))
             result['observations'][label]={'returncode':row['returncode'],'stdout':scrub(row['stdout']),'stderr':scrub(row['stderr']),'client_process':row.get('client_process')}
             return row
         except BaseException as error:result['unavailable'].append({'observation':label,'failure_type':type(error).__name__,'client_process':getattr(error,'owned_diagnostic_client',None)});return None
@@ -157,6 +158,13 @@ class OriginalHealthCalls:
 
 
 class SDKCustody(base.Custody):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        tool=self.plan['tools']['docker']
+        assert tool['path']=='/usr/bin/docker' and shutil.which('docker')==tool['path']
+        assert base.sha(tool['path'])==tool['sha256']
+    def docker(self,*args,check=True):
+        return subprocess.run([self.plan['tools']['docker']['path'],*args],capture_output=True,check=check,timeout=30)
     def inspect_image(self,obj,event):
         # The unchanged Hub.start has already completed its original health
         # measurement. These read-only custody checks issue no health/warmup.

@@ -299,8 +299,11 @@ to frozen harnesses:
   and [focused Admin/Events/recovery UI32](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json)
   pass their complete selected programs. The UI result is not a new full UI86 claim.
 
-These positives do not close the integrated roadmap. Full current-image recovery25,
-Kafka14 and final documentation-authority review remain separate requirements.
+The complete current-image [Kafka14/68 run](../../verification/kafka41-full14-positive/audit.json)
+also passes all 14 programs, with strict owned-service cleanup and protected
+services unchanged. These positives do not close the integrated roadmap: full
+recovery25, final evidence composition and documentation-authority review remain
+separate requirements.
 Independent cache integrity and two-build reproducibility are linked in the
 [build guide](operations.md#build-and-transfer). The
 [enforcing CNI18 result](../../verification/ownedMULTI008/cni-static-gate-positive/audit.json)

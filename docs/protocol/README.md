@@ -21,8 +21,9 @@ semantically conserved, not byte-identical: JSON object serialization order and
 only five explicitly named `required` string-array orderings per document differ.
 The comparison retains both arrays at each exact JSON Pointer and verifies every
 other array, example, enum and value unchanged. It does not reorder or republish
-these downloads. Current core/platform/browser positives and remaining complete
-recovery25/Kafka14 and final authority gates are distinguished in the
+these downloads. Current core/platform/browser positives and the complete
+[Kafka14/68 result](../../verification/kafka41-full14-positive/audit.json) remain
+separate from pending full recovery25, final composition and authority gates in the
 [qualification guide](../admin/event-service.md#qualification) and
 [active queue](../roadmap/active-work.md).
 

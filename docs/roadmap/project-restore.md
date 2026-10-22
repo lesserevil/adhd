@@ -114,9 +114,12 @@ fresh full86 browser matrix.
 The [current property join](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
 keeps original native/parser/allocator/ownership and local-legacy evidence bound
 to their actual unchanged modules and runtimes. Scalar observer ABI probes are
-compatibility evidence, not durability tests. Remaining full current regression
-programs, the separate offline rebind/hostile regression, final evidence
-composition and documentation/receipt/context bridge stay open. Full-server
+compatibility evidence, not durability tests. The complete
+[core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json) and
+[Kafka14/68](../../verification/kafka41-full14-positive/audit.json) runs pass on the
+current image, without replacing recovery-specific requirements. Full recovery25,
+including the separate offline rebind/hostile regression, final evidence composition
+and documentation/receipt/context bridge stay open. Full-server
 backup/rebind neither replaces selective recovery nor authorizes populated rollback.
 Keep pre-upgrade compatible backups and the matching prior image for rollback;
 never open a newer store with an older binary or overwrite a populated current

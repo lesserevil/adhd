@@ -27,10 +27,12 @@ with [root's named capture review](../../verification/ownedMULTI008/source41-foc
 The separate [deployed-model programs](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
 pass on both platforms: eight outer checks and twelve actual POSTs total, with the
 original filtering, cited-query, Blue-progress, privacy and hot disable/resume gates.
-These are separate programs, not one fresh full historical matrix. Complete current
-core, federation and offline-rebind regressions, final requirement composition and
-the documentation/receipt/context bridge remain open; retained failed aggregates
-stay false.
+The complete [core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json)
+and [Kafka14/68](../../verification/kafka41-full14-positive/audit.json) programs also
+pass on the current image. These are separate programs, not one fresh full
+historical matrix. Full recovery25, including offline rebind/hostile coverage,
+final requirement composition and the documentation/receipt/context bridge remain
+open; retained failed aggregates stay false.
 
 This program belongs to ADHD's hub Component, tests, tooling and guides. It does
 not require a framework pin upgrade, a new model or a database replacement. The

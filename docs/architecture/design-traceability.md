@@ -99,8 +99,11 @@ the pinned amd64 builder. Current independently scoped positives include:
   [scalar ABI19](../../verification/ownedMULTI008/source41-image-abi-positive/audit.json)
   retain their distinct UI, cache and observer-compatibility scopes.
 
-These results do not declare the whole goal complete. Full current-image recovery25
-and Kafka14 remain integrated gates in the [active queue](../roadmap/active-work.md).
+The complete [Kafka14/68 run](../../verification/kafka41-full14-positive/audit.json)
+also passes on the current image, with owned-service cleanup and protected
+services unchanged. These results do not declare the whole goal complete: full
+recovery25, final evidence composition and authority review remain in the
+[active queue](../roadmap/active-work.md).
 Earlier CNI, model, migration and subsystem evidence keeps its exact source scope;
 the [conservation review](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
 states the permitted joins and limits. Changed operating guides still require the

@@ -136,7 +136,10 @@ retains its original image/context scope. Current
 [scalar observer ABI19](../../verification/ownedMULTI008/source41-image-abi-positive/audit.json)
 and [core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json)
 are separate gates: cache validation and observer compatibility do not by themselves
-prove recovery or application durability. See Docker's
+prove recovery or application durability. The complete
+[Kafka14/68 run](../../verification/kafka41-full14-positive/audit.json) separately
+passes on this image; full recovery25, final composition and authority review remain
+pending. See Docker's
 [reproducible build guidance](https://docs.docker.com/build/ci/github-actions/reproducible-builds/).
 
 Transfer the staged directory and `deploy/run.sh`, `scripts/configure_hub.py` to

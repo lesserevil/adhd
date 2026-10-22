@@ -166,5 +166,7 @@ model identity, released cooperative lease and strict cleanup are retained.
 The [older compiled05 launcher143/false result](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json)
 remains historical evidence and is not rewritten by this positive run. This fixed
 synthetic corpus is not general semantic accuracy or latency calibration, a fresh
-optimizer benchmark, or a full-transitive/legal-clearance inventory. Full current
-Kafka14/recovery25 and final documentation-authority review remain separate gates.
+optimizer benchmark, or a full-transitive/legal-clearance inventory. Current
+[Kafka14/68](../../verification/kafka41-full14-positive/audit.json) now passes on
+this image; recovery25, final evidence composition and documentation-authority
+review remain separate gates.

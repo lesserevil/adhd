@@ -33,8 +33,12 @@ The [deployed-model programs](../../verification/ownedMULTI008/source41-deployed
 pass eight outer checks across Compose and Kind with twelve actual POSTs total;
 the inner reports retain the original semantic gates rather than a twelve-case array.
 [Focused browser qualification](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json)
-passes the complete Admin18/Events12/recovery2 programs. These positives do not
-close the remaining full core/federation/rebind and final evidence/receipt gates.
+passes the complete Admin18/Events12/recovery2 programs. The complete
+[core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json) and
+[Kafka14/68](../../verification/kafka41-full14-positive/audit.json) runs now pass,
+including federation in the full Kafka run. Full recovery25, final evidence
+composition and documentation/receipt review remain open; earlier false
+invocations retain their original scope.
 
 The pivot composes with [multiple projects per server](multi-project.md). Kafka
 is per server, not per project or per agent. A Kafka service can be one development

@@ -112,7 +112,7 @@ def run_script(script,argv,budget,cleanup_report,compiled_binding=None):
             'script_sha256':hashlib.sha256(script.read_bytes()).hexdigest(),'outer_bound_seconds':budget,
             'failure_type':type(primary).__name__ if primary else None,'cleanup_failure_types':failures,
             'images':[{'image_config_identity':obj.image_id,'closed':obj.name is None and not getattr(obj,'cleanup_blocked',False),
-                'events':obj.events,'payload_probe_lifecycle':obj.probe_events,'static_compiled_cache':getattr(obj,'recovery_static_cache',None),'compiled_launches':getattr(obj,'recovery_compiled_launches',[]),'static_cache_failure':getattr(obj,'recovery_static_cache_failure',None)} for obj in images],
+                'events':obj.events,'rebind_argument_observations':getattr(obj,'rebind_argument_observations',[]),'payload_probe_lifecycle':obj.probe_events,'static_compiled_cache':getattr(obj,'recovery_static_cache',None),'compiled_launches':getattr(obj,'recovery_compiled_launches',[]),'static_cache_failure':getattr(obj,'recovery_static_cache_failure',None)} for obj in images],
             'native_owned_runtimes':len(runtimes),'owned_native_processes_absent':native_absent}
         try:Path(cleanup_report).write_text(json.dumps(value,indent=2)+'\n')
         except BaseException as error:

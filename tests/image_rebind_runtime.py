@@ -99,6 +99,27 @@ class ImageRebindRuntime:
             assert len(observations)<64,'VM inspection observation bound'
             observations.append(snapshot)
 
+    @staticmethod
+    def record_arguments(session,row,expected,cmdline,pid,start_time,namespace):
+        # Hashes and booleans only: public commands can contain credentials.
+        digest=lambda value:hashlib.sha256(value).hexdigest()
+        tokens=cmdline.split(b'\0')
+        cmd=row.get('Config',{}).get('Cmd')
+        cmd_bytes=json.dumps(cmd,separators=(',',':'),ensure_ascii=True).encode()
+        observation={'container_id':row['Id'],'image_config_identity':row['Image'],
+            'host_vm_pid':pid,'vm_start_time_ticks':start_time,'pid_namespace':namespace,
+            'actual_cmdline_sha256':digest(cmdline),'actual_cmdline_bytes':len(cmdline),
+            'actual_token_count':len(tokens),'actual_tokens':[{'sha256':digest(t),'bytes':len(t)} for t in tokens[:256]],
+            'actual_token_hashes_truncated':len(tokens)>256,
+            'expected_tokens':[{'sha256':digest(arg.encode()),'bytes':len(arg.encode()),
+                                'matched':arg.encode() in tokens} for arg in expected],
+            'docker_cmd_equals_serialized':cmd==[session['serialized']],
+            'docker_cmd_sha256':digest(cmd_bytes),'docker_cmd_bytes':len(cmd_bytes),
+            'stable_proc_identity_before_assert':True}
+        session.setdefault('argument_observations',[]).append(observation)
+        target=session['target']
+        target.rebind_argument_observations=session['argument_observations']
+
     def observe_vm(self,session,deadline):
         target=session['target'];process=session['process']
         while time.monotonic()<deadline:
@@ -131,6 +152,10 @@ class ImageRebindRuntime:
             except FileNotFoundError:time.sleep(.02);continue
             if executable.name not in ('beam.smp','beam'):time.sleep(.02);continue
             expected=(session['component_argv'] if session['command_kind']=='component' else ['/app/hub.exs',session['serialized']])
+            assert Path('/proc/'+str(pid)+'/stat').read_text().rsplit(')',1)[1].split()[19]==start_time
+            assert os.readlink('/proc/'+str(pid)+'/ns/pid')==namespace
+            assert os.readlink('/proc/'+str(pid)+'/exe')==str(executable)
+            self.record_arguments(session,row,expected,cmdline,pid,start_time,namespace)
             assert expected and all(isinstance(arg,str) and arg.encode() in cmdline.split(b'\0') for arg in expected)
             assert namespace!=os.readlink('/proc/self/ns/pid')
             target.observe()

@@ -1,0 +1,10 @@
+{
+  "schema": "adhd/native-ui-audit-oracle-correction@1",
+  "original_runtime_matrix_unchanged_and_true": true,
+  "initial_read_only_audit_stopped": true,
+  "initial_assertion": "assert not Path(rig[home]).exists()",
+  "initial_failure": "AssertionError: Rig path remains home",
+  "cause": "Audit added a path-deletion requirement absent from original Rigs.close. Original close shuts down actual seats/daemon/tmux; --keep-work retains diagnostics and private files.",
+  "corrected_audit_scope": "Exact original process-start identities, per-suite nonce scan, private OpenRig environment process scan and current owned-root process scan must be absent; retain private files.",
+  "app_test_reruns_cleanup_mutations_provider_calls": 0
+}

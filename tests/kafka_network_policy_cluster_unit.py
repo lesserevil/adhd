@@ -85,8 +85,8 @@ class Guards(unittest.TestCase):
    process.assert_not_called()
  def test_fresh_anonymous_volume_bound_to_owned_node(self):
   runner=g.Executor(self.root,dict(self.plan(),node_anonymous_volume_destinations=['/var']));runner.preexisting_volumes={'other'};name='a'*64
-  row={'HostConfig':{'Binds':['/var','/lib/modules:/lib/modules:ro']},'Mounts':[{'Type':'volume','Name':name,'Driver':'local','Destination':'/var','Source':'/vol/'+name}]}
-  volume={'Name':name,'Driver':'local','Scope':'local','CreatedAt':'now','Mountpoint':'/vol/'+name}
+  row={'Config':{'Volumes':{'/var':{}}},'HostConfig':{'Binds':['/lib/modules:/lib/modules:ro']},'Mounts':[{'Type':'volume','Name':name,'Driver':'local','Destination':'/var','Source':'/vol/'+name}]}
+  volume={'Name':name,'Driver':'local','Scope':'local','CreatedAt':'now','Mountpoint':'/vol/'+name,'Labels':{'com.docker.volume.anonymous':''},'Options':None}
   with patch.object(runner,'node_owned',return_value='node'),patch.object(runner,'docker',return_value=subprocess.CompletedProcess([],0,json.dumps([volume]).encode())):
    runner.capture_volumes(row);self.assertTrue(runner.volumes_verified);self.assertEqual(runner.owned_volumes[0]['name'],name)
    runner.preexisting_volumes.add(name)
@@ -95,8 +95,17 @@ class Guards(unittest.TestCase):
  def test_named_volume_request_rejected(self):
   runner=g.Executor(self.root,dict(self.plan(),node_anonymous_volume_destinations=['/var']));runner.preexisting_volumes=set()
   with patch.object(runner,'node_owned',return_value='node'),patch.object(runner,'docker') as docker:
-   with self.assertRaises(AssertionError):runner.capture_volumes({'HostConfig':{'Binds':['named:/var']},'Mounts':[]})
+   with self.assertRaises(AssertionError):runner.capture_volumes({'Config':{'Volumes':{'/var':{}}},'HostConfig':{'Binds':['named:/var']},'Mounts':[]})
    docker.assert_not_called();self.assertFalse(runner.volumes_verified)
+ def test_missing_anonymous_label_or_external_options_rejected(self):
+  name='a'*64
+  row={'Config':{'Volumes':{'/var':{}}},'Mounts':[{'Type':'volume','Name':name,'Driver':'local','Destination':'/var','Source':'/vol/'+name}]}
+  for changes in [{'Labels':{}},{'Options':{'device':'foreign'}}]:
+   runner=g.Executor(self.root,dict(self.plan(),node_anonymous_volume_destinations=['/var']));runner.preexisting_volumes=set()
+   volume={'Name':name,'Driver':'local','Scope':'local','CreatedAt':'now','Mountpoint':'/vol/'+name,'Labels':{'com.docker.volume.anonymous':''},'Options':None,**changes}
+   with patch.object(runner,'node_owned',return_value='node'),patch.object(runner,'docker',return_value=subprocess.CompletedProcess([],0,json.dumps([volume]).encode())):
+    with self.assertRaises(AssertionError):runner.capture_volumes(row)
+   self.assertFalse(runner.volumes_verified)
  def test_verified_known_volume_cleanup_flags_and_strict_absence(self):
   runner=g.Executor(self.root,self.plan());runner.node_issued=True;runner.known_node='owned';runner.volumes_verified=True;runner.volume_candidates={'a'*64};calls=[]
   missing=subprocess.CompletedProcess([],1,b'[]',('Error response from daemon: get '+'a'*64+': no such volume').encode())

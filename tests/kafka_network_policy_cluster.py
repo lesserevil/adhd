@@ -169,7 +169,10 @@ class Executor:
  def capture_volumes(self,row):
   self.node_owned(row);assert self.preexisting_volumes is not None
   previous=self.owned_volumes if self.volumes_verified else None;self.volumes_verified=False
-  assert row['HostConfig']['Binds'].count('/var')==1,'Kind anonymous /var request must be explicit'
+  # Docker normalizes Kind's `--volume /var` into Config.Volumes, rather
+  # than retaining it in HostConfig.Binds. The mounted volume is separately
+  # required to be fresh and explicitly labelled anonymous by Docker.
+  assert row['Config'].get('Volumes')=={path:{} for path in self.plan['node_anonymous_volume_destinations']},'Kind anonymous volume declaration differs'
   mounts=[m for m in row['Mounts'] if m['Type']=='volume']
   assert sorted(m['Destination'] for m in mounts)==self.plan['node_anonymous_volume_destinations']
   actual=[]
@@ -178,6 +181,7 @@ class Executor:
    self.volume_candidates.add(name)
    result=self.docker('inspect-owned-volume','volume','inspect',name);values=json.loads(result.stdout);assert len(values)==1;volume=values[0]
    assert volume['Name']==name and volume['Driver']=='local' and volume['Scope']=='local' and volume['CreatedAt'] and volume['Mountpoint']==mount['Source']
+   assert volume.get('Labels')=={'com.docker.volume.anonymous':''} and not volume.get('Options'),'Expected Docker-created anonymous volume without external driver options'
    actual.append({'name':name,'destination':mount['Destination'],'driver':volume['Driver'],'scope':volume['Scope'],'created_at':volume['CreatedAt'],'mountpoint':volume['Mountpoint']})
   actual.sort(key=lambda v:v['name'])
   if previous is not None:assert actual==previous,'Owned anonymous volume lifetime changed'

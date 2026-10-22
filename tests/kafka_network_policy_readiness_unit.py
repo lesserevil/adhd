@@ -47,6 +47,21 @@ class Guards(unittest.TestCase):
    value,_=self.run_capture(Path(d)/'private','bytes');self.assertFalse(value['capture_passed']);self.assertEqual(value['commands'],1)
   with tempfile.TemporaryDirectory()as d,patch.object(m.time,'monotonic',side_effect=[0,61]),patch.object(m,'bounded')as command:
    value=m.capture(Path(d)/'private',['kubectl'],NS,UID,NONCE,'broker','role','pinned','node');self.assertFalse(value['capture_passed']);command.assert_not_called()
+ def test_external_reads_share_time_bytes_command_cap(self):
+  with tempfile.TemporaryDirectory()as d:
+   c=m.Capture(Path(d)/'private',['kubectl'],NS,UID,NONCE,'broker','role','pinned','node')
+   c.commands=32
+   with patch.object(m,'bounded')as command:
+    with self.assertRaises(AssertionError):c.external('owned',['docker'],65536,{})
+    command.assert_not_called()
+   c.commands=0;c.used=m.LIMITS['total_bytes']
+   with patch.object(m,'bounded')as command:
+    with self.assertRaises(AssertionError):c.external('owned',['docker'],65536,{})
+    command.assert_not_called()
+   c.used=0;c.deadline=0
+   with patch.object(m,'bounded')as command:
+    with self.assertRaises(AssertionError):c.external('owned',['docker'],65536,{})
+    command.assert_not_called()
  def test_failed_ready_primary_and_assertion_survive_capture_error(self):
   import textwrap,subprocess
   from types import SimpleNamespace

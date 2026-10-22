@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from kafka_network_policy_diagnostics import bounded
 
-LIMITS={'seconds':60,'command_seconds':10,'total_bytes':8*1024*1024,'metadata_bytes':512*1024,'namespace_bytes':65536,'log_bytes':65536,'log_requests':2,'commands':22,'pods':1,'tail_lines':200}
+LIMITS={'seconds':60,'command_seconds':10,'total_bytes':8*1024*1024,'metadata_bytes':512*1024,'namespace_bytes':65536,'log_bytes':65536,'log_requests':2,'commands':32,'pods':1,'tail_lines':200}
 ORIGINAL=b"                checked(['-n', namespace, 'wait', '--for=condition=Ready', 'pod/' + name, '--timeout=30s'])"
 REPLACEMENT=b"""                try:
                     checked(['-n', namespace, 'wait', '--for=condition=Ready', 'pod/' + name, '--timeout=30s'])
@@ -44,6 +44,13 @@ class Capture:
         assert time.monotonic()<=self.deadline and len(out)+len(err)<=cap
         self.used+=len(out)+len(err)
         return name,code,out,err
+    def external(self,name,argv,cap,environment):
+        remaining=self.deadline-time.monotonic();assert remaining>0 and self.commands<LIMITS['commands']
+        self.commands+=1;cap=min(cap,LIMITS['total_bytes']-self.used);assert cap>0
+        code,out,err=bounded(argv,environment,self.root,min(remaining,LIMITS['command_seconds']),cap)
+        assert time.monotonic()<=self.deadline and len(out)+len(err)<=cap
+        self.used+=len(out)+len(err)
+        return name,code,out,err
     def save(self,row):
         name,code,out,err=row;assert re.fullmatch('[a-z0-9-]+',name)
         saved={'name':name,'returncode':code}
@@ -62,7 +69,7 @@ class Capture:
         assert pod['spec'].get('nodeName')in(None,'',self.node)
         containers=pod['spec']['containers'];assert len(containers)==1 and containers[0]['name']=='fixture'and containers[0]['image']==self.image
         # Do not retain foreign API responses: only write after identity checks.
-        self.save(nsrow);self.save(prow);self.pod_status=pod.get('status',{})
+        self.save(nsrow);self.save(prow);self.pod_status=pod.get('status',{});self.pod_value=pod
         return pod
     def read(self,name,argv,cap):
         self.fence(name+'-before');row=self.fetch(name,argv,cap);self.fence(name+'-after')
@@ -78,12 +85,17 @@ class Capture:
         statuses=self.pod_status.get('containerStatuses',[])
         if any(s['name']=='fixture'and s.get('restartCount',0)>0 for s in statuses):
             self.logs+=1;assert self.logs<=LIMITS['log_requests'];self.read('log-previous',argv+['--previous'],LIMITS['log_bytes'])
+        if os.environ.get('ADHD_POLICY_NODE_CONTEXT'):
+            try:
+                from kafka_network_policy_cri import observe
+                self.node_observation=observe(self)
+            except BaseException as error:self.node_observation={'enabled':True,'failure_type':type(error).__name__,'cause':'unavailable; no inference'}
 
 
 def capture(root,kubectl,namespace,uid,nonce,pod,role,image,node):
     instance=Capture(root,kubectl,namespace,uid,nonce,pod,role,image,node);failure=None
     try:instance.collect()
     except BaseException as error:failure=type(error).__name__
-    summary={'scope':'Failure-only owned fixture Pod diagnostics; readiness/routes remain failed','capture_passed':failure is None,'failure_type':failure,'limits':LIMITS,'namespace_uid':uid,'pod_uid':instance.pod_uid,'pod':pod,'commands':instance.commands,'bytes':instance.used,'log_requests':instance.logs,'records':instance.rows,'raw_private':True}
+    summary={'scope':'Failure-only owned fixture Pod diagnostics; readiness/routes remain failed','capture_passed':failure is None,'failure_type':failure,'limits':LIMITS,'namespace_uid':uid,'pod_uid':instance.pod_uid,'pod':pod,'commands':instance.commands,'bytes':instance.used,'log_requests':instance.logs,'records':instance.rows,'raw_private':True,'owned_node_observation':getattr(instance,'node_observation',None)}
     (instance.root/'index.json').write_text(json.dumps(summary,indent=2)+'\n');(instance.root/'index.json').chmod(0o600)
     return summary

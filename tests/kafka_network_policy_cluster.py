@@ -134,7 +134,7 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py'):
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py','kafka_network_policy_endpoint.py','kafka_network_policy_endpoint_unit.py','kafka_network_policy.py','kafka_network_policy_readiness.py','kafka_network_policy_readiness_unit.py','kafka_network_policy_cri.py','kafka_network_policy_cri_unit.py'):
   shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)
@@ -184,6 +184,7 @@ def prepare(args):
  assert not args.direct_api_endpoint or args.diagnostic_only or bootstrap_binding,'Direct full gate requires qualified bootstrap12 dependency'
  if bootstrap_binding:plan['bootstrap_dependency']=bootstrap_binding
  if route_amendment:plan['route_observer_amendment']=route_amendment
+ if not args.diagnostic_only:plan['owned_cri_failure_observer']={'docker_commands':6,'total_commands':32,'total_seconds':60,'total_bytes':8388608,'cgroup_files':['memory.events','memory.events.local','memory.current','memory.max','memory.peak','pids.current','pids.max','pids.events','cpu.max','cpu.stat','cgroup.events'],'scope':'Only exact failed PodUID/containerID on issued Kind node; parent-before-child; unknown layout unsupported/no scan.'}
  if getattr(args,'controller_direct_api_endpoint',False):
   assert args.direct_api_endpoint and (args.diagnostic_only or bootstrap_binding)
   plan['controller_direct_api_endpoint']={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
@@ -345,6 +346,11 @@ class Executor:
   self.run('load-qa40',[p['tools']['kind']['path'],'load','docker-image','adhd-hub:qa40','--name',p['cluster']],timeout=180)
   assert json.loads(self.docker('qa40-image-after-load','image','inspect','adhd-hub:qa40').stdout)[0]['Id']==p['image']
   argv=[p['tools']['python']['path'],str(self.work/'frozen/tests/kafka_network_policy.py'),'--kubectl',p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG'],'--context',str(self.work/'bound/context'),'--admission-manifest',str(self.work/'bound/admission.json'),'--admission-sha256',p['admission_sha256'],'--image',p['image'],'--cluster-image','adhd-hub:qa40','--kind-cluster',p['cluster'],'--kind-node',p['node'],'--namespace','adhd-netpol-gate40','--policy',str(self.work/'frozen/deploy/k8s/private.yaml'),'--work',str(self.work/'runtime/gate'),'--report',str(self.work/'gate-report.json')]
+  # Private hash-sealed observation authority; never passed to application traffic.
+  observed=self.inspect(self.known_node);self.node_owned(observed);self.network_owned(self.inspect(self.known_network,network=True))
+  context={'schema':'adhd/policy-owned-node-observer@1','node_id':self.known_node,'network_id':self.known_network,'node_name':p['node'],'node_image':p['node_image']['configuration_digest'],'node_ip':observed['NetworkSettings']['Networks'][p['network']]['IPAddress'],'network_name':p['network'],'owner_nonce':p['owner_nonce'],'cluster':p['cluster'],'docker':p['tools']['docker'],'socket':p['docker_socket'],'docker_config':str(self.work/'bound/docker-config')}
+  context_path=self.work/'runtime/node-observer.json';save(context_path,context)
+  self.env.update(ADHD_POLICY_NODE_CONTEXT=str(context_path),ADHD_POLICY_NODE_CONTEXT_SHA256=sha(context_path))
   self.run('network-gate',argv,timeout=None)
   report=json.loads((self.work/'gate-report.json').read_text());assert report['passed'] and report['image_config_identity']==p['image'] and report['policy_sha256']==sha(self.work/'frozen/deploy/k8s/private.yaml')
   assert len(report['before'])==len(report['after'])==18 and all(r['reachable'] for r in report['before'])

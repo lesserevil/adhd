@@ -1,0 +1,26 @@
+{
+  "schema": "adhd/rebind-image-custody-review-fix@1",
+  "passed": true,
+  "runtime_ready": false,
+  "reviewer": "/root",
+  "findings": [
+    "Path.resolve followed container exe symlink text in host mount namespace; actual Alpine path is not guaranteed on host.",
+    "Argv verification/name issuance was outside owned startup cleanup."
+  ],
+  "repairs": [
+    "Read /proc/PID/exe magiclink text with os.readlink for basename; compare exact cmdline/PIDnamespace/starttime before+after Dockerreinspection, never hostresolve containerpath.",
+    "Create owned session before argv construction so issued-name failures enter independent stop/reset without masking primary error."
+  ],
+  "pure_checks": 13,
+  "new_vectors": [
+    "Actual observe_vm branch accepts synthetic container-only nonexistent host executable with all actual namespace/cmdline/image/UID checks.",
+    "Reused host PID/starttime change rejected after reinspection.",
+    "Failure after issuing target name closes/reset ownership before rethrowing original."
+  ],
+  "process_compiler_app_loader_provider_calls": 0,
+  "files": {
+    "tests/image_rebind_runtime.py": "a07e3d10cddac017ccbb680f44a606168cbf7de32b06a56f11b5a903796e265a",
+    "tests/image_rebind_runtime_unit.py": "d184cc9debe16e842fc2f624a9049d43c2a9beda7aa17c2f8e1ca05997206421"
+  },
+  "log_sha256": "da1ea2d5f44fb9cbb205891e632ea7860d7afc5f0f1116de53a4b4a3484a0173"
+}

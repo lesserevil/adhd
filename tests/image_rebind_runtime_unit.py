@@ -3,7 +3,9 @@ import json
 import hashlib
 from pathlib import Path
 import subprocess
+import os
 import tempfile
+import time
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -79,6 +81,49 @@ def boundary(root):
     assert base.expected_public_command()==['serve',str(root/'hub.json')]
 
 
+def vm_observation(root,retired=False):
+    value=owner(root);serialized=json.dumps(['rebind-storage',{'config_file':str(root/'hub.json')}])
+    row={'Id':'c'*64,'Image':'sha256:'+'a'*64,'Name':'/synthetic-owned','State':{'Running':True,'Pid':992999},
+        'Config':{'User':f'{os.getuid()}:{os.getgid()}'},'HostConfig':{'PidMode':'private','Privileged':False,'NetworkMode':'none'}}
+    target=SimpleNamespace(name='synthetic-owned',image_id=row['Image'],observe=lambda:None,
+        docker=lambda *a,**kw:SimpleNamespace(returncode=0,stdout=json.dumps([row]).encode()))
+    session={'target':target,'process':SimpleNamespace(poll=lambda:None),'serialized':serialized,'offline':True,'command_kind':'rebind-storage'}
+    calls=[];real_text=Path.read_text;real_bytes=Path.read_bytes
+    def link(path):
+        if path=='/proc/992999/exe':return '/container-only/not-on-host/beam.smp'
+        if path=='/proc/992999/ns/pid':return 'pid:[synthetic-private]'
+        if path=='/proc/self/ns/pid':return 'pid:[synthetic-host]'
+        raise AssertionError('Unexpected filesystem probe')
+    def text(path,*args,**kwargs):
+        if str(path)=='/proc/992999/stat':
+            calls.append('stat');stamp='54321' if retired and len(calls)>1 else '12345'
+            return '992999 (beam.smp) S '+' '.join(['0']*18+[stamp])
+        return real_text(path,*args,**kwargs)
+    def raw(path,*args,**kwargs):
+        if str(path)=='/proc/992999/cmdline':return b'/app/hub.exs\0'+serialized.encode()+b'\0'
+        return real_bytes(path,*args,**kwargs)
+    with patch('os.readlink',link),patch.object(Path,'read_text',text),patch.object(Path,'read_bytes',raw),patch.object(Path,'resolve',side_effect=AssertionError('Container executable must not resolve on host')):
+        try:value.observe_vm(session,time.monotonic()+1)
+        except AssertionError:
+            if not retired:raise
+        else:
+            assert not retired and session['custody']['executable_basename']=='beam.smp'
+            assert session['custody']['vm_start_time_ticks']=='12345'
+
+
+def argv_failure(root):
+    value=owner(root);value.args=SimpleNamespace(image='sha256:'+'a'*64,image_manifest=root/'manifest.json');calls=[]
+    def argv(_):raise RuntimeError('Synthetic failure after issuing owned name')
+    target=SimpleNamespace(argv=argv,name='synthetic-issued-name',cleanup_blocked=False)
+    def stop(hard=False):calls.append(hard);target.name=None
+    target.stop=stop
+    with patch('image_rebind_runtime.RetainedImage',return_value=target):
+        try:value.start(['rebind-storage',None],stdout=None,stderr=None,deadline=time.monotonic()+1)
+        except RuntimeError as error:assert str(error)=='Synthetic failure after issuing owned name'
+        else:raise AssertionError('Argv failure lost')
+    assert calls==[False] and value.active is None and value.sessions[0]['closed']
+
+
 def main():
     with tempfile.TemporaryDirectory() as directory,patch('subprocess.run',side_effect=AssertionError('No compiler or process')),patch('subprocess.Popen',side_effect=AssertionError('No actual process')):
         root=Path(directory).resolve()
@@ -103,8 +148,8 @@ def main():
         primary=subprocess.TimeoutExpired(['synthetic'],150);returned(root,primary=primary)
         returned(root,primary=RuntimeError('Original codec failure'),cleanup=OSError('Unconfirmed cleanup'))
         returned(root,cleanup=OSError('Unconfirmed cleanup'))
-        start_failure(root);boundary(root)
-    print('PASS image rebind preparation10: inert artifact binding, owned absolute argv/modes, stdout+stderr+exit, original timeout/errors, independent cleanup denial, rejected VM cleanup, replacement fence, source-bound public command and hard137; compiler/app/process attempts0')
+        start_failure(root);boundary(root);vm_observation(root);vm_observation(root,True);argv_failure(root)
+    print('PASS image rebind preparation13: inert artifact binding, owned argv/modes, stdout+stderr+exit, original errors, cleanup/replacement fences, public command+hard137, container-only exe custody, PID-reuse denial, issued-name argv cleanup; compiler/app/process attempts0')
 
 
 if __name__=='__main__':main()

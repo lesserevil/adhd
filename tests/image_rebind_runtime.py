@@ -62,11 +62,11 @@ class ImageRebindRuntime:
         config=command_config(command,self.root);serialized=json.dumps(command)
         target=(RebindFaultImage(self.args,self.root,environment,command) if environment else
             RetainedImage(self.args.image,self.args.image_manifest,self.root))
-        argv=rebind_argv(target.argv(config),serialized,command[0]!='serve')
         process=None
         session={'target':target,'process':None,'command_kind':command[0],'serialized':serialized,'offline':command[0]!='serve','custody':None}
         self.active=session;self.sessions.append(session)
         try:
+            argv=rebind_argv(target.argv(config),serialized,command[0]!='serve')
             process=subprocess.Popen(argv,stdout=stdout,stderr=stderr,start_new_session=True)
             session['process']=process;process._adhd_image_rebind=(self,session)
             self.observe_vm(session,deadline)
@@ -95,9 +95,10 @@ class ImageRebindRuntime:
             assert row['HostConfig']['PidMode'] in ('','private') and not row['HostConfig']['Privileged']
             assert row['HostConfig']['NetworkMode']==('none' if session['offline'] else 'host')
             try:
-                executable=Path('/proc/'+str(pid)+'/exe').resolve(strict=True)
+                executable=Path(os.readlink('/proc/'+str(pid)+'/exe'))
                 cmdline=Path('/proc/'+str(pid)+'/cmdline').read_bytes()
                 namespace=os.readlink('/proc/'+str(pid)+'/ns/pid')
+                start_time=Path('/proc/'+str(pid)+'/stat').read_text().rsplit(')',1)[1].split()[19]
             except FileNotFoundError:time.sleep(.02);continue
             if executable.name not in ('beam.smp','beam'):time.sleep(.02);continue
             assert b'/app/hub.exs' in cmdline.split(b'\0') and session['serialized'].encode() in cmdline.split(b'\0')
@@ -105,9 +106,14 @@ class ImageRebindRuntime:
             target.observe()
             again=json.loads(target.docker('inspect',target.name).stdout)[0]
             assert again['Id']==row['Id'] and again['State']['Pid']==pid and again['Image']==row['Image']
+            assert Path('/proc/'+str(pid)+'/stat').read_text().rsplit(')',1)[1].split()[19]==start_time
+            assert os.readlink('/proc/'+str(pid)+'/exe')==str(executable)
+            assert os.readlink('/proc/'+str(pid)+'/ns/pid')==namespace
+            assert Path('/proc/'+str(pid)+'/cmdline').read_bytes()==cmdline
             session['custody']={'container_id':row['Id'],'image_config_identity':row['Image'],'host_vm_pid':pid,
                 'namespace_pid':1,'executable_basename':executable.name,'pid_namespace':namespace,
                 'vm_cmdline_sha256':hashlib.sha256(cmdline).hexdigest(),'network_mode':row['HostConfig']['NetworkMode'],
+                'vm_start_time_ticks':start_time,
                 'user':row['Config']['User'],'command_kind':session['command_kind']}
             return
         raise AssertionError('Actual image CLI VM custody deadline exceeded')

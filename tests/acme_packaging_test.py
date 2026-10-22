@@ -73,6 +73,10 @@ class Bundle(unittest.TestCase):
     if p.is_symlink():p.unlink()
     p.write_bytes(original)
     if (self.tools/'extra').exists():(self.tools/'extra').unlink()
+ def test_staging_read_limit_applies_to_open_descriptor(self):
+  path=self.root/'too-large';path.write_bytes(b'four')
+  with self.assertRaises(SystemExit):stage.read_regular(path,3)
+  self.assertEqual(stage.read_regular(path,4),b'four')
  def test_unpinned_self_consistent_bundle_rejected(self):
   # Updating the bundled manifest cannot authorize new client bytes.
   (self.tools/'lego').write_bytes(b'\x7fELF\x02\x01foreign')

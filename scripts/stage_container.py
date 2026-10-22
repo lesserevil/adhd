@@ -12,7 +12,7 @@ import tarfile
 from pathlib import Path, PurePosixPath
 
 
-def read_regular(path):
+def read_regular(path, maximum=None):
     """Read a regular, non-symlink input without opening device/FIFO payloads."""
     path = Path(path)
     for parent in path.parents:
@@ -24,7 +24,11 @@ def read_regular(path):
             before = os.fstat(stream.fileno())
             if not stat.S_ISREG(before.st_mode):
                 raise SystemExit(f'Expected regular staging input: {path}')
-            content = stream.read()
+            if maximum is not None and before.st_size > maximum:
+                raise SystemExit('Oversized staging input')
+            content = stream.read() if maximum is None else stream.read(maximum + 1)
+            if maximum is not None and len(content) > maximum:
+                raise SystemExit('Oversized staging input')
             after = os.fstat(stream.fileno())
             if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
                     after.st_size, after.st_mtime_ns, after.st_ctime_ns):
@@ -119,7 +123,10 @@ def acme_tools(directory, pins_bytes):
     directory = Path(directory)
     if directory.is_symlink() or not directory.is_dir() or set(os.listdir(directory)) != ACME_FILES:
         raise SystemExit('Expected exact ACME tools bundle')
-    files = {name: read_regular(directory / name) for name in sorted(ACME_FILES)}
+    files = {name: read_regular(directory / name,
+              80*1024*1024 if name in {'lego','acme-guard'} else
+              4*1024*1024 if name == 'lego-sbom.json' else 1024*1024)
+             for name in sorted(ACME_FILES)}
     try:
         def unique(pairs):
             result = {}

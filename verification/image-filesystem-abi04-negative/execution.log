@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/run.py", line 262, in run_case
+    assert row['State']['Running'],'Actual image exited without armed observer boundary'
+           ~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: Actual image exited without armed observer boundary
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/run.py", line 340, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/run.py", line 337, in main
+    args=p.parse_args();prepare(args) if args.op=='prepare' else execute(args)
+                                                                 ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/run.py", line 318, in execute
+    verify(plan);row=run_case(plan,case,index,helper,custody);report['rows'].append(row);save(work/'result.json',report)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/run.py", line 301, in run_case
+    if failure:raise RuntimeError('ABI case failed; no retries or later cases; see '+str(root/'result.json')) from failure
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: ABI case failed; no retries or later cases; see /home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted04/cases/11-storage_write_fault-pwrite64/result.json

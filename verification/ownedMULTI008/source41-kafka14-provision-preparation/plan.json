@@ -127,6 +127,7 @@
     "kafka-rest"
   ],
   "root_readiness_checks": [
+    "Immediately before provisioning repeat BOTH selectedproject-label census and exact expected container/volume/network name absence, including unlabeled foreign collisions; refuse any existing object.",
     "Require provision exit0 and both exact new containers running/healthy with selected project+service labels, expected immutable config IDs, privatebroker networks/volume and REST loopback18089. Record actual full IDs and owned volume/network IDs.",
     "Within a bounded180s bootstrap readiness budget, GET /v3/clusters on18089 with perrequest10s; retain successful exact cluster ID. Compare with18082/18085 and require all three distinct (same original runner preflight). No app programs before readiness.",
     "Recheck all recorded protected service full IDs/image/running/starttime/restarts unchanged before and after provisioning and after cleanup.",
@@ -158,5 +159,32 @@
     "Require strict absence of each issued container full ID/name, owned volume and network IDs/names and empty selectedproject label census; protected snapshot unchanged.",
     "No --remove-orphans, global prune, unrelated service stop, image pull or protected resource deletion."
   ],
-  "runtime_status": "NOT_STARTED_ROOT_GO_REQUIRED"
+  "runtime_status": "NOT_STARTED_ROOT_GO_REQUIRED",
+  "exact_expected_resource_names_preexisting_absent": [
+    {
+      "kind": "container",
+      "name": "adhd-qa41-image-events-kafka-1",
+      "exact_name_census_empty": true
+    },
+    {
+      "kind": "container",
+      "name": "adhd-qa41-image-events-kafka-rest-1",
+      "exact_name_census_empty": true
+    },
+    {
+      "kind": "volume",
+      "name": "adhd-qa41-image-events_kafka-data",
+      "exact_name_census_empty": true
+    },
+    {
+      "kind": "network",
+      "name": "adhd-qa41-image-events_events",
+      "exact_name_census_empty": true
+    },
+    {
+      "kind": "network",
+      "name": "adhd-qa41-image-events_test-access",
+      "exact_name_census_empty": true
+    }
+  ]
 }

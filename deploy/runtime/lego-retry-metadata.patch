@@ -1,0 +1,222 @@
+--- a/main.go
++++ b/main.go
+@@ -8,7 +8,6 @@
+ 	"runtime"
+ 
+ 	"github.com/go-acme/lego/v5/cmd"
+-	"github.com/go-acme/lego/v5/log"
+ 	"github.com/urfave/cli/v3"
+ )
+ 
+@@ -22,6 +21,7 @@
+ 
+ 	err := app.Run(context.Background(), os.Args)
+ 	if err != nil {
+-		log.Fatal("Error", log.ErrorAttr(err))
++		cmd.WriteACMEResult(err, os.Stderr)
++		os.Exit(1)
+ 	}
+ }
+--- a/cmd/internal/retryable.go
++++ b/cmd/internal/retryable.go
+@@ -7,6 +7,7 @@
+ 	"io"
+ 	"net/http"
+ 	"os"
++	"time"
+ 
+ 	"github.com/go-acme/lego/v5/acme"
+ 	"github.com/go-acme/lego/v5/log"
+@@ -63,6 +64,12 @@
+ 				}
+ 			}
+ 
++		case acme.RateLimitedErrorType:
++			if resp.StatusCode == http.StatusTooManyRequests {
++				return rt, NewACMERateLimitError(errorDetails, resp.Header.Get("Retry-After"), time.Now())
++			}
++			return rt, errorDetails
++
+ 		default:
+ 			log.Warnf(log.LazySprintf("retry: %v", errorDetails))
+ 
+--- /dev/null
++++ b/cmd/internal/acme_retry_metadata.go
+@@ -0,0 +1,53 @@
++// ADHD integration: preserve issuer retry metadata without serializing CA details.
++// The underlying maintained client's request/retry/validation behavior is unchanged.
++package internal
++
++import (
++	"math"
++	"net/http"
++	"strconv"
++	"strings"
++	"time"
++)
++
++type ACMERateLimitError struct {
++	Cause   error
++	RetryAt *int64
++}
++
++func (e *ACMERateLimitError) Error() string { return e.Cause.Error() }
++func (e *ACMERateLimitError) Unwrap() error { return e.Cause }
++func NewACMERateLimitError(cause error, header string, observed time.Time) *ACMERateLimitError {
++	result := &ACMERateLimitError{Cause: cause}
++	header = strings.TrimSpace(header)
++	if header == "" {
++		return result
++	}
++	digits := true
++	for _, v := range header {
++		if v < '0' || v > '9' {
++			digits = false
++			break
++		}
++	}
++	now := observed.UnixMilli()
++	if digits {
++		seconds, err := strconv.ParseUint(header, 10, 64)
++		if err != nil || now < 0 || seconds > uint64((math.MaxInt64-now)/1000) {
++			return result
++		}
++		at := now + int64(seconds)*1000
++		result.RetryAt = &at
++		return result
++	}
++	date, err := http.ParseTime(header)
++	if err != nil {
++		return result
++	}
++	at := date.UnixMilli()
++	if at < now {
++		at = now
++	}
++	result.RetryAt = &at
++	return result
++}
+--- /dev/null
++++ b/cmd/internal/acme_retry_metadata_test.go
+@@ -0,0 +1,57 @@
++package internal
++
++import (
++	"errors"
++	"io"
++	"net/http"
++	"strings"
++	"testing"
++	"time"
++)
++
++func TestACMERetryMetadata(t *testing.T) {
++	now := time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)
++	for _, c := range []struct {
++		header string
++		known  bool
++		delta  int64
++	}{
++		{"120", true, 120000}, {"0", true, 0}, {"Thu, 22 Oct 2026 12:02:00 GMT", true, 120000},
++		{"Thu, 22 Oct 2026 11:02:00 GMT", true, 0}, {"", false, 0}, {"bad", false, 0},
++		{"-1", false, 0}, {"+1", false, 0}, {"18446744073709551615", false, 0},
++	} {
++		value := NewACMERateLimitError(errors.New("private CA detail"), c.header, now)
++		if (value.RetryAt != nil) != c.known {
++			t.Fatalf("header %q known", c.header)
++		}
++		if c.known && *value.RetryAt != now.UnixMilli()+c.delta {
++			t.Fatalf("header %q value", c.header)
++		}
++	}
++}
++
++type ACMEFinal429Transport struct{ Calls int }
++
++func (f *ACMEFinal429Transport) RoundTrip(request *http.Request) (*http.Response, error) {
++	f.Calls++
++	header := "0"
++	if f.Calls == 6 {
++		header = "120"
++	}
++	return &http.Response{StatusCode: 429, Header: http.Header{"Retry-After": []string{header}},
++		Body:    io.NopCloser(strings.NewReader(`{"type":"urn:ietf:params:acme:error:rateLimited","status":429,"detail":"private"}`)),
++		Request: request}, nil
++}
++func TestACMEFinalExhausted429PreservesLastHeader(t *testing.T) {
++	transport := &ACMEFinal429Transport{}
++	client := NewRetryableClient(&http.Client{Transport: transport})
++	before := time.Now().UnixMilli()
++	_, err := client.Get("https://no-network.invalid/directory")
++	var metadata *ACMERateLimitError
++	if transport.Calls != 6 || !errors.As(err, &metadata) || metadata.RetryAt == nil {
++		t.Fatal("final retry metadata lost")
++	}
++	if *metadata.RetryAt < before+120000 || *metadata.RetryAt > time.Now().UnixMilli()+120000 {
++		t.Fatal("wrong final delay")
++	}
++}
+--- /dev/null
++++ b/cmd/acme_result.go
+@@ -0,0 +1,29 @@
++// ADHD's fixed error-only process protocol. No CA URLs, account IDs or raw errors.
++package cmd
++
++import (
++	"encoding/json"
++	"errors"
++	"github.com/go-acme/lego/v5/cmd/internal"
++	"io"
++)
++
++func WriteACMEResult(err error, writer io.Writer) {
++	if err == nil {
++		return
++	}
++	result := struct {
++		Code    string `json:"code"`
++		RetryAt *int64 `json:"retry_at"`
++	}{Code: "ACME_PROCESS"}
++	var rate *internal.ACMERateLimitError
++	if errors.As(err, &rate) {
++		result.Code = "ACME_RATE_LIMIT"
++		result.RetryAt = rate.RetryAt
++	}
++	payload, marshalErr := json.Marshal(result)
++	if marshalErr != nil {
++		return
++	}
++	_, _ = io.WriteString(writer, "ADHD_ACME_RESULT "+string(payload)+"\n")
++}
+--- /dev/null
++++ b/cmd/acme_result_test.go
+@@ -0,0 +1,29 @@
++package cmd
++
++import (
++	"bytes"
++	"errors"
++	"fmt"
++	"github.com/go-acme/lego/v5/cmd/internal"
++	"strings"
++	"testing"
++	"time"
++)
++
++func TestACMEResultClosedProtocol(t *testing.T) {
++	now := time.UnixMilli(1700000000000)
++	for _, c := range []struct {
++		err  error
++		want string
++	}{
++		{errors.New("secret=https://account/private"), `ADHD_ACME_RESULT {"code":"ACME_PROCESS","retry_at":null}` + "\n"},
++		{fmt.Errorf("private wrapper: %w", internal.NewACMERateLimitError(errors.New("secret"), "120", now)), `ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":1700000120000}` + "\n"},
++		{internal.NewACMERateLimitError(errors.New("secret"), "bad", now), `ADHD_ACME_RESULT {"code":"ACME_RATE_LIMIT","retry_at":null}` + "\n"},
++	} {
++		var out bytes.Buffer
++		WriteACMEResult(c.err, &out)
++		if out.String() != c.want || len(out.Bytes()) > 128 || strings.Contains(out.String(), "secret") {
++			t.Fatal("unsafe process metadata")
++		}
++	}
++}

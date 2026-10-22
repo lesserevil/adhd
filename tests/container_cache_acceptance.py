@@ -61,6 +61,40 @@ def inspect_archive(data):
     return result
 
 
+def cache_summary(entries):
+    return {name: {'sha256': sha(body), 'mode': format(mode, '04o'),
+                   'type': kind.decode('ascii'), 'target': target}
+            for name, (body, mode, kind, target) in sorted(entries.items())}
+
+
+def archive_witness(data):
+    assert len(data) <= 64 * 1024 * 1024
+    with tarfile.open(fileobj=io.BytesIO(data), mode='r:') as tar:
+        members = tar.getmembers(); assert len(members) <= 256
+        rows = []
+        for item in members:
+            assert item.size <= 8 * 1024 * 1024
+            body = tar.extractfile(item).read() if item.isfile() else b''
+            rows.append({'name': item.name, 'uid': item.uid, 'gid': item.gid,
+                         'mode': format(item.mode, '04o'), 'type': item.type.decode('ascii'),
+                         'target': item.linkname, 'size': item.size, 'sha256': sha(body)})
+        return rows
+
+
+def prefix_contract(plan, result, image, artifact, mode, context):
+    assert result['passed'] is False and result['image'] == plan['image'] == image
+    assert result['artifact_sha256'] == plan['artifact_sha256'] == artifact
+    assert plan['cache_root_mode'] == mode and plan['context_files'] == context
+    expected = ['original-native18', 'describe', 'protocol-schema', 'protocol-openapi',
+                'offline-copy-control', 'missing-manifest', 'missing-beam', 'changed-beam', 'extra-beam']
+    assert [r['case'] for r in result['results']] == expected and all(r['passed'] is True for r in result['results'])
+    assert result['results'][0]['checks'] == 18
+    assert len(result['container_ledger']) == 11
+    assert result['container_ledger'][-1]['case'] == 'beam-symlink' and 'exit_code' not in result['container_ledger'][-1]
+    assert all(row['observed_absent'] and not row['cleanup_errors'] for row in result['container_ledger'])
+    return expected
+
+
 CASES = ('missing-manifest', 'missing-beam', 'changed-beam', 'extra-beam',
          'beam-symlink', 'missing-build-helper', 'changed-build-helper',
          'changed-boot-comment', 'changed-source', 'toolchain-version',
@@ -84,7 +118,7 @@ def mutation(files, name):
     elif name == 'extra-beam':
         files[prefix + 'ebin/Elixir.Unexpected.beam'] = (b'not a BEAM', 0o444, tarfile.REGTYPE, '')
     elif name == 'beam-symlink':
-        files[beam] = (b'', 0o444, tarfile.SYMTYPE, '/app/hub.exs')
+        files[beam] = (b'', 0o777, tarfile.SYMTYPE, '/app/hub.exs')
     elif name in ('missing-manifest', 'missing-beam', 'missing-build-helper'):
         raise AssertionError('True missing entries require the fixed setup helper')
     elif name == 'changed-source':
@@ -267,8 +301,13 @@ class Runner:
                 p = self.command(['cp', '-', identity + ':/runtime'], data=archive(cache))
                 assert p.returncode == 0
                 observed = self.command(['cp', identity + ':/runtime/adhd', '-'])
-                assert observed.returncode == 0 and inspect_archive(observed.stdout) == cache
+                assert observed.returncode == 0
+                witness = {'expected': cache_summary(cache), 'actual': archive_witness(observed.stdout)}
+                witness_path = self.work / (label + '.cache-before-start.json')
+                witness_path.write_text(json.dumps(witness, indent=2) + '\n')
+                row['offline_cache_metadata_sha256'] = sha(read(witness_path))
                 row['offline_cache_archive_sha256'] = sha(observed.stdout)
+                assert inspect_archive(observed.stdout) == cache
             if source is not None:
                 p = self.command(['cp', '-', identity + ':/app'], data=archive({'hub.exs': (source, 0o644, tarfile.REGTYPE, '')}))
                 assert p.returncode == 0
@@ -333,6 +372,8 @@ def verify(work, plan):
     socket = Path(plan['docker_socket']['path']); info = socket.stat()
     assert socket.resolve() == socket and stat.S_ISSOCK(info.st_mode)
     assert [info.st_dev, info.st_ino] == plan['docker_socket']['identity']
+    if plan.get('prefix'):
+        assert {p.name: sha(read(p)) for p in (work / 'prefix').iterdir()} == plan['prefix']['files']
 
 
 def prepare(args):
@@ -368,6 +409,19 @@ def prepare(args):
             'SDK30_and_fault_custody': 'Separate unchanged original harness gates; not covered by this cache driver',
             'negative_scope': 'RW rootfs ONLY for offline tamper; fixed missing-file setup additionally user0 then original boot/non-serving sentinel. Other cases remain user10001. No host mounts, models or brokers.',
             'parallelism': 1, 'automatic_retries': 0}
+    if args.prefix_work:
+        old = args.prefix_work.absolute()
+        old_plan = json.loads(read(old / 'plan.json')); old_result = json.loads(read(old / 'result.json'))
+        completed = prefix_contract(old_plan, old_result, args.image, sha(source), args.cache_root_mode, files)
+        assert old_result['plan_sha256'] == sha(read(old / 'plan.json'))
+        (work / 'prefix').mkdir()
+        names = {'plan.json', 'result.json', 'driver.py', 'execution.started'}
+        names |= {p.name for p in old.glob('*.stdout')} | {p.name for p in old.glob('*.stderr')}
+        for name in sorted(names): (work / 'prefix' / name).write_bytes(read(old / name))
+        plan['prefix'] = {'plan_sha256': sha(read(old / 'plan.json')), 'result_sha256': sha(read(old / 'result.json')),
+                          'whole_completed_cases': completed, 'original_passed': False,
+                          'files': {p.name: sha(read(p)) for p in (work / 'prefix').iterdir()}}
+        plan['cases'] = list(CASES[4:])
     (work / 'plan.json').write_text(json.dumps(plan, indent=2) + '\n')
     verify(work, plan)
     print(json.dumps({'prepared': True, 'executed': False, 'plan_sha256': sha(read(work / 'plan.json'))}))
@@ -389,22 +443,23 @@ def execute(args):
     primary = None
     try:
         original = runner.cache_snapshot()
-        native = runner.case('original-native18', ['--litai-test'])
-        cases = json.loads(native.stdout)['cases']
-        assert len(cases) == 18 and all(c['outcome'] == 'passed' for c in cases)
-        results.append({'case': 'original-native18', 'passed': True, 'checks': 18})
-        for operation in ('describe', 'protocol-schema', 'protocol-openapi'):
-            result = runner.case(operation, [json.dumps([operation])])
-            assert isinstance(json.loads(result.stdout), dict)
-            results.append({'case': operation, 'passed': True})
-        # The positive copied-cache control must pass before testing cp mutations.
-        control = runner.case('offline-copy-control', ['["describe"]'], cache=original, negative=False)
-        assert json.loads(control.stdout)['name'] == 'ADHD'
-        results.append({'case': 'offline-copy-control', 'passed': True})
+        if not plan.get('prefix'):
+            native = runner.case('original-native18', ['--litai-test'])
+            cases = json.loads(native.stdout)['cases']
+            assert len(cases) == 18 and all(c['outcome'] == 'passed' for c in cases)
+            results.append({'case': 'original-native18', 'passed': True, 'checks': 18})
+            for operation in ('describe', 'protocol-schema', 'protocol-openapi'):
+                result = runner.case(operation, [json.dumps([operation])])
+                assert isinstance(json.loads(result.stdout), dict)
+                results.append({'case': operation, 'passed': True})
+            # The positive copied-cache control must pass before testing cp mutations.
+            control = runner.case('offline-copy-control', ['["describe"]'], cache=original, negative=False)
+            assert json.loads(control.stdout)['name'] == 'ADHD'
+            results.append({'case': 'offline-copy-control', 'passed': True})
         with tarfile.open(Path(plan['context']) / 'payload.tar') as tar:
             source = tar.extractfile('app/hub.exs').read()
         beam = next(n for n in sorted(original) if n.endswith('.beam'))
-        for name in CASES:
+        for name in plan['cases']:
             verify(work, plan)
             target = {'missing-manifest': '/runtime/adhd/manifest.json',
                       'missing-build-helper': '/runtime/adhd/build.exs',
@@ -422,6 +477,7 @@ def execute(args):
         report = {'schema': 'adhd/cache-qualification-result@1', 'passed': primary is None,
                   'plan_sha256': args.plan_sha256, 'image': plan['image'],
                   'artifact_sha256': plan['artifact_sha256'], 'results': results,
+                  'prefix': plan.get('prefix'),
                   'container_ledger': runner.ledger,
                   'failure_type': type(primary).__name__ if primary else None,
                   'scope': 'Cache/CLI only; SDK cold readiness and fault observer custody remain separate gates'}
@@ -433,6 +489,7 @@ def main():
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument('--prepare', action='store_true'); mode.add_argument('--execute', action='store_true')
     p.add_argument('--image'); p.add_argument('--context', type=Path)
+    p.add_argument('--prefix-work', type=Path)
     p.add_argument('--cache-root-mode', type=lambda value: int(value, 8), choices=(0o555, 0o755))
     p.add_argument('--work', type=Path, required=True); p.add_argument('--plan-sha256')
     args = p.parse_args()

@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 import subprocess
+import stat
 import tarfile
 import tempfile
 import unittest
@@ -43,6 +44,30 @@ class Guards(unittest.TestCase):
             difference = {k for k in set(result) | set(files) if result.get(k) != files.get(k)}
             self.assertEqual(len(difference), 0 if case == 'changed-source' else 1)
         self.assertEqual(files['adhd/boot.exs'][0], b'boot')
+
+    def test_symlink_fixture_uses_kernel_mode_and_same_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            link = Path(directory) / 'link'; link.symlink_to('/app/hub.exs')
+            self.assertEqual(stat.S_IMODE(link.lstat().st_mode), 0o777)
+            files = {'adhd/ebin/Elixir.A.beam': (b'beam', 0o444, tarfile.REGTYPE, '')}
+            desired = m.mutation(files, 'beam-symlink')['adhd/ebin/Elixir.A.beam']
+            self.assertEqual(desired, (b'', 0o777, tarfile.SYMTYPE, '/app/hub.exs'))
+            witness = m.archive_witness(m.archive({'adhd/ebin/Elixir.A.beam': desired}))
+            self.assertEqual(witness[0]['mode'], '0777'); self.assertEqual(witness[0]['target'], '/app/hub.exs')
+
+    def test_prefix_only_consumes_whole_exact_completed_cases(self):
+        names = ['original-native18', 'describe', 'protocol-schema', 'protocol-openapi',
+                 'offline-copy-control', 'missing-manifest', 'missing-beam', 'changed-beam', 'extra-beam']
+        plan = {'image': 'image', 'artifact_sha256': 'artifact', 'cache_root_mode': 0o555, 'context_files': {'manifest': 'sha'}}
+        rows = [{'case': name, 'passed': True} for name in names]; rows[0]['checks'] = 18
+        ledger = [{'case': str(i), 'observed_absent': True, 'cleanup_errors': []} for i in range(11)]
+        ledger[-1]['case'] = 'beam-symlink'
+        result = {'passed': False, 'image': 'image', 'artifact_sha256': 'artifact', 'results': rows, 'container_ledger': ledger}
+        self.assertEqual(m.prefix_contract(plan, result, 'image', 'artifact', 0o555, {'manifest': 'sha'}), names)
+        result['results'].append({'case': 'beam-symlink', 'passed': True})
+        with self.assertRaises(AssertionError): m.prefix_contract(plan, result, 'image', 'artifact', 0o555, {'manifest': 'sha'})
+        result['results'].pop(); ledger[-1]['exit_code'] = 0
+        with self.assertRaises(AssertionError): m.prefix_contract(plan, result, 'image', 'artifact', 0o555, {'manifest': 'sha'})
 
     def runner(self, directory):
         return m.Runner(Path(directory), {'image': 'sha256:' + 'a' * 64})

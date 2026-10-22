@@ -102,8 +102,8 @@ passes all 17 cases under the original 30-second readiness deadline. The
 passes all five original programs /28 checks with actual compiled VM custody;
 that gate uses its original instrumented Store-loss entrypoint. Current deployment,
 security, browser and deployed-model results are recorded below. Next: finish the
-fresh full25 recovery and full14 Kafka gates, retain the completed core13 audit,
-then consolidate exact scoped evidence, declared verification and operating limits.
+fresh full25 recovery gate, then consolidate exact scoped evidence, declared
+verification and operating limits. Core13 and full14 Kafka now pass independently.
 
 The [successor core13 attempt](../../verification/eventing-readiness-core13-first-failure/manifest.json)
 stopped in its first foundation program after 11
@@ -185,7 +185,15 @@ update returns within the original five-second timeout in the diagnostic, withou
 establishing the earlier delay's cause. The [fresh full25 recovery](../../verification/recovery41-full25-second-preparation/manifest.json)
 and [fresh full14 Kafka](../../verification/source41-kafka-fresh-full14-preparation/review.json)
 plans retain every original scenario and deadline and borrow no passing prefixes.
-Their runtime gates remain open until the complete results pass.
+The recovery runtime gate remains open. The
+[complete fresh Kafka run](../../verification/kafka41-full14-positive/audit.json)
+now passes all 14 original programs /68 checks, with unchanged assertions and
+deadlines, complete input/tool closure, strict owned-resource absence and unchanged
+protected services. The [complete core run](../../verification/ownedMULTI008/source41-core13-positive/audit.json)
+passes all 13 programs /94 checks without borrowing either failed attempt's prefix.
+The [pinned declared verification](../../verification/source41-declared-verify-positive/manifest.json)
+passes authority, locks and current official receipt, with two configured skips;
+final documentation recording and verification remain part of the closure review.
 
 The [source41 deployed model audit](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
 passes on both Compose and Kind: eight outer reported checks and twelve actual

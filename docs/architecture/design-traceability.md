@@ -68,29 +68,44 @@ offline portable rebind is a separate CLI operation. Operational procedures are 
 [the Admin guide](../admin/operations.md) and
 [first-use initialization](../admin/web-console.md#first-use-project-initialization).
 
-[Formal source40 admission](../../verification/project-recovery/development40/admission/manifest.json)
-and [compiled05 admission/cache audit](../../verification/container-precompile-image40/compiled05-admission/manifest.json)
-bind the unchanged source artifact to its exact packaged image and authored
-contracts. The [independent build comparison](../../verification/container-precompile-image40/reproducibility05-positive/manifest.json)
-records two identical sequential builds without cache or network access for the tested pinned
-amd64 builder. The following current deployment results are independently scoped:
+[Formal source41 admission](../../verification/eventing-readiness-source41/admission/manifest.json)
+and the [compiled image audit/two-build comparison](../../verification/ownedMULTI008/source41-compiled-image-positive/audit.json)
+bind the source, actual image, cache and context. Both sequential no-cache,
+network-free builds produced identical image/configuration/layer identities on
+the pinned amd64 builder. Current independently scoped positives include:
 
-- [Compose11 plus Kind10](../../verification/ownedMULTI008/compiled05-baseline-platform-positive/manifest.json):
-  complete model-free programs, replacement, Compose broker patch upgrade, full
-  cold restore and selective target recovery preserving current Blue/global state.
-- [Secured Kind](../../verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json):
-  actual TLS/native OAuth, hot token/trust checks, Secret/certificate and pod
-  rotations, durable cursor and unchanged hub identity, with strict cleanup.
-- [Deployed model children](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json):
-  all 12 Compose/Kind filtering/backend-search scenarios qualify independently;
-  the outer launcher 143/false outcome remains recorded unchanged.
+- [Core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json),
+  including [wire8](../../verification/ownedMULTI008/source41-core13-positive/wire.json).
+  [Protocol export conservation](../../verification/ownedMULTI008/source41-protocol-conservation/review.json)
+  is semantic rather than byte identity; the published snapshots are preserved.
+- [Compose11/Kind10](../../verification/ownedMULTI008/source41-baseline-platform-positive/audit.json):
+  complete model-free programs, replacement, same-volume broker patch upgrade,
+  cold restore and selective recovery preserving newer Blue/global state.
+- [Secured Kind7](../../verification/ownedMULTI008/source41-secured-kind-positive/audit.json):
+  TLS/native OAuth, trust/token/Secret/key rotations, durable progress and unchanged
+  hub identity; private plaintext proxy-to-broker transport remains explicit.
+- [Deployed model programs](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json):
+  eight outer checks and 12 actual provider POSTs across both platforms, with typed
+  filter/search gates and privacy checks; no general accuracy claim.
+- [Metadata readiness23](../../verification/eventing-readiness-compiled41-positive/audit.json)
+  and [committed retention recovery3](../../verification/eventing-retention-compiled41-positive/audit.json)
+  exercise the successor Eventing behavior on the compiled image.
+- [SDK17](../../verification/eventing-readiness-sdk17-positive/manifest.json) and
+  [callback5/28](../../verification/recovery-callback41-positive/manifest.json)
+  cover their complete SDK and pinned incoming/query/HTTP callback programs;
+  callback instrumentation is distinct from default-entrypoint deployment gates.
+- [Focused UI32](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json),
+  [cache17](../../verification/container-cache41-positive/audit.json) and
+  [scalar ABI19](../../verification/ownedMULTI008/source41-image-abi-positive/audit.json)
+  retain their distinct UI, cache and observer-compatibility scopes.
 
-These positive gates do not declare MULTI/KAFKA integration or the whole goal
-complete. The [active queue](../roadmap/active-work.md) owns the integrated native/core,
-Kafka, complete recovery, CNI, browser and final documentation/lifecycle review.
-Applying changed operating guides requires a fresh proper-CLI authority/receipt
-transition. The old admission and runtime reports retain their original hashes;
-an unchanged-source/image bridge must be a separate reviewed record.
+These results do not declare the whole goal complete. Full current-image recovery25
+and Kafka14 remain integrated gates in the [active queue](../roadmap/active-work.md).
+Earlier CNI, model, migration and subsystem evidence keeps its exact source scope;
+the [conservation review](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
+states the permitted joins and limits. Changed operating guides still require the
+proper-CLI documentation/authority transition and reviewed receipt/context bridge.
+Historical source40/compiled05 admissions and false invocations remain immutable.
 
 MODEL-001 owns the optional [model Compose deployment](../../deploy/model.compose.yaml),
 checkpoint-verifying helper and SystemOne service. Raw delivery and literal search

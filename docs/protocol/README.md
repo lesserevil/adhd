@@ -10,9 +10,21 @@ These snapshots come from admitted successor38. Its independent combined-schema
 check covers 87 recovery vectors, exact normative definitions, resolved references,
 unchanged inherited definitions and OpenAPI correspondence. Its eight-group wire
 check covers actual HTTP, SDK and CLI traffic. The [publication evidence](../../verification/protocol21-publication/manifest.json)
-binds the artifact, files and raw reports. This publication qualifies the wire
-snapshots; the [roadmap](../roadmap/active-work.md) retains the unfinished integrated
-runtime, browser, image and platform gates.
+binds the artifact, files and raw reports; those published bytes and provenance
+remain unchanged.
+
+The current source41 image passes the complete
+[eight-group wire gate](../../verification/ownedMULTI008/source41-core13-positive/wire.json).
+Its [read-only export comparison](../../verification/ownedMULTI008/source41-protocol-conservation/review.json)
+binds actual cache17 CLI exports and the core HTTP/CLI snapshots. Profile 2.1 is
+semantically conserved, not byte-identical: JSON object serialization order and
+only five explicitly named `required` string-array orderings per document differ.
+The comparison retains both arrays at each exact JSON Pointer and verifies every
+other array, example, enum and value unchanged. It does not reorder or republish
+these downloads. Current core/platform/browser positives and remaining complete
+recovery25/Kafka14 and final authority gates are distinguished in the
+[qualification guide](../admin/event-service.md#qualification) and
+[active queue](../roadmap/active-work.md).
 
 ## Interfaces and versions
 

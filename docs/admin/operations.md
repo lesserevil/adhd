@@ -49,14 +49,20 @@ checks that use semantic filtering or model-backed search.
 
 ## Runtime and dependency licenses
 
-ADHD source is [Apache-2.0](../../LICENSE). The compiled05 image uses
+ADHD source is [Apache-2.0](../../LICENSE). The historical compiled05 inventory uses
 `elixir:1.20.4-otp-29-alpine@sha256:f1a8c06b332cacc7239381a25331a807fb63962f8221dff545ea4d8f78b0f50c`.
 Its recorded runtime is Elixir 1.20.4, OTP 29.1.2, Rebar3 3.27.0,
 Alpine 3.24.2-r0 and musl 1.2.6-r2. The
 [dependency audit](../../verification/compiled05-dependency-license-audit/audit.json)
 binds these versions, the compiled-image admission and exact upstream Elixir/OTP
 license references. Event transport uses OTP `inets`/`httpc`, SSL and crypto;
-it adds no Hex/Mix Kafka library.
+it adds no Hex/Mix Kafka library. The current source41 candidate retains the same
+three third-party base layers and runtime environment, as checked by the
+[source/module conservation review](../../verification/ownedMULTI008/source41-remaining-scope-review/review.json).
+Its changed application/cache layers are separately bound by the
+[source41 image audit](../../verification/ownedMULTI008/source41-compiled-image-positive/audit.json).
+This conservation carries the recorded dependency inventory forward, not a new
+legal-clearance or full-transitive-license claim.
 
 The [actual image inventory](../../verification/compiled05-dependency-license-audit/actual-image-inventory.json)
 retains the APK database hash and all 24 package records with their declared
@@ -117,14 +123,20 @@ the rebuild procedure in [source setup](../user/getting-started.md).
 Use a current Docker Engine with BuildKit. Staging normalizes archive ownership,
 timestamps, and permissions; the build command fixes image timestamps and disables variable
 provenance attestations. Record the image ID and input manifest. The
-[final compiled-image comparison](../../verification/container-precompile-image40/reproducibility05-positive/manifest.json)
+[current source41 compiled-image comparison](../../verification/ownedMULTI008/source41-compiled-image-positive/audit.json)
 records identical image configuration and filesystem layer identities from two
 independent sequential builds, both without build cache or network access. The
 [earlier comparison](../../verification/container-precompile-image40/reproducibility-first-negative/manifest.json)
 reproduced the final cache bytes but differed in intermediate layer metadata and
 remains a failed reproducibility result. The positive result covers the exact
 pinned amd64 builder and context; it does not establish identical images across
-different CPU architectures, compiler versions or Docker versions. See Docker's
+different CPU architectures, compiler versions or Docker versions. The [earlier compiled05 positive](../../verification/container-precompile-image40/reproducibility05-positive/manifest.json)
+retains its original image/context scope. Current
+[cache17](../../verification/container-cache41-positive/audit.json),
+[scalar observer ABI19](../../verification/ownedMULTI008/source41-image-abi-positive/audit.json)
+and [core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json)
+are separate gates: cache validation and observer compatibility do not by themselves
+prove recovery or application durability. See Docker's
 [reproducible build guidance](https://docs.docker.com/build/ci/github-actions/reproducible-builds/).
 
 Transfer the staged directory and `deploy/run.sh`, `scripts/configure_hub.py` to

@@ -273,35 +273,41 @@ never reset to latest and assert complete delivery.
 
 ## Qualification
 
-Current compiled05 deployment evidence is bound to the admitted source40 artifact,
-exact image, context and frozen harnesses:
+Current source41 deployment evidence binds the
+[admitted source](../../verification/eventing-readiness-source41/admission/manifest.json)
+and [exact compiled image/context](../../verification/ownedMULTI008/source41-compiled-image-positive/audit.json)
+to frozen harnesses:
 
-- [Model-free Compose11 and Kind10](../../verification/ownedMULTI008/compiled05-baseline-platform-positive/manifest.json)
-  pass the complete 21 named checks: public project initialization, durable raw
-  A2A delivery, replacements, consistent full cold backup/restore and selective
-  missing-project recovery preserving current Blue/security/global state. Compose
-  additionally passes the real same-volume 8.3.1→8.3.2 broker upgrade. All 84 original
-  platform assertions remain in the current 115-assertion harness.
-- [Secured Kind rotation](../../verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json)
-  passes seven whole scenarios with 51 assertions preserving all 48 originals:
-  HTTPS/native JWT denial and key retirement, hot token/trust validation, mounted
-  Secret password/certificate rotation, REST/broker pod replacement, durable cursor
-  progress and unchanged hub identity. The namespace, claimed PVs and owned probes
-  were removed. This is Enterprise/permitted-trial scope, with private plaintext
-  proxy-to-broker transport.
-- [Deployed optional-model filtering and search](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json)
-  independently qualifies all six Compose and six Kind child scenarios with their
-  exact compiled VM identities, bounded actual inference, raw progress and privacy
-  checks. Both children exited 0 and cleaned up. The outer launcher exited 143;
-  that failed invocation remains recorded and is not relabeled as a successful
-  aggregate run.
+- [Model-free Compose11 and Kind10](../../verification/ownedMULTI008/source41-baseline-platform-positive/audit.json)
+  pass all 21 named checks: public project initialization, durable raw A2A delivery,
+  replacements, full cold backup/restore and selective missing-project recovery
+  preserving newer Blue, security, global configuration and broker state. Compose
+  also passes the real same-volume 8.3.1→8.3.2 broker upgrade.
+- [Secured Kind](../../verification/ownedMULTI008/source41-secured-kind-positive/audit.json)
+  passes seven whole scenarios, with all 48 original assertions retained in the
+  51-site harness: TLS/native JWT denial and retirement, hot token/trust validation,
+  mounted Secret password/certificate rotation, REST/broker replacement, durable
+  cursor progress and unchanged hub identity. Owned namespace, PVs and probes were
+  removed. This remains Enterprise/permitted-trial scope with private plaintext
+  proxy-to-broker transport; it does not qualify SASL_SSL or production HA.
+- [Deployed optional-model filtering/search](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
+  passes both complete platform programs: eight outer reported checks, with six
+  actual provider POSTs per platform (12 total). Inner typed filter/search gates,
+  raw progress, scoped citations, foreign/private canary exclusion and hot
+  disable/resume are bound to the actual compiled VMs and strict cleanup.
+- [Core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.json)
+  and [focused Admin/Events/recovery UI32](../../verification/ownedMULTI008/source41-focused-ui-positive/audit.json)
+  pass their complete selected programs. The UI result is not a new full UI86 claim.
 
-These are scoped positive deployment gates. They do not close the integrated
-roadmap, final documentation-authority lifecycle, full CNI, complete recovery,
-Kafka, browser or core qualification by themselves. Independent cache integrity
-and reproducibility are linked in the [build guide](operations.md#build-and-transfer).
-Older service/native/accepted-image reports below retain their exact historical
-scope and do not substitute for these compiled05 results.
+These positives do not close the integrated roadmap. Full current-image recovery25,
+Kafka14 and final documentation-authority review remain separate requirements.
+Independent cache integrity and two-build reproducibility are linked in the
+[build guide](operations.md#build-and-transfer). The
+[enforcing CNI18 result](../../verification/ownedMULTI008/cni-static-gate-positive/audit.json)
+is a separate TCP network-policy proof on its recorded older image, not source41
+hub/Kafka qualification. Historical compiled05 deployment evidence, including its
+[model launcher143/false outcome](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json),
+remains unchanged and does not substitute for these source41 runs.
 
 `python3 tests/kafka_service.py --url URL --output _build/.../service.json` exercises
 real topic creation, ordered publication, manual consumer replacement/replay,
@@ -378,7 +384,7 @@ The [candidate platform diagnostic](../../verification/kafka-platform-diagnostic
 records eight official-SDK checks per platform, durable hub replacement and four
 live Nemotron decisions across Compose and Kubernetes. Its image is explicitly a
 lifecycle-unqualified diagnostic candidate. The temporary model relay was removed
-and the existing model remained ready. Current accepted compiled05 platform and
+and the existing model remained ready. Current source41 platform and
 security results are linked above; the old diagnostic is retained as history,
 while remaining integrated qualification and release gates stay explicit.
 
@@ -589,6 +595,6 @@ adds actual fresh-PVC startup under the broker's nonroot user/fsGroup and restar
 with the committed identity, using the exact ConfigMap source. It also repeats
 Secret and trust rotation with the native frozen diagnostic hub and complete
 old/new pod log capture. Its six checks passed and its namespace/PVC/PV were
-removed. The current compiled05 secured Kind result above independently qualifies its
+removed. The current source41 secured Kind result above independently qualifies its
 accepted-image branch. This older native result retains its original runtime
 scope; it is not itself evidence for the final container's OTP runtime.

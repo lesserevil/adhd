@@ -156,11 +156,15 @@ including scoped semantic history and the resumed filtered subscription after ho
 model re-enablement. These authored workload checks do not imply general calibration,
 latency guarantees or qualification of GPU hardware beyond the tested host.
 
-The [current compiled05 deployment gate](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json)
-independently qualifies all six Compose and six Kind child scenarios against the
-actual packaged runtime: filtered match/nonmatch, model disable/resume, cited
-backend history search, separate raw progress and foreign/private canary exclusion.
-Each child made six provider requests and exited 0 with strict cleanup. The outer
-launcher exited 143; its false aggregate is preserved. This small synthetic corpus
-is not general semantic accuracy or latency calibration, and the earlier evidence
-above retains its exact historical artifact/image scope.
+The [current source41 deployed-model gate](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
+passes both complete Compose and Kind programs against the actual packaged runtime:
+eight outer reported checks, with inner typed filter and semantic-search gates.
+Each platform made six provider POSTs (12 total), covering filtered match/nonmatch,
+model disable/resume, cited backend history search, separate raw progress and
+foreign/private canary exclusion. Actual compiled VM custody, unchanged protected
+model identity, released cooperative lease and strict cleanup are retained.
+The [older compiled05 launcher143/false result](../../verification/ownedMULTI008/compiled05-deployed-model-terminal/manifest.json)
+remains historical evidence and is not rewritten by this positive run. This fixed
+synthetic corpus is not general semantic accuracy or latency calibration, a fresh
+optimizer benchmark, or a full-transitive/legal-clearance inventory. Full current
+Kafka14/recovery25 and final documentation-authority review remain separate gates.

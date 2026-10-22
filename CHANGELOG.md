@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Qualification: the source41 compiled candidate passes core13/94, model-free
+  Compose11/Kind10, secured Kind7 and focused Admin/Events/recovery UI32. Both
+  deployed-model programs pass eight outer checks with 12 actual inference POSTs;
+  full recovery25/Kafka14 and final documentation-authority review remain pending.
+- Packaging: source41 passes two independent sequential no-cache/network-free
+  builds with identical image identities, plus offline payload/cache audit and
+  cache17. Historical artifacts and false invocations retain their original scope.
+
 - Eventing: tolerate transient Kafka metadata propagation after topic creation
   within one shared deadline, while retaining strict topology, retention,
   authorization and fresh-topic checks. Recover incomplete committed retention

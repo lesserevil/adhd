@@ -160,7 +160,7 @@ def prepare(args):
  shutil.copyfile(plain(Path(__file__)),work/'driver.py')
  plan={'schema':'adhd/image38-kafka-ladder@1','scope':'Actual admitted38 image only; discovers unchanged backend blockers. Does not qualify repaired40/current successor, UI or release.',
   'image_config_identity':IMAGE,'artifact_sha256':ARTIFACT,'admission_sha256':ADMISSION,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),
-  'payload_sha256':selected['payload_sha256'],'payload_audit':selected['audit'],'target_specifications':33,'live_specification_drift':drift,
+  'payload_sha256':selected['payload_sha256'],'payload_audit':selected['audit'],'target_specifications':33,'payload_custody':'Fixture-based lostreply/fairness/cutover/outage require strict2probe ledger; Hub-based controls/caps/dormant/Admin/policy/retention/federation validate exact manifest+artifact by exec in each actual app container and have no extra standalone payload probes','live_specification_drift':drift,
   'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'native_plan_sha256':sha(native),
   'docker_socket':{'path':str(socket),'identity':[socket_info.st_dev,socket_info.st_ino]},
   'external_inputs':[external(original_artifact),external(legacy),external(native),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+[v for r in proofbindings.values() for v in (r['source_library'],r['source_proof'])]+list(tools.values()),
@@ -184,6 +184,14 @@ def qualify(value,job,plan):
  for runtime in runtimes:
   assert runtime['kind']=='docker' and runtime['image_config_identity']==IMAGE and runtime['artifact_sha256']==ARTIFACT
   assert runtime['canonical_manifest_sha256']==plan['canonical_manifest_sha256'] and not runtime.get('cleanup_blocked',False)
+  if job['script'] in ('eventing_faults.py','multi_fairness.py','eventing_cutover.py','eventing_acceptance.py'):
+   assert runtime['payload_verified'] is True and not runtime['probe_cleanup_blocked']
+   probes=runtime['payload_probe_lifecycle'];assert len(probes)==2 and [r['entrypoint'] for r in probes]==['cat','sha256sum']
+   for probe in probes:
+    assert probe['image_config_identity']==IMAGE and probe['observed_absent'] and probe['run_exit_code']==0
+    assert not probe['run_failure_type'] and not probe['cleanup_failure_types'] and not probe['foreign_object_not_removed']
+    names.append(probe['owned_name'])
+    if probe['container_id'] is not None:ids.append(probe['container_id'])
   events=runtime['container_lifecycle'];started={e['container_id'] for e in events if e['action']=='started'}
   closed={e['container_id'] for e in events if e['action'] in ('hard-killed','stopped') and e.get('observed_absent') }
   assert started and started<=closed,'Started target container lacks actual wait/remove/absence closure'
@@ -248,10 +256,10 @@ def execute(work,digest):
     assert child.returncode==0 and report.is_file(),'Actual child failed or no report; no retry'
     ids,names=qualify(json.loads(report.read_text()),job,plan)
     for identifier in ids+names:
-     assert re.fullmatch('[a-f0-9]{64}|adhd-fs-codec-[a-f0-9]{16}',identifier)
+     assert re.fullmatch('[a-f0-9]{64}|adhd-(?:fs-codec|accept-probe)-[a-f0-9]{16}',identifier)
      result=subprocess.run([plan['tools']['docker']['path'],'inspect',identifier],capture_output=True,timeout=30,env=env)
      assert absent(result,identifier),'Independent actual owned container absence unconfirmed'
-    row.update(passed=True,independently_absent_ids=ids,independently_absent_codec_names=names);print('DONE',job['name'],True,flush=True)
+    row.update(passed=True,independently_absent_ids=ids,independently_absent_helper_names=names);print('DONE',job['name'],True,flush=True)
   except BaseException as error:failure=type(error).__name__;raise
   finally:
    try:verify(work,plan);unchanged=True

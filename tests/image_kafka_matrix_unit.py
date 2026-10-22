@@ -105,4 +105,28 @@ class ClusterGuards(unittest.TestCase):
   with patch.object(m.subprocess,'run',side_effect=[self.inspected('kafka'),foreign]):
    with self.assertRaises(AssertionError):m.preflight(self.plan(),{})
 
+class ProbeLedger(unittest.TestCase):
+ def fixture(self):
+  probes=[{'owned_name':'adhd-accept-probe-'+str(i)*16,'container_id':None,'image_config_identity':m.IMAGE,'entrypoint':entry,'run_exit_code':0,'run_failure_type':None,'foreign_object_not_removed':False,'observed_absent':True,'cleanup_failure_types':[]} for i,entry in [(1,'cat'),(2,'sha256sum')]]
+  runtime={'kind':'docker','image_config_identity':m.IMAGE,'artifact_sha256':m.ARTIFACT,'canonical_manifest_sha256':'m','payload_verified':True,'probe_cleanup_blocked':False,'payload_probe_lifecycle':probes,'container_lifecycle':[{'action':'started','container_id':'a'*64},{'action':'stopped','container_id':'a'*64,'observed_absent':True,'wait_observed':True}]}
+  return {'passed':True,'artifact_sha256':m.ARTIFACT,'checks':[{'passed':True}],'runtime':runtime}
+ def qualify(self,value):return m.qualify(value,{'script':'eventing_acceptance.py','expected_check_count':1,'observer_source':None},{'canonical_manifest_sha256':'m'})
+ def test_probe_names_in_independent_absence_set(self):
+  ids,names=self.qualify(self.fixture());self.assertEqual(ids,['a'*64]);self.assertEqual(len(names),2)
+ def test_unknown_probe_cleanup_denied(self):
+  value=self.fixture();value['runtime']['payload_probe_lifecycle'][0]['observed_absent']=False
+  with self.assertRaises(AssertionError):self.qualify(value)
+ def test_failed_verification_never_qualifies(self):
+  value=self.fixture();value['runtime']['payload_verified']=False
+  with self.assertRaises(AssertionError):self.qualify(value)
+ def test_probe_failure_cannot_be_erased_by_later_absence(self):
+  value=self.fixture();value['runtime']['payload_probe_lifecycle'][0]['run_failure_type']='TimeoutExpired'
+  with self.assertRaises(AssertionError):self.qualify(value)
+
+ def test_hub_payload_is_verified_in_actual_app_without_standalone_probes(self):
+  value=self.fixture();runtime=value['runtime']
+  for key in ('payload_verified','probe_cleanup_blocked','payload_probe_lifecycle'):runtime.pop(key)
+  ids,names=m.qualify(value,{'script':'eventing_retention.py','expected_check_count':1,'observer_source':None},{'canonical_manifest_sha256':'m'})
+  self.assertEqual(ids,['a'*64]);self.assertEqual(names,[])
+
 if __name__=='__main__':unittest.main()

@@ -20,12 +20,24 @@ The initial supported package is Linux amd64, Confluent Platform **8.3.2**
 
 ADHD remains Apache-2.0. That license does not relicense external dependencies.
 REST Proxy's Community License includes a restriction on competing hosted service
-offerings; review the [upstream license](https://github.com/confluentinc/kafka-rest/blob/master/LICENSE)
+offerings; review the [upstream license](https://github.com/confluentinc/kafka-rest/blob/v8.3.2/LICENSE)
 for your distribution. Component interoperability and supported patch lines are
 published in the [Confluent matrix](https://docs.confluent.io/platform/current/installation/versions-interoperability.html).
 The hub uses Elixir/OTP HTTP against the [REST Proxy v2 API](https://docs.confluent.io/platform/current/kafka-rest/api.html),
 not a newly authored Kafka wire client. No registry authentication or commercial
 Confluent security plugin is required by the model-free baseline manifests.
+
+The [compiled05 dependency audit](../../verification/compiled05-dependency-license-audit/audit.json)
+binds the hub base/runtime versions and the pinned broker/proxy identities above;
+its [APK inventory](../../verification/compiled05-dependency-license-audit/actual-image-inventory.json)
+records the hub image's package declarations. The
+[optional model inventory](../../verification/ownedMULTI008/optional-model-dependency-license/manifest.json)
+separately binds serving-source, weights, CUDA and selected base-package evidence.
+These scoped inventories supplement the source/resolved BOM receipts; they do not
+claim a complete transitive service inventory or license clearance. Follow the
+[build guide](operations.md#deployment-contract) for the compile-once image and
+validated startup cache. Container replacement uses that packaged entrypoint;
+mount only the writable configuration and data directories.
 
 ## Model-free Compose application
 

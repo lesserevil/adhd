@@ -17,8 +17,13 @@ search need no model. The hub container does not need GPU access or model weight
 
 The authoring defaults are Elixir, Make, and Linux. The exported artifact is
 a portable Elixir source script, not a macOS executable or native BEAM closure.
-Container packaging copies that exact script and recompiles it using the pinned
-Linux runtime. No additional compiler Flavor is required for this packaging path.
+Container packaging preserves that exact script and compiles its declared modules
+once during the OCI image build using the pinned Linux runtime. At startup, the
+loader verifies the source, compiler inputs, runtime anchors and complete module
+cache before loading application modules and running the original CLI dispatcher.
+A missing or changed cache fails startup; rebuild the image from admitted staging
+inputs. Keep `/app` and `/runtime/adhd` in the image rather than mounting replacement
+files over them. No additional compiler Flavor is required for this packaging path.
 Linux runtime compatibility is independently checked by the container acceptance
 suite. The Linux Flavor now owns the native authoring target and its lifecycle
 evidence.
@@ -40,7 +45,33 @@ Docker Desktop host networking is not validated by this project.
 
 The application includes a [local GPU model service](model-service.md) with a
 pinned Docker Compose deployment and checkpoint verification. Start it before
-performing live matching or federation checks.
+checks that use semantic filtering or model-backed search.
+
+## Runtime and dependency licenses
+
+ADHD source is [Apache-2.0](../../LICENSE). The compiled05 image uses
+`elixir:1.20.4-otp-29-alpine@sha256:f1a8c06b332cacc7239381a25331a807fb63962f8221dff545ea4d8f78b0f50c`.
+Its recorded runtime is Elixir 1.20.4, OTP 29.1.2, Rebar3 3.27.0,
+Alpine 3.24.2-r0 and musl 1.2.6-r2. The
+[dependency audit](../../verification/compiled05-dependency-license-audit/audit.json)
+binds these versions, the compiled-image admission and exact upstream Elixir/OTP
+license references. Event transport uses OTP `inets`/`httpc`, SSL and crypto;
+it adds no Hex/Mix Kafka library.
+
+The [actual image inventory](../../verification/compiled05-dependency-license-audit/actual-image-inventory.json)
+retains the APK database hash and all 24 package records with their declared
+licenses. These include GPL, LGPL, MIT, Apache, MPL, BSD, X11 and Zlib terms;
+the virtual `.erlang-rundeps` package has no declared license field. The hub's
+Apache license does not replace these package terms. The archive inspection found
+`app/LICENSE` as its conventional license/notice filename; it did not establish a
+complete third-party notice or source-offer bundle. Package declarations and file
+hashes provide traceability, not legal clearance or a complete transitive BOM.
+
+The same audit distinguishes host SDK/browser/OpenRig qualification tools from hub
+runtime dependencies. Kafka/REST Proxy terms are in the
+[event-service inventory](event-service.md#artifact-and-license-inventory), and
+optional serving code, checkpoint weights and CUDA/base terms are in the
+[model-service inventory](model-service.md#dependency-and-license-inventory).
 
 ## Build and transfer
 
@@ -85,9 +116,15 @@ the rebuild procedure in [source setup](../user/getting-started.md).
 
 Use a current Docker Engine with BuildKit. Staging normalizes archive ownership,
 timestamps, and permissions; the build command fixes image timestamps and disables variable
-provenance attestations. Record the image ID and input manifest. Reproducibility
-is checked for the tested architecture and builder; it does not imply identical
-images across different CPU architectures or Docker versions. See Docker's
+provenance attestations. Record the image ID and input manifest. The
+[final compiled-image comparison](../../verification/container-precompile-image40/reproducibility05-positive/manifest.json)
+records identical image configuration and filesystem layer identities from two
+independent sequential builds, both without build cache or network access. The
+[earlier comparison](../../verification/container-precompile-image40/reproducibility-first-negative/manifest.json)
+reproduced the final cache bytes but differed in intermediate layer metadata and
+remains a failed reproducibility result. The positive result covers the exact
+pinned amd64 builder and context; it does not establish identical images across
+different CPU architectures, compiler versions or Docker versions. See Docker's
 [reproducible build guidance](https://docs.docker.com/build/ci/github-actions/reproducible-builds/).
 
 Transfer the staged directory and `deploy/run.sh`, `scripts/configure_hub.py` to

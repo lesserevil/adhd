@@ -6,6 +6,47 @@ digest; weights are mounted separately and are never included in the hub image.
 The service publishes only `127.0.0.1:18770`. Linux host-networked hub containers
 can use `http://127.0.0.1:18770/v1/systemone` as `matcher.url`.
 
+## Dependency and license inventory
+
+The [scoped optional-model inventory](../../verification/ownedMULTI008/optional-model-dependency-license/manifest.json)
+binds the running pinned image, checkpoint revision and hashes, 17 selected
+installed components and 114 supplied legal-file hashes. Model weights remain an
+operator-supplied external artifact and are excluded from the hub image. The
+hub's Apache-2.0 license and the serving-source license do not grant rights to all
+weights, CUDA components or base-image packages.
+
+The serving source at commit `763a66b4bef4ad94a0f63ec9a2d9ad1e56673a4a` supplies
+an [Apache-2.0 license](https://raw.githubusercontent.com/pst2154/nemotron-deciffusion/763a66b4bef4ad94a0f63ec9a2d9ad1e56673a4a/LICENSE).
+Four actual serving files match that source revision byte for byte; this is not
+whole-image build reproducibility. The checkpoint at revision
+`d80a66a22c7640bcaefd2d71ea04ad14541e1822` has BF16 weights SHA-256
+`f892562cfd1dcd0ac7d245e1790edf7ea0f3e78bd3427ced5468b8bd874eb1fc`.
+Its pinned README declares “NVIDIA Nemotron Open Model License (same as v2).”
+The tracked checkpoint supplies no full license text, specific license version,
+standalone NOTICE or separate model card. That declaration is recorded as supplied;
+a currently published license is not substituted for the missing version. One
+configuration Python file carries an Apache-2.0 header, which describes that
+source file rather than the whole checkpoint. Obtain the checkpoint through your
+authorized source and retain its supplied terms with your installation.
+
+The serving image's recorded base is Ubuntu 24.04.3 LTS. Its shipped
+`/NGC-DL-CONTAINER-LICENSE`, selected Ubuntu copyright files and CUDA runtime
+wheel EULA are hash-bound in the inventory. The `nvidia-cuda-runtime` 13.0.96
+wheel declares `LicenseRef-NVIDIA-Proprietary`; those terms are separate from the
+Apache-2.0 serving code. Installed vLLM, Transformers and FlashInfer declare
+Apache-2.0; Torch records a mixed license expression. Triton and safetensors have
+retained license files despite empty metadata fields. Tokenizers has no license
+metadata field or distinct license file in the inspected package location, and
+FlashInfer JIT cache declares Apache-2.0 without a distinct legal file there.
+The detailed inventory preserves these unknowns and raw declarations.
+
+This inventory covers the observed top-level components and supplied legal
+materials. It provides neither a complete transitive Python/CUDA/OS/GPU-driver BOM
+nor redistribution clearance. Public vLLM build labels are retained provenance,
+not an independently reconstructed immutable base-image identity. See the
+[hub runtime inventory](operations.md#runtime-and-dependency-licenses) for the
+separate CPU-only hub package.
+
 ## Host and checkpoint setup
 
 Use a Linux Docker host with Compose, an NVIDIA GPU, a working driver and NVIDIA

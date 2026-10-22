@@ -111,7 +111,7 @@
 +      check(absent?(Path.join(root,"client.lock")) or ADHD.ACMEClient.lock_available?(root))
 +      {wb,_}=F.read(witness,4096,uid);w=F.json(wb)
 +      F.keys(w,~w(config_path owner phase))
-+      check(w["config_path"]==ADHD.Directory.digest(Path.expand(old)) and w["phase"]=="ready")
++      check(w["config_path"]==ADHD.Domain.digest(Path.expand(old)) and w["phase"]=="ready")
 +      check(is_binary(w["owner"]) and Regex.match?(~r/\A[A-Za-z0-9_-]{32}\z/,w["owner"]))
 +      {ob,_}=F.read(Path.join(root,"owner.json"),4096,uid)
 +      check(F.json(ob)==Map.delete(w,"phase"))
@@ -125,7 +125,7 @@
 +      {files,dirs,_}=walk(root,"",uid,deadline,max_bytes,max_records,{[],[],0})
 +      proof=%{"initialized"=>true,"old_config_path"=>w["config_path"],"owner"=>w["owner"],"files"=>Enum.sort_by(files,& &1["path"]),"directories"=>Enum.sort(dirs),"maximum_bytes"=>max_bytes}
 +      validate(proof,path)
-+      nw=Map.put(w,"config_path",ADHD.Directory.digest(Path.expand(path)))
++      nw=Map.put(w,"config_path",ADHD.Domain.digest(Path.expand(path)))
 +      {proof,[{"acme-witness",witness,wb,nw},{"acme-owner",Path.join(root,"owner.json"),ob,Map.delete(nw,"phase")}]}
 +    end
 +  end
@@ -159,7 +159,7 @@
 +    {wb,_}=F.read(path<>".acme-owner.json",4096,uid)
 +    {ob,_}=F.read(Path.join(root,"owner.json"),4096,uid)
 +    old=%{"owner"=>p["owner"],"config_path"=>p["old_config_path"]}
-+    new=Map.put(old,"config_path",ADHD.Directory.digest(Path.expand(path)))
++    new=Map.put(old,"config_path",ADHD.Domain.digest(Path.expand(path)))
 +    choices=if decided,do: [old,new],else: [old]
 +    check(F.json(ob) in choices)
 +    check(F.json(wb) in Enum.map(choices,&Map.put(&1,"phase","ready")))

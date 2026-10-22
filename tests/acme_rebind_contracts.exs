@@ -43,15 +43,24 @@ try do
   check.("root-without-witness-refused",fn->reject.(fn->ADHD.ACMERebind.capture(path,old,uid,limits) end) end)
   for n<-~w(accounts attempts generations),do: (File.mkdir!(Path.join(root,n));File.chmod!(Path.join(root,n),0o700))
   owner=String.duplicate("A",32)
-  w=%{"config_path"=>ADHD.Directory.digest(old),"owner"=>owner,"phase"=>"ready"}
+  w=%{"config_path"=>Base.encode16(:crypto.hash(:sha256,:erlang.term_to_binary(Path.expand(old))),case: :lower),"owner"=>owner,"phase"=>"ready"}
   wp=path<>".acme-owner.json";op=Path.join(root,"owner.json")
+  check.("actual-domain-producer-path-digest",fn->w["config_path"]==ADHD.Domain.digest(old) and w["config_path"]!=ADHD.Directory.digest(old) end)
+  producer=Code.string_to_quoted!(File.read!(Path.join(support,"tls.exs")))
+  {_ast,bindings}=Macro.prewalk(producer,[],fn
+    {:=,_,[{:binding,_,_},{{:.,_,[{:__aliases__,_,[:D]},:digest]},_,[{{:.,_,[{:__aliases__,_,[:Path]},:expand]},_,[{{:.,_,[{:s,_,_},:path]},_,[]}]}]}]}=node,acc->{node,[true|acc]}
+    node,acc->{node,acc}
+  end)
+  check.("tls-initializer-uses-same-domain-expression",fn->bindings==[true] and String.contains?(File.read!(Path.join(support,"tls.exs")),"alias ADHD.Domain, as: D") end)
+  put.(wp,Map.put(w,"config_path",ADHD.Directory.digest(old)));put.(op,Map.delete(w,"phase"));put.(Path.join(root,"state.json"),%{})
+  check.("json-digest-impostor-refused",fn->reject.(fn->ADHD.ACMERebind.capture(path,old,uid,limits) end) end)
   put.(wp,w);put.(op,Map.delete(w,"phase"));put.(Path.join(root,"state.json"),%{"active"=>"unchanged"})
   key=Path.join(root,"accounts/key.pem");put.(key,"private-fixture-only")
   cert=Path.join(root,"generations/cert.pem");put.(cert,"certificate-fixture-only")
   {proof,replacements}=ADHD.ACMERebind.capture(path,old,uid,limits)
   retained=Map.new([key,cert,Path.join(root,"state.json")],&{&1,{File.read!(&1),File.stat!(&1)}})
   check.("exact-owner-two-targets",fn->Enum.map(replacements,&elem(&1,1))==[wp,op] end)
-  check.("old-binding-and-opaque-owner-proved",fn->proof["old_config_path"]==ADHD.Directory.digest(old) and proof["owner"]==owner end)
+  check.("old-binding-and-opaque-owner-proved",fn->proof["old_config_path"]==ADHD.Domain.digest(old) and proof["owner"]==owner end)
   check.("predecision-valid",fn->ADHD.ACMERebind.verify(proof,path,uid,false)==:ok end)
   check.("wrong-old-config-binding-refused",fn->reject.(fn->ADHD.ACMERebind.capture(path,"/foreign/config.json",uid,limits) end) end)
   put.(Path.join(root,"client.lock"),"")

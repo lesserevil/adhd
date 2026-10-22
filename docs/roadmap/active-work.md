@@ -118,6 +118,28 @@ The failed request's exact expected revision was not retained; do not invent it 
 change application conflict behavior. Preserve all original assertions, deadlines
 and conflict-denial checks, with no automatic mutation retry.
 
+The [reviewed foundation fixture repair](../../verification/foundation-reload-fixture-repair/manifest.json)
+retains its last-good configuration immediately after the successful reload. The
+fresh full core13 run uses that single assignment change and preserves the
+original assertions and deadlines; the first false attempt remains unchanged.
+The [Kafka federation timeout diagnosis](../../verification/eventing-readiness-kafka14-federation-timeout/manifest.json)
+records 13 whole programs passing before the final federation program stops after
+seven partial checks. Its catalog configuration update was durably accepted as
+revision 2, but the client timed out waiting for HTTP status under the original
+five-second bound. The delayed phase is unproven. Next, retain the false run and
+independent cleanup evidence, then gather bounded, sanitized request/commit timing
+without retrying mutations or widening that bound before choosing a correction.
+
+The source41 full recovery run passes its first 23 whole programs, including all
+15 crash cases, then fails the storage-rebind harness's actual-VM command-line
+identity assertion. Its child assertion precedes the missing report that the
+parent reports as `FileNotFoundError`; the final hostile-rebind program is unrun.
+The real decision-durable fsync sentinel exists and cleanup reports closure, but
+the mismatching command-line fields were not retained. Next, independently retain
+the false attempt and cleanup, identify the launch/custody mismatch, and preserve
+exact process identity and original fault assertions in any correction. Partial
+checks do not qualify either failed program.
+
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
 passes28 whole suites/156 checks; its separately verified foundation prefix adds20

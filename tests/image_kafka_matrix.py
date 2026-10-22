@@ -20,8 +20,9 @@ import subprocess
 BASIS_ARTIFACT='1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7'
 LEGACY='1d3459aab65c295b8edb988dbf7bf716ecece78e9e7e7062ec19312984ee7d48'
 SOURCES=('multi_fault.c','store_move_fault.c','storage_write_fault.c','project_recovery_fault.c','rebind_fault.c')
-NAMES=['controls','caps','dormant','admin','policy','lostreply','fairness','cutover','cutover-decision','cutover-project','retention','outage','federation']
-COUNTS=dict(zip(NAMES,[8,5,2,4,4,2,4,4,5,5,2,9,14]))
+BASIS_NAMES=['controls','caps','dormant','admin','policy','lostreply','fairness','cutover','cutover-decision','cutover-project','retention','outage','federation']
+NAMES=BASIS_NAMES[:-1]+['optional-filter',BASIS_NAMES[-1]]
+COUNTS=dict(zip(NAMES,[8,5,2,4,4,2,4,4,5,5,2,7,2,14]))
 BASIS='2237066a598ba7a2136c4517e9f0da3901e05688e426a7a7512e72844242005a'
 
 
@@ -95,6 +96,7 @@ def verify(work,plan):
  manifest=json.loads((work/'bound/image-manifest.json').read_text());assert manifest['files']['hub.exs']==artifact
  assert sha(work/'bound/source-target.exs')==artifact and sha(work/'bound/image-manifest.json')==plan['canonical_manifest_sha256']
  assert [r['name'] for r in plan['jobs']]==NAMES and plan['parallelism']==1 and plan['automatic_retries']==0
+ assert [r['expected_check_count'] for r in plan['jobs']]==[COUNTS[n] for n in NAMES] and sum(COUNTS.values())==68
  check_tree(work/'frozen',plan['frozen']);check_tree(work/'bound',plan['bound'])
  for tree in plan['tool_trees']:assert tool_tree(tree['root'])==tree,'Native/Python tool closure drift'
  for row in plan['external_inputs']:
@@ -108,7 +110,7 @@ def verify(work,plan):
 
 
 def selected_native_jobs(native):
- rows=native['jobs'];assert [r['name'] for r in rows]==NAMES
+ rows=native['jobs'];assert [r['name'] for r in rows]==BASIS_NAMES
  assert all(r['arguments'][:2]==['--image',native['runtime']['image_config_identity']] for r in rows)
  for row in rows:
   args=row['arguments']
@@ -116,6 +118,21 @@ def selected_native_jobs(native):
  for name,stage in [('cutover-decision','transition-decision'),('cutover-project','transition-project')]:
   args=next(r['arguments'] for r in rows if r['name']==name);assert args[args.index('--crash-at')+1]==stage
  return rows
+
+
+def complete_jobs(native):
+ # The unchanged model-free outage program has seven checks. The two original
+ # deterministic filter assertions need their own controlled ModelFixture.
+ rows=selected_native_jobs(native)
+ optional={**next(r for r in rows if r['name']=='outage'),'name':'optional-filter','script':'eventing_optional_faults.py'}
+ return rows[:-1]+[optional,rows[-1]]
+
+
+def optional_filter_arguments(arguments):
+ arguments=list(arguments)
+ assert '--with-model' not in arguments and '--deadline' in arguments
+ index=arguments.index('--broker-container');del arguments[index:index+2]
+ return arguments+['--with-model']
 
 
 def prepare(args):
@@ -129,7 +146,7 @@ def prepare(args):
  selected=reader.reviewed_payload(context/'manifest.json',admission,admission_sha,image,artifact)
  assert len(selected['specifications'])==selected['audit']['canonical_specifications'] and len(selected['specifications'])>0
  native=plain(args.native_plan);assert sha(native)==BASIS;nv=json.loads(native.read_text());assert nv['artifact_sha256']==BASIS_ARTIFACT and nv['legacy_sha256']==LEGACY
- basis=selected_native_jobs(nv)
+ basis=complete_jobs(nv)
  frozen=work/'frozen';frozen.mkdir(mode=0o700)
  for tree in ('tests','scripts','deploy'):
   for path in sorted((root/tree).rglob('*')):
@@ -164,6 +181,7 @@ def prepare(args):
   original=list(row['arguments']);script=row['script'];arguments=[str(work)+v[len(str(native.parent)):] if v.startswith(str(native.parent)) else v for v in original]
   for flag,value in [('--image',image),('--owned-broker-container',project+'-kafka-1'),('--broker-container',project+'-kafka-1'),('--image-manifest',str(bound/'image-manifest.json')),('--image-fault-library',proofbindings['multi_fault.c']['library']),('--image-fault-proof',proofbindings['multi_fault.c']['proof'])]:
    if flag in arguments:arguments[arguments.index(flag)+1]=value
+  if row['name']=='optional-filter':arguments=optional_filter_arguments(arguments)
   jobs.append({'name':row['name'],'script':script,'native_basis_arguments':original,'arguments':arguments,'expected_check_count':COUNTS[row['name']],
    'observer_source':'multi_fault.c' if '--crash-at' in arguments else None,'argv':[tools['python']['path'],str(frozen/'tests'/script)]+arguments+['--report',str(work/(row['name']+'.json'))]})
  docker_config=bound/'docker-config';docker_config.mkdir(mode=0o700);(docker_config/'config.json').write_text('{}')
@@ -192,12 +210,13 @@ def qualify(value,job,plan):
  assert value['passed'] is True and value['artifact_sha256']==artifact
  rows=value['checks']
  assert len(rows)==job['expected_check_count'] and all(row['passed'] for row in rows)
+ if job['script']=='eventing_optional_faults.py':assert value['controlled_model_only'] is True
  runtimes=value['runtime'] if isinstance(value['runtime'],list) else [value['runtime']]
  ids=[];names=[]
  for runtime in runtimes:
   assert runtime['kind']=='docker' and runtime['image_config_identity']==image and runtime['artifact_sha256']==artifact
   assert runtime['canonical_manifest_sha256']==plan['canonical_manifest_sha256'] and not runtime.get('cleanup_blocked',False)
-  if job['script'] in ('eventing_faults.py','multi_fairness.py','eventing_cutover.py','eventing_acceptance.py'):
+  if job['script'] in ('eventing_faults.py','multi_fairness.py','eventing_cutover.py','eventing_acceptance.py','eventing_optional_faults.py'):
    assert runtime['payload_verified'] is True and not runtime['probe_cleanup_blocked']
    probes=runtime['payload_probe_lifecycle'];assert len(probes)==2 and [r['entrypoint'] for r in probes]==['cat','sha256sum']
    for probe in probes:

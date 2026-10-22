@@ -40,9 +40,24 @@ class Guards(unittest.TestCase):
   with self.assertRaises(AssertionError):m.inventory(link)
  def test_native_exact_selection(self):
   native=json.loads(Path('/home/horde/src/adhd/.worktrees/deployment/_build/image38-reviewed-preparation/eventing/plan.json').read_text())
-  self.assertEqual([r['name'] for r in m.selected_native_jobs(native)],m.NAMES)
+  self.assertEqual([r['name'] for r in m.selected_native_jobs(native)],m.BASIS_NAMES)
   bad=copy.deepcopy(native);row=next(r for r in bad['jobs'] if r['name']=='cutover-project');row['arguments'][row['arguments'].index('--deadline')+1]='91'
   with self.assertRaises(AssertionError):m.selected_native_jobs(bad)
+ def test_complete_seven_outage_plus_two_filter_checks_without_changing_original_jobs(self):
+  native=json.loads(Path('/home/horde/src/adhd/.worktrees/deployment/_build/image38-reviewed-preparation/eventing/plan.json').read_text());before=copy.deepcopy(native)
+  rows=m.complete_jobs(native)
+  self.assertEqual([r['name'] for r in rows],m.NAMES)
+  self.assertEqual([r for r in rows if r['name']!='optional-filter'],before['jobs'])
+  optional=next(r for r in rows if r['name']=='optional-filter')
+  outage=next(r for r in rows if r['name']=='outage')
+  self.assertEqual(optional['arguments'],outage['arguments'])
+  self.assertEqual(optional['script'],'eventing_optional_faults.py')
+  arguments=m.optional_filter_arguments(optional['arguments'])
+  self.assertIn('--with-model',arguments);self.assertNotIn('--broker-container',arguments)
+  self.assertEqual(arguments[arguments.index('--deadline')+1],'90')
+  self.assertNotIn('--with-model',outage['arguments']);self.assertEqual(native,before)
+  self.assertEqual(m.COUNTS['outage'],7);self.assertEqual(m.COUNTS['optional-filter'],2)
+  self.assertEqual(sum(m.COUNTS.values()),68)
  def test_authoritative_absence_only(self):
   id='a'*64
   good=subprocess.CompletedProcess([],1,b'[]',('error: no such object: '+id).encode())

@@ -15,6 +15,49 @@ import controlled_sdk_runtime as runtime
 class SDKPreparationGuards(unittest.TestCase):
  def test_fixed_sdk_scope_and_order(self):
   self.assertEqual(list(matrix.CASES.items()),[('feedback_sdk',5),('archive_sdk',4),('history_sdk',4),('retrieval_sdk',4)])
+ def compiled_fixture(self,root):
+  import copy
+  modules=['Elixir.ADHD.M'+str(i) for i in range(59)];artifact='a'*64;manifest='b'*64;image='sha256:'+'c'*64
+  anchors={'/proc/self/exe':'d'*64,**{'/usr/local/lib/elixir/ebin/'+n+'.beam':'e'*64 for n in ['Code','JSON','Kernel','elixir']}}
+  value={'schema':'adhd/precompiled-cache@1','source':'/app/hub.exs','source_sha256':artifact,'payload_manifest_sha256':manifest,
+   'modules':modules,'beams':{n+'.beam':'f'*64 for n in modules},'inputs_sha256':'1'*64,'boot_sha256':'2'*64,'build_sha256':'3'*64,
+   'toolchain':{'elixir':'1.20.4','otp':'29','anchors':anchors}}
+  path=root/'cache-manifest.json';matrix.write(path,value);metadata=root/'cache-metadata.json';matrix.write(metadata,{'offline_only':True})
+  audit={'passed':True,'image_config_identity':image,'artifact_sha256':artifact,'canonical_manifest_sha256':manifest,'cache_manifest_sha256':matrix.sha(path),
+   'cache_metadata_sha256':matrix.sha(metadata),'inputs_sha256':value['inputs_sha256'],'entrypoint':['elixir','/runtime/adhd/boot.exs','/app/hub.exs']}
+  admission={'files':{'cache-manifest.json':matrix.sha(path),'cache-metadata.json':matrix.sha(metadata)},'compiled_runtime_audit':audit}
+  return path,admission,image,artifact,manifest
+ def test_optional_compiled_binding_rejects_foreign_or_incomplete_proof(self):
+  import copy
+  with tempfile.TemporaryDirectory() as directory:
+   args=self.compiled_fixture(Path(directory));binding=matrix.compiled_cache_binding(*args)
+   self.assertEqual(len(binding['manifest']['modules']),59)
+   for key in ['image_config_identity','artifact_sha256','inputs_sha256','cache_manifest_sha256','cache_metadata_sha256','canonical_manifest_sha256','entrypoint']:
+    bad=copy.deepcopy(args[1]);bad['compiled_runtime_audit'][key]='wrong'
+    with self.assertRaises(AssertionError):matrix.compiled_cache_binding(args[0],bad,*args[2:])
+   bad=copy.deepcopy(args[1]);del bad['compiled_runtime_audit']
+   with self.assertRaises(KeyError):matrix.compiled_cache_binding(args[0],bad,*args[2:])
+   value=json.loads(args[0].read_text());value['beams']['../foreign.beam']=value['beams'].pop(next(iter(value['beams'])))
+   matrix.write(args[0],value);args[1]['files']['cache-manifest.json']=matrix.sha(args[0])
+   with self.assertRaises(AssertionError):matrix.compiled_cache_binding(*args)
+ def test_compiled_actual_vm_checks_are_after_original_source_custody_no_health(self):
+  with tempfile.TemporaryDirectory() as directory:
+   args=self.compiled_fixture(Path(directory));compiled=matrix.compiled_cache_binding(*args)
+   custody=runtime.SDKCustody.__new__(runtime.SDKCustody);custody.plan={'compiled_cache':compiled};custody.name=lambda obj:'owned';calls=[]
+   event={'container_id':'i'*64,'host_vm_pid':123};obj=SimpleNamespace()
+   files={'/runtime/adhd/boot.exs':'2'*64,'/runtime/adhd/build.exs':'3'*64,'/runtime/adhd/inputs.json':'1'*64,
+    **{'/runtime/adhd/ebin/'+k:v for k,v in compiled['manifest']['beams'].items()},
+    **{('/proc/1/exe' if k=='/proc/self/exe' else k):v for k,v in compiled['manifest']['toolchain']['anchors'].items()}}
+   def docker(*argv):
+    calls.append(argv)
+    if argv[0]=='inspect':body=json.dumps([{'Id':event['container_id'],'State':{'Pid':123,'Running':True},'Config':{'Entrypoint':compiled['reviewed_runtime_audit']['entrypoint']}}]).encode()
+    elif argv[2]=='cat':body=args[0].read_bytes()
+    else:body=('\n'.join(v+'  '+k for k,v in files.items())+'\n').encode()
+    return SimpleNamespace(stdout=body)
+   custody.docker=docker
+   with patch.object(runtime.base.Custody,'inspect_image',side_effect=lambda *a:calls.append(('original-source-custody',))):custody.inspect_image(obj,event)
+   self.assertEqual(calls[0],('original-source-custody',));self.assertEqual(len(calls),4);self.assertNotIn('health',str(calls))
+   self.assertEqual(event['compiled_cache']['modules'],59);self.assertEqual(event['compiled_cache']['extra_health_or_warmup_requests'],0)
  def fake_custody(self):
   root=Path('/private/owned');image='sha256:'+'a'*64;cid='b'*64;name='adhd-test-000000000000'
   files={'hub.exs':'c'*64,**{'f'+str(i):'d'*64 for i in range(58)}};manifest={'files':{**files,'Dockerfile':'e'*64}}

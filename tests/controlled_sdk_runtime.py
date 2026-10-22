@@ -157,6 +157,28 @@ class OriginalHealthCalls:
 
 
 class SDKCustody(base.Custody):
+    def inspect_image(self,obj,event):
+        # The unchanged Hub.start has already completed its original health
+        # measurement. These read-only custody checks issue no health/warmup.
+        super().inspect_image(obj,event)
+        compiled=self.plan.get('compiled_cache')
+        if not compiled:return
+        value=compiled['manifest'];name=self.name(obj)
+        raw=self.docker('exec',name,'cat','/runtime/adhd/manifest.json').stdout
+        assert hashlib.sha256(raw).hexdigest()==compiled['manifest_sha256'] and json.loads(raw)==value
+        files={'/runtime/adhd/boot.exs':value['boot_sha256'],'/runtime/adhd/build.exs':value['build_sha256'],
+               '/runtime/adhd/inputs.json':value['inputs_sha256'],
+               **{'/runtime/adhd/ebin/'+k:v for k,v in value['beams'].items()},
+               **{('/proc/1/exe' if k=='/proc/self/exe' else k):v for k,v in value['toolchain']['anchors'].items()}}
+        actual=self.docker('exec',name,'sha256sum',*files).stdout.decode().splitlines()
+        observed={line.split(None,1)[1].strip():line.split(None,1)[0] for line in actual}
+        assert observed==files,'Actual compiled helpers/BEAMs/toolchain differ'
+        row=json.loads(self.docker('inspect',name).stdout)[0]
+        assert row['Id']==event['container_id'] and row['State']['Pid']==event['host_vm_pid'] and row['State']['Running']
+        assert row['Config']['Entrypoint']==compiled['reviewed_runtime_audit']['entrypoint']
+        event['compiled_cache']={'manifest_sha256':compiled['manifest_sha256'],'modules':len(value['modules']),
+              'cache_and_toolchain_files_verified':len(files),'entrypoint':row['Config']['Entrypoint'],
+              'custody_after_original_health_only':True,'extra_health_or_warmup_requests':0}
     def start(self,original,obj,*args,**kwargs):
         def observed(instance,*a,**kw):
             recorder=OriginalHealthCalls(original,instance)

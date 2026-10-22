@@ -9,6 +9,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import stat
@@ -36,12 +37,43 @@ def tree(root):
  return {'files':files,'directories':directories}
 
 
+
+def compiled_cache_binding(path,admission,image,artifact,manifest_sha):
+ """Optional compiled target; source-only plans retain their original behavior."""
+ path=Path(path);regular=path.lstat()
+ assert stat.S_ISREG(regular.st_mode) and not path.is_symlink() and regular.st_nlink==1
+ assert sha(path)==admission['files']['cache-manifest.json']
+ value=json.loads(path.read_text());assert value['schema']=='adhd/precompiled-cache@1'
+ assert value['source']=='/app/hub.exs' and value['source_sha256']==artifact
+ assert value['payload_manifest_sha256']==manifest_sha
+ assert len(value['modules'])==59 and len(set(value['modules']))==59
+ assert all(re.fullmatch(r'Elixir\.ADHD\.[A-Za-z0-9]+',name) for name in value['modules'])
+ assert set(value['beams'])=={name+'.beam' for name in value['modules']}
+ assert all(re.fullmatch('[a-f0-9]{64}',v) for v in value['beams'].values())
+ assert all(re.fullmatch('[a-f0-9]{64}',value[k]) for k in ['inputs_sha256','boot_sha256','build_sha256'])
+ tool=value['toolchain'];anchors=tool['anchors']
+ assert tool['elixir']=='1.20.4' and tool['otp']=='29' and '/proc/self/exe' in anchors
+ assert len(anchors)==5 and all(re.fullmatch('[a-f0-9]{64}',v) for v in anchors.values())
+ assert all(p=='/proc/self/exe' or p.startswith('/usr/local/lib/elixir/') and p.endswith('.beam') and '\x00' not in p and '\n' not in p for p in anchors)
+ audit=admission['compiled_runtime_audit']
+ assert audit['passed'] is True and audit['image_config_identity']==image
+ assert audit['artifact_sha256']==artifact and audit['canonical_manifest_sha256']==manifest_sha
+ assert audit['cache_manifest_sha256']==sha(path) and audit['inputs_sha256']==value['inputs_sha256']
+ assert audit['entrypoint']==['elixir','/runtime/adhd/boot.exs','/app/hub.exs']
+ metadata=path.with_name('cache-metadata.json');info=metadata.lstat()
+ assert stat.S_ISREG(info.st_mode) and not metadata.is_symlink() and info.st_nlink==1
+ assert sha(metadata)==admission['files']['cache-metadata.json']==audit['cache_metadata_sha256']
+ return {'manifest_sha256':sha(path),'manifest':value,'metadata_sha256':sha(metadata),'reviewed_runtime_audit':audit}
+
+
 def prepare(a):
  repo=a.repo.absolute();work=a.work.absolute();assert repo.resolve()==repo and not work.exists()
  assert sha(a.admission)==a.admission_sha256
  admission=json.loads(a.admission.read_text());image=admission['image_config_identity'];artifact_hash=admission['artifact_sha256']
  reader=load(repo/'tests/image_qualification_inputs.py','reviewed_sdk_inputs')
  selected=reader.reviewed_payload(a.context/'manifest.json',a.admission,a.admission_sha256,image,artifact_hash)
+ compiled=compiled_cache_binding(a.compiled_cache_manifest,admission,image,artifact_hash,sha(a.context/'manifest.json')) if a.compiled_cache_manifest else None
+ assert compiled is not None or 'compiled_runtime_audit' not in admission,'Compiled target requires explicit cache manifest binding'
  work.mkdir(parents=True,mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700)
  for part in ['tests','scripts']:
   for path in (repo/part).rglob('*'):
@@ -51,6 +83,7 @@ def prepare(a):
   shutil.copyfile(Path(__file__).parent/name,frozen/'tests'/name)
  bindings={'image-manifest.json':a.context/'manifest.json','staged-Dockerfile':a.context/'Dockerfile','admission.json':a.admission,
   'receipt.json':a.admission.parent/'receipt.json','rebuild.json':a.admission.parent/'rebuild.json'}
+ if compiled:bindings.update({'cache-manifest.json':a.compiled_cache_manifest,'cache-metadata.json':a.compiled_cache_manifest.with_name('cache-metadata.json')})
  for name,path in bindings.items():assert path.resolve()==path.absolute() and not path.is_symlink();shutil.copyfile(path,work/name)
  assert all(sha(work/name)==admission['files'][name] for name in ['receipt.json','rebuild.json'])
  envelope=json.loads((work/'rebuild.json').read_text());result=envelope['result'];artifact=Path(result['artifact'])
@@ -79,7 +112,7 @@ def prepare(a):
  tools={label:{'path':str(path.absolute()),'resolved':str(path.resolve()),'sha256':sha(path.resolve())} for label,path in [('python',Path(sys.executable)),('elixir',elixir),('compiler',Path(shutil.which('cc')))]}
  shutil.copyfile(__file__,work/'run.py')
  plan={'schema':'adhd/controlled-sdk-image-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','image_config_identity':image,'artifact_sha256':artifact_hash,
-  'canonical_manifest_sha256':sha(work/'image-manifest.json'),'admission_sha256':a.admission_sha256,'actual_formal_native_export':str(artifact),
+  'compiled_cache':compiled,'canonical_manifest_sha256':sha(work/'image-manifest.json'),'admission_sha256':a.admission_sha256,'actual_formal_native_export':str(artifact),
   'frozen':str(frozen),'frozen_tree':tree(frozen),'frozen_inputs':tree(frozen)['files'],'externals':externals,
   'bound_inputs':{name:sha(work/name) for name in bindings},'driver_sha256':sha(work/'run.py'),'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),
   'admitted_specification_drift':drift,'manifest':str(work/'image-manifest.json'),'staged_dockerfile':str(work/'staged-Dockerfile'),
@@ -99,6 +132,9 @@ def verify(plan,work):
  assert tree(work/'frozen')==plan['frozen_tree'] and plan['frozen_inputs']==plan['frozen_tree']['files']
  for path,digest in plan['externals'].items():assert not Path(path).is_symlink() and sha(path)==digest
  for path,digest in plan['bound_inputs'].items():assert not (work/path).is_symlink() and sha(work/path)==digest
+ if plan.get('compiled_cache'):
+  admission=json.loads((work/'admission.json').read_text())
+  assert compiled_cache_binding(work/'cache-manifest.json',admission,plan['image_config_identity'],plan['artifact_sha256'],plan['canonical_manifest_sha256'])==plan['compiled_cache']
  assert plan['planned_suites']==list(CASES) and [v['name'] for v in plan['jobs']]==list(CASES)
  assert [v['expected_groups'] for v in plan['jobs']]==list(CASES.values()) and plan['original_readiness_seconds']==30
  for row in plan['tools'].values():assert str(Path(row['path']).resolve())==row['resolved'] and sha(row['resolved'])==row['sha256']
@@ -148,6 +184,6 @@ if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__);mode=parser.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  parser.add_argument('--work',type=Path,required=True);parser.add_argument('--reviewed-plan-sha256')
  for name in ['repo','context','admission','parent-plan','parent-matrix']:parser.add_argument('--'+name,type=Path)
- parser.add_argument('--admission-sha256');args=parser.parse_args();work=args.work.absolute()
+ parser.add_argument('--compiled-cache-manifest',type=Path);parser.add_argument('--admission-sha256');args=parser.parse_args();work=args.work.absolute()
  if args.prepare:prepare(args)
  else:sys.exit(execute(work,args.reviewed_plan_sha256))

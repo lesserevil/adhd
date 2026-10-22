@@ -138,9 +138,9 @@ and [core13/94](../../verification/ownedMULTI008/source41-core13-positive/audit.
 are separate gates: cache validation and observer compatibility do not by themselves
 prove recovery or application durability. The complete
 [Kafka14/68 run](../../verification/kafka41-full14-positive/audit.json) separately
-passes on this image, alongside [complete recovery25](../../verification/recovery41-full25-positive/manifest.json). The [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json)
-records the requirement scope; documentation-authority and receipt/context review
-remain pending. See Docker's
+passes on this image, alongside [complete recovery25](../../verification/recovery41-full25-positive/manifest.json). The [final property composition](../../verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
+records the requirement scope, completed by the final documentation-authority/
+receipt/context bridge. See Docker's
 [reproducible build guidance](https://docs.docker.com/build/ci/github-actions/reproducible-builds/).
 
 Transfer the staged directory and `deploy/run.sh`, `scripts/configure_hub.py` to

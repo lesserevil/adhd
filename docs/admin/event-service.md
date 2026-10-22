@@ -301,9 +301,9 @@ to frozen harnesses:
 
 The complete current-image [Kafka14/68 run](../../verification/kafka41-full14-positive/audit.json)
 also passes all 14 programs, with strict owned-service cleanup and protected
-services unchanged. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) and [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json)
-now cover the remaining runtime requirements. Documentation-authority and
-receipt/context review remain pending before roadmap closure.
+services unchanged. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) and [final property composition](../../verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
+cover the runtime requirements; the final documentation-authority/receipt/context
+bridge completes the recorded qualification.
 Independent cache integrity and two-build reproducibility are linked in the
 [build guide](operations.md#build-and-transfer). The
 [enforcing CNI18 result](../../verification/ownedMULTI008/cni-static-gate-positive/audit.json)

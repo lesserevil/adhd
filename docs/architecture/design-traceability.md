@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:1c0f8652dced085d134b3ba6f366db4979cf494e6315c143f45cbbce839244e5 -->
+<!-- literate-ai:authority-reviewed sha256:5ea6180c706ad0ea7e5b0d0a741fc889fabc586ca8b0de5e3e28d4e0bc9f55e2 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -101,12 +101,12 @@ the pinned amd64 builder. Current independently scoped positives include:
 
 The complete [Kafka14/68 run](../../verification/kafka41-full14-positive/audit.json)
 also passes on the current image, with owned-service cleanup and protected
-services unchanged. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) and [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json)
+services unchanged. The [complete recovery25](../../verification/recovery41-full25-positive/manifest.json) and [final property composition](../../verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
 complete the runtime requirement review; the [active queue](../roadmap/active-work.md)
-still holds documentation-authority and receipt/context review before closure.
+records the final documentation-authority/receipt/context bridge and proper parent closure.
 Earlier CNI, model, migration and subsystem evidence keeps its exact source scope;
 the [conservation review](../../verification/ownedMULTI008/source41-conservation-join-review/review.json)
-states the permitted joins and limits. Changed operating guides still require the
+states the permitted joins and limits. The changed guides are included in the
 proper-CLI documentation/authority transition and reviewed receipt/context bridge.
 Historical source40/compiled05 admissions and false invocations remain immutable.
 
@@ -135,3 +135,9 @@ and [development13 federation HTTP](../../verification/project-recovery-federati
 These do not become current image proof by relabeling them. Current authority,
 source/image identity, unchanged inputs and each required acceptance boundary must
 be established explicitly before final roadmap closure.
+
+The [first documentation authority bridge](../../verification/source41-first-documentation-bridge/manifest.json)
+binds the reviewed guides to a CLI-issued receipt and the unchanged qualified
+source, complete staged context and compiled image. [Dependency-ordered CLI closure](../../verification/source41-roadmap-parent-closure/manifest.json)
+records all six parent outcomes. The [active queue](../roadmap/active-work.md)
+tracks the final authority refresh after archival and its terminal verification.

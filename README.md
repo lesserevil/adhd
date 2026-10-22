@@ -45,9 +45,9 @@ and [Compose11/Kind10 deployment programs](verification/ownedMULTI008/source41-b
 [Current qualification and limits](docs/admin/event-service.md#qualification)
 include the complete [Kafka14/68 gate](verification/kafka41-full14-positive/audit.json).
 The [complete recovery25](verification/recovery41-full25-positive/manifest.json) and
-[requirement-by-requirement composition](verification/ownedMULTI008/source41-final-property-composition/review.json)
-complete the runtime evidence. Final documentation-authority and receipt/context
-review remain pending; this is not a release claim.
+[requirement-by-requirement composition](verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
+complete the runtime evidence. The final documentation-authority/receipt/context
+bridge completes the recorded acceptance; no registry publication or release is claimed.
 
 Build the accepted portable Elixir artifact with the project's pinned Literate AI
 installation and Elixir/OTP toolchain on the supported Linux authoring host:

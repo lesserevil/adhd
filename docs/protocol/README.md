@@ -23,9 +23,9 @@ The comparison retains both arrays at each exact JSON Pointer and verifies every
 other array, example, enum and value unchanged. It does not reorder or republish
 these downloads. Current core/platform/browser positives and the complete
 [Kafka14/68 result](../../verification/kafka41-full14-positive/audit.json) remain
-separately scoped in the [final property composition](../../verification/ownedMULTI008/source41-final-property-composition/review.json). [Complete recovery25](../../verification/recovery41-full25-positive/manifest.json)
+separately scoped in the [final property composition](../../verification/ownedMULTI008/source41-final-composition-after-full25/review.json). [Complete recovery25](../../verification/recovery41-full25-positive/manifest.json)
 now passes too; the [qualification guide](../admin/event-service.md#qualification)
-and [active queue](../roadmap/active-work.md) retain the pending documentation-authority
+and [active queue](../roadmap/active-work.md) record the completed documentation-authority
 and receipt/context review.
 
 ## Interfaces and versions

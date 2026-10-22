@@ -1,0 +1,130 @@
+{
+  "schema": "adhd/source41-kind-import-preparation@1",
+  "executed": false,
+  "scope": "Read-only preparation for root-authorized image import only; no node/namespace/service/pod lifecycle changes.",
+  "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "existing_local_tag": "adhd-hub:qa41-compiled01-a",
+  "local_tag_currently_matches": true,
+  "cluster": "adhd-event-qual",
+  "node": {
+    "name": "adhd-event-qual-control-plane",
+    "id": "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+    "image": "sha256:a9f00b2666c3e111d51e6cab9b122e2c96cc539f22ffbf0612169bfafdb9818b",
+    "running": true,
+    "kind_cluster_label": "adhd-event-qual",
+    "api_port_binding": [
+      {
+        "HostIp": "127.0.0.1",
+        "HostPort": "34113"
+      }
+    ]
+  },
+  "current_namespace_snapshot": [
+    {
+      "name": "adhd",
+      "uid": "93706f0a-d943-4f36-a9f2-b3bf79763c07",
+      "phase": "Active"
+    },
+    {
+      "name": "default",
+      "uid": "c9003497-de3c-40ed-8e83-be32ce039222",
+      "phase": "Active"
+    },
+    {
+      "name": "kube-node-lease",
+      "uid": "e39cbeef-1ed1-4eb6-b4e2-2236e3dd7aae",
+      "phase": "Active"
+    },
+    {
+      "name": "kube-public",
+      "uid": "87dfe07f-8667-4d11-9b4d-1e63cd3d0620",
+      "phase": "Active"
+    },
+    {
+      "name": "kube-system",
+      "uid": "ca0ad968-ae55-4e55-aff5-e70c72eaca56",
+      "phase": "Active"
+    },
+    {
+      "name": "local-path-storage",
+      "uid": "c8c22fed-5730-4ae6-b53c-71d2c2618117",
+      "phase": "Active"
+    }
+  ],
+  "metadata_tools": {
+    "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d",
+    "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl": "a2e984a18a0c063279d692533031c1eff93a262afcc0afdc517375432d060989",
+    "/usr/bin/docker": "6d1ac33d27f9f73d1feb0184e7c0847c1b6051dd60b7a6ec7b3ad9a2f7ca01ea",
+    "/home/horde/src/adhd/.worktrees/deployment/_build/baseline40-compiled05-prepare02/bound/kubeconfig": "e570f2a06eac21824720146d0855a6d9a1f0d3d8ef8c0b13e2c3cb4ded7a2858"
+  },
+  "socket": {
+    "path": "/run/docker.sock",
+    "identity": [
+      25,
+      1428
+    ]
+  },
+  "load_argv": [
+    "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kind",
+    "load",
+    "docker-image",
+    "adhd-hub:qa41-compiled01-a",
+    "--name",
+    "adhd-event-qual"
+  ],
+  "load_env": {
+    "DOCKER_HOST": "unix:///run/docker.sock",
+    "DOCKER_CONFIG": "/home/horde/src/adhd/_build/roadmap/final/compiled41-01/docker-config",
+    "PATH": "/usr/bin:/bin"
+  },
+  "conditional_tag_argv": [
+    "/usr/bin/docker",
+    "--host",
+    "unix:///run/docker.sock",
+    "--config",
+    "/home/horde/src/adhd/_build/roadmap/final/compiled41-01/docker-config",
+    "tag",
+    "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "adhd-hub:qa41-compiled01-a"
+  ],
+  "tag_policy": "Tag already exists and matches. No tag mutation needed. Refuse mismatched existing tag; do not overwrite. Conditional tag command shown only for missing tag after fresh review.",
+  "post_load_readonly_argv": [
+    [
+      "/usr/bin/docker",
+      "inspect",
+      "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60"
+    ],
+    [
+      "/usr/bin/docker",
+      "exec",
+      "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+      "crictl",
+      "inspecti",
+      "docker.io/library/adhd-hub:qa41-compiled01-a"
+    ],
+    [
+      "/usr/bin/docker",
+      "exec",
+      "0f0c43a92ca6cefbde408102c9f9b0a5af6fe7ede978be90a1d495d7625a8b60",
+      "crictl",
+      "inspecti",
+      "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+    ],
+    [
+      "/home/horde/src/adhd/.worktrees/deployment/_build/kafka/kubectl",
+      "--kubeconfig",
+      "/home/horde/src/adhd/.worktrees/deployment/_build/baseline40-compiled05-prepare02/bound/kubeconfig",
+      "get",
+      "namespaces",
+      "-o",
+      "json"
+    ]
+  ],
+  "pre_and_postconditions": [
+    "Before load recheck node full ID/image/running/cluster label and exact current localtag config; no node replacement allowed.",
+    "After load require crictl status.id==expected207 config for both exact imported tag and immutable config lookup; retain raw current inspect facts.",
+    "Namespace names/UIDs and node image/ID/API binding remain unchanged. Existing images/services/namespaces are retained; no prune or deletion.",
+    "Only after actual loaded facts exist may fresh baseline/security/model snapshots bind this tag and current node facts."
+  ],
+  "load_status": "NOT_EXECUTED_BY_AGENT"
+}

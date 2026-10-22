@@ -88,6 +88,12 @@ class Guards(unittest.TestCase):
   self.assertTrue(errors);self.assertEqual(docker.call_args.args,('fallback-remove-network','network','rm','ownednet'));self.assertFalse(runner.cleanup[0]['observed_absent'])
  def fixture(self):
   plan=dict(self.plan(),lane_lock=str(self.root/'lock'),driver_sha256='d',scope='pure',image='sha256:app');g.save(self.root/'plan.json',plan);return g.sha(self.root/'plan.json')
+ def test_verify_only_cli_never_creates_once_or_constructs_executor(self):
+  digest=self.fixture()
+  argv=['driver.py','--verify-only','--work',str(self.root),'--plan-sha256',digest]
+  with patch.object(sys,'argv',argv),patch.object(g,'verify',return_value=True)as verify,patch.object(g,'Executor')as executor,patch.object(g,'execute')as execute:
+   g.main();verify.assert_called_once();executor.assert_not_called();execute.assert_not_called()
+  self.assertFalse((self.root/'execution.started').exists());self.assertFalse((self.root/'result.json').exists())
  def test_once_before_any_operation(self):
   digest=self.fixture()
   with patch.object(g,'verify',return_value=True),patch.object(g.Executor,'perform',side_effect=OSError('mock')) as operation,patch.object(g.Executor,'finish',return_value=[]):

@@ -109,6 +109,9 @@ def verify(work,plan):
  assert Path('/proc/self/exe').resolve()==Path(plan['tools']['python']['realpath'])
  assert str(Path(sys.executable).absolute())==plan['tools']['python']['path']
  socket=Path(plan['docker_socket']['path']);s=socket.stat();assert socket.resolve()==socket and stat.S_ISSOCK(s.st_mode) and [s.st_dev,s.st_ino]==plan['docker_socket']['identity']
+ # Import only after the complete frozen/bound/tool closure has been verified.
+ helpers=str(work/'frozen/tests')
+ if helpers not in sys.path:sys.path.insert(0,helpers)
  if plan.get('bootstrap_dependency'):verify_bootstrap_dependency(work/'bound/bootstrap12',plan['bootstrap_dependency'],plan)
  if plan.get('direct_api_endpoint')and not plan.get('diagnostic_only'):assert plan.get('bootstrap_dependency')and plan.get('controller_direct_api_endpoint')
  assert plan['cluster']=='adhd-netpol-qa40' and plan['network']==plan['cluster']+'-net' and plan['node']==plan['cluster']+'-control-plane'
@@ -488,10 +491,13 @@ def execute(work,digest):
  return 0
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
+ p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--verify-only',action='store_true')
  p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
  for n in ('repo-root','cluster-plan','context','admission-manifest','node-config','oci-inputs'):p.add_argument('--'+n,type=Path)
  p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');p.add_argument('--controller-direct-api-endpoint',action='store_true');p.add_argument('--bootstrap-proof',type=Path);p.add_argument('--bootstrap-proof-sha256');p.add_argument('--route-baseline',type=Path);args=p.parse_args()
  if args.prepare:prepare(args)
+ elif args.verify_only:
+  work=args.work.absolute();assert args.plan_sha256 and sha(work/'plan.json')==args.plan_sha256
+  verify(work,json.loads((work/'plan.json').read_text()));print(json.dumps({'verified':True,'executed':False,'plan_sha256':args.plan_sha256}))
  else:sys.exit(execute(args.work.absolute(),args.plan_sha256))
 if __name__=='__main__':main()

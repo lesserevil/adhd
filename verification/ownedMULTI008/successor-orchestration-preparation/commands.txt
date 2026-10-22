@@ -1,0 +1,47 @@
+TEMPLATE ONLY. $UPPERCASE values must come from actual reviewed inputs. They are not assigned or executed by this document. CWD=$ROOT. Preparation itself can perform bounded Docker/Kind read-only inspection; root decides when it may run.
+
+# Proper native lifecycle: same real pinned CLI interface, fresh source/authorization/paths.
+$ROOT/_build/federation/litai/bin/python $ROOT/_build/federation/litai/bin/litai rebuild components/hub --project "$ROOT" --target host --retained-source "$RETAINED_SOURCE" --build-dir "$BUILD_DIR" --obj-dir "$OBJ_DIR" --jobs 1 --retained-source-plan
+$ROOT/_build/federation/litai/bin/python $ROOT/_build/federation/litai/bin/litai rebuild components/hub --project "$ROOT" --target host --retained-source "$RETAINED_SOURCE" --build-dir "$BUILD_DIR" --obj-dir "$OBJ_DIR" --jobs 1 --authorize-retained-source "$REVIEWED_AUTHORIZATION" --update-receipt --allow-host-execution
+
+# Existing stage command; exact newly passing acceptance and current receipt required.
+$PYTHON scripts/stage_container.py --rebuild-result "$REBUILD_JSON" --acceptance-report "$ACCEPTANCE_JSON" --output "$CONTEXT" --litai-command "$PINNED_CLI_JSON_ARGV"
+# --litai-command is one JSON string parsed by cli_command, e.g. ["/actual/pinned/python","/actual/pinned/litai"]. It is not a shell command.
+
+# Two root-owned independent no-cache compiler builds; use reviewed private Docker config/socket.
+$DOCKER --host "$DOCKER_SOCKET_URL" --config "$DOCKER_CONFIG" build --network=none --no-cache --pull=false --iidfile "$IID_FIRST" --tag "$TAG_FIRST" "$CONTEXT"
+$DOCKER --host "$DOCKER_SOCKET_URL" --config "$DOCKER_CONFIG" build --network=none --no-cache --pull=false --iidfile "$IID_SECOND" --tag "$TAG_SECOND" "$CONTEXT"
+# Independently compare exact ID/config/RootFS layer identities and bind both logs; compiler RUN must execute in both. No equality or admission is asserted here.
+
+# Offline payload/cache audit and admission: existing retained scripts have no CLI parameters.
+# Do not run old copies in place. Review a fresh target-bound copy of:
+# verification/container-precompile-image40/compiled05-admission/image-payload-audit.py
+# _build/roadmap/final/admit-compiled05.py
+# Replace only target/output/source admission bindings, then root reviews exact command/file hashes and GO. Preserve all original audit predicates and cleanup.
+
+# Cache17: accepts new image/context/admission directly. Actual normalized final cache root is0555.
+$PYTHON tests/container_cache_acceptance.py --prepare --work "$CACHE_WORK" --image "$IMAGE_ID" --context "$CONTEXT" --admission-manifest "$ADMISSION" --admission-sha256 "$ADMISSION_SHA" --cache-root-mode 0555
+# AFTER reviewed plan and root GO only:
+$PYTHON -I "$CACHE_WORK/driver.py" --execute --work "$CACHE_WORK" --plan-sha256 "$CACHE_PLAN_SHA"
+
+# Kafka14: new target bindings; historical native basis/artifact intentionally retained unchanged.
+$PYTHON tests/image_kafka_matrix.py --prepare --work "$KAFKA_WORK" --repo-root "$ROOT" --native-plan "$ORIGINAL_NATIVE13_PLAN" --basis-artifact "$ORIGINAL_SOURCE38_ARTIFACT" --abi-root "$NEW_TARGET_ABI_ROOT" --context "$CONTEXT" --admission-manifest "$ADMISSION" --image "$IMAGE_ID" --artifact-sha256 "$ARTIFACT_SHA" --admission-sha256 "$ADMISSION_SHA" --owned-compose-project "$FRESH_OWNED_BROKER_PROJECT"
+# AFTER root GO only; actual owned cluster readiness/provenance must match the plan:
+$PYTHON -I "$KAFKA_WORK/driver.py" --execute --work "$KAFKA_WORK" --plan-sha256 "$KAFKA_PLAN_SHA"
+
+# Platform binding: no services started by prepare; actual loaded successor tag and fresh namespace required.
+$PYTHON tests/kafka_platform_matrix.py --prepare --work "$PLATFORM_BINDING_WORK" --repo-root "$ROOT" --helper-root "$ROOT" --context "$CONTEXT" --admission-manifest "$ADMISSION" --acceptance-report "$ACCEPTANCE_JSON" --kubeconfig "$INLINE_KUBECONFIG" --compose-plugin "$COMPOSE_PLUGIN" --kubectl "$KUBECTL" --kind "$KIND" --python "$PYTHON" --docker "$DOCKER" --docker-socket "$DOCKER_SOCKET" --image "$IMAGE_ID" --admission-sha256 "$ADMISSION_SHA" --kind-cluster "$OWNED_KIND_CLUSTER" --kind-node "$OWNED_KIND_NODE" --cluster-image "$LOADED_SUCCESSOR_TAG" --name "$FRESH_PLATFORM_NAME" --compose-port "$COMPOSE_PORT" --kind-port "$KIND_PORT" --broker-image "$EQUIVALENT_IMPORTED_BROKER" --proxy-image "$EQUIVALENT_IMPORTED_PROXY" --execution-ready
+# This plan can serve as the platform basis below; do not also execute it and duplicate baseline programs.
+
+# Full model-free baseline Compose11+Kind10, using current compiled VM custody.
+$PYTHON tests/kafka_deployed_model_matrix.py --prepare --baseline --work "$BASELINE_WORK" --repo-root "$ROOT" --context "$CONTEXT" --admission "$ADMISSION" --admission-sha256 "$ADMISSION_SHA" --image "$IMAGE_ID" --original-plan "$REVIEWED_ORIGINAL_ENV_PLAN" --platform-plan "$PLATFORM_BINDING_WORK/plan.json" --cluster-image "$LOADED_SUCCESSOR_TAG" --broker-image "$EQUIVALENT_IMPORTED_BROKER" --proxy-image "$EQUIVALENT_IMPORTED_PROXY" --name "$FRESH_BASELINE_NAME" --compose-port "$BASELINE_COMPOSE_PORT" --kind-port "$BASELINE_KIND_PORT" --compose-relay-port "$BASELINE_UNUSED_RELAY_PORT1" --kind-relay-port "$BASELINE_UNUSED_RELAY_PORT2" --python "$PYTHON"
+
+# Secured Kind: full original TLS/OAuth/rotation program; no model calls.
+$PYTHON tests/kafka_oauth_k8s_matrix.py --prepare --work "$SECURITY_WORK" --repo-root "$ROOT" --context "$CONTEXT" --admission "$ADMISSION" --admission-sha256 "$ADMISSION_SHA" --image "$IMAGE_ID" --original-plan "$REVIEWED_SECURITY_ENV_PLAN" --platform-plan "$PLATFORM_BINDING_WORK/plan.json" --cluster-image "$LOADED_SUCCESSOR_TAG" --broker-image "$EQUIVALENT_IMPORTED_BROKER" --proxy-image "$EQUIVALENT_IMPORTED_PROXY" --namespace "$FRESH_OAUTH_NAMESPACE" --port "$SECURITY_REST_PORT" --hub-port "$SECURITY_HUB_PORT" --python "$PYTHON" --require-compiled-runtime
+
+# Separate original deployed model-only12 program (Compose6/Kind6); --baseline deliberately absent.
+$PYTHON tests/kafka_deployed_model_matrix.py --prepare --work "$MODEL_WORK" --repo-root "$ROOT" --context "$CONTEXT" --admission "$ADMISSION" --admission-sha256 "$ADMISSION_SHA" --image "$IMAGE_ID" --original-plan "$REVIEWED_ORIGINAL_ENV_PLAN" --platform-plan "$PLATFORM_BINDING_WORK/plan.json" --cluster-image "$LOADED_SUCCESSOR_TAG" --broker-image "$EQUIVALENT_IMPORTED_BROKER" --proxy-image "$EQUIVALENT_IMPORTED_PROXY" --name "$FRESH_MODEL_NAME" --compose-port "$MODEL_COMPOSE_PORT" --kind-port "$MODEL_KIND_PORT" --compose-relay-port "$MODEL_COMPOSE_RELAY_PORT" --kind-relay-port "$MODEL_KIND_RELAY_PORT" --lease-path "$ROOT/_build/roadmap/model18770.lane.lock" --python "$PYTHON"
+
+# Each baseline/security/model frozen parent requires this exact isolation pattern, after root reviews its actual full plan hash. $WORK is that individual fresh plan root, never an old snapshot. This is one template, not a loop.
+$PYTHON -I -S -B -X "pycache_prefix=$WORK/parent-cache" "$WORK/driver.py" --execute --work "$WORK" --plan-sha256 "$PLAN_SHA"
+# Empty owned parent-cache, frozen ownmatrix==driver, explicit actual driver path and once marker required. Model execution additionally requires root's exclusive cooperative lease handoff.

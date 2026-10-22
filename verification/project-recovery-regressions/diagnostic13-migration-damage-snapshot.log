@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "ROOT/tests/multi_migration.py", line 250, in <module>
+    asyncio.run(main(parser.parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "ROOT/tests/multi_migration.py", line 190, in main
+    await interrupt_upgrade(f, args, evidence)
+  File "ROOT/tests/multi_migration.py", line 64, in interrupt_upgrade
+    await startup
+  File "ROOT/tests/multi_support.py", line 150, in start
+    raise AssertionError("Hub exited during startup; inspect private fixture logs")
+AssertionError: Hub exited during startup; inspect private fixture logs

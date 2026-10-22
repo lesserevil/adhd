@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "ROOT/tests/storage_recovery.py", line 102, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "ROOT/tests/storage_recovery.py", line 35, in main
+    r=runtime(boundary,traced);data=Path(r.config['store_path']);snapshot=Path(str(data)+'.snapshot')
+      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ROOT/tests/storage_recovery.py", line 20, in runtime
+    r.command=command;r.start();r.stop();r.command=argv
+                      ^^^^^^^^^
+  File "ROOT/tests/foundation_acceptance.py", line 78, in start
+    self.initialize_unknown_projects()
+  File "ROOT/tests/foundation_acceptance.py", line 122, in initialize_unknown_projects
+    plan = settle(receipt, 'ready')['plan']
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ROOT/tests/foundation_acceptance.py", line 117, in settle
+    assert op['state'] not in ('failed', 'blocked', 'expired', 'stale'), op['failure']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'code': 'RESTORE_IO_ERROR', 'conflicts': [], 'reason': 'io', 'retryable': True, 'truncated': False}

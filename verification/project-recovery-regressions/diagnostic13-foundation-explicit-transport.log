@@ -1,0 +1,17 @@
+PASS first-install-private-random-admin-password-and-real-session
+PASS one-role-per-user-admin-only-assignment-and-self-owned-agent
+PASS cookie-api-csrf-and-origin-enforcement
+PASS agent-token-rotation-live-revokes-old-credential-without-changing-agent
+PASS durable-revision-conflict-and-response-loss-idempotency
+PASS existing-session-promotion-and-demotion-take-effect-live
+PASS disable-revokes-session-and-reenable-cannot-resurrect-old-cookie
+PASS admin-full-private-data-access-with-developer-viewer-denial
+Traceback (most recent call last):
+  File "WORKTREE/tests/foundation_acceptance.py", line 582, in <module>
+    main()
+  File "WORKTREE/tests/foundation_acceptance.py", line 379, in main
+    admin.api({'op':'config_update','patch':{'store_path':str(newstore)}},mutation=True)
+  File "WORKTREE/tests/foundation_acceptance.py", line 180, in api
+    assert status==expected,(body['op'],status,expected,value)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('config_update', 503, 200, {'error': {'code': 'CONFIG_WRITE_FAILED', 'message': 'Request failed'}})

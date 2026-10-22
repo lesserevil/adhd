@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "ROOT/tests/multi_store_move.py", line 180, in <module>
+    asyncio.run(main(parser.parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "ROOT/tests/multi_store_move.py", line 78, in main
+    admin.call({'op': 'config_update', 'patch': {'store_path': str(collision)}}, mutation=True, expected=409)
+  File "ROOT/tests/multi_support.py", line 300, in call
+    return self.client.api(command, expected=expected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ROOT/tests/foundation_acceptance.py", line 174, in api
+    assert status==expected,(body['op'],status,expected,value)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('config_update', 503, 409, {'error': {'code': 'CONFIG_WRITE_FAILED', 'message': 'Request failed'}})

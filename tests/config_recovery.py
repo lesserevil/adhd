@@ -13,6 +13,16 @@ import time
 from foundation_acceptance import Runtime, Client, free_port
 
 
+def configuration_rename_after(trace, target, offset):
+    """Only observe renames emitted after the reviewed mutation was armed."""
+    assert type(offset) is int and offset >= 0
+    if not trace.exists():
+        return False
+    raw = trace.read_bytes()
+    assert len(raw) >= offset, 'Configuration syscall trace was truncated'
+    return ('", "' + target + '"').encode() in raw[offset:]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--command', required=True)
@@ -55,11 +65,14 @@ def main():
             def mutate():
                 try: Client(runtime, admin_token).api(request)
                 except Exception as error: failures.append(type(error).__name__)
+            # Bootstrap, explicit fixture admission and the initial publication
+            # must never satisfy the configuration mutation's boundary witness.
+            trace_offset = trace.stat().st_size if trace.exists() else 0
             thread = threading.Thread(target=mutate, daemon=True); thread.start()
             target = str(runtime.file) + {'transaction': '.transaction', 'config': '', 'journal': '.journal'}[boundary]
             deadline = time.monotonic() + 25
             while time.monotonic() < deadline:
-                if trace.exists() and ('", "' + target + '"') in trace.read_text(): break
+                if configuration_rename_after(trace, target, trace_offset): break
                 time.sleep(.01)
             else: raise AssertionError('Expected configuration rename boundary was not reached: ' + boundary)
             runtime.stop(hard=True); thread.join(timeout=16)
@@ -84,7 +97,9 @@ def main():
                 assert runtime.config['config_revision'] == initial_revision + 1
             assert not Path(str(runtime.file) + '.transaction').exists()
             cases.append({'case': 'kill-at-' + boundary + '-rename', 'passed': True,
-                          'recovered': 'new' if is_new else 'old'})
+                          'recovered': 'new' if is_new else 'old',
+                          'mutation_trace_offset': trace_offset,
+                          'trace_sha256': hashlib.sha256(trace.read_bytes()).hexdigest()})
             print('PASS', cases[-1]['case'], flush=True)
         finally: runtime.stop()
     Path(args.report).write_text(json.dumps({'schema': 'adhd/config-recovery@1', 'passed': True,

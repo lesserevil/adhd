@@ -69,3 +69,16 @@ acknowledgements, plus real fsync→SIGKILL recovery at decision, registry and r
 boundaries. All12 pass. The earlier frozen review02 report remains evidence for
 its earlier artifact; neither report claims an admitted release or container
 qualification. The separate six hostile CLI cases use the same dev12 artifact.
+
+The [actual pending-model service report](../../verification/project-recovery-pending-model/manifest.json)
+passes four checks on frozen development13. A controlled local evaluator receives
+an actual History POST and holds its response while the same hub loses one
+nondefault project writer and restores an earlier complete empty backup. Releasing
+the old typed response encounters a retired connection; neither the discarded
+query nor publication reappears. The restored target accepts fresh writes, and
+those writes and newer unrelated project data survive another cold start. The
+runner adds only a private test observer for one Store loss; all data and recovery
+operations use public Admin/A2A. This is cancellation and state isolation evidence,
+not semantic quality or qualification of every pending model/peer/Kafka family.
+An initial unsupported fixture operation and the old eventing worker's recovery
+exception are retained as explicit limitations rather than hidden as clean runs.

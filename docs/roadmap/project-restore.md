@@ -101,7 +101,7 @@ after a cold restart. This run used no Kafka or model and does not satisfy the
 complete evidence list below. [Offline backup validation](../../verification/project-recovery/backup-validator.json)
 and [real HTTP epoch checks](../../verification/project-recovery/http-epoch/manifest.json)
 provide separate bounded evidence. The next action is complete native Kafka,
-feature-family and syscall-fault qualification, including portable full-server rebind.
+feature-family and syscall-fault qualification. Guarded portable full-server rebind now passes12 native CLI/cold-start/crash groups, with six additional hostile-checkpoint rejection cases; these remain distinct from selective recovery. The [pending-model service witness](../../verification/project-recovery-pending-model/manifest.json) proves actual cancellation across a live restore; late peer and Kafka callbacks still require their own full flows.
 
 - Restore an empty and an explicitly missing target from a hash-bound backup while
   another project retains newer originals, acknowledgements, jobs, receipts and

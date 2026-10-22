@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:6a88d9ea1103e2f2e216fae2fa29929b5661348455868a77cdd14d5044817913 -->
+<!-- literate-ai:authority-reviewed sha256:e9ad756e4107657a44fca65fd3398642f400ec13dfed7b387d141eb754a9b423 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -213,3 +213,14 @@ checkpoint hardening, complete recovery and successor platform qualification sta
 [Development09 kill checks](../../verification/project-recovery-crash/dev09/manifest.json)
 also pass the actual after-first-snapshot boundary without a default project and
 the before-cleanup boundary for an archived project, using real Kafka and no model.
+
+[Guarded native12 recovery](../../verification/project-recovery-native/manifest-dev12.json)
+passes18 native regressions; the separate guarded portable rebind report passes12
+actual CLI/cold-start/fsync-kill groups. The ordinary-checkpoint parser passes82
+vectors on both OTP27 and OTP29; six actual hostile rebind requests reject before
+metadata changes. [Development13 federation HTTP](../../verification/project-recovery-federation/manifest-dev13.json)
+qualifies authenticated recovery503 with Retry-After1 independently from A2A's
+HTTP200 JSON-RPC domain failures. [A real pending-model service case](../../verification/project-recovery-pending-model/manifest.json)
+also passes cancellation across a live target-only restore and a subsequent cold
+restart. Full peer/Kafka callback crossover, the complete crash matrix, formal
+successor admission and exact image/platform coverage remain separate open gates.

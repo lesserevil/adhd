@@ -115,7 +115,12 @@ def cluster_facts(kubectl,kubeconfig,node,tag,broker,proxy,namespace):
         'kind_network_id':network[0]['Id'],'issuer_bind':addresses[0],'selected_images':selected,'host_image_equivalence':original}
 
 
+def verify_own_matrix(work):
+    assert sha(work/'driver.py')==sha(work/'frozen/tests/kafka_oauth_k8s_matrix.py'), 'Frozen own matrix differs from actual driver'
+
+
 def verify(work,plan,preflight=True):
+    verify_own_matrix(work)
     assert Path(__file__).absolute()==work/'driver.py' and Path(__file__).resolve()==work/'driver.py' and sha(__file__)==plan['driver_sha256']
     for key,directory in [('frozen_inputs','frozen'),('bound_inputs','bound'),('context_inputs','context')]:verify_frozen_inputs(work/directory,plan[key])
     verify_empty_cache(work/'parent-cache',True);verify_empty_cache(work/'results/pycache',False)
@@ -140,7 +145,7 @@ def prepare(a):
     _,drift=freeze_inputs(a.repo_root,work/'frozen',selected['specifications'])
     tree(a.repo_root/'deploy')
     shutil.copytree(a.repo_root/'deploy',work/'frozen/deploy')
-    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py','kafka_image_equivalence.py']
+    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py','kafka_image_equivalence.py','kafka_oauth_k8s_matrix.py']
     for name in overlays:shutil.copyfile(Path(__file__).parent/name,work/'frozen/tests'/name)
     for p in a.context.iterdir():
         assert p.is_file() and not p.is_symlink();shutil.copyfile(p,work/'context'/p.name)
@@ -154,7 +159,7 @@ def prepare(a):
     facts=cluster_facts(tools['kubectl']['path'],work/'bound/kubeconfig',basis['kind_node'],basis['cluster_image'],a.broker_image,a.proxy_image,a.namespace)
     assert facts['selected_images']['hub']['id']==a.image
     endpoint=kube_endpoint(work/'bound/kubeconfig',facts['node']['cluster'])
-    shutil.copyfile(__file__,work/'driver.py');dump(work/'bound/config.json',{})
+    shutil.copyfile(__file__,work/'driver.py');verify_own_matrix(work);dump(work/'bound/config.json',{})
     env=host_dependencies.child_environment(original['env'],dependencies,work/'bound',work/'results/pycache',Path('/run/docker.sock'))
     argv=[str(a.python),'-s','-B',str(work/'frozen/tests/kafka_oauth_k8s.py'),'--image',a.image,'--context',str(work/'context'),
         '--acceptance-report',str(work/'bound/admission.json'),'--kubectl',tools['kubectl']['path'],'--kubeconfig',str(work/'bound/kubeconfig'),

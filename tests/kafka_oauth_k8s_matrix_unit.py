@@ -2,6 +2,7 @@
 import ast
 from pathlib import Path
 import sys
+import tempfile
 from unittest.mock import patch
 import kafka_oauth_k8s_matrix as runner
 
@@ -27,7 +28,14 @@ def main():
     assert "args.initialize_projects=True" in source and "'configMapGenerator'" not in source
     assert 'with suppress(Exception):\n                run([\'delete\'' not in source
     assert "keytool=KeytoolProbe(PROXY_IMAGE,issuer.root)" in source
-    print('PASS securedKind preparation pure5: authored entry rejected before helpers, zero real preflight calls, original48assertions/static initialization/shipped inline bootstrap verification, fixed keytoolsource, publishednode-port mismatch denial and no hidden namespace-delete errors; runtimes/providers0')
+    with tempfile.TemporaryDirectory() as directory:
+        work=Path(directory);(work/'frozen/tests').mkdir(parents=True)
+        (work/'driver.py').write_text('current');(work/'frozen/tests/kafka_oauth_k8s_matrix.py').write_text('stale')
+        try:runner.verify_own_matrix(work)
+        except AssertionError as error:assert 'own matrix differs' in str(error)
+        else:raise AssertionError('Stale own copy accepted')
+        (work/'frozen/tests/kafka_oauth_k8s_matrix.py').write_text('current');runner.verify_own_matrix(work)
+    print('PASS securedKind preparation pure6: authored entry rejected before helpers, zero real preflight calls, original48assertions/static initialization/shipped inline bootstrap verification, fixed keytoolsource, publishednode-port mismatch denial and no hidden namespace-delete errors; runtimes/providers0')
 
 
 if __name__=='__main__':main()

@@ -10,6 +10,11 @@ from types import SimpleNamespace
 import native_core_remaining as m
 
 class NativeRemainingGuards(unittest.TestCase):
+ def test_wire_original_self_lock_never_gets_coordinator_flock(self):
+  wire=['python','wire.py','--port-lock','/owned/lock'];foundation=['python','foundation.py']
+  self.assertIs(m.coordinator_argv('wire',wire,'/owned/lock'),wire)
+  self.assertEqual(m.coordinator_argv('foundation',foundation,'/owned/lock'),['/usr/bin/flock','/owned/lock',*foundation])
+  self.assertEqual(wire,['python','wire.py','--port-lock','/owned/lock'])
  def test_changed_actual_driver_refuses_before_external_reads(self):
   with tempfile.TemporaryDirectory()as tmp:
    root=Path(tmp);driver=root/'run.py';shutil.copyfile(m.__file__,driver);digest=m.sha(driver)

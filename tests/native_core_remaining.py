@@ -72,6 +72,42 @@ def owned_tree(root):
    files[str(p.relative_to(root))]=sha(p)
  return {'files':files,'directories':directories}
 
+
+def coordinator_argv(name,argv,lock):
+ # Wire owns its original self-flock. Only foundation needs an outer coordinator.
+ return ['/usr/bin/flock',lock,*argv] if name=='foundation' else argv
+
+def replace_workspace(value,old,new):
+ if isinstance(value,str):return value.replace(str(old),str(new))
+ if isinstance(value,list):return [replace_workspace(v,old,new)for v in value]
+ if isinstance(value,dict):return {k:replace_workspace(v,old,new)for k,v in value.items()}
+ return value
+
+def prepare_remainder(a):
+ work=a.work.absolute();assert not work.exists()
+ parent_path=a.parent_plan.absolute();old=parent_path.parent;parent=json.loads(parent_path.read_text())
+ original=load(old/'run.py','original_native29_driver');assert original.verify(parent,old)
+ result=json.loads(a.parent_result.read_text());assert result['passed']is False and result['inputs_unchanged']
+ assert result['plan_sha256']==sha(parent_path) and result['artifact_sha256']==parent['artifact_sha256']
+ assert [r['name']for r in result['rows']]==['foundation','wire']
+ assert result['rows'][0]['passed'] and result['rows'][1]['returncode']==130 and not result['rows'][1]['passed']
+ assert result['unrun']==[r['name']for r in parent['jobs'][2:]]
+ work.mkdir(parents=True,mode=0o700);shutil.copytree(old/'frozen',work/'frozen')
+ for name in ['native_core_remaining.py','native_core_remaining_unit.py']:shutil.copyfile(Path(__file__).parent/name,work/'frozen/tests'/name)
+ shutil.copyfile(__file__,work/'run.py')
+ bound={name:old/name for name in parent['bound_inputs']}
+ bound.update({'parent-plan.json':parent_path,'parent-result.json':a.parent_result,'parent-driver.py':old/'run.py','prefix-foundation.json':old/'runtime/foundation.json','prefix-foundation-custody.json':old/'foundation-custody.json','prefix-foundation.log':old/'foundation.log','interrupt.json':a.interrupt_receipt})
+ for name,path in bound.items():assert not path.is_symlink();shutil.copyfile(path,work/name)
+ plan=json.loads(json.dumps(parent));plan.update(frozen=str(work/'frozen'),frozen_inputs=owned_tree(work/'frozen'),driver_sha256=sha(work/'run.py'),runtime=str(work/'runtime'),fence_library=str(work/'provider-fence.so'),fence_audit=str(work/'provider-fence.audit'))
+ jobs=replace_workspace(parent['jobs'][1:],old,work);wire=jobs[0]
+ assert wire['name']=='wire' and wire['argv'][:2]==['/usr/bin/flock',parent['jobs'][0]['argv'][1]]
+ plan['foundation_lock']=wire['argv'][1];wire['argv']=wire['argv'][2:]
+ assert '--port-lock'in wire['argv'] and wire['argv'][wire['argv'].index('--port-lock')+1]==plan['foundation_lock']
+ plan.update(jobs=jobs,bound_inputs={name:sha(work/name)for name in bound},qualified_prefix={'names':['foundation'],'parent_plan_sha256':sha(parent_path),'parent_result_sha256':sha(a.parent_result),'whole_foundation_cases':len(json.loads((work/'prefix-foundation.json').read_text())['cases'])},scope='Remaining28 of original native29; exact whole foundation20 retained separately, original false aggregate preserved. Current native18 and ownershipfault3 also separate. No source38 equivalence/image/SDK/UI/model/platform/release claim.')
+ write(work/'plan.json',plan);load(work/'run.py','native28_frozen_driver').verify(plan,work)
+ print(json.dumps({'plan_sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],'frozen_files':len(plan['frozen_inputs']['files']),'externals':len(plan['externals']),'bound_inputs':len(bound),'jobs':len(jobs)}))
+
+
 def prepare(a):
  root=a.repo.absolute();work=a.work.absolute();assert not work.exists()
  proposal=json.loads(a.proposal.read_text());assert proposal['executed'] is False and proposal['remaining_native_rows']==29
@@ -111,7 +147,7 @@ def prepare(a):
    if arg=='/home/horde/src/adhd/.venv/bin/python':argv.append(sys.executable)
    elif arg==str(root/row['entrypoint']):argv.append(str(script))
    else:argv.append(arg.replace('FRESH_NATIVE40_RESULTS_ROOT',str(work/'runtime')))
-  if name in ['foundation','wire']:argv=['/usr/bin/flock',str(root/'_build/roadmap/foundation-port.lock'),*argv]
+  argv=coordinator_argv(name,argv,str(root/'_build/roadmap/foundation-port.lock'))
   jobs.append({'name':name,'argv':argv,'script':str(script),'report':str(work/'runtime'/(name+'.json')),'custody':str(work/(name+'-custody.json')),'log':str(work/(name+'.log'))})
  assert len(jobs)==29 and [r['name']for r in jobs]==proposal['remaining_native_row_names']
  for job in jobs:
@@ -121,7 +157,7 @@ def prepare(a):
     if candidate.is_file() and not candidate.is_relative_to(work):
      if candidate.is_symlink():assert str(candidate) in [v['path']for v in tools.values()]
      external[str(candidate.resolve())]=sha(candidate.resolve())
- plan={'schema':'adhd/native-core-remaining-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','artifact_sha256':sha(artifact),'artifact':str(artifact),'source_admission_sha256':a.admission_sha256,'frozen':str(frozen),'frozen_inputs':owned_tree(frozen),'bound_inputs':{n:sha(work/n)for n in bound},'externals':external,'producer_root':str(producer_root),'producer_tree':producer_state,'driver_sha256':sha(work/'run.py'),'tools':tools,'runtime':str(work/'runtime'),'jobs':jobs,'specification_drift':drift,'retained_native_rows':proposal['retained_current_native_rows'],'automatic_retries':0,'parallelism':1,'outer_child_deadline':None,'scope':'Current source40 native29 remaining rows only; original native18 and ownership-fault3 stay separately retained. No image/SDK/model/security/UI/recovery matrix closure.','tool_closure_scope':'Exact inputs and top executable identities, not recursive tool-library closure','qualified_path':str(elixir.parent)+':'+str(root/'_build/federation/native/erlang/bin')+':/usr/bin:/bin','provider_port_fence':18770,'fence_library':str(work/'provider-fence.so'),'fence_audit':str(work/'provider-fence.audit'),'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()}
+ plan={'schema':'adhd/native-core-remaining-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','artifact_sha256':sha(artifact),'artifact':str(artifact),'source_admission_sha256':a.admission_sha256,'frozen':str(frozen),'frozen_inputs':owned_tree(frozen),'bound_inputs':{n:sha(work/n)for n in bound},'externals':external,'producer_root':str(producer_root),'producer_tree':producer_state,'driver_sha256':sha(work/'run.py'),'tools':tools,'runtime':str(work/'runtime'),'jobs':jobs,'specification_drift':drift,'retained_native_rows':proposal['retained_current_native_rows'],'automatic_retries':0,'parallelism':1,'outer_child_deadline':None,'scope':'Current source40 native29 remaining rows only; original native18 and ownership-fault3 stay separately retained. No image/SDK/model/security/UI/recovery matrix closure.','tool_closure_scope':'Exact inputs and top executable identities, not recursive tool-library closure','foundation_lock':str(root/'_build/roadmap/foundation-port.lock'),'qualified_path':str(elixir.parent)+':'+str(root/'_build/federation/native/erlang/bin')+':/usr/bin:/bin','provider_port_fence':18770,'fence_library':str(work/'provider-fence.so'),'fence_audit':str(work/'provider-fence.audit'),'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()}
  write(work/'plan.json',plan);load(work/'run.py','native_frozen_driver').verify(plan,work)
  print(json.dumps({'plan_sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],'frozen_files':len(plan['frozen_inputs']['files']),'external_files':len(external),'bound_inputs':len(bound),'rows':len(jobs)}))
 
@@ -132,7 +168,20 @@ def verify(plan,work):
  for name,digest in plan['externals'].items():assert not Path(name).is_symlink() and sha(name)==digest
  assert owned_tree(plan['producer_root'])==plan['producer_tree']
  for value in plan['tools'].values():assert str(Path(value['path']).resolve())==value['resolved'] and sha(value['resolved'])==value['sha256']
- assert plan['automatic_retries']==0 and plan['parallelism']==1 and plan['outer_child_deadline'] is None and len(plan['jobs'])==29
+ assert plan['automatic_retries']==0 and plan['parallelism']==1 and plan['outer_child_deadline'] is None
+ if plan.get('qualified_prefix'):
+  parent=json.loads((work/'parent-plan.json').read_text());result=json.loads((work/'parent-result.json').read_text());old=Path(parent['frozen']).parent
+  assert len(plan['jobs'])==28 and plan['qualified_prefix']['names']==['foundation'] and result['passed']is False
+  assert result['rows'][0]['name']=='foundation' and result['rows'][0]['passed']
+  expected=replace_workspace(parent['jobs'][1:],old,work);assert expected[0]['name']=='wire' and expected[0]['argv'][:2]==['/usr/bin/flock',plan['foundation_lock']]
+  expected[0]['argv']=expected[0]['argv'][2:];assert expected==plan['jobs']
+  report=json.loads((work/'prefix-foundation.json').read_text());custody=json.loads((work/'prefix-foundation-custody.json').read_text())
+  assert report['passed'] and report['artifact_sha256']==plan['artifact_sha256'] and custody['passed']
+  assert result['rows'][0]['report_sha256']==sha(work/'prefix-foundation.json') and result['rows'][0]['custody_sha256']==sha(work/'prefix-foundation-custody.json') and result['rows'][0]['log_sha256']==sha(work/'prefix-foundation.log')
+  assert plan['qualified_prefix']['parent_plan_sha256']==sha(work/'parent-plan.json') and plan['qualified_prefix']['parent_result_sha256']==sha(work/'parent-result.json')
+  before=parent['frozen_inputs']['files'];after=plan['frozen_inputs']['files'];assert set(before)==set(after)
+  assert {name for name in before if before[name]!=after[name]}=={'tests/native_core_remaining.py','tests/native_core_remaining_unit.py'}
+ else:assert len(plan['jobs'])==29
  return True
 
 class ChildLedger:
@@ -190,7 +239,7 @@ def execute(work,expected):
   subprocess.run([plan['tools']['compiler']['resolved'],'-shared','-fPIC','-O2','-o',plan['fence_library'],str(work/'frozen/tests/project_recovery_no_provider.c'),'-ldl'],check=True,timeout=30)
   for job in plan['jobs']:
    verify(plan,work);argv=[plan['tools']['python']['path'],'-B',str(work/'run.py'),'--child',job['name'],'--work',str(work),'--reviewed-plan-sha256',expected]
-   if job['name']in ['foundation','wire']:argv=['/usr/bin/flock',job['argv'][1],*argv]
+   argv=coordinator_argv(job['name'],argv,plan['foundation_lock'])
    print('START',job['name'],flush=True)
    nonce=expected+':'+job['name'];child_env=dict(env,ADHD_NATIVE_CORE_RUN_NONCE=nonce);result=None;child_error=None;cleanup_error=None;unexpected=[]
    try:
@@ -209,11 +258,12 @@ def execute(work,expected):
   try:verify(plan,work);unchanged=True
   except BaseException:unchanged=False
   unrun=[r['name']for r in plan['jobs']if r['name']not in {v['name']for v in rows}]
-  value={'schema':'adhd/native-core-remaining-result@1','passed':not failure and unchanged and not unrun and all(r['passed']for r in rows),'plan_sha256':expected,'artifact_sha256':plan['artifact_sha256'],'rows':rows,'unrun':unrun,'failure_type':failure,'inputs_unchanged':unchanged,'scope':plan['scope']};write(work/'matrix.json',value)
+  value={'schema':'adhd/native-core-remaining-result@1','passed':not failure and unchanged and not unrun and all(r['passed']for r in rows),'plan_sha256':expected,'artifact_sha256':plan['artifact_sha256'],'rows':rows,'unrun':unrun,'failure_type':failure,'inputs_unchanged':unchanged,'scope':plan['scope'],'retained_qualified_prefix':plan.get('qualified_prefix')};write(work/'matrix.json',value)
  return 0 if value['passed']else 1
 
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);m=p.add_mutually_exclusive_group(required=True);m.add_argument('--prepare',action='store_true');m.add_argument('--execute',action='store_true');m.add_argument('--child')
- p.add_argument('--repo',type=Path);p.add_argument('--work',type=Path,required=True);p.add_argument('--proposal',type=Path);p.add_argument('--context',type=Path);p.add_argument('--admission',type=Path);p.add_argument('--admission-sha256');p.add_argument('--reviewed-plan-sha256');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);m=p.add_mutually_exclusive_group(required=True);m.add_argument('--prepare',action='store_true');m.add_argument('--prepare-remainder',action='store_true');m.add_argument('--execute',action='store_true');m.add_argument('--child')
+ p.add_argument('--parent-plan',type=Path);p.add_argument('--parent-result',type=Path);p.add_argument('--interrupt-receipt',type=Path);p.add_argument('--repo',type=Path);p.add_argument('--work',type=Path,required=True);p.add_argument('--proposal',type=Path);p.add_argument('--context',type=Path);p.add_argument('--admission',type=Path);p.add_argument('--admission-sha256');p.add_argument('--reviewed-plan-sha256');a=p.parse_args()
  if a.prepare:prepare(a)
+ elif a.prepare_remainder:prepare_remainder(a)
  else:sys.exit(child(a.work.absolute(),a.reviewed_plan_sha256,a.child)if a.child else execute(a.work.absolute(),a.reviewed_plan_sha256))

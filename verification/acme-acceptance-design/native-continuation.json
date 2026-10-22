@@ -1,0 +1,37 @@
+{
+  "schema": "adhd/acme-native-diagnostic-continuation-design@1",
+  "status": "prepared before real client observation",
+  "scope": "Real local Pebble/Lego diagnostic only; later official native/image/platform lifecycle remains required.",
+  "native_ports": {
+    "private_http": "new ephemeral loopback port",
+    "https": 18443,
+    "app_challenge": 18080,
+    "ca_http01_relay": 8080,
+    "optional_peer_https": 18444,
+    "optional_peer_challenge": 18081
+  },
+  "fixed_budgets": {
+    "first_cut_seconds": 600,
+    "with_oidc_federation_seconds": 900,
+    "app_start_seconds": 45,
+    "order_timeout_ms": 30000,
+    "manual_renew_observation_seconds": 40,
+    "automatic_renew_observation_seconds": 100,
+    "relay_requests": 128,
+    "relay_handlers": 8,
+    "actual_successful_proof_hold_seconds": 20
+  },
+  "first_cut": "bootstrap5, actual CA HTTP01 proof/strict attacks, issuer-root+hostname handshake, wrong-name/wrong-root TLS rejection, actual HTTPS Admin/A2A, hot manual leaf rotation and exact renewal receipt replay, automatic renewal under actual short-lived leaf policy, unchanged-file cold certificate reuse",
+  "optional_continuity": "Existing real PKCE+signed-JWT provider with HTTPS callback/security cookies/nonce/CSRF; two real issuer-signed hubs, isolated OTP trust+inetrc, actual bidirectional V2 catalog/auth and outbound Directory HTTPS before/after observed rotation. No source/discovery model-answer claim.",
+  "fences": "Full phase requires caller-reviewed actual Lego+guardian SHA256; cache source+BEAM guard, no public issuer, no model/Kafka fixture, all own VMs/relay/provider closed in finally.",
+  "pending": "Bad challenge/outage/ownership/private-key and stopped complete-server ACME rebind coverage still separate; no completed claim from this design.",
+  "helpers": {
+    "tests/acme_acceptance.py": "599a8f1d06d86cca2e0a088ae44f71718b4af03454d7f91e8daf352cd050b5fd",
+    "tests/acme_runtime.py": "b880367ccf4f9f19d5e6f3984643ce99fd3144ef25408cf0275f057aa67eadca",
+    "tests/acme_challenge_relay.py": "43778edf15b69f79778130e70c0c6761846c944dc90d1c017a1cf4c7327f9383",
+    "tests/acme_challenge_relay_unit.py": "19d189316b57069faa51388994d655ea28a838273fcf99b1f067a1c3f2dc9fda",
+    "tests/acme_continuity.py": "8efe519ac2c7a607dcead06346eca97965f0b3e0f0d958ac6231e0264b59b658",
+    "tests/acme_continuity_unit.py": "8991a1b671a8a51a5a5b2b67f8da1e9d3373a59629e42c783ab2c804c6cf8960"
+  },
+  "pure_checks": 14
+}

@@ -18,11 +18,13 @@ import subprocess
 import sys
 import time
 from uuid import uuid4
+from urllib.error import URLError
 
 from jsonschema import Draft202012Validator, FormatChecker
 from acme_acceptance_fixtures import certificate_facts, challenge_request_vectors, TOKEN, raw_challenge_get
 from acme_challenge_relay import ChallengeRelay
 from acme_runtime import NativeDiagnostic, PublicClient, sha, regular
+from acme_continuity import OIDCContinuity, FederationContinuity
 
 
 def wait_for(test, seconds, label):
@@ -101,17 +103,27 @@ def run(args):
     schema = json.loads(Path(args.schema).read_text())
     validator = Draft202012Validator({'$ref': '#/$defs/TLSStatus', '$defs': schema['$defs']}, format_checker=FormatChecker())
     report = {'schema': 'adhd/acme-native-diagnostic@1', 'passed': False, 'checks': [],
-              'scope': 'Source-bound diagnostic cache, real local Pebble and maintained client; not release/image/OIDC/federation qualification',
+              'scope': 'Source-bound diagnostic cache, real local Pebble and maintained client; not release/image qualification. Optional continuity covers actual OIDC and federation catalog/auth transport only, not full identity-policy or source/discovery model-quality regressions.',
               'ca_manifest_sha256': args.ca_manifest_sha256, 'contract_sha256': sha(args.schema),
               'source_manifest_sha256': args.cache_manifest_sha256, 'public_ca_calls': 0,
               'phase': args.phase,
               'fixture_profile': 'eventing disabled; matcher null; no broker or model calls', 'failure_type': None}
-    relay = ChallengeRelay()
+    relay = ChallengeRelay(upstreams={'one.acme.test':18080, 'two.acme.test':18081})
     runtime = None
+    oidc = federation = None
     primary = None
     def check(name, **facts):
         report['checks'].append({'name': name, 'passed': True, **facts})
     try:
+        if args.phase == 'full':
+            assert args.lego_sha256 and args.guardian_sha256, 'Actual reviewed client pair hashes required before issuance'
+            pair = {}
+            for name, digest in (('lego',args.lego_sha256), ('acme-guard',args.guardian_sha256)):
+                path = Path(args.source)/'bin'/name
+                regular(path)
+                assert os.access(path,os.X_OK) and sha(path)==digest, 'Reviewed client pair drift'
+                pair[name] = digest
+            report['actual_client_pair_sha256'] = pair
         hub = work / 'hub'
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0))
@@ -126,7 +138,9 @@ def run(args):
         trust = hub / 'directory-root.pem'
         trust.write_bytes(Path(ca['frontend_root']).read_bytes())
         trust.chmod(0o600)
-        runtime = NativeDiagnostic(hub, args.source, args.cache, args.elixir, args.cache_manifest_sha256, erlang=args.erlang)
+        runtime = NativeDiagnostic(hub, args.source, args.cache, args.elixir, args.cache_manifest_sha256,
+                                   erlang=args.erlang, peer_trust=ca['issuer_root'] if args.continuity else None,
+                                   peer_hosts=('one.acme.test', 'two.acme.test') if args.continuity else ())
         runtime.start()
         original_pid = runtime.process.pid
         admin = PublicClient(runtime.base)
@@ -215,14 +229,16 @@ def run(args):
         assert cert['serial_number_hex'] == initial['certificate']['serial']
         assert secure.handshakes[-1]['verified_chain_and_hostname'] is True
         check('real issued certificate independently trusted and hostname verified', certificate=cert)
-        for wrong in (PublicClient('https://two.acme.test:18443', trust=ca['issuer_root']),
-                      PublicClient('https://one.acme.test:18443', trust=ca['frontend_root'])):
+        for wrong, expected_error in ((PublicClient('https://two.acme.test:18443', trust=ca['issuer_root']),ssl.SSLError),
+                                      (PublicClient('https://one.acme.test:18443', trust=ca['frontend_root']),ssl.SSLCertVerificationError)):
             try:
                 wrong.request('/health')
-            except (OSError, ssl.SSLError):
-                pass
+            except (URLError,ssl.SSLError) as error:
+                reason = error.reason if isinstance(error,URLError) else error
+                assert isinstance(reason,expected_error), 'Negative must be TLS rejection, not unrelated transport outage'
             else:
                 raise AssertionError('Hostname/untrusted issuer must fail')
+        assert secure.request('/health')[0] == 200
         check('wrong hostname and unrelated trust root fail closed')
         secure.login('admin', password)
         tokens = config['agents']
@@ -234,16 +250,29 @@ def run(args):
         delivery()
         check('actual authenticated A2A send poll ack and Admin over native HTTPS')
 
+        if args.continuity:
+            oidc = OIDCContinuity(work/'oidc', secure.base, ca['issuer_root'])
+            oidc.configure(secure)
+            check('real signed PKCE OIDC callback over HTTPS and nonce CSRF cookie controls')
+            federation = FederationContinuity(args, work/'peer', ca, runtime, admin, tokens, initialize)
+            federation.start()
+            check('two actual ACME-issued hubs and trusted outbound HTTPS federation catalogs')
+
+        before_manual = status()
         accepted, command = admin.mutate('tls_renew')
         assert accepted['accepted'] is True
         changed = wait_for(lambda: (value if (value := status())['certificate'] and
-                           value['certificate']['sha256'] != initial['certificate']['sha256'] else None), 40, 'Manual real renewal')
+                           value['certificate']['sha256'] != before_manual['certificate']['sha256'] else None), 40, 'Manual real renewal')
         assert admin.api(command) == accepted, 'Same receipt must replay after renewal'
         assert runtime.process.pid == original_pid and runtime.process.poll() is None
         assert secure.request('/health')[0] == 200
         rotated = certificate_facts(secure.handshakes[-1]['der'], ['one.acme.test'], datetime.now(timezone.utc))
         assert rotated['leaf_der_sha256'] == changed['certificate']['sha256']
         delivery()
+        if oidc:
+            oidc.after_rotation(changed['certificate']['sha256'])
+        if federation:
+            federation.check('after_rotation')
         check('hot real leaf rotation and exact renew receipt replay', certificate=rotated, same_vm=True)
 
         automatic = wait_for(lambda: (value if (value := status())['certificate'] and
@@ -268,7 +297,8 @@ def run(args):
         raise
     finally:
         cleanup = []
-        for close in (relay.close, runtime.stop if runtime else lambda: None):
+        for close in (federation.close if federation else lambda: None, oidc.close if oidc else lambda: None,
+                      runtime.stop if runtime else lambda: None, relay.close):
             try:
                 close()
             except BaseException as error:
@@ -276,6 +306,9 @@ def run(args):
                 if primary:
                     primary.add_note('Owned ACME fixture cleanup failed: ' + type(error).__name__)
         report['runtime_identities'] = runtime.identities if runtime else []
+        report['peer_runtime_identities'] = federation.runtime.identities if federation and federation.runtime else []
+        report['oidc_events'] = oidc.events if oidc else []
+        report['federation_events'] = federation.events if federation else []
         report['relay'] = relay.snapshot()
         report['cleanup_errors'] = cleanup
         if cleanup:
@@ -292,15 +325,21 @@ def main():
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--execute', action='store_true', required=True)
     parser.add_argument('--phase', choices=('bootstrap', 'full'), default='bootstrap')
+    parser.add_argument('--continuity', action='store_true', help='Explicit real OIDC and two-hub HTTPS federation stratum')
+    parser.add_argument('--lego-sha256')
+    parser.add_argument('--guardian-sha256')
+    args = parser.parse_args()
     def expired(signum, frame):
-        raise TimeoutError('Finite diagnostic suite 600 second budget')
+        raise TimeoutError('Finite diagnostic suite budget')
     previous = signal.signal(signal.SIGALRM, expired)
-    signal.alarm(600)
+    prior_term = signal.signal(signal.SIGTERM, expired)
+    signal.alarm(900 if args.continuity else 600)
     try:
-        run(parser.parse_args())
+        run(args)
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, previous)
+        signal.signal(signal.SIGTERM, prior_term)
 
 
 if __name__ == '__main__':

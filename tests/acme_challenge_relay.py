@@ -41,10 +41,14 @@ def public_event(path, host, status, body, mode):
 
 
 class ChallengeRelay:
-    def __init__(self, port=8080, upstream_port=18080, *, bind='127.0.0.1', max_requests=128, hold_seconds=20):
+    def __init__(self, port=8080, upstream_port=18080, *, bind='127.0.0.1', max_requests=128, hold_seconds=20, upstreams=None):
         assert bind in ('127.0.0.1', '127.0.0.2') and 0 < port < 65536 and 0 < upstream_port < 65536
         assert 1 <= max_requests <= 256 and 0 < hold_seconds <= 30 and port != upstream_port
         self.bind, self.port, self.upstream_port = bind, port, upstream_port
+        self.upstreams = dict(upstreams or {'one.acme.test': upstream_port})
+        assert 1 <= len(self.upstreams) <= 2
+        assert all(name in ('one.acme.test', 'two.acme.test') and type(value) is int and 0 < value < 65536
+                   and value != port for name, value in self.upstreams.items())
         self.max_requests, self.hold_seconds = max_requests, hold_seconds
         self.lock = threading.Lock()
         self.release = threading.Event()
@@ -113,7 +117,9 @@ class ChallengeRelay:
                         raw.extend(block)
                     assert raw.find(b'\r\n\r\n') == len(raw) - 4
                     path, host = parse_request(bytes(raw))
-                    conn = http.client.HTTPConnection(owner.bind, owner.upstream_port, timeout=3)
+                    hostname = host.split(':', 1)[0]
+                    assert hostname in owner.upstreams, 'Relay never forwards an unregistered domain'
+                    conn = http.client.HTTPConnection(owner.bind, owner.upstreams[hostname], timeout=3)
                     try:
                         conn.request('GET', path, headers={'Host': host, 'Connection': 'close'})
                         response = conn.getresponse()

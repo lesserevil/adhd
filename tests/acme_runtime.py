@@ -8,6 +8,7 @@ import http.client
 from http.cookiejar import CookieJar
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import socket
@@ -129,10 +130,13 @@ class PublicClient:
 
 
 class NativeDiagnostic:
-    def __init__(self, root, source, cache, elixir, cache_manifest_sha256, *, erlang):
+    def __init__(self, root, source, cache, elixir, cache_manifest_sha256, *, erlang, peer_trust=None, peer_hosts=()):
         self.root, self.source, self.cache = map(lambda p: Path(p).resolve(), (root, source, cache))
         self.elixir = Path(elixir).resolve()
         self.erlang = Path(erlang).resolve()
+        self.peer_trust = Path(peer_trust).resolve() if peer_trust else None
+        self.peer_hosts = tuple(peer_hosts)
+        assert all(host in ('one.acme.test', 'two.acme.test') for host in self.peer_hosts)
         self.manifest_sha = cache_manifest_sha256
         self.file = self.root / 'hub.json'
         self.process, self.logs, self.log_ids = None, [], []
@@ -176,6 +180,25 @@ class NativeDiagnostic:
             command = [str(self.elixir), '-pa', str(self.cache), '-e', code, '--', json.dumps(['serve', str(self.file)])]
             env = {'PATH': str(self.elixir.parent) + ':' + str(self.erlang.parent) + ':/usr/bin:/bin', 'HOME': str(self.root),
                    'LANG': 'C.UTF-8', 'ERL_FLAGS': '+S 2:2'}
+            def erl_path(path):
+                assert re.fullmatch(r'[A-Za-z0-9_./-]+', str(path)), 'Owned runtime path must have an unambiguous Erlang argument'
+                return "'" + json.dumps(str(path)) + "'"
+            if self.peer_trust:
+                regular(self.peer_trust)
+                binding['peer_trust_sha256'] = sha(self.peer_trust)
+                env['ERL_FLAGS'] += ' -public_key cacerts_path ' + erl_path(self.peer_trust)
+            if self.peer_hosts:
+                inetrc = self.root/'fixture.inetrc'
+                data = '{lookup, [file]}.\n' + ''.join('{host, {127,0,0,1}, ['+json.dumps(host)+']}.\n' for host in self.peer_hosts)
+                if inetrc.exists():
+                    regular(inetrc)
+                    assert inetrc.read_text() == data
+                else:
+                    fd = os.open(inetrc, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+                    with os.fdopen(fd, 'w') as output:
+                        output.write(data)
+                binding['peer_inetrc_sha256'] = sha(inetrc)
+                env['ERL_FLAGS'] += ' -kernel inetrc ' + erl_path(inetrc)
             self.process = subprocess.Popen(command, stdout=self.logs[0], stderr=self.logs[1],
                                             start_new_session=True, env=env)
             self.pid_ticks = ticks(self.process.pid)

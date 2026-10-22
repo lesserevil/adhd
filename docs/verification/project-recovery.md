@@ -103,3 +103,23 @@ The corrected test keeps the immediate empty-directory assertion and derives the
 later refresh observation bound from that ten-second timeout plus two seconds
 for scheduling. These timing corrections preserve the stale-result criterion.
 The final origin stderr is empty; all owned hubs and relay threads were closed.
+
+The [twelve-boundary native12 crash matrix](../../verification/project-recovery-crash/dev12/manifest.json)
+passes eleven boundaries and preserves one failure after installing the snapshot:
+the exact stage/target hardlink pair remains at link count two. Strict reads reject
+that transient pair; subsequent unavailable-target alias lookup then stops startup.
+[Native14 repair of the same interrupted fixture](../../verification/project-recovery-crash/repair14/manifest.json)
+passes three checks, including exact original decision/state preservation and
+another cold restart. This does not relabel the original failure or qualify all
+boundaries on the successor.
+
+The [actual Kafka callback repair](../../verification/project-recovery-pending-kafka/manifest.json)
+passes five checks on frozen13 with only Resources/Eventing replaced. The original
+accepted event is backed up pending; real old-topic and fresh-topic consumer
+responses are held independently across live target restore. Releasing only the
+old reply cannot create delivery/quarantine or advance the fresh offset. Releasing
+the fresh reply delivers the original once, and its acknowledgement survives cold
+restart. A retired active HTTP request now wakes its waiting owner through the
+existing failure path, and the event worker survives a retired unit's failed error
+recording. Ordinary completed HTTP releases add no cancellation message. Combined14
+and full image/platform qualification remain independently gated.

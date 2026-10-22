@@ -65,6 +65,7 @@ from kube_qualification_inputs import json_kube_endpoint as kube_endpoint, valid
 from multi_image_core_matrix import claim_execution
 from kafka_image_equivalence import verify_pair, ORIGINAL_PROXY as PROXY_IMAGE
 import image_host_dependencies as host_dependencies
+from image_compiled_inputs import compiled_admission
 
 
 def readonly(argv):
@@ -127,6 +128,7 @@ def verify(work,plan,preflight=True):
     for row in plan['tools'].values():host_dependencies.verify_path(row)
     sock=Path(plan['docker_socket']['path']).stat();assert stat.S_ISSOCK(sock.st_mode) and [sock.st_dev,sock.st_ino]==plan['docker_socket']['identity']
     assert kube_endpoint(work/'bound/kubeconfig',plan['facts']['node']['cluster'])==plan['kube_endpoint']
+    assert compiled_admission(work/'context',work/'bound/admission.json',plan['admission_sha256'],plan['image'],plan['artifact_sha256'],required=plan.get('require_compiled_runtime',False))==plan.get('compiled_binding')
     if preflight:
         for port in plan['ports'].values():free_port(port)
         assert cluster_facts(plan['tools']['kubectl']['path'],work/'bound/kubeconfig',plan['facts']['node']['name'],plan['cluster_image'],plan['broker_image'],plan['proxy_image'],plan['namespace'])==plan['facts']
@@ -139,12 +141,13 @@ def prepare(a):
     assert a.port!=a.hub_port
     for port in (a.port,a.hub_port):free_port(port)
     selected=reviewed_payload(a.context/'manifest.json',a.admission,a.admission_sha256,a.image,json.loads((a.context/'manifest.json').read_text())['files']['hub.exs'])
+    compiled=compiled_admission(a.context,a.admission,a.admission_sha256,a.image,json.loads((a.context/'manifest.json').read_text())['files']['hub.exs'],required=getattr(a,'require_compiled_runtime',False))
     work.mkdir(mode=0o700)
     for name in ['frozen','bound','context','parent-cache','results']:(work/name).mkdir(mode=0o700)
     _,drift=freeze_inputs(a.repo_root,work/'frozen',selected['specifications'])
     tree(a.repo_root/'deploy')
     shutil.copytree(a.repo_root/'deploy',work/'frozen/deploy')
-    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py','kafka_image_equivalence.py','kafka_oauth_k8s_matrix.py','kube_qualification_inputs.py']
+    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py','kafka_image_equivalence.py','kafka_oauth_k8s_matrix.py','kube_qualification_inputs.py','image_compiled_inputs.py']
     for name in overlays:shutil.copyfile(Path(__file__).parent/name,work/'frozen/tests'/name)
     for p in a.context.iterdir():
         assert p.is_file() and not p.is_symlink();shutil.copyfile(p,work/'context'/p.name)
@@ -176,6 +179,7 @@ def prepare(a):
         '--broker-image',a.broker_image,'--proxy-image',a.proxy_image,'--port',str(a.port),'--hub-port',str(a.hub_port),
         '--work',str(work/'oauth-work'),'--report',str(work/'result.json')]
     plan={'schema':'adhd/secured-kind-oauth-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','driver_sha256':sha(work/'driver.py'),'parent_pycache_prefix':str(work/'parent-cache'),
+        'require_compiled_runtime':getattr(a,'require_compiled_runtime',False),'compiled_binding':compiled,
         'artifact_sha256':json.loads((a.context/'manifest.json').read_text())['files']['hub.exs'],'image':a.image,'canonical_manifest_sha256':sha(a.context/'manifest.json'),'admission_sha256':a.admission_sha256,
         'docker_socket':{'path':'/run/docker.sock','identity':[sock.st_dev,sock.st_ino]},'static_tool_elf':tool_elf,'platform_basis_sha256':sha(a.platform_plan),
         'frozen_inputs':tree(work/'frozen'),'bound_inputs':tree(work/'bound'),'context_inputs':tree(work/'context'),'tools':tools,'facts':facts,'kube_endpoint':endpoint,
@@ -213,6 +217,7 @@ def main():
     p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
     for n in ['repo-root','context','admission','original-plan','platform-plan']:p.add_argument('--'+n,type=Path)
     for n in ['image','admission-sha256','broker-image','proxy-image']:p.add_argument('--'+n)
+    p.add_argument('--require-compiled-runtime',action='store_true',help='Require separately reviewed compiled cache/entrypoint audit in fresh admission')
     p.add_argument('--namespace',default='adhd-oauth-40');p.add_argument('--port',type=int,default=18940);p.add_argument('--hub-port',type=int,default=18941)
     p.add_argument('--python',type=Path,default=Path(sys.executable).absolute());a=p.parse_args()
     if a.prepare:prepare(a)

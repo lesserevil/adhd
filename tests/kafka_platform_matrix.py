@@ -8,6 +8,8 @@ sys.dont_write_bytecode=True
 _STAGED=__file__.rsplit('/',1)[-1]=='driver.py'
 if _STAGED:
     assert sys.flags.isolated, 'Run the frozen driver with python -I'
+elif __name__=='__main__':
+    assert '--execute' not in sys.argv, 'Execute only the reviewed frozen driver.py with python -I'
 import argparse
 import hashlib
 import json
@@ -223,10 +225,11 @@ def execute(work,expected):
         for job in plan['jobs']:
             verify(work,plan);report=work/(job['name']+'.json');log=work/(job['name']+'.log')
             assert not report.exists() and not log.exists() and not (work/(job['name']+'-work')).exists()
-            row={'name':job['name'],'started':True,'process_exit_code':None,'passed':False,'report_sha256':None,'log_sha256':None}
+            row={'name':job['name'],'attempted':True,'started':False,'process_exit_code':None,'passed':False,'report_sha256':None,'log_sha256':None}
             results.append(row)
             print('START',job['name'],flush=True)
             with log.open('x') as output:child=subprocess.run(job['argv'],cwd=plan['runtime_cwd'],env=env,stdout=output,stderr=subprocess.STDOUT)
+            row['started']=True  # A returned child outcome witnesses actual creation.
             qualified=child.returncode==0 and report_passed(report)
             value=json.loads(report.read_text()) if report_passed(report) else {}
             if qualified:
@@ -244,11 +247,13 @@ def execute(work,expected):
             for field,suffix in (('report_sha256','.json'),('log_sha256','.log')):
                 path=work/(row['name']+suffix)
                 if path.is_file():row[field]=sha(path)
-        unrun=[job['name'] for job in plan['jobs'] if job['name'] not in {row['name'] for row in results}]
+        executed=[row['name'] for row in results if row['started']]
+        unrun=[job['name'] for job in plan['jobs'] if job['name'] not in executed]
         dump(work/'matrix.json',{'schema':'adhd/platform-image-matrix@1','passed':not failure and unchanged and not unrun and all(row['passed'] for row in results),
             'scope':plan['scope'],'image_config_identity':plan['image_config_identity'],'artifact_sha256':plan['artifact_sha256'],
             'plan_sha256':expected,'frozen_inputs_unchanged':unchanged,'failure_type':failure,'results':results,
-            'planned_platforms':[job['name'] for job in plan['jobs']],'executed_platforms':[row['name'] for row in results],'unrun_platforms':unrun})
+            'planned_platforms':[job['name'] for job in plan['jobs']],'attempted_platforms':[row['name'] for row in results],
+            'executed_platforms':executed,'unrun_platforms':unrun})
     return 0 if json.loads((work/'matrix.json').read_text())['passed'] else 1
 
 

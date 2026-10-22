@@ -46,6 +46,7 @@ def execution(work,behavior):
     assert (work/'execution-started.json').is_file()
     if behavior=='pass':assert result==0 and calls==['compose','k8s'] and output['passed'] and output['unrun_platforms']==[]
     elif behavior=='preflight':assert calls==[] and output['executed_platforms']==[] and output['unrun_platforms']==['compose','k8s']
+    elif behavior=='raise':assert calls==['compose'] and output['attempted_platforms']==['compose'] and output['executed_platforms']==[] and output['unrun_platforms']==['compose','k8s']
     else:assert calls==['compose'] and output['executed_platforms']==['compose'] and output['unrun_platforms']==['k8s']
     assert output['passed']==(behavior=='pass')
     with patch.object(driver,'verify',return_value=True),patch.object(driver,'preflight',side_effect=AssertionError('No preflight on reentry')),patch('subprocess.Popen',side_effect=AssertionError('No process')):
@@ -76,6 +77,11 @@ def main():
             except AssertionError:pass
             else:raise AssertionError('Historical binding plan executed')
         assert not (work/'execution-started.json').exists();checks+=1
+        with patch.object(sys,'argv',[driver.__file__,'--execute']),patch.dict(sys.modules,{'yaml':None,'image_qualification_inputs':None,'multi_image_core_matrix':None}),patch('subprocess.Popen',side_effect=AssertionError('No process')):
+            try:runpy.run_path(driver.__file__,run_name='__main__')
+            except AssertionError as error:assert str(error)=='Execute only the reviewed frozen driver.py with python -I'
+            else:raise AssertionError('Authored execute imported unverified helpers')
+        checks+=1
         for behavior in ('pass','false','missing-report','unknown-cleanup','raise','preflight'):
             work=root/behavior;work.mkdir();execution(work,behavior);checks+=1
         tree=root/'tree';tree.mkdir();(tree/'known').write_text('fixture');inputs=driver.file_tree(tree)

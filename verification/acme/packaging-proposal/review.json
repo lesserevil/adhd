@@ -1,0 +1,25 @@
+{
+  "schema": "adhd/acme-packaging-proposal@1",
+  "pure_new_tests": 4,
+  "existing_packaging_tests": 12,
+  "elixir_syntax_parse": "build.exs and boot.exs PASS; no evaluation/compiler/app",
+  "files": {
+    "scripts/stage_container.py": "dfc23f327c0ce9719d0216248bc0e7b4c06199612adebc94a5ffff0d0e03d781",
+    "deploy/runtime/build.exs": "3ac94012c7dd9724458f284a7f5e8301b4444f40ac19c762de5b85d14c0e678c",
+    "deploy/runtime/boot.exs": "0e316f8a0cb464b4e1c0f67ef5c208c4339465ec761d69b3755c79468cc49f76",
+    "tests/acme_packaging_test.py": "8f8a71bdff89c97c8b47ad5e5488e0b7205e25689b8adba1d0e4504326ab649e"
+  },
+  "implemented": [
+    "stage-time --acme-tools exact8-file bundle pinned against tracked manifest",
+    "require bundle for ACMEClient artifacts",
+    "old compiler/cache schema1 unchanged when no ACME tools",
+    "schema2 full tools hash closure before compiling/loading app",
+    "executables0555 metadata0444 all timestamps0",
+    "context remains exact5 files; Dockerfile unchanged"
+  ],
+  "pending": [
+    "final reproducible binary and module inventory/pin bundle",
+    "extend offline payload/cache admission validators for schema2 and current actual module/spec counts",
+    "actual new image build/cache/runtime qualification"
+  ]
+}

@@ -26,19 +26,31 @@ Enum.each(["/runtime", root, root <> "/ebin", "/app"], fn path ->
   end
 end)
 manifest = regular.(root <> "/manifest.json") |> JSON.decode!()
-if Enum.sort(Map.keys(manifest)) != Enum.sort(~w(schema source source_sha256 payload_manifest_sha256 inputs_sha256 boot_sha256 build_sha256 modules beams toolchain)), do: fail.()
-if manifest["schema"] != "adhd/precompiled-cache@1" or manifest["source"] != source or
+has_acme = manifest["schema"] == "adhd/precompiled-cache@2"
+acme_files = ~w(LICENSE.lego LICENSE.musl acme-build.json acme-bundle.json acme-guard acme-pins.json lego lego-sbom.json)
+expected_keys = ~w(schema source source_sha256 payload_manifest_sha256 inputs_sha256 boot_sha256 build_sha256 modules beams toolchain) ++ if(has_acme, do: ["acme"], else: [])
+if Enum.sort(Map.keys(manifest)) != Enum.sort(expected_keys), do: fail.()
+if manifest["schema"] not in ["adhd/precompiled-cache@1", "adhd/precompiled-cache@2"] or manifest["source"] != source or
    manifest["source_sha256"] != sha.(source_bytes) or manifest["boot_sha256"] != sha.(regular.(root <> "/boot.exs")) or
    manifest["payload_manifest_sha256"] != sha.(payload.("/app/manifest.json")), do: fail.()
-if Enum.sort(File.ls!(root)) != ["boot.exs", "build.exs", "ebin", "inputs.json", "manifest.json"], do: fail.()
+if Enum.sort(File.ls!(root)) != Enum.sort(["boot.exs", "build.exs", "ebin", "inputs.json", "manifest.json"] ++ if(has_acme, do: acme_files, else: [])), do: fail.()
 if manifest["build_sha256"] != sha.(regular.(root <> "/build.exs")) or
    manifest["inputs_sha256"] != sha.(regular.(root <> "/inputs.json")), do: fail.()
 inputs = regular.(root <> "/inputs.json") |> JSON.decode!()
 if Enum.sort(Map.keys(inputs)) != Enum.sort(~w(schema source_sha256 payload_manifest_sha256 files)) or
-   inputs["schema"] != "adhd/container-compiler-inputs@1" or
+   inputs["schema"] != (if(has_acme, do: "adhd/container-compiler-inputs@2", else: "adhd/container-compiler-inputs@1")) or
    inputs["source_sha256"] != manifest["source_sha256"] or
    inputs["payload_manifest_sha256"] != manifest["payload_manifest_sha256"] or
-   inputs["files"] != %{"boot.exs" => manifest["boot_sha256"], "build.exs" => manifest["build_sha256"]}, do: fail.()
+   inputs["files"] != Map.merge(%{"boot.exs" => manifest["boot_sha256"], "build.exs" => manifest["build_sha256"]}, if(has_acme, do: manifest["acme"], else: %{})), do: fail.()
+if has_acme do
+  if Enum.sort(Map.keys(manifest["acme"])) != Enum.sort(acme_files), do: fail.()
+  Enum.each(manifest["acme"], fn {name, digest} ->
+    path = root <> "/" <> name
+    if sha.(regular.(path)) != digest, do: fail.()
+    expected_mode = if name in ["acme-guard", "lego"], do: 0o555, else: 0o444
+    if :erlang.band(File.stat!(path).mode, 0o7777) != expected_mode, do: fail.()
+  end)
+end
 toolchain = manifest["toolchain"]
 if Enum.sort(Map.keys(toolchain)) != Enum.sort(~w(elixir otp erts architecture anchors)) or
    toolchain["elixir"] != System.version() or toolchain["otp"] != to_string(:erlang.system_info(:otp_release)) or
@@ -58,6 +70,7 @@ names = Enum.map(modules, fn
   _ -> fail.()
 end)
 if length(Enum.uniq(names)) != length(names) or Enum.map(names, &Atom.to_string/1) != manifest["modules"], do: fail.()
+if ADHD.ACMEClient in names and not has_acme, do: fail.()
 if Enum.any?(tail, &match?({op, _, _} when op in [:alias, :import, :require, :use], &1)), do: fail.()
 files = Enum.map(names, &(Atom.to_string(&1) <> ".beam"))
 if Enum.sort(File.ls!(root <> "/ebin")) != Enum.sort(files) or Enum.sort(Map.keys(manifest["beams"])) != Enum.sort(files), do: fail.()

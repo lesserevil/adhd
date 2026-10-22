@@ -18,10 +18,13 @@ end)
 sha = fn bytes -> :crypto.hash(:sha256, bytes) |> Base.encode16(case: :lower) end
 inputs_bytes = regular.("/packaging/inputs.json")
 inputs = JSON.decode!(inputs_bytes)
+acme_files = ~w(LICENSE.lego LICENSE.musl acme-build.json acme-bundle.json acme-guard acme-pins.json lego lego-sbom.json)
+has_acme = inputs["schema"] == "adhd/container-compiler-inputs@2"
+expected_files = Enum.sort(["boot.exs", "build.exs"] ++ if(has_acme, do: acme_files, else: []))
 if Enum.sort(Map.keys(inputs)) != Enum.sort(~w(schema source_sha256 payload_manifest_sha256 files)) or
-   inputs["schema"] != "adhd/container-compiler-inputs@1" or
-   Enum.sort(Map.keys(inputs["files"])) != ["boot.exs", "build.exs"] or
-   Enum.sort(File.ls!("/packaging")) != ["boot.exs", "build.exs", "inputs.json"], do: fail.()
+   inputs["schema"] not in ["adhd/container-compiler-inputs@1", "adhd/container-compiler-inputs@2"] or
+   Enum.sort(Map.keys(inputs["files"])) != expected_files or
+   Enum.sort(File.ls!("/packaging")) != Enum.sort(["inputs.json" | expected_files]), do: fail.()
 Enum.each(inputs["files"], fn {name, digest} ->
   if sha.(regular.("/packaging/" <> name)) != digest, do: fail.()
 end)
@@ -39,6 +42,7 @@ names = Enum.map(modules, fn
   _ -> fail.()
 end)
 if length(names) != length(Enum.uniq(names)), do: fail.()
+if ADHD.ACMEClient in names and not has_acme, do: fail.()
 # No global lexical environment may be silently lost at this boundary.
 if Enum.any?(tail, &match?({op, _, _} when op in [:alias, :import, :require, :use], &1)), do: fail.()
 if File.exists?(wrapper), do: fail.()
@@ -62,15 +66,20 @@ toolchain = %{
   "architecture" => to_string(:erlang.system_info(:system_architecture)),
   "anchors" => Map.new(anchors, fn path -> {path, sha.(File.read!(path))} end)
 }
+acme = if has_acme, do: Map.take(inputs["files"], acme_files), else: %{}
+Enum.each(acme, fn {name, _digest} ->
+  File.write!(Path.join(output, name), regular.("/packaging/" <> name), [:exclusive])
+end)
 manifest = %{
   "schema" => "adhd/precompiled-cache@1", "source" => source,
   "source_sha256" => sha.(bytes), "payload_manifest_sha256" => sha.(regular.("/app/manifest.json")),
   "inputs_sha256" => sha.(inputs_bytes), "boot_sha256" => sha.(boot), "build_sha256" => sha.(regular.("/packaging/build.exs")),
   "modules" => Enum.map(names, &Atom.to_string/1), "beams" => beams, "toolchain" => toolchain
 }
+manifest = if has_acme, do: Map.merge(manifest, %{"schema" => "adhd/precompiled-cache@2", "acme" => acme}), else: manifest
 File.write!(Path.join(output, "manifest.json"), JSON.encode!(manifest), [:exclusive])
 Enum.each(Path.wildcard(output <> "/**/*"), fn path ->
-  File.chmod!(path, if(File.dir?(path), do: 0o555, else: 0o444))
+  File.chmod!(path, if(File.dir?(path) or Path.basename(path) in ["acme-guard", "lego"], do: 0o555, else: 0o444))
 end)
 File.chmod!(output, 0o555)
 

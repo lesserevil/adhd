@@ -110,10 +110,51 @@ def cli_command(value):
     return command
 
 
+ACME_FILES = frozenset({'acme-guard', 'lego', 'acme-pins.json', 'acme-build.json',
+                        'lego-sbom.json', 'LICENSE.lego', 'LICENSE.musl', 'acme-bundle.json'})
+
+
+def acme_tools(directory, pins_bytes):
+    """Only the exact reviewed, platform-specific immutable dependency bundle."""
+    directory = Path(directory)
+    if directory.is_symlink() or not directory.is_dir() or set(os.listdir(directory)) != ACME_FILES:
+        raise SystemExit('Expected exact ACME tools bundle')
+    files = {name: read_regular(directory / name) for name in sorted(ACME_FILES)}
+    try:
+        def unique(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result: raise ValueError('duplicate key')
+                result[key] = value
+            return result
+        bundle = json.loads(files['acme-bundle.json'], object_pairs_hook=unique)
+        pins = json.loads(pins_bytes, object_pairs_hook=unique)
+        expected = pins['runtime_bundle']['files']
+        if (set(bundle) != {'schema', 'platform', 'files'} or
+                bundle['schema'] != 'adhd/acme-runtime-bundle@1' or bundle['platform'] != 'linux_amd64' or
+                set(bundle['files']) != ACME_FILES - {'acme-bundle.json'} or
+                set(expected) != ACME_FILES - {'acme-bundle.json', 'acme-pins.json'} or
+                files['acme-pins.json'] != pins_bytes):
+            raise ValueError('bundle closure')
+        for name in bundle['files']:
+            digest = hashlib.sha256(files[name]).hexdigest()
+            if bundle['files'][name] != digest or (name in expected and expected[name] != digest):
+                raise ValueError('bundle identity')
+        for name in ('lego', 'acme-guard'):
+            if files[name][:6] != b'\x7fELF\x02\x01': raise ValueError('Linux64 tools')
+    except (ValueError, KeyError, TypeError, UnicodeError) as error:
+        raise SystemExit('Invalid pinned ACME tools bundle') from error
+    return files
+
+
 def write_context(files, output, packaging=None):
     if b'ADD packaging.tar /' in files['Dockerfile'] and packaging is None:
         raise SystemExit('Precompiled Dockerfile requires compiler helpers')
-    if packaging is not None and set(packaging) != {'build.exs', 'boot.exs'}:
+    has_acme = packaging is not None and ACME_FILES <= set(packaging)
+    expected_packaging = {'build.exs', 'boot.exs'} | (ACME_FILES if has_acme else set())
+    if b'defmodule ADHD.ACMEClient do' in files['hub.exs'] and not has_acme:
+        raise SystemExit('ACME application requires pinned --acme-tools bundle')
+    if packaging is not None and set(packaging) != expected_packaging:
         raise SystemExit('Expected exact precompiler helper closure')
     manifest = {'schema': 'adhd/container-inputs@1', 'files': {
         name: hashlib.sha256(content).hexdigest() for name, content in sorted(files.items())}}
@@ -137,7 +178,7 @@ def write_context(files, output, packaging=None):
             info.size = len(content)
             archive.addfile(info, io.BytesIO(content))
     if packaging is not None:
-        inputs = {'schema': 'adhd/container-compiler-inputs@1',
+        inputs = {'schema': 'adhd/container-compiler-inputs@2' if has_acme else 'adhd/container-compiler-inputs@1',
                   'source_sha256': hashlib.sha256(files['hub.exs']).hexdigest(),
                   'payload_manifest_sha256': hashlib.sha256(manifest_bytes).hexdigest(),
                   'files': {name: hashlib.sha256(value).hexdigest()
@@ -165,6 +206,7 @@ def main():
     source.add_argument('--export', help='Literate AI artifact export (the default input)')
     source.add_argument('--rebuild-result', help='Passing litai rebuild JSON result for retained-source qualification')
     parser.add_argument('--acceptance-report', help='Passing independent hub acceptance report, required with --rebuild-result')
+    parser.add_argument('--acme-tools', help='Exact pinned ACME runtime bundle directory (stage-time only)')
     parser.add_argument('--output', default='_build/container')
     parser.add_argument('--litai-command', type=cli_command, default=['litai'],
                         help='Verifier CLI argv as JSON, e.g. ["/pinned/python","/pinned/litai"]')
@@ -238,6 +280,8 @@ def main():
     files.update(specification_files(root / "components/hub"))
     packaging = {name: read_regular(root / 'deploy/runtime' / name)
                  for name in ('build.exs', 'boot.exs')}
+    if args.acme_tools:
+        packaging.update(acme_tools(args.acme_tools, read_regular(root / 'deploy/runtime/acme-pins.json')))
     write_context(files, args.output, packaging)
     output = Path(args.output)
     print(json.dumps({'context': str(output.resolve()), 'artifact_sha256': digest}))

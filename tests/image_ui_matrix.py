@@ -57,7 +57,26 @@ def approved_entrypoint(key,current,original,amendments):
  return True
 
 
+def fresh_suites(names=None):
+ if names is None:return list(CASES)
+ assert isinstance(names,list) and names and all(isinstance(name,str) for name in names), 'Nonempty fresh suite selection required'
+ assert len(names)==len(set(names)) and all(name in CASES for name in names), 'Unknown or duplicate fresh suite'
+ return [name for name in CASES if name in names]
+
+
+def selected_plan_suites(plan):
+ names=plan.get('fresh_suite_selection')
+ assert not (names is not None and plan.get('resume_basis')), 'Fresh selection cannot be a historical remainder'
+ return fresh_suites(names)
+
+
+def selection_mode(a):
+ assert getattr(a,'suites',None) is None or (a.prepare and not a.prepare_remainder), '--suites is only for a fresh prepare'
+ return fresh_suites(getattr(a,'suites',None))
+
+
 def prepare(a):
+ suites=selection_mode(a)
  repo=a.repo.absolute();work=a.work.absolute();assert repo.resolve()==repo and not work.exists()
  assert sha(a.admission)==a.admission_sha256;admission=json.loads(a.admission.read_text());image=admission['image_config_identity'];artifact=admission['artifact_sha256']
  reader=load(repo/'tests/image_qualification_inputs.py','reviewed_ui_inputs');selected=reader.reviewed_payload(a.context/'manifest.json',a.admission,a.admission_sha256,image,artifact)
@@ -108,6 +127,7 @@ def prepare(a):
  jobs=[];runtime=work/'runtime';openrig_root=a.openrig_root.absolute();assert not openrig_root.exists() and len(str(openrig_root/'rigs/mux/tmux-999999/default'))<105
  for row in initial['serial_lane']:
   name=row['name'];assert name in CASES
+  if name not in suites:continue
   old=row['argv'];entry=next(Path(value) for value in old if value.endswith('.py'))
   entry=frozen/'tests'/entry.name;key='tests/'+entry.name
   if approved_entrypoint(key,sha(entry),old_inputs['files'][key]['sha256'],amendments):used_amendments.add(key)
@@ -120,18 +140,19 @@ def prepare(a):
   if name=='session-fence':common+=['--port-lock',initial['serial_lane'][8]['argv'][-1]]
   jobs.append({'name':name,'expected_units':CASES[name],'test_argv':common,'outer_timeout_seconds':row['outer_timeout_seconds'],'scope':row['scope'],
    'custody_report':str(work/(name+'-custody.json')),'launch_ledger':str(work/(name+'-launches.json')),'foundation_lock':initial['serial_lane'][7]['argv'][1] if name=='accounts-oidc' else None})
- assert [v['name'] for v in jobs]==list(CASES) and used_amendments==set(amendments)
+ assert [v['name'] for v in jobs]==suites and used_amendments==set(amendments)
  shutil.copyfile(__file__,work/'run.py')
  env={key:value for key,value in initial['env'].items() if key not in ['PYTHONPYCACHEPREFIX']};env.update(PYTHONDONTWRITEBYTECODE='1',NODE_DISABLE_COMPILE_CACHE='1',PATH=qualified_path)
  plan={'schema':'adhd/image-ui-nine-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','image_config_identity':image,'artifact_sha256':artifact,'admission_sha256':a.admission_sha256,
   'compiled_cache':compiled,'entrypoint_amendments':amendments,'canonical_manifest_sha256':sha(work/'image-manifest.json'),'manifest':str(work/'image-manifest.json'),'frozen':str(frozen),'frozen_tree':tree(frozen),'frozen_inputs':{key:value['sha256'] for key,value in tree(frozen)['files'].items()},
   'externals':externals,'tool_roots':tool_roots,'bound_inputs':{name:sha(work/name) for name in bound},'driver_sha256':sha(work/'run.py'),'python':sys.executable,
   'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'admitted_specification_drift':drift,'actual_formal_export':str(formal),'specifications':33,'actual_app_files':59,
-  'runtime_cwd':str(runtime),'openrig_root':str(openrig_root),'lane_lock':initial['lane_lock'],'env':env,'jobs':jobs,'planned_suites':list(CASES),'expected_units':86,
+  'runtime_cwd':str(runtime),'openrig_root':str(openrig_root),'lane_lock':initial['lane_lock'],'env':env,'jobs':jobs,'planned_suites':suites,'expected_units':sum(CASES[name] for name in suites),
   'docker':{'path':str(docker),'sha256':sha(docker)},'qualified_path':qualified_path,'tool_closure_scope':'Existing declared tool roots and exact top executables; no additional recursive library closure claim','parallelism':1,'maximum_owned_hubs':2,'automatic_retries':0,'runs_per_suite':1,'stop_first_failure':True,'provider_calls_authorized':0,
   'native39_historical_only':{'artifact_sha256':historical['artifact_sha256'],'completed_units':86,'original_false_aggregate_preserved':True},
   'prior_image40_prefix':'Six whole71 remain historical source-only-image40 scopes; old false aggregate and10 partial OpenRig excluded, not counted into new full9 execution','diagnostic_capture_storage':'Actual PNG/ARIA remain ignored under runtime/OpenRig private roots; retain hashes and paths only in durable proof, then require root visual review','capture_and_manual_review':initial['capture_and_manual_review'],'openrig_scope':'Actual two builtin:terminal rigs via pinned CLI0.6.14. No LLM coding-provider workload; no image egress firewall claim.',
-  'scope':'Exact admitted image40 UI/OpenRig nine suites86units only after actual execution. Native39 evidence remains historical; captures require root visual inspection; no backend semantic quality/platform/release claim.'}
+  'scope':'Exact admitted image selected UI programs only after actual execution: '+', '.join(suites)+'. Native39 evidence remains historical; captures require root visual inspection; no backend semantic quality/platform/release claim.'}
+ if getattr(a,'suites',None) is not None:plan['fresh_suite_selection']=suites
  write(work/'plan.json',plan);load(work/'run.py','copied_image_ui_driver').verify(plan,work)
  print(json.dumps({'plan':str(work/'plan.json'),'plan_sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],'frozen_files':len(plan['frozen_inputs']),'external_entries':len(externals),'tool_roots':len(tool_roots),'bound_inputs':len(bound)}))
 
@@ -153,8 +174,10 @@ def resume_prefix(parent,matrix,work):
 
 
 def prepare_remainder(a):
+ assert getattr(a,'suites',None) is None, 'Fresh selection cannot be a historical remainder'
  work=a.work.absolute();origin=a.parent_plan.absolute().parent
  assert not work.exists();parent=json.loads(a.parent_plan.read_text());matrix=json.loads((origin/'matrix.json').read_text())
+ assert parent.get('fresh_suite_selection') is None, 'Fresh selection cannot be a historical remainder'
  old=load(origin/'run.py','unchanged_parent_ui_driver');assert old.verify(parent,origin)
  work.mkdir(parents=True,mode=0o700);shutil.copytree(origin/'frozen',work/'frozen')
  for name in parent['bound_inputs']:shutil.copyfile(origin/name,work/name)
@@ -206,7 +229,7 @@ def verify(plan,work):
   assert validator.compiled_cache_binding(work/'cache-manifest.json',json.loads((work/'admission.json').read_text()),plan['image_config_identity'],plan['artifact_sha256'],plan['canonical_manifest_sha256'])==plan['compiled_cache']
  if plan.get('entrypoint_amendments'):
   assert json.loads((work/'entrypoint-amendments.json').read_text())['entries']==plan['entrypoint_amendments']
- selected=list(CASES)
+ selected=selected_plan_suites(plan)
  if plan.get('resume_basis'):
   assert sha(work/'parent-plan.json')==plan['resume_basis']['parent_plan_sha256'] and sha(work/'parent-matrix.json')==plan['resume_basis']['parent_matrix_sha256']
   parent=json.loads((work/'parent-plan.json').read_text());matrix=json.loads((work/'parent-matrix.json').read_text())
@@ -328,7 +351,8 @@ if __name__=='__main__':
  mode.add_argument('--prepare-remainder',action='store_true')
  parser.add_argument('--work',type=Path,required=True);parser.add_argument('--reviewed-plan-sha256');parser.add_argument('--parent-plan',type=Path)
  for name in ['repo','context','admission','openrig-root','compiled-cache-manifest','entrypoint-amendments']:parser.add_argument('--'+name,type=Path)
- parser.add_argument('--admission-sha256');a=parser.parse_args();work=a.work.absolute()
+ parser.add_argument('--suites',nargs='+',help='Fresh selected complete programs in canonical order; default all nine; forbidden for historical remainder or execute')
+ parser.add_argument('--admission-sha256');a=parser.parse_args();selection_mode(a);work=a.work.absolute()
  if a.prepare:prepare(a)
  elif a.prepare_remainder:prepare_remainder(a)
  else:sys.exit(execute(work,a.reviewed_plan_sha256))

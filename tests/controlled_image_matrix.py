@@ -60,6 +60,10 @@ def prepare(repo,work,bindings):
     assert sha(work/'receipt.json')==admission['receipt_file_sha256']
     assert sha(work/'rebuild.json')==admission['official_rebuild_envelope']['sha256']
     manifest=json.loads((work/'image-manifest.json').read_text());assert manifest['files']['hub.exs']==ARTIFACT
+    staged_dockerfile=repo/'_build/roadmap/final/container-context-38/Dockerfile'
+    assert sha(staged_dockerfile)==manifest['files']['Dockerfile']
+    shutil.copyfile(staged_dockerfile,work/'staged-Dockerfile')
+    assert admission['payload_audit']['actual_app_files']==len(manifest['files'])-1==59
     drift={}
     with tarfile.open(repo/'_build/roadmap/final/container-context-38/payload.tar') as archive:
         for path,digest in manifest['files'].items():
@@ -118,7 +122,8 @@ def prepare(repo,work,bindings):
         'image_config_identity':IMAGE,'artifact_sha256':ARTIFACT,'canonical_manifest_sha256':MANIFEST,
         'admission_sha256':ADMISSION,'manifest':str(work/'image-manifest.json'),'frozen':str(frozen),
         'frozen_inputs':fileset(frozen),'externals':externals,'historical_inventory_proofs':proofs,
-        'bound_inputs':{name:sha(work/name) for name in ['image-manifest.json','admission.json','rebuild.json','receipt.json']},
+        'bound_inputs':{name:sha(work/name) for name in ['image-manifest.json','admission.json','rebuild.json','receipt.json','staged-Dockerfile']},
+        'staged_dockerfile':str(work/'staged-Dockerfile'),'expected_app_files':admission['payload_audit']['actual_app_files'],
         'driver_sha256':sha(work/'run.py'),'python':sys.executable,'compiler':str(Path(shutil.which('cc')).resolve()),
         'native_artifact_sha256':[ARTIFACT]+sorted({sha(p) for p in all_producers}),
         'path_prefix':str(toolchain/'elixir/bin')+':'+str(toolchain/'erlang/bin'),
@@ -150,7 +155,7 @@ def authoritative_absence(result,identifier):
     assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',identifier)
     if result.returncode==0:return False
     expected=[f'Error: No such object: {identifier}\n',f'Error: No such container: {identifier}\n',
-              f'Error response from daemon: No such container: {identifier}\n']
+              f'Error response from daemon: No such container: {identifier}\n',f'error: no such object: {identifier}\n']
     assert result.returncode==1 and result.stderr in [v.encode() for v in expected]
     assert result.stdout in (b'',b'[]\n')
     return True

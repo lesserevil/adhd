@@ -11,7 +11,7 @@ import hashlib
 import importlib.util
 from unittest.mock import patch
 from pathlib import Path
-from controlled_image_runtime import Custody,audit_models,regular,authoritative_absence as runtime_absent
+from controlled_image_runtime import Custody,audit_models,regular,runtime_app_files,authoritative_absence as runtime_absent
 from controlled_image_matrix import fileset,durable_once_marker,authoritative_absence as driver_absent
 
 URL='http://127.0.0.1:19001/v1/systemone'
@@ -41,7 +41,7 @@ class Preparation(unittest.TestCase):
     def test_only_authoritative_exact_missing_object_accepted(self):
         for check in [runtime_absent,driver_absent]:
             for text in ['Error: No such object: owned-name\n','Error: No such container: owned-name\n',
-                         'Error response from daemon: No such container: owned-name\n']:
+                         'Error response from daemon: No such container: owned-name\n','error: no such object: owned-name\n']:
                 self.assertTrue(check(CompletedProcess([],1,b'[]\n',text.encode()),'owned-name'))
             self.assertFalse(check(CompletedProcess([],0,b'present',b''),'owned-name'))
     def test_foreign_mixed_daemon_or_nonexact_absence_refused(self):
@@ -49,7 +49,7 @@ class Preparation(unittest.TestCase):
         cases=[(2,b'[]\n',good),(125,b'',good),(1,b'[]\n',b'Error: No such object: other-name\n'),
                (1,b'[]\n',good+b'Cannot connect to the Docker daemon\n'),
                (1,b'[]\n',b'Cannot connect: no such socket\n'),(1,b'[]\n',good.rstrip()),
-               (1,b'[]\n',b'Warning\n'+good),(1,b'not-json',good)]
+               (1,b'[]\n',b'Warning\n'+good),(1,b'not-json',good),(1,b'[]\n',b'error: no such object: OWNED-NAME\n')]
         for check in [runtime_absent,driver_absent]:
             for code,out,err in cases:
                 with self.subTest(code=code,err=err),self.assertRaises(AssertionError):
@@ -95,6 +95,44 @@ class Preparation(unittest.TestCase):
                 with self.assertRaises(FileExistsError):module.execute(root,expected)
                 launch.assert_not_called()
             self.assertEqual(marker.read_bytes(),before);self.assertFalse((root/'runtime').exists())
+
+    def test_actual_custody_hash_argv_has_exact59_app_files(self):
+        with tempfile.TemporaryDirectory() as text:
+            custody=Custody.__new__(Custody);custody.image='sha256:expected';custody.plan={'expected_app_files':59}
+            app={**{f'file{n}':'a'*64 for n in range(57)},'hub.exs':'b'*64,'LICENSE':'c'*64}
+            custody.manifest={'files':{'Dockerfile':'d'*64,**app}};custody.manifest_bytes=json.dumps(custody.manifest).encode()
+            custody.launches=[{'name':'owned-name'}];custody.ledger=Path(text)/'ledger.json';custody.name=lambda obj:'owned-name'
+            row={'Id':'known-id','Image':custody.image,'State':{'Running':True,'Pid':123},
+                 'HostConfig':{'PidMode':'','NetworkMode':'host','ReadonlyRootfs':True}}
+            calls=[]
+            def observe(*args,**kwargs):
+                calls.append(args)
+                if args==('inspect','owned-name'):raw=json.dumps([row]).encode()
+                elif args==('exec','owned-name','cat','/app/manifest.json'):raw=custody.manifest_bytes
+                elif args[:3]==('exec','owned-name','sha256sum'):
+                    self.assertEqual(list(args[3:]),['/app/'+key for key in app])
+                    raw=''.join(f'{value}  /app/{key}\n' for key,value in app.items()).encode()
+                elif args==('exec','owned-name','readlink','/proc/1/exe'):raw=b'/runtime/beam.smp\n'
+                elif args==('exec','owned-name','cat','/proc/1/status'):raw=b'Pid:\t1\n'
+                elif args==('exec','owned-name','cat','/proc/1/cmdline'):raw=b'beam\0'
+                else:self.fail('Unexpected custody command '+repr(args))
+                return CompletedProcess([],0,raw,b'')
+            custody.docker=observe;event={};custody.inspect_image(SimpleNamespace(),event)
+            self.assertEqual(event['full_payload_files_verified'],59)
+            self.assertFalse(any('/app/Dockerfile' in call for call in calls))
+            self.assertEqual(runtime_app_files(custody.manifest,59),app)
+            with self.assertRaises(AssertionError):runtime_app_files(custody.manifest,60)
+    def test_staged_dockerfile_bytes_are_bound_without_starting_runtime(self):
+        with tempfile.TemporaryDirectory() as text:
+            root=Path(text);dockerfile=root/'staged-Dockerfile';dockerfile.write_bytes(b'actual staged build input')
+            digest=hashlib.sha256(dockerfile.read_bytes()).hexdigest()
+            manifest={'files':{'Dockerfile':digest,'hub.exs':'b'*64,**{f'file{n}':'a'*64 for n in range(58)}}}
+            path=root/'manifest.json';path.write_text(json.dumps(manifest))
+            plan={'image_config_identity':'sha256:expected','manifest':str(path),'fence_library':str(root/'fence.so'),
+                  'staged_dockerfile':str(dockerfile),'bound_inputs':{dockerfile.name:digest},'expected_app_files':59}
+            Custody(plan,{'launch_ledger':str(root/'launches.json')},root/'report.json')
+            dockerfile.write_bytes(b'wrong build input')
+            with self.assertRaisesRegex(AssertionError,'Staged Dockerfile'):Custody(plan,{'launch_ledger':str(root/'launches.json')},root/'report.json')
 
     def test_file_links_refused_before_start(self):
         with tempfile.TemporaryDirectory() as text:

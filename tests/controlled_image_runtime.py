@@ -48,10 +48,19 @@ def authoritative_absence(result,identifier):
     assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',identifier)
     if result.returncode==0:return False
     expected=[f'Error: No such object: {identifier}\n',f'Error: No such container: {identifier}\n',
-              f'Error response from daemon: No such container: {identifier}\n']
+              f'Error response from daemon: No such container: {identifier}\n',f'error: no such object: {identifier}\n']
     assert result.returncode==1 and result.stderr in [v.encode() for v in expected]
     assert result.stdout in (b'',b'[]\n')
     return True
+
+
+def runtime_app_files(manifest,expected_count):
+    files=manifest['files']
+    assert 'Dockerfile' in files,'Missing declared build input'
+    app={key:value for key,value in files.items() if key!='Dockerfile'}
+    assert type(expected_count) is int and expected_count==59 and len(app)==expected_count
+    assert len(files)==expected_count+1 and 'hub.exs' in app
+    return app
 
 
 def proc_identity(pid):
@@ -87,6 +96,10 @@ class Custody:
         self.launches=[];self.ledger=Path(job['launch_ledger'])
         self.image=plan['image_config_identity'];self.manifest_bytes=Path(plan['manifest']).read_bytes()
         self.manifest=json.loads(self.manifest_bytes);self.fence=Path(plan['fence_library'])
+        staged=Path(plan['staged_dockerfile']);regular(staged)
+        assert sha(staged)==self.manifest['files']['Dockerfile'],'Staged Dockerfile does not match reviewed build input'
+        assert plan['bound_inputs'][staged.name]==sha(staged)
+        runtime_app_files(self.manifest,plan['expected_app_files'])
     def docker(self,*args,check=True):
         return subprocess.run(['docker',*args],capture_output=True,check=check,timeout=30)
     def absent(self,name):
@@ -123,7 +136,7 @@ class Custody:
         launch['container_id']=row['Id'];self.ledger.write_text(json.dumps(self.launches,indent=2)+'\n')
         manifest=self.docker('exec',name,'cat','/app/manifest.json').stdout
         assert manifest==self.manifest_bytes,'Actual running payload manifest differs'
-        files=self.manifest['files'];paths=['/app/'+key for key in files]
+        files=runtime_app_files(self.manifest,self.plan['expected_app_files']);paths=['/app/'+key for key in files]
         assert all('..' not in Path(key).parts and not Path(key).is_absolute() for key in files)
         actual=self.docker('exec',name,'sha256sum',*paths).stdout.decode().splitlines()
         expected={('/app/'+key):digest for key,digest in files.items()}

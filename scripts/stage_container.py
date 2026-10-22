@@ -5,10 +5,11 @@ import hashlib
 import io
 import json
 import os
+import re
 import subprocess
 import stat
 import tarfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 def read_regular(path):
@@ -34,11 +35,12 @@ def read_regular(path):
 
 
 def specification_files(component):
-    """Include the complete authored Markdown tree; generated files stay outside it."""
+    """Read the exact locked normative closure, including non-Markdown contracts."""
     component = Path(component)
     if component.is_symlink() or not component.is_dir():
         raise SystemExit('Expected a regular specification directory')
-    files = {}
+
+    # Preserve the existing no-redirected-tree policy even for unused directories.
     def fail_walk(error):
         raise SystemExit(f'Cannot enumerate specification inputs: {error}')
 
@@ -46,13 +48,66 @@ def specification_files(component):
         for name in children:
             if (Path(directory) / name).is_symlink():
                 raise SystemExit(f'Symlink specification directory is not allowed: {name}')
-        for name in sorted(names):
-            if name.endswith('.md'):
-                path = Path(directory) / name
-                files['specification/' + path.relative_to(component).as_posix()] = read_regular(path)
+        for name in names:
+            if name.endswith('.md') and (Path(directory) / name).is_symlink():
+                raise SystemExit(f'Symlink specification input is not allowed: {name}')
+
+    def unique_object(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Duplicate lock field')
+            value[key] = item
+        return value
+
+    try:
+        lock = json.loads(read_regular(component / 'component.lock.json'),
+                          object_pairs_hook=unique_object)
+        root = lock['root_revision']
+        nodes = [node for node in lock['nodes']
+                 if node['target_flavor_selection']['component_revision'] == root]
+        if len(nodes) != 1:
+            raise ValueError('Expected exactly one locked root')
+        references = nodes[0]['revision']['specifications']
+        if not isinstance(references, list) or not references:
+            raise ValueError('Missing locked specifications')
+        files = {}
+        for reference in references:
+            name = reference['uri']
+            if not isinstance(name, str) or not name or '\\' in name or ':' in name or '\0' in name:
+                raise ValueError('Invalid specification path')
+            path = PurePosixPath(name)
+            if path.is_absolute() or str(path) != name or any(part in ('.', '..') for part in path.parts):
+                raise ValueError('Unsafe specification path')
+            target = 'specification/' + name
+            if target in files:
+                raise ValueError('Duplicate specification path')
+            identity = reference['identity']
+            if (reference['kind'] != 'specification' or identity['algorithm'] != 'sha256' or
+                    not isinstance(identity['digest'], str) or
+                    re.fullmatch(r'[0-9a-f]{64}', identity['digest']) is None):
+                raise ValueError('Invalid locked specification identity')
+            content = read_regular(component.joinpath(*path.parts))
+            if hashlib.sha256(content).hexdigest() != identity['digest']:
+                raise SystemExit(f'Locked specification hash differs: {name}')
+            files[target] = content
+    except (ValueError, KeyError, TypeError, UnicodeDecodeError) as error:
+        raise SystemExit('Invalid locked specification closure') from error
     if 'specification/component.md' not in files:
         raise SystemExit('Missing canonical component specification')
     return dict(sorted(files.items()))
+
+
+def cli_command(value):
+    """Parse an explicitly selected argv without invoking a shell."""
+    try:
+        command = json.loads(value)
+    except (ValueError, TypeError) as error:
+        raise argparse.ArgumentTypeError('Expected a JSON CLI argument array') from error
+    if (not isinstance(command, list) or not command or
+            not all(isinstance(item, str) and item and '\0' not in item for item in command)):
+        raise argparse.ArgumentTypeError('Expected a nonempty JSON array of nonempty arguments')
+    return command
 
 
 def write_context(files, output):
@@ -91,9 +146,11 @@ def main():
     source.add_argument('--rebuild-result', help='Passing litai rebuild JSON result for retained-source qualification')
     parser.add_argument('--acceptance-report', help='Passing independent hub acceptance report, required with --rebuild-result')
     parser.add_argument('--output', default='_build/container')
+    parser.add_argument('--litai-command', type=cli_command, default=['litai'],
+                        help='Verifier CLI argv as JSON, e.g. ["/pinned/python","/pinned/litai"]')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    result = subprocess.run(['litai', 'verify'], capture_output=True, text=True)
+    result = subprocess.run([*args.litai_command, 'verify'], capture_output=True, text=True)
     if result.returncode:
         raise SystemExit('Project verification failed; run litai verify and refresh the build receipt')
     evidence = json.loads(result.stdout)

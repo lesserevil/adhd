@@ -165,3 +165,7 @@ that retained provider matches the actual failed attempt's recipe and generation
 key; the source BOM is unchanged. Preserve the original helper output and failed
 attempt. Correct only disposable source metadata through the actual retained
 preparation path, renew authority review/authorization, then rerun admission.
+
+The first prospective recipe review incorrectly selected ordinary coding-provider scope. `verification/project-recovery/development16/retained-provider-correction.json` preserves the official pre-build rejection and supersedes that exact-recipe claim: retained-source model selection independently derives the observed recipe and generation key, with the same source BOM. The oracle/declaration review remains separate. Fresh current authority and retained authorization are required before retry; no failed attempt, CAS object or receipt was rewritten.
+
+The staging construction follow-up `verification/project-recovery/development16/staging-closure-review.json` verifies33 locked normative payloads, including exact recovery JSON Schema bytes in manifest/archive,14 positive/negative input tests and deterministic synthetic archives. It does not claim actual accepted-artifact staging or image qualification.

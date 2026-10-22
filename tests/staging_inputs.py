@@ -8,6 +8,9 @@ import hashlib
 import importlib.util
 import json
 import os
+import argparse
+from unittest.mock import patch
+from types import SimpleNamespace
 from pathlib import Path
 import tarfile
 import tempfile
@@ -27,6 +30,17 @@ class Inputs(unittest.TestCase):
         self.component = self.root / 'hub'
         self.component.mkdir()
         (self.component / 'component.md').write_text('Canonical authority\n')
+        self.lock(['component.md'])
+
+    def lock(self, names):
+        references = [{'uri': name, 'kind': 'specification', 'identity': {
+            'algorithm': 'sha256', 'digest': hashlib.sha256(
+                (self.component / name).read_bytes()).hexdigest()}} for name in names]
+        root = {'algorithm': 'sha256', 'digest': '1' * 64}
+        value = {'root_revision': root, 'nodes': [{'target_flavor_selection': {
+            'component_revision': root}, 'revision': {'specifications': references}}]}
+        (self.component / 'component.lock.json').write_text(json.dumps(value))
+        return value
 
     def reject(self, callback):
         with self.assertRaises(SystemExit):
@@ -40,7 +54,12 @@ class Inputs(unittest.TestCase):
             content = ('Authority ' + name + '\n').encode()
             (folder / 'spec.md').write_bytes(content)
             expected['specification/' + name + '/spec.md'] = content
-        (self.component / 'component.lock.json').write_text('generated, not authority')
+        recovery = self.component / 'project-recovery'
+        recovery.mkdir()
+        payload = b'{"$id":"urn:test:recovery","type":"object"}\n'
+        (recovery / 'interface.schema.json').write_bytes(payload)
+        expected['specification/project-recovery/interface.schema.json'] = payload
+        self.lock([name.removeprefix('specification/') for name in expected])
         files = STAGE.specification_files(self.component)
         self.assertEqual(files, expected)
         files.update({'hub.exs': b'accepted artifact', 'Dockerfile': b'FROM scratch\n',
@@ -78,12 +97,85 @@ class Inputs(unittest.TestCase):
     def test_fifo_input_rejected_without_blocking(self):
         path = self.component / 'pipe.md'
         os.mkfifo(path)
+        lock = json.loads((self.component / 'component.lock.json').read_text())
+        lock['nodes'][0]['revision']['specifications'].append({
+            'uri': 'pipe.md', 'kind': 'specification',
+            'identity': {'algorithm': 'sha256', 'digest': '0' * 64}})
+        (self.component / 'component.lock.json').write_text(json.dumps(lock))
         self.reject(lambda: STAGE.specification_files(self.component))
 
     def test_regular_reader_rejects_symlink_ancestor(self):
         alias = self.root / 'alias'
         alias.symlink_to(self.component, target_is_directory=True)
         self.reject(lambda: STAGE.read_regular(alias / 'component.md'))
+
+
+    def test_changed_locked_json_rejected(self):
+        path = self.component / 'interface.schema.json'
+        path.write_text('{"type":"object"}')
+        self.lock(['component.md', path.name])
+        path.write_text('{"type":"null"}')
+        self.reject(lambda: STAGE.specification_files(self.component))
+
+    def test_declared_non_markdown_arbitrary_suffix_included(self):
+        path = self.component / 'contract.data'
+        path.write_bytes(b'Exact declared authority')
+        self.lock(['component.md', path.name])
+        self.assertEqual(STAGE.specification_files(self.component)['specification/contract.data'],
+                         path.read_bytes())
+
+    def test_missing_lock_and_missing_declared_file_rejected(self):
+        (self.component / 'component.lock.json').unlink()
+        self.reject(lambda: STAGE.specification_files(self.component))
+        self.lock(['component.md'])
+        (self.component / 'component.md').unlink()
+        self.reject(lambda: STAGE.specification_files(self.component))
+
+    def test_duplicate_and_unsafe_locked_paths_rejected(self):
+        original = self.lock(['component.md'])
+        for name in ('component.md', '../outside.json', '/absolute.json',
+                     './component.md', 'nested/../component.md', 'nested\\file.json'):
+            lock = json.loads(json.dumps(original))
+            item = dict(lock['nodes'][0]['revision']['specifications'][0])
+            item['uri'] = name
+            lock['nodes'][0]['revision']['specifications'].append(item)
+            (self.component / 'component.lock.json').write_text(json.dumps(lock))
+            with self.subTest(name=name):
+                self.reject(lambda: STAGE.specification_files(self.component))
+
+    def test_linked_declared_json_and_lock_rejected(self):
+        path = self.component / 'interface.schema.json'
+        path.write_text('{}')
+        self.lock(['component.md', path.name])
+        path.unlink()
+        path.symlink_to('/etc/hostname')
+        self.reject(lambda: STAGE.specification_files(self.component))
+        path.unlink()
+        lock = self.component / 'component.lock.json'
+        lock.unlink()
+        lock.symlink_to('/etc/hostname')
+        self.reject(lambda: STAGE.specification_files(self.component))
+
+    def test_duplicate_roots_and_lock_json_fields_rejected(self):
+        value = self.lock(['component.md'])
+        value['nodes'].append(value['nodes'][0])
+        (self.component / 'component.lock.json').write_text(json.dumps(value))
+        self.reject(lambda: STAGE.specification_files(self.component))
+        (self.component / 'component.lock.json').write_text('{"nodes":[],"nodes":[]}')
+        self.reject(lambda: STAGE.specification_files(self.component))
+
+    def test_explicit_cli_argv_is_used_without_shell_before_output(self):
+        command = ['/selected/python', '/selected/litai']
+        result = SimpleNamespace(returncode=1, stdout='', stderr='verification rejected')
+        with patch.object(STAGE.subprocess, 'run', return_value=result) as run:
+            with patch('sys.argv', ['stage_container.py', '--litai-command', json.dumps(command)]):
+                self.reject(STAGE.main)
+        run.assert_called_once_with(command + ['verify'], capture_output=True, text=True)
+
+    def test_invalid_cli_argv_rejected(self):
+        for value in ('null', '{}', '[]', '[1]', '[""]', '["bad\\u0000argument"]', 'not-json'):
+            with self.subTest(value=value), self.assertRaises(argparse.ArgumentTypeError):
+                STAGE.cli_command(value)
 
 
 if __name__ == '__main__':

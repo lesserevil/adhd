@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Container staging includes the complete locked specification closure, including recovery JSON Schema, and accepts an explicitly selected verifier CLI.
+
 - Protocol: specify profile 2 for stable projects, separate project admission,
   project-qualified federation and Kafka-backed raw/filtered subscriptions. Publish
   complete scope inventories, closed schemas/OpenAPI and compatibility rules with

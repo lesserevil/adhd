@@ -68,6 +68,17 @@ This route requires a passing rebuild bound to the current receipt and checks th
 artifact bytes against independent acceptance. Refresh the rebuild result after
 authority changes. It does not manufacture a framework export or change provenance.
 
+The context includes every normative file in the current hub lock, including
+`specification/project-recovery/interface.schema.json`; each payload must match
+its locked SHA256. Missing, redirected, duplicate or changed inputs fail before
+the context is written. Existing top-level specification aliases remain available.
+
+If the default `litai` on PATH differs from the project-pinned installation, select
+the reviewed interpreter and entry script explicitly with
+`--litai-command '["/absolute/python","/absolute/litai"]'`. This changes only the
+verifier invocation; current receipt and artifact checks still apply. The staging
+acceptance harness accepts the same option.
+
 The output directory must be new; choose `--output _build/container-next` for
 another staging run. A stale hash fails staging. A changed specification requires
 the rebuild procedure in [source setup](../user/getting-started.md).

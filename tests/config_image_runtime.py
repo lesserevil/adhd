@@ -36,9 +36,17 @@ class ConfigurationFaultRuntime(Runtime):
         self.arm.chmod(0o600)
 
     def observe_boundary(self):
-        if not self.sentinel.exists():
+        try:
+            raw = self.sentinel.read_bytes()
+        except FileNotFoundError:
             return False
-        trace = json.loads(self.sentinel.read_bytes())
+        assert len(raw) <= 256, 'Oversized configuration boundary witness'
+        try:
+            trace = json.loads(raw)
+        except json.JSONDecodeError:
+            # O_EXCL creates the sentinel before the observer writes it. A
+            # partial record is not a boundary witness; keep the original wait.
+            return False
         assert trace['stage'] == self.boundary and trace['pid'] == 1 and trace['rename_result'] == 0
         self.image_runtime.stop_at_observed_boundary(trace)
         return True

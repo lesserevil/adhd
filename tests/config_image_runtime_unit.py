@@ -43,6 +43,10 @@ class ConfigurationImageGuards(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 runtime.arm_mutation()
             trace = {'stage': 'config', 'pid': 1, 'rename_result': 0}
+            for incomplete in [b'', b'{', b'{"stage":"config",']:
+                runtime.sentinel.write_bytes(incomplete)
+                self.assertFalse(runtime.observe_boundary())
+            self.assertEqual(calls, [])
             runtime.sentinel.write_text(json.dumps(trace))
             self.assertTrue(runtime.observe_boundary())
             self.assertEqual(calls, [trace])

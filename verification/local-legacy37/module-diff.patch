@@ -1,0 +1,347 @@
+--- source36/storage.exs
++++ source37/storage.exs
+@@ -1,5 +1,8 @@
+ defmodule ADHD.Storage do
+   alias ADHD.Domain, as: D
++
++  def local_legacy_state(path, project, server \\ nil, limits \\ nil), do: ADHD.LocalLegacy.read(path,project,server,limits)
++  def verify_local_legacy(proof), do: ADHD.LocalLegacy.verify(proof)
+ 
+   def bytes(state) do
+     :erlang.term_to_binary(state, [:deterministic, minor_version: 2])
+@@ -335,4 +338,142 @@
+         D.fail("INVALID_STORE")
+     end
+   end
+-end+end
++defmodule ADHD.LocalLegacy do
++  # Local startup only. Imported payloads continue to use RecoveryFiles.read.
++  alias ADHD.RecoveryFiles, as: F
++  alias ADHD.Domain, as: D
++  @maximum 67_108_864
++  def limits(c \\ %{}) do
++    configured = Map.get(c, "recovery") || %{}
++    value = Map.merge(%{"max_backup_bytes" => @maximum,"max_records" => 100_000,
++      "scan_batch_records" => 256,"timeout_ms" => 300_000}, configured)
++    Map.put(value,"deadline_ms",System.monotonic_time(:millisecond)+value["timeout_ms"])
++  end
++  def preflight_seed(config_path,c) do
++    case File.lstat(config_path<>".stores") do
++      {:ok,%{type: :regular}}->:ok
++      {:error,:enoent}->
++        if File.lstat(config_path<>".stores.marker") != {:error,:enoent},do: F.fail("path")
++        if c["server_id"],do: ADHD.Directory.server_id(c["server_id"])
++        proofs=for id<-ADHD.Projects.ids(c) do
++          D.identifier(id)
++          path=ADHD.StorageRegistry.legacy_path(c,id) |> Path.expand(Path.dirname(config_path))
++          read(path,id,c["server_id"],limits(c)) |> validate(c,id)
++        end
++        Enum.each(proofs,&verify/1)
++        :ok
++      _->F.fail("path")
++    end
++  end
++  def read(path, project, server \\ nil, budget \\ nil) do
++    budget = budget || limits()
++    uid=File.stat!("/proc/self").uid
++    checkpoint=read_optional(path,uid,budget)
++    snapshot=read_optional(ADHD.Storage.snapshot_path(path),uid,budget)
++    if is_nil(checkpoint) and is_nil(snapshot) do
++      %{state: nil,files: [],absent: [path,ADHD.Storage.snapshot_path(path)],limits: budget,uid: uid}
++    else
++      if Enum.sum(for item<-[checkpoint,snapshot],item,do: byte_size(item.bytes))>budget["max_backup_bytes"],do: F.fail("limits")
++      snapshot_state=if snapshot,do: ADHD.ProjectBackup.decode_snapshot(snapshot.bytes,budget)
++      parsed=if checkpoint,do: ADHD.RecoveryCheckpoint.preflight(checkpoint.bytes,budget)
++      checkpoint_state=case parsed do
++        {:ok,state}->state
++        {:needs_repair,:not_closed}->if is_nil(snapshot_state),do: F.fail("schema")
++        nil->nil
++      end
++      state=snapshot_state || checkpoint_state
++      for candidate<-[checkpoint_state,snapshot_state],is_map(candidate),do: identity(candidate,project,server)
++      if checkpoint_state && snapshot_state do
++        a=Map.put_new(checkpoint_state,:aliases,[checkpoint_state.project])
++        b=Map.put_new(snapshot_state,:aliases,[snapshot_state.project])
++        :ok=ADHD.Storage.checkpoint_compatible(a,b)
++      end
++      files=Enum.reject([checkpoint,snapshot],&is_nil/1)
++      if Enum.any?([checkpoint_state,snapshot_state],&(is_map(&1) and &1[:schema]==4)) do
++        Enum.each(files,fn f->F.private(f.path,:regular,uid) end)
++      end
++      %{state: state,files: Enum.map(files,&Map.delete(&1,:bytes)),absent: Enum.reject([path,ADHD.Storage.snapshot_path(path)],fn p->Enum.any?(files,&(&1.path==p)) end),limits: budget,uid: uid}
++    end
++  end
++  defp identity(state,project,server) do
++    D.check(is_map(state) and state[:schema] in [1,2,3,4])
++    D.identifier(state[:project])
++    if is_nil(state[:server_id]),do: D.check(state[:schema]==1),else: ADHD.Directory.server_id(state[:server_id])
++    aliases=Map.get(state,:aliases,[state.project])
++    D.list(aliases,256,1);D.distinct(aliases);Enum.each(aliases,&D.identifier/1)
++    D.check(state.project in aliases and project in aliases)
++    if not is_nil(server) and not is_nil(state[:server_id]),do: D.check(server==state.server_id)
++    D.integer(state[:seq],0,9_007_199_254_740_991)
++    D.integer(Map.get(state,:storage_generation,0),0,9_007_199_254_740_991)
++    :ok
++  end
++  def validate(%{state: nil}=proof,_c,_project),do: Map.put(proof,:validated,nil)
++  def validate(proof,c,project) do
++    raw_server=Map.get(proof.state,:server_id)
++    D.check(is_nil(c["server_id"]) or is_nil(raw_server) or c["server_id"]==raw_server)
++    server=c["server_id"] || raw_server || ADHD.Directory.server_id()
++    current=Map.put(c,"server_id",server)
++    checked=ADHD.ProjectBackupValidation.validate_local(proof.state,current,project,proof.limits,fn _->:ok end)
++    Map.put(proof,:validated,checked.state)
++  end
++  def verify(proof) do
++    Enum.each(proof.absent,fn path->
++      optional_parents(path)
++      if File.lstat(path) != {:error,:enoent},do: F.fail("path")
++    end)
++    Enum.each(proof.files,fn original->
++      current=read_file(original.path,proof.uid,proof.limits)
++      if current.identity != original.identity or current.sha256 != original.sha256,do: F.fail("path")
++    end)
++    :ok
++  end
++  defp metadata(path,uid) do
++    F.ancestors(path)
++    case File.lstat(path) do
++      {:ok,s}->
++        mode=Bitwise.band(s.mode,0o7777)
++        if s.type != :regular or s.uid != uid or s.links != 1 or mode not in [0o600,0o640,0o644,0o660,0o664],do: F.fail("path")
++        s
++      _->F.fail("path")
++    end
++  end
++  defp optional_parents(path) do
++    Enum.reduce_while(Path.split(Path.dirname(Path.expand(path))),nil,fn part,parent->
++      current=if is_nil(parent),do: part,else: Path.join(parent,part)
++      case File.lstat(current) do
++        {:ok,%{type: :directory}}->{:cont,current}
++        {:error,:enoent}->{:halt,nil}
++        _->F.fail("path")
++      end
++    end)
++    :ok
++  end
++  defp read_optional(path,uid,budget) do
++    optional_parents(path)
++    case File.lstat(path) do {:error,:enoent}->nil;_->read_file(path,uid,budget) end
++  end
++  defp read_file(path,uid,budget) do
++    before=metadata(path,uid)
++    if before.size>budget["max_backup_bytes"] or before.size<0,do: F.fail("limits")
++    {:ok,file}=:file.open(String.to_charlist(path),[:read,:binary,:raw])
++    try do
++      {:ok,opened}=:file.read_file_info(file)
++      if F.identity(File.Stat.from_record(opened)) != F.identity(before),do: F.fail("path")
++      bytes=chunks(file,before.size,budget,[])
++      if :file.read(file,1) != :eof,do: F.fail("limits")
++      {:ok,after_handle}=:file.read_file_info(file)
++      if F.identity(File.Stat.from_record(after_handle)) != F.identity(before) or F.identity(metadata(path,uid)) != F.identity(before),do: F.fail("path")
++      %{path: path,identity: F.identity(before),sha256: F.sha(bytes),bytes: bytes}
++    after :file.close(file) end
++  end
++  defp chunks(_file,0,_budget,parts),do: IO.iodata_to_binary(Enum.reverse(parts))
++  defp chunks(file,left,budget,parts) do
++    if System.monotonic_time(:millisecond)>=budget["deadline_ms"],do: throw({:recovery,"RESTORE_TIMEOUT","timeout"})
++    Process.sleep(0)
++    case :file.read(file,min(left,65536)) do
++      {:ok,bytes} when byte_size(bytes)>0->chunks(file,left-byte_size(bytes),budget,[bytes|parts])
++      _->F.fail("io")
++    end
++  end
++end
+--- source36/storage_registry.exs
++++ source37/storage_registry.exs
+@@ -158,45 +158,29 @@
+   end
+   defp initial(config_path,c) do
+     files=paths(config_path)
+-    {projects,epochs,moves}=Enum.reduce(ADHD.Projects.ids(c),{%{},[],[]},fn id,{entries,reserved,moves}->
++    # Prove every local input before creating any native staging table.
++    verified=Map.new(ADHD.Projects.ids(c),fn id->
+       path=Path.expand(legacy_path(c,id))
+-      source=case {File.lstat(path),File.lstat(ADHD.Storage.snapshot_path(path))} do
+-        {{:error,:enoent},{:error,:enoent}}->nil
+-        {file,snapshot}->
+-          for item<-[file,snapshot],do: D.check(match?({:ok,%{type: :regular}},item) or item=={:error,:enoent})
+-          for file_path<-[path,ADHD.Storage.snapshot_path(path)],File.exists?(file_path),do: F.private(file_path,:regular,File.stat!(config_path).uid)
+-          state=ADHD.Storage.read_snapshot(path)
+-          if state do
+-            if File.exists?(path) do
+-              case ADHD.Storage.guard_checkpoint(path) do
+-                {:ok,checkpoint}->:ok=ADHD.Storage.checkpoint_compatible(checkpoint,state)
+-                {:needs_repair,:not_closed}->:ok
+-              end
+-            end
+-            ADHD.Scope.with_project(id,fn->ADHD.Store.upgrade(state,id) end)
+-          else
+-            {:ok,checkpoint}=ADHD.Storage.guard_checkpoint(path)
+-            {:ok,table}=:dets.open_file(:adhd_registry_read,[file: String.to_charlist(path),access: :read,repair: false])
+-            try do
+-              [{:state,value}]=:dets.lookup(table,:state)
+-              D.check(value==checkpoint)
+-              ADHD.Scope.with_project(id,fn->ADHD.Store.upgrade(value,id) end)
+-            after :dets.close(table) end
+-          end
+-      end
++      proof=ADHD.Storage.local_legacy_state(path,id,c["server_id"],ADHD.LocalLegacy.limits(c)) |> ADHD.LocalLegacy.validate(c,id)
++      {id,proof}
++    end)
++    {projects,epochs,moves,sources}=Enum.reduce(ADHD.Projects.ids(c),{%{},[],[],[]},fn id,{entries,reserved,moves,sources}->
++      path=Path.expand(legacy_path(c,id))
++      proof=verified[id]
++      source=if proof.validated,do: ADHD.Scope.with_project(id,fn->ADHD.Store.upgrade(proof.validated,id) end)
+       base=%{"server_id"=>c["server_id"],"project_id"=>id,"aliases"=>[],"initialized"=>false,"generation"=>0,"project_epoch"=>nil,"allocation_epoch"=>nil,"topic_generation"=>nil,"storage_anchor"=>path,"state_sha256"=>nil,"sequence"=>0,"storage_generation"=>0,"availability"=>"uninitialized"}
+       if is_nil(source) do
+-        {Map.put(entries,id,base),reserved,moves}
++        {Map.put(entries,id,base),reserved,moves,[proof|sources]}
+       else
+         D.check(source.server_id==c["server_id"])
+         epoch=fresh(reserved);allocation=fresh([epoch|reserved]);target=selected_path(c,id,epoch)
+         entry=Map.merge(base,%{"aliases"=>Enum.sort(source.aliases--[id]),"initialized"=>true,"generation"=>1,"project_epoch"=>epoch,"allocation_epoch"=>allocation,"storage_anchor"=>target,"availability"=>"ready"})
+         state=source |> headers(entry) |> ADHD.Storage.next()
+         stage_dir=target<>".stage";D.check(not File.exists?(stage_dir));F.mkdir_private(stage_dir,File.stat!(config_path).uid)
+-        stage=Path.join(stage_dir,"state.dets");proof=ADHD.Storage.write_closed(stage,state)
+-        entry=Map.merge(entry,%{"state_sha256"=>proof["digest"],"sequence"=>proof["sequence"],"storage_generation"=>proof["generation"]})
+-        move=Map.merge(proof,%{"source"=>path,"target"=>target,"stage"=>stage,"stage_dir"=>stage_dir})
+-        {Map.put(entries,id,entry),[epoch,allocation|reserved],[move|moves]}
++        stage=Path.join(stage_dir,"state.dets");stage_proof=ADHD.Storage.write_closed(stage,state)
++        entry=Map.merge(entry,%{"state_sha256"=>stage_proof["digest"],"sequence"=>stage_proof["sequence"],"storage_generation"=>stage_proof["generation"]})
++        move=Map.merge(stage_proof,%{"source"=>path,"target"=>target,"stage"=>stage,"stage_dir"=>stage_dir})
++        {Map.put(entries,id,entry),[epoch,allocation|reserved],[move|moves],[proof|sources]}
+       end
+     end)
+     registry=seal(%{"schema"=>1,"config_file"=>Path.expand(config_path),"server_id"=>c["server_id"],"projects"=>projects,"reserved_epochs"=>epochs})
+@@ -205,6 +189,7 @@
+     # Keep the exact current config as matching evidence beside offline old stores.
+     backup=config_path<>".pre-registry"
+     if not File.exists?(backup),do: ADHD.Storage.atomic_private(backup,File.read!(config_path))
++    Enum.each(sources,&ADHD.Storage.verify_local_legacy/1)
+     ADHD.Storage.atomic_private(files.decision,JSON.encode!(decision))
+     recover_adoption(config_path,decision)
+     registry
+--- source36/projects.exs
++++ source37/projects.exs
+@@ -44,17 +44,9 @@
+   def table(id),do: {:global,{ADHD.Store,id}}
+   def store_name(c),do: if(not multi?(c) or c["project_id"]==ADHD.Config.root()["project_id"],do: ADHD.Store,else: table(c["project_id"]))
+   def server(c) do
+-    c["server_id"] || case ADHD.Storage.read_snapshot(c["store_path"]) do
+-      %{server_id: id}->id
+-      _->
+-        if File.exists?(c["store_path"]) do
+-          {:ok,checkpoint}=ADHD.Storage.guard_checkpoint(c["store_path"])
+-          {:ok,t}=:dets.open_file(:adhd_identity_probe,[file: String.to_charlist(c["store_path"]),access: :read,repair: false])
+-          try do
+-            D.check(:dets.lookup(t,:state)==[{:state,checkpoint}])
+-            case :dets.lookup(t,:state) do [{:state,%{server_id: id}}]->id; _->ADHD.Directory.server_id() end
+-          after :dets.close(t) end
+-        else ADHD.Directory.server_id() end
++    c["server_id"] || case (ADHD.Storage.local_legacy_state(c["store_path"],c["project_id"],nil,ADHD.LocalLegacy.limits(c)) |> ADHD.LocalLegacy.validate(c,c["project_id"])) do
++      %{validated: %{server_id: id}}->id
++      %{validated: nil}->ADHD.Directory.server_id()
+     end
+   end
+   def normalize(c) do
+--- source36/migration.exs
++++ source37/migration.exs
+@@ -4,6 +4,9 @@
+     if not is_list(seed["projects"]) do
+       D.identifier(seed["project_id"])
+       store=Path.expand(seed["store_path"],Path.dirname(path))
++      proof=ADHD.Storage.local_legacy_state(store,seed["project_id"],seed["server_id"],ADHD.LocalLegacy.limits(seed)) |> ADHD.LocalLegacy.validate(seed,seed["project_id"])
++      verified_server=if proof.validated,do: proof.validated.server_id,else: seed["server_id"] || ADHD.Directory.server_id()
++      ADHD.Directory.server_id(verified_server)
+       # Existing accepted state is preserved byte-for-byte before the first
+       # format decision. Immutable backup names make retries fail closed.
+       backups=Enum.filter([path,path<>".journal",store,store<>".snapshot"],&File.exists?/1)
+@@ -22,6 +25,7 @@
+           %{"source"=>file,"backup"=>backup,"sha256"=>Base.encode16(:crypto.hash(:sha256,content),case: :lower)}
+         end)
+         result=%{"version"=>1,"phase"=>"prepared","project_id"=>seed["project_id"],"files"=>files}
++        ADHD.Storage.verify_local_legacy(proof)
+         ADHD.Config.atomic(prepared,JSON.encode!(result));result
+       end
+       D.check(marker["project_id"]==seed["project_id"])
+@@ -29,9 +33,10 @@
+       id=seed["project_id"]
+       users=Enum.map(seed["users"] || [],&Map.put_new(&1,"project_ids",[id]))
+       grants=Map.new(seed["agents"],fn {actor,_}->{actor,[id]} end)
+-      migrated=seed |> Map.put("projects",[%{"id"=>id,"name"=>id,"status"=>"active","description"=>"","settings"=>%{}}]) |> Map.put("users",users) |> Map.put("agent_projects",grants) |> Map.put("server_id",ADHD.Projects.server(Map.put(seed,"store_path",store)))
++      migrated=seed |> Map.put("projects",[%{"id"=>id,"name"=>id,"status"=>"active","description"=>"","settings"=>%{}}]) |> Map.put("users",users) |> Map.put("agent_projects",grants) |> Map.put("server_id",verified_server)
+       # Persist complete target config in the marker before replacing the file.
+       decision=Map.put(marker,"config",migrated) |> Map.put("phase","decided")
++      ADHD.Storage.verify_local_legacy(proof)
+       ADHD.Config.atomic(prepared,JSON.encode!(decision))
+       ADHD.Config.atomic(path,JSON.encode!(migrated))
+       migrated
+--- source36/config.exs
++++ source37/config.exs
+@@ -63,6 +63,10 @@
+   def init(path) do
+     try do
+       recover(path)
++      if File.exists?(path) do
++        safe_file(path)
++        :ok=ADHD.LocalLegacy.preflight_seed(path,File.read!(path) |> ADHD.JSON.decode!())
++      end
+       ADHD.Migration.recover(path)
+ 
+       if not File.exists?(path) do
+@@ -70,7 +74,9 @@
+       end
+ 
+       safe_file(path)
+-      seed = File.read!(path) |> ADHD.JSON.decode!() |> then(&ADHD.Migration.config(path, &1))
++      seed = File.read!(path) |> ADHD.JSON.decode!()
++      :ok=ADHD.LocalLegacy.preflight_seed(path,seed)
++      seed = ADHD.Migration.config(path,seed)
+ 
+       if is_list(seed["projects"]) and (seed["users"] || []) == [] and
+            not Map.has_key?(seed, "auth") and is_nil(seed["admin_token"]) do
+--- source36/project_backup_validation.exs
++++ source37/project_backup_validation.exs
+@@ -59,6 +59,41 @@
+       for key<-[:budget,:agents,:users],do: Process.delete({__MODULE__,key})
+     end
+   end
++  # Local adoption has already proven the configured files and current config.
++  # It imports no grants or credentials. This pure seam validates the complete
++  # legacy graph BEFORE Store.upgrade can replace malformed derived state.
++  def validate_local(raw,current,target,limits,progress) do
++    Process.put({__MODULE__,:budget},{0,limits["max_records"],limits["scan_batch_records"],limits["deadline_ms"],progress})
++    Process.put({__MODULE__,:agents},MapSet.new())
++    Process.put({__MODULE__,:users},MapSet.new())
++    try do
++      walk(raw);pulse()
++      check(is_map(raw) and raw[:schema] in [1,2,3])
++      known=@maps ++ [:schema,:project,:seq,:aliases,:server_id,:storage_generation,:eventing,:optimization,:retrieval_selection,:retrieval_index,:feedback,:project_migration]
++      check(Enum.all?(Map.keys(raw),&(&1 in known)))
++      identifier(target);identifier(raw[:project]);uint(raw[:seq]);uint(Map.get(raw,:storage_generation,0))
++      server=current["server_id"];ADHD.Directory.server_id(server)
++      check(is_nil(raw[:server_id]) or raw[:server_id]==server)
++      aliases=Map.get(raw,:aliases,[raw.project])
++      check(is_list(aliases) and length(aliases)<=256 and Enum.uniq(aliases)==aliases)
++      Enum.each(aliases,&identifier/1)
++      check(raw.project in aliases and target in aliases)
++      check(if(is_list(current["projects"]),do: Enum.any?(current["projects"],&(&1["id"]==target)),else: current["project_id"]==target))
++      s=defaults(raw,server)
++      defs=ADHD.Protocol.schema()["$defs"]
++      core(s,defs);features(s);lineage(s);eventing(s,defs);federation(s,defs);receipts(s,defs);principal_refs(s)
++      proof=ownership(current,current)
++      {n,_,_,_,_}=Process.get({__MODULE__,:budget});progress.(%{records_checked: n})
++      %{state: s,references: proof,records: n,aliases: Enum.sort(aliases--[target])}
++    rescue
++      _->invalid("schema")
++    catch
++      {:recovery,_,_}=reason->throw(reason)
++      _,_->invalid("schema")
++    after
++      for key<-[:budget,:agents,:users],do: Process.delete({__MODULE__,key})
++    end
++  end
+   # Installation changes headers and appends recovery metadata after the source
+   # manifest proof. Validate/count that exact staged generation independently.
+   # This API does not substitute for validate/5's original ownership proof.

@@ -1,0 +1,13 @@
+    warning: variable "cases" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 59 │   cases=[%{"case"=>"reject-"<>name<>"-without-input-change","passed"=>true}|cases]
+    │   ~
+    │
+    └─ tests/local_legacy_adoption.exs:59:3
+
+** (BadBooleanError) expected a boolean on left-side of "and", got: nil
+    /home/horde/src/adhd/_build/roadmap/multi/source37-recovery/storage.exs:406: ADHD.LocalLegacy.identity/3
+    /home/horde/src/adhd/_build/roadmap/multi/source37-recovery/storage.exs:386: anonymous fn/4 in ADHD.LocalLegacy.read/4
+    (elixir 1.18.4) lib/enum.ex:2546: Enum."-reduce/3-lists^foldl/2-0-"/3
+    /home/horde/src/adhd/_build/roadmap/multi/source37-recovery/storage.exs:386: ADHD.LocalLegacy.read/4
+    tests/local_legacy_adoption.exs:28: (file)

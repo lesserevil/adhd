@@ -23,6 +23,7 @@ See the [stored-information guide](docs/user/stored-information.md).
 - **Using an existing hub:** follow the [user guide](docs/user/using-the-hub.md).
 - **Trying the MVP:** use the [live-testing checklist](docs/user/live-testing.md).
 - **Running the service:** follow the [admin guide](docs/admin/operations.md).
+- **Managed HTTPS:** see [ACME setup and qualification](docs/admin/acme.md).
 - **Local GPU model:** use the included [model container](docs/admin/model-service.md).
 - **Connecting project hubs:** follow [federated discovery](docs/user/federation.md)
   and [canonical source routing](docs/user/federation-directory.md).

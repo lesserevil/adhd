@@ -93,6 +93,9 @@ The [web management console](admin/web-console.md) provides authenticated health
 subscription and delivery observation, plus confirmed subscription management and
 pending-job retries. It uses a separate administrator credential.
 
+The [managed HTTPS guide](admin/acme.md) describes ACME setup, hot Admin controls,
+private certificate state and the current qualification boundary.
+
 The [local model service](admin/model-service.md) runs the selected decision model
 in a pinned GPU container alongside the hub.
 

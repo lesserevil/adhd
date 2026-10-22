@@ -85,6 +85,12 @@ current policy after hot role/configuration changes.
   file location is selected at startup. Blank secret fields retain secrets;
   explicit removal controls revoke them. Blank history/retrieval URL/model fields
   restore subscription-matcher inheritance.
+- **TLS:** Admin-only native HTTPS and HTTP-01 certificate setup, issuer/contact,
+  domains, consent, listener addresses, renewal/retry policy and private issuer
+  trust-file selection. Save settings without restarting; refresh status for
+  desired/active domains, expiry, pending work and sanitized failures. Request
+  renewal explicitly when needed. Follow [managed HTTPS](acme.md) for routing,
+  recovery and the current qualification boundary.
 
 Settings changes are revision checked and confirmed. Invalid or failed changes
 retain the previous active configuration. Changes apply without restarting the hub

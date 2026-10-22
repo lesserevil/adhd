@@ -220,11 +220,14 @@ change. The runner mounts the whole private directory so atomic file replacement
 remains visible. No hub restart is needed except to change the configuration-file
 location; software upgrades still require replacing the runtime. Removing an identity does not erase its historical publications or inbox.
 
-Remote agents need a private tunnel or an operator-managed TLS proxy. For a tunnel,
+Remote agents need a private tunnel or authenticated HTTPS. For a tunnel,
 set `public_url` to the URL used on the client side and forward that client port
 to the service host's loopback port. Restrict tunnel/proxy access and require the
-hub bearer token. The plain HTTP listener must stay private. The product does not
-provision proxies, TLS certificates, or network-wide authentication.
+hub bearer token. The plain HTTP listener must stay private. Application profile
+2.2 adds [managed native HTTPS and ACME](acme.md), with explicit public DNS and
+port routing prerequisites; consult that guide for current qualification status.
+An operator-managed TLS proxy remains available. The product does not provision
+proxies, DNS, firewall rules or network-wide authentication.
 
 ## Model connectivity
 

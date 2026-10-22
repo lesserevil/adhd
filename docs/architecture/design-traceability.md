@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:6c8435b97018930dd68c6eac895c4a4ddd713833ee75ecc5c948bd5a23a2321c -->
+<!-- literate-ai:authority-reviewed sha256:f4f4afb72ca706829c620e7a1f17ba0a3860037d0542760aebe353e36487f458 -->
 
 [Project guide](../README.md) → design traceability
 
@@ -116,6 +116,19 @@ require no model. The [model guide](../admin/model-service.md) distinguishes ser
 source, operator-supplied checkpoint and CUDA/base terms. The
 [hub and service inventory](../admin/event-service.md#artifact-and-license-inventory)
 separates application Apache-2.0 from external dependency licenses.
+
+## Managed certificate implementation in progress
+
+ACME-001 is additive application profile 2.2 authority under
+`components/hub/acme/{spec.md,interface.schema.json}`. It selects HTTP-01 through
+a pinned maintained client, bounded guardian process, private durable account and
+certificate state, native HTTPS and hot Admin settings. The
+[operator guide](../admin/acme.md) and optional deployment instructions in
+`deploy/runtime/acme-deployment.md` describe
+setup and limits. Profile 2.1 acceptance above remains scoped to its existing
+artifact. Current ACME source and isolated-CA checks are development evidence;
+full lifecycle, packaged-image, browser and platform qualification remain open
+in the [active queue](../roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme).
 
 ## Historical integration checkpoints
 

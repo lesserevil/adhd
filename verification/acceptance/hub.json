@@ -1,7 +1,7 @@
 {
   "schema": "literate-ai/component-acceptance-oracle@1",
   "component": "hub",
-  "specification_set_identity": "sha256:110dfc9b8b7ed656406e1c8b23de480ad0cc0501ade61ab7c28bab9b6113b6de",
+  "specification_set_identity": "sha256:3cd04905934012a5113afff7d4ede63b7805ecc16638a0ff263b9f7b68af7ea7",
   "cases": [
     {
       "case_id": "validate-ack-vector",
@@ -1972,6 +1972,184 @@
       "expected_result": {
         "valid": true,
         "op": "cancel_query_job"
+      }
+    },
+    {
+      "case_id": "oracle-acme-global-status",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "tls_status"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "tls_status"
+      }
+    },
+    {
+      "case_id": "oracle-acme-renew-first-revision",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "tls_renew",
+          "expected_revision": 1,
+          "confirm": true,
+          "message_id": "independent-renew-1"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "tls_renew"
+      }
+    },
+    {
+      "case_id": "oracle-acme-renew-safe-integer-ceiling",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "tls_renew",
+          "expected_revision": 9007199254740991,
+          "confirm": true,
+          "message_id": "independent-renew-ceiling"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "tls_renew"
+      }
+    },
+    {
+      "case_id": "oracle-acme-disable",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_update",
+          "patch": {
+            "tls": {
+              "enabled": false,
+              "acme": {
+                "enabled": false
+              }
+            }
+          },
+          "expected_revision": 43,
+          "confirm": true,
+          "message_id": "independent-acme-disable"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_update"
+      }
+    },
+    {
+      "case_id": "oracle-acme-reset-defaults",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_update",
+          "patch": {
+            "tls": null
+          },
+          "expected_revision": 44,
+          "confirm": true,
+          "message_id": "independent-acme-reset-defaults"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_update"
+      }
+    },
+    {
+      "case_id": "oracle-acme-ipv6-listener",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_update",
+          "patch": {
+            "tls": {
+              "enabled": false,
+              "host": "::1",
+              "port": 19443,
+              "challenge_host": "::1",
+              "challenge_port": 19080
+            }
+          },
+          "expected_revision": 45,
+          "confirm": true,
+          "message_id": "independent-acme-ipv6-listener"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_update"
+      }
+    },
+    {
+      "case_id": "oracle-acme-configured-issuer-identity",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_update",
+          "patch": {
+            "tls": {
+              "enabled": true,
+              "host": "127.0.0.1",
+              "port": 19443,
+              "challenge_host": "127.0.0.1",
+              "challenge_port": 19080,
+              "acme": {
+                "enabled": true,
+                "directory_url": "https://authority.fixture.invalid/v2/directory",
+                "email": "operations@fixture.invalid",
+                "domains": [
+                  "service-a.fixture.invalid",
+                  "service-b.fixture.invalid"
+                ],
+                "accept_terms": true,
+                "renew_before_days": 1,
+                "retry_seconds": 30,
+                "order_timeout_ms": 1000,
+                "ca_cert_file": "owned-ca.pem"
+              }
+            }
+          },
+          "expected_revision": 46,
+          "confirm": true,
+          "message_id": "independent-acme-configured-issuer-identity"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_update"
+      }
+    },
+    {
+      "case_id": "oracle-acme-bounded-policy-maxima",
+      "arguments": [
+        "validate-admin",
+        {
+          "op": "config_update",
+          "patch": {
+            "tls": {
+              "acme": {
+                "renew_before_days": 90,
+                "retry_seconds": 86400,
+                "order_timeout_ms": 600000,
+                "ca_cert_file": null
+              }
+            }
+          },
+          "expected_revision": 47,
+          "confirm": true,
+          "message_id": "independent-acme-bounded-policy-maxima"
+        }
+      ],
+      "expected_result": {
+        "valid": true,
+        "op": "config_update"
       }
     }
   ]

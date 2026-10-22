@@ -31,6 +31,16 @@ PIN = json.loads((Path(__file__).with_name("openrig_pin.json")).read_text())
 RED, BLUE = "project-red", "project-blue"
 
 
+def captured_adapter(stdout, session_name, adapter=ADAPTER):
+    """Decode shipped CLI JSON and account for real terminal line wrapping."""
+    capture = json.loads(stdout)
+    assert capture["ok"] is True and capture["sessionName"] == session_name
+    assert isinstance(capture["content"], str)
+    logical = capture["content"].replace("\r", "").replace("\n", "")
+    assert str(adapter) in logical
+    return capture
+
+
 def private(path, value):
     path.write_text(json.dumps(value))
     path.chmod(0o600)
@@ -241,7 +251,7 @@ async def checks(f, evidence):
         # Read the real terminal through the shipped CLI, not a fabricated pane.
         for entry in rigs.entries:
             capture = await asyncio.to_thread(rigs.cli_call, "capture", entry["canonicalSessionName"], "--lines", "100", "--json")
-            assert "openrig_hub.py" in capture.stdout
+            captured_adapter(capture.stdout, entry["canonicalSessionName"])
             assert all(token not in capture.stdout for token in f.tokens.values())
         evidence.record("actual-openrig-cli-terminal-capture-has-adapter-path-without-bearer-secrets")
         assert hashlib.sha256(ADAPTER.read_bytes()).hexdigest() == digest

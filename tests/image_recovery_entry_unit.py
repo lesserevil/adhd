@@ -74,8 +74,13 @@ def main():
         case(root,'deadline','deadline_handler()',entry.QualificationDeadline)
         case(root,'swallowed-deadline','try: deadline_handler()\nexcept BaseException: pass',entry.QualificationDeadline)
         case(root,'zero-exit','raise SystemExit(0)')
+        inner=root/'async-inner.finally'
+        case(root,'async-callback-deadline',
+            'import asyncio\nasync def task():\n asyncio.get_running_loop().call_soon(deadline_handler)\n try: await asyncio.sleep(60)\n finally: Path('+repr(str(inner))+').write_text("inner closed")\nasyncio.run(task())',entry.QualificationDeadline)
+        assert inner.read_text()=='inner closed'
+        assert issubclass(entry.QualificationDeadline,KeyboardInterrupt) and not issubclass(entry.QualificationDeadline,Exception)
         fallback(root);fallback(root,foreign=True);owned_primary(root)
-    print('PASS recovery entry pure8: actual runpy finally, original primary, deadline-before-cleanup, swallowed deadline denied, normal zeroexit, strict fallback/foreign denial, actual ledger/primary+cleanup preservation; real signals/processes0')
+    print('PASS recovery entry pure9: actual runpy finally, original primary, deadline-before-cleanup, swallowed deadline denied, normal zeroexit, strict fallback/foreign denial, actual ledger/primary+cleanup preservation, actual asyncio bare-callback propagation+inner/outer finally; real signals/processes0')
 
 
 if __name__=='__main__':main()

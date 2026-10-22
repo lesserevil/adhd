@@ -15,7 +15,10 @@ from image_eventing_runtime import EventingFaultImage
 from multi_support import Fixture
 
 
-class QualificationDeadline(BaseException):pass
+# asyncio.Handle explicitly rethrows KeyboardInterrupt/SystemExit; it logs and
+# swallows other BaseException subclasses from bare callbacks. This remains
+# outside Exception catches without claiming to bound arbitrary catch loops.
+class QualificationDeadline(KeyboardInterrupt):pass
 class QualificationCleanupFailure(BaseException):pass
 _deadline_fired=False
 

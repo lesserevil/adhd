@@ -8,6 +8,8 @@
 #include <string.h>
 #include <unistd.h>
 
+_Static_assert(sizeof(off_t)==8 && sizeof(off64_t)==8,"64-bit offset ABI required");
+_Static_assert(__builtin_types_compatible_p(off_t,off64_t),"identical offset ABI required");
 #define BIG_OFFSET (((off_t)1 << 32) + 17)
 static const char payload[]="actual scalar ABI bytes\n";
 static void die(int code) { _exit(code); }
@@ -64,11 +66,13 @@ __attribute__((constructor)) static void probe(void) {
  void *fn=dlsym(handle,op);if(!fn)die(138);
  /* This lookup originates AFTER the observer in the preload list, so it must
   * resolve the real musl forwarding target, not recursively our wrapper. */
+ const char *forward=is_op(op,"renameat2")?"syscall:renameat2":op;
  void *next=is_op(op,"renameat2")?NULL:dlsym(RTLD_NEXT,op);
+ if(is_op(op,"pwrite64")&&!next) { next=dlsym(RTLD_NEXT,"pwrite");forward="pwrite"; }
  if(!is_op(op,"renameat2")&&(!next||next==fn))die(139);
  unarmed(fn,op,root);
  char trace[4096],body[512];path(trace,sizeof(trace),root,"caller.json");
- int fd=fresh(trace);int n=snprintf(body,sizeof(body),"{\"op\":\"%s\",\"namespace_pid\":1,\"wrapper_resolved\":true,\"next_resolved_distinct\":%s,\"direct_syscall\":%s,\"unarmed_success\":true,\"sparse_offset\":%lld}\n",op,is_op(op,"renameat2")?"false":"true",is_op(op,"renameat2")?"true":"false",(long long)((is_op(op,"pwrite")||is_op(op,"pwrite64"))?BIG_OFFSET:0));
+ int fd=fresh(trace);int n=snprintf(body,sizeof(body),"{\"op\":\"%s\",\"namespace_pid\":1,\"wrapper_resolved\":true,\"next_resolved_distinct\":%s,\"direct_syscall\":%s,\"unarmed_success\":true,\"real_forwarding_symbol\":\"%s\",\"off_t_bytes\":%zu,\"off64_t_bytes\":%zu,\"sparse_offset\":%lld}\n",op,is_op(op,"renameat2")?"false":"true",is_op(op,"renameat2")?"true":"false",forward,sizeof(off_t),sizeof(off64_t),(long long)((is_op(op,"pwrite")||is_op(op,"pwrite64"))?BIG_OFFSET:0));
  if(n<0||(size_t)n>=sizeof(body))die(140);
  write_all(fd,body,(size_t)n);if(fsync(fd)||close(fd))die(141);
  if(setenv(key,stage,1))die(142);

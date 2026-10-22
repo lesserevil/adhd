@@ -1,0 +1,71 @@
+{
+  "schema": "adhd/image-filesystem-observer-elf@1",
+  "passed": true,
+  "scope": "Host compiler/readelf only; object never loaded",
+  "source": "storage_write_fault.c",
+  "source_sha256": "dcb19f03c9e7304eb80029ea5f8ef1af685960123a5a5f69e0ed1402d654e17d",
+  "library_sha256": "a79e494bb7569966f3c0d8c6f59aba22e5fe01e923b7cff5768a082990915c48",
+  "compile_argv": [
+    "cc",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-shared",
+    "-fPIC",
+    "-nostdlib",
+    "-fno-stack-protector",
+    "-U_FORTIFY_SOURCE",
+    "-D_FORTIFY_SOURCE=0",
+    "-O2",
+    "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted05/inputs/storage_write_fault.c",
+    "-o",
+    "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted05/build/storage_write_fault/observer.so"
+  ],
+  "elf_machine": "x86_64",
+  "elf_class": "ELF64",
+  "undefined_scalar_symbols": [
+    "_exit",
+    "access",
+    "close",
+    "dlsym",
+    "free",
+    "getenv",
+    "getpid",
+    "kill",
+    "malloc",
+    "memmem",
+    "open",
+    "pause",
+    "read",
+    "readlink",
+    "snprintf",
+    "strcmp",
+    "strlen",
+    "strncmp",
+    "write"
+  ],
+  "exported_symbols": [
+    "fsync",
+    "pwrite",
+    "pwrite64",
+    "rename"
+  ],
+  "needed_libraries": [],
+  "glibc_symbol_versions": [],
+  "section_sha256": {
+    "dynamic": "4f6c1f8a751f139c435fb6ccdb3f0a2f78188aa5965a5c83df301d50a1178ad7",
+    "versions": "cf2ded89ffb6823969c850408064e501136b8b261c8e2e62a271865d023cd6e7",
+    "header": "f5faa1a565da644b6caa383fc07fcd1087aacb18b78fa7e7bc9f68bf082c998f",
+    "symbols": "de027e3276b1dbd50d8be6220fca706142a976138a572f4d34a4cc151fea2a06"
+  },
+  "compiler_version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "actual_image_loader_qualified": false,
+  "application_started": false,
+  "required_actual_image_abi_cases": [
+    "fsync",
+    "pwrite",
+    "pwrite64",
+    "rename"
+  ]
+}

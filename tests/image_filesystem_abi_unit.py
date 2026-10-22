@@ -100,6 +100,15 @@ class Guards(unittest.TestCase):
    (work/'result.json').unlink()
    with self.assertRaises(FileExistsError):abi.execute(args)
   self.assertEqual(entered,['first-case'])
+ def test_truthful_forwarding_symbol_and_offset_width(self):
+  call={'op':'pwrite64','namespace_pid':1,'wrapper_resolved':True,'next_resolved_distinct':True,'direct_syscall':False,
+    'unarmed_success':True,'real_forwarding_symbol':'pwrite','off_t_bytes':8,'off64_t_bytes':8,'sparse_offset':abi.BIG_OFFSET}
+  abi.validate_call(call,'pwrite64')
+  abi.validate_call(dict(call,real_forwarding_symbol='pwrite64'),'pwrite64')
+  for changed in [dict(call,off_t_bytes=4),dict(call,off64_t_bytes=4),dict(call,real_forwarding_symbol='unknown'),dict(call,next_resolved_distinct=False),dict(call,sparse_offset=17)]:
+   with self.assertRaises(AssertionError):abi.validate_call(changed,'pwrite64')
+  # No generic alias fallback is admitted for unrelated operations.
+  with self.assertRaises(AssertionError):abi.validate_call(dict(call,op='fsync'),'fsync')
  def test_independent_cleanup_after_known_id_inspect_failure(self):
   identifier='f'*64
   def absent(result,key):return result.returncode==1 and result.stderr==('No such object: '+key).encode()

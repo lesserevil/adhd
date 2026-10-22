@@ -65,5 +65,21 @@ ssize_t pwrite(int fd,const void *buf,size_t count,off_t offset) {
   static ssize_t (*real)(int,const void *,size_t,off_t);if(!real)real=dlsym(RTLD_NEXT,"pwrite");ssize_t n=real(fd,buf,count,offset);if(n>=0)checkpoint_written(fd,"pwrite");return n;
 }
 ssize_t pwrite64(int fd,const void *buf,size_t count,off64_t offset) {
-  static ssize_t (*real)(int,const void *,size_t,off64_t);if(!real)real=dlsym(RTLD_NEXT,"pwrite64");ssize_t n=real(fd,buf,count,offset);if(n>=0)checkpoint_written(fd,"pwrite64");return n;
+  /* Modern musl keeps LFS64 relocation compatibility but does not export the
+   * pwrite64 name through dlsym. Prefer the original glibc/native symbol; only
+   * use real pwrite when the signed offset types are exactly ABI-identical. */
+  _Static_assert(sizeof(off_t)==8 && sizeof(off64_t)==8,"64-bit offset ABI required");
+  _Static_assert(__builtin_types_compatible_p(off_t,off64_t),"identical offset ABI required");
+  static ssize_t (*real64)(int,const void *,size_t,off64_t);
+  if(!real64)real64=dlsym(RTLD_NEXT,"pwrite64");
+  ssize_t n;
+  if(real64)n=real64(fd,buf,count,offset);
+  else {
+    static ssize_t (*real)(int,const void *,size_t,off_t);
+    if(!real)real=dlsym(RTLD_NEXT,"pwrite");
+    if(!real)_exit(119);
+    n=real(fd,buf,count,(off_t)offset);
+  }
+  if(n>=0)checkpoint_written(fd,"pwrite64");
+  return n;
 }

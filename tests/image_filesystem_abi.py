@@ -85,7 +85,11 @@ def prepare(args):
  work.mkdir(parents=True,mode=0o700)
  inputs=work/'inputs';inputs.mkdir(mode=0o700)
  source_root=Path(args.helpers_root).absolute();assert source_root.resolve(strict=True)==source_root and source_root.is_dir() and not source_root.is_symlink()
- for name in HELPERS+tuple(FAMILIES):shutil.copyfile(plain(source_root/name),inputs/name)
+ for name in HELPERS+tuple(FAMILIES):
+  # Only this reviewed test observer changes for musl's missing dlsym alias;
+  # the other four observers come byte-for-byte from the helper authority.
+  origin=Path(__file__).with_name(name) if name=='storage_write_fault.c' else source_root/name
+  shutil.copyfile(plain(origin),inputs/name)
  shutil.copyfile(plain(Path(__file__).with_name('image_filesystem_abi_caller.c')),inputs/'image_filesystem_abi_caller.c')
  shutil.copyfile(plain(Path(__file__)),work/'run.py');shutil.copyfile(manifest,inputs/'manifest.json')
  helper,_=load_helpers(inputs)
@@ -214,6 +218,15 @@ def command(plan,case,library,caller,control,name,root):
   '--entrypoint','/bin/true',plan['image_config_identity']]
 
 
+def validate_call(call,op):
+ assert call['op']==op and call['namespace_pid']==1 and call['unarmed_success'] and call['wrapper_resolved']
+ assert call['direct_syscall']==(op=='renameat2') and call['next_resolved_distinct']==(op!='renameat2')
+ assert call['off_t_bytes']==call['off64_t_bytes']==8
+ if op=='pwrite64':assert call['real_forwarding_symbol'] in ('pwrite64','pwrite')
+ else:assert call['real_forwarding_symbol']==('syscall:renameat2' if op=='renameat2' else op)
+ if op in ('pwrite','pwrite64'):assert call['sparse_offset']==BIG_OFFSET
+
+
 def cleanup_owned(docker,key,image,known_identifier,absent_check):
  """Independent known-ID cleanup; failed inspect never implies absence."""
  notes=[];foreign=False;confirmed=False;gone=False
@@ -263,8 +276,7 @@ def run_case(plan,case,index,helpers,custody):
    time.sleep(.01)
   else:raise AssertionError('Actual image ABI boundary deadline')
   trace=json.loads(control['sentinel'].read_text());assert trace['stage']==control['stage'] and trace['pid']==1
-  call=json.loads((root/'caller.json').read_text());assert call['op']==case['op'] and call['unarmed_success'] and call['wrapper_resolved']
-  assert call['direct_syscall']==(case['op']=='renameat2') and call['next_resolved_distinct']==(case['op']!='renameat2')
+  call=json.loads((root/'caller.json').read_text());validate_call(call,case['op'])
   owned=custody.stop_owned_process(identifier,plan['image_config_identity'],trace,OBSERVER,'busybox',['/bin/true'])
   assert row['HostConfig']['NetworkMode']=='none' and row['HostConfig']['ReadonlyRootfs']
   mounts={v['Destination']:v for v in row['Mounts']}

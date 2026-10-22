@@ -1,0 +1,96 @@
+{
+  "schema": "adhd/image-filesystem-abi05-preparation@1",
+  "passed": true,
+  "scope": "Primary-source/offline exactimage diagnosis +test-only correction +pure/hostELF preparation; NO new loader/application execution",
+  "negative04": {
+    "path": "verification/image-filesystem-abi04-negative/manifest.json",
+    "sha256": "4a7b2e10be40f9ef3eaea1213cf5103b9378101113461f02531eb6e2e0de0389",
+    "passed": false,
+    "completed_cases": 11,
+    "failed_case": "storage_write_fault.c/pwrite64",
+    "unrun_cases": 6,
+    "all12actualcontainers_independently_absent": true,
+    "original23files7dirsunchanged": true,
+    "exit139_interpretation": "Explicit caller die139 before unarmed operation when real-next lookup missing or recursive; SIGSEGV not proven by exitcode alone"
+  },
+  "diagnosis": {
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "image_config_digest_verified_from_saved_bytes": true,
+    "image_musl_package": "1.2.6-r2 x86_64",
+    "read_only_method": "docker image save; safe offline selected archive-member read; readelf only. NO container create/entry/loader",
+    "loader_sha256": "38d022ce7425ff105ccfb53598f606e6e5f5f0a34bfbc793d65e6f34c9d72806",
+    "loader_dynamic_symbol_rows": [
+      "  1495: 000000000006babb   197 FUNC    GLOBAL DEFAULT   11 pwrite"
+    ],
+    "pwrite64_dynamic_export_present": false,
+    "primary_sources": {
+      "dynlink-1.2.6.c": {
+        "url": "https://git.musl-libc.org/cgit/musl/plain/ldso/dynlink.c?h=v1.2.6",
+        "sha256": "a12efe3464982f83fab5da801b61d4124f0f6c836db8eae90862914aa22b5b38",
+        "bytes": 67732
+      },
+      "pwrite-1.2.6.c": {
+        "url": "https://git.musl-libc.org/cgit/musl/plain/src/unistd/pwrite.c?h=v1.2.6",
+        "sha256": "f817c3122957329d0fbaa26a84df3785ff4b80cb2002268003cb10bfaee5db04",
+        "bytes": 557
+      },
+      "alltypes-1.2.6.h.in": {
+        "url": "https://git.musl-libc.org/cgit/musl/plain/include/alltypes.h.in?h=v1.2.6",
+        "sha256": "0258a616386b1c33c1a539317bdfd0de381dd43d7e5bebb205c4b4e1e71eef56",
+        "bytes": 3498
+      },
+      "unistd-1.2.6.h": {
+        "url": "https://git.musl-libc.org/cgit/musl/plain/include/unistd.h?h=v1.2.6",
+        "sha256": "ab2782955f7f5cd22b4feaa7dd48195a4e6d86c6d022bfd39e14ebb610b165e1",
+        "bytes": 13741
+      }
+    },
+    "primary_source_findings": "musl1.2.6 do_dlsym uses find_sym2 without get_lfs64 relocation fallback; pwrite is standard off_t implementation; off_t is Int64, LFS64 headers map off64_t/pwrite64 names to standard types/functions. ELF absence supports missing real-next pwrite64 rather than recursive same pointer."
+  },
+  "correction": {
+    "source": "tests/storage_write_fault.c",
+    "original_sha256": "73eae65e688ce1bfd410a20a4744f4336bfab6f480a5776b15ca84948ecea217",
+    "new_sha256": "dcb19f03c9e7304eb80029ea5f8ef1af685960123a5a5f69e0ed1402d654e17d",
+    "only_changed_observer": true,
+    "other4observer_sources_unchanged": true,
+    "conditions_assertions_and_native_preference_preserved": "Only pwrite64 forwarding body changes: original realpwrite64 preferred; if missing, sizeof(off_t)==sizeof(off64_t)==8 and compiler type identity asserted, forward to actual RTLD_NEXT pwrite; missing both fails exit119. Original checkpoint_written thresholds/syscall labels unchanged.",
+    "caller_truthful_forwarding": "Reports real_forwarding_symbol pwrite or pwrite64, actual offset widths and >4GiB sparse offset. Driver disallows unrelated alias widening, wrongwidth/offset or unresolved pointer."
+  },
+  "pure_checks": {
+    "tests": 10,
+    "passed": true,
+    "subprocess_attempts": 0,
+    "new_group": "Truthful pwrite64 native-or-standard forwarding; wrongwidth/name/offset/unresolved symbol and unrelated-op fallback denied"
+  },
+  "host_elf": {
+    "objects": 6,
+    "passed": true,
+    "needed_libraries": [],
+    "glibc_symbol_versions": [],
+    "objects_never_loaded": true
+  },
+  "unstarted05": {
+    "plan_path": "/home/horde/src/adhd/.worktrees/contracts/_build/image-abi38-unstarted05/plan.json",
+    "plan_sha256": "4a02c9e6c73fec6d283b9804961510ab0112f9960fd640e960012a94dda27120",
+    "driver_sha256": "bb8c6e1f380af298aceb94255c76f992f459f122e9be7d27f6ce88ebb81408a3",
+    "caller_source_sha256": "51e0616a8018f020bc51124f3d5ca5a11102347b0847d27957a5afa4a7fcea62",
+    "cases": 18,
+    "files": 23,
+    "directories": 7,
+    "once_marker_absent": true,
+    "input_closure_verified": true,
+    "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+    "source38only": "NOT40/current-successor evidence; fresh successor binding and rootGO required"
+  },
+  "code": {
+    "storage_write_fault.c": "dcb19f03c9e7304eb80029ea5f8ef1af685960123a5a5f69e0ed1402d654e17d",
+    "image_filesystem_abi.py": "bb8c6e1f380af298aceb94255c76f992f459f122e9be7d27f6ce88ebb81408a3",
+    "image_filesystem_abi_caller.c": "51e0616a8018f020bc51124f3d5ca5a11102347b0847d27957a5afa4a7fcea62",
+    "image_filesystem_abi_unit.py": "d9d970956ab1fa5f6b9b37cd4fffd2aae0a5552d98ac12590d4e9f70c6a9184a"
+  },
+  "actual_new_loader_probes": 0,
+  "actual_application_starts": 0,
+  "provider_calls": 0,
+  "broker_calls": 0,
+  "required_gate": "Root independent code/full18-plan review and explicitGO; no blind retry,04false remains false"
+}

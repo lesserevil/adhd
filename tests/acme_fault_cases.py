@@ -46,7 +46,7 @@ def corrupt_actual_challenge(admin, secure, relay):
         # A configured new contact gets a real independent account. Previously
         # authorized account/domain reuse must not bypass this challenge case.
         accepted,_=admin.mutate('config_update',patch={'tls':{'acme':{'email':'fault-authorization@one.acme.test'}}})
-        failed=wait_failure(admin,before,'ACME_AUTHORIZATION',accepted['config_revision'])
+        failed=wait_failure(admin,before,'ACME_PROCESS',accepted['config_revision'])
         events=relay.snapshot()['events'][start:]
         assert events and all(row['upstream_status']==200 and row['mode']=='corrupt' for row in events)
         assert secure.request('/health')[0]==200
@@ -69,7 +69,7 @@ def directory_connection_refusal(admin, secure):
         reservation.bind(('127.0.0.1',0))
         port=reservation.getsockname()[1]
         accepted,_=admin.mutate('config_update',patch={'tls':{'acme':{'directory_url':f'https://localhost:{port}/dir'}}})
-        failed=wait_failure(admin,before,'ACME_NETWORK',accepted['config_revision'])
+        failed=wait_failure(admin,before,'ACME_PROCESS',accepted['config_revision'])
         assert secure.request('/health')[0]==200
         return {'name':'owned refused directory endpoint preserves prior valid certificate',
                 'passed':True,'prior_leaf_sha256':leaf,'last_error':failed['last_error'],

@@ -18,15 +18,15 @@ class FaultChecks(unittest.TestCase):
             with self.assertRaises(AssertionError):prior_valid(bad)
 
     def test_failure_requires_actual_new_attempt_typed_error_and_same_leaf(self):
-        before=status();after={**before,'last_attempt_at':'old','last_error':{'code':'ACME_AUTHORIZATION'},
+        before=status();after={**before,'last_attempt_at':'old','last_error':{'code':'ACME_PROCESS'},
                                'config_revision':8,'acme_state':'backoff','next_attempt_at':'future'}
         admin=Mock();admin.api.return_value=after
-        self.assertEqual(wait_failure(admin,before,'ACME_AUTHORIZATION',8),after)
-        for bad in ({**after,'last_error':{'code':'ACME_PROCESS'}},
+        self.assertEqual(wait_failure(admin,before,'ACME_PROCESS',8),after)
+        for bad in ({**after,'last_error':{'code':'ACME_RATE_LIMIT'}},
                     {**after,'certificate':{**before['certificate'],'sha256':'b'*64}},
                     {**after,'config_revision':7}):
             admin.api.return_value=bad
-            with self.assertRaises(AssertionError):wait_failure(admin,before,'ACME_AUTHORIZATION',8)
+            with self.assertRaises(AssertionError):wait_failure(admin,before,'ACME_PROCESS',8)
 
 
 if __name__=='__main__':unittest.main()

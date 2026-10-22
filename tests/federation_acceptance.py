@@ -138,11 +138,24 @@ class Hub:
                 raise AssertionError('Hub failed startup; inspect private acceptance work directory')
             try:
                 if request(self.base, '/health')[0] == 200:
+                    self.initialize_unknown_projects()
                     return
             except (URLError, TimeoutError, ConnectionError):
                 pass
             time.sleep(.1)
         raise AssertionError('Hub readiness timeout')
+
+    def initialize_unknown_projects(self):
+        # Handwritten test configurations still use the supported public Admin
+        # admission flow. The existing version-aware helper skips ready projects,
+        # leaves legacy profiles unchanged, and refuses known unavailable stores.
+        from foundation_acceptance import Runtime
+        admission = Runtime.__new__(Runtime)
+        admission.root, admission.file, admission.base = self.root, self.root / 'config.json', self.base
+        admission.initialize_projects = True
+        admission.initialize_unknown_projects()
+        if request(self.base, '/protocol/schema')[1].get('$id') == 'urn:adhd:protocol:2.1':
+            self.config = json.loads(admission.file.read_text())
 
     def stop(self, hard=False):
         if self.container:

@@ -81,6 +81,7 @@ class ImageHub(Hub):
             assert artifact==self.target.artifact,'Actual container artifact differs from reviewed manifest'
             self.target.lifecycle.append({'action':'started','container_id':observed['Id'],
                 'image_config_identity':observed['Image'],'artifact_sha256':artifact})
+            self.initialize_unknown_projects()
         except BaseException:
             self.stop(hard=True)
             raise

@@ -19,9 +19,6 @@ import subprocess
 import sys
 import time
 sys.dont_write_bytecode=True
-IMAGE='sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0'
-ARTIFACT='1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7'
-ADMISSION='2526ad178e88239704f62b9d7437b98c3f4baca71ee9a82b84e635b242896d58'
 BOUNDARIES=('transaction','config','journal')
 
 
@@ -45,11 +42,40 @@ def tree(root):
    files[str(path.relative_to(root))]=sha(path)
  return {'files':files,'directories':directories}
 
+def target_identity(image,artifact,admission):
+ assert isinstance(image,str) and re.fullmatch('sha256:[a-f0-9]{64}',image)
+ assert all(isinstance(value,str) and re.fullmatch('[a-f0-9]{64}',value) for value in [artifact,admission])
+ return {'image_config_identity':image,'artifact_sha256':artifact,'admission_sha256':admission}
+
+
+def validate_admission(bound,target):
+ assert sha(bound/'admission.json')==target['admission_sha256']
+ admission=json.loads((bound/'admission.json').read_text())
+ assert admission['passed'] is True
+ assert admission['image_config_identity']==target['image_config_identity']
+ assert admission['artifact_sha256']==target['artifact_sha256']
+ assert admission['canonical_manifest_sha256']==sha(bound/'image-manifest.json')
+ if admission['schema']=='adhd/current40-admission-and-image-binding@1':
+  assert admission['image_built'] is True
+  expected={key:admission['files'][key] for key in ['receipt.json','rebuild.json']}
+ else:
+  # Retained prior plan is historical; no schema guessing for new admissions.
+  assert admission['schema']=='adhd/current38-admission-and-image-binding@1'
+  expected={'receipt.json':admission['receipt_file_sha256'],'rebuild.json':admission['official_rebuild_envelope']['sha256']}
+ assert all(sha(bound/name)==digest for name,digest in expected.items())
+ audit=admission['payload_audit']
+ assert audit['passed'] is True and audit['image_id']==target['image_config_identity']
+ assert audit['artifact_sha256']==target['artifact_sha256'] and audit['canonical_manifest_sha256']==admission['canonical_manifest_sha256']
+ assert audit['actual_app_files']==59 and audit['canonical_specifications']==33
+ return True
+
+
 def prepare(a):
  repo=a.repo_root.absolute();work=a.work.absolute();assert repo.resolve()==repo and not work.exists()
+ target=target_identity(a.image,a.artifact_sha256,a.admission_sha256)
  work.mkdir(parents=True,mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700);bound=work/'bound';bound.mkdir(mode=0o700)
  reader=load(repo/'tests/image_qualification_inputs.py','selected_payload')
- selected=reader.reviewed_payload(a.context/'manifest.json',repo/'verification/project-recovery/development38/admission/manifest.json',ADMISSION,IMAGE,ARTIFACT)
+ selected=reader.reviewed_payload(a.context/'manifest.json',a.admission,target['admission_sha256'],target['image_config_identity'],target['artifact_sha256'])
  assert len(selected['specifications'])==33 and selected['audit']['actual_app_files']==59
  for part in ['tests','scripts']:
   for source in (repo/part).rglob('*'):
@@ -61,35 +87,35 @@ def prepare(a):
  asserts=lambda value:[ast.dump(node) for node in ast.walk(value) if isinstance(node,ast.Assert)]
  assert asserts(original)==asserts(actual),'Original assertions changed'
  for source,name in [(a.context/'manifest.json','image-manifest.json'),(a.context/'Dockerfile','staged-Dockerfile'),
-    (repo/'verification/project-recovery/development38/admission/manifest.json','admission.json'),
+    (a.admission,'admission.json'),
     (a.abi_root/'build/config_rename_fault/observer.so','observer.so'),(a.abi_root/'config_rename_fault.c.proof.json','observer-proof.json')]:
   assert source.resolve()==source.absolute() and source.is_file() and not source.is_symlink();shutil.copyfile(source,bound/name)
  for name in ['receipt.json','rebuild.json']:
   assert (a.receipt_bindings/name).is_file();shutil.copyfile(a.receipt_bindings/name,bound/name)
  admission=json.loads((bound/'admission.json').read_text());proof=json.loads((bound/'observer-proof.json').read_text());manifest=json.loads((bound/'image-manifest.json').read_text())
- assert sha(bound/'receipt.json')==admission['receipt_file_sha256'] and sha(bound/'rebuild.json')==admission['official_rebuild_envelope']['sha256']
+ validate_admission(bound,target)
  assert sha(bound/'staged-Dockerfile')==manifest['files']['Dockerfile']
  assert proof['passed'] and proof['application_started'] is False and proof['owned_container_absent'] and proof['exit_code']==137
- assert proof['image_config_identity']==IMAGE and proof['artifact_sha256']==ARTIFACT and proof['canonical_manifest_sha256']==sha(bound/'image-manifest.json')
+ assert proof['image_config_identity']==target['image_config_identity'] and proof['artifact_sha256']==target['artifact_sha256'] and proof['canonical_manifest_sha256']==sha(bound/'image-manifest.json')
  assert proof['observer']['source_sha256']==sha(frozen/'tests/config_rename_fault.c') and proof['observer']['library_sha256']==sha(bound/'observer.so')
  assert proof['successful_abi_cases']==proof['observer']['exported_symbols']==['rename']
- (bound/'source38.exs').write_bytes(selected['artifact_bytes']);assert sha(bound/'source38.exs')==ARTIFACT
+ (bound/'target.exs').write_bytes(selected['artifact_bytes']);assert sha(bound/'target.exs')==target['artifact_sha256']
  shutil.copyfile(__file__,work/'driver.py');runtime=work/'runtime'
- argv=[str(frozen/'tests/config_recovery.py'),'--image',IMAGE,'--image-manifest',str(bound/'image-manifest.json'),
-       '--image-artifact',str(bound/'source38.exs'),'--image-fault-library',str(bound/'observer.so'),
+ argv=[str(frozen/'tests/config_recovery.py'),'--image',target['image_config_identity'],'--image-manifest',str(bound/'image-manifest.json'),
+       '--image-artifact',str(bound/'target.exs'),'--image-fault-library',str(bound/'observer.so'),
        '--image-fault-proof',str(bound/'observer-proof.json'),'--protocol-version','2','--report',str(work/'result.json')]
  tools={}
  for label,path in [('python',Path(sys.executable)),('docker',Path('/usr/bin/docker'))]:
   tools[label]={'path':str(path.absolute()),'resolved':str(path.resolve()),'sha256':sha(path.resolve())}
  sock=Path('/var/run/docker.sock').resolve();info=sock.stat();assert stat.S_ISSOCK(info.st_mode)
- plan={'schema':'adhd/config-image-three-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED','image_config_identity':IMAGE,'artifact_sha256':ARTIFACT,
-  'admission_sha256':ADMISSION,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'payload_sha256':selected['payload_sha256'],
+ plan={'schema':'adhd/config-image-three-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED',**target,
+  'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'payload_sha256':selected['payload_sha256'],
   'driver_sha256':sha(work/'driver.py'),'frozen':tree(frozen),'bound':tree(bound),'specification_count':33,'admitted_specification_drift':drift,
   'source_observer_proof_sha256':sha(a.abi_root/'config_rename_fault.c.proof.json'),'root_original_entrypoint_sha256':sha(repo/'tests/config_recovery.py'),'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'original_assertions_count':len(asserts(original)),
   'runtime_cwd':str(runtime),'tools':tools,'docker_socket':{'path':str(sock),'identity':[info.st_dev,info.st_ino]},
   'test_argv':argv,'boundaries':list(BOUNDARIES),'parallelism':1,'runs_per_script':1,'automatic_retries':0,'fail_first':True,
   'outer_timeout':None,'original_deadlines':{'readiness_seconds':45,'mutation_seconds':25,'client_join_seconds':16},
-  'provider_calls_authorized':0,'broker_calls_authorized':0,'scope':'Admitted38 configuration crash3 only; separate from recovery42/native strace3/latest40/UI/release. Controlled unreachable model URL127:1; no physical image egress firewall claim.',
+  'provider_calls_authorized':0,'broker_calls_authorized':0,'scope':'Explicit admitted target configuration crash3 only; separate from recovery42/native strace3/other images/UI/release. Controlled unreachable model URL127:1; no physical image egress firewall claim.',
   'preparation_app_or_compiler_starts':0}
  save(work/'plan.json',plan);load(work/'driver.py','copied_config_driver').verify(work,plan);print(json.dumps({'plan':str(work/'plan.json'),'sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],'frozen':len(plan['frozen']['files']),'bound':len(plan['bound']['files'])}))
 
@@ -97,7 +123,8 @@ def verify(work,plan):
  assert work.resolve()==work and Path(__file__).absolute()==work/'driver.py' and Path(__file__).resolve()==work/'driver.py'
  info=Path(__file__).lstat();assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and sha(__file__)==plan['driver_sha256']
  assert tree(work/'frozen')==plan['frozen'] and tree(work/'bound')==plan['bound']
- assert plan['image_config_identity']==IMAGE and plan['artifact_sha256']==ARTIFACT and plan['admission_sha256']==ADMISSION
+ target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
+ validate_admission(work/'bound',target)
  assert plan['boundaries']==list(BOUNDARIES) and plan['outer_timeout'] is None
  for row in plan['tools'].values():assert str(Path(row['path']).resolve())==row['resolved'] and sha(row['resolved'])==row['sha256']
  info=Path(plan['docker_socket']['path']).stat();assert stat.S_ISSOCK(info.st_mode) and [info.st_dev,info.st_ino]==plan['docker_socket']['identity']
@@ -140,6 +167,7 @@ def audit_configuration(config,initial):
 
 def child(work,expected):
  assert sha(work/'plan.json')==expected;plan=json.loads((work/'plan.json').read_text());verify(work,plan)
+ target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
  assert json.loads((work/'started.json').read_text())['plan_sha256']==expected
  sys.path.insert(0,str(work/'frozen/tests'))
  from config_image_runtime import ConfigurationFaultRuntime
@@ -165,7 +193,7 @@ def child(work,expected):
    audit_configuration(obj.config,initial=False)
    image=obj.image_runtime;image.observe()
    row=json.loads(image.docker('inspect',image.container_id).stdout)[0]
-   assert row['Id']==image.container_id and row['Image']==IMAGE and row['State']['Running']
+   assert row['Id']==image.container_id and row['Image']==target['image_config_identity'] and row['State']['Running']
    assert row['HostConfig']['PidMode']!='host' and row['State']['Pid']>0
    exe=image.docker('exec',image.container_id,'readlink','/proc/1/exe').stdout.decode().strip()
    assert exe.endswith('/beam.smp')
@@ -189,11 +217,11 @@ def child(work,expected):
  def popen(argv,*args,**kwargs):
   launch=None
   if isinstance(argv,(list,tuple)) and argv[:2]==['docker','run']:
-   assert '--name' in argv and IMAGE in argv and '--pid' not in argv and not any(v.startswith('--pid=') for v in argv)
+   assert '--name' in argv and target['image_config_identity'] in argv and '--pid' not in argv and not any(v.startswith('--pid=') for v in argv)
    name=argv[argv.index('--name')+1];assert re.fullmatch(r'adhd-(?:multi-accept|accept-probe)-[a-f0-9]{16}',name)
    kind='probe' if name.startswith('adhd-accept-probe-') else 'app'
    assert argv[argv.index('--network')+1]==('none' if kind=='probe' else 'host')
-   launch={'name':name,'kind':kind,'image_config_identity':IMAGE};launches.append(launch);progress()
+   launch={'name':name,'kind':kind,'image_config_identity':target['image_config_identity']};launches.append(launch);progress()
   result=original_popen(argv,*args,**kwargs)
   if launch:launch['client_pid']=result.pid;progress()
   return result
@@ -212,6 +240,7 @@ def child(work,expected):
 
 
 def independent_absence(work,plan):
+ target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
  helper=load(work/'frozen/tests/controlled_image_matrix.py','strict_docker_absence')
  progress=json.loads((work/'custody-progress.json').read_text()) if (work/'custody-progress.json').exists() else {'launches':[],'runtimes':[]}
  expected={v['name']:v.get('container_id') for v in progress['launches']}
@@ -230,7 +259,7 @@ def independent_absence(work,plan):
    if not helper.authoritative_absence(actual,identifier):
     assert actual.returncode==0,'Absence unconfirmed by Docker'
     objects=json.loads(actual.stdout);assert len(objects)==1;obj=objects[0]
-    assert obj['Image']==IMAGE and re.fullmatch('[a-f0-9]{64}',obj['Id'])
+    assert obj['Image']==target['image_config_identity'] and re.fullmatch('[a-f0-9]{64}',obj['Id'])
     assert obj['Name'].lstrip('/') in {v['name'] for v in progress['launches']}
     if known:assert obj['Id']==known
     else:assert obj['Name']=='/'+identifier
@@ -249,12 +278,13 @@ def independent_absence(work,plan):
 
 
 def qualify(value,custody,plan):
- assert value['passed'] is True and value['artifact_sha256']==ARTIFACT
+ target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
+ assert value['passed'] is True and value['artifact_sha256']==target['artifact_sha256']
  assert [v['case'] for v in value['cases']]==['kill-at-'+stage+'-rename' for stage in BOUNDARIES] and all(v['passed'] for v in value['cases'])
  assert custody['passed'] and not custody['cleanup_failure_types'] and len(value['runtime'])==len(custody['runtimes'])==3
  for runtime,reported,stage in zip(custody['runtimes'],value['runtime'],BOUNDARIES):
-  assert runtime['boundary']==stage and runtime['verified'] and runtime['image_config_identity']==IMAGE
-  assert runtime['artifact_sha256']==ARTIFACT and runtime['canonical_manifest_sha256']==plan['canonical_manifest_sha256']
+  assert runtime['boundary']==stage and runtime['verified'] and runtime['image_config_identity']==target['image_config_identity']
+  assert runtime['artifact_sha256']==target['artifact_sha256'] and runtime['canonical_manifest_sha256']==plan['canonical_manifest_sha256']
   assert runtime['observer_disarmed'] and not runtime['cleanup_blocked'] and not runtime['probe_cleanup_blocked'] and runtime['probe_active_name'] is None
   assert runtime['name'] is None and runtime['container_id'] is None and runtime['docker_client_exited']
   started={v['container_id'] for v in runtime['container_lifecycle'] if v['action']=='started'}
@@ -262,11 +292,11 @@ def qualify(value,custody,plan):
   assert len(started)==2 and started<=stopped
   payload=runtime['running_payload_custody'];assert len(payload)==2 and {row['container_id'] for row in payload}==started
   assert all(row['actual_app_files']==59 and row['all_manifest_app_hashes_matched'] and row['host_vm_pid']>0
-    and row['namespace_vm_pid']==1 and row['pid_mode']!='host' and row['image_config_identity']==IMAGE
+    and row['namespace_vm_pid']==1 and row['pid_mode']!='host' and row['image_config_identity']==target['image_config_identity']
     and row['canonical_manifest_sha256']==plan['canonical_manifest_sha256'] for row in payload)
-  assert reported['image_config_identity']==IMAGE and reported['payload_verified']
+  assert reported['image_config_identity']==target['image_config_identity'] and reported['payload_verified']
   assert reported['canonical_manifest_sha256']==runtime['canonical_manifest_sha256']
-  assert reported['artifact_sha256']==ARTIFACT and reported['container_lifecycle']==runtime['container_lifecycle']
+  assert reported['artifact_sha256']==target['artifact_sha256'] and reported['container_lifecycle']==runtime['container_lifecycle']
   assert reported['actual_beam_kernel_custody']==runtime['actual_beam_kernel_custody']
   assert reported['payload_probe_lifecycle']==runtime['probe_lifecycle']
   hard=[v for v in runtime['container_lifecycle'] if v['action']=='hard-killed'];assert len(hard)==1 and hard[0]['exit_code']==137 and hard[0]['wait_observed']
@@ -276,6 +306,7 @@ def qualify(value,custody,plan):
 
 def execute(work,expected):
  assert sha(work/'plan.json')==expected;plan=json.loads((work/'plan.json').read_text());verify(work,plan)
+ target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
  helper=load(work/'frozen/tests/controlled_image_matrix.py','reviewed_pure_helpers')
  assert not Path(plan['runtime_cwd']).exists();helper.durable_once_marker(work/'started.json',{'plan_sha256':expected})
  Path(plan['runtime_cwd']).mkdir(mode=0o700);env=dict(os.environ);env['PYTHONDONTWRITEBYTECODE']='1';env['ERL_FLAGS']='+S 2:2'
@@ -301,7 +332,7 @@ def execute(work,expected):
   try:verify(work,plan);unchanged=True
   except BaseException:unchanged=False;passed=False
   save(work/'matrix.json',{'schema':'adhd/config-image-three-result@1','passed':passed and unchanged,'plan_sha256':expected,
-   'image_config_identity':IMAGE,'artifact_sha256':ARTIFACT,'child_exit_code':code,'failure_type':failure,
+   **target,'child_exit_code':code,'failure_type':failure,
    'frozen_and_bound_unchanged':unchanged,'independent_absence':observations,'whole_script_executions':1 if process else 0,
    'native_strace3_qualified':False,'scope':plan['scope']})
  return 0 if passed and unchanged else 1
@@ -311,6 +342,7 @@ if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__);mode=parser.add_mutually_exclusive_group(required=True)
  mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--child',action='store_true')
  parser.add_argument('--work',type=Path,required=True);parser.add_argument('--plan-sha256')
+ parser.add_argument('--image');parser.add_argument('--artifact-sha256');parser.add_argument('--admission-sha256');parser.add_argument('--admission',type=Path)
  for name in ['repo-root','context','abi-root','receipt-bindings']:parser.add_argument('--'+name,type=Path)
  args=parser.parse_args();work=args.work.absolute()
  if args.prepare:prepare(args)

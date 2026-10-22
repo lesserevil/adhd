@@ -1,0 +1,214 @@
+{
+  "application_started": false,
+  "cases": [
+    {
+      "case": "absent-proof-detects-appearing-root",
+      "passed": true
+    },
+    {
+      "case": "byte-budget-refused",
+      "passed": true
+    },
+    {
+      "case": "changed-retained-content-refused",
+      "passed": true
+    },
+    {
+      "case": "closed-target-allowlist-0",
+      "passed": true
+    },
+    {
+      "case": "closed-target-allowlist-1",
+      "passed": true
+    },
+    {
+      "case": "closed-target-allowlist-2",
+      "passed": true
+    },
+    {
+      "case": "closed-target-allowlist-3",
+      "passed": true
+    },
+    {
+      "case": "closed-target-allowlist-4",
+      "passed": true
+    },
+    {
+      "case": "closed-target-allowlist-5",
+      "passed": true
+    },
+    {
+      "case": "deadline-refused",
+      "passed": true
+    },
+    {
+      "case": "exact-owner-two-targets",
+      "passed": true
+    },
+    {
+      "case": "foreign-owner-refused",
+      "passed": true
+    },
+    {
+      "case": "hardlink-refused",
+      "passed": true
+    },
+    {
+      "case": "incomplete-initialization-refused",
+      "passed": true
+    },
+    {
+      "case": "legacy-no-managed-state",
+      "passed": true
+    },
+    {
+      "case": "legacy-three-target-decision-0",
+      "passed": true
+    },
+    {
+      "case": "legacy-three-target-decision-1",
+      "passed": true
+    },
+    {
+      "case": "legacy-three-target-decision-2",
+      "passed": true
+    },
+    {
+      "case": "legacy-three-target-decision-3",
+      "passed": true
+    },
+    {
+      "case": "legacy-three-target-decision-4",
+      "passed": true
+    },
+    {
+      "case": "legacy-three-target-decision-5",
+      "passed": true
+    },
+    {
+      "case": "live-guardian-refused",
+      "passed": true
+    },
+    {
+      "case": "missing-initialized-state-refused",
+      "passed": true
+    },
+    {
+      "case": "missing-witness-with-state-refused",
+      "passed": true
+    },
+    {
+      "case": "old-binding-and-opaque-owner-proved",
+      "passed": true
+    },
+    {
+      "case": "postproof-extra-file-refused",
+      "passed": true
+    },
+    {
+      "case": "predecision-valid",
+      "passed": true
+    },
+    {
+      "case": "public-private-key-refused",
+      "passed": true
+    },
+    {
+      "case": "record-budget-refused",
+      "passed": true
+    },
+    {
+      "case": "recover-prefix-0",
+      "passed": true
+    },
+    {
+      "case": "recover-prefix-1",
+      "passed": true
+    },
+    {
+      "case": "recover-prefix-2",
+      "passed": true
+    },
+    {
+      "case": "recover-prefix-3",
+      "passed": true
+    },
+    {
+      "case": "recover-prefix-4",
+      "passed": true
+    },
+    {
+      "case": "recover-prefix-5",
+      "passed": true
+    },
+    {
+      "case": "recovered-ready-binding-0",
+      "passed": true
+    },
+    {
+      "case": "recovered-ready-binding-1",
+      "passed": true
+    },
+    {
+      "case": "recovered-ready-binding-2",
+      "passed": true
+    },
+    {
+      "case": "recovered-ready-binding-3",
+      "passed": true
+    },
+    {
+      "case": "recovered-ready-binding-4",
+      "passed": true
+    },
+    {
+      "case": "recovered-ready-binding-5",
+      "passed": true
+    },
+    {
+      "case": "retained-key-cert-state-bytes-mode-inode-unchanged",
+      "passed": true
+    },
+    {
+      "case": "root-without-witness-refused",
+      "passed": true
+    },
+    {
+      "case": "symlink-refused",
+      "passed": true
+    },
+    {
+      "case": "wrong-old-config-binding-refused",
+      "passed": true
+    }
+  ],
+  "guardian_probe_stubbed": true,
+  "journal_validation_stubbed": true,
+  "passed": true,
+  "shared_source_edited": false,
+  "source_sha256": "091ba603837bac13063a72e63ccc6eb1af7c90af78abdc9016fc2f23faaf9d2b",
+  "schema": "adhd/acme-offline-rebind-preparation@1",
+  "status": "isolated-candidate-pure-checks-passed",
+  "baseline_sha256": "c4d3ac46e5ae4d148c8ff173286545067fd0479f0b6be90319de2255997e32e7",
+  "patch_sha256": "ec81eda50fe2fd388913bbc75d469a45edf8d79189afb7cf91d5a7a46977174a",
+  "test_sha256": "72bdae3c1258f4c19761465d4ef844b6aa57ea070155aaabd0a00f6d426604af",
+  "shared_candidate_sha256": "c4d3ac46e5ae4d148c8ff173286545067fd0479f0b6be90319de2255997e32e7",
+  "scope": [
+    "Only config-path digests in independent ready witness and root owner change; opaque owner/account/keys/certificates/state content unchanged.",
+    "Optional private decision ACME proof; exact ordered three-or-five target allowlist; original public request/result unchanged.",
+    "No initialized managed state is created, repaired or silently adopted by the extension.",
+    "Missing ready witness/root/state or foreign binding rejects; absent-state proof detects appearance before decision/recovery.",
+    "Private metadata and retained files use existing bounded FD/path readers; no stronger atomic O_NOFOLLOW claim.",
+    "Existing per-file atomic replacement and durable tagged decision remain the actual runtime implementation. Pure capsule tests every preinstalled prefix with a write seam; it does not simulate power-loss/fsync."
+  ],
+  "limits": [
+    "Guardian availability is stubbed; actual guardian execution is not qualified. Absent lock does not invoke/create a guardian lock.",
+    "Project graph/journal validators and atomic write collaborator are stubbed; actual shared recovery control, allowlist and private input readers execute.",
+    "No real full-server/project rebind, TLS/CA issuance, application startup or live crash claim.",
+    "Inventory uses existing configured byte/record budgets (at most 1GiB/1,000,000 records), bounded deadline, and existing 10MiB decision limit before commit."
+  ],
+  "first_failures_preserved": [
+    "test01: test output root initially relative, exact expected target comparison failed; fixed fixture absolute root.",
+    "test02/test03: new replacement count supplied Domain.list arguments in wrong max/min order; isolated implementation fixed to list(...,5,3)."
+  ]
+}

@@ -25,7 +25,15 @@ queue item or let `docs/roadmap/` become a plan archive.
 
 ## Authorized implementation batches
 
-Current qualification uses unchanged source40 and the compiled05 image. The
+The [readiness successor](../../verification/eventing-readiness-candidate01/root-source-review.json)
+changes only Eventing and ProjectRestore; it is not yet qualified. The proper
+lock and documentation-authority gates pass. Its [first lifecycle attempt](../../verification/eventing-readiness-lifecycle41-first-failure/manifest.json)
+stopped before application compilation because the retained snapshot omitted
+the required test manifest and source SBOM. Next: regenerate those recipe-bound
+sidecars with the pinned framework, obtain fresh source authorization and run
+the native lifecycle and independent readiness faults.
+
+Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
 passes28 whole suites/156 checks; its separately verified foundation prefix adds20
 checks, yielding29 suites/176 checks without relabeling the earlier failed runs.

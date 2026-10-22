@@ -6,6 +6,11 @@ client and retain that handshake separately.
 """
 from datetime import timezone
 import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import stat
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
@@ -62,3 +67,20 @@ def certificate_key_pair_facts(der, private_key_pem):
     left, right = public(cert.public_key()), public(key.public_key())
     assert left == right, 'Issued leaf does not match private key public SPKI'
     return {'key_pair_match': True, 'public_key_spki_sha256': hashlib.sha256(left).hexdigest()}
+
+
+def active_private_key_facts(hub_root, der):
+    """Read only the owned active generation and compare its actual public key."""
+    root=Path(hub_root)/'acme'
+    state=json.loads((root/'state.json').read_text())
+    generation=state['active']
+    assert isinstance(generation,str) and re.fullmatch(r'[A-Za-z0-9_-]{32}',generation)
+    current=root/'generations'/generation
+    for path in (root,root/'generations',current):
+        metadata=path.lstat()
+        assert stat.S_ISDIR(metadata.st_mode) and metadata.st_uid==os.getuid() and metadata.st_mode&0o777==0o700
+    path=current/'key.pem'
+    metadata=path.lstat()
+    assert stat.S_ISREG(metadata.st_mode) and metadata.st_nlink==1 and metadata.st_uid==os.getuid()
+    assert metadata.st_mode&0o777==0o600 and metadata.st_size<=65536
+    return certificate_key_pair_facts(der,path.read_bytes())

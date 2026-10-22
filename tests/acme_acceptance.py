@@ -21,7 +21,7 @@ from uuid import uuid4
 from urllib.error import URLError
 
 from jsonschema import Draft202012Validator, FormatChecker
-from acme_acceptance_fixtures import certificate_facts, challenge_request_vectors, TOKEN, raw_challenge_get
+from acme_acceptance_fixtures import certificate_facts, challenge_request_vectors, TOKEN, raw_challenge_get, active_private_key_facts
 from acme_challenge_relay import ChallengeRelay
 from acme_runtime import NativeDiagnostic, PublicClient, sha, regular
 from acme_continuity import OIDCContinuity, FederationContinuity
@@ -227,6 +227,7 @@ def run(args):
         secure = PublicClient('https://one.acme.test:18443', trust=ca['issuer_root'])
         assert secure.request('/health')[0] == 200
         cert = certificate_facts(secure.handshakes[-1]['der'], ['one.acme.test'], datetime.now(timezone.utc))
+        cert.update(active_private_key_facts(hub,secure.handshakes[-1]['der']))
         assert cert['leaf_der_sha256'] == initial['certificate']['sha256']
         assert cert['serial_number_hex'] == initial['certificate']['serial']
         assert secure.handshakes[-1]['verified_chain_and_hostname'] is True

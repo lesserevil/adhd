@@ -104,12 +104,13 @@ class Packaging(unittest.TestCase):
     def test_generated_cache_has_fixed_timestamp_policy(self):
         build = self.helpers['build.exs'].decode()
         self.assertIn('File.touch!(path, 0)', build)
-        self.assertIn('["/runtime", output | Path.wildcard(output <> "/**/*")]', build)
+        self.assertIn('[wrapper, wrapper <> "/runtime", output | Path.wildcard(output <> "/**/*")]', build)
+        self.assertIn('if File.exists?(wrapper), do: fail.()', build)
         self.assertGreater(build.index('File.touch!(path, 0)'), build.index('File.chmod!(output, 0o555)'))
         dockerfile = (ROOT / 'deploy/Dockerfile').read_text()
-        self.assertIn('RUN chmod 0555 /runtime/adhd && touch -d @0 /runtime /runtime/adhd', dockerfile)
-        self.assertGreater(dockerfile.index('RUN chmod 0555'), dockerfile.index('COPY --from=compiler'))
-        self.assertLess(dockerfile.index('RUN chmod 0555'), dockerfile.index('USER 10001:10001'))
+        self.assertIn('COPY --from=compiler /image-root/ /', dockerfile)
+        final_stage = dockerfile.split('FROM ')[-1]
+        self.assertFalse(any(line.startswith('RUN ') for line in final_stage.splitlines()))
 
     def test_same_pinned_runtime_and_visible_original_argv(self):
         lines = (ROOT / 'deploy/Dockerfile').read_text().splitlines()

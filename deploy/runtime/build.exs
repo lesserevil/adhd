@@ -1,6 +1,7 @@
 # Packaging-only compiler. Never evaluates the application's command dispatcher.
 source = "/app/hub.exs"
-output = "/runtime/adhd"
+wrapper = "/image-root"
+output = wrapper <> "/runtime/adhd"
 fail = fn -> raise "Invalid precompiled application input" end
 regular = fn path ->
   case File.lstat(path) do
@@ -40,7 +41,7 @@ end)
 if length(names) != length(Enum.uniq(names)), do: fail.()
 # No global lexical environment may be silently lost at this boundary.
 if Enum.any?(tail, &match?({op, _, _} when op in [:alias, :import, :require, :use], &1)), do: fail.()
-if File.exists?(output), do: fail.()
+if File.exists?(wrapper), do: fail.()
 File.mkdir_p!(Path.join(output, "ebin"))
 compiled = Enum.flat_map(modules, &Code.compile_quoted(&1, source))
 if Enum.map(compiled, &elem(&1, 0)) != names, do: fail.()
@@ -74,6 +75,6 @@ end)
 File.chmod!(output, 0o555)
 
 # RUN/COPY output timestamps must not inherit wall clock build time.
-Enum.each(["/runtime", output | Path.wildcard(output <> "/**/*")], fn path ->
+Enum.each([wrapper, wrapper <> "/runtime", output | Path.wildcard(output <> "/**/*")], fn path ->
   File.touch!(path, 0)
 end)

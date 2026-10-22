@@ -9,9 +9,9 @@ FROM elixir:1.20.4-otp-29-alpine@sha256:f1a8c06b332cacc7239381a25331a807fb63962f
 LABEL org.opencontainers.image.title="ADHD coordination hub"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 ADD payload.tar /
-COPY --from=compiler /runtime/adhd /runtime/adhd
-# COPY creates its destination parents with wall-clock metadata.
-RUN chmod 0555 /runtime/adhd && touch -d @0 /runtime /runtime/adhd
+# Explicit normalized ancestor entries avoid wall-clock implicit parents.
+# No final RUN: build-container resolver mounts otherwise alter /etc metadata.
+COPY --from=compiler /image-root/ /
 WORKDIR /app
 ENV ERL_FLAGS="+S 2:2" HOME=/tmp
 USER 10001:10001

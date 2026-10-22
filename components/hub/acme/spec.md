@@ -157,6 +157,27 @@ backup/restore includes it through the existing stopped-server procedure. Do not
 mistake a missing initialized account/state directory for permission to reset it.
 A fresh installation may create it when ACME is explicitly enabled.
 
+A durable initialization witness distinguishes `initializing` from `ready`.
+Only the initializing phase may complete empty state after a crash; loss of ready
+state must never reset ownership. Keep known account identities and private-key
+hash witnesses so missing initialized account directories/keys are errors.
+
+The bundled client preserves a valid issuer Retry-After minimum immediately upon
+observing a 429 or 503 response, before its own backoff or response-body parsing.
+It atomically writes and fsyncs the maximum observed minimum to the private
+`issuer-retry.json` beside state.json. This closed record contains only code
+(ACME_RATE_LIMIT or ACME_PROCESS) and retry_at (UTC Unix milliseconds). Header
+absence/malformed values introduce no issuer minimum; configured local backoff
+still applies. The hub validates and consults this durable floor before all new
+attempts, including after cancellation, timeout, manual renewal and restart.
+No later generic error, policy edit or process deadline may erase a valid future
+minimum. The narrow pinned Lego source patch and its dependency/build identities
+are retained with the runtime packaging inputs; the underlying ACME validation
+and retry decisions remain maintained-client behavior. The internal stderr
+protocol is bounded `ADHD_ACME_RESULT ` followed by exactly {code,retry_at}; raw
+errors/URLs are never an API or control protocol. Its retry_at is null or Unix
+milliseconds. Do not parse free-form error text to recover issuer limits.
+
 One attempt per server, no concurrent client writers. Bundle a fixed executable
 and build its argv from validated settings only; no shell, hooks, DNS plugin,
 ambient provider credentials, custom executable or arbitrary flags. Bound one
@@ -166,6 +187,10 @@ with separately reserved bounded cleanup effort. Capture stdout/stderr bounded
 child process group and terminates descendants on timeout, parent EOF or parent
 hard death. Do not claim process cleanup from a wait on the launcher alone.
 Unknown process closure blocks further attempts, rather than overlapping writers.
+The guardian holds the private root client.lock through process-group teardown
+and reaping. A fixed no-child probe checks actual lock availability before
+retiring interrupted working files, adopting account-key witnesses or starting
+another client; elapsed-time guesses are not closure proof.
 
 Lego's working output is not the live certificate. In a new owned generation,
 verify bounded PEM parsing (at most 1MiB complete chain and 64KiB private key),
@@ -197,7 +222,9 @@ downgrade. Existing accepted TLS connections follow bounded normal server drain.
 
 ## Scheduler, restart and public state
 
-Renew when the active certificate reaches not_after-renew_before_days, and on
+Renew when the active certificate reaches not_after-renew_before_days (capping
+the renewal window at one third of the certificate lifetime for short-lived CA
+profiles), and on
 initial enable with no usable desired certificate. Perform bounded retry after
 retry_seconds, respecting a valid later CA Retry-After without busy loops;
 persist the next-attempt time and sanitized outcome. One accepted manual renewal

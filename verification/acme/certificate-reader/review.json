@@ -1,0 +1,432 @@
+{
+  "application_started": false,
+  "cases": [
+    {
+      "actual": {
+        "accepted": true,
+        "live": true,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "9e2f4db9d85d6f5a69636c8953ac85db37dbdfbd486f50cc13f526ceffa976e8",
+        "wrong_sni_rejected": true
+      },
+      "case": "valid-rsa-full-chain",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": true,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "9e2f4db9d85d6f5a69636c8953ac85db37dbdfbd486f50cc13f526ceffa976e8",
+        "wrong_sni_rejected": true
+      },
+      "case": "valid-single-supplied-leaf",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": true,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "8d1a6f7ca22a8c27d55f3932f350f425b05d1bb9546626c3fc4774c8ab3fbcc7",
+        "wrong_sni_rejected": true
+      },
+      "case": "valid-root-omitted",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": true,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "8d1a6f7ca22a8c27d55f3932f350f425b05d1bb9546626c3fc4774c8ab3fbcc7",
+        "wrong_sni_rejected": true
+      },
+      "case": "valid-intermediate-chain",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": true,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "5de68a0c46c4c154ee4c4edb6558f16c9bfc2cfe310e8c9539bd045210b66468",
+        "wrong_sni_rejected": true
+      },
+      "case": "valid-p256",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": true,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "223896970d259117c215d21f774d02f63bd38e0406a11f88b6b97d2a1fd51606",
+        "wrong_sni_rejected": true
+      },
+      "case": "valid-p384",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "FunctionClauseError"
+      },
+      "case": "extra-ip-san",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "FunctionClauseError"
+      },
+      "case": "extra-uri-san",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "wrong-dns-san",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "unknown-critical-leaf",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "unknown-critical-single-leaf",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "MatchError"
+      },
+      "case": "non-ca-issuer",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "MatchError"
+      },
+      "case": "missing-issuer-basicconstraints",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "MatchError"
+      },
+      "case": "wrong-issuer-signature",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "wrong-private-key",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "future-leaf",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "future-leaf-recovery",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "expired-leaf",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": false,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "41261498819fb5ace8eaf1b3092e89d7393c539b4dcf74e6c43e3bcf7cb45100",
+        "wrong_sni_rejected": true
+      },
+      "case": "expired-leaf-recovery",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": false,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "41261498819fb5ace8eaf1b3092e89d7393c539b4dcf74e6c43e3bcf7cb45100",
+        "wrong_sni_rejected": true
+      },
+      "case": "expired-single-leaf-recovery",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "unsupported-key-weak",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "unsupported-key-p521",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "unsupported-key-ed25519",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "clientauth-only-leaf",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "ca-leaf-with-dns",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "leaf-without-signature-usage",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "issuer-without-keycertsign",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "expired-issuer",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "future-issuer",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "anchor-pathlen-exceeded",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "unknown-critical-anchor",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "MatchError"
+      },
+      "case": "unknown-critical-intermediate",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "MatchError"
+      },
+      "case": "expired-intermediate-recovery",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": true,
+        "live": true,
+        "requested_sni_matches_live_state": true,
+        "serial": "abcdef",
+        "sha256": "04dfa0388b269ca5839e342ac00860963740eb76274f0c82a41fd78fa8974e3d",
+        "wrong_sni_rejected": true
+      },
+      "case": "valid-no-optional-keyusage",
+      "expected_accepted": true,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "throw"
+      },
+      "case": "weak-issuer-key",
+      "expected_accepted": false,
+      "passed": true
+    },
+    {
+      "actual": {
+        "accepted": false,
+        "error_type": "FunctionClauseError"
+      },
+      "case": "pem-extra-noncertificate",
+      "expected_accepted": false,
+      "passed": true
+    }
+  ],
+  "module_sha256": "f9043644891cdba975fbde64e1a3ac61350cdc1db4280bd1c60230d0fe2cf66d",
+  "passed": true,
+  "generator_sha256": "71f9b9437e7ff5688a947e50e1e5691ab2f9282d436d372fb07ee8be3dfdd5b9",
+  "source_files": {
+    "domain.exs": "a8d9fb89f272984ddd2473d2c1253a64d4cf224e9814da18a817cca5158eeaa4",
+    "tls_certificate.exs": "f9043644891cdba975fbde64e1a3ac61350cdc1db4280bd1c60230d0fe2cf66d"
+  },
+  "input_source_unchanged": true,
+  "exit_code": 0,
+  "fixture_keys_retained_private_only": true,
+  "certificate_fixture_sha256": {
+    "valid-rsa-full-chain": "0ee1af2f57e0441ce408894a217bed2c8e97d97bb685675283d5622bdf3c161e",
+    "valid-single-supplied-leaf": "91628364977e16767646d79d4f3f167e14cbae0af69dfd147e63d89bfd52647a",
+    "valid-root-omitted": "d66730d930034a38312d973f087127d12b059126a613a76035ca97d9239a0f7f",
+    "valid-intermediate-chain": "5caf7ac9d12e474142699ce51956fdf6f8b9a352efae4a5f5cc1888ab27ea984",
+    "valid-p256": "8e3037c1e47d15c6fc426d560dba1d2c538ff4b5cda943feeb29f2d1572914d8",
+    "valid-p384": "cee83cc256dcd6a40c822a0522878fce2900a96b5c9ec31ab1baa6f5374dc190",
+    "extra-ip-san": "0a012586ad61c3b99e2b6232c9d3103a3d55a88cf40b94ba2c8d8082f7f92242",
+    "extra-uri-san": "920155675844a17c8510320ca0e529140aeeece53aca0bd577bf12ad70d2e0b2",
+    "wrong-dns-san": "a28ae708002c1813361341ce414e5fe669443488d458e9aabf95eb73ac199bad",
+    "unknown-critical-leaf": "9115ea4fcb08b52bba6538c3d7c2042fa41af423556d3f885b687bfd5ae2b0fb",
+    "unknown-critical-single-leaf": "5bf25ca4135568627a47426c5eeebef67320561e39efc428a6a8a82086c2383a",
+    "non-ca-issuer": "df1397835e855f77fe417cd470d33ed25e8cf8e5609efd71514b9c262f1d3e13",
+    "missing-issuer-basicconstraints": "0cee0bec14a37975bd99ae16e3de81e87c34aca201073913d7b5350168332c34",
+    "wrong-issuer-signature": "77e6baa4f65867d5a9618f337467ba5561f57a911b77b3662a7154cf7c297bf4",
+    "wrong-private-key": "0ee1af2f57e0441ce408894a217bed2c8e97d97bb685675283d5622bdf3c161e",
+    "future-leaf": "813b2fd9027bbe558290369bd0f8131169ea0518e339d4cb22f9bb29b64c7ae9",
+    "future-leaf-recovery": "813b2fd9027bbe558290369bd0f8131169ea0518e339d4cb22f9bb29b64c7ae9",
+    "expired-leaf": "cdeec2d1498af743dc9a7662a0d3e4f74cbc5a16cdee9e9ece37d4338c08c1c5",
+    "expired-leaf-recovery": "cdeec2d1498af743dc9a7662a0d3e4f74cbc5a16cdee9e9ece37d4338c08c1c5",
+    "expired-single-leaf-recovery": "29522d222c79ebb8faefcdaa7af380aa29053e42507719ef968b43b7864b615e",
+    "unsupported-key-weak": "2e36de28e8313cb1682272ad3bd9305c91a02a4a746854e63959e651f98b085b",
+    "unsupported-key-p521": "2021fa740fedda439291266e4e55749bbdab0cc29ed9d3a3885af8bc72031f67",
+    "unsupported-key-ed25519": "39bbf26e3d277b37ccc4ead35fc734cb0ef6a30099a440adce2af2f03c2c5afe",
+    "clientauth-only-leaf": "42076b6353f2ba93565fd060c34188cfbfe7648572beb492b08da503f8ae55b5",
+    "ca-leaf-with-dns": "dbb8c86d190c527a742167ab562c06fca8c0522b98a10e841e406c48518f037f",
+    "leaf-without-signature-usage": "4361f7a031ee7eebb6718a950c10ae483b05c575b43a092fe71a0065af16d2e4",
+    "issuer-without-keycertsign": "6921646f5392e80dfe9cee884b8f9808182a49e1356b6d202cabe3a3213843a6",
+    "expired-issuer": "082f0cbf989726050d64725d9f3289d03707b57f41d6a2664bc85691360210f2",
+    "future-issuer": "4d2f420caa59fdf9df4ef5ad29603c20cb97211446bc8c0ce744bf1d19f3e6ca",
+    "anchor-pathlen-exceeded": "298239ed4efa84250d4b6c3a87e27040477112a37b54371a369325ed3e3eb453",
+    "unknown-critical-anchor": "9ac155c1ee143f97e4cfe498918dff592be5f57907952e5b82c6619ca169152e",
+    "unknown-critical-intermediate": "cd38184d9f5ed2f080ab9a54b35bb4fc51e182ecb4873a4feaaba6896722d3d3",
+    "expired-intermediate-recovery": "401b445e14f7ecadcc1b0ad6362051da37092583417a83b96750d05c837df5c7",
+    "valid-no-optional-keyusage": "d44228d2fbbc07445aed4e189fa1b891e56d5413ae84d50f76011b28a584e5a5",
+    "weak-issuer-key": "dfcc05e3d3b619bbbc5aa961801ed70ac33dad9a97bbfd20709d969fee4a006e",
+    "pem-extra-noncertificate": "28aca1efbed3404a92cc85d36ce6611f589cac9cf757cfa9e59265385fc387ae"
+  },
+  "schema": "adhd/acme-certificate-load-vectors@1",
+  "status": "independent-module-only-cryptographic-vectors-passed",
+  "capsule_sha256": "bb85a924a2089655cab6f9324513529f9d17870dc75c8bb1ad794a3e6b27c198",
+  "cryptography_version": "50.0.2",
+  "python_version": "3.12.3",
+  "scope": [
+    "Each graph is independently signed by Python cryptography, then actual frozen ADHD.TLSCertificate.load/4 parses/verifies actual PEM/key bytes under native OTP.",
+    "Covers exact DNS SAN rejection of extra IP/URI names, critical extensions, non-CA or unqualified issuers, wrong issuer signature/key pair, future/expired leaf and recovery-only expired status.",
+    "Positive RSA2048/P256/P384/full-chain/omitted-root/single-leaf/no-optional-KU cases; strong-key restrictions, EKU/KU/BC and root/pathLen/time checks.",
+    "Actual options callback rejects foreign SNI and accepts requested SNI exactly when certificate live; lower-case certificate serial checked."
+  ],
+  "limits": [
+    "No live TLS handshake, SSL listener, trust-root admission, CA/order/client/guardian/application startup or public issuance is claimed.",
+    "The final supplied issuer is a structural anchor only; these vectors do not establish external/public-root trust.",
+    "Generated keys and public certificates remain private ignored fixtures; committed evidence includes only digests and bounded outcomes."
+  ],
+  "earlier_private_runs": [
+    "certificates01:34 passed; certificates02:36 passed; certificates03 adds exact requested-SNI/live-state relation,36 passed. No runtime/module failure observed."
+  ]
+}

@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import sys
-sys.path.insert(0,"/home/horde/src/adhd/tests")
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 import unittest
 from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('m',Path(__file__).with_name('image_oidc_policy_matrix.py'))
@@ -77,12 +77,64 @@ class Guards(unittest.TestCase):
   probes=[{'entrypoint':kind,'image_config_identity':TARGET['image_config_identity'],'observed_absent':True,'run_exit_code':0,'run_failure_type':None,'cleanup_failure_types':[],'foreign_object_not_removed':False,'owned_name':'adhd-accept-probe-'+str(i)*16,'container_id':None} for i,kind in enumerate(['cat','sha256sum'])]
   events=[{'action':'started','container_id':i} for i in ids]+[{'action':kind,'container_id':i,'observed_absent':True,'wait_observed':True,'exit_code':code} for i,kind,code in [(ids[0],'hard-killed',137),(ids[1],'stopped',0)]]
   observations=[{'container_id':i,'host_pid':9999999998+n,'kernel_start_time':str(n)} for n,i in enumerate(ids) for _ in range(2)]
-  runtime={'kind':'docker',**TARGET,'canonical_manifest_sha256':'m','payload_verified':True,'probe_cleanup_blocked':False,'cleanup_blocked':False,'payload_probe_lifecycle':probes,'container_lifecycle':events,'kernel_vm_observations':observations}
+  transitions=[{'phase':phase,'eventing_enabled_before':enabled,'eventing_enabled_after':False,'revision_before':rev,'revision_after':rev+(1 if enabled else 0),'container_id':identifier,'public_local_admin_login':True,'public_initialization_completed':True,'projects':[{'project_id':'p','availability':'ready'}]} for phase,enabled,rev,identifier in [('first-admission',True,1,ids[0]),('verified-restart',False,10,ids[1])]]
+  runtime={'kind':'docker',**TARGET,'canonical_manifest_sha256':'m','payload_verified':True,'probe_cleanup_blocked':False,'cleanup_blocked':False,'payload_probe_lifecycle':probes,'container_lifecycle':events,'kernel_vm_observations':observations,'auth_only_fixture_transitions':transitions}
   value={'passed':True,'schema':'adhd/oidc-policy@1','artifact_sha256':TARGET['artifact_sha256'],'cases':[{'passed':True} for _ in range(5)],'runtime':runtime}
   custody=self.root/'custody.json';custody.write_text(json.dumps({'failure_type':None,'application_assertions_unchanged':True,'runtimes':[runtime]}))
   plan={**TARGET,'canonical_manifest_sha256':'m','custody_report':str(custody)}
   self.assertEqual(m.qualify(value,{},plan)[0],ids)
-  for change in (lambda v:v['runtime']['container_lifecycle'][-2].update(exit_code=1),lambda v:v['runtime'].update(payload_verified=False),lambda v:v.update(cases=[])):
+  for change in (lambda v:v['runtime']['container_lifecycle'][-2].update(exit_code=1),lambda v:v['runtime'].update(payload_verified=False),lambda v:v.update(cases=[]),lambda v:v['runtime'].update(auth_only_fixture_transitions=[]),lambda v:v['runtime']['auth_only_fixture_transitions'][1].update(public_initialization_completed=False)):
    bad=copy.deepcopy(value);change(bad)
    with self.assertRaises(AssertionError):m.qualify(bad,{},plan)
+ def fixture_runtime(self,failed=False):
+  import oidc_policy_image as runner
+  from types import SimpleNamespace
+  runtime=object.__new__(runner.ObservedRuntime);runtime.root=self.root;runtime.file=self.root/'hub.json';runtime.initialized_once=False
+  runtime.owned_image=SimpleNamespace(fixture_transitions=[])
+  state={'config_revision':1,'config':{'users':[{'username':'admin','built_in':True,'provider':'local','role':'Admin'}],'eventing':{'enabled':True}}}
+  runtime.file.write_text(json.dumps(state['config']));(self.root/'initial-admin-password.txt').write_text('Password: synthetic-unit-only\n')
+  events=[];state['admitted']=False;state['missing']=False
+  class Client:
+   def __init__(self,r):assert r is runtime
+   def login(self,user,password):events.append(('login',user));assert password=='synthetic-unit-only'
+   def api(self,cmd,**kw):
+    events.append(cmd['op'])
+    if cmd['op']=='config_get':return copy.deepcopy(state)
+    if cmd['op']=='config_update':
+     assert cmd=={'op':'config_update','patch':{'eventing':{'enabled':False}}} and kw=={'mutation':True}
+     state['config']['eventing']['enabled']=False;state['config_revision']+=1
+    elif cmd['op']=='list_projects':return {'projects':[{'id':'p'}]}
+    elif cmd['op']=='project_restore_status':return {'availability':'ready' if state['admitted'] and not state['missing'] else 'recovery_required'}
+    else:raise AssertionError(cmd)
+  def original(self):
+   assert self is runtime and state['config']['eventing']['enabled'] is False
+   events.append('original-public-initializer')
+   if failed:raise RuntimeError('original initialization failure')
+   state['admitted']=True
+  return runner,runtime,state,events,Client,original
+ def test_auth_only_public_transport_then_original_admission_and_renamed_restart(self):
+  runner,runtime,state,events,client,original=self.fixture_runtime()
+  with patch.object(runner.policy,'Client',client),patch.object(runner.policy.UpgradeRuntime,'initialize_unknown_projects',original):
+   runtime.initialize_unknown_projects();self.assertTrue(runtime.initialized_once)
+   state['config']['users'][0]['username']='renamed-admin';runtime.file.write_text(json.dumps(state['config']))
+   runtime.initialize_unknown_projects()
+  self.assertEqual(events.count('original-public-initializer'),1);self.assertEqual(events.count('config_update'),1)
+  self.assertLess(events.index('config_update'),events.index('original-public-initializer'))
+  self.assertIn(('login','renamed-admin'),events)
+  transitions=runtime.owned_image.fixture_transitions;self.assertEqual(len(transitions),2)
+  self.assertTrue(all(t['public_initialization_completed'] for t in transitions));self.assertEqual(transitions[0]['revision_after'],2)
+  self.assertEqual(transitions[1]['revision_before'],transitions[1]['revision_after'])
+  self.assertNotIn('password',json.dumps(transitions));self.assertNotIn('synthetic-unit-only',json.dumps(transitions))
+ def test_failed_first_admission_does_not_mark_initialized(self):
+  runner,runtime,state,events,client,original=self.fixture_runtime(failed=True)
+  with patch.object(runner.policy,'Client',client),patch.object(runner.policy.UpgradeRuntime,'initialize_unknown_projects',original):
+   with self.assertRaisesRegex(RuntimeError,'original initialization failure'):runtime.initialize_unknown_projects()
+  self.assertFalse(runtime.initialized_once);self.assertFalse(runtime.owned_image.fixture_transitions[-1]['public_initialization_completed'])
+ def test_known_missing_restart_never_reinitializes_or_skips_unavailable(self):
+  runner,runtime,state,events,client,original=self.fixture_runtime()
+  with patch.object(runner.policy,'Client',client),patch.object(runner.policy.UpgradeRuntime,'initialize_unknown_projects',original):
+   runtime.initialize_unknown_projects();state['missing']=True
+   with self.assertRaisesRegex(AssertionError,'Never skip unavailable'):runtime.initialize_unknown_projects()
+  self.assertEqual(events.count('original-public-initializer'),1)
+  self.assertFalse(runtime.owned_image.fixture_transitions[-1]['public_initialization_completed'])
 if __name__=='__main__':unittest.main()

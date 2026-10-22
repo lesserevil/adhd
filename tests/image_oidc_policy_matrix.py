@@ -134,7 +134,7 @@ def prepare(args):
  docker_config=bound/'docker-config';docker_config.mkdir(mode=0o700);(docker_config/'config.json').write_text('{}')
  socket=Path('/var/run/docker.sock').resolve(strict=True);info=socket.stat();assert stat.S_ISSOCK(info.st_mode)
  runtime=work/'runtime';runtime.mkdir(mode=0o700);shutil.copytree(frozen/'scripts',runtime/'scripts');shutil.copyfile(plain(Path(__file__)),work/'driver.py')
- plan={'schema':'adhd/image-oidc-policy-plan@1','scope':'Original five independent OIDC policy cases and all16 assertASTs unchanged; controlled local OIDCProvider, no model/broker/live provider. Separate from auth_lifecycle/browser; no release claim.',
+ plan={'schema':'adhd/image-oidc-policy-plan@1','scope':'Original five independent OIDC policy cases and all16 assertASTs unchanged; explicit auth-only public transport disable then original public initialization, ready-only renamed-admin restart. Controlled local OIDCProvider, no model/broker/live provider. Separate from auth_lifecycle/browser; no release claim.',
   'image_config_identity':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),
   'payload_sha256':selected['payload_sha256'],'payload_audit':selected['audit'],'target_specifications':len(selected['specifications']),
   'frozen':inventory(frozen),'bound':inventory(bound),'runtime_scripts':inventory(runtime/'scripts'),'custody_report':str(work/'custody.json'),'driver_sha256':sha(work/'driver.py'),'unchanged_harness_sha256':sha(root/'tests/oidc_policy.py'),
@@ -149,6 +149,22 @@ def prepare(args):
 
 def absent(result,identifier):
  return result.returncode==1 and result.stdout.strip() in (b'',b'[]') and re.fullmatch(r'(?i:(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*)'+re.escape(identifier),result.stderr.decode(errors='replace').strip()) is not None
+
+
+def qualify_fixture(transitions):
+ assert len(transitions)==2
+ first,restart=transitions
+ assert first['phase']=='first-admission' and restart['phase']=='verified-restart'
+ assert first['eventing_enabled_before'] is True and first['eventing_enabled_after'] is False
+ assert first['revision_after']==first['revision_before']+1
+ assert restart['eventing_enabled_before'] is False and restart['eventing_enabled_after'] is False
+ assert restart['revision_after']==restart['revision_before'] and restart['revision_before']>=first['revision_after']
+ assert first['container_id']!=restart['container_id']
+ assert first['projects']==restart['projects'] and first['projects']
+ for row in transitions:
+  assert row['public_local_admin_login'] is True and row['public_initialization_completed'] is True
+  assert all(p['availability']=='ready' for p in row['projects'])
+ return {row['container_id'] for row in transitions}
 
 
 def qualify(value,job,plan):
@@ -171,7 +187,8 @@ def qualify(value,job,plan):
  hard=[e for e in events if e['action']=='hard-killed'];assert len(hard)==1 and hard[0]['exit_code']==137
  custody=json.loads(plain(plan['custody_report']).read_text());assert custody['failure_type'] is None and custody['application_assertions_unchanged'] and len(custody['runtimes'])==1
  witness=custody['runtimes'][0]
- for key in ('container_lifecycle','payload_probe_lifecycle','kernel_vm_observations'):assert witness[key]==runtime[key]
+ for key in ('container_lifecycle','payload_probe_lifecycle','kernel_vm_observations','auth_only_fixture_transitions'):assert witness[key]==runtime[key]
+ assert qualify_fixture(runtime['auth_only_fixture_transitions'])==started
  observations=runtime['kernel_vm_observations'];assert {r['container_id'] for r in observations}==started
  identities=[]
  for identifier in started:

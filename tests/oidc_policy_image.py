@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import os
+import re
 import sys
 
 import oidc_policy as policy
@@ -46,6 +47,7 @@ class ObservedImage(RetainedImage):
     def identity(self):
         result = super().identity()
         result['kernel_vm_observations'] = self.vm_observations
+        result['auth_only_fixture_transitions'] = getattr(self,'fixture_transitions',[])
         return result
 
 
@@ -57,7 +59,8 @@ def passive_identity(image):
             'payload_verified':image.verified, 'probe_cleanup_blocked':getattr(image,'probe_cleanup_blocked',False),
             'cleanup_blocked':getattr(image,'cleanup_blocked',False),
             'container_lifecycle':image.events, 'payload_probe_lifecycle':getattr(image,'probe_events',[]),
-            'kernel_vm_observations':image.vm_observations}
+            'kernel_vm_observations':image.vm_observations,
+            'auth_only_fixture_transitions':getattr(image,'fixture_transitions',[])}
 
 
 IMAGES = []
@@ -68,7 +71,44 @@ class ObservedRuntime(policy.UpgradeRuntime):
         assert image is not None, 'This narrow runner accepts an actual image only'
         super().__init__(root, command, image, manifest)
         self.owned_image = ObservedImage(image, manifest, self.root)
+        self.initialized_once = False
+        self.owned_image.fixture_transitions = []
         IMAGES.append(self.owned_image)
+
+    def initialize_unknown_projects(self):
+        # This fixture has no broker or project-data assertions. Select its
+        # transport policy publicly before the original public Admin admission.
+        users=[u for u in self.config['users'] if u.get('built_in') and u.get('provider')=='local']
+        assert len(users)==1 and users[0]['role']=='Admin'
+        username=users[0]['username']
+        password=re.search(r'^Password: (.+)$',(self.root/'initial-admin-password.txt').read_text(),re.M)[1]
+        admin=policy.Client(self);admin.login(username,password)
+        before=admin.api({'op':'config_get'});enabled=before['config']['eventing']['enabled']
+        revision=before['config_revision']
+        assert type(enabled) is bool
+        if enabled:admin.api({'op':'config_update','patch':{'eventing':{'enabled':False}}},mutation=True)
+        after=admin.api({'op':'config_get'})
+        assert after['config']['eventing']['enabled'] is False
+        assert after['config_revision']==revision+(1 if enabled else 0)
+        transition={'phase':'verified-restart' if self.initialized_once else 'first-admission',
+            'eventing_enabled_before':enabled,'eventing_enabled_after':False,
+            'revision_before':revision,'revision_after':after['config_revision'],
+            'public_local_admin_login':True,'public_initialization_completed':False,'projects':[]}
+        self.owned_image.fixture_transitions.append(transition)
+        if not self.initialized_once:
+            assert username=='admin','Fresh fixture uses original bootstrap name'
+            super().initialize_unknown_projects()
+        projects=admin.api({'op':'list_projects'})['projects'];assert projects
+        for project in projects:
+            status=admin.api({'op':'project_restore_status','project_id':project['id']})
+            assert status['availability']=='ready','Never skip unavailable target on restart'
+            transition['projects'].append({'project_id':project['id'],'availability':'ready'})
+        transition['public_initialization_completed']=True
+        self.initialized_once=True
+
+    def start(self):
+        super().start()
+        self.owned_image.fixture_transitions[-1]['container_id']=self.owned_image.container_id
 
 
 def main():

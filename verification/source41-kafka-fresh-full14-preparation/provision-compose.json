@@ -1,0 +1,145 @@
+{
+  "name": "adhd-qa41-image-events-final",
+  "networks": {
+    "events": {
+      "name": "adhd-qa41-image-events-final_events",
+      "ipam": {},
+      "internal": true
+    },
+    "test-access": {
+      "name": "adhd-qa41-image-events-final_test-access",
+      "ipam": {}
+    }
+  },
+  "services": {
+    "kafka": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 2,
+      "command": null,
+      "entrypoint": [
+        "/usr/bin/python3",
+        "/opt/adhd/kafka-bootstrap.py"
+      ],
+      "environment": {
+        "KAFKA_ADVERTISED_LISTENERS": "INTERNAL://kafka:9092",
+        "KAFKA_AUTO_CREATE_TOPICS_ENABLE": "false",
+        "KAFKA_CONTROLLER_LISTENER_NAMES": "CONTROLLER",
+        "KAFKA_CONTROLLER_QUORUM_VOTERS": "1@kafka:9093",
+        "KAFKA_DEFAULT_REPLICATION_FACTOR": "1",
+        "KAFKA_HEAP_OPTS": "-Xms256m -Xmx512m",
+        "KAFKA_INTER_BROKER_LISTENER_NAME": "INTERNAL",
+        "KAFKA_LISTENERS": "INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093",
+        "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP": "INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT",
+        "KAFKA_LOG_DIRS": "/var/lib/kafka/data/logs",
+        "KAFKA_MIN_INSYNC_REPLICAS": "1",
+        "KAFKA_NODE_ID": "1",
+        "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": "1",
+        "KAFKA_PROCESS_ROLES": "broker,controller",
+        "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR": "1",
+        "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR": "1"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "kafka-broker-api-versions --bootstrap-server localhost:9092 \u003e/dev/null 2\u003e\u00261"
+        ],
+        "timeout": "10s",
+        "interval": "10s",
+        "retries": 12,
+        "start_period": "40s"
+      },
+      "image": "confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f",
+      "mem_limit": "1610612736",
+      "networks": {
+        "events": null
+      },
+      "pids_limit": 256,
+      "platform": "linux/amd64",
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "1m0s",
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "kafka-data",
+          "target": "/var/lib/kafka/data",
+          "volume": {}
+        },
+        {
+          "type": "bind",
+          "source": "/home/horde/src/adhd/_build/kafka41-compiled02/frozen/deploy/kafka-bootstrap.py",
+          "target": "/opt/adhd/kafka-bootstrap.py",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ]
+    },
+    "kafka-rest": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "cpus": 1,
+      "command": null,
+      "depends_on": {
+        "kafka": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "entrypoint": null,
+      "environment": {
+        "KAFKA_REST_BOOTSTRAP_SERVERS": "kafka:9092",
+        "KAFKA_REST_CONSUMER_ENABLE_AUTO_COMMIT": "false",
+        "KAFKA_REST_HEAP_OPTS": "-Xms128m -Xmx384m",
+        "KAFKA_REST_HOST_NAME": "kafka-rest",
+        "KAFKA_REST_LISTENERS": "http://0.0.0.0:8082",
+        "KAFKA_REST_PRODUCER_ACKS": "all",
+        "KAFKA_REST_PRODUCER_ENABLE_IDEMPOTENCE": "true",
+        "KAFKA_REST_PRODUCER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION": "1"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "bash -ec 'exec 3\u003c\u003e/dev/tcp/127.0.0.1/8082; printf \"GET /brokers HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" \u003e\u00263; read -r status \u003c\u00263; [[ \"$$status\" == *\" 200 \"* ]]' "
+        ],
+        "timeout": "5s",
+        "interval": "10s",
+        "retries": 12,
+        "start_period": "20s"
+      },
+      "image": "confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058",
+      "mem_limit": "1073741824",
+      "networks": {
+        "events": null,
+        "test-access": null
+      },
+      "pids_limit": 256,
+      "platform": "linux/amd64",
+      "ports": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 8082,
+          "published": "18089",
+          "protocol": "tcp"
+        }
+      ],
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "30s"
+    }
+  },
+  "volumes": {
+    "kafka-data": {
+      "name": "adhd-qa41-image-events-final_kafka-data"
+    }
+  }
+}

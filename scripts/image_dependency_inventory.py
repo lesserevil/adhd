@@ -14,6 +14,8 @@ import stat
 import tarfile
 
 DB='lib/apk/db/installed'
+DB_WHITEOUTS={'.wh.lib','lib/.wh.apk','lib/apk/.wh.db','lib/apk/db/.wh.installed',
+             '.wh..wh..opq','lib/.wh..wh..opq','lib/apk/.wh..wh..opq','lib/apk/db/.wh..wh..opq'}
 MAX_LAYER=1024*1024*1024
 
 def digest(stream):
@@ -52,15 +54,19 @@ def inventory(archive,image):
   for index,name in enumerate(layers):
    member=byname[name];assert member.isfile() and member.size<=MAX_LAYER
    actual=digest(outer.extractfile(member));assert 'sha256:'+actual==config['rootfs']['diff_ids'][index]
-   count=0;targets=set()
+   count=0;targets=set();replacement=None;removed=False
    with tarfile.open(fileobj=outer.extractfile(member),mode='r|') as inner:
     for m in inner:
      count+=1;assert count<=250000
      n=m.name.removeprefix('./');assert not n.startswith('/') and '..' not in Path(n).parts
-     if n=='lib/apk/db/.wh.installed' or n in ('lib/.wh..wh..opq','lib/apk/.wh..wh..opq','lib/apk/db/.wh..wh..opq'):state=None
+     if n in DB_WHITEOUTS:removed=True
      if n==DB:
-      assert n not in targets and m.isfile() and m.size<=2*1024*1024;targets.add(n);state=inner.extractfile(m).read()
+      assert n not in targets and m.isfile() and m.size<=2*1024*1024;targets.add(n);replacement=inner.extractfile(m).read()
      if m.isfile() and re.search(r'(^|/)(?:COPYING|COPYRIGHT|NOTICE|LICENSE)(?:[./_-]|$)',n,re.I):license_paths.add(n)
+   # Whiteouts remove lower-layer entries regardless of tar member order.
+   # A database written in this same layer survives its directory's opacity.
+   if removed:state=None
+   if replacement is not None:state=replacement
    layer_rows.append({'index':index,'diff_id':'sha256:'+actual,'bytes':member.size})
  assert state is not None,'No supported Alpine package database in final layer view'
  env=dict(x.split('=',1) for x in config['config'].get('Env',[]) if '=' in x)

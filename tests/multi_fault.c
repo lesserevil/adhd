@@ -57,6 +57,16 @@ static int contains_identity(const char *path, const char *identity) {
   return found;
 }
 
+static int project_snapshot(const char *store, const char *destination) {
+  size_t stem = strlen(store), size = strlen(destination);
+  if (size < stem + 9 || strncmp(destination, store, stem) ||
+      strcmp(destination + size - 9, ".snapshot")) return 0;
+  /* Legacy base snapshot or an explicitly initialized generation below this
+   * owned store root. A real decision identity must also match the source. */
+  return !strcmp(destination + stem, ".snapshot") ||
+    !strncmp(destination + stem, ".projects/", 10);
+}
+
 static int boundary(const char *source, const char *destination) {
   const char *stage = getenv("ADHD_CRASH_STAGE");
   const char *config = getenv("ADHD_CRASH_CONFIG");
@@ -68,7 +78,7 @@ static int boundary(const char *source, const char *destination) {
   snprintf(transaction, sizeof(transaction), "%s.transaction", config);
   if (!strcmp(stage, "transition-decision") && !strcmp(destination, config)
       && transition(transaction, identity, sizeof(identity))) return 1;
-  if (!strcmp(stage, "transition-project") && !strcmp(destination, snapshot)
+  if (!strcmp(stage, "transition-project") && project_snapshot(store, destination)
       && transition(transaction, identity, sizeof(identity)) && contains_identity(source, identity)) return 2;
   if (!strcmp(destination, marker)) {
     if (!strcmp(stage, "before-prepared") && has_phase(source, "prepared")) return 1;

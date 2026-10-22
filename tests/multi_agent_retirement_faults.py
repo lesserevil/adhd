@@ -37,7 +37,13 @@ async def checks(f, evidence):
                     "token": secrets.token_urlsafe(32), "project_ids": ["project-red"]}, mutation=True)
     evidence.record("fresh-developer-creation-succeeds-with-complete-snapshot-evidence")
 
-    snapshot = Path(f.config["store_path"] + ".snapshot")
+    if schema.get("$id") == "urn:adhd:protocol:2.1":
+        from project_recovery_state import route
+        entry, anchor = route(f.config_file, "project-red")
+        assert entry["initialized"] and entry["availability"] == "ready"
+        snapshot = Path(str(anchor) + ".snapshot")
+    else:
+        snapshot = Path(f.config["store_path"] + ".snapshot")
     held = snapshot.with_name(snapshot.name + ".ownership-fault-held")
     assert snapshot.is_file() and not held.exists()
     observations = []

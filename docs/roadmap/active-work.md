@@ -74,11 +74,17 @@ retains that aggregate as failed and proves all14 strict vectors passed. The
 original invocation omitted the existing `--fixed-baseline` flag for the repaired
 artifact. A fresh final-seven batch is running with that flag; all466 frozen inputs,
 11 external bindings, remaining suite order and assertions are unchanged. The reviewed image filesystem/migration ladder
-is now running serially: 17 original jobs / 85 expected checks, with all five
-observers bound to the actual passing image ABI probes. Its complete storage suite
-passes10 checks (four real write kills and six integrity predicates); root review
-independently confirms all18 owned application containers and five codec helpers
-are absent. The remaining16 jobs have no whole-matrix pass claim. Preparation and isolated
+ran serially with17 original jobs /85 expected checks and all five observers
+bound to the passing actual image ABI probes. It stopped at the after-decision
+store-move custody check: the process tuple changed between pre-STOP observations;
+the exact differing field was not retained. The tuple includes a whole memory-map
+hash, which can legitimately change, so repair that observation guard without
+weakening stable process identity or source-bound observer mapping checks. Retain
+the failed aggregate,10 complete storage checks and four complete before-decision
+move checks; do not count the failed suite's one partial check or14 unrun jobs.
+Root independently verifies all21 recorded app containers and five codec helpers
+are absent and the complete exact-image container enumeration is empty. The
+prepared Kafka and configuration ABI plans need fresh guard snapshots before execution. Preparation and isolated
 guard checks for all 15 image recovery crash variants, private-network learned
 recovery and the actual-image offline rebind adapter have also passed; their
 application runs remain pending. The integrated platform driver and missing-target

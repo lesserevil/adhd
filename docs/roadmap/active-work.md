@@ -25,6 +25,28 @@ queue item or let `docs/roadmap/` become a plan archive.
 
 ## Authorized implementation batches
 
+Current qualification uses unchanged source40 and the compiled05 image. The
+[native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
+passes28 whole suites/156 checks; its separately verified foundation prefix adds20
+checks, yielding29 suites/176 checks without relabeling the earlier failed runs.
+[Model-free Compose and Kind](../../verification/ownedMULTI008/compiled05-baseline-platform-positive/manifest.json)
+pass21 whole checks, and [secured Kind](../../verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json)
+passes seven scenarios/51 assertions, including actual credential/certificate and
+broker/proxy replacement. The [Calico bootstrap](../../verification/network-policy-kind40-bootstrap12-positive/audit.json)
+passes both rollouts; route enforcement remains a separate running gate.
+
+The [compiled05 core attempt](../../verification/final05-core13-first-failure/manifest.json)
+remains failed: foundation, wire and store-move passed whole; multi-project passed
+eight partial checks before the fixture tried to initialize an unrelated newly
+registered project during restart. That additional operation returned
+`RESTORE_IO_ERROR`; its underlying cause is unproven. The required original
+restart assertions and nine later suites are unqualified. Restrict fixture
+bootstrap to its initial project inventory, preserving explicit admission for
+later projects and all original assertions/deadlines, then qualify the ten-suite
+remainder. Current native browser, Kafka and enforcing-CNI route matrices are
+running. Updated operating guides still require the proper documentation-authority
+and receipt lifecycle; no parent item is closed by these partial results.
+
 The user has now authorized implementation of all outstanding roadmap work,
 grouped in branches with parallel agents. MULTI-001 through MULTI-008 and
 KAFKA-001 through KAFKA-009 are the current implementation program. Their

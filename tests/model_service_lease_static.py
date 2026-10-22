@@ -42,7 +42,7 @@ class LeaseGuards(unittest.TestCase):
    (root/'hard').unlink();alias=root/'alias';alias.symlink_to(path)
    with self.assertRaises(AssertionError):lease.acquire(alias)
  def build(self,root):
-  planroot=root/'quality';planroot.mkdir();driver=planroot/'run.py';driver.write_text('# never executed\n');plan=planroot/'plan.json';plan.write_text(json.dumps({'schema':'adhd/live-quality-image-plan@1','driver_sha256':lease.sha(driver)}));work=root/'request'
+  planroot=root/'quality';planroot.mkdir();driver=planroot/'run.py';driver.write_text('# never executed\n');plan=planroot/'plan.json';plan.write_text(json.dumps({'schema':'adhd/live-quality-image-plan@1','driver_sha256':lease.sha(driver),'tools':{'docker':{'path':str(Path('/bin/true').absolute()),'resolved':str(Path('/bin/true').resolve()),'sha256':lease.sha(Path('/bin/true').resolve())}}}));work=root/'request'
   args=SimpleNamespace(work=work,plan=plan,model_name='/owned-model',lease_path=root/'lease')
   lease.prepare(args);sp=importlib.util.spec_from_file_location('copied_model_lease',work/'launch.py');m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m)
   return m,work,driver
@@ -66,6 +66,12 @@ class LeaseGuards(unittest.TestCase):
     with patch.object(m,'inspect_model') as inspect:self.assertEqual(m.execute(w/'request.json',m.sha(w/'request.json')),1);inspect.assert_not_called()
     self.assertIsNone(json.loads((w/'result.json').read_text())['child_pid']);self.assertFalse((w/'driver.log').exists())
    finally:os.close(fd)
+ def test_changed_pinned_docker_refuses_before_metadata_or_child(self):
+  with tempfile.TemporaryDirectory() as directory:
+   m,w,driver=self.build(Path(directory));request=json.loads((w/'request.json').read_text());request['docker_sha256']='0'*64;(w/'request.json').write_text(json.dumps(request));(w/'request.json').chmod(0o600)
+   with patch.object(m,'inspect_model') as inspect:
+    with self.assertRaises(AssertionError):m.execute(w/'request.json',m.sha(w/'request.json'))
+    inspect.assert_not_called()
  def test_existing_result_refuses_before_lease_or_inspect(self):
   with tempfile.TemporaryDirectory() as directory:
    m,w,driver=self.build(Path(directory));(w/'result.json').write_text('old')

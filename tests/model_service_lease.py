@@ -63,11 +63,11 @@ def validate_identity(raw,expected):
  return {'container_id':row['Id'],'image_config_identity':row['Image'],'name':row['Name'],'running':True,'healthy':True,'host_vm_pid':row['State']['Pid'],'started_at':row['State']['StartedAt'],'restart_count':row['RestartCount'],'published_port':{'host_ip':'127.0.0.1','host_port':18770,'container_port':8770}}
 
 
-def inspect_model(expected):
+def inspect_model(expected,docker):
  # Read-only Docker metadata; no GET/POST, healthcheck command or warmup.
  started=time.monotonic();deadline=started+5;process=None;selector=selectors.DefaultSelector();streams={};client={}
  try:
-  process=subprocess.Popen(['docker','inspect',expected['container_id']],stdout=subprocess.PIPE,stderr=subprocess.PIPE);client['pid']=process.pid
+  process=subprocess.Popen([docker,'inspect',expected['container_id']],stdout=subprocess.PIPE,stderr=subprocess.PIPE);client['pid']=process.pid
   for stream in [process.stdout,process.stderr]:os.set_blocking(stream.fileno(),False);selector.register(stream,selectors.EVENT_READ);streams[stream]=bytearray()
   while selector.get_map():
    remaining=deadline-time.monotonic()
@@ -96,6 +96,8 @@ def validate_request(request):
  assert sha(driver)==request['driver_sha256'] and sha(plan)==request['plan_sha256']
  payload=json.loads(plan.read_text());assert payload['driver_sha256']==request['driver_sha256'] and payload['schema']=='adhd/live-quality-image-plan@1'
  python=Path(request['python']);assert str(python.resolve())==request['python_resolved'] and sha(python.resolve())==request['python_sha256']
+ assert str(Path(sys.executable).resolve())==request['python_resolved'] and sha(Path(sys.executable).resolve())==request['python_sha256']
+ docker=Path(request['docker']);assert docker.is_absolute() and str(docker.resolve())==request['docker_resolved'] and sha(docker.resolve())==request['docker_sha256']
  assert request['expected_model']['container_id']==MODEL and request['expected_model']['image_config_identity']==IMAGE
  return [str(python),'-B',str(driver),'--execute','--work',str(plan.parent),'--reviewed-plan-sha256',request['plan_sha256']]
 
@@ -105,7 +107,7 @@ def execute(path,digest):
  assert not(work/'result.json').exists() and not(work/'driver.log').exists()
  fd=None;identity=None;before=None;after=None;child=None;failure=None;cleanup_failure=None;code=None;metadata_errors=[]
  try:
-  fd,identity=acquire(Path(request['lease_path']));before=inspect_model(request['expected_model']);raw=(json.dumps({'request_sha256':digest,'parent_pid':os.getpid(),'driver_sha256':request['driver_sha256'],'plan_sha256':request['plan_sha256']})+'\n').encode();assert len(raw)<=4096
+  fd,identity=acquire(Path(request['lease_path']));before=inspect_model(request['expected_model'],request['docker']);raw=(json.dumps({'request_sha256':digest,'parent_pid':os.getpid(),'driver_sha256':request['driver_sha256'],'plan_sha256':request['plan_sha256']})+'\n').encode();assert len(raw)<=4096
   os.ftruncate(fd,0);assert os.write(fd,raw)==len(raw);os.fsync(fd)
   # Recheck exact reviewed bytes after the metadata gate and before any child.
   assert validate_request(request)==argv
@@ -124,7 +126,7 @@ def execute(path,digest):
    except BaseException as error:cleanup_failure=type(error).__name__
   if before:
    try:
-    after=inspect_model(request['expected_model']);assert {k:v for k,v in before.items() if k!='metadata_client'}=={k:v for k,v in after.items() if k!='metadata_client'}
+    after=inspect_model(request['expected_model'],request['docker']);assert {k:v for k,v in before.items() if k!='metadata_client'}=={k:v for k,v in after.items() if k!='metadata_client'}
    except BaseException as error:
     cleanup_failure=type(error).__name__
     if hasattr(error,'owned_metadata_client'):metadata_errors.append(error.owned_metadata_client)
@@ -140,7 +142,7 @@ def execute(path,digest):
 def prepare(a):
  work=a.work.absolute();assert not work.exists();plan=a.plan.absolute();driver=plan.parent/'run.py';regular(plan);regular(driver);p=json.loads(plan.read_text());assert sha(driver)==p['driver_sha256'];assert a.model_name.startswith('/')
  work.mkdir(mode=0o700);launcher=work/'launch.py';shutil_copy=Path(__file__).read_bytes();launcher.write_bytes(shutil_copy);launcher.chmod(0o600)
- request={'schema':'adhd/cooperative-model-service-lease-request@1','launcher_path':str(launcher),'launcher_sha256':sha(launcher),'driver':str(driver),'driver_sha256':sha(driver),'plan':str(plan),'plan_sha256':sha(plan),'python':sys.executable,'python_resolved':str(Path(sys.executable).resolve()),'python_sha256':sha(Path(sys.executable).resolve()),'lease_path':str(a.lease_path.absolute()),'expected_model':{'container_id':MODEL,'image_config_identity':IMAGE,'name':a.model_name},'cooperative_all_agent_handoff_and_current_connection_gate_required':True,'status':'UNSTARTED_ROOT_REVIEW_REQUIRED'}
+ request={'schema':'adhd/cooperative-model-service-lease-request@1','launcher_path':str(launcher),'launcher_sha256':sha(launcher),'driver':str(driver),'driver_sha256':sha(driver),'plan':str(plan),'plan_sha256':sha(plan),'python':sys.executable,'python_resolved':str(Path(sys.executable).resolve()),'python_sha256':sha(Path(sys.executable).resolve()),'docker':p['tools']['docker']['path'],'docker_resolved':p['tools']['docker']['resolved'],'docker_sha256':p['tools']['docker']['sha256'],'lease_path':str(a.lease_path.absolute()),'expected_model':{'container_id':MODEL,'image_config_identity':IMAGE,'name':a.model_name},'cooperative_all_agent_handoff_and_current_connection_gate_required':True,'status':'UNSTARTED_ROOT_REVIEW_REQUIRED'}
  private_write(work/'request.json',request);print(json.dumps({'request':str(work/'request.json'),'request_sha256':sha(work/'request.json'),'launcher_sha256':sha(launcher)}))
 
 if __name__=='__main__':

@@ -1,0 +1,121 @@
+{
+  "schema": "adhd/eventing-readiness-native23-execution-design@1",
+  "executable": false,
+  "runtime_authorized": false,
+  "runtime_started": false,
+  "qualified": false,
+  "pending_target": {
+    "artifact": null,
+    "artifact_sha256": null,
+    "official_receipt": null,
+    "receipt_sha256": null,
+    "component_lock_identity": null,
+    "specification_set_identity": null,
+    "reason": "Bind only actual root-exported artifact and reviewed official lifecycle outputs after they exist; candidate source presence is not admission."
+  },
+  "harness": {
+    "eventing_readiness_faults.py": "3e5d45d2c1595f4cd85171442514d7357de0cb452796c0bc5875f1a7d790b3fe",
+    "eventing_readiness_proxy.py": "6638df8db3db463707e3feb5ff1b48c5fa1eced376d65593328eaed1bb04ffc6",
+    "eventing_readiness_proxy_unit.py": "17fcf4679d5ee149f8a07ae13f1ba87b323226ebb9db045fc12442f4f82972e0",
+    "eventing_readiness_matrix.py": "e596d664e1e3d439e0e5d7f2714d106799ef2e7134471c358344254f0c5b8e16",
+    "eventing_readiness_matrix_unit.py": "a55636c9eab6b62fb8b72ba90caf2f1b4347af8d279f4c98da4b9d7b9c6b3d4a",
+    "eventing_readiness_cleanup_unit.py": "bf83d63d1860f4b760f1333024cb7d623e350cb5a12243147c1e4be0ddc99632"
+  },
+  "canonical_authority": {
+    "components/hub/eventing/spec.md": "4e92f5fa837b9becf446b2733c1e460f53314efc1f3b93734ac0a08ec564f4ba",
+    "components/hub/project-recovery/spec.md": "c9e6a069cb789ab4eff9efd4925396a9856a8df5038b09e802ec5ab459dfe4be",
+    "components/hub/resources/spec.md": "43136b7d22154f733621f1296062e95b4a6fea51645a09ffafee3cd6c4e45789",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "execution": {
+    "order": "Original21 authored cases preserved as ordered prefix, followed by metadata-lag and offset-end-float; all23 serial, fresh private fixture per case, fail first/no retries.",
+    "cases": [
+      "lag",
+      "queue-control",
+      "duplicate",
+      "duplicate-bad-topology",
+      "never",
+      "queue",
+      "forbidden",
+      "server-error",
+      "malformed",
+      "bad-cleanup",
+      "partitions-float",
+      "retention-missing",
+      "retention-float",
+      "retention-negative",
+      "retention-duplicate",
+      "existing-retention",
+      "offset-nonzero",
+      "offset-negative",
+      "offset-missing",
+      "offset-float",
+      "offset-string",
+      "metadata-lag",
+      "offset-end-float"
+    ],
+    "argv_template": [
+      "<pinned-venv-python>",
+      "-I",
+      "-B",
+      "<frozen-tests>/eventing_readiness_faults.py",
+      "--hub",
+      "<actual-accepted-export>",
+      "--eventing-rest-url",
+      "http://127.0.0.1:18082",
+      "--recovery-schema",
+      "<frozen-authority>/components/hub/project-recovery/interface.schema.json",
+      "--keep-work",
+      "<fresh-private-results>/fixtures",
+      "--report",
+      "<fresh-private-results>/report.json"
+    ],
+    "provider_calls": 0,
+    "no_broker_mutation": "No broker stop/restart/topic deletion; fixture creates only own random namespace topics through real REST.",
+    "no_mocked_success": "Selected faults surround actual Kafka creation; positive cases require actual subscription delivery and preserved Blue publication/ack.",
+    "waits": "Existing Fixture45s readiness, existing20s recovery observation and actual application1000/3000ms Eventing/10000ms queue owner budgets unchanged;2s post-failure Red lane release observation is a resource-liveness assertion, not an extension to the operation deadline."
+  },
+  "freeze_and_admission_checks": [
+    "Require actual artifact regular owned nonredirected file, exact export digest tied to reviewed lifecycle receipt/source/lock; reject candidate-only targets.",
+    "Freeze exact harness and complete declared local Python import closure plus actual referenced schema/refs/authority bytes; record full relative file SET, hashes, modes, reject symlinks and unexpected entries before and after.",
+    "Pin actual Python/Elixir/Erlang top executables and required qualified tool roots/PATH; do not claim recursive OS-library closure.",
+    "Use immutable copied export identical to official export, never write sourceC/compiled05/candidate or receipts/locks.",
+    "Verify original21 case order and original program entry; bind driver actual __file__ digest; guard once with exclusive nofollow marker, fsync marker and parent before child.",
+    "Private fresh result root must not exist; one program owns serial cases, no outer deadline bypassing finally; original harness unwinds fixture and proxy independently.",
+    "No imports or verification may open/start runtime/proxy/model. Root separately reviews full sealed plan and authorizes execute."
+  ],
+  "qualification_and_cleanup": [
+    "Require report schema, actual21 cases true only if all execute; any first false remains false, unrun cases explicit.",
+    "Retain per-case actual native PID/start ticks/cmd hash and reaped status, proxy handlers0/thread stopped/failure list; inspect exact recorded identities and scoped fixture processes independently without broad kill or cleanup mutation.",
+    "After every failed operation, retain authenticated public resource_status proving Red Eventing active0/queued0 while allowing legitimate Blue activity.",
+    "Keep queue premise and actual active/queued observations; late or absent within0.5s is fixture-premise failure, not product failure.",
+    "Reverify full frozen/external/bound file SET/hashes after terminal; preserve original reports/logs/first failure and sanitized proof metadata, no credentials/config bodies."
+  ],
+  "blocked_until": [
+    "Official root actual export and lifecycle proof available",
+    "Full frozen execution plan prepared and independently reviewed",
+    "Root runtime GO"
+  ],
+  "preserved_predecessor_design": {
+    "path": "verification/eventing-readiness-native21-design/plan-design.json",
+    "sha256": "1fe577b6aa6b66880d00c20f2f4cf83f87eb70d16710496fec2ab5944463e489"
+  },
+  "strengthening": {
+    "approved_by": "root before any app/proxy execution",
+    "original_ordered_case_prefix": 21,
+    "appended_cases": [
+      "metadata-lag",
+      "offset-end-float"
+    ],
+    "old_run_case_assertions_preserved_in_order": 27,
+    "new_suite": "adhd/eventing-readiness-faults@2",
+    "driver_plan_schema": "adhd/eventing-readiness-native23-plan@1",
+    "driver_result_schema": "adhd/eventing-readiness-native23-result@1",
+    "retention": "Retain only successful actual broker cleanup.policy (delete/compact) and canonical signed64 retention.ms values. Before authorized alter require observed old value and absent prior transaction; every alter requires durable decision file, then actual desired value readback. Arbitrary values/row names/headers/URL/body never retained.",
+    "metadata_lag": "First exact postcreate metadata read gets declared404; require subsequent actual metadata200 and real broker delivery, no repeated creation.",
+    "offset_end_float": "Integer beginning0 and floating end0.0 must fail predecision and release Red resources.",
+    "pure_checks_passed": 25,
+    "runtime_or_proxy_started": false,
+    "provider_calls": 0
+  }
+}

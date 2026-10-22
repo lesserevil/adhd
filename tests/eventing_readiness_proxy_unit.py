@@ -25,6 +25,21 @@ class Faults(unittest.TestCase):
         self.assertGreater(observed['recovery_timeout_ms'],observed['eventing_timeout_ms'])
         for late in [10.5001,11,9]:
             with self.assertRaisesRegex(AssertionError,'Fixture premise failed'):p.queue_premise(10,late)
+    def test_metadata_lag_is_bounded_postcreation_only(self):
+        self.assertEqual(p.fault_response('metadata-lag','metadata',200,b'valid',1,False),(200,b'valid',False))
+        self.assertEqual(p.fault_response('metadata-lag','metadata',200,b'valid',1,True)[0],404)
+        self.assertEqual(p.fault_response('metadata-lag','metadata',200,b'valid',2,True),(200,b'valid',False))
+    def test_end_offset_float_has_integer_beginning(self):
+        _,raw,injected=p.fault_response('offset-end-float','offsets',200,b'{}',1,True)
+        value=json.loads(raw);self.assertTrue(injected)
+        self.assertIs(type(value['beginning_offset']),int);self.assertIs(type(value['end_offset']),float)
+    def test_configuration_observer_retains_only_policy_values(self):
+        raw=json.dumps({'data':[{'name':'retention.ms','value':'604800000'},{'name':'cleanup.policy','value':'delete'},
+             {'name':'unrelated.credential','value':'NEVER_RETAIN'},{'name':'retention.ms','value':'PRIVATE_BAD_VALUE'}]}).encode()
+        observed=p.actual_configuration(200,raw)
+        self.assertEqual(observed,{'cleanup_policy':['delete'],'retention_ms':['604800000',{'invalid_value_type':'str'}]})
+        self.assertNotIn('PRIVATE',json.dumps(observed));self.assertNotIn('NEVER',json.dumps(observed))
+        self.assertIsNone(p.actual_configuration(404,raw));self.assertEqual(p.actual_configuration(200,b'bad'),{'invalid_data':True})
     def test_nontransient_and_float_fault_bytes(self):
         self.assertEqual(p.fault_response('forbidden','configs',200,b'valid',1,True)[0],403)
         self.assertEqual(p.fault_response('server-error','configs',200,b'valid',1,True)[0],500)

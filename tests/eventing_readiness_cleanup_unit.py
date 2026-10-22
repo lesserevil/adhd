@@ -54,7 +54,7 @@ class Cleanup(unittest.TestCase):
    kill.assert_not_called()
  def test_partial_failed_report_still_records_absence_and_unrun(self):
   with tempfile.TemporaryDirectory()as d:
-   path=Path(d)/'report.json';path.write_text(json.dumps({'checks':[{'name':m.CASES[0]}],
+   path=Path(d)/'report.json';path.write_text(json.dumps({'suite':'adhd/eventing-readiness-faults@2','planned_cases':list(m.CASES),'original_case_prefix_count':21,'checks':[{'name':m.CASES[0]}],
     'proxy_cleanup':[{'case':c,'handlers':0,'thread_alive':False,'failures':[],'cleanup_failure_types':[]}for c in m.CASES[:2]],
     'native_runtime_cases':{'lag':{'pid':99999999,'start_ticks':17,'reaped':True}}}))
    _,observation=m.report_observations(path)

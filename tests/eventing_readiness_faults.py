@@ -23,7 +23,7 @@ from project_recovery_acceptance import Recovery,RED,BLUE
 from project_recovery_state import route
 
 CASES=('lag','queue-control','duplicate','duplicate-bad-topology','never','queue','forbidden','server-error','malformed','bad-cleanup','partitions-float','retention-missing','retention-float','retention-negative','retention-duplicate','existing-retention',
-       'offset-nonzero','offset-negative','offset-missing','offset-float','offset-string')
+       'offset-nonzero','offset-negative','offset-missing','offset-float','offset-string','metadata-lag','offset-end-float')
 
 
 async def until(predicate,seconds):
@@ -81,19 +81,27 @@ async def run_case(args,case,e):
         if case=='existing-retention':
             proxy.arm(blue_initialized[-1]['result']['topic'],case)
             proxy.transaction=Path(str(f.file)+'.transaction')
-            desired=before['config']['eventing']['retention_ms']//2
+            assert not proxy.transaction.exists(),'Prior transaction must not falsely witness this decision'
+            old_retention=before['config']['eventing']['retention_ms']
+            desired=old_retention//2
             f.admin().call({'op':'config_update','patch':{'eventing':{**f.config['eventing'],'retention_ms':desired}},
                 'expected_revision':before['config_revision'],'message_id':uuid4().hex,'confirm':True},mutation=True)
             alters=[v for v in proxy.events if v['category']=='alter']
             assert alters and all(v['durable_transaction_present']for v in alters)
             assert any(v['category']=='configs'and v['at']>alters[-1]['at']for v in proxy.events)
+            expected_old={'cleanup_policy':['delete'],'retention_ms':[str(old_retention)]}
+            expected_new={'cleanup_policy':['delete'],'retention_ms':[str(desired)]}
+            prior_reads=[v for v in proxy.events if v['category']=='configs'and v['at']<alters[0]['at']and v['actual_configuration']==expected_old]
+            verified_reads=[v for v in proxy.events if v['category']=='configs'and v['at']>alters[-1]['at']and v['actual_configuration']==expected_new]
+            assert prior_reads,'Actual broker old valid retention must be observed before authorized alter'
+            assert verified_reads,'Actual broker desired retention must be read back after authorized alter'
             assert f.admin().call({'op':'config_get'})['config']['eventing']['retention_ms']==desired
             after_route=route(f.file,BLUE)[0]
             for field in ['server_id','project_id','generation','project_epoch','allocation_epoch','storage_anchor','aliases']:
                 assert after_route[field]==blue_route[field]
             assert (await actor.call(scoped(BLUE,'get_record',publication_id=original['id'])))['record']['publication']==original
             assert all(d['id']!=delivery['id']for d in (await blue.call(scoped(BLUE,'poll')))['deliveries'])
-            e.record(case,actual_postdecision_alters=alters,readback_observed=True,original_and_ack_preserved=True)
+            e.record(case,actual_postdecision_alters=alters,actual_predecision_old_configuration=prior_reads,actual_postdecision_desired_configuration=verified_reads,readback_observed=True,original_and_ack_preserved=True)
             return
         planned=r.call(RED,'project_restore_plan',mode='initialize',confirm=True,expected_revision=r.revision(),message_id=uuid4().hex)
         plan=(await r.settle(RED,planned,{'ready'}))['plan'];r.assert_plan(plan,RED,'initialize')
@@ -129,9 +137,10 @@ async def run_case(args,case,e):
         current_blue,_=route(f.file,BLUE);assert current_blue==blue_route
         assert (await actor.call(scoped(BLUE,'get_record',publication_id=original['id'])))['record']['publication']==original
         assert all(d['id']!=delivery['id']for d in (await blue.call(scoped(BLUE,'poll')))['deliveries'])
-        if case in ('lag','queue-control','duplicate'):
+        if case in ('lag','queue-control','duplicate','metadata-lag'):
             assert operation['state']=='complete'and len(creates)==1
             if case in ('lag','queue-control'):assert sum(v['injected']for v in selected)==(2 if case=='lag'else 20)
+            if case=='metadata-lag':assert sum(v['injected']for v in selected)==1 and any(v['category']=='metadata'and v['status']==200 and not v['injected']for v in selected)
             if case=='duplicate':assert creates[0]['status']==400 and any(v['category']=='metadata'and v['at']>creates[0]['at']for v in selected)
             red=await f.agent('red-b');await red.call(scoped(RED,'subscribe',mode='raw'))
             item=(await actor.call(scoped(RED,'publish_record',text='Real broker readiness accepted')))['record']['publication']
@@ -193,7 +202,7 @@ async def run_case(args,case,e):
 async def main(args):
     if args.rest_url or args.command or args.with_model:raise ValueError('Requires owned --hub/--image, no model')
     if args.keep_work:args.keep_work.mkdir(mode=0o700,parents=True,exist_ok=False)
-    e=Evidence(args.report,'adhd/eventing-readiness-faults@1');e.value.update(provider_calls=0,
+    e=Evidence(args.report,'adhd/eventing-readiness-faults@2');e.value.update(provider_calls=0,planned_cases=list(CASES),original_case_prefix_count=21,
         artifact_sha256=json.loads(args.image_manifest.read_text())['files']['hub.exs']if args.image else hashlib.sha256(args.hub.read_bytes()).hexdigest(),
         harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         proxy_sha256=hashlib.sha256(Path(__file__).with_name('eventing_readiness_proxy.py').read_bytes()).hexdigest(),

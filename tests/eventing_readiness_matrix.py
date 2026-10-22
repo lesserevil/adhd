@@ -19,8 +19,8 @@ import sys
 import time
 from urllib.parse import urlsplit
 sys.dont_write_bytecode=True
-CASES=('lag','queue-control','duplicate','duplicate-bad-topology','never','queue','forbidden','server-error','malformed','bad-cleanup','partitions-float','retention-missing','retention-float','retention-negative','retention-duplicate','existing-retention','offset-nonzero','offset-negative','offset-missing','offset-float','offset-string')
-SCHEMA='adhd/eventing-readiness-native21-plan@1'
+CASES=('lag','queue-control','duplicate','duplicate-bad-topology','never','queue','forbidden','server-error','malformed','bad-cleanup','partitions-float','retention-missing','retention-float','retention-negative','retention-duplicate','existing-retention','offset-nonzero','offset-negative','offset-missing','offset-float','offset-string','metadata-lag','offset-end-float')
+SCHEMA='adhd/eventing-readiness-native23-plan@1'
 
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -124,7 +124,7 @@ def prepare(a):
  plan={'schema':SCHEMA,'status':'UNSTARTED_ROOT_REVIEW_REQUIRED','official':official,'frozen':inventory(frozen),'bound':inventory(bound),
        'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_roots':roots,'argv':argv,'environment':env,'cases':list(CASES),
        'automatic_retries':0,'parallelism':1,'provider_calls_authorized':0,'outer_timeout':None,
-       'scope':'Native real-Kafka21 authored fault cases; no compiled-image, replicated-durability or model-quality claim.'}
+       'scope':'Native real-Kafka23 authored fault cases; no compiled-image, replicated-durability or model-quality claim.'}
  save(work/'plan.json',plan)
  print(json.dumps({'plan':str(work/'plan.json'),'sha256':sha(work/'plan.json'),'driver_sha256':plan['driver_sha256'],'frozen_files':len(plan['frozen']['files'])}))
 
@@ -163,7 +163,9 @@ def scoped_processes(root):
  return found
 
 def report_observations(path):
- report=read(path);observed=[r['name']for r in report['checks']]
+ report=read(path);assert report['suite']=='adhd/eventing-readiness-faults@2'
+ assert report['planned_cases']==list(CASES)and report['original_case_prefix_count']==21
+ observed=[r['name']for r in report['checks']]
  attempted=[r['case']for r in report.get('proxy_cleanup',[])]
  assert observed==list(CASES)[:len(observed)]and attempted==list(CASES)[:len(attempted)]
  assert len(observed)<=len(attempted)<=len(observed)+1
@@ -183,7 +185,7 @@ def report_observations(path):
 def execute(work):
  plan=verify(work);work=Path(work).absolute();assert not(work/'results').exists()
  claim(work/'started.json');(work/'results').mkdir(mode=0o700)
- result={'schema':'adhd/eventing-readiness-native21-result@1','passed':False,'plan_sha256':sha(work/'plan.json'),'driver_sha256':sha(__file__),'official':plan['official'],'runtime_started':False,'unrun':list(CASES)}
+ result={'schema':'adhd/eventing-readiness-native23-result@1','passed':False,'plan_sha256':sha(work/'plan.json'),'driver_sha256':sha(__file__),'official':plan['official'],'runtime_started':False,'unrun':list(CASES)}
  child=None;failure=None
  try:
   with (work/'results/stdout.log').open('xb')as out,(work/'results/stderr.log').open('xb')as err:

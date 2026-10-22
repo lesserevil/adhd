@@ -59,6 +59,10 @@ class Gates(unittest.TestCase):
    root=Path(d);(root/'plan.json').write_text(json.dumps({'schema':m.SCHEMA}))
    with self.assertRaises(AssertionError):m.execute(root)
    launch.assert_not_called();self.assertFalse((root/'started.json').exists())
+ def test_original21_prefix_and_two_reviewed_additions(self):
+  old=('lag','queue-control','duplicate','duplicate-bad-topology','never','queue','forbidden','server-error','malformed','bad-cleanup','partitions-float','retention-missing','retention-float','retention-negative','retention-duplicate','existing-retention','offset-nonzero','offset-negative','offset-missing','offset-float','offset-string')
+  self.assertEqual(m.CASES[:21],old);self.assertEqual(m.CASES[21:],('metadata-lag','offset-end-float'))
+  self.assertEqual(m.SCHEMA,'adhd/eventing-readiness-native23-plan@1')
  def test_endpoint_cannot_select_model_or_remote(self):
   self.assertEqual(m.endpoint('http://127.0.0.1:18082'),'http://127.0.0.1:18082')
   for x in ['http://127.0.0.1:18770','http://example.org:18082','http://u:p@127.0.0.1:18082','http://127.0.0.1:18082/x']:

@@ -1,6 +1,7 @@
 """Bounded transparent real-Kafka REST faults; no broker success is invented."""
 import http.client
 import json
+import re
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -38,6 +39,24 @@ def classify(path,topic):
     return None
 
 
+def actual_configuration(status,body):
+    """Only public Kafka policy values; no arbitrary row/name/body is retained."""
+    if status!=200:return None
+    try:value=json.loads(body)
+    except (ValueError,UnicodeDecodeError):return {'invalid_data':True}
+    if not isinstance(value,dict)or not isinstance(value.get('data'),list):return {'invalid_data':True}
+    result={'cleanup_policy':[],'retention_ms':[]}
+    for row in value['data']:
+        if not isinstance(row,dict):continue
+        if row.get('name')=='cleanup.policy':
+            v=row.get('value');result['cleanup_policy'].append(v if isinstance(v,str)and v in ('delete','compact')else {'invalid_value_type':type(v).__name__})
+        if row.get('name')=='retention.ms':
+            v=row.get('value')
+            valid=isinstance(v,str)and len(v)<=19 and re.fullmatch(r'-1|0|[1-9][0-9]*',v)is not None and int(v)<=9223372036854775807
+            result['retention_ms'].append(v if valid else {'invalid_value_type':type(v).__name__})
+    return result
+
+
 def fault_response(mode,category,status,body,number,created):
     """Pure fault transform. Only the selected fresh topic can reach this seam."""
     if not created:return status,body,False
@@ -60,11 +79,12 @@ def fault_response(mode,category,status,body,number,created):
             for row in value['data']:
                 if row['name']=='cleanup.policy':row['value']='compact'
             return status,json.dumps(value).encode(),True
+    if category=='metadata'and mode=='metadata-lag'and number==1:return 404,b'{"error_code":40401,"message":"Declared metadata visibility fault"}',True
     if category=='metadata'and mode in ('duplicate-bad-topology','partitions-float')and status==200:
         value=json.loads(body);value['partitions_count']=1.0 if mode=='partitions-float'else 2;return status,json.dumps(value).encode(),True
     if category=='offsets'and mode.startswith('offset-')and status==200:
         values={'offset-nonzero':{'beginning_offset':0,'end_offset':1},'offset-negative':{'beginning_offset':-1,'end_offset':0},
-            'offset-missing':{'beginning_offset':0},'offset-float':{'beginning_offset':0.0,'end_offset':0},'offset-string':{'beginning_offset':'0','end_offset':0}}
+            'offset-missing':{'beginning_offset':0},'offset-float':{'beginning_offset':0.0,'end_offset':0},'offset-string':{'beginning_offset':'0','end_offset':0},'offset-end-float':{'beginning_offset':0,'end_offset':0.0}}
         return 200,json.dumps(values[mode]).encode(),True
     return status,body,False
 
@@ -108,14 +128,15 @@ class ReadinessProxy:
                     headers={k:v for k,v in self.headers.items()if k.lower()not in ('host','connection','content-length')}
                     headers['Connection']='close';connection.request(self.command,self.path,body,headers)
                     response=connection.getresponse();data=response.read(262145);assert len(data)<=262144;status=response.status
+                    configuration=actual_configuration(status,data)if category=='configs'else None
                     with owner.lock:
                         if created_request and status in range(200,300):
-                            owner.created=True
+                            owner.created=True;owner.counts['metadata']=0
                             if owner.mode.startswith('duplicate'):status,data=400,b'{"error_code":40002}'
                         owner.counts[category]=owner.counts.get(category,0)+1
                         status,data,injected=fault_response(owner.mode,category,status,data,owner.counts[category],owner.created)if owner.mode else(status,data,False)
                         assert len(owner.events)<256
-                        owner.events.append({'at':time.monotonic(),'method':self.command,'category':category,'selected_create':created_request,'status':status,'injected':injected,'durable_transaction_present':self.server.owner.transaction.exists()if self.server.owner.transaction is not None else None})
+                        owner.events.append({'at':time.monotonic(),'method':self.command,'category':category,'selected_create':created_request,'status':status,'injected':injected,'actual_configuration':configuration,'durable_transaction_present':self.server.owner.transaction.exists()if self.server.owner.transaction is not None else None})
                     self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.send_header('Connection','close');self.end_headers();self.wfile.write(data)
                 except (BrokenPipeError,ConnectionResetError):pass # canceled owned HTTP is expected in deadline cases
                 except BaseException as error:

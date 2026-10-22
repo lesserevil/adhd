@@ -1,0 +1,73 @@
+{
+  "schema": "adhd/rebind-failure-diagnosis@1",
+  "passed": false,
+  "read_only": true,
+  "work": "/home/horde/src/adhd/_build/recovery41-compiled01-full25",
+  "primary_child_failure": "AssertionError in ImageRebindRuntime.observe_vm exact argument membership assertion line134",
+  "parent_secondary_failure": "FileNotFoundError reading absent rebind.json masks child primary",
+  "original_first23_whole_preserved": true,
+  "rebind_whole_qualified": false,
+  "rebind_hostile_unrun": true,
+  "observations": {
+    "original_stdout_stage_lines": 13,
+    "boundary_sentinel": {
+      "stage": "decision-durable",
+      "pid": 1,
+      "directory_fsync_result": 0
+    },
+    "report_absent": true,
+    "outer_deadline_expired": false,
+    "cleanup_failure_types": [],
+    "image_objects": 14,
+    "all_image_objects_closed": true,
+    "last_image_events": [
+      {
+        "action": "started",
+        "container_id": "61445e662c1bd6339b0c6f57b90cfdab9b8089e778095aedc31484cb59a6514c",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "61445e662c1bd6339b0c6f57b90cfdab9b8089e778095aedc31484cb59a6514c",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "last_compiled_launch": [
+      {
+        "container_id": "61445e662c1bd6339b0c6f57b90cfdab9b8089e778095aedc31484cb59a6514c",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "host_container_pid": 1840243,
+        "readonly_rootfs": true,
+        "private_pid_namespace": true,
+        "protected_paths_not_mounted": true,
+        "execution_scope": "precompiled-entrypoint-with-scalar-observer",
+        "entrypoint": [
+          "elixir",
+          "/runtime/adhd/boot.exs",
+          "/app/hub.exs"
+        ]
+      }
+    ]
+  },
+  "causal_scope": [
+    "Observe_vm reached a beam/beam.smp executable in a private PID namespace after exact image/name/user/network checks, then failed membership of /app/hub.exs and/or exact serialized request.",
+    "The actual decision-durable sentinel exists and records PID1/fsync0, but accepted kernel-stop custody was not established; do not count this crash scenario.",
+    "No failing /proc cmdline or match booleans persisted; cannot establish which expected argument differs, nor a correct fixture relaxation.",
+    "C observer only intercepts rename/fsync and writes sentinel/stops; no source evidence it deliberately rewrites argv.",
+    "Original scenario and outer finally attempted cleanup; recorded exact IDs have wait/absence events, but this read-only diagnosis does not replace parent current strict absence audit."
+  ],
+  "next_action": "Before any retry or relaxation, review a narrow additive failure diagnostic retaining exact argument-match booleans, bounded argv hash/length/token hashes and inspected Config.Cmd equality; preserve all original membership assertions and deadlines. Parent matrix should preserve child status/stderr when report missing rather than masking it. No app fix currently evidenced.",
+  "files": {
+    "plan.json": "e56d27ffe9457fbe4cd91e6d2122eb8a96c9ef490b65679b84edd6bc441259c4",
+    "matrix.json": "2aa1209add5fa9c55e435a11f15ab6296c4fdba421a492b8f07a56d605a2b9ba",
+    "results/rebind.stderr": "2cd9ebc6e5aa86b0359674bb19ffd82a9008d831f5f8249a8017a5573371e69c",
+    "results/rebind.stdout": "e779887886cda46207d35aecd740afdff38a73298782953ac53c8fba5917e9f2",
+    "results/rebind-cleanup.json": "900633828f2d03d48e6143a3a130c81b59ccae075bf89854cea7add28f9aa8d4",
+    "results/rebind-work/decision-durable.sentinel.json": "b2f9013f1f693183409a8ee77375387743adbc39a739437fee20757dd5f78b04",
+    "frozen/tests/image_rebind_runtime.py": "8ffd8ddcd899a9d523e180352767f51181f080ec756f0fb0b38455085a77859a",
+    "frozen/tests/storage_rebind.py": "e6f4811a6f87aca224eced85aa4d8720f7b6068fa81a32bcb32dc057400531c0",
+    "frozen/tests/rebind_fault.c": "214336e720e505aa0da8e2cfd6049fe9fc821220e9b8e9df7727b3702c694b08"
+  }
+}

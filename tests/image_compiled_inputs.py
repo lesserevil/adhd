@@ -71,7 +71,7 @@ def compiled_context(context,expected_manifest,expected_artifact):
     expected_helpers={'build.exs','boot.exs'}|(ACME_FILES if has_acme else set())
     assert set(inputs['files'])==expected_helpers
     assert all(re.fullmatch('[a-f0-9]{64}',v) for v in inputs['files'].values())
-    packaging=context/'packaging.tar';assert packaging.stat().st_size <= (96*1024*1024 if has_acme else 4*1024*1024 if member.name=='packaging/lego-sbom.json' else 1024*1024)
+    packaging=context/'packaging.tar';assert packaging.stat().st_size <= (96*1024*1024 if has_acme else 1024*1024)
     content={};seen=set()
     with tarfile.open(packaging,mode='r:') as archive:
         members=archive.getmembers();assert len(members)==len(expected_helpers)+2

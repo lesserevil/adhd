@@ -95,8 +95,9 @@ def verify(work,plan):
  admitted=json.loads((work/'bound/admission.json').read_text());assert admitted['passed'] and admitted['image_config_identity']==image and admitted['artifact_sha256']==artifact
  manifest=json.loads((work/'bound/image-manifest.json').read_text());assert manifest['files']['hub.exs']==artifact
  assert sha(work/'bound/source-target.exs')==artifact and sha(work/'bound/image-manifest.json')==plan['canonical_manifest_sha256']
- assert [r['name'] for r in plan['jobs']]==NAMES and plan['parallelism']==1 and plan['automatic_retries']==0
- assert [r['expected_check_count'] for r in plan['jobs']]==[COUNTS[n] for n in NAMES] and sum(COUNTS.values())==68
+ names=diagnostic_names(plan.get('federation_diagnostic',False))
+ assert [r['name'] for r in plan['jobs']]==names and plan['parallelism']==1 and plan['automatic_retries']==0
+ assert [r['expected_check_count'] for r in plan['jobs']]==[COUNTS[n] for n in names] and sum(COUNTS.values())==68
  check_tree(work/'frozen',plan['frozen']);check_tree(work/'bound',plan['bound'])
  for tree in plan['tool_trees']:assert tool_tree(tree['root'])==tree,'Native/Python tool closure drift'
  for row in plan['external_inputs']:
@@ -126,6 +127,11 @@ def complete_jobs(native):
  rows=selected_native_jobs(native)
  optional={**next(r for r in rows if r['name']=='outage'),'name':'optional-filter','script':'eventing_optional_faults.py'}
  return rows[:-1]+[optional,rows[-1]]
+
+
+def diagnostic_names(enabled):
+ assert type(enabled) is bool, 'Diagnostic selector must be an explicit boolean'
+ return ['federation'] if enabled else NAMES
 
 
 def owned_rest_port(value):
@@ -167,6 +173,7 @@ def prepare(args):
  assert len(selected['specifications'])==selected['audit']['canonical_specifications'] and len(selected['specifications'])>0
  native=plain(args.native_plan);assert sha(native)==BASIS;nv=json.loads(native.read_text());assert nv['artifact_sha256']==BASIS_ARTIFACT and nv['legacy_sha256']==LEGACY
  basis=complete_jobs(nv)
+ if getattr(args,'federation_diagnostic',False):basis=[row for row in basis if row['name'] in diagnostic_names(True)]
  frozen=work/'frozen';frozen.mkdir(mode=0o700)
  for tree in ('tests','scripts','deploy'):
   for path in sorted((root/tree).rglob('*')):
@@ -210,6 +217,7 @@ def prepare(args):
  runtime=work/'runtime';runtime.mkdir(mode=0o700)
  shutil.copyfile(plain(Path(__file__)),work/'driver.py')
  plan={'schema':'adhd/image-kafka-ladder@2','scope':'Only the explicitly selected admitted image/artifact; no historical result relabeling, UI, live-model or release claim',
+  'federation_diagnostic':bool(getattr(args,'federation_diagnostic',False)),
   'image_config_identity':image,'artifact_sha256':artifact,'admission_sha256':admission_sha,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),
   'payload_sha256':selected['payload_sha256'],'payload_audit':selected['audit'],'target_specifications':len(selected['specifications']),'payload_custody':'Fixture-based lostreply/fairness/cutover/outage require strict2probe ledger; Hub-based controls/caps/dormant/Admin/policy/retention/federation validate exact manifest+artifact by exec in each actual app container and have no extra standalone payload probes','live_specification_drift':drift,
   'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'native_plan_sha256':sha(native),
@@ -336,6 +344,7 @@ def main():
  for name in ('repo-root','native-plan','abi-root','context','admission-manifest','basis-artifact'):parser.add_argument('--'+name,type=Path)
  for name in ('image','artifact-sha256','admission-sha256','owned-compose-project'):parser.add_argument('--'+name)
  parser.add_argument('--owned-rest-port',type=int,default=18088)
+ parser.add_argument('--federation-diagnostic',action='store_true',help='Fresh one-program original14-check diagnostic; no prefix pass composition')
  args=parser.parse_args()
  if args.prepare:prepare(args)
  else:assert _STAGED;sys.exit(execute(args.work.absolute(),args.plan_sha256))

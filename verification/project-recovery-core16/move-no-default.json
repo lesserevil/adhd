@@ -1,0 +1,69 @@
+{
+  "suite": "adhd/multi-store-relocation@1",
+  "started_at": "2026-10-22T01:00:17.766373+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "originals-source-retries-acknowledged-and-unacknowledged-deliveries-created-in-isolated-projects",
+      "passed": true
+    },
+    {
+      "name": "occupied-project-destination-rejected-without-config-or-foreign-file-change",
+      "passed": true
+    },
+    {
+      "name": "every-project-writer-moves-hot-at-one-revision-without-process-restart",
+      "passed": true,
+      "project_count": 3
+    },
+    {
+      "name": "concurrent-accepted-writes-retain-message-idempotency-and-data",
+      "passed": true,
+      "accepted_count": 16,
+      "retryable_busy_count": 19
+    },
+    {
+      "name": "all-project-originals-source-idempotency-and-delivery-identities-survive-live-switch",
+      "passed": true
+    },
+    {
+      "name": "hard-restart-opens-every-relocated-project-and-preserves-postmove-accepted-write",
+      "passed": true
+    },
+    {
+      "name": "same-durable-semantic-job-survives-switch-and-restart-then-completes-after-provider-recovery",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "harness_sha256": "8e8ecdbd8111608753198c1b709bfa617d7b09d48f9aed46e9114a316b6e4305",
+  "no_default": true,
+  "finished_at": "2026-10-22T01:01:24.828291+00:00",
+  "explicit_fixture_initializations": [
+    {
+      "project_id": "project-red",
+      "plan_id": "restoreplan_ee96dce6248d7b2b5dcee79d0eaabcfe_1",
+      "operation_id": "restore_ee96dce6248d7b2b5dcee79d0eaabcfe_2",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-blue",
+      "plan_id": "restoreplan_ee96dce6248d7b2b5dcee79d0eaabcfe_3",
+      "operation_id": "restore_ee96dce6248d7b2b5dcee79d0eaabcfe_4",
+      "mode": "initialize",
+      "completed": true
+    },
+    {
+      "project_id": "project-hidden",
+      "plan_id": "restoreplan_ee96dce6248d7b2b5dcee79d0eaabcfe_5",
+      "operation_id": "restore_ee96dce6248d7b2b5dcee79d0eaabcfe_6",
+      "mode": "initialize",
+      "completed": true
+    }
+  ]
+}

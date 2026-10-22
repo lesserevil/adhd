@@ -52,6 +52,7 @@ if _STAGED:
     sys.path.insert(0,staged_imports(__file__,_expected))
 
 import yaml
+from kube_qualification_inputs import validate_kube_endpoint
 
 from image_qualification_inputs import reviewed_payload, freeze_inputs, verify_frozen_inputs
 from multi_image_core_matrix import claim_execution, report_passed
@@ -86,21 +87,7 @@ def executable(path):
 
 def kube_endpoint(path,cluster):
     path=Path(path);assert not path.is_symlink() and path.stat().st_size<=1048576
-    value=yaml.safe_load(path.read_text())
-    assert value['kind']=='Config' and value['apiVersion']=='v1'
-    assert all(len(value[key])==1 for key in ('clusters','contexts','users'))
-    context=value['contexts'][0];selected=value['clusters'][0];user=value['users'][0]
-    assert value['current-context']==context['name']
-    assert context['context']['cluster']==selected['name']=='kind-'+cluster
-    assert context['context']['user']==user['name']
-    assert set(user['user'])=={'client-certificate-data','client-key-data'}, 'No external auth executors/files'
-    assert all(isinstance(v,str) and v for v in user['user'].values())
-    assert selected['cluster'].get('certificate-authority-data')
-    assert set(selected['cluster'])=={'server','certificate-authority-data'}, 'No proxy, TLS override or external CA files'
-    endpoint=urlsplit(selected['cluster']['server'])
-    assert endpoint.scheme=='https' and endpoint.hostname in ('127.0.0.1','::1') and endpoint.port
-    assert not endpoint.username and not endpoint.password and not endpoint.path and not endpoint.query and not endpoint.fragment
-    return {'server':selected['cluster']['server'],'host':endpoint.hostname,'port':endpoint.port,'cluster':cluster}
+    return validate_kube_endpoint(yaml.safe_load(path.read_text()),cluster)
 
 
 def verify(work,plan):

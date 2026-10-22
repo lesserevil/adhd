@@ -12,6 +12,10 @@ from pathlib import Path
 import subprocess
 
 
+ORIGINAL_BROKER='confluentinc/cp-kafka@sha256:23b7aed3099df6c95e31e8c4bf3b20682e360edbf9867bc2eac978e32c89cf7f'
+ORIGINAL_PROXY='confluentinc/cp-kafka-rest@sha256:85f286aa0b8b6cfc1977d81bdb9b5eb3ece4942563afd49862e14d5e92ac7058'
+
+
 def verify_pair(node,imported,original,read=subprocess.check_output):
     assert '@sha256:' in imported
     digest=imported.rsplit('@',1)[1]

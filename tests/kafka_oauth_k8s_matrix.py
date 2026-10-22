@@ -61,10 +61,9 @@ import ipaddress
 import socket
 from image_qualification_inputs import reviewed_payload,freeze_inputs,verify_frozen_inputs
 from image_recovery_remaining_matrix import tree,verify_empty_cache,wait_owned_child
-from kafka_platform_matrix import kube_endpoint
+from kube_qualification_inputs import json_kube_endpoint as kube_endpoint, validate_kube_endpoint
 from multi_image_core_matrix import claim_execution
-from kafka_oauth_provider import PROXY_IMAGE
-from kafka_image_equivalence import verify_pair
+from kafka_image_equivalence import verify_pair, ORIGINAL_PROXY as PROXY_IMAGE
 import image_host_dependencies as host_dependencies
 
 
@@ -145,12 +144,22 @@ def prepare(a):
     _,drift=freeze_inputs(a.repo_root,work/'frozen',selected['specifications'])
     tree(a.repo_root/'deploy')
     shutil.copytree(a.repo_root/'deploy',work/'frozen/deploy')
-    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py','kafka_image_equivalence.py','kafka_oauth_k8s_matrix.py']
+    overlays=['kafka_oauth_k8s.py','kafka_oauth_provider.py','kafka_oauth_custody.py','kafka_oauth_custody_unit.py','image_host_dependencies.py','kafka_image_equivalence.py','kafka_oauth_k8s_matrix.py','kube_qualification_inputs.py']
     for name in overlays:shutil.copyfile(Path(__file__).parent/name,work/'frozen/tests'/name)
     for p in a.context.iterdir():
         assert p.is_file() and not p.is_symlink();shutil.copyfile(p,work/'context'/p.name)
     shutil.copyfile(a.admission,work/'bound/admission.json')
-    kube=Path(a.platform_plan).parent/'bound/kubeconfig';shutil.copyfile(kube,work/'bound/kubeconfig');(work/'bound/kubeconfig').chmod(0o600)
+    kube=Path(a.platform_plan).parent/'bound/kubeconfig'
+    # Parsing optional YAML is preparation-only; the isolated -S parent uses
+    # semantically identical closed JSON, never ambient site-packages.
+    import yaml
+    from kafka_oauth_provider import PROXY_IMAGE as provider_pin
+    assert provider_pin==PROXY_IMAGE
+    original_kube=yaml.safe_load(kube.read_text());validate_kube_endpoint(original_kube,basis['kind_cluster'])
+    shutil.copyfile(kube,work/'bound/original-kubeconfig.yaml')
+    dump(work/'bound/kubeconfig',original_kube)
+    assert json.loads((work/'bound/kubeconfig').read_text())==original_kube
+    (work/'bound/kubeconfig').chmod(0o600);(work/'bound/original-kubeconfig.yaml').chmod(0o600)
     original=json.loads(a.original_plan.read_text());dependencies=host_dependencies.capture(a.python,original['env']['PATH']);dump(work/'bound/host-dependencies.json',dependencies)
     tools={name:host_dependencies.path_binding(row['path']) for name,row in basis['tools'].items() if name in ('kubectl','kind','docker','python')}
     tool_elf={name:host_dependencies.elf_inputs(row['realpath']) for name,row in tools.items() if name in ('kubectl','kind')}

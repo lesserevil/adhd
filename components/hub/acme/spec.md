@@ -71,7 +71,7 @@ hot-config preflight reads and binds its bytes. No shell/environment interpolati
 Email has no control characters and at most 254 UTF-8 bytes. Names are unique,
 lowercase ASCII DNS A-labels, at most 253 bytes, each label 1..63 characters,
 no trailing dot/wildcard/IP literal; operators convert Unicode via IDNA first.
-At most 100 names. Sorting canonicalizes the domain set; order has no semantics.
+At most 20 names. Sorting canonicalizes the domain set; order has no semantics.
 Host is an explicit IPv4/IPv6 address, not a hostname requiring network lookup.
 Resolve relative ca_cert_file paths against CONFIG_FILE's parent, never process
 CWD; reject symlink/unsafe file input before any new network attempt.
@@ -145,7 +145,8 @@ Managed state is the private `acme/` directory beside CONFIG_FILE, containing
 is configurable. Bind initialized state to the original server/configuration
 identity. A second unrelated configuration sharing this directory must reject the
 collision, not adopt another account. Retain an independent owner-only durable
-initialization witness beside CONFIG_FILE so loss of an initialized managed
+initialization witness `CONFIG_FILE.acme-owner.json` beside CONFIG_FILE, binding
+its configuration-path digest and opaque managed-state owner, so loss of an initialized managed
 directory cannot be mistaken for first use. Include witness and managed directory
 in stopped full-server backup/restore, preserving identity under the existing
 explicit offline metadata rebind when paths change. Require owned 0700
@@ -219,7 +220,7 @@ uses only a fixed code/message/retryable table. UTC timestamps are RFC3339 secon
 ending Z. Certificate sha256 hashes leaf DER; serial is lowercase hexadecimal.
 Status is Admin-only global state, independent of selected project.
 
-`tls_status` is read-only. `tls_renew` requires config_revision, confirm:true and
+`tls_status` is read-only. `tls_renew` requires expected_revision, confirm:true and
 message_id and uses existing durable Admin mutation receipt scope. Authenticate
 and authorize before replay. A stale new submission returns CONFIG_CONFLICT.
 A successful accepted reply is durable scheduling, not successful issuance.
@@ -258,7 +259,7 @@ reachability and must never be inferred from staging or self-signed fixtures.
 
 ```json
 {"op":"tls_status"}
-{"op":"tls_renew","config_revision":12,"confirm":true,"message_id":"renew-12-1"}
+{"op":"tls_renew","expected_revision":12,"confirm":true,"message_id":"renew-12-1"}
 {"accepted":true,"config_revision":12}
 {"error":{"code":"TLS_RENEW_UNAVAILABLE","message":"Managed ACME renewal is disabled."}}
 ```

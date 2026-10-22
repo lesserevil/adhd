@@ -42,7 +42,7 @@
       "items": {
         "$ref": "#/$defs/Domain"
       },
-      "maxItems": 100,
+      "maxItems": 20,
       "uniqueItems": true
     },
     "BindAddress": {
@@ -739,19 +739,19 @@
         "op": {
           "const": "tls_renew"
         },
-        "config_revision": {
-          "$ref": "#/$defs/Revision"
-        },
         "confirm": {
           "const": true
         },
         "message_id": {
           "$ref": "#/$defs/MessageId"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/Revision"
         }
       },
       "required": [
         "op",
-        "config_revision",
+        "expected_revision",
         "confirm",
         "message_id"
       ],

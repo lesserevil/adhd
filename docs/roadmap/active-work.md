@@ -77,6 +77,18 @@ both passing reports into fresh source admission before staging and independentl
 building the successor compiled image. Compiled-image and deployment qualification
 remain open.
 
+The [separate retention companion](../../verification/eventing-retention-native-positive/manifest.json)
+now passes all three checks across three owned native starts: actual alteration
+under the durable decision followed by injected readback failure, desired-policy
+replay before healthy response headers on unchanged-file restart, and a second
+restart without repeated alteration, offset reset or acknowledged delivery replay.
+Records, routes, revisions and message receipts are preserved; all owned processes
+and proxy handlers are cleaned up. The [fresh source admission](../../verification/eventing-readiness-source41/admission/manifest.json)
+binds both native reports to the actual official receipt, rebuild and provenance.
+Next: independently build and audit the staged successor image twice, then run its
+cache, ABI, recovery and affected integration/deployment gates. Native evidence
+does not qualify that image.
+
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)
 passes28 whole suites/156 checks; its separately verified foundation prefix adds20

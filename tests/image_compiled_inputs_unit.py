@@ -5,7 +5,8 @@ from image_compiled_inputs import compiled_context,digest
 
 
 def make(root,kind=None):
-    source='b'*64;docker=b'ENTRYPOINT ["elixir", "/runtime/adhd/boot.exs", "/app/hub.exs"]\n'
+    source_bytes=''.join('defmodule ADHD.M'+str(i)+' do\nend\n' for i in range(59)).encode()
+    source=digest(source_bytes);docker=b'ENTRYPOINT ["elixir", "/runtime/adhd/boot.exs", "/app/hub.exs"]\n'
     manifest=json.dumps({'schema':'adhd/container-inputs@1','files':{'hub.exs':source,'Dockerfile':digest(docker)}}).encode()
     files={'boot.exs':b'synthetic boot text','build.exs':b'synthetic compiler text'}
     inputs={'schema':'adhd/container-compiler-inputs@1','source_sha256':source,'payload_manifest_sha256':digest(manifest),'files':{k:digest(v)for k,v in files.items()}}
@@ -13,7 +14,10 @@ def make(root,kind=None):
     if kind=='manifest':inputs['payload_manifest_sha256']='c'*64
     if kind=='unknown':inputs['files']['foreign.exs']='c'*64
     raw=json.dumps(inputs).encode();(root/'compiler-inputs.json').write_bytes(raw)
-    (root/'manifest.json').write_bytes(manifest);(root/'Dockerfile').write_bytes(docker);(root/'payload.tar').write_bytes(b'synthetic opaque payload; separately checked by reviewed_payload')
+    (root/'manifest.json').write_bytes(manifest);(root/'Dockerfile').write_bytes(docker);None
+    with tarfile.open(root/'payload.tar','w') as payload:
+        for name,value in [('app/hub.exs',source_bytes),('app/manifest.json',manifest)]:
+            member=tarfile.TarInfo(name);member.size=len(value);payload.addfile(member,io.BytesIO(value))
     with tarfile.open(root/'packaging.tar','w') as archive:
         directory=tarfile.TarInfo('packaging');directory.type=tarfile.DIRTYPE;directory.mode=0o755;archive.addfile(directory)
         for name,value in {**files,'inputs.json':raw}.items():

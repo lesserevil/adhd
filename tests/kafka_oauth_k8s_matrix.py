@@ -152,6 +152,9 @@ def prepare(a):
     for p in a.context.iterdir():
         assert p.is_file() and not p.is_symlink();shutil.copyfile(p,work/'context'/p.name)
     shutil.copyfile(a.admission,work/'bound/admission.json')
+    if compiled is not None:
+        for name in ('cache-manifest.json','cache-metadata.json'):
+            shutil.copyfile(a.admission.parent/name,work/'bound'/name)
     kube=Path(a.platform_plan).parent/'bound/kubeconfig'
     # Parsing optional YAML is preparation-only; the isolated -S parent uses
     # semantically identical closed JSON, never ambient site-packages.

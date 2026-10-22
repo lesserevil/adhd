@@ -5,8 +5,10 @@ runtime qualification are separate required admission evidence.
 """
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import tarfile
 
 
@@ -67,6 +69,66 @@ def compiled_context(context,expected_manifest,expected_artifact):
         'actual_runtime_or_cache_qualified':False}
 
 
+def retained_cache_files(admission_path, admission, audit, binding, context):
+    """Read exact retained raw cache manifest and metadata, not SHA declarations."""
+    parent=Path(admission_path).absolute().parent
+    assert parent.resolve(strict=True)==parent and parent.is_dir()
+    values={};raws={}
+    for filename,field in [('cache-manifest.json','cache_manifest_sha256'),('cache-metadata.json','cache_metadata_sha256')]:
+        expected=admission['files'][filename]
+        assert expected==audit[field]
+        path=parent/filename;before=path.lstat()
+        assert stat.S_ISREG(before.st_mode) and before.st_nlink==1 and before.st_size<=1024*1024
+        identity=lambda st:(st.st_dev,st.st_ino,st.st_mode,st.st_nlink,st.st_size,st.st_mtime_ns,st.st_ctime_ns)
+        descriptor=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+        with os.fdopen(descriptor,'rb') as handle:
+            assert identity(os.fstat(handle.fileno()))==identity(before)
+            raw=handle.read(1024*1024+1);assert len(raw)<=1024*1024
+            assert identity(os.fstat(handle.fileno()))==identity(before)
+        assert identity(path.lstat())==identity(before)
+        assert digest(raw)==expected
+        raws[filename]=raw;values[filename]=closed_object(raw)
+    cache=values['cache-manifest.json'];metadata=values['cache-metadata.json']
+    assert set(cache)=={'schema','source','source_sha256','payload_manifest_sha256','inputs_sha256','boot_sha256','build_sha256','modules','beams','toolchain'}
+    assert cache['schema']=='adhd/precompiled-cache@1' and cache['source']=='/app/hub.exs'
+    assert cache['source_sha256']==binding['source_sha256']
+    assert cache['payload_manifest_sha256']==binding['canonical_manifest_sha256']
+    assert cache['inputs_sha256']==binding['compiler_inputs_sha256']
+    assert cache['boot_sha256']==binding['packaging_files_sha256']['boot.exs']
+    assert cache['build_sha256']==binding['packaging_files_sha256']['build.exs']
+    # The ordinary payload verifier authenticates the full tar. This scoped read
+    # additionally binds module names/order to this exact source SHA. No code is
+    # compiled or evaluated; the selected source has column-zero defmodules.
+    with tarfile.open(Path(context)/'payload.tar',mode='r:') as archive:
+        sources=[m for m in archive.getmembers() if m.name=='app/hub.exs']
+        assert len(sources)==1 and sources[0].isfile() and 0<sources[0].size<=8*1024*1024
+        source=archive.extractfile(sources[0]).read()
+    assert digest(source)==binding['source_sha256']
+    modules=['Elixir.'+name for name in re.findall(r'^defmodule ([A-Z][A-Za-z0-9_.]*) do\s*$',source.decode(),re.M)]
+    assert len(modules)==len(set(modules))==audit['cache_modules'] and cache['modules']==modules
+    expected_beams={name+'.beam' for name in modules}
+    assert set(cache['beams'])==expected_beams
+    assert all(isinstance(v,str) and re.fullmatch('[a-f0-9]{64}',v) for v in cache['beams'].values())
+    toolchain=cache['toolchain']
+    assert set(toolchain)=={'anchors','architecture','elixir','erts','otp'}
+    assert toolchain['elixir']=='1.20.4' and toolchain['otp']=='29' and toolchain['erts']=='17.1.1' and toolchain['architecture']=='x86_64-pc-linux-musl'
+    expected_anchors={'/proc/self/exe'}|{'/usr/local/lib/elixir/bin/../lib/elixir/ebin/'+name for name in ['Elixir.Code.beam','Elixir.JSON.beam','Elixir.Kernel.beam','elixir.beam']}
+    assert set(toolchain['anchors'])==expected_anchors and all(isinstance(v,str) and re.fullmatch('[a-f0-9]{64}',v) for v in toolchain['anchors'].values())
+    files={'adhd/boot.exs':cache['boot_sha256'],'adhd/build.exs':cache['build_sha256'],
+           'adhd/inputs.json':cache['inputs_sha256'],'adhd/manifest.json':digest(raws['cache-manifest.json']),
+           **{'adhd/ebin/'+name:sha for name,sha in cache['beams'].items()}}
+    directories={'/runtime':'0o755','adhd':'0o555','adhd/ebin':'0o555'}
+    assert set(metadata)==set(files)|set(directories) and len(metadata)-1==audit['cache_entries']
+    for name,row in metadata.items():
+        assert set(row)=={'mode','mtime','sha256'} and type(row['mtime']) is int and row['mtime']==0
+        if name in directories:assert row['mode']==directories[name] and row['sha256'] is None
+        else:assert row['mode']=='0o444' and row['sha256']==files[name]
+    return {'cache_manifest_sha256':digest(raws['cache-manifest.json']),
+            'cache_metadata_sha256':digest(raws['cache-metadata.json']),
+            'source_bound_module_order':modules,'cache_file_hashes_cross_checked':len(files),
+            'cache_metadata_entries_including_runtime_parent':len(metadata)}
+
+
 def compiled_admission(context, admission_path, admission_sha256, image, artifact, *, required=False):
     """Bind reviewed compiled audit declarations, alongside reviewed_payload().
 
@@ -95,7 +157,8 @@ def compiled_admission(context, admission_path, admission_sha256, image, artifac
     assert type(audit['cache_entries']) is int and audit['cache_entries']==65
     assert audit['entrypoint']==binding['expected_entrypoint']
     assert audit['container_started'] is False and audit['owned_container_absent'] is True
-    return {**binding,'reviewed_admission_sha256':admission_sha256,
+    retained=retained_cache_files(admission_path,admission,audit,binding,context)
+    return {**binding,'retained_cache_binding':retained,'reviewed_admission_sha256':admission_sha256,
             'reviewed_compiled_runtime_audit':audit,
             'actual_runtime_or_cache_qualified':False,
             'scope':'Staged/compiler bindings plus reviewed offline-audit declarations only; no runtime/SDK/readiness/reproducibility gate result.'}

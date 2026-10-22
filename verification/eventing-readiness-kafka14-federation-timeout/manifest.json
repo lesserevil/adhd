@@ -1,0 +1,55 @@
+{
+  "schema": "adhd/kafka-federation-timeout-diagnosis@1",
+  "passed": false,
+  "read_only": true,
+  "no_runtime_or_mutations": true,
+  "work": "/home/horde/src/adhd/.worktrees/deployment/_build/kafka41-compiled01",
+  "inputs": {
+    "plan.json": "0e694b32105e2617c8f46c43e3d0bdb50881837250697929c37724ee1ac7cef4",
+    "matrix.json": "2155368d8af4adf27d8642d83948370ff7716df61d0b7087da907277ddcbfacf",
+    "federation.json": "80fe26a44e385314a97d8c53b331549869ed1005a4690554333b130d52b985a7",
+    "federation.log": "2b94ec1e75c3ac3141eb39af27120f2ee9a46923506fc9026eab9bd6210cafdc",
+    "frozen/tests/federation_multi.py": "432851c0389c71e5947b979dc589f1db672cd60105b4665547c431f112416104",
+    "frozen/tests/federation_acceptance.py": "7fbeb4fb2965977c0a469ae5e704caba2e6e4a75203e798ce02f5fe4aea9be73",
+    "federation-work/server-1/config.json": "d7b09b2d1db0ae66a392fa0edf06ccac30e3b15f467738fcedf704b3b101b3c1",
+    "federation-work/server-1/config.json.journal": "b685b8b41d7a5fde8a5ead8fbc13b6df66fd5d8cdb6f4693b64d4c470ace07e2",
+    "federation-work/server-1/stdout": "5d3b199d14f3d0e1b5838232897c33c677aa68f284825ec044bb02e37b737f9b",
+    "federation-work/server-1/stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "observed": {
+    "federation_whole": false,
+    "partial_checks_excluded": 7,
+    "failure_type": "TimeoutError",
+    "request_phase": "waiting for HTTP response status",
+    "client_timeout_seconds": 5,
+    "final_server1_config_revision": 2,
+    "requested_catalog_resource_persisted": true,
+    "journal_receipts": 1,
+    "journal_result_applied": true,
+    "journal_result_revision": 2,
+    "transaction_remains": false,
+    "server_stderr_bytes": [
+      0,
+      0,
+      0
+    ]
+  },
+  "code_path": {
+    "patch": "federation_multi.py108 config_update after config_get; no retry",
+    "transport": "federation_acceptance.py38 urlopen(timeout=5)",
+    "config_commit": "Config.commit persists desired config+journal before Resources.refresh/Projects.prepare/workers/Directory reconciliation; removes transaction before returning",
+    "eventing": "Catalog-only change does not alter Eventing.transition_policy (enabled/rest_url/topic_prefix/bearer_token/tls_ca_pem/retention_ms). No retained evidence of provisioning at this update.",
+    "storage": "Store.prepare_moves entries empty when store_path unchanged; ordinary synchronous Store/registry/directory persistence still occurs."
+  },
+  "interpretation": "Durable accepted update is present despite client timeout. Synchronous commit/response completion exceeding the client budget is consistent with evidence; exact delayed phase and elapsed time are unproven. No evidence currently justifies app change, automatic retry, or widening original five-second timeout.",
+  "evidence_gaps": [
+    "No failed MID/request-start timestamp recorded, so journal attribution is inferred from sole receipt and exact requested persisted change.",
+    "No server request/response timing, scheduler/resource trace or phase timestamps.",
+    "No causal filesystem/fsync/broker timing or owned process stack at timeout.",
+    "Parent owns original cleanup audit; this diagnosis does not invent historical IDs or claim global container absence."
+  ],
+  "next_action": "Preserve false aggregate and deadline. If further diagnosis is authorized, transparently timestamp only original config_get/config_update request/response and sanitized commit-phase telemetry on unchanged source; do not retry current request or introduce alternate timeout.",
+  "files": {
+    "federation.log": "2b94ec1e75c3ac3141eb39af27120f2ee9a46923506fc9026eab9bd6210cafdc"
+  }
+}

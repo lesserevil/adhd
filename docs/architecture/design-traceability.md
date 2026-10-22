@@ -203,3 +203,10 @@ Net/Resources evidence; complete restore and actual model/peer/Kafka crossover
 remain unqualified. [The offline backup validator](../../verification/project-recovery/backup-validator.json)
 passes 33 checks over retained actual snapshots, including original principal and
 project-reference proofs, without opening DETS or calling live services.
+
+[Actual process-kill evidence](../../verification/project-recovery-crash/manifest.json)
+records a predecision pass and an interrupted snapshot installation that exposed
+an availability-only comparison stopping startup. A Coordinator-only repair
+resumed that same interrupted installation, preserved retained target and current
+unrelated state, and passed another cold restart. Remaining crash boundaries,
+checkpoint hardening, complete recovery and successor platform qualification stay open.

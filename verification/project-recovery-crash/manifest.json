@@ -1,0 +1,40 @@
+{
+  "schema": "adhd/project-recovery-crash-development@1",
+  "state": "partial",
+  "scope": "One actual real-Kafka before-decision kernel SIGKILL pass; one after-first-snapshot SIGKILL exposed whole-hub startup failure. Coordinator-only repair resumes that same preserved actual interrupted installation and passes original target/healthy-project/config preservation plus another cold restart. No full matrix, safe-checkpoint, image, platform or admission claim.",
+  "reports": [
+    {
+      "path": "verification/project-recovery-crash/before-decision-dev05.json",
+      "sha256": "7458838f0d104cdef18e0965e0e1a22dcdb01a61518345e5aaa66107ec687018",
+      "passed": true
+    },
+    {
+      "path": "verification/project-recovery-crash/partial-install-dev05-failure.json",
+      "sha256": "a78061e68fb709017836b733fd76f05de284c1b8e0c2aa34c3f31f76f9468b4c",
+      "passed": false
+    },
+    {
+      "path": "verification/project-recovery-crash/partial-install-repair.json",
+      "sha256": "996aa0a292ff5166caacd742076737944ffc0d74a172ddf5a32a333b7c3ca989",
+      "passed": true
+    }
+  ],
+  "root_cause": "Persisted old route availability was ready; startup-derived missing availability captured in decision was recovery_required. Every other old route field matched. Startup rejected exact equality before per-project recovery.",
+  "repair": "Compare all old route identity/path/header/watermark fields exactly while allowing only derived ready/restoring/recovery_required availability for an initialized old route. New selected route still matches exact fields.",
+  "module_overlay": "Only RecoveryCoordinator differs from failed immutable dev05; prefix/suffix bytes verified identical.",
+  "repair_plan": {
+    "path": "verification/project-recovery-crash/repair-plan.json",
+    "sha256": "04b12ef8f603eae7468762966ec010ae78c229b24e335b4faf7169a9aa179b4f"
+  },
+  "resume_driver": {
+    "path": "verification/project-recovery-crash/resume.py.source",
+    "sha256": "5580ba32d48133086486d27d3a5b9732a9e2885728801a54b167009fccf50297"
+  },
+  "preserved_harness_failures": [
+    "invalid-confirm-before-decision.json",
+    "invalid-confirm-after-install-snapshot.json"
+  ],
+  "harness_failure_cause": "Initial closed RestorePlanCommand incorrectly included confirm; both rejected before fault arming. Corrected request, no application relaxation.",
+  "provider_calls": 0,
+  "full_recovery_qualified": false
+}

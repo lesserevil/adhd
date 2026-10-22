@@ -59,3 +59,13 @@ a directory cycle, compressed/executable ETF and a free block within live paddin
 Each returns the closed RESTORE_CONFLICT CLI error before a durable decision,
 and every byte in its copied complete backup remains unchanged. Native-opener
 tracing belongs to the separate parser reports, not this public CLI proof.
+
+The [guarded integrated rebind report](../../verification/project-recovery/rebind-native12.json)
+repeats all12 native portable/cold-server/crash groups on the same source36-dev12
+artifact above, using the unchanged public CLI harness and fault hook. It covers
+both healthy-byte preservation and the actual guarded opener path, retained
+recovery history, moved-path cold startup, original/source retries and queue
+acknowledgements, plus real fsync→SIGKILL recovery at decision, registry and receipt
+boundaries. All12 pass. The earlier frozen review02 report remains evidence for
+its earlier artifact; neither report claims an admitted release or container
+qualification. The separate six hostile CLI cases use the same dev12 artifact.

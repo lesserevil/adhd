@@ -1,0 +1,50 @@
+{
+  "schema": "adhd/controlled-image-custody@1",
+  "passed": false,
+  "failure_type": "AssertionError",
+  "image_config_identity": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "canonical_manifest_sha256": "dce8d0923d530c01cd38d9ce7c6700e838fd79f2f7bb5e50989b311118aadac4",
+  "adapter_sha256": "71b50fc20c54fd9d60679bfaa8aa09d70e9f3c30131c2b55b4dd414439b406c8",
+  "original_helpers_sha256": {
+    "foundation_acceptance.py": "dc82228bc778b5e26262f2470236d3a788c7d08b635ee5be48f71a630a7963fc",
+    "hub_acceptance.py": "ddfb691f1d5a52a0b328613ac9db7617c3ebd732ca457e86a42b4febfa10e222",
+    "container_acceptance.py": "d78909efae902f679b42b985233f91ffd683a9cfbca0ba84ae92effd774ac904"
+  },
+  "controlled_endpoint_whitelist": {
+    "http://127.0.0.1:45125/v1/systemone": {
+      "class": "hub_acceptance.ModelFixture",
+      "helper_sha256": "ddfb691f1d5a52a0b328613ac9db7617c3ebd732ca457e86a42b4febfa10e222"
+    }
+  },
+  "runtime_events": [
+    {
+      "action": "start",
+      "kind": "docker",
+      "root": "/home/horde/src/adhd/.worktrees/acceptance/_build/ci38g/runtime/_build/roadmap/context-tests/run-zuf36k66/current",
+      "config_sha256": "a6748d38c4438832125e6984fd6008b1cace0825eba859a1644e7aecd442e195",
+      "completed": false,
+      "selected_models": [
+        {
+          "path": [
+            "matcher",
+            "url"
+          ],
+          "url": "http://127.0.0.1:45125/v1/systemone"
+        }
+      ],
+      "container_name": "adhd-foundation-f5beaea7c5ce",
+      "container_id": "f9565ca9447c8b2417be3981ba535f4bbc66205446cca8a9e91f7b7355148894",
+      "host_vm_pid": 1477933,
+      "failure_type": "CalledProcessError"
+    }
+  ],
+  "cleanup_failure_types": [
+    "AssertionError",
+    "AssertionError"
+  ],
+  "native_fence_sha256": "7158f342be00ca847e2c4c95306bf082d0495e344188bdd570fcc68c14beb767",
+  "blocked_provider_connects": 0,
+  "provider_isolation_scope": "Native connect fence mapped; image exact typed-loopback config selection and no redirects. Docker host network has no physical egress firewall; no claim LD_PRELOAD fences image.",
+  "all_original_assertions_bounds_corpus": "Original frozen entrypoint run unchanged; wrapper observes custody and cleans owned startup failures only."
+}

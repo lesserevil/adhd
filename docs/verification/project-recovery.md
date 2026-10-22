@@ -82,3 +82,24 @@ operations use public Admin/A2A. This is cancellation and state isolation eviden
 not semantic quality or qualification of every pending model/peer/Kafka family.
 An initial unsupported fixture operation and the old eventing worker's recovery
 exception are retained as explicit limitations rather than hidden as clean runs.
+
+The [actual peer catalog epoch report](../../verification/project-recovery/peer-epoch13-native.json)
+binds source36-dev13 artifact `c5d684b9e9580170a3012fb369f4376cc1fbd7ec2f183124dbed12fea76667f1`
+and records four passing checks across two isolated native hubs. A transparent
+relay holds an actual authenticated v2 catalog success while the nondefault Red
+writer is killed and its files are moved after observed Store DOWN. Public Admin
+restore activates a fresh epoch in the same server process. Releasing the old
+reply while its advertised cache lifetime is still valid leaves the directory
+pending and empty. A separately held/released current-epoch catalog then populates
+the directory, with its actual response revision/expiry; unrelated Blue private
+messages and its route remain current. Models and eventing are disabled; no
+provider, Kafka, container or lifecycle admission is claimed.
+
+Two earlier harness failures are retained: [attempt1](../../verification/project-recovery/peer-epoch13-attempt1.json)
+required a fresh request before releasing the old synchronous worker request;
+[attempt2](../../verification/project-recovery/peer-epoch13-attempt2.json) allowed
+only three seconds for a worker with a configured ten-second HTTP deadline.
+The corrected test keeps the immediate empty-directory assertion and derives the
+later refresh observation bound from that ten-second timeout plus two seconds
+for scheduling. These timing corrections preserve the stale-result criterion.
+The final origin stderr is empty; all owned hubs and relay threads were closed.

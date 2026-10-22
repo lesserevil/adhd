@@ -1,0 +1,77 @@
+{
+  "suite": "project-recovery-peer-catalog-epoch",
+  "started_at": "2026-10-22T00:30:14.435132+00:00",
+  "passed": false,
+  "checks": [
+    {
+      "name": "actual-authenticated-v2-peer-catalog-success-held-before-target-loss",
+      "passed": true,
+      "response_sha256": "97c4d7e0982fa15d9b94e80ce8ee02494cb7a4ec9981e4d51a120aefa9e8b1a1"
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "c5d684b9e9580170a3012fb369f4376cc1fbd7ec2f183124dbed12fea76667f1",
+  "harness_sha256": "3d33d01340d4873482350a91c1038f88856d84eaf71ba1b6433e954f7a68a152",
+  "scope": "Actual native v2 peer HTTP catalog refresh across live target writer loss/restore; no Kafka/model/provider or container claim",
+  "limits": {
+    "startup_seconds": 150,
+    "relay_slots": 4,
+    "relay_requests": 128,
+    "hold_seconds": 10,
+    "epoch_transition_seconds": 8
+  },
+  "dependency_sha256": {
+    "tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "/home/horde/src/adhd/tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "/home/horde/src/adhd/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "relay_errors": [],
+  "relay_observations": [
+    {
+      "request": {
+        "destination_project_id": "project-red",
+        "op": "catalog",
+        "origin_project_id": "project-red",
+        "origin_server_id": "f5f7d1448cad4853aa06ca70d1a5909b",
+        "protocol_version": 2
+      },
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T00:30:58.381Z",
+        "items": [
+          {
+            "aliases": [
+              "held-catalog"
+            ],
+            "canonical": true,
+            "description": "Actual peer canonical catalog marker",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "held-catalog",
+              "tenant": "fixture"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782",
+        "server_id": "4f318e8dc0324bf9b1077c4a01d002bb",
+        "visible": true
+      },
+      "response_sha256": "97c4d7e0982fa15d9b94e80ce8ee02494cb7a4ec9981e4d51a120aefa9e8b1a1",
+      "held_index": 0,
+      "released": false,
+      "write_succeeded": false
+    }
+  ],
+  "finished_at": "2026-10-22T00:31:02.544846+00:00",
+  "failure_type": "AssertionError"
+}

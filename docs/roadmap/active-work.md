@@ -1034,6 +1034,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   [the exact property/evidence review](../../verification/ownedMULTI008/multi008-independent-leaf-review/property-review.json).
   The complete regression, migration and final consolidation gates remain open.
 
+- **Successor readiness qualification:** Run all original23 real-broker readiness cases on the new admitted compiled image, preserving every deadline and capacity premise. Bind each actual VM to the source/cache payload and prove complete owned cleanup; the native23 result alone cannot qualify the image. The separate committed-retention recovery companion remains independently required.
 - **Priority:** P1
 - **Owner:** hub acceptance harnesses, protocol documentation and operator/client guides
 - **Direction:** Finish the program only with independent evidence for isolation, compatibility and operation.
@@ -1172,6 +1173,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   Recovery continuation exposed a post-create Kafka metadata propagation defect;
   the hub eventing authority owns its repair, alongside deployment qualification.
 
+- **Compiled successor gate:** Keep the full23 readiness-fault image gate open until the actual successor cache/image admission and runtime evidence pass. Preserve earlier failed attempts and use the unchanged original scenario assertions; no broader packaging or release claim follows from preparing a wrapper.
 - **Priority:** P1
 - **Owner:** deployment artifacts, dependency Flavors and operator guides
 - **Direction:** Deploy each ADHD server with its own Kafka service using Kubernetes pods or equivalent plain containers.

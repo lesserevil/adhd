@@ -93,7 +93,7 @@ def main():
         def docker(*args,check=True):
             calls.append(args)
             if args[0]=='inspect':
-                if not state['exists']:return SimpleNamespace(returncode=1,stdout=b'',stderr=b'No such container')
+                if not state['exists']:return SimpleNamespace(returncode=1,stdout=b'',stderr=('No such container: '+args[1]).encode())
                 row={'Id':'f'*64,'Image':IMAGE,'State':{'Running':state['running'],'ExitCode':137,'Pid':1000}}
                 return SimpleNamespace(returncode=0,stdout=json.dumps([row]).encode(),stderr=b'')
             if args[0]=='kill':state['running']=False

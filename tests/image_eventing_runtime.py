@@ -55,6 +55,7 @@ class EventingFaultImage(OwnedImage):
         self.last_exit_code = None
 
     def argv(self, config_file):
+        assert not getattr(self,'cleanup_blocked',False), 'Prior owned cleanup remains unconfirmed'
         self.config_file = Path(config_file)
         base = super().argv(config_file)
         if not self.armed:
@@ -78,43 +79,83 @@ class EventingFaultImage(OwnedImage):
             'stage': self.stage, 'observer_sha256': self.library_sha256, **observed})
         return observed
 
+    @staticmethod
+    def authoritative_absence(result, identifier):
+        """Only Docker's explicit missing-object result proves absence."""
+        if result.returncode != 1:
+            return False
+        error=result.stderr.decode(errors='replace')
+        return re.fullmatch(r'(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*'
+                            +re.escape(identifier),error.strip(),re.IGNORECASE) is not None
+
     def stop(self, hard=False):
         if self.name is None:
+            assert not getattr(self,'cleanup_blocked',False), 'Prior owned cleanup remains unconfirmed'
             return
-        row = json.loads(self.docker('inspect', self.name).stdout)[0]
-        assert row['Image'] == self.image_id
-        identifier = row['Id']
-        running = row['State']['Running']
-        if hard:
-            assert running and self.container_id == identifier, 'Hard kill requires actual live owned image'
+        owned_name=self.name
+        identifier=self.container_id or owned_name
+        row=None;failure=None;absent=False;foreign=False
+        self.last_exit_code=None
         try:
+            initial=self.docker('inspect',identifier,check=False)
+            if self.authoritative_absence(initial,identifier):
+                absent=True
+                self.events.append({'action':'observed-already-absent','owned_name':owned_name,
+                    'container_id':self.container_id,'observed_absent':True,'authoritative_no_such_object':True})
+                assert not hard, 'Hard kill requires an actual live owned image'
+                return
+            assert initial.returncode==0, 'Owned container inspect failed without proving absence'
+            rows=json.loads(initial.stdout);assert len(rows)==1
+            row=rows[0]
+            foreign=(row['Image']!=self.image_id or (self.container_id is not None and row['Id']!=self.container_id))
+            assert not foreign, 'Inspected object is not the owned image/container'
+            identifier=row['Id'];running=row['State']['Running']
+            if hard:
+                assert running and self.container_id==identifier, 'Hard kill requires actual live owned image'
             if running:
                 self.observe()
-                if hard:
-                    self.docker('kill', '--signal', 'KILL', identifier)
-                else:
-                    self.docker('stop', '--time', '8', identifier)
-            exit_code = int(self.docker('wait', identifier).stdout)
-            state = json.loads(self.docker('inspect', identifier).stdout)[0]
-            assert not state['State']['Running'] and state['State']['ExitCode'] == exit_code
-            if hard:
-                assert exit_code == 137
-            self.last_exit_code = exit_code
-            self.docker('rm', identifier)
-            assert self.absent()
-            self.events.append({'action': 'hard-killed' if hard else 'stopped', 'container_id': identifier,
-                                'exit_code': exit_code, 'wait_observed': True, 'observed_absent': True})
-        except BaseException:
-            self.docker('rm', '--force', identifier, check=False)
-            assert self.absent(), 'Owned image failure cleanup unproven'
+                if hard:self.docker('kill','--signal','KILL',identifier)
+                else:self.docker('stop','--time','8',identifier)
+            exit_code=int(self.docker('wait',identifier).stdout)
+            state=json.loads(self.docker('inspect',identifier).stdout)[0]
+            assert not state['State']['Running'] and state['State']['ExitCode']==exit_code
+            if hard:assert exit_code==137
+            self.last_exit_code=exit_code
+            self.docker('rm',identifier)
+            final=self.docker('inspect',identifier,check=False)
+            assert self.authoritative_absence(final,identifier), 'Owned removal absence unconfirmed'
+            absent=True
+            self.events.append({'action':'hard-killed' if hard else 'stopped','container_id':identifier,
+                'exit_code':exit_code,'wait_observed':True,'observed_absent':True})
+        except BaseException as error:
+            failure=error
+            # Inspect can fail before Docker creates an object. Still attempt
+            # independent cleanup of our issued name/known ID, except when an
+            # authoritative inspection positively identifies a foreign object.
+            cleanup_errors=[]
+            if not foreign:
+                try:self.docker('rm','--force',identifier,check=False)
+                except BaseException as cleanup_error:cleanup_errors.append(type(cleanup_error).__name__)
+                try:
+                    final=self.docker('inspect',identifier,check=False)
+                    absent=self.authoritative_absence(final,identifier)
+                    if not absent:cleanup_errors.append('AbsenceUnconfirmed')
+                except BaseException as cleanup_error:cleanup_errors.append(type(cleanup_error).__name__)
+            else:cleanup_errors.append('ForeignObjectNotRemoved')
+            self.cleanup_blocked=not absent
+            self.events.append({'action':'failed-owned-cleanup','owned_name':owned_name,
+                'container_id':identifier,'failure_type':type(error).__name__,
+                'observed_absent':absent,'cleanup_failure_types':cleanup_errors})
+            if cleanup_errors:error.add_note('Owned cleanup unconfirmed: '+','.join(cleanup_errors))
             raise
         finally:
-            self.name = self.container_id = None
-            if hard:
-                self.armed = False
+            self.name=self.container_id=None
+            if hard:self.armed=False
+            if failure is None:self.cleanup_blocked=False
 
     def identity(self):
         result = super().identity()
         result.update(observer_library_sha256=self.library_sha256, observer_loader_proof_sha256=self.proof_sha256,
-                      actual_beam_kernel_custody=self.custody, observer_disarmed_after_kill=not self.armed)
+                      actual_beam_kernel_custody=self.custody, observer_disarmed_after_kill=not self.armed,
+                      cleanup_blocked=getattr(self,'cleanup_blocked',False))
         return result

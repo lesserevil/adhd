@@ -111,13 +111,20 @@ def instrument_argv(base, library, source_name, environment):
 class RetainedImage(OwnedImage):
     """Reuse reviewed hard-kill/wait137/removal semantics without an observer."""
     stop=EventingFaultImage.stop
+    authoritative_absence=staticmethod(EventingFaultImage.authoritative_absence)
 
     def __init__(self,image,manifest,root):
         assert re.fullmatch('sha256:[a-f0-9]{64}',image)
         super().__init__(image,manifest,root)
         self.armed=False;self.last_exit_code=None
 
+    def identity(self):
+        result=super().identity()
+        result['cleanup_blocked']=getattr(self,'cleanup_blocked',False)
+        return result
+
     def argv(self,config_file):
+        assert not getattr(self,'cleanup_blocked',False), 'Prior owned cleanup remains unconfirmed'
         result=super().argv(config_file);result.remove('--rm');return result
 
 
@@ -131,6 +138,7 @@ class FilesystemFaultImage(RetainedImage):
         self.config_file=None;self.custody=[];self.armed=True
 
     def argv(self,config_file):
+        assert not getattr(self,'cleanup_blocked',False), 'Prior owned cleanup remains unconfirmed'
         self.config_file=Path(config_file)
         # Call original to retain --rm until the pure instrumentation checks it.
         base=OwnedImage.argv(self,config_file)

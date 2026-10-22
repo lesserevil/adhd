@@ -67,6 +67,9 @@ check is excluded and15 later suites remained unrun in that attempt. The
 [source-unchanged diagnostic](../../verification/final05-recovery-phase05-diagnostic/manifest.json)
 passes all five original case assertions and observes normal staging/checkpoint/
 transport completion; the earlier failure did not reproduce and remains unexplained.
+Later [bounded retained-log correlation](../../verification/final05-original-r25-broker-correlation/manifest.json)
+also identifies the original failed topic's configuration404 after a creation201;
+the diagnostic pass did not disprove that transient provisioning failure.
 The [ordinary compiled-image continuation](../../verification/final05-recovery16-prefix13-first-failure/manifest.json)
 passes thirteen whole suites/61 checks, then fails before the requested after-cleanup
 boundary; two offline-rebind suites remain unrun. Retained broker logs identify

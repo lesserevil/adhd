@@ -20,6 +20,7 @@ elif __name__=='__main__':assert '--execute' not in sys.argv, 'Execute only revi
 sys.dont_write_bytecode=True
 import argparse
 import copy
+import importlib.util
 import hashlib
 import json
 import os
@@ -139,6 +140,18 @@ def remainder_names(basis,matrix,artifact,image):
 
 
 
+def full_app_rows(descriptor):
+    rows=[r for r in descriptor['selected_rows']if r['family']!='component']
+    assert len(rows)==25 and [r['name']for r in rows[:8]]==['admission','rejections','private','agent-admission','uninitialized-move','mixed','federation-errors','learned']
+    assert sum(r['family']=='crash'for r in rows)==15 and [r['name']for r in rows[-2:]]==['rebind','rebind-hostile']
+    return rows
+
+
+def load_compiled_helper(frozen):
+    spec=importlib.util.spec_from_file_location('reviewed_recovery_compiled_binding',frozen/'tests/controlled_sdk_matrix.py')
+    helper=importlib.util.module_from_spec(spec);spec.loader.exec_module(helper);return helper
+
+
 def verify(work,plan):
     assert sha(Path(__file__))==sha(work/'driver.py')==plan['driver_sha256']
     for key,directory in [('frozen_inputs','frozen'),('component_inputs','component'),('context_inputs','context')]:
@@ -154,6 +167,16 @@ def verify(work,plan):
     sock=Path(plan['docker_socket']['path']).stat()
     assert stat.S_ISSOCK(sock.st_mode) and [sock.st_dev,sock.st_ino]==plan['docker_socket']['identity']
     expected=42
+    if plan.get('full_app_only'):
+        assert not plan.get('resume_basis')
+        original=json.loads((work/'bound/original-plan.json').read_text())
+        assert [j['name']for j in plan['jobs']]==[r['name']for r in full_app_rows(layout(original))]
+        expected=25
+    if plan.get('compiled_binding'):
+        assert json.loads((work/'bound/compiled-binding.json').read_text())==plan['compiled_binding']
+        admission=json.loads((work/'bound/admission.json').read_text())
+        compiled=load_compiled_helper(work/'frozen').compiled_cache_binding(work/'bound/cache-manifest.json',admission,plan['image_config_identity'],plan['artifact_sha256'],plan['canonical_manifest_sha256'])
+        assert compiled==plan['compiled_binding']['compiled_cache']
     if plan.get('resume_basis'):
         prior=json.loads((work/'bound/prior-plan.json').read_text());matrix=json.loads((work/'bound/prior-matrix.json').read_text())
         names=remainder_names(prior,matrix,plan['artifact_sha256'],plan['image_config_identity'])
@@ -182,7 +205,7 @@ def prepare(args):
     descriptor=layout(original)
     work.mkdir(mode=0o700);frozen=work/'frozen';frozen.mkdir(mode=0o700)
     inputs,drift=freeze_inputs(args.helper_root,frozen,selected['specifications'])
-    for name in ('image_recovery_remaining_matrix.py','image_recovery_component.py','image_recovery_remaining_layout.py','image_rebind_runtime.py'):
+    for name in ('image_recovery_remaining_matrix.py','image_recovery_remaining_matrix_unit.py','image_recovery_entry.py','image_recovery_cache.py','image_recovery_cache_unit.py'):
         shutil.copyfile(Path(__file__).with_name(name),frozen/'tests'/name)
     shutil.copytree(origin/'fixtures',frozen/'fixtures',copy_function=shutil.copy2)
     # Complete original component fixtures are copied without modifying their
@@ -211,6 +234,19 @@ def prepare(args):
     (bound/'artifact.exs').write_bytes(selected['artifact_bytes'])
     shutil.copy2(args.admission_manifest,bound/'admission.json');shutil.copy2(args.original_plan,bound/'original-plan.json')
     shutil.copy2(original_inputs,bound/'original-inputs.json')
+    compiled_binding=None
+    admission=json.loads((bound/'admission.json').read_text())
+    cache_path=getattr(args,'compiled_cache_manifest',None)
+    assert cache_path is not None or 'compiled_runtime_audit'not in admission,'Compiled image requires explicit cache binding'
+    if cache_path is not None:
+        assert cache_path.absolute()==args.admission_manifest.parent/'cache-manifest.json'
+        for name,digest in admission['files'].items():
+            assert Path(name).name==name and name not in ('.','..')
+            source=args.admission_manifest.parent/name;assert source.resolve(strict=True)==source.absolute()and source.stat().st_nlink==1 and sha(source)==digest
+            assert not(bound/name).exists();shutil.copy2(source,bound/name)
+        compiled=load_compiled_helper(frozen).compiled_cache_binding(bound/'cache-manifest.json',admission,args.image,artifact,sha(args.context/'manifest.json'))
+        compiled_binding={'image_config_identity':args.image,'compiled_cache':compiled,'source_manifest_sha256':sha(args.context/'manifest.json'),'scope':'Immutable readonly image cache probes; not in-VM67. Original app entrypoint/observer kernel custody retained separately.'}
+        dump(bound/'compiled-binding.json',compiled_binding)
     external={}
     for name,row in inventory['external'].items():
         src=Path(name);assert sha(src)==row['sha256']
@@ -228,6 +264,10 @@ def prepare(args):
     dependencies=host_dependencies.capture(args.python,original['env']['PATH'])
     dump(bound/'host-dependencies.json',dependencies)
     resume_basis=None;selected_names=None
+    full_app_only=getattr(args,'full_app_only',False)
+    if full_app_only:
+        assert not args.resume_work
+        selected_names=[r['name']for r in full_app_rows(descriptor)]
     if args.resume_work:
         prior=args.resume_work.absolute();assert args.resume_plan_sha256 and sha(prior/'plan.json')==args.resume_plan_sha256
         basis=json.loads((prior/'plan.json').read_text());matrix=json.loads((prior/'matrix.json').read_text())
@@ -283,6 +323,8 @@ def prepare(args):
         wrapper=work/'results'/(name+'-cleanup.json')
         command=[str(args.python),'-s','-B',str(frozen/'tests/image_recovery_entry.py'),'--script',str(harness),'--script-sha256',sha(harness),
             '--timeout',str(row['outer_timeout_seconds']),'--cleanup-report',str(wrapper),'--',*argv]
+        if compiled_binding:
+            command[command.index('--'):command.index('--')]=['--compiled-binding',str(bound/'compiled-binding.json'),'--compiled-binding-sha256',sha(bound/'compiled-binding.json')]
         jobs.append({'name':name,'family':row['family'],'argv':command,'report':str(report),'cleanup_report':str(wrapper),
             'outer_timeout_seconds':row['outer_timeout_seconds'],'original':row['original']})
     shutil.copy2(__file__,work/'driver.py')
@@ -294,7 +336,8 @@ def prepare(args):
         external[str(executable)]={'realpath':str(real),'sha256':sha(real)}
     socket=args.docker_socket.stat();assert stat.S_ISSOCK(socket.st_mode)
     plan={'schema':'adhd/image-recovery42-plan@1','execution_ready':args.execution_ready,'execution_started':False,
-        'scope':('Failed+unrun'+str(len(selected_names))+' of original recovery42; prior whole passes remain separate preserved evidence.' if resume_basis else 'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.'),'resume_basis':resume_basis,
+        'full_app_only':full_app_only,'compiled_binding':compiled_binding,
+        'scope':('Original full-app25/128 subset; source-only17/181 and callback5/28 remain separately scoped.'if full_app_only else 'Failed+unrun'+str(len(selected_names))+' of original recovery42; prior whole passes remain separate preserved evidence.' if resume_basis else 'Actual-image remaining recovery42 only; five transport rows and completed five callbacks remain separate evidence.'),'resume_basis':resume_basis,
         'known38_ownership_gap':args.image==BASELINE,'image_config_identity':args.image,'artifact_sha256':artifact,
         'admission_manifest_sha256':args.admission_sha256,'canonical_manifest_sha256':sha(work/'context/manifest.json'),
         'payload_tar_sha256':selected['payload_sha256'],'original_plan_sha256':args.original_sha256,
@@ -355,6 +398,13 @@ def execute(work,expected):
                 # Every owned image callback/session must close before evidence
                 # passes; wrapper additionally enforces fallback native closure.
                 assert all(r['closed'] for r in cleanup['images']) and cleanup['owned_native_processes_absent']
+                if plan.get('compiled_binding'):
+                    for image in cleanup['images']:
+                        starts={v['container_id']for v in image['events']if v['action']=='started'}
+                        if starts:
+                            evidence=image['static_compiled_cache'];assert evidence['cache_modules']==59 and evidence['cache_files']==62 and evidence['source_files']==59 and evidence['static_toolchain_anchors']==4 and evidence['dynamic_VM_anchor_observed_here']is False
+                            assert starts<={v['container_id']for v in image['compiled_launches']}
+                            assert all(v['observed_absent']for v in image['payload_probe_lifecycle'])
                 verify(work,plan);row['passed']=True
             except BaseException as error:
                 row['failure_type']=type(error).__name__;raise
@@ -381,7 +431,7 @@ def main():
         parser.add_argument('--'+name,type=Path)
     for name in ['original-sha256','admission-sha256','image']:parser.add_argument('--'+name)
     parser.add_argument('--python',type=Path,default=Path(sys.executable).absolute());parser.add_argument('--docker-socket',type=Path,default=Path('/var/run/docker.sock'))
-    parser.add_argument('--execution-ready',action='store_true')
+    parser.add_argument('--execution-ready',action='store_true');parser.add_argument('--full-app-only',action='store_true');parser.add_argument('--compiled-cache-manifest',type=Path)
     parser.add_argument('--resume-work',type=Path);parser.add_argument('--resume-plan-sha256')
     args=parser.parse_args()
     if args.prepare:prepare(args)

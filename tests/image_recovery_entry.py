@@ -55,13 +55,16 @@ def close_owned_image(target):
         raise original
 
 
-def run_script(script,argv,budget,cleanup_report):
+def run_script(script,argv,budget,cleanup_report,compiled_binding=None):
     global _deadline_fired
     _deadline_fired=False
     script=Path(script).absolute();assert script.resolve(strict=True)==script and script.is_file()
     assert type(budget) is int and 0<budget<=5400
     assert signal.getitimer(signal.ITIMER_REAL)==(0.0,0.0),'Do not replace another timer'
-    images=[];runtimes=[];primary=None;failures=[]
+    images=[];runtimes=[];primary=None;failures=[];cache_hook=None
+    if compiled_binding is not None:
+        from image_recovery_cache import CacheCustody
+        cache_hook=CacheCustody(OwnedImage,compiled_binding);cache_hook.install()
     image_init=OwnedImage.__init__;runtime_init=Runtime.__init__;fixture_close=Fixture.close
     old_handler=signal.getsignal(signal.SIGALRM);old_argv=sys.argv
     def stop_wrapper(stop):
@@ -99,6 +102,9 @@ def run_script(script,argv,budget,cleanup_report):
             if process is not None and process.poll() is None:
                 try:runtime.stop(hard=True)
                 except BaseException as error:failures.append(type(error).__name__)
+        if cache_hook is not None:
+            cache_hook.restore()
+            if any(getattr(obj,'recovery_static_cache_failure',None)for obj in images):failures.append('StaticCacheVerificationFailed')
         native_absent=all(getattr(obj,'process',None) is None or obj.process.poll() is not None for obj in runtimes)
         if not native_absent:failures.append('OwnedNativeProcessStillRunning')
         value={'schema':'adhd/recovery-entry-cleanup@1','passed':primary is None and not failures and not _deadline_fired,
@@ -106,7 +112,7 @@ def run_script(script,argv,budget,cleanup_report):
             'script_sha256':hashlib.sha256(script.read_bytes()).hexdigest(),'outer_bound_seconds':budget,
             'failure_type':type(primary).__name__ if primary else None,'cleanup_failure_types':failures,
             'images':[{'image_config_identity':obj.image_id,'closed':obj.name is None and not getattr(obj,'cleanup_blocked',False),
-                'events':obj.events} for obj in images],
+                'events':obj.events,'payload_probe_lifecycle':obj.probe_events,'static_compiled_cache':getattr(obj,'recovery_static_cache',None),'compiled_launches':getattr(obj,'recovery_compiled_launches',[]),'static_cache_failure':getattr(obj,'recovery_static_cache_failure',None)} for obj in images],
             'native_owned_runtimes':len(runtimes),'owned_native_processes_absent':native_absent}
         try:Path(cleanup_report).write_text(json.dumps(value,indent=2)+'\n')
         except BaseException as error:
@@ -122,10 +128,15 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--script',type=Path,required=True)
     parser.add_argument('--script-sha256',required=True);parser.add_argument('--timeout',type=int,required=True)
     parser.add_argument('--cleanup-report',type=Path,required=True);parser.add_argument('arguments',nargs=argparse.REMAINDER)
+    parser.add_argument('--compiled-binding',type=Path);parser.add_argument('--compiled-binding-sha256')
     args=parser.parse_args();assert hashlib.sha256(args.script.read_bytes()).hexdigest()==args.script_sha256
     assert not args.cleanup_report.exists()
     argv=args.arguments[1:] if args.arguments[:1]==['--'] else args.arguments
-    run_script(args.script,argv,args.timeout,args.cleanup_report)
+    compiled=None
+    if args.compiled_binding is not None:
+        assert hashlib.sha256(args.compiled_binding.read_bytes()).hexdigest()==args.compiled_binding_sha256
+        compiled=json.loads(args.compiled_binding.read_text())
+    run_script(args.script,argv,args.timeout,args.cleanup_report,compiled)
 
 
 if __name__=='__main__':main()

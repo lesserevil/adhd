@@ -52,6 +52,14 @@ def execute_case(root,mode):
 
 
 def main():
+    names=['admission','rejections','private','agent-admission','uninitialized-move','mixed','federation-errors','learned']+['crash-'+str(n)for n in range(15)]+['rebind','rebind-hostile']
+    rows=[{'name':n,'family':'crash'if n.startswith('crash-')else'http'}for n in names]
+    descriptor={'selected_rows':rows[:8]+[{'name':'primitive-'+str(n),'family':'component'}for n in range(17)]+rows[8:]}
+    assert [r['name']for r in matrix.full_app_rows(descriptor)]==names
+    bad=copy.deepcopy(descriptor);bad['selected_rows'].pop()
+    try:matrix.full_app_rows(bad)
+    except AssertionError:pass
+    else:raise AssertionError('Incomplete25 accepted')
     with tempfile.TemporaryDirectory() as directory:
         root=Path(directory).resolve();work=root/'bootstrap';frozen=work/'frozen';(frozen/'tests').mkdir(parents=True)
         helper=frozen/'tests/helper.py';helper.write_text('raise RuntimeError("never imported")\n')
@@ -111,7 +119,7 @@ def main():
             try:matrix.resolve(value,{'KNOWN':'x'})
             except AssertionError:pass
             else:raise AssertionError('Unresolved command admitted')
-    print('PASS remaining matrix pure17: staged fullSET/hash/symlink/root custody, exact42 success, creationfail attempted-vs-executed, reportfalse failfast, openimage closure denial, diagnostic38 beforeclaim denial, unresolved templates, exact declared-origin trees with excluded old outputs/inside-shadow denial, parent interruption signals owned child cleanup/preserves primary+known terminal exit, stale/redirected caches rejected, ambient injection not inherited; actual subprocess/runtime calls0')
+    print('PASS remaining matrix pure19 (including full-app25 exact order/incomplete rejection): staged fullSET/hash/symlink/root custody, exact42 success, creationfail attempted-vs-executed, reportfalse failfast, openimage closure denial, diagnostic38 beforeclaim denial, unresolved templates, exact declared-origin trees with excluded old outputs/inside-shadow denial, parent interruption signals owned child cleanup/preserves primary+known terminal exit, stale/redirected caches rejected, ambient injection not inherited; actual subprocess/runtime calls0')
 
 
 if __name__=='__main__':main()

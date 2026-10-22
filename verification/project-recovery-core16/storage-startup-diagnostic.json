@@ -1,0 +1,20 @@
+{
+  "schema": "adhd/fault-fixture-diagnostic@1",
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19",
+  "passed": false,
+  "application_defect_claimed": false,
+  "cause": "Global strace syscall delays ran during project startup before the intended mutation; original45-second Runtime readiness deadline exceeded. No intended fault-boundary SIGKILL or crash-recovery pass is claimed.",
+  "trace_sha256": "3de5a0abedb92126ae0f6307673b5cd8c1b721c23e667181fe6c5e0e071f8954",
+  "trace_retained_ignored": true,
+  "trace_summary": {
+    "delayed": 37,
+    "fsync_calls": 18,
+    "rename_calls": 5,
+    "pwrite64_calls": 14
+  },
+  "failure_log": {
+    "path": "verification/project-recovery-core16/storage-initial-startup-failure.log",
+    "sha256": "328f1164fecef674a8904f3680bd73d27f48fb156e88fe605d8f7a8849ae89b3"
+  },
+  "replacement": "Dedicated observer remains inert through complete accepted baseline and then stops after the selected real successful mutation write. Original recovery data assertions and application deadlines unchanged."
+}

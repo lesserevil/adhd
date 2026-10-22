@@ -1,0 +1,80 @@
+{
+  "schema": "adhd/storage-recovery@1",
+  "scope": "full",
+  "passed": true,
+  "cases": [
+    {
+      "case": "kill-at-snapshot-data-sync",
+      "passed": true,
+      "snapshot_installed": false,
+      "checkpoint_needed_repair": false,
+      "observer": {
+        "stage": "snapshot-data-sync",
+        "pid": 2786403,
+        "syscall": "fsync"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "kill-at-snapshot-install",
+      "passed": true,
+      "snapshot_installed": true,
+      "checkpoint_needed_repair": false,
+      "observer": {
+        "stage": "snapshot-install",
+        "pid": 2801719,
+        "syscall": "rename"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "kill-at-checkpoint-write",
+      "passed": true,
+      "snapshot_installed": true,
+      "checkpoint_needed_repair": true,
+      "observer": {
+        "stage": "checkpoint-write",
+        "pid": 2817568,
+        "syscall": "pwrite"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "kill-at-checkpoint-sync",
+      "passed": true,
+      "snapshot_installed": true,
+      "checkpoint_needed_repair": true,
+      "observer": {
+        "stage": "checkpoint-sync",
+        "pid": 2835530,
+        "syscall": "fsync"
+      },
+      "actual_sigkill": true
+    },
+    {
+      "case": "corrupt-checksum-fails-closed-without-reset-and-matched-restore-works",
+      "passed": true
+    },
+    {
+      "case": "stale-snapshot-cannot-roll-back-a-newer-acknowledged-checkpoint",
+      "passed": true
+    },
+    {
+      "case": "validly-checksummed-foreign-identity-snapshot-is-rejected",
+      "passed": true
+    },
+    {
+      "case": "missing-checkpoint-reconstructed-from-complete-valid-snapshot",
+      "passed": true
+    },
+    {
+      "case": "unrelated-checkpoint-corruption-is-not-silently-treated-as-an-interrupted-write",
+      "passed": true
+    },
+    {
+      "case": "snapshot-symlink-is-rejected-without-modifying-its-target",
+      "passed": true
+    }
+  ],
+  "artifact_sha256": "881716eca4728611a4c8b51719d218ea9b9cc24f1b8fc8e6ddef963f864bee19"
+}

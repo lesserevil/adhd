@@ -29,6 +29,10 @@ class FakeServer:
 class QualityGuards(unittest.TestCase):
  def test_original_scope_and_fixed_caps(self):
   self.assertEqual(list(matrix.CASES.values()),[22,21,23,3]);self.assertEqual(sum(matrix.CAPS.values()),288)
+ def test_whole_suite_budgets_include_original_cold_starts(self):
+  self.assertEqual(sum(matrix.WINDOWS.values()),12000)
+  for name,value in matrix.BUDGET_BASIS.items():self.assertEqual(value['subtotal_seconds']+value['margin_seconds'],matrix.WINDOWS[name])
+  self.assertGreaterEqual(matrix.WINDOWS['history_quality'],22*(45+35+60+120))
  def test_same_request_bytes_response_and_count_no_retry(self):
   with tempfile.TemporaryDirectory() as directory,patch.object(runtime,'ThreadingHTTPServer',FakeServer),patch.object(runtime.threading,'Thread',FakeThread),patch.object(runtime.threading,'Timer',FakeThread):
    relay=runtime.Relay({'provider_window_seconds':450,'provider_post_cap':64},Path(directory)/'exchanges.jsonl')

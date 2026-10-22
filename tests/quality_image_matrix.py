@@ -18,6 +18,12 @@ import time
 sys.dont_write_bytecode=True
 CASES={'history_quality':22,'retrieval_quality':21,'archive_quality':23,'feedback_quality':3}
 CAPS={'history_quality':64,'retrieval_quality':32,'archive_quality':128,'feedback_quality':64}
+WINDOWS={'history_quality':6000,'retrieval_quality':1800,'archive_quality':3000,'feedback_quality':1200}
+BUDGET_BASIS={
+ 'history_quality':{'cold_starts':22,'startup_seconds_each':45,'queries':22,'query_seconds_each':35,'public_init_seconds_each':60,'control_allowance_seconds_each':120,'subtotal_seconds':5720,'margin_seconds':280},
+ 'retrieval_quality':{'cold_starts':1,'startup_seconds':60,'public_init_seconds':60,'index_waits':21,'index_seconds_each':25,'queries':21,'query_seconds_each':25,'control_allowance_seconds':330,'subtotal_seconds':1500,'margin_seconds':300},
+ 'archive_quality':{'cold_starts':1,'startup_seconds':60,'public_init_seconds':60,'index_waits':23,'index_seconds_each':45,'queries':23,'query_seconds_each':45,'control_allowance_seconds':510,'subtotal_seconds':2700,'margin_seconds':300},
+ 'feedback_quality':{'cold_starts':1,'startup_seconds':45,'public_init_seconds':60,'strata':3,'original_60s_waits_per_stratum':4,'control_allowance_seconds':375,'subtotal_seconds':1200,'margin_seconds':0}}
 
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -64,7 +70,7 @@ def prepare(a):
   flag='--model-url' if name=='feedback_quality' else '--matcher-url'
   argv=[str(entry),'--image',image,flag,'@OWNED_RELAY_URL@','--report',str(work/(name+'.json'))]
   jobs.append({'name':name,'expected_groups':count,'test_argv':argv,'custody_report':str(work/(name+'-custody.json')),
-   'launch_ledger':str(work/(name+'-launches.json')),'provider_log':str(work/(name+'-provider.jsonl')),'provider_post_cap':CAPS[name],'provider_window_seconds':450,'expected_image_starts':22 if name=='history_quality' else 1})
+   'launch_ledger':str(work/(name+'-launches.json')),'provider_log':str(work/(name+'-provider.jsonl')),'provider_post_cap':CAPS[name],'provider_window_seconds':WINDOWS[name],'experiment_budget_basis':BUDGET_BASIS[name],'expected_image_starts':22 if name=='history_quality' else 1})
  for path in [Path(sys.executable).resolve(),Path(shutil.which('docker')).resolve()]:externals[str(path)]=sha(path)
  tools={label:{'path':str(path.absolute()),'resolved':str(path.resolve()),'sha256':sha(path.resolve())} for label,path in [('python',Path(sys.executable)),('docker',Path(shutil.which('docker')))]}
  shutil.copyfile(__file__,work/'run.py')
@@ -78,7 +84,7 @@ def prepare(a):
   'tools':tools,'python':sys.executable,'runtime_cwd':str(runtime),'fence_library':str(work/'unused-no-native-fence'),'fence_audit':str(work/'unused-no-native-audit'),
   'runs_per_suite':1,'automatic_retries':0,'parallelism':1,'maximum_owned_hubs':1,'stop_first_failure':True,
   'original_readiness_seconds':{'foundation_Runtime':45,'federation_Hub':60},'original_query_seconds':{'history':35,'retrieval':25,'archive':45,'feedback':60},
-  'provider_upstream':'http://127.0.0.1:18770/v1/systemone','provider_model':'Nemotron-Deciffusion-8B-v2.1','maximum_provider_posts':288,'provider_window_seconds_per_suite':450,'maximum_provider_window_seconds':1800,'relay_retries':0,
+  'provider_upstream':'http://127.0.0.1:18770/v1/systemone','provider_model':'Nemotron-Deciffusion-8B-v2.1','maximum_provider_posts':288,'provider_window_seconds_per_suite':WINDOWS,'maximum_provider_window_seconds':sum(WINDOWS.values()),'relay_retries':0,
   'assessment_profile':{'feedback_history_request_bytes':8192,'min_confidence_ppm':500000},'exclusive_model_lease_required':True,'extra_provider_health_or_warmup_calls':0,'provider_window_origin':'Relay creation before original suite startup; includes intervening cold startups; deadline is never extended',
   'scope':'Exactimage40 original live quality69 only. Single fixed original corpus/labels/gates; optimizer172 and deployed Compose/Kind filter/search remain separate. No execution before root review/GO.'}
  write(work/'plan.json',plan);load(work/'run.py','copied_quality_driver').verify(plan,work)

@@ -1,0 +1,56 @@
+{
+  "schema": "adhd/documentation-final05-postterminal-procedure@1",
+  "prepare_only": true,
+  "root_GO_required_for_stage": true,
+  "actual_new_receipt_not_assigned": true,
+  "current_old_receipt_identity": "sha256:e4220c1fb913ec97a22c91db06ddbe02c5aa46b0b28e7dfed62fab05eae49455",
+  "old_admission_sha256": "f811fa5dcbdcb468cd15a148b15fb377ee577972ffc999e81f7eb06874db59ec",
+  "pinned_cli_argv": [
+    "_build/federation/litai/bin/python",
+    "_build/federation/litai/bin/litai"
+  ],
+  "require_parent_authoritative_lifecycle_exit_code": 0,
+  "require_new_envelope": {
+    "command": "rebuild",
+    "ok": true,
+    "result.passed": true,
+    "result.specification": "components/hub",
+    "result.artifact.sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+  },
+  "require_correlations": [
+    "rebuild.result.receipt_identity == actual current receipt.receipt_identity",
+    "rebuild.result.lifecycle_result_identity == actual current receipt.receipt.result",
+    "rebuild.result.lifecycle_request_identity == actual current receipt.lifecycle_request_identity",
+    "receipt produced only by proper CLI; preserve immutable old receipt and admission copies",
+    "new current authority/retained authorization0766/tree54b8/component lock9ac5/native test/BOM remain as reviewed, all58 retained files unchanged"
+  ],
+  "verify_argv": [
+    "_build/federation/litai/bin/python",
+    "_build/federation/litai/bin/litai",
+    "verify"
+  ],
+  "stage_argv": [
+    "python3",
+    "scripts/stage_container.py",
+    "--rebuild-result",
+    "_build/roadmap/final/documentation-final05/rebuild.json",
+    "--acceptance-report",
+    "verification/ownership40-development/manifest.json",
+    "--litai-command",
+    "[\"_build/federation/litai/bin/python\",\"_build/federation/litai/bin/litai\"]",
+    "--output",
+    "_build/roadmap/final/documentation-final05/container-context"
+  ],
+  "stage_output_must_be_fresh": "_build/roadmap/final/documentation-final05/container-context",
+  "expected_full_context5": {
+    "Dockerfile": "9ded107e56e6d142c629632d9eae514fb15c34aca689de73a07eeeddec5f9efa",
+    "compiler-inputs.json": "b987a58d1479af63c9470336104699e21fac184339d940df54defb65a96b381d",
+    "manifest.json": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "packaging.tar": "4332fbceea1725bf5ceb27061ab88aaf9b4fd92ecbeb387e2daa791fa6969308",
+    "payload.tar": "f8b6bf6b66c2a98b640f316c6568757f6f4e6dc25f15e9f13af48e3c75dd42d8"
+  },
+  "comparison": "Before opening bytes reject symlink/redirected root, symlink entries, nonregular entries, missing or extra names. Require exact five-name SET and byte equality of each file against original compiled05 context; retain actual SHA256 and comparison result. Source59/spec33/compiler-input/packaging closure must also remain unchanged.",
+  "bridge_scope": "Separate new bridge proof binds actual current proper CLI receipt/authority to unchanged source59/spec33/context5/cache67 and existing compiled05 image/proofs. Existing f811 admission and runtime reports stay immutable. If any payload/context/cache/source/lock differs, abort unchanged-image bridge; do not invent equivalence or rebuild success.",
+  "execution_performed_by_this_preparation": false,
+  "staging_script_sha256": "4b8d1762248af64b268bd8ebbcf9576386ff6cfb2cab3b53849738fba5c6ee1c"
+}

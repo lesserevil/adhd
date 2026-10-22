@@ -40,6 +40,17 @@ def effective_initial_revision(client):
     return revision
 
 
+def start_native_after_public_bootstrap(runtime,command,traced):
+    # Exercise the public first-install/admission flow without delaying its
+    # unrelated renames. The same real config/stores are then cold-opened under
+    # the original syscall observer before any baseline publication/mutation.
+    runtime.command=command
+    runtime.start()
+    runtime.stop()
+    runtime.command=traced
+    runtime.start()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     target = parser.add_mutually_exclusive_group(required=True)
@@ -68,7 +79,7 @@ def main():
         else:
             traced = ['strace', '-f', '-e', 'trace=rename', '-e',
                       'inject=rename:delay_exit=2s', '-o', str(trace)] + command
-            runtime = Runtime(root / boundary, traced)
+            runtime = Runtime(root / boundary, command)
         old_port, new_port = free_port(), free_port()
         token, admin_token = 'independent-agent-credential-0001', 'independent-administrator-credential-0001'
         old_store, new_store = runtime.root / 'old.dets', runtime.root / 'new.dets'
@@ -79,7 +90,8 @@ def main():
         runtime.file.write_text(json.dumps(original)); runtime.file.chmod(0o600)
         failures = []
         try:
-            runtime.start()
+            if args.image:runtime.start()
+            else:start_native_after_public_bootstrap(runtime,command,traced)
             agent = Client(runtime)
             initial_revision = effective_initial_revision(Client(runtime, admin_token))
             publication = agent.rpc({'op': 'publish', 'text': 'Original survives every commit boundary.'}, token, mid='durable-original')['publication']
@@ -128,6 +140,7 @@ def main():
             assert not Path(str(runtime.file) + '.transaction').exists()
             cases.append({'case': 'kill-at-' + boundary + '-rename', 'passed': True,
                           'recovered': 'new' if is_new else 'old',
+                          'native_untraced_public_bootstrap': not bool(args.image),
                           'mutation_trace_offset': trace_offset,
                           'trace_sha256': hashlib.sha256((runtime.sentinel if args.image else trace).read_bytes()).hexdigest()})
             print('PASS', cases[-1]['case'], flush=True)

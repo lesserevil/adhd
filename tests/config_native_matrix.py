@@ -66,6 +66,7 @@ import image_host_dependencies as host_dependencies
 def verify(work,plan):
     assert Path(__file__).absolute()==work/'driver.py' and Path(__file__).resolve()==work/'driver.py'
     assert sha(__file__)==plan['driver_sha256']
+    assert sha(work/'frozen/tests/config_native_matrix.py')==plan['driver_sha256']
     verify_frozen_inputs(work/'frozen',plan['frozen_inputs'])
     verify_frozen_inputs(work/'bound',plan['bound_inputs'])
     verify_empty_cache(work/'parent-cache',True)
@@ -89,6 +90,8 @@ def prepare(a):
     inputs,drift=freeze_inputs(a.repo_root,work/'frozen',selected['specifications'])
     # This authored driver and the additive closure helper are the only overlays.
     shutil.copyfile(__file__,work/'driver.py')
+    shutil.copyfile(__file__,work/'frozen/tests/config_native_matrix.py')
+    shutil.copyfile(Path(__file__).parent/'config_recovery.py',work/'frozen/tests/config_recovery.py')
     shutil.copyfile(Path(__file__).parent/'image_host_dependencies.py',work/'frozen/tests/image_host_dependencies.py')
     (work/'bound/target.exs').write_bytes(joined)
     shutil.copyfile(admission,work/'bound/admission.json')
@@ -114,6 +117,11 @@ def prepare(a):
     print(json.dumps({'plan':str(work/'plan.json'),'sha256':sha(work/'plan.json'),'frozen_files':len(plan['frozen_inputs']),'bound_files':len(plan['bound_inputs'])}))
 
 
+def completed_result(work,exit_code):
+    assert exit_code==0, 'Native config child failed; preserve known exit and raw stderr before report parsing'
+    return json.loads((Path(work)/'result.json').read_text())
+
+
 def execute(work,expected):
     assert sha(work/'plan.json')==expected;plan=json.loads((work/'plan.json').read_text());verify(work,plan)
     claim_execution(work,expected,plan['driver_sha256'])
@@ -124,8 +132,8 @@ def execute(work,expected):
             process=subprocess.Popen(plan['test_argv'],cwd=work/'results',env=plan['env'],stdout=out,stderr=err,start_new_session=True)
             result.update(started=True,child_pid=process.pid)
             result['exit_code']=wait_owned_child(process)
+        child=completed_result(work,result['exit_code'])
         verify(work,plan)
-        child=json.loads((work/'result.json').read_text())
         assert result['exit_code']==0 and child['passed'] is True and child['artifact_sha256']==plan['artifact_sha256']
         assert [r['case'] for r in child['cases']]==['kill-at-'+name+'-rename' for name in plan['boundaries']]
         assert all(r['passed'] and r['mutation_trace_offset']>0 for r in child['cases'])

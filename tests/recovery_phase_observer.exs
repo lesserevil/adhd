@@ -14,7 +14,6 @@ defmodule ADHDTestRecoveryPhaseObserver do
     {ADHD.Eventing, :provision, 2},
     {ADHD.Eventing, :provision, 3},
     {ADHD.Eventing, :request, 4},
-    {ADHD.Eventing, :request, 5},
     {ADHD.Eventing, :request, 6},
     {ADHD.Eventing, :request_now, 7},
     {ADHD.Eventing, :response, 4},

@@ -49,6 +49,16 @@ text = wait.(wait, 250)
 IO.write(text)
 '''.replace('CACHE_DIGEST',cache_digest).replace('OBSERVER',base64.b64encode(observer).decode())
 
+def probe_options(args,image):
+    values=list(args)
+    assert values[0]=='run' and values.count(image)==1
+    assert '--network'in values and values[values.index('--network')+1]=='none' and '--read-only'in values
+    assert not any(x in ['--mount','--volume','--pid','--no-healthcheck']or x.startswith('--pid=')for x in values)
+    index=values.index(image)
+    values[index:index]=['--no-healthcheck','--tmpfs','/tmp:rw,nosuid,noexec,size=16m','--memory','512m','--cpus','1','--pids-limit','128','--env','ERL_FLAGS=+S 2:2']
+    return tuple(values)
+
+
 def verify(work,plan):
     assert sha(work/'driver.py')==plan['driver_sha256']and sha(work/'observer.exs')==plan['observer_sha256']
     original=Path(plan['phase_work']);assert sha(original/'plan.json')==plan['phase_plan_sha256']and sha(original/'driver.py')==plan['phase_driver_sha256']
@@ -75,7 +85,7 @@ def main():
     class Probe(OwnedImage):
         def docker(self,*args,**kwargs):
             if args and args[0]=='run':
-                values=list(args);index=values.index(self.image_id);values[index:index]=['--tmpfs','/tmp:rw,nosuid,noexec,size=16m','--memory','512m','--cpus','1','--pids-limit','128','--env','ERL_FLAGS=+S 2:2'];args=tuple(values)
+                args=probe_options(args,self.image_id)
             return super().docker(*args,**kwargs)
     for k in list(os.environ):
         if k.startswith('DOCKER_'):del os.environ[k]

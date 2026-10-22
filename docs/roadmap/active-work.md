@@ -67,8 +67,15 @@ the original failed attempt retained. The [image core run](../../verification/im
 passes ten complete suites but exposes an ownership-verification crash; two later
 suites remain unrun. The [narrow successor40 repair](../../verification/ownership40-development/manifest.json)
 passes18 native checks and all three public ownership fault/recovery checks;
-its independent formal admission is running. Complete recovery, image/runtime and
-platform evidence must still pass before parent items close. The older
+its independent formal admission is running. The final native recovery remainder
+passed 11 more complete suites before its pending-query validator reported a
+baseline-expectation mismatch; retain that aggregate as failed while reviewing
+the actual accepted-state result. The reviewed image filesystem/migration ladder
+is now running serially: 17 original jobs / 85 expected checks, with all five
+observers bound to the actual passing image ABI probes. Preparation and isolated
+guard checks for all 15 image recovery crash variants and private-network learned
+recovery have also passed; their application runs remain pending. Complete
+recovery, image/runtime and platform evidence must still pass before parent items close. The older
 [source34 review](../../verification/multi-eventing/completion-review-34.json)
 remains historical evidence rather than current program completion.
 

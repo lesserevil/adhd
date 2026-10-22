@@ -1,0 +1,80 @@
+{
+  "schema": "adhd/serial-core-followup-qualification@1",
+  "passed": true,
+  "lifecycle_admitted": false,
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "case_groups": 33,
+  "max_test_children": 1,
+  "results": [
+    {
+      "name": "default",
+      "case_groups": 7,
+      "passed": true,
+      "timing": {
+        "write_deadline_seconds": 20,
+        "retry_after_seconds": [
+          1.0,
+          1.0
+        ],
+        "retry_count": 2,
+        "admin_move_ms": 1015.779,
+        "all_writes_ms": 2452.531,
+        "accepted_writes": 16
+      }
+    },
+    {
+      "name": "no-default",
+      "case_groups": 7,
+      "passed": true,
+      "timing": {
+        "write_deadline_seconds": 20,
+        "retry_after_seconds": [
+          1.0,
+          1.0
+        ],
+        "retry_count": 2,
+        "admin_move_ms": 1034.145,
+        "all_writes_ms": 2609.517,
+        "accepted_writes": 16
+      }
+    },
+    {
+      "name": "auth",
+      "case_groups": 9,
+      "passed": true,
+      "timing": null
+    },
+    {
+      "name": "storage",
+      "case_groups": 10,
+      "passed": true,
+      "timing": null
+    }
+  ],
+  "private_driver": "_build/kafka/core38-serial/driver.py",
+  "driver_sha256": "d7bc10453d3262fddd5b72ee9e81bda5642e4943956c8d7d28cb774f7d0b6b47",
+  "frozen_inputs_unchanged": true,
+  "composed_exact38_case_groups": 169,
+  "composition": "Originalexact38run136completegroups +33serialfocusedgroups; originalfalsematrix andinitialfocusedstartuptimeouts preserved. Onlyrelocationtestretrysemantics changed c69f9fc; auth/storage exactoriginalhelpers. No product/deadline/assertion change.",
+  "original_failed_matrix": {
+    "path": "verification/project-recovery-core38-initial/manifest.json",
+    "sha256": "74e7a7b987648b9efa2c07c4b5b3bbd4fe8e9c265b49d621f474ff891541a096"
+  },
+  "files": {
+    "matrix.json": "ef24d8d3b519b9b3226b5525d80c7e70aeffe2e81e3d48a62317d07f52686036",
+    "default.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driver.log": "c1bfea08b40a7e3a8496e20428985c2f700b9c8da8031e3ae08eb09c6aa9b7e1",
+    "storage.log": "3d93a47050c699f89075a11cc36dba6ac588238d5f3a91476ed79540b779488b",
+    "auth.json": "7bdb00fa3294ffa62807eb20cc82d1aaaa604f5a7b52d0ebbcc6b8eecc0a581d",
+    "storage.json": "9701d4503e21d9d588070293e7141ac63b8e4b192691bfd7fa21cbd68c5cf253",
+    "default.json": "0e8071dcfe3adf6d3fae6757c19adf42f24fd16e9a2532f0df76a0acfd4c72b2",
+    "auth.log": "82809bc525ba99034a81acfbb1c074665c9300acc54163483aa7ed0d5361acde",
+    "no-default.json": "032121cde1d6664a527e25213a752e5e95063cc1e7a7edfcf9f6ec5c11e34ec5",
+    "no-default.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "plan.json": "5ecfd0ea5a3069232ee9e1970a4f0e6ff06c1f7e86a6a8588df800bdb82f82a9"
+  },
+  "limitations": [
+    "Developmentnative qualificationonly, not lifecycleadmission/image/platform evidence.",
+    "Controlledproviders only; no externalprovider calls."
+  ]
+}

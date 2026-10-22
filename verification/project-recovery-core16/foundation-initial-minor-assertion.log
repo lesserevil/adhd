@@ -1,0 +1,24 @@
+PASS first-install-private-random-admin-password-and-real-session
+PASS one-role-per-user-admin-only-assignment-and-self-owned-agent
+PASS cookie-api-csrf-and-origin-enforcement
+PASS agent-token-rotation-live-revokes-old-credential-without-changing-agent
+PASS durable-revision-conflict-and-response-loss-idempotency
+PASS existing-session-promotion-and-demotion-take-effect-live
+PASS disable-revokes-session-and-reenable-cannot-resurrect-old-cookie
+PASS admin-full-private-data-access-with-developer-viewer-denial
+PASS live-store-migration-preserves-history-deliveries-and-failed-move-rollback
+PASS live-listener-rebind-and-occupied-port-rollback-with-same-process
+PASS atomic-external-file-reload-and-invalid-update-retains-last-good
+PASS real-oidc-code-pkce-rsa-jwt-validation-and-highest-group-role
+PASS oidc-consumed-state-replay-and-missing-flow-cookie-rejected-before-exchange
+PASS hot-oidc-only-mode-provider-session-revocation-and-last-admin-recovery
+PASS live-oidc-group-mapping-demotion-is-server-local
+PASS explicit-oidc-link-proof-conflict-rejection-stable-id-role-and-agent-ownership
+PASS stable-project-id-display-rename-and-hard-restart-preserve-replay-and-acknowledgements
+Traceback (most recent call last):
+  File "WORKTREE/_build/kafka/core16/frozen/tests/foundation_acceptance.py", line 590, in <module>
+    main()
+  File "WORKTREE/_build/kafka/core16/frozen/tests/foundation_acceptance.py", line 533, in main
+    status,schema,_=again.get('/protocol/schema');assert status==200 and schema['$id']=='urn:adhd:protocol:'+str(args.protocol_version)
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

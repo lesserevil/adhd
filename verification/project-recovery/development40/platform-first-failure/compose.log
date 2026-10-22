@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/_build/roadmap/final/platform40-plan01/frozen/tests/kafka_final_platform.py", line 736, in <module>
+    asyncio.run(main(p.parse_args()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/roadmap/final/platform40-plan01/frozen/tests/kafka_final_platform.py", line 591, in main
+    selected=await exercise_selective_restore(fixture,Recovery(fixture,selective_schema),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/roadmap/final/platform40-plan01/frozen/tests/kafka_selective_platform.py", line 348, in exercise_selective_restore
+    await verify_selective_restore(fixture, recovery, state, broker_end)
+  File "/home/horde/src/adhd/_build/roadmap/final/platform40-plan01/frozen/tests/kafka_selective_platform.py", line 363, in verify_selective_restore
+    viewer.api(scoped(BLUE, 'eventing_status'))
+  File "/home/horde/src/adhd/_build/roadmap/final/platform40-plan01/frozen/tests/foundation_acceptance.py", line 180, in api
+    assert status==expected,(body['op'],status,expected,value)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('eventing_status', 403, 200, {'error': {'code': 'FORBIDDEN', 'message': 'Request failed'}})

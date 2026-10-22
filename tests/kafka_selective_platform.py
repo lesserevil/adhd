@@ -14,6 +14,7 @@ from uuid import uuid4
 
 from multi_support import scoped, poll_until, reject
 from foundation_acceptance import Client
+from container_fixture import OwnedImage
 from project_recovery_acceptance import Strict, RED, BLUE
 from project_recovery_state import canonical, digest, snapshot
 import jsonschema
@@ -238,10 +239,7 @@ def missing_target_anchor(registry_body, server_id, project_id):
 
 
 def helper_absent(result, name):
-    return (result.returncode == 1 and result.stdout.strip() in (b'', b'[]')
-            and re.fullmatch(r'(?:Error(?: response from daemon)?:\s*)?No such (?:object|container):\s*'
-                             + re.escape(name), result.stderr.decode(errors='replace').strip(), re.IGNORECASE)
-            is not None)
+    return OwnedImage.probe_absence(result, name)
 
 
 # Runs only while the actual hub is stopped, in an unprivileged helper
@@ -352,15 +350,25 @@ async def exercise_selective_restore(fixture, recovery, bundle, broker_end, vm_i
     return state
 
 
+def verify_viewer_access(fixture, password):
+    viewer = Client(fixture)
+    user = viewer.login('platform-current-viewer', password)
+    assert user['role'] == 'Viewer'
+    assert user['project_ids'] == [BLUE]
+    assert [p['id'] for p in viewer.api({'op': 'list_projects'})['projects']] == [BLUE]
+    viewer.api(scoped(BLUE, 'overview'))
+    # Event recovery status is explicitly Admin-only. Preserve both the
+    # current account's permitted project reads and its authorization limits.
+    viewer.api(scoped(BLUE, 'eventing_status'), expected=403)
+    viewer.api(scoped(RED, 'overview'), expected=404)
+
+
 async def verify_selective_restore(fixture, recovery, state, broker_end):
     admin = fixture.admin()
     red, reader = await fixture.agent('red-a'), await fixture.agent('red-b')
     blue, blue_reader = await fixture.agent('blue-a'), await fixture.agent('blue-b')
     assert admin.call({'op': 'config_get'})['config'] == state['config']
-    viewer = Client(fixture)
-    user = viewer.login('platform-current-viewer', state['viewer_password'])
-    assert user['role'] == 'Viewer'
-    viewer.api(scoped(BLUE, 'eventing_status'))
+    verify_viewer_access(fixture, state['viewer_password'])
     assert recovery.status(BLUE)['route'] == state['blue_route']
     assert (await blue.call(scoped(BLUE, 'get', publication_id=state['blue_publication']['id'])))['publication'] == state['blue_publication']
     pending = (await blue_reader.call(scoped(BLUE, 'poll')))['deliveries']

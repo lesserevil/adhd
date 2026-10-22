@@ -10,9 +10,11 @@ import tarfile
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from kafka_selective_platform import (prepare_bundle, bundle_tar, read_hub_archive,
-                                     missing_target_anchor, MISSING_TARGET_SCRIPT, helper_absent)
+                                     missing_target_anchor, MISSING_TARGET_SCRIPT, helper_absent,
+                                     verify_viewer_access, BLUE, RED)
 from project_recovery_state import canonical
 
 
@@ -248,6 +250,7 @@ class StoppedLossScript(unittest.TestCase):
         for code, output, error in [(1,b'[]',b'Cannot connect to Docker daemon'),
                                    (1,b'[]',b'error: no such object: owned-helper\ntransport failure'),
                                    (1,b'[]',b'error: no such object: someone-else'),
+                                   (1,b'[]',b'error: no such object: OWNED-HELPER'),
                                    (1,b'[{"Id":"foreign"}]',b'error: no such object: owned-helper'),
                                    (125,b'[]',b'error: no such object: owned-helper')]:
             self.assertFalse(helper_absent(SimpleNamespace(returncode=code, stdout=output, stderr=error), name))
@@ -285,6 +288,38 @@ class StoppedLossScript(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(anchor.read_bytes(), b'checkpoint')
                 self.assertFalse(Path(str(anchor) + '.platform-lost-test').exists())
+
+
+class ViewerAuthorization(unittest.TestCase):
+    def check_policy(self, role='Viewer', grants=None, statuses=None):
+        calls = []
+        selected = [BLUE] if grants is None else grants
+        policy = {('list_projects', None): 200, ('overview', BLUE): 200,
+                  ('eventing_status', BLUE): 403, ('overview', RED): 404}
+        policy.update(statuses or {})
+        def api(body, expected=200):
+            calls.append((body, expected))
+            assert policy[(body['op'], body.get('project_id'))] == expected
+            return {'projects': [{'id': project} for project in selected]}
+        viewer = SimpleNamespace(login=lambda *_: {'role': role, 'project_ids': selected}, api=api)
+        with patch('kafka_selective_platform.Client', return_value=viewer):
+            verify_viewer_access(object(), 'private-fixture-password')
+        return calls
+
+    def test_current_viewer_retains_blue_reads_and_admin_denial(self):
+        calls = self.check_policy()
+        self.assertEqual(calls, [({'op': 'list_projects'}, 200),
+                                ({'op': 'overview', 'project_id': BLUE}, 200),
+                                ({'op': 'eventing_status', 'project_id': BLUE}, 403),
+                                ({'op': 'overview', 'project_id': RED}, 404)])
+
+    def test_changed_role_grants_or_access_are_rejected(self):
+        for changed in [dict(role='Admin'), dict(grants=[RED]),
+                        dict(statuses={('overview', BLUE): 403}),
+                        dict(statuses={('eventing_status', BLUE): 200}),
+                        dict(statuses={('overview', RED): 200})]:
+            with self.subTest(changed=changed), self.assertRaises(AssertionError):
+                self.check_policy(**changed)
 
 
 if __name__ == '__main__':

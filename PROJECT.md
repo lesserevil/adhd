@@ -83,8 +83,9 @@ Agents in separate rigs should communicate through a shared ADHD hub or federate
 hubs using the A2A boundary, with an adapter or skill where needed. Preserve project
 access and provenance, and allow participation by agents outside OpenRig.
 [INTEROP-001](docs/roadmap/active-work.md#interop-001-support-openrig-cross-rig-communication-through-adhd)
-records the planned integration and actual-rig acceptance; compatibility is not yet
-qualified.
+records the integration and actual-rig acceptance. Its pinned adapter has passed
+the item-specific cross-rig checks; final program closure still depends on the
+integrated multi-project and Kafka qualification.
 
 An agent can submit a message addressed to another agent through the hub's A2A
 interface. The hub queues it for the recipient rather than requiring a direct
@@ -119,7 +120,7 @@ Original facts and provenance remain searchable in the backend independently
 of delivery filters or Kafka retention. Literal/metadata search works without a
 model; semantic filtering and search/answer workflows may use an optional model.
 Deploy a hub plus its own Kafka service as a Kubernetes application or equivalent
-plain containers, with both Kubernetes and Compose packaging planned and the
+plain containers, with both Kubernetes and Compose packaging implemented and the
 model service optional. Preserve project admission, server-local roles, durable
 acknowledgements, hot Admin configuration and canonical federation routing.
 
@@ -127,9 +128,12 @@ acknowledgements, hot Admin configuration and canonical federation routing.
 [Kafka pub/sub plan](docs/roadmap/kafka-pubsub.md) scope contracts, Kafka handoff,
 A2A delivery, optional filters, fact search, Admin controls, deployments,
 migration and qualification. Integrate these with MULTI-001 through MULTI-008.
-Implementation is now authorized and underway in local feature branches. The
-accepted runtime still uses model-matched subscriptions and existing local queues;
-new Kafka/multi-project candidates have separate partial qualification evidence.
+Implementation proceeds in local feature branches. The current multi-project
+candidate implements Kafka streams with optional model filtering; model-free and
+optional-model Compose/Kubernetes integration have scoped qualification evidence.
+Final qualification remains open for the recorded topic-readiness repair,
+successor recovery checks and enforcing network policy. Earlier model-matched
+local-queue results remain historical evidence for their original runtime.
 
 ### Plain-text subscriptions in the current runtime
 
@@ -206,15 +210,16 @@ remains fast and independent. Native and Docker evidence is [qualified](verifica
 SEARCH-001 now provides owned contextual candidate retrieval and versioned native
 indexes with bounded relevance scoring, immutable provenance and hot Admin controls;
 native and Docker evidence is [qualified](verification/retrieval-qualified.json).
-SEARCH-003 and INDEX-001 retain two separate open gates for
-feedback/replay and generated index promotion.
+SEARCH-003 and INDEX-001 provide separately qualified
+[feedback/replay](verification/feedback-qualified.json) and
+[generated index promotion](verification/optimization-qualified.json).
 
 ### Multiple projects per server direction
 
 Each server must support multiple projects while continuing to federate with
 other ADHD servers. This supersedes the earlier one-server-per-project product
-restriction; a single-project deployment remains supported. The current runtime
-is still single-project. The [multiple-project roadmap](docs/roadmap/multi-project.md)
+restriction; a single-project deployment remains supported. The current candidate
+implements multiple projects. The [multiple-project roadmap](docs/roadmap/multi-project.md)
 and MULTI-001 through MULTI-008 in [active work](docs/roadmap/active-work.md)
 record the contract, storage/migration, access, agent workflow, federation,
 hot Admin, resource isolation and qualification tasks. Implementation is now

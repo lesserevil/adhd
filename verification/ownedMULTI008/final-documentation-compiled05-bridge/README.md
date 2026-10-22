@@ -1,0 +1,7 @@
+The proper pinned CLI lifecycle passed all 18 native tests and committed receipt `4cc1466d…`. Independent review matched its request, command, result and project revision to the actual current receipt. Full verification passed authority, locks and receipt, with only the two declared source-intelligence/HTML skips.
+
+Fresh staging produced exactly the same five regular, non-symlink files as admitted compiled05, byte for byte. Its payload retains 59 application files plus the embedded manifest and all 33 locked canonical specifications. Compiler inputs and both packaging helpers match the original cache bindings; all 58 complete retained-source inputs are unchanged. These are separate inventories: 58 retained source/build/metadata files and 59 packaged application files.
+
+The reviewed base authority `6329055b…`, bound to Component lock `9ac5f8e8…` by the pinned canonical rebuild-authority contract, produces lifecycle project revision `ad75c133…`. Both identities are retained with their distinct meanings.
+
+This separate bridge binds the new documentation/current receipt to unchanged source `c635c242…` and compiled05 image `4bcdbc7e…`. Original receipt `e4220c1f…`, admission `f811fa5d…` and existing runtime reports remain immutable. No Docker rebuild or runtime test was performed by this review. Outstanding integrated recovery/CNI/runtime gates remain separate; this bridge is not a whole-release attestation.

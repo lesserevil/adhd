@@ -11,6 +11,8 @@ import tempfile
 import threading
 import time
 from foundation_acceptance import Runtime, Client, free_port
+from config_image_runtime import ConfigurationFaultRuntime
+from image_filesystem_fault import fault_arguments, target_artifact
 
 
 def configuration_rename_after(trace, target, offset):
@@ -25,23 +27,33 @@ def configuration_rename_after(trace, target, offset):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--command', required=True)
+    target = parser.add_mutually_exclusive_group(required=True)
+    target.add_argument('--command')
+    target.add_argument('--image')
+    parser.add_argument('--image-manifest', type=Path)
+    fault_arguments(parser, artifact=True)
     parser.add_argument('--report', default='verification/config-recovery.json')
     parser.add_argument('--protocol-version', type=int, choices=(1, 2), default=2)
     args = parser.parse_args()
-    command = json.loads(args.command)
-    assert shutil.which('strace'), 'Linux strace is required for syscall-boundary fault injection'
+    command = json.loads(args.command) if args.command else None
+    if not args.image:
+        assert shutil.which('strace'), 'Linux strace is required for syscall-boundary fault injection'
+    artifact = target_artifact(args) if args.image else Path(command[-1])
     parent = Path('_build/roadmap/config-recovery').resolve()
     parent.mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix='run-', dir=parent))
     cases = []
+    runtimes = []
     for boundary in ('transaction', 'config', 'journal'):
         trace = root / (boundary + '.trace')
         # Delay syscall return so an external observer can kill the process at a
         # real filesystem transition. No application hook or fake persistence.
-        traced = ['strace', '-f', '-e', 'trace=rename', '-e',
-                  'inject=rename:delay_exit=2s', '-o', str(trace)] + command
-        runtime = Runtime(root / boundary, traced)
+        if args.image:
+            runtime = ConfigurationFaultRuntime(root / boundary, args, boundary)
+        else:
+            traced = ['strace', '-f', '-e', 'trace=rename', '-e',
+                      'inject=rename:delay_exit=2s', '-o', str(trace)] + command
+            runtime = Runtime(root / boundary, traced)
         old_port, new_port = free_port(), free_port()
         token, admin_token = 'independent-agent-credential-0001', 'independent-administrator-credential-0001'
         old_store, new_store = runtime.root / 'old.dets', runtime.root / 'new.dets'
@@ -68,16 +80,19 @@ def main():
             # Bootstrap, explicit fixture admission and the initial publication
             # must never satisfy the configuration mutation's boundary witness.
             trace_offset = trace.stat().st_size if trace.exists() else 0
+            if args.image:
+                runtime.arm_mutation()
             thread = threading.Thread(target=mutate, daemon=True); thread.start()
             target = str(runtime.file) + {'transaction': '.transaction', 'config': '', 'journal': '.journal'}[boundary]
             deadline = time.monotonic() + 25
             while time.monotonic() < deadline:
-                if configuration_rename_after(trace, target, trace_offset): break
+                if (runtime.observe_boundary() if args.image else configuration_rename_after(trace, target, trace_offset)): break
                 time.sleep(.01)
             else: raise AssertionError('Expected configuration rename boundary was not reached: ' + boundary)
             runtime.stop(hard=True); thread.join(timeout=16)
             assert not thread.is_alive(), 'Lost-response client failed to stop'
-            runtime.command = command
+            if not args.image:
+                runtime.command = command
             runtime.start()
             config = runtime.config
             is_new = config['port'] == new_port
@@ -99,11 +114,15 @@ def main():
             cases.append({'case': 'kill-at-' + boundary + '-rename', 'passed': True,
                           'recovered': 'new' if is_new else 'old',
                           'mutation_trace_offset': trace_offset,
-                          'trace_sha256': hashlib.sha256(trace.read_bytes()).hexdigest()})
+                          'trace_sha256': hashlib.sha256((runtime.sentinel if args.image else trace).read_bytes()).hexdigest()})
             print('PASS', cases[-1]['case'], flush=True)
-        finally: runtime.stop()
+        finally:
+            runtime.stop()
+            if args.image:
+                runtimes.append(runtime.image_runtime.identity())
     Path(args.report).write_text(json.dumps({'schema': 'adhd/config-recovery@1', 'passed': True,
-        'artifact_sha256': hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(), 'cases': cases}, indent=2) + '\n')
+        'artifact_sha256': hashlib.sha256(artifact.read_bytes()).hexdigest(), 'cases': cases,
+        'runtime': runtimes if args.image else None}, indent=2) + '\n')
 
 
 if __name__ == '__main__': main()

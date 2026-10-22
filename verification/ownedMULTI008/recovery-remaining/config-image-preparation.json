@@ -1,0 +1,53 @@
+{
+  "schema": "adhd/config-image-fault-preparation@1",
+  "status": "UNSTARTED_REQUIRES_OBSERVER_ABI_AND_REVIEW",
+  "scope": "Three original global configuration rename crash cases on actual image VM; no app change",
+  "original_configuration_assertions_retained": 13,
+  "original_mutation_timeout_seconds": 25,
+  "original_client_join_seconds": 16,
+  "native_strace_path_retained": true,
+  "original_five_observer_sources_unchanged": true,
+  "new_observer": {
+    "source": "config_rename_fault.c",
+    "exports": [
+      "rename"
+    ],
+    "stage_targets": [
+      "transaction",
+      "config",
+      "journal"
+    ],
+    "armed_only_after_fixture_publication": true,
+    "forwards_actual_libc_before_observing_success": true,
+    "actual_image_abi_qualified": false
+  },
+  "standalone_abi_selection": {
+    "default_original_cases": 18,
+    "optional_config_source_cases": 1,
+    "new_source_requires_own_source_bound_proof": true
+  },
+  "pure_checks": {
+    "config_image_runtime": 4,
+    "existing_abi_guards": 10,
+    "native_trace_guards": 2
+  },
+  "runtime_policy": "PID1 source-bound observer; ancestor pidfd STOP/kernel-T and retained KILL137/wait/remove; disarm before cold restart",
+  "app_starts": 0,
+  "compiler_starts": 0,
+  "model_calls": 0,
+  "remaining": [
+    "Independent code review",
+    "Host-only ELF build/audit and frozen standalone rename plan",
+    "Actual exact-image loader/forwarding/custody probe",
+    "Frozen original-three-case application plan and native mutation-specific run",
+    "Run actual image three-case fault/recovery with independent cleanup audit"
+  ],
+  "files": {
+    "config_rename_fault.c": "bc3c16ecf630dd401f9b4b5314e26c04a4f161dca9f30f9d2fdbb2e4a34238e5",
+    "config_image_runtime.py": "2a798da16f25280a523b568fb4eb832b6927dc7aad585275f2961089546d1476",
+    "config_image_runtime_unit.py": "27bed0cf9c246612e96b905cf651c2d91ccdc533fbf4d00f340ac0ccb65b420c",
+    "config_recovery.py": "312bf0b1c471732af5342dad27208bb5dc80277b866cdc1094d29a906f18cf0e",
+    "image_filesystem_abi.py": "91173d5cac3260542e20836610f565c131b6a9c796b33c5b89cead7df68442de",
+    "image_filesystem_fault.py": "fcb70bb1088493f1b7ba13cd41fca4abd72ada541aea1ea98bcf036f72788db7"
+  }
+}

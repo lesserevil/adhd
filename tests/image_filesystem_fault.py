@@ -17,6 +17,8 @@ from image_eventing_runtime import EventingFaultImage
 
 OBSERVER = '/adhd-test/filesystem-observer.so'
 SOURCES = {
+    'config_rename_fault.c': {'exports': {'rename'}, 'prefix': 'ADHD_CONFIG_FAULT_',
+        'stages': {'transaction','config','journal'}},
     'multi_fault.c': {'exports': {'rename','renameat','renameat2','link','linkat'},
         'prefix': 'ADHD_CRASH_', 'stages': {'before-prepared','before-decided','before-config','after-snapshot','before-completed','transition-decision','transition-project'}},
     'store_move_fault.c': {'exports': {'rename','link','unlink'}, 'prefix': 'ADHD_MOVE_',

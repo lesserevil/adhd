@@ -30,7 +30,16 @@ FAMILIES={
  'project_recovery_fault.c':('rename','fsync','link','unlink'),
  'rebind_fault.c':('rename','fsync'),
 }
+OPTIONAL_FAMILIES={'config_rename_fault.c':('rename',)}
 CALLER_ABI={'_exit','access','close','dlopen','dlsym','fsync','getenv','getpid','lseek','memcmp','open','pread','read','setenv','snprintf','strcmp','strlen','unsetenv','write'}
+
+
+def selected_families(names=None):
+ names=list(FAMILIES) if names is None else names
+ available={**FAMILIES,**OPTIONAL_FAMILIES}
+ assert isinstance(names,list) and names and len(names)==len(set(names))
+ assert all(name in available for name in names)
+ return {name:available[name] for name in names}
 
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -77,6 +86,7 @@ def compile_caller(source,target):
 
 
 def prepare(args):
+ families=selected_families(getattr(args,'family',None))
  assert re.fullmatch('sha256:[a-f0-9]{64}',args.image)
  manifest=plain(args.image_manifest);raw=manifest.read_bytes();meta=json.loads(raw)
  assert meta['schema']=='adhd/container-inputs@1' and re.fullmatch('[a-f0-9]{64}',meta['files']['hub.exs'])
@@ -85,7 +95,7 @@ def prepare(args):
  work.mkdir(parents=True,mode=0o700)
  inputs=work/'inputs';inputs.mkdir(mode=0o700)
  source_root=Path(args.helpers_root).absolute();assert source_root.resolve(strict=True)==source_root and source_root.is_dir() and not source_root.is_symlink()
- for name in HELPERS+tuple(FAMILIES):
+ for name in HELPERS+tuple(families):
   # Only this reviewed test observer changes for musl's missing dlsym alias;
   # the other four observers come byte-for-byte from the helper authority.
   origin=Path(__file__).with_name(name) if name=='storage_write_fault.c' else source_root/name
@@ -94,7 +104,7 @@ def prepare(args):
  shutil.copyfile(plain(Path(__file__)),work/'run.py');shutil.copyfile(manifest,inputs/'manifest.json')
  helper,_=load_helpers(inputs)
  builds={}
- for source in FAMILIES:
+ for source in families:
   library,audit=helper.compile_observer(source,work/'build'/source.removesuffix('.c'));builds[source]={'library':str(library),'audit':audit}
  caller=work/'build/caller.so';caller_audit=compile_caller(inputs/'image_filesystem_abi_caller.c',caller)
  inventory={str(f.relative_to(work)):{'sha256':sha(f),'bytes':f.stat().st_size} for f in sorted(work.rglob('*')) if f.is_file()}
@@ -103,8 +113,9 @@ def prepare(args):
        'artifact_sha256':meta['files']['hub.exs'],'work':str(work),'driver_sha256':sha(work/'run.py'),'inventory':inventory,
        'directories':sorted(str(f.relative_to(work)) for f in work.rglob('*') if f.is_dir()),
        'observer_builds':builds,'caller':{'library':str(caller),'audit':caller_audit},
-       'cases':[{'source':s,'op':op} for s,ops in FAMILIES.items() for op in ops],
-       'limits':{'cases':18,'serial_containers':1,'boundary_seconds':10,'kernel_stop_seconds':2,'docker_seconds':30,
+       'selected_families':list(families),
+       'cases':[{'source':s,'op':op} for s,ops in families.items() for op in ops],
+       'limits':{'cases':sum(map(len,families.values())),'serial_containers':1,'boundary_seconds':10,'kernel_stop_seconds':2,'docker_seconds':30,
                  'network':'none','memory':'128m','cpus':1,'pids':32,'case_seconds':120,'cleanup_seconds':45,'provider_calls':0,'app_starts':0,'broker_calls':0},
        'required_review':'Explicit root GO of this exact plan hash before --execute; first failure preserved, no retries',
        'sparse_write':{'offset':BIG_OFFSET,'payload_hex':PAYLOAD.hex(),'maximum_allocated_bytes_per_file':65536}}
@@ -112,10 +123,11 @@ def prepare(args):
 
 
 def verify(plan):
+ families=selected_families(plan.get('selected_families'))
  work=Path(plan['work']);assert work.resolve(strict=True)==work and not work.is_symlink()
  driver=plain(Path(__file__));assert sha(driver)==plan['driver_sha256'],'Executing driver changed'
- assert plan['cases']==[{'source':s,'op':op} for s,ops in FAMILIES.items() for op in ops]
- assert len(plan['cases'])==plan['limits']['cases']==18
+ assert plan['cases']==[{'source':s,'op':op} for s,ops in families.items() for op in ops]
+ assert len(plan['cases'])==plan['limits']['cases']==sum(map(len,families.values()))
  observed=set();directories=set()
  for root in (work/'inputs',work/'build'):
   assert root.resolve(strict=True)==root and not root.is_symlink();directories.add(str(root.relative_to(work)))
@@ -171,6 +183,10 @@ def fixture(root,source,op):
    write(Path(str(config)+'.transaction'),b'actual decision control')
    if op=='link':src=root/'.restore-probe/state.dets.snapshot';dst=Path(str(store)+'.snapshot')
    else:dst=Path(str(config)+'.transaction');before=True;effect='before-unlink'
+ elif source=='config_rename_fault.c':
+  assert op=='rename';prefix='ADHD_CONFIG_FAULT_';stage='journal'
+  dst=Path(str(config)+'.journal');write(root/'armed',b'armed')
+  extra={prefix+'CONFIG':str(config),prefix+'ARM':str(root/'armed')}
  else:
   assert source=='rebind_fault.c';prefix='ADHD_REBIND_';stage='decision-durable';dst=Path(str(config)+'.transaction');extra={prefix+'CONFIG':str(config)}
   if op=='fsync':extra['ADHD_ABI_PREPARE_RENAME']=str(src);extra['ADHD_ABI_SYNC']=str(root);effect='directory-synced-rename'
@@ -330,7 +346,7 @@ def execute(args):
    verify(plan);row=run_case(plan,case,index,helper,custody);report['rows'].append(row);save(work/'result.json',report)
   # Each source proof carries all successful export cases and their physical
   # witnesses. No historical rename-only proof is promoted to full closure.
-  for source,ops in FAMILIES.items():
+  for source,ops in selected_families(plan.get('selected_families')).items():
    rows=[r for r in report['rows'] if r['case']['source']==source];assert {r['case']['op'] for r in rows}==set(ops)
    proof={'schema':'adhd/image-filesystem-observer-probe@1','passed':True,'application_started':False,'owned_container_absent':all(r['owned_container_absent'] for r in rows),
     'image_config_identity':plan['image_config_identity'],'artifact_sha256':plan['artifact_sha256'],'canonical_manifest_sha256':plan['canonical_manifest_sha256'],
@@ -345,6 +361,7 @@ def execute(args):
 def main():
  p=argparse.ArgumentParser(description=__doc__);sub=p.add_subparsers(dest='op',required=True)
  a=sub.add_parser('prepare');a.add_argument('--helpers-root',type=Path,required=True);a.add_argument('--work',type=Path,required=True);a.add_argument('--image',required=True);a.add_argument('--image-manifest',type=Path,required=True)
+ a.add_argument('--family',action='append',choices=list(FAMILIES)+list(OPTIONAL_FAMILIES),help='Explicit source ABI closure; default preserves the original18 cases')
  a=sub.add_parser('execute');a.add_argument('--plan',type=Path,required=True);a.add_argument('--reviewed-plan-sha256',required=True)
  args=p.parse_args();prepare(args) if args.op=='prepare' else execute(args)
 

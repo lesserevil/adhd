@@ -6,7 +6,7 @@ corrected successors require their own admitted image, source and ABI proofs.
 import sys
 sys.dont_write_bytecode=True
 _STAGED=__file__.rsplit('/',1)[-1]=='driver.py'
-if _STAGED:assert sys.flags.isolated, 'Frozen execution requires python -I'
+if _STAGED:assert sys.flags.isolated and sys.flags.no_site, 'Frozen execution requires python -I -S'
 elif __name__=='__main__':assert '--execute' not in sys.argv, 'Execute only frozen driver.py under python -I'
 import argparse
 import copy
@@ -51,6 +51,7 @@ if _STAGED:
     sys.path.insert(0,bootstrap(__file__,sys.argv[sys.argv.index('--plan-sha256')+1]))
 
 from image_qualification_inputs import reviewed_payload,freeze_inputs,verify_frozen_inputs
+import image_host_dependencies as host_dependencies
 from image_filesystem_fault import validate_observer
 from image_recovery_remaining_layout import layout,epoch_fixture_overlay
 from multi_image_core_matrix import claim_execution
@@ -106,6 +107,7 @@ def verify(work,plan):
         verify_frozen_inputs(work/directory,plan[key])
     assert all(sha(work/name)==digest for name,digest in plan['bound_inputs'].items())
     verify_frozen_inputs(work/'bound',{str(Path(name).relative_to('bound')):digest for name,digest in plan['bound_inputs'].items()})
+    host_dependencies.verify(json.loads((work/'bound/host-dependencies.json').read_text()))
     for name,row in plan['external_inputs'].items():
         p=Path(name);assert p.resolve(strict=True)==Path(row['realpath']) and sha(p)==row['sha256']
     assert Path(sys.executable).resolve(strict=True)==Path(plan['python']['realpath']) and sha(plan['python']['realpath'])==plan['python']['sha256']
@@ -171,6 +173,9 @@ def prepare(args):
     for name,library,proof in [('project_recovery_fault',args.project_library,args.project_proof),('rebind_fault',args.rebind_library,args.rebind_proof)]:
         shutil.copy2(library,bound/(name+'.so'));shutil.copy2(proof,bound/(name+'.proof.json'))
     (work/'results').mkdir(mode=0o700)
+    dump(bound/'config.json',{})
+    dependencies=host_dependencies.capture(args.python,original['env']['PATH'])
+    dump(bound/'host-dependencies.json',dependencies)
     jobs=[]
     for row in descriptor['selected_rows']:
         name=row['name'];tokens={'FROZEN':str(frozen),'RESULTS':str(work/'results'),'ARTIFACT':str(bound/'artifact.exs'),
@@ -186,7 +191,7 @@ def prepare(args):
                 '--job',str(jobfile),'--job-sha256',sha(jobfile),'--work',job['work'],'--report',str(report)]
         else:argv=resolve(row['harness_arguments'],tokens)
         wrapper=work/'results'/(name+'-cleanup.json')
-        command=[str(args.python),'-B',str(frozen/'tests/image_recovery_entry.py'),'--script',str(harness),'--script-sha256',sha(harness),
+        command=[str(args.python),'-s','-B',str(frozen/'tests/image_recovery_entry.py'),'--script',str(harness),'--script-sha256',sha(harness),
             '--timeout',str(row['outer_timeout_seconds']),'--cleanup-report',str(wrapper),'--',*argv]
         jobs.append({'name':name,'family':row['family'],'argv':command,'report':str(report),'cleanup_report':str(wrapper),
             'outer_timeout_seconds':row['outer_timeout_seconds'],'original':row['original']})
@@ -203,7 +208,7 @@ def prepare(args):
         'known38_ownership_gap':args.image==BASELINE,'image_config_identity':args.image,'artifact_sha256':artifact,
         'admission_manifest_sha256':args.admission_sha256,'canonical_manifest_sha256':sha(work/'context/manifest.json'),
         'payload_tar_sha256':selected['payload_sha256'],'original_plan_sha256':args.original_sha256,
-        'driver_sha256':sha(work/'driver.py'),'jobs':jobs,'parallelism':1,'runs_per_suite':1,'fail_fast':True,
+        'driver_sha256':sha(work/'driver.py'),'driver_python_flags':['-I','-S'],'jobs':jobs,'parallelism':1,'runs_per_suite':1,'fail_fast':True,
         'original_input_trees':[str(n) for n in original_trees],
         'excluded_original_outputs':'Original native runtime _build is outside declared six input trees and is not copied; each authoritative tree exactSET verified.',
         'fixture_amendments':descriptor['fixture_amendments'],'separate_dependencies':descriptor['separate_dependencies'],
@@ -211,7 +216,7 @@ def prepare(args):
         'bound_inputs':{str(p.relative_to(work)):sha(p) for p in bound.iterdir()},'external_inputs':external,
         'python':{'path':str(args.python),'realpath':str(args.python.resolve()),'sha256':sha(args.python.resolve())},
         'docker_socket':{'path':str(args.docker_socket),'identity':[socket.st_dev,socket.st_ino]},
-        'env':{**original['env'],'PYTHONPYCACHEPREFIX':str(work/'results/pycache')},'runtime_cwd':str(work/'results'),'live_specification_drift':drift,
+        'env':host_dependencies.child_environment(original['env'],dependencies,bound,work/'results/pycache',args.docker_socket),'runtime_cwd':str(work/'results'),'live_specification_drift':drift,
         'source_files':{n:sha(source_target/n) for n in names},'component_scripts':{str(n):sha(component/n) for n in component_scripts},
         'deadline_policy':'Exact original per-row main deadline; BaseException unwind before disarmed cleanup. Known audited scripts only; no arbitrary infinite-catch guarantee.',
         'preparation_only':not args.execution_ready}

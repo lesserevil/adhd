@@ -131,6 +131,9 @@ def prepare(args):
  socket=Path('/var/run/docker.sock').resolve(strict=True);s=socket.stat()
  plan={'schema':'adhd/enforcing-cni-kind-executor@1','prepared':True,'executed':False,'root_GO_required':True,'cluster':base['cluster'],'network':base['dedicated_network'],'node':base['node'],'bridge_subnet':base['network_subnet'],'owner_label':'adhd-policy-owner','owner_nonce':os.urandom(16).hex(),'image':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'node_image':node,'node_anonymous_volume_destinations':['/var'],'node_image_declared_volumes':sorted((json.loads(node_config.read_text())['config'].get('Volumes') or {}).keys()),'CNI_images':cni,'CNI_provisioning':'exact-OCI-archive-import','CNI_transfer':'owned-node-exec-stdin-private-varlib','CNI_archives':oci_report['images'],'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'external_inputs':[external(oci_source/name) for name in ('manifest.json','0.oci.tar','1.oci.tar','2.oci.tar')]+[external(node_config),external(source),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+list(tools.values()),'docker_socket':{'path':str(socket),'identity':[s.st_dev,s.st_ino]},'lane_lock':str(root/'_build/roadmap/netpol-kind.lane.lock'),'automatic_retries':0,'parallelism':1,'fixture_pods':9,'routes':18,'scope':'Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.','runtime_starts_during_preparation':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED'}
  assert not args.direct_api_endpoint or args.diagnostic_only,'Direct endpoint first requires explicit diagnostic-only review'
+ if getattr(args,'controller_direct_api_endpoint',False):
+  assert args.direct_api_endpoint and args.diagnostic_only
+  plan['controller_direct_api_endpoint']={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
  if args.direct_api_endpoint:plan['direct_api_endpoint']={'mode':'owned-node-InternalIP','port':6443,'require_peer_hostname_tls':True,'read_preflight_only_before_configmap':True}
  if args.diagnostic_only:
   from kafka_network_policy_diagnostics import LIMITS
@@ -261,6 +264,7 @@ class Executor:
   k=[p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG']]
   if p.get('direct_api_endpoint'):self.install_direct_api_endpoint(k)
   self.run('install-calico',k+['create','-f',str(self.work/'bound/calico-pinned.yaml')],timeout=120)
+  if p.get('controller_direct_api_endpoint'):self.install_controller_endpoint(k)
   if p.get('diagnostic_only'):
    from kafka_network_policy_diagnostics import Diagnostics,LIMITS,bounded,observe_rollout
    assert p['diagnostic_limits']==LIMITS
@@ -323,6 +327,31 @@ class Executor:
   assert after['metadata']['uid']==ns['metadata']['uid']
   self.node_owned(self.inspect(self.known_node))
   self.direct_api_proof={'address':address,'port':6443,'namespace_uid':ns['metadata']['uid'],'node_uid':api['metadata']['uid'],'configmap_uid':actual['metadata']['uid'],'owner_nonce':p['owner_nonce'],'tls':tls,'inside_own_node_verified':True,'host_direct_API_verified':True,'pinned_calico_manifest_sha256':sha(self.work/'bound/calico-pinned.yaml'),'separate_configmap_sha256':sha(path)}
+
+ def install_controller_endpoint(self,k):
+  from kafka_network_policy_endpoint import controller_patch,address_for,NAME
+  import copy,yaml
+  p=self.plan;proof=self.direct_api_proof;assert p['diagnostic_only']and p['direct_api_endpoint']and p['controller_direct_api_endpoint']=={'mode':'exclusive-owned-configmap-envFrom','container':'calico-kube-controllers'}
+  def get(name,kind,target):return json.loads(self.run(name,k+['-n','kube-system','get',kind,target,'-o','json','--request-timeout=10s'],timeout=15).stdout)
+  def fences(suffix):
+   ns=json.loads(self.run('controller-namespace-'+suffix,k+['get','namespace','kube-system','-o','json','--request-timeout=10s'],timeout=15).stdout)
+   api=json.loads(self.run('controller-node-'+suffix,k+['get','node',p['node'],'-o','json','--request-timeout=10s'],timeout=15).stdout)
+   assert ns['metadata']['uid']==proof['namespace_uid']and api['metadata']['uid']==proof['node_uid']
+   node=self.inspect(self.known_node);self.node_owned(node);self.network_owned(self.inspect(self.known_network,True))
+   assert address_for(node,api,p,self.known_node,self.known_network)==proof['address']
+   return get('controller-configmap-'+suffix,'configmap',NAME)
+  cm=fences('before')
+  expected=next(d for d in yaml.safe_load_all((self.work/'bound/calico-pinned.yaml').read_text())if d and d.get('kind')=='Deployment'and d['metadata']['name']=='calico-kube-controllers')
+  before=get('controller-before-overlay','deployment','calico-kube-controllers')
+  patch=controller_patch(before,expected,cm,proof);path=self.work/'runtime/controller-endpoint-overlay.json';assert not path.exists();save(path,patch)
+  self.run('controller-endpoint-overlay',k+['-n','kube-system','patch','deployment','calico-kube-controllers','--type=json','--patch-file',str(path),'--request-timeout=10s'],timeout=15)
+  after=get('controller-after-overlay','deployment','calico-kube-controllers')
+  assert after['metadata']['uid']==before['metadata']['uid']
+  original=copy.deepcopy(before['spec']['template']['spec']['containers']);original[0]['envFrom']=patch[-1]['value']
+  assert after['spec']['template']['spec']['containers']==original
+  # Repeat all ownership and ConfigMap UID/data guards after the atomic patch.
+  controller_patch(before,expected,fences('after'),proof)
+  self.direct_api_proof['controller_overlay']={'deployment_uid':before['metadata']['uid'],'configmap_uid':proof['configmap_uid'],'patch_sha256':sha(path),'guarded_json_patch':True,'container':'calico-kube-controllers','pinned_manifest_unchanged':True}
 
  def finish(self):
   p=self.plan;errors=[]
@@ -412,7 +441,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
  for n in ('repo-root','cluster-plan','context','admission-manifest','node-config','oci-inputs'):p.add_argument('--'+n,type=Path)
- p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');args=p.parse_args()
+ p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');p.add_argument('--direct-api-endpoint',action='store_true');p.add_argument('--controller-direct-api-endpoint',action='store_true');args=p.parse_args()
  if args.prepare:prepare(args)
  else:sys.exit(execute(args.work.absolute(),args.plan_sha256))
 if __name__=='__main__':main()

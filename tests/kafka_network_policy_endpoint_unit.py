@@ -36,4 +36,36 @@ class Guards(unittest.TestCase):
   with patch.object(m.ssl,'create_default_context',return_value=context),patch.object(m.socket,'create_connection',return_value=MagicMock())as connect:
    proof=m.verify_tls('10.240.240.2',b'CA');connect.assert_called_once_with(('10.240.240.2',6443),timeout=5)
   self.assertTrue(proof['verify_peer']);self.assertEqual(context.wrap_socket.call_args.kwargs['server_hostname'],'10.240.240.2')
+class ControllerGuards(unittest.TestCase):
+ def fixture(self):
+  from copy import deepcopy
+  expected={'kind':'Deployment','metadata':{'name':'calico-kube-controllers'},'spec':{'selector':{'matchLabels':{'k8s-app':'calico-kube-controllers'}},'template':{'metadata':{'labels':{'k8s-app':'calico-kube-controllers'}},'spec':{'containers':[{'name':'calico-kube-controllers','image':'pinned','env':[{'name':'DATASTORE_TYPE','value':'kubernetes'}]}]}}}}
+  actual=deepcopy(expected);actual['metadata'].update(namespace='kube-system',uid='deployment-uid');actual['spec']['template']['spec']['containers'][0].update(terminationMessagePath='/dev/termination-log',terminationMessagePolicy='File')
+  proof={'address':'10.240.240.2','namespace_uid':'ns-uid','node_uid':'node-uid','owner_nonce':'a'*32,'configmap_uid':'cm-uid'}
+  cm=m.configmap(proof['address'],proof['namespace_uid'],proof['node_uid'],proof['owner_nonce']);cm['metadata']['uid']='cm-uid'
+  return actual,expected,cm,proof
+ def test_atomic_patch_preserves_containers_and_tests_uid(self):
+  from copy import deepcopy
+  actual,expected,cm,proof=self.fixture();before=deepcopy(actual);patch=m.controller_patch(actual,expected,cm,proof)
+  self.assertEqual(actual,before);self.assertEqual([p['op']for p in patch],['test','test','add']);self.assertEqual(patch[0]['value'],'deployment-uid');self.assertEqual(patch[1]['value'],actual['spec']['template']['spec']['containers']);self.assertEqual(patch[2]['path'],'/spec/template/spec/containers/0/envFrom')
+ def test_only_exact_api_probe_defaults_allowed(self):
+  actual,expected,cm,proof=self.fixture();a=actual['spec']['template']['spec']['containers'][0];e=expected['spec']['template']['spec']['containers'][0]
+  e['readinessProbe']={'exec':{'command':['health']},'periodSeconds':10};a['readinessProbe']={'exec':{'command':['health']},'periodSeconds':10,'failureThreshold':3,'successThreshold':1,'timeoutSeconds':1};a['resources']={}
+  self.assertEqual(len(m.controller_patch(actual,expected,cm,proof)),3);a['readinessProbe']['timeoutSeconds']=2
+  with self.assertRaises(AssertionError):m.controller_patch(actual,expected,cm,proof)
+ def test_foreign_existing_env_and_wrong_configmap_rejected(self):
+  for defect in ['namespace','name','image','envFrom','env','extra','configmap_uid','nonce','node','address']:
+   actual,expected,cm,proof=self.fixture();c=actual['spec']['template']['spec']['containers'][0]
+   if defect=='namespace':actual['metadata']['namespace']='other'
+   elif defect=='name':actual['metadata']['name']='other'
+   elif defect=='image':c['image']='foreign'
+   elif defect=='envFrom':c['envFrom']=[]
+   elif defect=='env':c['env']=[]
+   elif defect=='extra':actual['spec']['template']['spec']['containers'].append(dict(c))
+   elif defect=='configmap_uid':cm['metadata']['uid']='other'
+   elif defect=='nonce':cm['metadata']['labels']['adhd-policy-owner']='b'*32
+   elif defect=='node':cm['metadata']['annotations']['adhd.policy/node-uid']='foreign'
+   else:cm['data']['KUBERNETES_SERVICE_HOST']='10.240.240.3'
+   with self.assertRaises(AssertionError,msg=defect):m.controller_patch(actual,expected,cm,proof)
+
 if __name__=='__main__':unittest.main()

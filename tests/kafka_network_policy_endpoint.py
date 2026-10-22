@@ -48,3 +48,33 @@ def configmap(address,namespace_uid,node_uid,nonce):
 def inside_command(node_id,address):
  assert re.fullmatch('[a-f0-9]{64}',node_id)and str(ipaddress.IPv4Address(address))==address
  return ['exec',node_id,'kubectl','--kubeconfig=/etc/kubernetes/admin.conf','--server=https://'+address+':6443','get','namespace','kube-system','-o','json','--request-timeout=10s']
+
+
+def controller_patch(deployment,expected,actual_configmap,proof):
+ """One guarded diagnostic overlay, only the pinned controller's absent envFrom."""
+ import copy
+ metadata=deployment['metadata'];assert deployment['kind']==expected['kind']=='Deployment'
+ assert metadata['name']==expected['metadata']['name']=='calico-kube-controllers'
+ assert metadata['namespace']=='kube-system'and metadata['uid']
+ assert deployment['spec']['selector']==expected['spec']['selector']
+ assert deployment['spec']['template']['metadata']['labels']==expected['spec']['template']['metadata']['labels']
+ containers=deployment['spec']['template']['spec']['containers'];pinned=expected['spec']['template']['spec']['containers']
+ assert len(containers)==len(pinned)==1
+ assert containers[0]['name']==pinned[0]['name']=='calico-kube-controllers'and'envFrom'not in containers[0]
+ # API-defaulted termination fields are the only container additions permitted.
+ assert set(containers[0])<=set(pinned[0])|{'resources','terminationMessagePath','terminationMessagePolicy'}
+ assert containers[0].get('resources',{})==pinned[0].get('resources',{})
+ for key,value in pinned[0].items():
+  if key in ('livenessProbe','readinessProbe'):
+   value=dict({'failureThreshold':3,'periodSeconds':10,'successThreshold':1,'timeoutSeconds':1},**value)
+  assert containers[0][key]==value
+ assert containers[0].get('terminationMessagePath','/dev/termination-log')=='/dev/termination-log'
+ assert containers[0].get('terminationMessagePolicy','File')=='File'
+ value=configmap(proof['address'],proof['namespace_uid'],proof['node_uid'],proof['owner_nonce'])
+ cm=actual_configmap;assert cm['metadata']['uid']==proof['configmap_uid']
+ assert cm['metadata']['name']==NAME and cm['metadata']['namespace']=='kube-system'
+ assert cm['data']==value['data']and cm['metadata']['labels']==value['metadata']['labels']and cm['metadata']['annotations']==value['metadata']['annotations']
+ patch=[{'op':'test','path':'/metadata/uid','value':metadata['uid']},
+  {'op':'test','path':'/spec/template/spec/containers','value':copy.deepcopy(containers)},
+  {'op':'add','path':'/spec/template/spec/containers/0/envFrom','value':[{'configMapRef':{'name':NAME}}]}]
+ return patch

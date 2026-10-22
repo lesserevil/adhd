@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import Request, HTTPCookieProcessor, build_opener
 from uuid import uuid4
 
-sys.path.insert(0, str(Path('tests').resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hub_acceptance import ModelFixture
 
 

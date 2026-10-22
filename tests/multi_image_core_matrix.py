@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+from image_qualification_inputs import verify_frozen_inputs
 
 
 
@@ -50,6 +51,7 @@ def main():
     mode.add_argument('--execute', action='store_true', help='Execute the previously reviewed frozen plan')
     for name in ('repo-root', 'work'):
         p.add_argument('--' + name, type=Path, required=True)
+    p.add_argument('--helper-root', type=Path, help='Explicit current-root plus reviewed test-only overlay to freeze')
     p.add_argument('--image')
     for name in ('image-manifest', 'legacy-hub', 'published-schema', 'published-openapi', 'producer-report', 'admission-manifest'):
         p.add_argument('--' + name, type=Path)
@@ -58,20 +60,25 @@ def main():
     p.add_argument('--plan-sha256', help='Required reviewed exact plan digest for execution')
     p.add_argument('--eventing-rest-url', default='http://127.0.0.1:18082')
     a = p.parse_args()
+    sys.dont_write_bytecode = True
     root, work = a.repo_root.resolve(), a.work.resolve()
     if a.prepare:
         assert all(getattr(a, k) for k in ('image', 'image_manifest', 'legacy_hub', 'published_schema',
                                           'published_openapi', 'producer_report', 'artifact_sha256', 'admission_manifest', 'admission_sha256'))
         assert re.fullmatch(r'sha256:[a-f0-9]{64}', a.image), 'Require immutable image configuration ID'
         manifest = a.image_manifest.resolve()
-        from image_qualification_inputs import reviewed_payload, freeze_inputs
+        from image_qualification_inputs import reviewed_payload, freeze_inputs, verify_frozen_inputs, prepare_runtime_cwd
         selected = reviewed_payload(manifest, a.admission_manifest, a.admission_sha256, a.image, a.artifact_sha256)
         audit = selected['audit']
         locked_specs = selected['specifications']
         assert not work.exists(), 'Fresh qualification directory required'
         frozen = work / 'frozen'
         frozen.mkdir(parents=True, mode=0o700)
-        inputs, live_spec_drift = freeze_inputs(root, frozen, locked_specs)
+        inputs, live_spec_drift = freeze_inputs(a.helper_root.resolve() if a.helper_root else root, frozen, locked_specs)
+        verify_frozen_inputs(frozen, inputs)
+        runtime, runtime_data = prepare_runtime_cwd(work, frozen, inputs)
+        binding = work / 'hub-binding.exs'
+        binding.write_bytes(selected['artifact_bytes'])
         exports = work / 'exports'
         exports.mkdir()
         for source, name in ((a.published_schema, 'schema.json'), (a.published_openapi, 'openapi.json')):
@@ -85,9 +92,9 @@ def main():
                 '--eventing-rest-url', a.eventing_rest_url, '--with-model']
         jobs = [
             ('foundation', 'foundation_acceptance.py', ['--image', a.image, '--protocol-version', '2', '--protocol-profile', '2.1']),
-            ('wire', 'protocol_acceptance.py', ['--image', a.image, '--command', '[]', '--profile-version', '2.1.0',
+            ('wire', 'protocol_acceptance.py', ['--image', a.image, '--command', json.dumps(['elixir', str(binding)]), '--profile-version', '2.1.0',
                 '--published-schema', str(exports / 'schema.json'), '--published-openapi', str(exports / 'openapi.json'),
-                '--port-lock', str(work / 'foundation-port.lock')])]
+                '--port-lock', str(root / '_build/roadmap/foundation-port.lock')])]
         for name, file, extra in (
                 ('multi', 'multi_acceptance.py', []), ('store-move', 'multi_store_move.py', []),
                 ('move-no-default', 'multi_store_move.py', ['--no-default']), ('hot', 'multi_hot.py', []),
@@ -109,17 +116,22 @@ def main():
             'scope': 'Admitted38 recovery/backend normative payload; live-root presentation changes excluded and unqualified',
             'locked_specifications': {name: hashlib.sha256(body).hexdigest() for name, body in locked_specs.items()},
             'legacy_sha256': sha(legacy), 'legacy_hub': str(legacy), 'driver_sha256': sha(work / 'driver.py'),
+            'runtime_cwd': str(runtime), 'outer_child_timeout_seconds': None,
+            'child_timeout_policy': 'Existing authored harness bounds only; no additional driver wall-clock cap; an incomplete child cannot pass',
+            'wire_artifact_command_is_report_binding_only': True,
             'frozen_inputs': inputs, 'bound_inputs': {str(f.relative_to(work)): sha(f) for f in (
-                work / 'image-manifest.json', work / 'producer-report.json', work / 'admission-manifest.json', exports / 'schema.json', exports / 'openapi.json')},
+                work / 'image-manifest.json', work / 'producer-report.json', work / 'admission-manifest.json', exports / 'schema.json', exports / 'openapi.json', binding)} | runtime_data,
             'first_two_serial': True, 'parallelism_after_first_two': 2, 'fail_fast': True, 'runs_per_suite': 1,
-            'jobs': [{'name': n, 'script': f, 'arguments': v} for n, f, v in jobs]}
+            'foundation_flock_sha256': sha(Path('/usr/bin/flock')),
+            'jobs': [{'name': n, 'script': f, 'prefix': ['/usr/bin/flock', str(root / '_build/roadmap/foundation-port.lock')] if n == 'foundation' else [], 'arguments': v} for n, f, v in jobs]}
         (work / 'plan.json').write_text(json.dumps(plan, indent=2) + '\n')
         print('PREPARED image core13; no execution')
         return
     plan = reviewed_plan(work, a.plan_sha256, __file__)
     assert sha(Path(plan['legacy_hub'])) == plan['legacy_sha256']
     frozen = work / 'frozen'
-    assert all(sha(frozen / path) == digest for path, digest in plan['frozen_inputs'].items())
+    verify_frozen_inputs(frozen, plan['frozen_inputs'])
+    assert sha(Path('/usr/bin/flock')) == plan['foundation_flock_sha256']
     assert all(sha(work / path) == digest for path, digest in plan['bound_inputs'].items())
     sys.path.insert(0, str(frozen / "tests"))
     claim_execution(work, a.plan_sha256, plan['driver_sha256'])
@@ -131,14 +143,18 @@ def main():
     assert custody.manifest['files']['hub.exs'] == plan['artifact_sha256']
     env = os.environ.copy()
     env['PYTHONPATH'] = str(frozen / 'tests')
+    env['PYTHONDONTWRITEBYTECODE'] = '1'
+    env['PYTHONPYCACHEPREFIX'] = str(work / 'pycache')
     def run(job):
         name = job['name']
         report = work / (name + '.json')
+        verify_frozen_inputs(frozen, plan['frozen_inputs'])
+        assert all(sha(work / path) == digest for path, digest in plan['bound_inputs'].items())
         assert not report.exists(), 'Refuse stale report reuse'
         print('START', name, flush=True)
         with (work / (name + '.log')).open('w') as log:
-            result = subprocess.run([sys.executable, str(frozen / 'tests' / job['script']),
-                *job['arguments'], '--report', str(report)], cwd=frozen, env=env, stdout=log, stderr=subprocess.STDOUT)
+            result = subprocess.run([*job['prefix'], sys.executable, str(frozen / 'tests' / job['script']),
+                *job['arguments'], '--report', str(report)], cwd=plan['runtime_cwd'], env=env, stdout=log, stderr=subprocess.STDOUT)
         actual_report_passed = report_passed(report)
         qualified = result.returncode == 0 and actual_report_passed
         print('DONE', name, result.returncode, 'report_passed', actual_report_passed, flush=True)
@@ -153,7 +169,7 @@ def main():
     if len(results) == 2 and all(row['exit_code'] == 0 for row in results):
         results += bounded_jobs(plan['jobs'][2:], run, 2, True)
     unrun = [job['name'] for job in plan['jobs'] if job['name'] not in {r['name'] for r in results}]
-    unchanged = (sha(Path(plan['legacy_hub'])) == plan['legacy_sha256'] and all(sha(frozen / path) == digest for path, digest in plan['frozen_inputs'].items()) and
+    unchanged = (sha(Path(plan['legacy_hub'])) == plan['legacy_sha256'] and verify_frozen_inputs(frozen, plan['frozen_inputs']) and sha(Path('/usr/bin/flock')) == plan['foundation_flock_sha256'] and
                  all(sha(work / path) == digest for path, digest in plan['bound_inputs'].items()))
     value = {'schema': 'adhd/image-core-matrix@1', 'passed': unchanged and not unrun and all(r['exit_code'] == 0 for r in results),
         'image_config_identity': custody.image_id, 'artifact_sha256': plan['artifact_sha256'],

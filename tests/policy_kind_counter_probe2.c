@@ -101,8 +101,8 @@ static void clock_fact(void) {
   char out[512];
   snprintf(out, sizeof out,
            "{\"kind\":\"clock-fact\",\"monotonic_ns\":%" PRIu64 ",\"boottime_ns\":%" PRIu64 ",\"time_namespace_inode\":%" PRIu64 ",\"time_for_children_namespace_inode\":%" PRIu64 "}\n",
-           (uint64_t)mono.tv_sec * NS + (uint64_t)mono.tv_nsec,
-           (uint64_t)boot.tv_sec * NS + (uint64_t)boot.tv_nsec,
+           (uint64_t)((uint64_t)mono.tv_sec * NS + (uint64_t)mono.tv_nsec),
+           (uint64_t)((uint64_t)boot.tv_sec * NS + (uint64_t)boot.tv_nsec),
            namespace_inode(getpid(), "time"), namespace_inode(getpid(), "time_for_children"));
   emit(out);
 }
@@ -114,6 +114,8 @@ static void image_fact(void) {
   require(realpath(name, resolved) != NULL, "probe-image-executable-resolution");
   require(!strcmp(resolved, name) || !strcmp(resolved, "/usr/local/lib/elixir/bin/elixir"),
           "probe-image-executable-unexpected-target");
+  const char *canonical = !strcmp(resolved, name) ?
+      "/usr/local/bin/elixir" : "/usr/local/lib/elixir/bin/elixir";
   int fd = open(resolved, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
   require(fd >= 0, "probe-image-executable-open");
   struct stat before, after;
@@ -129,9 +131,10 @@ static void image_fact(void) {
   require(n >= 10 && !memcmp(bytes, "#!/bin/sh\n", 10), "probe-image-executable-shebang");
   char hash[65], out[512];
   digest(bytes, n, hash);
-  snprintf(out, sizeof out,
+  int written = snprintf(out, sizeof out,
            "{\"kind\":\"image-executable-fact\",\"requested\":\"/usr/local/bin/elixir\",\"resolved\":\"%s\",\"sha256\":\"%s\",\"bytes\":%zu,\"mode\":%u,\"uid\":0,\"script_executed\":false}\n",
-           resolved, hash, n, (unsigned)(before.st_mode & 07777));
+           canonical, hash, n, (unsigned)(before.st_mode & 07777));
+  require(written >= 0 && (size_t)written < sizeof out, "probe-image-fact-output-cap");
   emit(out);
 }
 

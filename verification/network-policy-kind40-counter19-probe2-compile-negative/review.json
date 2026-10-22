@@ -1,0 +1,60 @@
+{
+  "actual_diagnostics": [
+    {
+      "code": "format",
+      "function": "clock_fact",
+      "line": 103,
+      "reason": "PRIu64 is unsigned long on this ABI, while NSULL arithmetic yielded unsigned long long."
+    },
+    {
+      "code": "format-truncation",
+      "function": "image_fact",
+      "line": 133,
+      "reason": "Compiler cannot narrow PATH_MAX resolved buffer from closed string comparisons."
+    }
+  ],
+  "container_starts": 0,
+  "elapsed_seconds": 0.6152148520050105,
+  "execution_provenance": {
+    "executor": "parent /root",
+    "scope": "Static compile ONLY",
+    "session": 40954
+  },
+  "exit_code": 1,
+  "native_executions": 0,
+  "not_claimed": [
+    "Fixed C compilation/native success",
+    "Gate ENV/clock/image fact outcome",
+    "Any cluster/application/resource qualification"
+  ],
+  "only_source_corrections": [
+    "Cast complete monotonic/boottime arithmetic expressions to uint64_t.",
+    "Print one of the two fixed already-validated canonical executable target strings; check snprintf result length explicitly."
+  ],
+  "original_compile_passed": false,
+  "original_gate_unchanged": true,
+  "raw": {
+    "compile.json": "1e3a0badb701bd2698ff1e89e88a8115dfd9117a3f5843787f518f8b030bf48e",
+    "compile.stderr": "0ba7418d4ad7b7a99a0debfcfcaf8687f56f0289d8ba8cee4efc13167669b993",
+    "compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "plan.json": "6deeef0b770d05c3a7fcd711d4434b3993016651275ff94baaddf80847269fd9"
+  },
+  "schema": "adhd/counter19-probe2-source03-negative-source04-correction@1",
+  "source03_preserved": true,
+  "source04": {
+    "compiled": false,
+    "driver_sha256": "a81eb3dc28ad9530edf658d711b7f1d23e32c637a8273a209d049e86304e2146",
+    "execution_ready": false,
+    "isolated_verify_exit_code": 0,
+    "native_executed": false,
+    "plan_path": "_build/policy-kind-counter19-sameuid-source04/plan.json",
+    "plan_sha256": "23b6b0fc8920f3f259eabd94f67e3b0a33465811a313e7086750dc22bcb356aa",
+    "probe_source_sha256": "80f2273cb1631a2b924f0c55609cabdcd85b51bff9bc581bed40c86a8df5124b",
+    "pure_groups_passed": 22
+  },
+  "warnings_preserved": [
+    "-Wall",
+    "-Wextra",
+    "-Werror"
+  ]
+}

@@ -47,9 +47,8 @@ per project, observe those limits through the public resource-status API, and
 retain its same 20 visibility faults and three-second deadline. The negative queue
 case keeps its original single global ticket, held Blue request, observed queued
 Red work and shared three-second budget within the ten-second recovery budget.
-Retain bounded failure traces before assertions can discard them. Next: review
-that fixture correction and run all 23 independent cases against the passing
-export and receipt; the earlier failure remains false.
+The correction also retains bounded failure traces before assertions can discard
+them. Its complete rerun is recorded below; the earlier failure remains false.
 The [corrected-control run](../../verification/eventing-readiness-native23-retention-failure/manifest.json)
 passes 15 whole cases, including the observed shared-budget queue expiry, then
 fails existing-retention after its durable decision and real Kafka alter; seven
@@ -71,11 +70,9 @@ zero unrun cases, verified input/tool closure and all owned native processes and
 proxies cleaned up. It preserves the original assertions and deadlines, observes
 the independent positive-control capacity, verifies the actual old/new Kafka
 retention values around the durable decision, and retains the shared-budget queue
-expiry. Both earlier failed runs remain false. Next: complete the separate
-committed-retention failure and unchanged-file cold-recovery companion, then bind
-both passing reports into fresh source admission before staging and independently
-building the successor compiled image. Compiled-image and deployment qualification
-remain open.
+expiry. Both earlier failed runs remain false. The separate committed-retention
+failure and unchanged-file cold-recovery companion and source admission are
+recorded below. Compiled-image and deployment qualification remain open.
 
 The [separate retention companion](../../verification/eventing-retention-native-positive/manifest.json)
 now passes all three checks across three owned native starts: actual alteration

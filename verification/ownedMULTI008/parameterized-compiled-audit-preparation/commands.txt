@@ -1,0 +1,18 @@
+PREPARATION ONLY. No new receipt/image/admission exists or is assigned here. Actual source41 lifecycle currently refused the stale independent oracle after exporting source; do not feed that failed rebuild to admission capture. Wait for a proper successful lifecycle/new receipt and root-reviewed context/build/audit.
+
+# Root-reviewed create-only offline auditor; no image process is started.
+# Supply actual staged manifest SHA/source SHA and immutable image config ID.
+$PYTHON -I -B $FROZEN_TESTS/image_payload_audit.py --execute --context "$ACTUAL_CONTEXT" --context-sha256 "$ACTUAL_CONTEXT_SHA" --artifact-sha256 "$ACTUAL_SOURCE_SHA" --image "$ACTUAL_IMAGE_ID" --runtime-helpers "$REVIEWED_RUNTIME_HELPERS" --output "$FRESH_AUDIT_DIRECTORY" --docker "$ABSOLUTE_DOCKER" --docker-socket "$REVIEWED_DOCKER_SOCKET" --docker-config "$PRIVATE_DOCKER_CONFIG"
+# Runtime helpers is the exact deploy/runtime directory; no caller CWD imports.
+# Audit output contains image-payload.json and actual cache-manifest/metadata.
+# Docker config must be owned/closed and config.json exactly{}; no auth required
+# for already-built immutable ID. Actual create uses --pull never/network none.
+
+# Root-reviewed admission capture: actual proper source admission + exact original
+# receipt/rebuild bytes, not a hand-generated or copied-stale success declaration.
+$PYTHON -I -B $FROZEN_TESTS/image_compiled_admission.py --execute --source-admission "$ACTUAL_HOST_ADMISSION" --source-admission-sha256 "$ACTUAL_HOST_ADMISSION_SHA" --receipt "$ACTUAL_HOST_RECEIPT" --rebuild "$ACTUAL_PASSING_REBUILD" --context "$ACTUAL_CONTEXT" --context-sha256 "$ACTUAL_CONTEXT_SHA" --artifact-sha256 "$ACTUAL_SOURCE_SHA" --image "$ACTUAL_IMAGE_ID" --audit-directory "$ACTUAL_AUDIT_DIRECTORY" --payload-audit-sha256 "$ACTUAL_PAYLOAD_AUDIT_SHA" --build-log "$ACTUAL_COMPILER_BUILD_LOG" --output "$FRESH_COMPILED_ADMISSION_DIRECTORY" --docker "$ABSOLUTE_DOCKER" --docker-socket "$REVIEWED_DOCKER_SOCKET" --docker-config "$PRIVATE_DOCKER_CONFIG"
+# This inspects image configuration but creates/starts no container, issues no
+# receipt, and changes no current receipt. It copies verified source evidence
+# into a fresh output, binds all sibling cache bytes and reruns compiled_admission.
+# Its final manifest says qualification_complete:false/release_qualified:false.
+# Runtime readiness/cache17/ABI/reproducibility/deployment remain separate gates.

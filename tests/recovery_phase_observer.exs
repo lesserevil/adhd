@@ -32,18 +32,24 @@ defmodule ADHDTestRecoveryPhaseObserver do
       send(parent, {ref, :opened})
       try do
         emit(fd, ["header", nonce, "source-unchanged-compiled-diagnostic"])
+        Process.put(:phase_setup, ["await-modules"])
         await_modules(1500)
         spec = [{:_, [], [{:return_trace}, {:exception_trace}]}]
         Enum.each(@functions, fn mfa ->
+          {m, f, a} = mfa
+          Process.put(:phase_setup, ["pattern", inspect(m), Atom.to_string(f), Integer.to_string(a)])
           count = :erlang.trace_pattern(mfa, spec, [:local])
+          emit(fd, ["pattern", inspect(m), Atom.to_string(f), Integer.to_string(a), Integer.to_string(count)])
           true = is_integer(count) and count > 0
         end)
+        Process.put(:phase_setup, ["trace-all"])
         :erlang.trace(:all, true, [:call, :arity, {:tracer, self()}])
+        Process.put(:phase_setup, ["trace-new"])
         :erlang.trace(:new, true, [:call, :arity, {:tracer, self()}])
         emit(fd, ["ready", nonce, Integer.to_string(length(@functions)) <> "-mfa-patterns"])
         collect(fd, 0, System.monotonic_time(:millisecond) + 1800000)
       catch
-        _, _ -> emit(fd, ["observer-failed", nonce, "redacted"])
+        class, _ -> emit(fd, ["observer-failed", nonce, safe_class(class) | Process.get(:phase_setup, ["unknown"])])
       after
         Enum.each(@functions, fn mfa -> :erlang.trace_pattern(mfa, false, [:local]) end)
         :erlang.trace(:all, false, [:call])
@@ -70,6 +76,9 @@ defmodule ADHDTestRecoveryPhaseObserver do
   defp emit(fd, fields) do
     line = Enum.join([Integer.to_string(System.monotonic_time(:microsecond)) | fields], "|") <> "\n"
     true = byte_size(line) <= 240
+    bytes = Process.get(:phase_bytes, 0) + byte_size(line)
+    true = bytes <= 65536
+    Process.put(:phase_bytes, bytes)
     :ok = :file.write(fd, line)
   end
   defp collect(fd, count, deadline) when count < 256 do

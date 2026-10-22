@@ -69,8 +69,11 @@ suites remain unrun. The [narrow successor40 repair](../../verification/ownershi
 passes18 native checks and all three public ownership fault/recovery checks;
 its independent formal admission is running. The final native recovery remainder
 passed 11 more complete suites before its pending-query validator reported a
-baseline-expectation mismatch; retain that aggregate as failed while reviewing
-the actual accepted-state result. The reviewed image filesystem/migration ladder
+baseline-expectation mismatch; the [terminal review](../../verification/project-recovery/development38/native-final18/manifest.json)
+retains that aggregate as failed and proves all14 strict vectors passed. The
+original invocation omitted the existing `--fixed-baseline` flag for the repaired
+artifact. A fresh final-seven batch is running with that flag; all466 frozen inputs,
+11 external bindings, remaining suite order and assertions are unchanged. The reviewed image filesystem/migration ladder
 is now running serially: 17 original jobs / 85 expected checks, with all five
 observers bound to the actual passing image ABI probes. Preparation and isolated
 guard checks for all 15 image recovery crash variants and private-network learned

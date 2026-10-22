@@ -106,6 +106,9 @@ def main():
         assert not poll('p') and not poll('q')
         projects=copy.deepcopy(h.config['projects']);projects.append({'id':'new','name':'New','settings':{'eventing':{'topic_prefix':'new_project','retention_ms':7200000}}})
         patch({'projects':projects})
+        if request(h.base,'/protocol/schema')[1].get('$id')=='urn:adhd:protocol:2.1':
+            assert admin('project_restore_status','new')['availability']=='uninitialized'
+            h.initialize_unknown_projects()
         assert retained(status('new')['topic'])==7200000
         assert model.states==[]
         record('per-field-null-reset-inherits-root-and-new-project-preflight-needs-no-live-empty-writer')

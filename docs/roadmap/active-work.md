@@ -73,7 +73,8 @@ checks, yielding29 suites/176 checks without relabeling the earlier failed runs.
 pass21 whole checks, and [secured Kind](../../verification/ownedMULTI008/compiled05-secured-kind-positive/manifest.json)
 passes seven scenarios/51 assertions, including actual credential/certificate and
 broker/proxy replacement. The [Calico bootstrap](../../verification/network-policy-kind40-bootstrap12-positive/audit.json)
-passes both rollouts; route enforcement remains a separate unqualified gate.
+passes both rollouts. The separate [complete CNI route gate](../../verification/ownedMULTI008/cni-static-gate-positive/audit.json)
+now passes all 18 routes with exact image custody and full owned-resource cleanup.
 
 The [compiled05 core attempt](../../verification/final05-core13-first-failure/manifest.json)
 remains failed: foundation, wire and store-move passed whole; multi-project passed
@@ -109,9 +110,13 @@ with both owned container IDs and names independently absent. The earlier
 [wrapper timeout](../../verification/network-policy-static-protocol-first-negative/audit.json)
 remains failed. The [first static CNI run](../../verification/ownedMULTI008/cni-static-gate-first-failure/audit.json)
 reaches Pod readiness but fails its imported-image alias lookup before traffic;
-zero routes are qualified and all owned resources are cleaned. Next: review
-immutable image-custody resolution and run a fresh enforcing-CNI gate with all
-original 18 routes and nine Pods; protocol checks alone do not qualify enforcement.
+zero routes are qualified and all owned resources are cleaned. After exact
+single-child OCI-index diagnosis, the [fresh complete CNI run](../../verification/ownedMULTI008/cni-static-gate-positive/audit.json)
+now passes all 18 pre-policy controls and exactly five allowed/thirteen denied
+post-policy routes. All nine Pod image chains, post-traffic identities/readiness,
+two helper ConfigMap UIDs, namespace cleanup and full disposable-cluster cleanup
+are independently verified. This completes the network-only subrequirement;
+successor application/Kafka qualification remains separate and open.
 The
 [full-application recovery attempt](../../verification/final05-recovery25-prefix9-first-failure/manifest.json)
 retains nine whole suites/44 checks; the no-default-project crash case failed

@@ -1,0 +1,120 @@
+{
+  "operations": [
+    {
+      "operation_id": "restore_f99ad47ff2de7a231096f2c355eb6769_2",
+      "kind": "apply",
+      "state": "complete",
+      "created_at": "2026-10-22T10:50:04.820Z",
+      "updated_at": "2026-10-22T10:50:05.710Z",
+      "failure": null,
+      "progress": {
+        "bytes_read": 0,
+        "maximum_bytes": 67108864,
+        "maximum_records": 100000,
+        "records_checked": 39
+      },
+      "project_id": "project-red"
+    },
+    {
+      "operation_id": "restore_f99ad47ff2de7a231096f2c355eb6769_4",
+      "kind": "apply",
+      "state": "complete",
+      "created_at": "2026-10-22T10:50:05.991Z",
+      "updated_at": "2026-10-22T10:50:06.568Z",
+      "failure": null,
+      "progress": {
+        "bytes_read": 0,
+        "maximum_bytes": 67108864,
+        "maximum_records": 100000,
+        "records_checked": 39
+      },
+      "project_id": "project-blue"
+    },
+    {
+      "operation_id": "restore_f99ad47ff2de7a231096f2c355eb6769_6",
+      "kind": "apply",
+      "state": "failed",
+      "created_at": "2026-10-22T10:50:33.791Z",
+      "updated_at": "2026-10-22T10:50:34.226Z",
+      "failure": {
+        "code": "RESTORE_IO_ERROR",
+        "conflicts": [],
+        "reason": "io",
+        "retryable": true,
+        "truncated": false
+      },
+      "progress": {
+        "bytes_read": 18766,
+        "maximum_bytes": 67108864,
+        "maximum_records": 100000,
+        "records_checked": 123
+      },
+      "project_id": "project-red"
+    },
+    {
+      "operation_id": "restoreplan_f99ad47ff2de7a231096f2c355eb6769_1",
+      "kind": "plan",
+      "state": "ready",
+      "created_at": "2026-10-22T10:50:04.625Z",
+      "updated_at": "2026-10-22T10:50:04.743Z",
+      "failure": null,
+      "progress": {
+        "bytes_read": 0,
+        "maximum_bytes": 67108864,
+        "maximum_records": 100000,
+        "records_checked": 0
+      },
+      "project_id": "project-red"
+    },
+    {
+      "operation_id": "restoreplan_f99ad47ff2de7a231096f2c355eb6769_3",
+      "kind": "plan",
+      "state": "ready",
+      "created_at": "2026-10-22T10:50:05.859Z",
+      "updated_at": "2026-10-22T10:50:05.907Z",
+      "failure": null,
+      "progress": {
+        "bytes_read": 0,
+        "maximum_bytes": 67108864,
+        "maximum_records": 100000,
+        "records_checked": 0
+      },
+      "project_id": "project-blue"
+    },
+    {
+      "operation_id": "restoreplan_f99ad47ff2de7a231096f2c355eb6769_5",
+      "kind": "plan",
+      "state": "ready",
+      "created_at": "2026-10-22T10:50:33.523Z",
+      "updated_at": "2026-10-22T10:50:33.691Z",
+      "failure": null,
+      "progress": {
+        "bytes_read": 18766,
+        "maximum_bytes": 67108864,
+        "maximum_records": 100000,
+        "records_checked": 117
+      },
+      "project_id": "project-red"
+    }
+  ],
+  "selected_transport_enabled": true,
+  "owned_stage_assigned": true,
+  "root_eventing": {
+    "enabled": true,
+    "rest_url": "http://127.0.0.1:18082",
+    "topic_prefix": "adhd",
+    "timeout_ms": 3000
+  },
+  "default_project_key_present": false,
+  "transaction_exists": false,
+  "armed_exists": true,
+  "sentinel_exists": false,
+  "private_input_hashes": {
+    "hub.json": "a8b6ed1e0614309290df22c70e7019d0e320ac5a4b4b944580b8572341fdfbe7",
+    "hub.json.recovery": "d3b4a7eadfe25be8f0186139e36babfc77251b9174edd4edcff15d6f0a0a6523",
+    "hub.json.stores": "61b55738ea1627d25df8be1ca8b00034ea75ff1126bb84a99d4f0876cc3d2bc2",
+    "stdout.log": "55fefb777ac6203c86e596e6c271a3a76e2f0e749d60e3751640b8308d71028b",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "cause": "Unresolved caught exception after owned stage assignment, before durable decision. Filesystem/checkpoint and Eventing.preflight_restore remain candidates; no causal attribution."
+}

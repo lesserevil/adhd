@@ -1,0 +1,136 @@
+{
+  "suite": "project-recovery-admission",
+  "started_at": "2026-10-22T10:26:50.264302+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "handwritten-config-global-auth-does-not-admit-unknown-project-stores",
+      "passed": true
+    },
+    {
+      "name": "developer-viewer-and-agent-cannot-obtain-or-create-server-owned-recovery-work",
+      "passed": true
+    },
+    {
+      "name": "explicit-reviewed-admin-initialization-creates-one-verified-route-without-config-or-other-project-change",
+      "passed": true
+    },
+    {
+      "name": "external-recovery-receipts-survive-hard-restart-and-cannot-cross-projects-or-invent-unauthorized-acceptance",
+      "passed": true
+    },
+    {
+      "name": "cold-known-missing-target-never-reinitializes-or-accepts-data-and-other-project-remains-writable",
+      "passed": true,
+      "target_route_generation": 1,
+      "original_pair_sha256": {
+        "state.dets": "4e333ac03028529086a48b155ba1bf0008dd4594d6a7507a7d1f03e04ee501cd",
+        "state.dets.snapshot": "90763572f03b1866eb191ceaac1e4f0fa3d6cf4b115adbc5e22ba97b22db2a18"
+      }
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "qualification": "admission-only; target-restore-and-allocator-matrix-separately-required",
+  "authored_recovery_schema_sha256": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f",
+  "finished_at": "2026-10-22T10:27:28.653447+00:00",
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+    "canonical_manifest_sha256": "09e482f9d2cd16302ff8383bbcd3d422af620315446843df03087e3a005c6ce9",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "eb77bc3cbf1c7ee2e42a259fcc67006e1df45039a73cf07f59c41137df74c380",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "eb77bc3cbf1c7ee2e42a259fcc67006e1df45039a73cf07f59c41137df74c380",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "1cff883a1e51bd1b9e728f3ad33f9ada56b391a74424b88953f680c9a7da6021",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "1cff883a1e51bd1b9e728f3ad33f9ada56b391a74424b88953f680c9a7da6021",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "5fe78c3724ed8d1296f83a7dc70f72c34688701147e13b64ead9d725f4b24f86",
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "5fe78c3724ed8d1296f83a7dc70f72c34688701147e13b64ead9d725f4b24f86",
+        "exit_code": 137,
+        "wait_observed": true,
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-500aece1cb404076",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-8a35845fb05d4062",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-df6617f52398423f",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-2ce5bcafe6ee4f8e",
+        "container_id": null,
+        "image_config_identity": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "cleanup_blocked": false,
+    "fixture_sha256": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a"
+  },
+  "image_id": "sha256:4bcdbc7eb5771060af2ab58136bac370153164d284ebc07db0696e765462e8ab",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3"
+}

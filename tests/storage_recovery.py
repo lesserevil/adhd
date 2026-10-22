@@ -3,13 +3,20 @@
 import argparse,hashlib,json,os,re,secrets,shutil,signal,subprocess,tempfile,threading,time
 from pathlib import Path
 from foundation_acceptance import Runtime,Client,ModelFixture,free_port
+from image_filesystem_fault import fault_arguments
+from image_filesystem_runtime import FilesystemRuntime
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--command',required=True);p.add_argument('--integrity-only',action='store_true');p.add_argument('--report',default='verification/storage-recovery.json');args=p.parse_args();command=json.loads(args.command)
+    p=argparse.ArgumentParser(description=__doc__)
+    target=p.add_mutually_exclusive_group(required=True);target.add_argument('--command');target.add_argument('--image')
+    p.add_argument('--image-manifest',type=Path);fault_arguments(p)
+    p.add_argument('--integrity-only',action='store_true');p.add_argument('--report',default='verification/storage-recovery.json')
+    args=p.parse_args();command=json.loads(args.command) if args.command else []
     parent=Path('_build/roadmap/storage-recovery').resolve();parent.mkdir(parents=True,exist_ok=True);root=Path(tempfile.mkdtemp(prefix='run-',dir=parent));cases=[];model=ModelFixture();hubs=[]
-    def runtime(name,argv):
-        r=Runtime(root/name,argv);r.file.write_text(json.dumps({'project_id':'storage-fixture','port':free_port(),'store_path':str(r.root/'hub.dets'),
+    def runtime(name,argv,environment=None):
+        r=(FilesystemRuntime(root/name,args,'storage_write_fault.c' if environment else None,environment,mount_root=root) if args.image else Runtime(root/name,argv))
+        r.file.write_text(json.dumps({'project_id':'storage-fixture','port':free_port(),'store_path':str(r.root/'hub.dets'),
             'projects':[{'id':name,'name':name,'status':'active','settings':{}} for name in ('storage-fixture','healthy-blue')],
             'agents':{name:secrets.token_urlsafe(32) for name in ('alice','bob','blue')},
             'agent_projects':{'alice':['storage-fixture'],'bob':['storage-fixture'],'blue':['healthy-blue']},'admin_token':secrets.token_urlsafe(32),
@@ -51,13 +58,14 @@ def main():
             r.initialize_projects=previous
     try:
         observer=root/'storage-write-fault.so'
-        if not args.integrity_only:
+        if not args.integrity_only and not args.image:
             subprocess.run(['cc','-std=c11','-Wall','-Wextra','-Werror','-shared','-fPIC','-O2',str(Path(__file__).with_name('storage_write_fault.c')),'-o',str(observer),'-ldl'],check=True)
         dirty_witness=False
         for boundary in (() if args.integrity_only else ('snapshot-data-sync','snapshot-install','checkpoint-write','checkpoint-sync')):
             model.mode='match';sentinel=root/(boundary+'.observed.json');arm=root/(boundary+'.arm');target=root/(boundary+'.target')
             traced=['env','LD_PRELOAD='+str(observer),'ADHD_WRITE_STAGE='+boundary,'ADHD_WRITE_SENTINEL='+str(sentinel),'ADHD_WRITE_ARM='+str(arm),'ADHD_WRITE_TARGET='+str(target)]+command
-            r=runtime(boundary,traced);data=selected(r);snapshot=Path(str(data)+'.snapshot')
+            environment={'ADHD_WRITE_STAGE':boundary,'ADHD_WRITE_SENTINEL':str(sentinel),'ADHD_WRITE_ARM':str(arm),'ADHD_WRITE_TARGET':str(target)}
+            r=runtime(boundary,traced,environment);data=selected(r);snapshot=Path(str(data)+'.snapshot')
             rpc(r,{'op':'subscribe','description':'Observe source records'},mid='baseline-subscription',actor='bob')
             baseline_command={'op':'publish_record','text':'Acknowledged original evidence','context':{'question':'What was observed?','subject':'original'},'source':{'kind':'email','id':'origin','item_id':'original-event'}}
             original=rpc(r,baseline_command,mid='baseline-publication')['record'];oid=original['publication']['id']
@@ -82,18 +90,29 @@ def main():
             while time.monotonic()<deadline:
                 if sentinel.exists():
                     hit=json.loads(sentinel.read_text())
+                    if args.image:
+                        r.target.stop_at_observed_boundary(hit)
+                        assert time.monotonic()<=deadline,'Actual image STOP exceeded original boundary deadline'
+                        break
                     state=Path('/proc/'+str(r.process.pid)+'/status').read_text()
                     if re.search(r'^State:\s+T',state,re.M):break
                 time.sleep(.005)
             assert hit is not None,'Actual filesystem boundary not observed: '+boundary
-            assert hit['stage']==boundary and hit['pid']==r.process.pid
+            assert hit['stage']==boundary and hit['pid']==(1 if args.image else r.process.pid)
             assert hit['syscall'] in ({'rename'} if boundary=='snapshot-install' else {'pwrite','pwrite64'} if boundary=='checkpoint-write' else {'fsync'})
-            assert re.search(r'^State:\s+T',Path('/proc/'+str(r.process.pid)+'/status').read_text(),re.M),'Observer did not stop the actual hub'
-            r.stop(hard=True);assert r.process.returncode==-signal.SIGKILL
+            if not args.image:assert re.search(r'^State:\s+T',Path('/proc/'+str(r.process.pid)+'/status').read_text(),re.M),'Observer did not stop the actual hub'
+            r.stop(hard=True)
+            if args.image:assert r.process.returncode==137 and r.target.last_exit_code==137
+            else:assert r.process.returncode==-signal.SIGKILL
             worker.join(timeout=16);assert not worker.is_alive()
             committed=snapshot.read_bytes()!=before
             if boundary in ('checkpoint-write','checkpoint-sync'):assert committed and b'crash-request' in snapshot.read_bytes()
-            check=subprocess.check_output(['elixir','-e',':dets.open_file(:inspect_fault,[file: String.to_charlist(hd(System.argv())),access: :read,repair: false]) |> IO.inspect()',str(data)],text=True,stderr=subprocess.STDOUT)
+            if args.image:
+                inspected=r.offline_elixir(':dets.open_file(:inspect_fault,[file: String.to_charlist(hd(System.argv())),access: :read,repair: false]) |> IO.inspect()',data)
+                assert inspected.returncode==0,inspected.stderr
+                check=inspected.stdout+inspected.stderr
+            else:
+                check=subprocess.check_output(['elixir','-e',':dets.open_file(:inspect_fault,[file: String.to_charlist(hd(System.argv())),access: :read,repair: false]) |> IO.inspect()',str(data)],text=True,stderr=subprocess.STDOUT)
             needs_repair='needs_repair' in check;dirty_witness=dirty_witness or needs_repair
             r.command=command;r.start()
             assert rpc(r,baseline_command,mid='baseline-publication')['record']==original
@@ -115,7 +134,7 @@ def main():
         record('stale-snapshot-cannot-roll-back-a-newer-acknowledged-checkpoint')
         # Independent codec fixture changes identity while preserving a valid hash.
         source='''path=hd(System.argv()); <<"ADHDSTATE",1,_::binary-size(32),body::binary>>=File.read!(path); s=:erlang.binary_to_term(body); s=Map.put(s,:server_id,String.duplicate("0",32)); b=:erlang.term_to_binary(s,[:deterministic,{:minor_version,2}]); File.write!(path,<<"ADHDSTATE",1,(:crypto.hash(:sha256,b))::binary,b::binary>>)'''
-        fixture=subprocess.run(['elixir','-e',source,str(snapshot)],capture_output=True,text=True);assert fixture.returncode==0,fixture.stderr;rejected(r);snapshot.write_bytes(latest)
+        fixture=r.offline_elixir(source,snapshot) if args.image else subprocess.run(['elixir','-e',source,str(snapshot)],capture_output=True,text=True);assert fixture.returncode==0,fixture.stderr;rejected(r);snapshot.write_bytes(latest)
         record('validly-checksummed-foreign-identity-snapshot-is-rejected')
         data.unlink();r.start();assert rpc(r,{'op':'get','publication_id':later['publication']['id']})['publication']==later['publication'];r.stop()
         record('missing-checkpoint-reconstructed-from-complete-valid-snapshot')
@@ -123,7 +142,7 @@ def main():
         record('unrelated-checkpoint-corruption-is-not-silently-treated-as-an-interrupted-write')
         target=r.root/'operator-file';target.write_bytes(b'untouched operator data');snapshot.unlink();snapshot.symlink_to(target);rejected(r);assert target.read_bytes()==b'untouched operator data'
         record('snapshot-symlink-is-rejected-without-modifying-its-target')
-        Path(args.report).write_text(json.dumps({'schema':'adhd/storage-recovery@1','scope':'integrity' if args.integrity_only else 'full','passed':True,'cases':cases,'artifact_sha256':hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest()},indent=2)+'\n')
+        Path(args.report).write_text(json.dumps({'schema':'adhd/storage-recovery@1','scope':'integrity' if args.integrity_only else 'full','passed':True,'cases':cases,'artifact_sha256':r.target.manifest['files']['hub.exs'] if args.image else hashlib.sha256(Path(command[-1]).read_bytes()).hexdigest(),'runtime':[{**h.target.identity(),'offline_helpers':h.offline_helpers} for h in hubs] if args.image else None},indent=2)+'\n')
     finally:
         for r in hubs:r.stop()
         model.close()

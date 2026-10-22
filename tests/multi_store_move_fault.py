@@ -17,10 +17,11 @@ import time
 from uuid import uuid4
 
 from multi_support import Evidence, Fixture, arguments, poll_until, scoped
+from image_filesystem_fault import fault_arguments, fault_image
 
 
 async def main(args):
-    if not args.hub or args.rest_url:
+    if not (args.hub or args.image) or args.rest_url:
         raise ValueError('Requires a locally owned --hub and native Linux Elixir on PATH')
     f = Fixture(args)
     if args.no_default:
@@ -29,24 +30,32 @@ async def main(args):
     target.parent.mkdir()
     source = Path(__file__).with_name('store_move_fault.c')
     library = f.root / 'move-fault.so'
-    subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-shared', '-fPIC', '-O2',
+    if not args.image:
+        subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-shared', '-fPIC', '-O2',
                     '-o', str(library), str(source), '-ldl'], check=True)
     sentinel = f.root / 'move-fault.json'
     armed = f.root / 'move-fault.armed'
-    injected = copy.copy(args)
-    injected.hub = None
-    injected.command = json.dumps(['env', 'LD_PRELOAD=' + str(library),
-        'ADHD_MOVE_STAGE=' + args.crash_at, 'ADHD_MOVE_CONFIG=' + str(f.file),
-        'ADHD_MOVE_TARGET=' + str(target), 'ADHD_MOVE_SENTINEL=' + str(sentinel),
-        'ADHD_MOVE_ARM=' + str(armed), 'elixir', str(args.hub)])
-    f.args = injected
+    if args.image:
+        f.image_runtime=fault_image(args,f.root,source.name,{
+            'ADHD_MOVE_STAGE':args.crash_at,'ADHD_MOVE_CONFIG':str(f.file),
+            'ADHD_MOVE_TARGET':str(target),'ADHD_MOVE_SENTINEL':str(sentinel),'ADHD_MOVE_ARM':str(armed)})
+        library=f.image_runtime.library
+    else:
+        injected = copy.copy(args)
+        injected.hub = None
+        injected.command = json.dumps(['env', 'LD_PRELOAD=' + str(library),
+            'ADHD_MOVE_STAGE=' + args.crash_at, 'ADHD_MOVE_CONFIG=' + str(f.file),
+            'ADHD_MOVE_TARGET=' + str(target), 'ADHD_MOVE_SENTINEL=' + str(sentinel),
+            'ADHD_MOVE_ARM=' + str(armed), 'elixir', str(args.hub)])
+        f.args = injected
     evidence = Evidence(args.report, 'adhd/multi-store-move-crash@1')
-    evidence.value.update(artifact_sha256=hashlib.sha256(args.hub.read_bytes()).hexdigest(),
+    evidence.value.update(artifact_sha256=f.image_runtime.manifest['files']['hub.exs'] if args.image else hashlib.sha256(args.hub.read_bytes()).hexdigest(),
         harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         fault_source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
         fault_library_sha256=hashlib.sha256(library.read_bytes()).hexdigest(),
         crash_at=args.crash_at, no_default=args.no_default)
     pending = None
+    failure = None
     try:
         await f.start()
         admin = f.admin()
@@ -82,19 +91,23 @@ async def main(args):
             await asyncio.sleep(.01)
         assert sentinel.exists(),'Requested move boundary was not observed'
         observed=json.loads(sentinel.read_text())
-        assert observed['pid']==f.process.pid and observed['stage']==args.crash_at
-        end=time.monotonic()+2
-        while time.monotonic()<end:
-            state=Path('/proc/'+str(f.process.pid)+'/status').read_text()
-            if re.search(r'^State:\s+T\b',state,re.M):
-                break
-            await asyncio.sleep(.01)
+        if args.image:
+            f.image_runtime.stop_at_observed_boundary(observed)
         else:
-            raise AssertionError('Actual runtime was not stopped at the observed boundary')
+            assert observed['pid']==f.process.pid and observed['stage']==args.crash_at
+            end=time.monotonic()+2
+            while time.monotonic()<end:
+                state=Path('/proc/'+str(f.process.pid)+'/status').read_text()
+                if re.search(r'^State:\s+T\b',state,re.M):
+                    break
+                await asyncio.sleep(.01)
+            else:
+                raise AssertionError('Actual runtime was not stopped at the observed boundary')
         decision=Path(str(f.file)+'.transaction')
         assert decision.exists() == (args.crash_at!='before-decision')
         f.hard_stop()
-        assert f.process.returncode == -signal.SIGKILL
+        if args.image:assert f.process.returncode==137 and f.image_runtime.last_exit_code==137
+        else:assert f.process.returncode == -signal.SIGKILL
         try:
             await pending
         except Exception:
@@ -121,10 +134,11 @@ async def main(args):
         await poll_until(agents['blue-b'],'project-blue',{post['id']},args.deadline)
         evidence.record('recovered-project-writers-accept-new-publications-and-drain-real-kafka')
     except BaseException as exc:
-        evidence.finish(exc)
+        failure = exc
+        if not args.image:evidence.finish(exc)
         raise
     else:
-        evidence.finish()
+        if not args.image:evidence.finish()
     finally:
         if pending and not pending.done():
             if f.process and f.process.poll() is None:
@@ -134,11 +148,23 @@ async def main(args):
             except Exception:
                 pass
         f.args=args
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as cleanup_error:
+            if args.image:
+                evidence.value['cleanup_failure_type']=type(cleanup_error).__name__
+                if failure is not None:failure.add_note('Image cleanup failed: '+type(cleanup_error).__name__)
+                evidence.finish(failure or cleanup_error)
+            raise
+        else:
+            if args.image:
+                f.bind_evidence(evidence)
+                evidence.finish(failure)
 
 
 if __name__=='__main__':
     parser=arguments(__doc__)
+    fault_arguments(parser)
     parser.add_argument('--no-default',action='store_true')
     parser.add_argument('--crash-at',required=True,choices=['before-decision','after-decision',
         'after-first-snapshot','after-first-checkpoint','before-config','after-config','before-cleanup'])

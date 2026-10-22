@@ -1,0 +1,95 @@
+{
+  "schema": "adhd/image-core-fault-preparation@1",
+  "passed": true,
+  "scope": "Test-only preparation, five independent host ELF audits and pure guards; NOT image loader/application fault qualification",
+  "base_commit": "03f996bc7623d73a428d3fad1baa52e33476884e",
+  "branch": "roadmap/image-core-faults",
+  "native_assertion_preservation": {
+    "multi_migration.py": {
+      "preserved_native_assertions": 26,
+      "baseline_sha256": "f5d64ac70583fcc7a8f27bbd6439af48b7509b67ea9eb1727fe573114fdc5e55",
+      "prepared_sha256": "1ebe62bc5c6daa98a0b11259f7aa598fa0a5838fac154bbc406069d7ccf58f70"
+    },
+    "multi_store_move_fault.py": {
+      "preserved_native_assertions": 12,
+      "baseline_sha256": "6e84953aafdb8c1816c7d7332aca528e686eb8227669729e7f98173dce0a239e",
+      "prepared_sha256": "665ff47e24c249ee84c2263013de34657a1a73d2a58746240f16f9d800843e72"
+    },
+    "storage_recovery.py": {
+      "preserved_native_assertions": 28,
+      "baseline_sha256": "90d133a05792a8451df33ee994a80b301fe38499aa8c94477f86b264ec75c445",
+      "prepared_sha256": "f372c230b4239a7f4b5317b3de1e918ecd20efa01a24f3380e7ff892f7999c16"
+    }
+  },
+  "pure_guards": {
+    "passed": 10,
+    "process_start_attempts": 0,
+    "docker_attempts": 0,
+    "harness": "tests/image_filesystem_fault_unit.py",
+    "sha256": "dad4ec7bc6eea0c9451abba16595e6e795c592ba4f755f2d53299c7ec29405fd"
+  },
+  "source_code": {
+    "tests/image_filesystem_fault.py": "a151af497b635f2e1ed1a89a310e8bbaa1bdde4dc9b99919b42e77d41b9d60bb",
+    "tests/image_filesystem_runtime.py": "f6df3aaf70dace25263b3cb04a518bbd8811612e053d47c0fe35e4759cf2991b",
+    "tests/multi_migration.py": "1ebe62bc5c6daa98a0b11259f7aa598fa0a5838fac154bbc406069d7ccf58f70",
+    "tests/multi_store_move_fault.py": "665ff47e24c249ee84c2263013de34657a1a73d2a58746240f16f9d800843e72",
+    "tests/storage_recovery.py": "f372c230b4239a7f4b5317b3de1e918ecd20efa01a24f3380e7ff892f7999c16"
+  },
+  "elf_audits": {
+    "rebind_fault.c.json": "4956553fc864e8d42eb56d16161b635f61c77fa59aeeef801d15e3a53357cbff",
+    "storage_write_fault.c.json": "8de84b488b6bd11cab1f5502b0698ab1e6087114d6c8e8df057250532f778591",
+    "project_recovery_fault.c.json": "9c82c012cc11391bba976f23e8d5d6468fd0d7733f656986a1e46eac0d37f1a9",
+    "store_move_fault.c.json": "97eee3275e5eba6bf82671dfeb97ab80b232cbf0705a38e012fa989c7363bba1",
+    "multi_fault.c.json": "acfe50a33b0107a4a801b427bee0f77893509961e838892c4d0e614fec5e8580"
+  },
+  "all_c_sources_unchanged": true,
+  "target_image_for_future_probes": "sha256:b12e75c09ccd213f06739f7fdd998d675670491c31677143fecaceab7823e0f0",
+  "actual_image_loader_probes": 0,
+  "application_starts": 0,
+  "offline_cli_starts": 0,
+  "broker_starts": 0,
+  "provider_calls": 0,
+  "prepared_case_families": {
+    "storage": "all4 actual write boundaries plus6 integrity/recovery predicates",
+    "store_move": "all7 original durable boundaries",
+    "migration": "ordinary plus5 actual kill boundaries plus3 damaged prepared backup refusals"
+  },
+  "image_custody_policy": "Exact immutable image/raw manifest/artifact, readonly source-bound observer, actual owned private-namespace BEAM PID via ancestor pidfd STOP, kernel T, DockerKILL/wait137/remove/absence; observer disarmed on cold replacement. No Docker-client PID used as VM.",
+  "new_required_actual_image_abi_cases": {
+    "multi_fault.c": [
+      "link",
+      "linkat",
+      "rename",
+      "renameat",
+      "renameat2"
+    ],
+    "store_move_fault.c": [
+      "link",
+      "rename",
+      "unlink"
+    ],
+    "storage_write_fault.c": [
+      "fsync",
+      "pwrite",
+      "pwrite64",
+      "rename"
+    ],
+    "project_recovery_fault.c": [
+      "fsync",
+      "link",
+      "rename",
+      "unlink"
+    ],
+    "rebind_fault.c": [
+      "fsync",
+      "rename"
+    ]
+  },
+  "limitations": [
+    "Every new C source/library requires independently reviewed actual-image ABI/boundary probe before use; host ELF acceptance does not prove musl loader/symbol behavior.",
+    "Historical identical multi_fault probe remains only its exact source/library loader/PID scope; it does not prove actual BEAM migration cases.",
+    "Recovery15 and offline rebind fixture adapters deliberately left for subsequent batch; their C files are host-audited only.",
+    "No new executor plans created or existing frozen core13/Kafka13 plans changed.",
+    "Prepared core fault adapters and storage image codec helper remain unexecuted pending independent root review/GO."
+  ]
+}

@@ -18,6 +18,7 @@ import time
 from uuid import uuid4
 
 from multi_support import Evidence, Fixture, arguments, poll_until, scoped
+from image_filesystem_fault import fault_arguments, fault_image, target_artifact, RetainedImage
 
 
 P = "project-red"
@@ -40,7 +41,8 @@ async def interrupt_upgrade(f, args, evidence):
     assert sys.platform == "linux", "Precise filesystem crash fixture requires Linux"
     fixture_source = Path(__file__).with_name("multi_fault.c")
     library = f.root / "migration-fault.so"
-    subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-shared", "-fPIC", "-O2",
+    if not args.image:
+        subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-shared", "-fPIC", "-O2",
                     "-o", str(library), str(fixture_source), "-ldl"], check=True)
     sentinel = f.root / "migration-fault.json"
     assert not sentinel.exists(), "Crash fixture directory must be fresh"
@@ -48,12 +50,18 @@ async def interrupt_upgrade(f, args, evidence):
     store = Path(seed["store_path"])
     sources = [f.file, Path(str(f.file) + ".journal"), store, Path(str(store) + ".snapshot")]
     originals = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in sources if path.exists()}
-    injected = copy.copy(args)
-    injected.hub = None
-    injected.command = json.dumps(["env", "LD_PRELOAD=" + str(library),
-        "ADHD_CRASH_STAGE=" + args.crash_at, "ADHD_CRASH_CONFIG=" + str(f.file),
-        "ADHD_CRASH_STORE=" + str(store), "ADHD_CRASH_SENTINEL=" + str(sentinel), "elixir", str(args.hub)])
-    f.args = injected
+    if args.image:
+        f.image_runtime=fault_image(args,f.root,fixture_source.name,{
+            'ADHD_CRASH_STAGE':args.crash_at,'ADHD_CRASH_CONFIG':str(f.file),
+            'ADHD_CRASH_STORE':str(store),'ADHD_CRASH_SENTINEL':str(sentinel)})
+        library=f.image_runtime.library
+    else:
+        injected = copy.copy(args)
+        injected.hub = None
+        injected.command = json.dumps(["env", "LD_PRELOAD=" + str(library),
+            "ADHD_CRASH_STAGE=" + args.crash_at, "ADHD_CRASH_CONFIG=" + str(f.file),
+            "ADHD_CRASH_STORE=" + str(store), "ADHD_CRASH_SENTINEL=" + str(sentinel), "elixir", str(args.hub)])
+        f.args = injected
     startup = asyncio.create_task(f.start())
     try:
         end = time.monotonic() + 55
@@ -67,17 +75,21 @@ async def interrupt_upgrade(f, args, evidence):
         else:
             raise AssertionError("Migration never reached the requested real filesystem boundary")
         trace = json.loads(sentinel.read_text())
-        assert trace["stage"] == args.crash_at and trace["pid"] == f.process.pid
-        end = time.monotonic() + 2
-        while time.monotonic() < end:
-            state = Path("/proc/" + str(trace["pid"]) + "/status").read_text()
-            if re.search(r"^State:\s+T\b", state, re.M):
-                break
-            await asyncio.sleep(.01)
+        if args.image:
+            f.image_runtime.stop_at_observed_boundary(trace)
         else:
-            raise AssertionError("Requested crash boundary did not stop the actual runtime process")
+            assert trace["stage"] == args.crash_at and trace["pid"] == f.process.pid
+            end = time.monotonic() + 2
+            while time.monotonic() < end:
+                state = Path("/proc/" + str(trace["pid"]) + "/status").read_text()
+                if re.search(r"^State:\s+T\b", state, re.M):
+                    break
+                await asyncio.sleep(.01)
+            else:
+                raise AssertionError("Requested crash boundary did not stop the actual runtime process")
         f.hard_stop()
-        assert f.process.returncode == -signal.SIGKILL
+        if args.image:assert f.process.returncode==137 and f.image_runtime.last_exit_code==137
+        else:assert f.process.returncode == -signal.SIGKILL
         try:
             await startup
         except AssertionError:
@@ -135,6 +147,11 @@ async def damaged_backup_refusal(f, args, evidence):
     finally:
         if f.process is not None and f.process.poll() is None:
             f.hard_stop()
+        if args.image and f.image_runtime.name is not None:
+            f.image_runtime.stop()
+            f.process.wait(timeout=15)
+            for log in f.logs:log.close()
+            f.logs=[]
         backup.write_bytes(original)
         backup.chmod(0o600)
 
@@ -142,11 +159,12 @@ async def damaged_backup_refusal(f, args, evidence):
 async def main(args):
     if not args.with_model:
         raise ValueError("Legacy semantic migration requires --with-model for its controlled decision fixture")
-    if not args.hub:
+    if not (args.hub or args.image):
         raise ValueError("Migration requires locally owned --hub and --legacy-hub")
-    current = args.hub
+    current = target_artifact(args)
     legacy_args = copy.copy(args)
     legacy_args.hub = args.legacy_hub
+    legacy_args.image = None
     f = Fixture(legacy_args)
     evidence = Evidence(args.report, "adhd/multi-eventing-migration@1")
     evidence.value["artifact_sha256"] = hashlib.sha256(current.read_bytes()).hexdigest()
@@ -158,6 +176,7 @@ async def main(args):
     f.config.pop("projects")
     f.config.pop("agent_projects")
     f.config.pop("eventing")
+    failure = None
     try:
         await f.start()
         a, b = await f.agent("red-a"), await f.agent("red-b")
@@ -186,6 +205,7 @@ async def main(args):
 
         f.hard_stop()
         f.args = args
+        if args.image:f.image_runtime=RetainedImage(args.image,args.image_manifest,f.root)
         if args.crash_at:
             await interrupt_upgrade(f, args, evidence)
         if args.damage_backup:
@@ -234,16 +254,29 @@ async def main(args):
             assert (await a.call(scoped(P, "get", publication_id=original["id"])))["publication"] == original
         evidence.record("repeated-kill-reopen-migration-is-idempotent-and-acknowledged-deliveries-never-resurrect")
     except BaseException as exc:
-        evidence.finish(exc)
+        failure = exc
+        if not args.image:evidence.finish(exc)
         raise
     else:
-        evidence.finish()
+        if not args.image:evidence.finish()
     finally:
-        await f.close()
+        try:
+            await f.close()
+        except BaseException as cleanup_error:
+            if args.image:
+                evidence.value['cleanup_failure_type']=type(cleanup_error).__name__
+                if failure is not None:failure.add_note('Image cleanup failed: '+type(cleanup_error).__name__)
+                evidence.finish(failure or cleanup_error)
+            raise
+        else:
+            if args.image:
+                f.bind_evidence(evidence)
+                evidence.finish(failure)
 
 
 if __name__ == "__main__":
     parser = arguments(__doc__)
+    fault_arguments(parser,artifact=True)
     parser.add_argument("--legacy-hub", type=Path, required=True)
     parser.add_argument("--crash-at", choices=("before-prepared", "before-decided", "before-config", "after-snapshot", "before-completed"))
     parser.add_argument("--damage-backup", choices=("config", "backend", "snapshot"))

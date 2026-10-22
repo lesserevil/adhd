@@ -166,6 +166,12 @@ async def checks(f,e,m,budget):
         q=await wait(done)
         e.value.setdefault('actual_archive_queries',[]).append(q);e.write()
         assert q['status']=='completed' and q['error'] is None and answer_pass(q,case,ids),'Original asserted answer/coverage failed'
+        assert q['mode']=='search_then_scan' and q['complete'] is False and q['limit']==8
+        assert q['coverage']['full_scope_evaluated'] and q['scan']['error'] is None
+        scan=q['scan']['coverage'];supplied=set(ids.values())
+        assert scan['primary_complete'] and scan['final_complete'] and not scan['truncated']
+        assert set(scan['expanded_ids'])|{ids['2']}==supplied
+        assert all(g['reason']=='cycle' and g['target_id'] in supplied for g in scan['gaps'])
         assert q['search'] and q['search']['status']=='completed' and q['search']['error'] is None and q['search']['candidates']==[]
         assert q['assessment'] is None and 'no_candidates' in q['fallback_reasons'] and q['scan']['coverage']['final_complete']
         async def captured():
@@ -175,6 +181,8 @@ async def checks(f,e,m,budget):
         management('save_retrieval_label',True,attempt_id=row['id'],expected_label_revision=0,label=label)
         detail=management('feedback_attempt',attempt_id=row['id'])['attempt']
         assert detail['status']=='completed' and detail['owner_id']==name and detail['labels'][-1]['confirmed']
+        assert detail['recipe']==p['recipe'] and detail['label_revision']==1
+        assert detail['labels'][-1]['support_ids']==label['support_ids'] and detail['labels'][-1]['cohort']==case['cohort']
         if case['cohort']=='training':assert detail['adjudicated_diagnosis'] in ('confirmed_retrieval_gap','confirmed_context_assembly_gap')
         e.value.setdefault('confirmed_attempts',[]).append({'case':case['id'],'detail':detail,'gold':label});e.write()
         return row['id'],detail

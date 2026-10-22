@@ -55,7 +55,7 @@ def validate_admission(bound,target):
  assert admission['image_config_identity']==target['image_config_identity']
  assert admission['artifact_sha256']==target['artifact_sha256']
  assert admission['canonical_manifest_sha256']==sha(bound/'image-manifest.json')
- if admission['schema']=='adhd/current40-admission-and-image-binding@1':
+ if admission['schema']in ('adhd/current40-admission-and-image-binding@1','adhd/compiled40-admission-and-image-binding@1'):
   assert admission['image_built'] is True
   expected={key:admission['files'][key] for key in ['receipt.json','rebuild.json']}
  else:
@@ -67,6 +67,10 @@ def validate_admission(bound,target):
  assert audit['passed'] is True and audit['image_id']==target['image_config_identity']
  assert audit['artifact_sha256']==target['artifact_sha256'] and audit['canonical_manifest_sha256']==admission['canonical_manifest_sha256']
  assert audit['actual_app_files']==59 and audit['canonical_specifications']==33
+ if admission['schema']=='adhd/compiled40-admission-and-image-binding@1':
+  directory=bound/'compiled-admission';assert tree(directory)['files']==admission['files']
+  compiled=load(bound.parent/'frozen/tests/controlled_sdk_matrix.py','reviewed_compiled_binding').compiled_cache_binding(directory/'cache-manifest.json',admission,target['image_config_identity'],target['artifact_sha256'],sha(bound/'image-manifest.json'))
+  assert compiled['reviewed_runtime_audit']['cache_modules']==59
  return True
 
 
@@ -81,7 +85,7 @@ def prepare(a):
   for source in (repo/part).rglob('*'):
    if '__pycache__' not in source.parts:assert not source.is_symlink()
  inputs,drift=reader.freeze_inputs(repo,frozen,selected['specifications'])
- for name in ['config_image_matrix.py','config_recovery.py','config_image_runtime_unit.py','config_image_matrix_unit.py']:
+ for name in ['config_image_matrix.py','config_image_matrix_unit.py']:
   shutil.copyfile(Path(__file__).parent/name,frozen/'tests'/name)
  original=ast.parse((repo/'tests/config_recovery.py').read_text());actual=ast.parse((frozen/'tests/config_recovery.py').read_text())
  asserts=lambda value:[ast.dump(node) for node in ast.walk(value) if isinstance(node,ast.Assert)]
@@ -93,6 +97,15 @@ def prepare(a):
  for name in ['receipt.json','rebuild.json']:
   assert (a.receipt_bindings/name).is_file();shutil.copyfile(a.receipt_bindings/name,bound/name)
  admission=json.loads((bound/'admission.json').read_text());proof=json.loads((bound/'observer-proof.json').read_text());manifest=json.loads((bound/'image-manifest.json').read_text())
+ compiled=None
+ if admission['schema']=='adhd/compiled40-admission-and-image-binding@1':
+  directory=bound/'compiled-admission';directory.mkdir(mode=0o700)
+  for name,digest in admission['files'].items():
+   assert Path(name).name==name and name not in ('.','..')
+   source=a.admission.parent/name;assert source.resolve()==source.absolute()and source.is_file()and source.stat().st_nlink==1 and sha(source)==digest
+   shutil.copyfile(source,directory/name)
+  compiled=load(frozen/'tests/controlled_sdk_matrix.py','compiled_config_prepare').compiled_cache_binding(directory/'cache-manifest.json',admission,target['image_config_identity'],target['artifact_sha256'],sha(bound/'image-manifest.json'))
+ (bound/'docker-config').mkdir(mode=0o700);(bound/'docker-config/config.json').write_bytes(b'{}')
  validate_admission(bound,target)
  assert sha(bound/'staged-Dockerfile')==manifest['files']['Dockerfile']
  assert proof['passed'] and proof['application_started'] is False and proof['owned_container_absent'] and proof['exit_code']==137
@@ -110,10 +123,10 @@ def prepare(a):
  sock=Path('/var/run/docker.sock').resolve();info=sock.stat();assert stat.S_ISSOCK(info.st_mode)
  plan={'schema':'adhd/config-image-three-plan@1','status':'UNSTARTED_ROOT_REVIEW_REQUIRED',**target,
   'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'payload_sha256':selected['payload_sha256'],
-  'driver_sha256':sha(work/'driver.py'),'frozen':tree(frozen),'bound':tree(bound),'specification_count':33,'admitted_specification_drift':drift,
+  'compiled_cache':compiled,'driver_sha256':sha(work/'driver.py'),'frozen':tree(frozen),'bound':tree(bound),'specification_count':33,'admitted_specification_drift':drift,
   'source_observer_proof_sha256':sha(a.abi_root/'config_rename_fault.c.proof.json'),'root_original_entrypoint_sha256':sha(repo/'tests/config_recovery.py'),'root_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'original_assertions_count':len(asserts(original)),
-  'runtime_cwd':str(runtime),'tools':tools,'docker_socket':{'path':str(sock),'identity':[info.st_dev,info.st_ino]},
-  'test_argv':argv,'boundaries':list(BOUNDARIES),'parallelism':1,'runs_per_script':1,'automatic_retries':0,'fail_first':True,
+  'runtime_cwd':str(runtime),'tools':tools,'tool_trees':[load(frozen/'tests/image_filesystem_matrix.py','config_tools_prepare').tool_tree(path) for path in [repo/'.venv',repo/'_build/federation/native/elixir',repo/'_build/federation/native/erlang']],'docker_socket':{'path':str(sock),'identity':[info.st_dev,info.st_ino]},
+  'private_docker_config':str(bound/'docker-config'),'test_argv':argv,'boundaries':list(BOUNDARIES),'parallelism':1,'runs_per_script':1,'automatic_retries':0,'fail_first':True,
   'outer_timeout':None,'original_deadlines':{'readiness_seconds':45,'mutation_seconds':25,'client_join_seconds':16},
   'provider_calls_authorized':0,'broker_calls_authorized':0,'scope':'Explicit admitted target configuration crash3 only; separate from recovery42/native strace3/other images/UI/release. Controlled unreachable model URL127:1; no physical image egress firewall claim.',
   'preparation_app_or_compiler_starts':0}
@@ -123,10 +136,15 @@ def verify(work,plan):
  assert work.resolve()==work and Path(__file__).absolute()==work/'driver.py' and Path(__file__).resolve()==work/'driver.py'
  info=Path(__file__).lstat();assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and sha(__file__)==plan['driver_sha256']
  assert tree(work/'frozen')==plan['frozen'] and tree(work/'bound')==plan['bound']
+ if plan.get('private_docker_config'):assert (work/'bound/docker-config/config.json').read_bytes()==b'{}'
  target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
  validate_admission(work/'bound',target)
  assert plan['boundaries']==list(BOUNDARIES) and plan['outer_timeout'] is None
+ assert plan['tools']['docker']['path']=='/usr/bin/docker'
  for row in plan['tools'].values():assert str(Path(row['path']).resolve())==row['resolved'] and sha(row['resolved'])==row['sha256']
+ if plan.get('tool_trees'):
+  reader=load(work/'frozen/tests/image_filesystem_matrix.py','config_tools_verify')
+  for item in plan['tool_trees']:assert reader.tool_tree(item['root'])==item
  info=Path(plan['docker_socket']['path']).stat();assert stat.S_ISSOCK(info.st_mode) and [info.st_dev,info.st_ino]==plan['docker_socket']['identity']
  return True
 
@@ -235,11 +253,23 @@ def child(work,expected):
    raw=image.docker('exec',image.container_id,'sha256sum',*['/app/'+name for name in files]).stdout.decode()
    observed={path.removeprefix('/app/'):digest for digest,path in (line.split() for line in raw.splitlines())}
    assert observed==files
+   cache_custody=None
+   if plan.get('compiled_cache'):
+    compiled=plan['compiled_cache'];cache=compiled['manifest']
+    raw_cache=image.docker('exec',image.container_id,'cat','/runtime/adhd/manifest.json').stdout
+    assert hashlib.sha256(raw_cache).hexdigest()==compiled['manifest_sha256']and json.loads(raw_cache)==cache
+    cache_files={'/runtime/adhd/boot.exs':cache['boot_sha256'],'/runtime/adhd/build.exs':cache['build_sha256'],'/runtime/adhd/inputs.json':cache['inputs_sha256'],**{'/runtime/adhd/ebin/'+name:digest for name,digest in cache['beams'].items()},**{('/proc/1/exe'if name=='/proc/self/exe'else name):digest for name,digest in cache['toolchain']['anchors'].items()}}
+    observed_cache=image.docker('exec',image.container_id,'sha256sum',*cache_files).stdout.decode().splitlines()
+    assert {line.split(None,1)[1].strip():line.split(None,1)[0]for line in observed_cache}==cache_files
+    again=json.loads(image.docker('inspect',image.container_id).stdout)[0]
+    assert again['Id']==row['Id']and again['State']['Pid']==row['State']['Pid']and again['State']['Running']
+    assert again['Config']['Entrypoint']==compiled['reviewed_runtime_audit']['entrypoint']
+    cache_custody={'manifest_sha256':compiled['manifest_sha256'],'modules':len(cache['modules']),'files_verified':len(cache_files),'extra_health_or_warmup_calls':0}
    if not hasattr(obj,'reviewed_payload_custody'):obj.reviewed_payload_custody=[]
    obj.reviewed_payload_custody.append({'container_id':row['Id'],'host_vm_pid':row['State']['Pid'],
     'namespace_vm_pid':1,'vm_executable':exe,'pid_mode':row['HostConfig']['PidMode'],
     'image_config_identity':row['Image'],'actual_app_files':len(observed),
-    'canonical_manifest_sha256':hashlib.sha256(manifest).hexdigest(),'all_manifest_app_hashes_matched':True})
+    'canonical_manifest_sha256':hashlib.sha256(manifest).hexdigest(),'all_manifest_app_hashes_matched':True,'compiled_cache':cache_custody})
    return result
   finally:progress()
  def stop(obj,*args,**kwargs):
@@ -308,6 +338,18 @@ def independent_absence(work,plan):
  return observations
 
 
+def validate_cache_custody(row,compiled):
+ assert row=={'manifest_sha256':compiled['manifest_sha256'],'modules':59,'files_verified':67,'extra_health_or_warmup_calls':0}
+ return True
+
+
+def child_environment(plan):
+ env={k:v for k,v in os.environ.items()if not k.startswith(('DOCKER_','PYTHON','LD_','ERL_','ELIXIR_'))}
+ env.update(PYTHONDONTWRITEBYTECODE='1',ERL_FLAGS='+S 2:2',PATH='/usr/bin:/bin')
+ if plan.get('private_docker_config'):env.update(DOCKER_HOST='unix://'+plan['docker_socket']['path'],DOCKER_CONFIG=plan['private_docker_config'])
+ return env
+
+
 def qualify(value,custody,plan):
  target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
  assert value['passed'] is True and value['artifact_sha256']==target['artifact_sha256']
@@ -328,6 +370,8 @@ def qualify(value,custody,plan):
   assert all(row['actual_app_files']==59 and row['all_manifest_app_hashes_matched'] and row['host_vm_pid']>0
     and row['namespace_vm_pid']==1 and row['pid_mode']!='host' and row['image_config_identity']==target['image_config_identity']
     and row['canonical_manifest_sha256']==plan['canonical_manifest_sha256'] for row in payload)
+  if plan.get('compiled_cache'):
+   for row in payload:validate_cache_custody(row['compiled_cache'],plan['compiled_cache'])
   assert reported['image_config_identity']==target['image_config_identity'] and reported['payload_verified']
   assert reported['canonical_manifest_sha256']==runtime['canonical_manifest_sha256']
   assert reported['artifact_sha256']==target['artifact_sha256'] and reported['container_lifecycle']==runtime['container_lifecycle']
@@ -343,7 +387,7 @@ def execute(work,expected):
  target=target_identity(plan['image_config_identity'],plan['artifact_sha256'],plan['admission_sha256'])
  helper=load(work/'frozen/tests/controlled_image_matrix.py','reviewed_pure_helpers')
  assert not Path(plan['runtime_cwd']).exists();helper.durable_once_marker(work/'started.json',{'plan_sha256':expected})
- Path(plan['runtime_cwd']).mkdir(mode=0o700);env=dict(os.environ);env['PYTHONDONTWRITEBYTECODE']='1';env['ERL_FLAGS']='+S 2:2'
+ Path(plan['runtime_cwd']).mkdir(mode=0o700);env=child_environment(plan)
  argv=[plan['tools']['python']['path'],'-I',str(work/'driver.py'),'--child','--work',str(work),'--plan-sha256',expected]
  process=None;failure=None;observations=[];code=None;passed=False
  try:

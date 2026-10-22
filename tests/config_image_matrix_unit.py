@@ -11,6 +11,16 @@ TARGET=matrix.target_identity('sha256:'+'a'*64,'b'*64,'c'*64)
 def plan_with(**extra):return {**TARGET,**extra}
 
 class ConfigMatrixGuards(unittest.TestCase):
+ def test_compiled_cache_custody_rejects_weaker_observation(self):
+  compiled={'manifest_sha256':'a'*64};row={'manifest_sha256':'a'*64,'modules':59,'files_verified':67,'extra_health_or_warmup_calls':0}
+  self.assertTrue(matrix.validate_cache_custody(row,compiled))
+  for changed in [None,{},dict(row,modules=58),dict(row,files_verified=66),dict(row,extra_health_or_warmup_calls=1),dict(row,manifest_sha256='b'*64)]:
+   with self.assertRaises(AssertionError):matrix.validate_cache_custody(changed,compiled)
+ def test_child_routes_to_bound_socket_and_private_config(self):
+  plan={'private_docker_config':'/private/docker','docker_socket':{'path':'/bound/socket'}}
+  with patch.dict(matrix.os.environ,{'DOCKER_HOST':'tcp://foreign:2375','DOCKER_CONTEXT':'foreign','DOCKER_CONFIG':'/foreign','LD_PRELOAD':'foreign','ERL_LIBS':'foreign'},clear=True):env=matrix.child_environment(plan)
+  self.assertEqual(env['PATH'],'/usr/bin:/bin');self.assertEqual(env['DOCKER_HOST'],'unix:///bound/socket');self.assertEqual(env['DOCKER_CONFIG'],'/private/docker')
+  self.assertFalse(any(k in env for k in ['DOCKER_CONTEXT','LD_PRELOAD','ERL_LIBS']))
  def test_explicit_target_parameters_reject_malformed_bindings(self):
   self.assertEqual(matrix.target_identity(TARGET['image_config_identity'],TARGET['artifact_sha256'],TARGET['admission_sha256']),TARGET)
   for changed in [dict(TARGET,image_config_identity='tag:latest'),dict(TARGET,artifact_sha256='B'*64),dict(TARGET,admission_sha256=None)]:

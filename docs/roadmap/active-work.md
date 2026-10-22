@@ -93,8 +93,11 @@ Its [complete protocol cross-check](../../verification/network-policy-static-pro
 passes all 25 original observations against native and original Elixir probes,
 with both owned container IDs and names independently absent. The earlier
 [wrapper timeout](../../verification/network-policy-static-protocol-first-negative/audit.json)
-remains failed. Next: run the frozen enforcing-CNI gate with all original 18
-routes and nine Pods; protocol checks alone do not qualify network enforcement.
+remains failed. The [first static CNI run](../../verification/ownedMULTI008/cni-static-gate-first-failure/audit.json)
+reaches Pod readiness but fails its imported-image alias lookup before traffic;
+zero routes are qualified and all owned resources are cleaned. Next: review
+immutable image-custody resolution and run a fresh enforcing-CNI gate with all
+original 18 routes and nine Pods; protocol checks alone do not qualify enforcement.
 The
 [full-application recovery attempt](../../verification/final05-recovery25-prefix9-first-failure/manifest.json)
 retains nine whole suites/44 checks; the no-default-project crash case failed

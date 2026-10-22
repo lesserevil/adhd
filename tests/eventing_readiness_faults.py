@@ -77,7 +77,8 @@ def sanitized_case_diagnostic(case,proxy,operation,elapsed,config,primary,cleanu
             result[key]=safe
             if len(rows)>8:result[key+'_truncated']=True
         return result
-    events=list(proxy.events)if proxy is not None else[];safe_events=[]
+    events_available=proxy is not None and hasattr(proxy,'events')
+    events=list(proxy.events)if events_available else[];safe_events=[]
     for event in events[:256]:
         if not isinstance(event,dict):continue
         safe_events.append({'at':number(event.get('at'),1e12),
@@ -100,7 +101,7 @@ def sanitized_case_diagnostic(case,proxy,operation,elapsed,config,primary,cleanu
     return {'case':case,'selected_operation':selected,'elapsed_seconds':number(elapsed,3600),
         'eventing_timeout_ms':number(eventing.get('timeout_ms'),1000000000),
         'recovery_timeout_ms':number(recovery.get('timeout_ms'),1000000000),
-        'events':safe_events,'event_count':len(events),'events_truncated':len(events)>256,
+        'events':safe_events,'events_available':events_available,'event_count':len(events),'events_truncated':len(events)>256,
         'assertion_or_primary_type':typename(type(primary).__name__)if primary is not None else None,
         'cleanup_failure_types':[typename(v)for v in cleanup_types[:16]],'cleanup_types_truncated':len(cleanup_types)>16}
 
@@ -246,7 +247,7 @@ async def run_case(args,case,e):
             e.value.setdefault('proxy_cleanup',[]).append({'case':case,'constructed':proxy is not None,'handlers':proxy.handlers if proxy else 0,'thread_alive':proxy.thread.is_alive()if proxy else False,'failures':proxy.failures if proxy else[],'cleanup_failure_types':failures})
         except BaseException as error:failures.append(type(error).__name__)
         try:
-            e.value.setdefault('case_diagnostics',{})[case]=sanitized_case_diagnostic(case,proxy,operation,diagnostic_elapsed,f.config if f is not None else{},primary,failures)
+            e.value.setdefault('case_diagnostics',{})[case]=sanitized_case_diagnostic(case,proxy,operation,diagnostic_elapsed,getattr(f,'config',{}),primary,failures)
             e.write()
         except BaseException as error:failures.append(type(error).__name__)
         if failures:

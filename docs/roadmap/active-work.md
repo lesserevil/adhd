@@ -194,6 +194,15 @@ passes all 13 programs /94 checks without borrowing either failed attempt's pref
 The [pinned declared verification](../../verification/source41-declared-verify-positive/manifest.json)
 passes authority, locks and current official receipt, with two configured skips;
 final documentation recording and verification remain part of the closure review.
+That verification records the pre-recording phase. The proper CLI has now recorded
+the reviewed operating guides; authority and both locks pass, but the unchanged
+official receipt is stale against the new documentation authority revision.
+Use a reviewed CLI-owned retained-source lifecycle to issue the matching receipt
+after the final documentation edits. Preserve the existing source41 admissions,
+failed attempts and runtime identities, and verify exact source, specification,
+cache and context conservation before joining image207 to the final receipt.
+Do not update receipt or authority fields by hand or relabel the old verification
+as a post-recording pass.
 
 The [source41 deployed model audit](../../verification/ownedMULTI008/source41-deployed-model-positive/audit.json)
 passes on both Compose and Kind: eight outer reported checks and twelve actual

@@ -991,6 +991,8 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
 
+<a id="proto-001--specify-and-verify-every-federated-system-wire-protocol-rigorously"></a>
+
 ### [x] PROTO-001 — Specify and verify every federated-system wire protocol rigorously
 
 - **Priority:** P1
@@ -1011,6 +1013,8 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Review the published contracts for independent implementability and completeness; verify a separately authored protocol client or responder can interoperate using the published contracts and fixtures, without importing hub implementation internals. Record protocol/schema versions with passing conformance evidence.
 
 Qualified profile-1.1 completion evidence: see the directory-batch evidence above.
+
+<a id="fed-003--publish-information-catalogs-and-route-queries-to-canonical-source-owners"></a>
 
 ### [x] FED-003 — Publish information catalogs and route queries to canonical source owners
 

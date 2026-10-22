@@ -105,7 +105,8 @@ class ForeignContainer(Exception): pass
 
 MISSING_HELPER = ('set -eu; case "$1" in /runtime/adhd/manifest.json|/runtime/adhd/build.exs|'
                   '/runtime/adhd/ebin/Elixir.*.beam) ;; *) exit 72;; esac; '
-                  'p=${1%/*}; chmod 755 "$p"; rm -- "$1"; chmod 555 "$p"; '
+                  'p=${1%/*}; case "$p" in /runtime/adhd) mode=755;; /runtime/adhd/ebin) mode=555;; *) exit 73;; esac; '
+                  'chmod 755 "$p"; rm -- "$1"; chmod "$mode" "$p"; '
                   "exec elixir /runtime/adhd/boot.exs /app/hub.exs '[\"cache-guard-must-not-dispatch\"]'")
 
 
@@ -233,7 +234,8 @@ class Runner:
             assert set(result) == expected
             for name, (body, mode, kind, target) in result.items():
                 assert not target and kind in (tarfile.REGTYPE, tarfile.DIRTYPE)
-                assert mode == (0o555 if kind == tarfile.DIRTYPE else 0o444)
+                expected_mode = self.plan['cache_root_mode'] if name == 'adhd' else (0o555 if kind == tarfile.DIRTYPE else 0o444)
+                assert mode == expected_mode
                 if name.startswith('adhd/ebin/'):
                     assert sha(body) == manifest['beams'][name.removeprefix('adhd/ebin/')]
             for key in ('boot', 'build'):
@@ -354,6 +356,7 @@ def prepare(args):
             'execution_ready': True, 'root_GO_required': True,
             'image': args.image, 'context': str(context), 'context_files': files,
             'artifact_sha256': sha(source), 'expected_modules': modules,
+            'cache_root_mode': 0o755, 'cache_ebin_mode': 0o555, 'cache_file_mode': 0o444,
             'driver_sha256': sha(read(work / 'driver.py')), 'docker_sha256': sha(read('/usr/bin/docker')),
             'docker_socket': {'path': str(socket), 'identity': [info.st_dev, info.st_ino]},
             'python': {'path': str(Path(sys.executable).absolute()), 'realpath': str(Path('/proc/self/exe').resolve()),

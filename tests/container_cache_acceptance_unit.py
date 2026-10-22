@@ -105,7 +105,9 @@ class Guards(unittest.TestCase):
     def test_true_missing_helper_is_fixed_allowlist(self):
         self.assertIn('rm -- "$1"', m.MISSING_HELPER)
         self.assertNotIn('eval ', m.MISSING_HELPER)
-        self.assertIn('chmod 555 "$p"', m.MISSING_HELPER)
+        self.assertIn('chmod "$mode" "$p"', m.MISSING_HELPER)
+        self.assertIn('/runtime/adhd) mode=755', m.MISSING_HELPER)
+        self.assertIn('/runtime/adhd/ebin) mode=555', m.MISSING_HELPER)
         with tempfile.TemporaryDirectory() as directory:
             runner = self.runner(directory); runner.allowed_missing = {'/runtime/adhd/manifest.json'}
             with patch.object(runner, 'command', side_effect=AssertionError('must not spawn')) as command:

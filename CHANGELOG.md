@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Hub: support isolated projects, project-scoped agents and federation, Kafka-backed
+  raw subscriptions and optional text filters, and hot Admin controls. Keep original
+  facts and search independent of subscription filters and broker retention.
+  Integrated selective-recovery and deployment qualification remains in progress.
+
 - Protocol: publish the reviewed application 2.1 schema/OpenAPI with selective
   recovery contracts, examples and conformance evidence. Retain exact 2.0 exports
   and separate historical profile-1 semantics from current project/Kafka rules.

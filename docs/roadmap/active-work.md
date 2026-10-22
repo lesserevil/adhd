@@ -63,7 +63,10 @@ staging/checkpoint/transport interval to identify the underlying failure. The
 now pass:18 native tests, current receipt verification and exact equality of all
 five staged container files,59 application files and33 canonical specifications.
 The new receipt is retained separately from the original admission; the compiled
-image remains unchanged. No parent item is closed by these partial results.
+image remains unchanged. [Ten independently complete parent items](../../verification/ownedMULTI008/closed-ten-parent-batch05-review/manifest.json)
+are now closed through the proper CLI in dependency order, with current receipt
+verification preserved. Six parents and eight checklist leaves remain open;
+selective recovery and enforcing-CNI traffic remain active qualification work.
 
 The [leaf-by-leaf closure review](../../verification/final05-leaf-closure-proposal/review.json)
 supports49 additional implementation/evidence checklist closures across the
@@ -818,7 +821,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Review a complete operation/state/configuration scope matrix and proposed protocol examples, including denied access and mixed-version peers.
 - **Contract completion evidence:** Contracts are complete in `components/hub/multi/spec.md` and the exact published `docs/protocol/scopes.json`, profile-2 schema/OpenAPI and examples. `tests/protocol_scope.py --schema docs/protocol/schema.json` passes exhaustive operation/configuration coverage. [Native wire conformance](../../verification/multi-eventing/final-wire-30.json) passes eight groups on artifact `698496fe…`, including positive/negative traffic and exact CLI/HTTP interface equivalence; [native federation](../verification/native-eventing.json) adds actual three-server, legacy-pair and denied-scope traffic. Runtime program qualification remains with MULTI-002 through MULTI-008.
 
-### [ ] MULTI-002 — Partition durable state and migrate single-project installations
+### [x] MULTI-002 — Partition durable state and migrate single-project installations
 
 - **Priority:** P1
 - **Owner:** hub core, information, configuration and persistence contracts
@@ -835,7 +838,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Upgrade actual earlier accepted stores and preserve publications, private deliveries, acknowledgements, queries, source IDs and selected optimizer recipes.
   - [x] Kill/restart migration and project transactions; prove no partial admission, silent empty stores, identity reassignment or cross-project key collisions.
 
-### [ ] MULTI-003 — Enforce project access and agent memberships
+### [x] MULTI-003 — Enforce project access and agent memberships
 
 - **Priority:** P1
 - **Owner:** hub identity and configuration contracts
@@ -846,11 +849,11 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Add Admin-managed user project access and agent project memberships with stable ownership and explicit project selection.
   - [x] Enforce role, admission, ownership and membership checks on every direct and indirect operation, including live revocation and queued work.
   - [x] Preserve local admin bootstrap, OIDC provider links, groups-to-role configuration and non-transitive email correlation; do not import remote access grants.
-  - [x] Prevent a Developer from recreating a removed agent ID that retains private deliveries, receipts, subscriptions or owned jobs in any project. A public-interface probe on candidate31 verified new-owner access to the former owner's private queue. Preserve explicit Admin recovery/reassignment and retained data; add native/container retirement/recreation regression evidence. Candidate32 implements an all-project verified-snapshot guard; native first-install OIDC/accounts checks remain passing in `verification/multi-eventing/oidc-first-setup-32.json`. Independent candidate32 retirement and snapshot-fault suites pass, and role/browser checks pass22 groups. Review found a legacy missing-snapshot path could attempt the bootstrap DETS opener; candidate33 removes that fallback and uses only a verified snapshot server identity. Its legacy/fault requalification and official artifact/image admission remain required.
+  - [x] Prevent a Developer from recreating a removed agent ID that retains private deliveries, receipts, subscriptions or owned jobs in any project. A public-interface probe on candidate31 verified new-owner access to the former owner's private queue. Preserve explicit Admin recovery/reassignment and retained data; add native/container retirement/recreation regression evidence. Candidate32 implements an all-project verified-snapshot guard; native first-install OIDC/accounts checks remain passing in `verification/multi-eventing/oidc-first-setup-32.json`. Independent candidate32 retirement and snapshot-fault suites pass, and role/browser checks pass22 groups. Review found a legacy missing-snapshot path could attempt the bootstrap DETS opener; candidate33 removes that fallback and uses only a verified snapshot server identity. The current source40 ownership repair, core94 retirement/fault cases and native/container role and account browser runs now qualify that path; the original failed candidates remain historical.
 - **Evidence:**
   - [x] Exercise the role/owner/project matrix through API and browser, including guessed IDs, forged scopes, stale sessions, token rotation and revocation during work. The [independent OIDC policy image run](../../verification/ownedMULTI008/compiled05-oidc-policy-positive/manifest.json) now passes all five original cases and16 assertions on compiled05, retaining the native path and original policy assertions. The auth-only fixture uses the actual private bootstrap password, publicly disables its unused event transport before first project admission and verifies all projects ready after the original renamed-admin restart. Two actual compiled VMs, hard restart and strict owned cleanup are independently bound; the first fixture failure remains retained. The broader role/owner/project matrix is independently qualified by the exact sourceC native API9/role/account evidence and current native/container browser9/86, including guessed scopes, session revocation, token rotation and delayed-work fences; the leaf-only evidence binding is retained separately from parent program closure.
 
-### [ ] MULTI-004 — Scope agent coordination and evidence workflows to projects
+### [x] MULTI-004 — Scope agent coordination and evidence workflows to projects
 
 - **Priority:** P1
 - **Owner:** hub core, evidence, history, retrieval, archive, feedback and optimization contracts
@@ -866,7 +869,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Run interleaved projects with identical local IDs and content; prove delivery, deduplication, evidence, replay and optimizer isolation.
   - [x] Prove explicit fan-out returns only admitted project evidence with accurate partial coverage and no private addressed messages.
 
-### [ ] MULTI-005 — Federate servers hosting multiple projects
+### [x] MULTI-005 — Federate servers hosting multiple projects
 
 - **Priority:** P1
 - **Owner:** hub federation, directory and protocol contracts
@@ -881,12 +884,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Qualify at least three real servers with multiple projects, local/remote canonical routing, conflicting owners, stale caches, outages, retries and revocation. The current [three-server Kafka federation](../../verification/final05-kafka-whole68-positive/manifest.json), [stale-owner four-check run](../../verification/ownedMULTI008/compiled05-stale-canonical-owner-positive/manifest.json) and [callback/epoch fences](../../verification/final05-recovery-callback28-positive/manifest.json) jointly qualify this scope. Expiry uses the original10-second TTL and12-second wait; an unavailable canonical owner never delegates work to a reachable noncanonical server.
   - [x] Validate exact new wire traffic independently and test old/new peer compatibility, bounded forwarding, privacy and unchanged server-local roles.
 
-### [ ] MULTI-006 — Manage multiple projects through the hot Admin console
+### [x] MULTI-006 — Manage multiple projects through the hot Admin console
 
 - **Leaf qualification:** All seven implementation/evidence leaves are supported
   by [the exact requirement map](../../verification/admin-roadmap-closure-review05/review.json),
   current native and container browser9/86, and the mapped core/API evidence.
-  The parent remains open pending its independent dependencies.
+  Its item-specific dependencies and evidence are complete; integrated program qualification remains with MULTI-007/MULTI-008 and KAFKA-009.
 
 - **Priority:** P1
 - **Owner:** hub management, presentation and configuration contracts
@@ -898,7 +901,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Distinguish server-wide users, roles, OIDC, listener/model resources and defaults from project overrides with explicit inheritance and reset semantics.
   - [x] Scope all views/actions, clear stale browser context on project switching/revocation and preserve confirmation, secret handling, CSRF and concurrent-edit checks. Refresh must reload the admitted project list and names before requesting the selected project; externally removed access must clear the old selection and pending actions.
   - [x] Repair first-time OIDC setup so the Admin connection test is available for proposed settings before initial save; the inherited browser regression found the button hidden until a provider was already configured. Requalify the corrected artifact and image.
-  - [x] Diagnose and repair the [unexpected HTTP401 in the exact-image foundation browser flow](../../verification/multi-eventing/foundation-browser-34-failure.json). A [deterministic actual-service probe](../../verification/multi-eventing/admin-stale401-34/manifest.json) now proves that an old list_projects HTTP401 resets a newly authenticated workspace while its server session remains valid. Fence stale auth responses and cancel old-context requests; requalify normal desktop/mobile OIDC setup, linking and logout without ignoring unexpected errors. The original untraced401 is not definitively attributed. [Native development35ui qualification](../../verification/multi-eventing/admin-session-35/manifest.json) now passes the strict race regression on both viewports, current-session revocation, the unchanged accounts/OIDC browser suite and18 native cases; the same race harness fails actualimage34. Successor artifact admission and image/browser qualification remain required.
+  - [x] Diagnose and repair the [unexpected HTTP401 in the exact-image foundation browser flow](../../verification/multi-eventing/foundation-browser-34-failure.json). A [deterministic actual-service probe](../../verification/multi-eventing/admin-stale401-34/manifest.json) now proves that an old list_projects HTTP401 resets a newly authenticated workspace while its server session remains valid. Fence stale auth responses and cancel old-context requests; requalify normal desktop/mobile OIDC setup, linking and logout without ignoring unexpected errors. The original untraced401 is not definitively attributed. [Native development35ui qualification](../../verification/multi-eventing/admin-session-35/manifest.json) now passes the strict race regression on both viewports, current-session revocation, the unchanged accounts/OIDC browser suite and18 native cases; the same race harness fails actualimage34. Current native and compiled05 browser qualification now covers this repair, including the strict delayed-response/session-fencing cases.
   - [x] Wrap complete namespaced object IDs in Events replay subscription labels and replay-status paragraphs within the 390px mobile viewport. The [admitted38 browser run](../../verification/native38-ui-initial/manifest.json) fails on document overflow; subsequent painted-text measurements identify these two unwrapped text regions, while navigation remains correctly clipped inside its own scroller. Preserve full IDs, accessible labels, desktop layout and the unchanged replay/acknowledgement assertions; qualify the repair on native and container runtimes before closing this follow-up.
 - **Evidence:**
   - [x] Inspect desktop/mobile flows for every role; exercise concurrent tabs, stale revisions, project switching, live OIDC/access changes and project archival without restart.
@@ -974,7 +977,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Review implementable positive/negative wire examples and a state/ownership matrix for Kafka, backend storage, delivery state and model work.
 - **Contract completion evidence:** `components/hub/eventing/spec.md` defines the outbox/backend/Kafka/delivery/model ownership matrix, closed event and subscription envelopes, offsets versus positions, filter revisions and migration compatibility; `components/hub/component.md` explicitly selects standard HTTP plus the maintained REST Proxy API. Compose/Kubernetes pin Kafka and REST Proxy 8.3.2 by digest and disclose the separate REST Proxy license. [Native eventing conformance](../verification/native-eventing.json) independently validates 24 positive and 27 negative vectors plus actual broker events; [wire conformance](../../verification/multi-eventing/final-wire-30.json) binds profile 2 to admitted artifact `698496fe…`. Transport/deployment implementation qualification remains with KAFKA-002 through KAFKA-009.
 
-### [ ] KAFKA-002 — Integrate per-server Kafka with durable event publication
+### [x] KAFKA-002 — Integrate per-server Kafka with durable event publication
 
 - **Priority:** P1
 - **Owner:** hub event transport, core persistence and dependency contracts
@@ -988,9 +991,9 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Evidence:**
   - [x] Kill hub/broker around each publish/checkpoint boundary; prove no acknowledged event is lost and retries do not create duplicate logical publications.
   - [x] Exercise multi-project isolation, rebalances, broker unavailability, disk/queue limits and recovery with a real Kafka service.
-- **Current native qualification:** [The source34 complementary matrix](../../verification/multi-eventing/native34-complement/manifest.json) retains 66 passing checks across 13 single-run suites, including real broker outage/recovery, retention recovery, project policy, resource limits, delivery retries, cutover interruption and three-broker federation. Twelve raw reports bind the exact artifact directly; the lost-reply report is bound compositionally through its frozen plan and retained driver, with that limitation explicit. This supplements the separate 15-check core/protocol/durability proof. [Actual managed-observer coordinator changes and manual-bridge recovery](../../verification/multi-eventing/rebalance-34/assessment.json) now pass five native checks; this does not claim managed bridge ownership transfer or HA. Immutable-image qualification remains open.
+- **Current native qualification:** [The source34 complementary matrix](../../verification/multi-eventing/native34-complement/manifest.json) retains 66 passing checks across 13 single-run suites, including real broker outage/recovery, retention recovery, project policy, resource limits, delivery retries, cutover interruption and three-broker federation. Twelve raw reports bind the exact artifact directly; the lost-reply report is bound compositionally through its frozen plan and retained driver, with that limitation explicit. This supplements the separate 15-check core/protocol/durability proof. [Actual managed-observer coordinator changes and manual-bridge recovery](../../verification/multi-eventing/rebalance-34/assessment.json) now pass five native checks; this does not claim managed bridge ownership transfer or HA. [Current compiled05 Kafka qualification](../../verification/final05-kafka-whole68-positive/manifest.json) now passes all14 whole suites/68 checks, complemented by the current filesystem fault and configuration crash gates.
 
-### [ ] KAFKA-003 — Bridge Kafka subscriptions to durable A2A deliveries
+### [x] KAFKA-003 — Bridge Kafka subscriptions to durable A2A deliveries
 
 - **Priority:** P1
 - **Owner:** hub A2A, subscriptions, delivery and authorization contracts
@@ -1005,7 +1008,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Run official A2A SDK flows with multiple subscribers receiving every project event and no direct broker access; prove zero model calls.
   - [x] Exercise disconnect/reconnect, concurrent subscribe/publish, filter changes, repeated polls/acks, overlapping subscriptions and consumer rebalances.
 
-### [ ] KAFKA-004 — Apply optional Jev-like filters without blocking raw streams
+### [x] KAFKA-004 — Apply optional Jev-like filters without blocking raw streams
 
 - **Priority:** P1
 - **Owner:** hub model integration, subscription worker and scheduling contracts
@@ -1020,7 +1023,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] With no model configured and with a hung/failing model, prove raw subscriptions deliver promptly with zero inference calls and other projects are not starved.
   - [x] Validate real short-response filtered matches/nonmatches, malformed decisions, retries, hot filter edits and revocation without silent misses or duplicated deliveries.
 
-### [ ] KAFKA-005 — Preserve backend fact search independently of pubsub
+### [x] KAFKA-005 — Preserve backend fact search independently of pubsub
 
 - **Priority:** P1
 - **Owner:** hub information, evidence, history, retrieval and optimization contracts
@@ -1035,12 +1038,12 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Publish with no model and no subscriptions; prove facts remain searchable after filtering, acknowledgements, restart and broker log expiry.
   - [x] Exercise lag/rebuild/restore and model-disabled semantic queries with truthful coverage and unchanged evidence/privacy guarantees.
 
-### [ ] KAFKA-006 — Expose hot Kafka and subscription controls in Admin
+### [x] KAFKA-006 — Expose hot Kafka and subscription controls in Admin
 
 - **Leaf qualification:** All six implementation/evidence leaves are supported
   by [the exact requirement map](../../verification/admin-roadmap-closure-review05/review.json),
   both current browser runtimes, Kafka14/68 and actual secured Kind7/51.
-  This includes live credential rotation; parent dependencies remain open.
+  This includes live credential rotation; integrated recovery and deployment qualification remains a separate program gate.
 
 - **Priority:** P1
 - **Owner:** hub configuration, identity and management contracts
@@ -1049,7 +1052,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Depends on:** KAFKA-003, KAFKA-004, KAFKA-005, MULTI-006
 - **Implementation:**
   - [x] Add normal forms for raw versus filtered subscriptions, filter health/backlogs and project-wide event observation. Provide confirmed revisioned subscription edits, pause/resume and selector/filter changes through Admin; preserve queued deliveries and acknowledgements.
-  - [x] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation. Current integration is completing partial per-project topic-prefix, retention and backlog-policy overrides with explicit inheritance; broker endpoint, security and enabled state remain server-wide. Qualify failed multi-project retention proposals against actual broker state before closing this control gate.
+  - [x] Provide hot connection/credential/topic-policy changes with validation, cutover watermarks, consumer fencing and rollback; forbid silent resets or implicit replay. Recovery forms must support explicit subscription IDs/revisions beyond the bounded first page, with no hidden replay target truncation. Current integration provides partial per-project topic-prefix, retention and backlog-policy overrides with explicit inheritance; broker endpoint, security and enabled state remain server-wide. Qualify failed multi-project retention proposals against actual broker state before closing this control gate.
   - [x] Qualify interruption recovery of the new durable all-project transport transition and implement explicit Admin quarantine repair; candidate10 already passes real-Kafka successful/failed cutover and hard restart, linked in the partial progress record.
   - [x] Expose authorized broker lag, outbox/projection backlog, retention gaps, budgets and delivery/model status with secret redaction and server/project scope.
 - **Evidence:**

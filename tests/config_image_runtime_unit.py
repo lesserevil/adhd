@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from config_image_runtime import ConfigurationFaultRuntime
+from config_recovery import append_verified_identity
 from image_filesystem_abi import selected_families, fixture
 from image_filesystem_fault import SOURCES
 
@@ -55,6 +56,17 @@ class ConfigurationImageGuards(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     runtime.observe_boundary()
             self.assertEqual(calls, [trace])
+
+    def test_unverified_reporting_cannot_retry_probe(self):
+        calls=[];runtimes=[]
+        image=SimpleNamespace(verified=False,identity=lambda: calls.append('identity') or {'kind':'docker'})
+        append_verified_identity(runtimes,image)
+        self.assertEqual(calls,[])
+        self.assertEqual(runtimes,[])
+        image.verified=True
+        append_verified_identity(runtimes,image)
+        self.assertEqual(calls,['identity'])
+        self.assertEqual(runtimes,[{'kind':'docker'}])
 
     def test_actual_vm_exit_and_cleanup_failure_propagation(self):
         runtime = ConfigurationFaultRuntime.__new__(ConfigurationFaultRuntime)

@@ -25,6 +25,12 @@ def configuration_rename_after(trace, target, offset):
     return ('", "' + target + '"').encode() in raw[offset:]
 
 
+def append_verified_identity(runtimes,image_runtime):
+    # Reporting an initial verification failure must not start another probe.
+    if image_runtime.verified:
+        runtimes.append(image_runtime.identity())
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     target = parser.add_mutually_exclusive_group(required=True)
@@ -119,7 +125,7 @@ def main():
         finally:
             runtime.stop()
             if args.image:
-                runtimes.append(runtime.image_runtime.identity())
+                append_verified_identity(runtimes,runtime.image_runtime)
     Path(args.report).write_text(json.dumps({'schema': 'adhd/config-recovery@1', 'passed': True,
         'artifact_sha256': hashlib.sha256(artifact.read_bytes()).hexdigest(), 'cases': cases,
         'runtime': runtimes if args.image else None}, indent=2) + '\n')

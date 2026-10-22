@@ -67,10 +67,12 @@ check is excluded and15 later suites remained unrun in that attempt. The
 [source-unchanged diagnostic](../../verification/final05-recovery-phase05-diagnostic/manifest.json)
 passes all five original case assertions and observes normal staging/checkpoint/
 transport completion; the earlier failure did not reproduce and remains unexplained.
-The [ordinary compiled-image continuation](../../verification/final05-recovery16-continuation-preparation/manifest.json)
-passes thirteen whole suites, then fails before the requested after-cleanup
+The [ordinary compiled-image continuation](../../verification/final05-recovery16-prefix13-first-failure/manifest.json)
+passes thirteen whole suites/61 checks, then fails before the requested after-cleanup
 boundary; two offline-rebind suites remain unrun. Retained broker logs identify
 a transient own-topic configuration404 immediately after topic creation201.
+Combined with the earlier nine whole suites/44 checks, this proves22 whole
+suites/105 checks on compiled05; partial failed-case checks are excluded.
 Next: retain the correlated failure/cleanup evidence and fix bounded post-create
 metadata readiness in the owning eventing contract before successor qualification.
 The original assertion/deadline remains unchanged. The

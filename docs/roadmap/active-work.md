@@ -82,9 +82,14 @@ restart without repeated alteration, offset reset or acknowledged delivery repla
 Records, routes, revisions and message receipts are preserved; all owned processes
 and proxy handlers are cleaned up. The [fresh source admission](../../verification/eventing-readiness-source41/admission/manifest.json)
 binds both native reports to the actual official receipt, rebuild and provenance.
-Next: independently build and audit the staged successor image twice, then run its
-cache, ABI, recovery and affected integration/deployment gates. Native evidence
-does not qualify that image.
+The [successor image qualification](../../verification/ownedMULTI008/source41-compiled-image-positive/audit.json)
+now records two independent sequential builds with identical image, configuration
+and filesystem-layer identities. Its create-only offline audit verifies the exact
+59-file application payload, 33 specifications, 59 compiled modules and 65 cache
+entries, normalized timestamps and owned-container absence. This is scoped build
+and payload evidence. Next: finish the image's cache, ABI, full recovery, readiness
+and affected integration/deployment gates. Native evidence does not qualify that
+image's runtime behavior.
 
 Retained qualification below uses source40 and the compiled05 image. The
 [native core continuation](../../verification/native40-core28-cwd-positive/manifest.json)

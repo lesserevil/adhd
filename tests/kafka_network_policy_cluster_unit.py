@@ -7,12 +7,35 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch,MagicMock
 s=importlib.util.spec_from_file_location('gate',Path(__file__).with_name('kafka_network_policy_cluster.py'));g=importlib.util.module_from_spec(s);s.loader.exec_module(g)
 class Guards(unittest.TestCase):
  def setUp(self):self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name).resolve()
  def tearDown(self):self.temp.cleanup()
  def plan(self):return {'cluster':'adhd-netpol-qa40','network':'adhd-netpol-qa40-net','node':'adhd-netpol-qa40-control-plane','owner_label':'owner','owner_nonce':'nonce','bridge_subnet':'10.240.240.0/24','node_image':{'configuration_digest':'sha256:node'},'tools':{'python':{'path':'/test/python'},'docker':{'path':'/test/docker'}},'docker_socket':{'path':'/test/socket'}}
+ def test_stream_command_fixed_namespace_targets(self):
+  for index in range(3):
+   command,target=g.stream_command('a'*64,index)
+   self.assertEqual(command[:4],['exec','-i','a'*64,'sh'])
+   self.assertEqual(target,'/var/lib/adhd-policy-oci/'+str(index)+'.oci.tar')
+   self.assertEqual(command[-1],target);self.assertIn('set -C',g.CNI_STREAM_SCRIPT)
+   self.assertNotIn('/tmp',target);self.assertNotIn('eval ',g.CNI_STREAM_SCRIPT)
+  for node,index in [('foreign',0),('a'*64,3),('a'*64,True),('a'*64,'0')]:
+   with self.assertRaises(AssertionError):g.stream_command(node,index)
+ def test_stream_stdin_uses_bounded_communicate(self):
+  (self.root/'runtime').mkdir();runner=g.Executor(self.root,self.plan());child=MagicMock();child.pid=321;child.returncode=0;child.communicate.return_value=(b'ok',b'')
+  with patch.object(g,'verify',return_value=True),patch.object(g.subprocess,'Popen',return_value=child) as process:
+   runner.run('stream',['docker','exec','-i','owned'],timeout=300,data=b'archive')
+  self.assertEqual(process.call_args.kwargs['stdin'],g.subprocess.PIPE)
+  child.communicate.assert_called_once_with(input=b'archive',timeout=300)
+  self.assertEqual(runner.events[0]['input_bytes'],7);self.assertIn('intended stdin',runner.events[0]['input_observation'])
+ def test_stream_timeout_never_resends_input_and_joins_child(self):
+  (self.root/'runtime').mkdir();runner=g.Executor(self.root,self.plan());child=MagicMock();child.pid=321;child.returncode=-9;child.poll.return_value=None
+  child.communicate.side_effect=[g.subprocess.TimeoutExpired(['docker'],300,output=b'partial',stderr=b'err'),(b'partial',b'err')]
+  with patch.object(g,'verify',return_value=True),patch.object(g.subprocess,'Popen',return_value=child),patch.object(g.os,'getpgid',return_value=321),patch.object(g.os,'killpg') as kill:
+   with self.assertRaises(g.subprocess.TimeoutExpired):runner.run('stream',['docker'],timeout=300,data=b'archive')
+  self.assertEqual(child.communicate.call_count,2);self.assertEqual(child.communicate.call_args.kwargs,{'timeout':15});kill.assert_called_once_with(321,g.signal.SIGKILL)
+  self.assertTrue(runner.events[0]['owned_client_joined_after_failure']);self.assertEqual(runner.events[0]['returncode'],-9)
  def test_exact_tree(self):
   (self.root/'a').write_text('x');v=g.inventory(self.root);(self.root/'empty').mkdir();self.assertNotEqual(g.inventory(self.root),v)
   (self.root/'alias').symlink_to(self.root/'empty',target_is_directory=True)

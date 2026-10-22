@@ -62,6 +62,15 @@ def volume_absent(result,name):
  return result.returncode==1 and result.stdout.strip() in (b'',b'[]') and re.fullmatch(r'(?i:(?:Error(?: response from daemon)?:\s*)?get\s+)'+re.escape(name)+r'(?i::\s+no such volume)',result.stderr.decode(errors='replace').strip()) is not None
 
 
+CNI_DIRECTORY='/var/lib/adhd-policy-oci'
+CNI_STREAM_SCRIPT=('case "$1" in /var/lib/adhd-policy-oci/0.oci.tar|/var/lib/adhd-policy-oci/1.oci.tar|/var/lib/adhd-policy-oci/2.oci.tar) ;; *) exit 72;; esac; '
+                   'umask 077; set -C; cat > "$1"; chmod 0444 "$1"')
+def stream_command(node,index):
+ assert re.fullmatch('[a-f0-9]{64}',node) and type(index) is int and 0<=index<3
+ target=CNI_DIRECTORY+'/'+str(index)+'.oci.tar'
+ return ['exec','-i',node,'sh','-eu','-c',CNI_STREAM_SCRIPT,'adhd-cni-archive',target],target
+
+
 def verify(work,plan):
  assert work.resolve(strict=True)==work and not work.is_symlink()
  assert sha(plain(__file__))==sha(work/'driver.py')==plan['driver_sha256']
@@ -92,8 +101,8 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- shutil.copyfile(plain(__file__),frozen/'tests/kafka_network_policy_cluster.py')
- shutil.copyfile(plain(Path(__file__).with_name('kafka_network_policy_oci.py')),frozen/'tests/kafka_network_policy_oci.py')
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py'):
+  shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)
  shutil.copyfile(source,bound/'research-plan.json');shutil.copytree(source.parent/'downloads',bound/'downloads')
@@ -120,7 +129,7 @@ def prepare(args):
  for n in ('kind','kubectl','docker'):assert tools[n]['sha256']==base['tools'][n]['sha256']
  images=json.loads((bound/'images.json').read_text());node=next(i for i in images if 'kindest' in i['repository']);cni=[i for i in images if 'calico/' in i['repository']]
  socket=Path('/var/run/docker.sock').resolve(strict=True);s=socket.stat()
- plan={'schema':'adhd/enforcing-cni-kind-executor@1','prepared':True,'executed':False,'root_GO_required':True,'cluster':base['cluster'],'network':base['dedicated_network'],'node':base['node'],'bridge_subnet':base['network_subnet'],'owner_label':'adhd-policy-owner','owner_nonce':os.urandom(16).hex(),'image':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'node_image':node,'node_anonymous_volume_destinations':['/var'],'node_image_declared_volumes':sorted((json.loads(node_config.read_text())['config'].get('Volumes') or {}).keys()),'CNI_images':cni,'CNI_provisioning':'exact-OCI-archive-import','CNI_archives':oci_report['images'],'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'external_inputs':[external(oci_source/name) for name in ('manifest.json','0.oci.tar','1.oci.tar','2.oci.tar')]+[external(node_config),external(source),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+list(tools.values()),'docker_socket':{'path':str(socket),'identity':[s.st_dev,s.st_ino]},'lane_lock':str(root/'_build/roadmap/netpol-kind.lane.lock'),'automatic_retries':0,'parallelism':1,'fixture_pods':9,'routes':18,'scope':'Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.','runtime_starts_during_preparation':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED'}
+ plan={'schema':'adhd/enforcing-cni-kind-executor@1','prepared':True,'executed':False,'root_GO_required':True,'cluster':base['cluster'],'network':base['dedicated_network'],'node':base['node'],'bridge_subnet':base['network_subnet'],'owner_label':'adhd-policy-owner','owner_nonce':os.urandom(16).hex(),'image':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'node_image':node,'node_anonymous_volume_destinations':['/var'],'node_image_declared_volumes':sorted((json.loads(node_config.read_text())['config'].get('Volumes') or {}).keys()),'CNI_images':cni,'CNI_provisioning':'exact-OCI-archive-import','CNI_transfer':'owned-node-exec-stdin-private-varlib','CNI_archives':oci_report['images'],'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'external_inputs':[external(oci_source/name) for name in ('manifest.json','0.oci.tar','1.oci.tar','2.oci.tar')]+[external(node_config),external(source),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+list(tools.values()),'docker_socket':{'path':str(socket),'identity':[s.st_dev,s.st_ino]},'lane_lock':str(root/'_build/roadmap/netpol-kind.lane.lock'),'automatic_retries':0,'parallelism':1,'fixture_pods':9,'routes':18,'scope':'Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.','runtime_starts_during_preparation':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED'}
  save(work/'plan.json',plan);verify(work,plan);print(json.dumps({'prepared':True,'executed':False,'plan_sha256':sha(work/'plan.json'),'work':str(work)}))
 
 class Executor:
@@ -129,16 +138,19 @@ class Executor:
   self.env={k:v for k,v in os.environ.items() if not k.startswith(('DOCKER_','KIND_','KUBECONFIG','LD_','ERL_','ELIXIR_','PYTHON')) and k.lower() not in ('http_proxy','https_proxy','all_proxy','no_proxy')}
   self.env.update(DOCKER_HOST='unix://'+plan['docker_socket']['path'],DOCKER_CONFIG=str(work/'bound/docker-config'),KUBECONFIG=str(work/'runtime/owned.kubeconfig'),KIND_EXPERIMENTAL_DOCKER_NETWORK=plan['network'],KIND_EXPERIMENTAL_PROVIDER='docker',PYTHONDONTWRITEBYTECODE='1',PYTHONPATH=str(work/'frozen/tests'),NO_PROXY='127.0.0.1,localhost,::1',no_proxy='127.0.0.1,localhost,::1')
   self.env['PATH']=str(Path(plan['tools']['python']['path']).parent)+':/usr/bin:/bin'
- def run(self,name,argv,timeout=40,check=True):
+ def run(self,name,argv,timeout=40,check=True,data=None):
   verify(self.work,self.plan)
   if hasattr(self,'kubeconfig_sha256'):assert sha(plain(self.env['KUBECONFIG']))==self.kubeconfig_sha256
   log=self.work/(f'{len(self.events):02d}-'+name+'.log');assert not log.exists()
   row={'name':name,'argv':argv,'started':False,'returncode':None};self.events.append(row)
+  if data is not None:
+   assert isinstance(data,bytes) and 0<len(data)<=256*1024*1024
+   row.update(input_bytes=len(data),input_sha256=hashlib.sha256(data).hexdigest(),input_observation='intended stdin; completion proven only by subsequent in-node digest')
   child=None;out=b'';err=b''
   try:
-   child=subprocess.Popen(argv,env=self.env,cwd=self.work/'runtime',stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
+   child=subprocess.Popen(argv,env=self.env,cwd=self.work/'runtime',stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE if data is not None else None,start_new_session=True)
    row.update(started=True,host_client_pid=child.pid)
-   out,err=child.communicate(timeout=timeout);row['returncode']=child.returncode
+   out,err=child.communicate(input=data,timeout=timeout) if data is not None else child.communicate(timeout=timeout);row['returncode']=child.returncode
    result=subprocess.CompletedProcess(argv,child.returncode,out,err)
    if check:assert result.returncode==0,name+' failed'
    return result
@@ -227,10 +239,13 @@ class Executor:
   # DNS remains untouched. Import and prove original target before any CNI apply.
   from kafka_network_policy_oci import verify_import
   self.docker('node-containerd-version','exec',self.known_node,'ctr','version')
+  assert p['CNI_transfer']=='owned-node-exec-stdin-private-varlib'
+  self.docker('create-cni-private-directory','exec',self.known_node,'sh','-eu','-c','umask 077; mkdir /var/lib/adhd-policy-oci')
   for i,im in enumerate(p['CNI_images']):
-   ref=im['repository']+'@'+im['linux_amd64_digest'];archive=self.work/'bound/oci-archives'/(str(i)+'.oci.tar');remote='/tmp/cni-exact-'+str(i)+'.oci.tar'
+   ref=im['repository']+'@'+im['linux_amd64_digest'];archive=self.work/'bound/oci-archives'/(str(i)+'.oci.tar');command,remote=stream_command(self.known_node,i)
    assert sha(archive)==p['CNI_archives'][i]['archive_sha256']
-   self.docker('copy-cni-archive'+str(i),'cp',str(archive),self.known_node+':'+remote,timeout=300)
+   payload=plain(archive).read_bytes();assert len(payload)==p['CNI_archives'][i]['archive_bytes'] and hashlib.sha256(payload).hexdigest()==p['CNI_archives'][i]['archive_sha256']
+   self.docker('stream-cni-archive'+str(i),*command,data=payload,timeout=300)
    assert self.docker('archive-cni'+str(i),'exec',self.known_node,'sha256sum',remote).stdout.decode().split()[0]==p['CNI_archives'][i]['archive_sha256']
    self.docker('import-cni'+str(i),'exec',self.known_node,'ctr','--namespace=k8s.io','images','import','--local','--digests','--base-name',im['repository'],'--platform','linux/amd64',remote,timeout=300)
    listing=self.docker('target-cni'+str(i),'exec',self.known_node,'ctr','--namespace=k8s.io','images','list').stdout.decode()

@@ -101,7 +101,7 @@ def prepare(args):
    assert not p.is_symlink()
    if p.is_dir() or '__pycache__' in p.parts:continue
    dest=frozen/p.relative_to(root);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(plain(p),dest)
- for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py'):
+ for name in ('kafka_network_policy_cluster.py','kafka_network_policy_cluster_unit.py','kafka_network_policy_oci.py','kafka_network_policy_oci_unit.py','kafka_network_policy_diagnostics.py','kafka_network_policy_diagnostics_unit.py'):
   shutil.copyfile(plain(Path(__file__).with_name(name)),frozen/'tests'/name)
  bound=work/'bound';bound.mkdir()
  for n in ('calico-pinned.yaml','kind.yaml','images.json','local-preflight.json'):shutil.copyfile(plain(source.parent/n),bound/n)
@@ -130,6 +130,9 @@ def prepare(args):
  images=json.loads((bound/'images.json').read_text());node=next(i for i in images if 'kindest' in i['repository']);cni=[i for i in images if 'calico/' in i['repository']]
  socket=Path('/var/run/docker.sock').resolve(strict=True);s=socket.stat()
  plan={'schema':'adhd/enforcing-cni-kind-executor@1','prepared':True,'executed':False,'root_GO_required':True,'cluster':base['cluster'],'network':base['dedicated_network'],'node':base['node'],'bridge_subnet':base['network_subnet'],'owner_label':'adhd-policy-owner','owner_nonce':os.urandom(16).hex(),'image':image,'artifact_sha256':artifact,'admission_sha256':admission_hash,'canonical_manifest_sha256':sha(bound/'image-manifest.json'),'node_image':node,'node_anonymous_volume_destinations':['/var'],'node_image_declared_volumes':sorted((json.loads(node_config.read_text())['config'].get('Volumes') or {}).keys()),'CNI_images':cni,'CNI_provisioning':'exact-OCI-archive-import','CNI_transfer':'owned-node-exec-stdin-private-varlib','CNI_archives':oci_report['images'],'frozen':inventory(frozen),'bound':inventory(bound),'driver_sha256':sha(work/'driver.py'),'tools':tools,'tool_trees':[tool_tree(root/'.venv'),tool_tree(root/'_build/federation/native/elixir'),tool_tree(root/'_build/federation/native/erlang')],'external_inputs':[external(oci_source/name) for name in ('manifest.json','0.oci.tar','1.oci.tar','2.oci.tar')]+[external(node_config),external(source),external(context/'manifest.json'),external(context/'payload.tar'),external(admission)]+list(tools.values()),'docker_socket':{'path':str(socket),'identity':[s.st_dev,s.st_ino]},'lane_lock':str(root/'_build/roadmap/netpol-kind.lane.lock'),'automatic_retries':0,'parallelism':1,'fixture_pods':9,'routes':18,'scope':'Single disposable Kind node; raw18route shipped NetworkPolicy proof only. No actualKafka/hub/model/HA/application/release qualification.','runtime_starts_during_preparation':0,'execution_status':'UNSTARTED_REVIEW_REQUIRED'}
+ if args.diagnostic_only:
+  from kafka_network_policy_diagnostics import LIMITS
+  plan.update(diagnostic_only=True,diagnostic_limits=LIMITS,fixture_pods=0,routes=0,scope='Diagnostic-only exact Calico bootstrap; bounded private pre-cleanup reads, no route/app/Kafka qualification.')
  save(work/'plan.json',plan);verify(work,plan);print(json.dumps({'prepared':True,'executed':False,'plan_sha256':sha(work/'plan.json'),'work':str(work)}))
 
 class Executor:
@@ -255,6 +258,25 @@ class Executor:
    verify_import(im,listing,observed,(self.work/'bound/downloads'/original_name).read_bytes(),actual)
   k=[p['tools']['kubectl']['path'],'--kubeconfig',self.env['KUBECONFIG']]
   self.run('install-calico',k+['create','-f',str(self.work/'bound/calico-pinned.yaml')],timeout=120)
+  if p.get('diagnostic_only'):
+   from kafka_network_policy_diagnostics import Diagnostics,LIMITS,bounded,observe_rollout
+   assert p['diagnostic_limits']==LIMITS
+   def fence(timeout):
+    assert timeout>0 and sha(plain(self.env['KUBECONFIG']))==self.kubeconfig_sha256
+    deadline=time.monotonic()+timeout
+    for network,identifier in [(False,self.known_node),(True,self.known_network)]:
+     remaining=deadline-time.monotonic();assert remaining>0
+     argv=[p['tools']['docker']['path']]+(['network','inspect'] if network else ['inspect'])+[identifier]
+     code,out,err=bounded(argv,self.env,self.work/'runtime',remaining,LIMITS['metadata_bytes'])
+     assert code==0 and time.monotonic()<=deadline
+     rows=json.loads(out);assert len(rows)==1
+     self.network_owned(rows[0]) if network else self.node_owned(rows[0])
+   diagnostic=Diagnostics(self.work/'runtime/private-diagnostics',k,self.env,self.work/'runtime',p['node'],fence)
+   self.diagnostic=diagnostic;diagnostic.anchor()
+   def rollout():
+    for name,target in [('ready-calico','daemonset/calico-node'),('ready-controller','deployment/calico-kube-controllers')]:self.run(name,k+['-n','kube-system','rollout','status',target,'--timeout=300s'],timeout=320)
+   observe_rollout(rollout,diagnostic)
+   return before
   for name,target in [('ready-calico','daemonset/calico-node'),('ready-controller','deployment/calico-kube-controllers')]:self.run(name,k+['-n','kube-system','rollout','status',target,'--timeout=300s'],timeout=320)
   self.run('ready-node',k+['wait','--for=condition=Ready','node/'+p['node'],'--timeout=300s'],timeout=320)
   assert json.loads(self.docker('qa40-image-before-load','image','inspect','adhd-hub:qa40').stdout)[0]['Id']==p['image']
@@ -337,6 +359,9 @@ def execute(work,digest):
   except BaseException as e:error=e
   finally:
    cleanup_errors=runner.finish()
+   if hasattr(runner,'diagnostic'):
+    try:save(work/'diagnostic-private-index.json',{'pins':runner.diagnostic.pins,'rows':runner.diagnostic.rows,'summary':getattr(runner.diagnostic,'summary',None),'failure_type':getattr(runner.diagnostic,'capture_error',None)})
+    except BaseException as diagnostic_index_error:cleanup_errors.append(diagnostic_index_error)
    protected=getattr(runner,'protected_before',before)
    if protected is not None:
     try:assert runner.protected()==protected
@@ -354,7 +379,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);mode=p.add_mutually_exclusive_group(required=True);mode.add_argument('--prepare',action='store_true');mode.add_argument('--execute',action='store_true')
  p.add_argument('--work',type=Path,required=True);p.add_argument('--plan-sha256')
  for n in ('repo-root','cluster-plan','context','admission-manifest','node-config','oci-inputs'):p.add_argument('--'+n,type=Path)
- p.add_argument('--cluster-plan-sha256');args=p.parse_args()
+ p.add_argument('--cluster-plan-sha256');p.add_argument('--diagnostic-only',action='store_true');args=p.parse_args()
  if args.prepare:prepare(args)
  else:sys.exit(execute(args.work.absolute(),args.plan_sha256))
 if __name__=='__main__':main()

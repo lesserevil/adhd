@@ -78,7 +78,7 @@ def validate_observer(image, library, proof, source_name):
     info=library.lstat()
     assert stat.S_ISREG(info.st_mode) and info.st_nlink==1 and info.st_uid==os.getuid()
     report=json.loads(proof.read_text());build=report['observer']
-    assert report['schema'] in ('adhd/image-observer-loader-probe@1','adhd/image-filesystem-observer-probe@1')
+    assert report['schema']=='adhd/image-filesystem-observer-probe@1', 'Generic faults require complete source ABI qualification'
     assert report['passed'] is True and report['application_started'] is False and report['owned_container_absent'] is True
     assert report['image_config_identity']==image and report['exit_code']==137
     assert report['actual_musl_loader']=='/lib/ld-musl-x86_64.so.1'
@@ -87,11 +87,10 @@ def validate_observer(image, library, proof, source_name):
     assert set(build['undefined_scalar_symbols'])<=SCALAR_ABI
     assert report['process_custody']['signal_method']=='ancestor-pidfd-SIGSTOP'
     assert report['process_custody']['kernel_state']=='stopped'
-    # Historical multi_fault proof qualifies only that identical source/library.
-    if source_name!='multi_fault.c':
-        assert report['schema']=='adhd/image-filesystem-observer-probe@1'
-        assert set(build['exported_symbols'])==SOURCES[source_name]['exports']
-        assert set(report['successful_abi_cases'])==SOURCES[source_name]['exports']
+    # A rename-only historical Eventing proof cannot qualify migration's link,
+    # linkat or renameat paths, even when the source/library bytes are identical.
+    assert set(build['exported_symbols'])==SOURCES[source_name]['exports']
+    assert set(report['successful_abi_cases'])==SOURCES[source_name]['exports']
     return library, report
 
 

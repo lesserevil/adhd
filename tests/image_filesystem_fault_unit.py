@@ -69,6 +69,13 @@ def main():
             write_proof(successful_abi_cases=['rename']);denied(lambda:validate_observer(IMAGE,lib,proof,source))
             bad=copy.deepcopy(good);bad['observer']['undefined_scalar_symbols']=['stat'];proof.write_text(json.dumps(bad));denied(lambda:validate_observer(IMAGE,lib,proof,source))
             write_proof(image_config_identity='sha256:'+'c'*64);denied(lambda:validate_observer(IMAGE,lib,proof,source))
+            source='multi_fault.c'
+            write_proof(schema='adhd/image-observer-loader-probe@1',successful_abi_cases=['rename'])
+            denied(lambda:validate_observer(IMAGE,lib,proof,source))
+            write_proof(successful_abi_cases=['rename'])
+            denied(lambda:validate_observer(IMAGE,lib,proof,source))
+            write_proof();validate_observer(IMAGE,lib,proof,source)
+            source='store_move_fault.c'
             write_proof();obj=FilesystemFaultImage(IMAGE,manifest,root,source,lib,proof,env)
             with patch.object(OwnedImage,'argv',return_value=base):
                 instrumented=obj.argv(root/'hub.json')
@@ -97,7 +104,7 @@ def main():
         assert ('kill','--signal','KILL','f'*64) in calls and ('wait','f'*64) in calls and ('rm','f'*64) in calls
         assert owned.name is None and owned.last_exit_code==137 and owned.events[-1]['observed_absent']
     assert not starts
-    print('PASS image filesystem10: source binding, build-only denial, complete ABI cases, scalar whitelist, image binding, readonly observer, retained container, disarmed cold replacement, PID/env denial, exact-ID kill/wait137/remove custody; process attempts0')
+    print('PASS image filesystem11: source binding, build-only denial, complete ABI cases, scalar whitelist, image binding, readonly observer, retained container, disarmed cold replacement, PID/env denial, exact-ID kill/wait137/remove custody, full multi-source ABI closure; process attempts0')
 
 
 if __name__=='__main__':main()

@@ -1,0 +1,393 @@
+{
+  "suite": "adhd/project-recovery-pending-kafka@1",
+  "started_at": "2026-10-22T14:56:01.733703+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-accepted-pending-event-backed-up-and-old-topic-consumer-response-held",
+      "passed": true
+    },
+    {
+      "name": "same-accepted-event-republished-to-fresh-topic-while-both-real-consumer-replies-are-held",
+      "passed": true,
+      "old_topic": "adhd.06bee44862de11c8.73786e979410fe19.r345f86d5bd8df284cbbbf182f4c2b8f8.events.v1",
+      "new_topic": "adhd.06bee44862de11c8.73786e979410fe19.r1df2d54f5e51ab7806a83d4996cfa8b0.events.v1"
+    },
+    {
+      "name": "released-old-topic-response-cannot-materialize-or-attach-offset-to-restored-target",
+      "passed": true,
+      "response_transport": "retired_connection"
+    },
+    {
+      "name": "fresh-topic-response-materializes-original-event-once-with-original-publication-identity",
+      "passed": true
+    },
+    {
+      "name": "acknowledgement-and-current-blue-survive-real-cold-restart",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Controlled model responses prove transport/failure isolation, not semantic quality.",
+    "A single broker does not qualify replicated Kafka durability."
+  ],
+  "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+  "harness_sha256": "4b327280f02dbf0359159d9bf4f9db152e9edd24377301c6fbf61e6912d70fe4",
+  "runner_sha256": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+  "provider_calls": 0,
+  "scope": "Actual real Kafka consumer reply across same-VM target-only restore; explicit project eventing cap2 overlap fixture, not default cap1 restore latency or full platform qualification",
+  "resource_profile": {
+    "eventing_concurrency": 16,
+    "project_eventing_concurrency": 2,
+    "reason": "One held old actual HTTP callback and mandatory pre-decision fresh-topic preflight must overlap; no scheduler bypass or deadline change."
+  },
+  "original_failed_attempt": "verification/project-recovery/development38/image-recovery-serial38/manifest.json",
+  "resource_observations": [
+    {
+      "phase": "old-consumer-held-before-target-loss",
+      "status": {
+        "ingress_tickets": 2,
+        "lanes": {
+          "eventing": {
+            "active": 2,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 18,
+            "ingress_rejections": 0,
+            "projects": {
+              "project-blue": {
+                "active": 1,
+                "queued": 0
+              },
+              "project-red": {
+                "active": 1,
+                "queued": 0
+              }
+            },
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "model": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "network": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          }
+        },
+        "limits": {
+          "eventing_concurrency": 16,
+          "max_waiters": 1024,
+          "model_concurrency": 4,
+          "network_concurrency": 16,
+          "project_eventing_concurrency": 2,
+          "project_model_concurrency": 1,
+          "project_network_concurrency": 4
+        },
+        "started": true,
+        "waiting": 0
+      },
+      "held_actual_consumer_response": true
+    },
+    {
+      "phase": "fresh-consumer-held-after-restoration",
+      "status": {
+        "ingress_tickets": 2,
+        "lanes": {
+          "eventing": {
+            "active": 2,
+            "caller_deaths": 0,
+            "fenced": 1,
+            "grants": 42,
+            "ingress_rejections": 0,
+            "projects": {
+              "project-blue": {
+                "active": 1,
+                "queued": 0
+              },
+              "project-red": {
+                "active": 1,
+                "queued": 0
+              }
+            },
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "model": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          },
+          "network": {
+            "active": 0,
+            "caller_deaths": 0,
+            "fenced": 0,
+            "grants": 0,
+            "ingress_rejections": 0,
+            "projects": {},
+            "queue_rejections": 0,
+            "queued": 0,
+            "queued_timeouts": 0
+          }
+        },
+        "limits": {
+          "eventing_concurrency": 16,
+          "max_waiters": 1024,
+          "model_concurrency": 4,
+          "network_concurrency": 16,
+          "project_eventing_concurrency": 2,
+          "project_model_concurrency": 1,
+          "project_network_concurrency": 4
+        },
+        "started": true,
+        "waiting": 0
+      },
+      "held_actual_consumer_response": true
+    }
+  ],
+  "actual_old_response": {
+    "path": "/consumers/adhd.06bee44862de11c8.73786e979410fe19.r345f86d5bd8df284cbbbf182f4c2b8f8.events.v1.fanout/instances/adhd-iTQvPXkWNyq7rgptpIFzIwHOw8YuJhQQ/records?timeout=1000&max_bytes=262144",
+    "rows": [
+      {
+        "topic": "adhd.06bee44862de11c8.73786e979410fe19.r345f86d5bd8df284cbbbf182f4c2b8f8.events.v1",
+        "key": "project-red",
+        "value": {
+          "author_id": "bridge",
+          "created_at": "2026-10-22T14:56:18.530Z",
+          "event_id": "publication_01d6227f39d1263fd226b1818513b5cc_3",
+          "project_id": "project-red",
+          "project_sequence": 2,
+          "publication": {
+            "author_id": "bridge",
+            "created_at": "2026-10-22T14:56:18.530Z",
+            "data": {},
+            "id": "publication_01d6227f39d1263fd226b1818513b5cc_3",
+            "information_type": "message",
+            "occurred_at": "2026-10-22T14:56:18.530Z",
+            "project_id": "project-red",
+            "source": {
+              "id": "bridge",
+              "kind": "agent"
+            },
+            "text": "One accepted event survives physical transport reset."
+          },
+          "publication_id": "publication_01d6227f39d1263fd226b1818513b5cc_3",
+          "schema_version": 1,
+          "server_id": "1cffd78b5c484e4e5a4d33f680424f97"
+        },
+        "partition": 0,
+        "offset": 0
+      }
+    ],
+    "status": 200,
+    "received_at": 238889.874270974,
+    "released_at": 238894.358545888,
+    "transport": "retired_connection"
+  },
+  "actual_new_response": {
+    "path": "/consumers/adhd.06bee44862de11c8.73786e979410fe19.r1df2d54f5e51ab7806a83d4996cfa8b0.events.v1.fanout/instances/adhd-0yn1bATPrCGa8j5PCX7GLhr_YAMjZ7Si/records?timeout=1000&max_bytes=262144",
+    "rows": [
+      {
+        "topic": "adhd.06bee44862de11c8.73786e979410fe19.r1df2d54f5e51ab7806a83d4996cfa8b0.events.v1",
+        "key": "project-red",
+        "value": {
+          "author_id": "bridge",
+          "created_at": "2026-10-22T14:56:18.530Z",
+          "event_id": "publication_01d6227f39d1263fd226b1818513b5cc_3",
+          "project_id": "project-red",
+          "project_sequence": 2,
+          "publication": {
+            "author_id": "bridge",
+            "created_at": "2026-10-22T14:56:18.530Z",
+            "data": {},
+            "id": "publication_01d6227f39d1263fd226b1818513b5cc_3",
+            "information_type": "message",
+            "occurred_at": "2026-10-22T14:56:18.530Z",
+            "project_id": "project-red",
+            "source": {
+              "id": "bridge",
+              "kind": "agent"
+            },
+            "text": "One accepted event survives physical transport reset."
+          },
+          "publication_id": "publication_01d6227f39d1263fd226b1818513b5cc_3",
+          "schema_version": 1,
+          "server_id": "1cffd78b5c484e4e5a4d33f680424f97"
+        },
+        "partition": 0,
+        "offset": 0
+      }
+    ],
+    "status": 200,
+    "received_at": 238894.316174255,
+    "released_at": 238894.701293559,
+    "transport": "written"
+  },
+  "runtime": {
+    "kind": "docker",
+    "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+    "canonical_manifest_sha256": "8fcef6b26a1aa06d64c81dd41eee4bc38ebcda95c6b4da605da6dbddba132763",
+    "container_helper_sha256": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0",
+    "artifact_sha256": "d41ecdddfaf78b70ff5e1ce869b1d248f8442a25922ee58d2f080f9942f4f108",
+    "container_lifecycle": [
+      {
+        "action": "started",
+        "container_id": "19af8255d8737d10bd791c464efd824ec0e9a97dd4977f10829112b442378de3",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "19af8255d8737d10bd791c464efd824ec0e9a97dd4977f10829112b442378de3",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "ef2cc52f52fcfb4c336c1ff8a1ec654680c4d8fee833b16f9d31828b8143d794",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "hard-killed",
+        "container_id": "ef2cc52f52fcfb4c336c1ff8a1ec654680c4d8fee833b16f9d31828b8143d794",
+        "observed_absent": true
+      },
+      {
+        "action": "started",
+        "container_id": "0275a4c8a4a75eb0b01dc8f88824ee424a12ffda25ecb61048b7bd437d455b35",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf"
+      },
+      {
+        "action": "stopped",
+        "container_id": "0275a4c8a4a75eb0b01dc8f88824ee424a12ffda25ecb61048b7bd437d455b35",
+        "observed_absent": true
+      }
+    ],
+    "payload_verified": true,
+    "payload_probe_lifecycle": [
+      {
+        "owned_name": "adhd-accept-probe-ac4634903fff4e9f",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "cat",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      },
+      {
+        "owned_name": "adhd-accept-probe-3cc7b81a7ce6435e",
+        "container_id": null,
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "entrypoint": "sha256sum",
+        "run_exit_code": 0,
+        "run_failure_type": null,
+        "foreign_object_not_removed": false,
+        "observed_absent": true,
+        "cleanup_failure_types": []
+      }
+    ],
+    "probe_cleanup_blocked": false,
+    "fixture_sha256": "67e58509f5159f6bcafe3b049e7358a597d3e33093841895070af557fbfc30cd",
+    "observer_sha256": "ca5f9b3a0f1a0c4b9a222e4fe771645fc9dc4dbcffa8b830fd19d8b85b23fb8c",
+    "observer_mount": "/adhd-test/recovery-observer.exs",
+    "recovery_image_helper_sha256": "0ba13d11979b3bd10ae19d502d6e48207e05b2e248eb98c4bb81ce94d8eda4fb",
+    "startup_seconds": 45,
+    "watched_vm_observations": [
+      {
+        "container_id": "19af8255d8737d10bd791c464efd824ec0e9a97dd4977f10829112b442378de3",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "host_vm_pid": 1584602,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "fc0beb42b7ca78bf75eda7920a70b8bb1957c26ca97b0065a39fd0b9b32ffb54",
+        "proc1_cmdline_sha256": "0f831b72eadc72ce59bb24f4905665f2c3b56df72c6b78c78fdc2025406be5a4",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "ef2cc52f52fcfb4c336c1ff8a1ec654680c4d8fee833b16f9d31828b8143d794",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "host_vm_pid": 1588686,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "47e36a8522f6a5b36f2fc8d10ad55e70cb4073e2e67cd40898f29f5d77b04437",
+        "proc1_cmdline_sha256": "0f831b72eadc72ce59bb24f4905665f2c3b56df72c6b78c78fdc2025406be5a4",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "ef2cc52f52fcfb4c336c1ff8a1ec654680c4d8fee833b16f9d31828b8143d794",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "host_vm_pid": 1588686,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "2e15cba04d0367a223575a1f749466d0d113928f372680c430fa4a4b0222382f",
+        "proc1_cmdline_sha256": "0f831b72eadc72ce59bb24f4905665f2c3b56df72c6b78c78fdc2025406be5a4",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "ef2cc52f52fcfb4c336c1ff8a1ec654680c4d8fee833b16f9d31828b8143d794",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "host_vm_pid": 1588686,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "8d65b8cd5679cc0ecbc1b5fd677f1b4c47b315d6f96bf6056223074e67a9f6a9",
+        "proc1_cmdline_sha256": "0f831b72eadc72ce59bb24f4905665f2c3b56df72c6b78c78fdc2025406be5a4",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "ef2cc52f52fcfb4c336c1ff8a1ec654680c4d8fee833b16f9d31828b8143d794",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "host_vm_pid": 1588686,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "c389efb2b2e09756a103e8d435f52927238ed0796a26d1f99587ec87408da168",
+        "proc1_cmdline_sha256": "0f831b72eadc72ce59bb24f4905665f2c3b56df72c6b78c78fdc2025406be5a4",
+        "observer_read_only": true
+      },
+      {
+        "container_id": "0275a4c8a4a75eb0b01dc8f88824ee424a12ffda25ecb61048b7bd437d455b35",
+        "image_config_identity": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+        "host_vm_pid": 1592743,
+        "namespace_vm_pid": 1,
+        "pid_namespace_mode": "",
+        "vm_executable_basename": "beam.smp",
+        "proc1_status_sha256": "635a11102f654c35ce5d591f78a5f41625feb6dda3e5563f26ed10e9abac1444",
+        "proc1_cmdline_sha256": "0f831b72eadc72ce59bb24f4905665f2c3b56df72c6b78c78fdc2025406be5a4",
+        "observer_read_only": true
+      }
+    ],
+    "cleanup_failure_types": [],
+    "docker_client_pid": 1592677,
+    "owned_docker_client_exited": true,
+    "owned_container_absent": true
+  },
+  "image_id": "sha256:207ad8e3375ca3741a409c7315f96e14a89c3906caba1db170f04cb6203073bf",
+  "finished_at": "2026-10-22T14:56:49.615911+00:00"
+}

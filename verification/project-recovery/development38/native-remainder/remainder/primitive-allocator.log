@@ -1,0 +1,184 @@
+     warning: ADHD.Eventing.subscription/1 is undefined (module ADHD.Eventing is not available or is yet to be defined)
+     │
+ 167 │       "subscribe" -> ADHD.Eventing.subscription(c)
+     │                                    ~
+     │
+     └─ source38/domain.exs:167:36: ADHD.Domain.agent/1
+     └─ source38/domain.exs:168:46: ADHD.Domain.agent/1
+     └─ source38/domain.exs:276:76: ADHD.Domain.admin/1
+
+     warning: ADHD.Records.read_args/1 is undefined (module ADHD.Records is not available or is yet to be defined)
+     │
+ 176 │       "get_record" -> ADHD.Records.read_args(c)
+     │                                    ~
+     │
+     └─ source38/domain.exs:176:36: ADHD.Domain.agent/1
+     └─ source38/domain.exs:272:41: ADHD.Domain.admin/1
+
+     warning: ADHD.SourceQueries.validate/1 is undefined (module ADHD.SourceQueries is not available or is yet to be defined)
+     │
+ 182 │       x when x in ~w(source_query get_source_query cancel_source_query) -> ADHD.SourceQueries.validate(c)
+     │                                                                                               ~
+     │
+     └─ source38/domain.exs:182:95: ADHD.Domain.agent/1
+
+     warning: ADHD.Retrieval.validate/1 is undefined (module ADHD.Retrieval is not available or is yet to be defined)
+     │
+ 183 │       x when x in ~w(retrieve get_retrieval continue_retrieval cancel_retrieval retrieval_index) -> ADHD.Retrieval.validate(c)
+     │                                                                                                                    ~
+     │
+     └─ source38/domain.exs:183:116: ADHD.Domain.agent/1
+
+     warning: ADHD.Feedback.validate/1 is undefined (module ADHD.Feedback is not available or is yet to be defined)
+     │
+ 184 │       x when x in ~w(list_retrieval_attempts get_retrieval_attempt replay_retrieval get_retrieval_replay continue_retrieval_replay cancel_retrieval_replay) -> ADHD.Feedback.validate(c)
+     │                                                                                                                                                                              ~
+     │
+     └─ source38/domain.exs:184:174: ADHD.Domain.agent/1
+
+     warning: ADHD.Archive.validate/1 is undefined (module ADHD.Archive is not available or is yet to be defined)
+     │
+ 185 │       x when x in ~w(query_archive get_archive_query continue_archive_query cancel_archive_query) -> ADHD.Archive.validate(c)
+     │                                                                                                                   ~
+     │
+     └─ source38/domain.exs:185:115: ADHD.Domain.agent/1
+
+     warning: ADHD.History.validate/1 is undefined (module ADHD.History is not available or is yet to be defined)
+     │
+ 186 │       x when x in ~w(query_history get_history_query continue_history_query cancel_history_query) -> ADHD.History.validate(c)
+     │                                                                                                                   ~
+     │
+     └─ source38/domain.exs:186:115: ADHD.Domain.agent/1
+
+     warning: ADHD.ProjectRestore.validate/1 is undefined (module ADHD.ProjectRestore is not available or is yet to be defined)
+     │
+ 195 │     ADHD.ProjectRestore.validate(c)
+     │                         ~
+     │
+     └─ source38/domain.exs:195:25: ADHD.Domain.admin/1
+
+     warning: ADHD.Optimization.operations/0 is undefined (module ADHD.Optimization is not available or is yet to be defined)
+     │
+ 262 │     if op not in ADHD.Optimization.operations(),do: optional(c,"status",&check(&1 in ~w(pending done cancelled)))
+     │                                    ~
+     │
+     └─ source38/domain.exs:262:36: ADHD.Domain.admin/1
+     └─ source38/domain.exs:270:32: ADHD.Domain.admin/1
+
+     warning: ADHD.Feedback.admin_operations/0 is undefined (module ADHD.Feedback is not available or is yet to be defined)
+     │
+ 269 │     if op in ADHD.Feedback.admin_operations(),do: ADHD.Feedback.validate_admin(c)
+     │                            ~
+     │
+     └─ source38/domain.exs:269:28: ADHD.Domain.admin/1
+
+     warning: ADHD.Feedback.validate_admin/1 is undefined (module ADHD.Feedback is not available or is yet to be defined)
+     │
+ 269 │     if op in ADHD.Feedback.admin_operations(),do: ADHD.Feedback.validate_admin(c)
+     │                                                                 ~
+     │
+     └─ source38/domain.exs:269:65: ADHD.Domain.admin/1
+
+     warning: ADHD.Optimization.validate/1 is undefined (module ADHD.Optimization is not available or is yet to be defined)
+     │
+ 270 │     if op in ADHD.Optimization.operations(),do: ADHD.Optimization.validate(c)
+     │                                                                   ~
+     │
+     └─ source38/domain.exs:270:67: ADHD.Domain.admin/1
+
+     warning: ADHD.History.read_options/1 is undefined (module ADHD.History is not available or is yet to be defined)
+     │
+ 271 │     if op == "query_job", do: ADHD.History.read_options(c)
+     │                                            ~
+     │
+     └─ source38/domain.exs:271:44: ADHD.Domain.admin/1
+
+     warning: ADHD.Eventing.controls/0 is undefined (module ADHD.Eventing is not available or is yet to be defined)
+     │
+ 274 │     if op in ADHD.Eventing.controls(),do: ADHD.Eventing.validate_control(c)
+     │                            ~
+     │
+     └─ source38/domain.exs:274:28: ADHD.Domain.admin/1
+
+     warning: ADHD.Eventing.validate_control/1 is undefined (module ADHD.Eventing is not available or is yet to be defined)
+     │
+ 274 │     if op in ADHD.Eventing.controls(),do: ADHD.Eventing.validate_control(c)
+     │                                                         ~
+     │
+     └─ source38/domain.exs:274:57: ADHD.Domain.admin/1
+
+     warning: ADHD.ProjectRestore.patch/1 is undefined (module ADHD.ProjectRestore is not available or is yet to be defined)
+     │
+ 296 │           "recovery"->ADHD.ProjectRestore.patch(v)
+     │                                           ~
+     │
+     └─ source38/domain.exs:296:43: ADHD.Domain.patch/1
+
+     warning: ADHD.Resources.normalize/1 is undefined (module ADHD.Resources is not available or is yet to be defined)
+     │
+ 299 │           "resources"->ADHD.Resources.normalize(%{"resources"=>v})
+     │                                       ~
+     │
+     └─ source38/domain.exs:299:39: ADHD.Domain.patch/1
+
+     warning: ADHD.Eventing.config/1 is undefined (module ADHD.Eventing is not available or is yet to be defined)
+     │
+ 300 │           "eventing"->keys(v,~w(enabled rest_url topic_prefix timeout_ms retry_ms bearer_token tls_ca_pem retention_ms max_pending_events max_pending_bytes max_pending_filter_jobs max_pending_filter_jobs_per_subscription));ADHD.Eventing.config(%{"eventing"=>Map.reject(v,fn {_,value}->is_nil(value) end)})
+     │                                                                                                                                                                                                                                              ~
+     │
+     └─ source38/domain.exs:300:238: ADHD.Domain.patch/1
+
+     warning: ADHD.Directory.entry/2 is undefined (module ADHD.Directory is not available or is yet to be defined)
+     │
+ 317 │             optional_nonnull(v,"catalog",fn cat->keys(cat,~w(visible entries));optional_nonnull(cat,"visible",&boolean/1);optional_nonnull(cat,"entries",fn entries->list(entries,256);Enum.each(entries,&ADHD.Directory.entry(&1,true)) end) end)
+     │                                                                                                                                                                                                                          ~
+     │
+     └─ source38/domain.exs:317:218: ADHD.Domain.patch/1
+
+     warning: ADHD.Feedback.patch/1 is undefined (module ADHD.Feedback is not available or is yet to be defined)
+     │
+ 332 │           "feedback"->ADHD.Feedback.patch(v)
+     │                                     ~
+     │
+     └─ source38/domain.exs:332:37: ADHD.Domain.patch/1
+
+     warning: ADHD.Optimization.patch/1 is undefined (module ADHD.Optimization is not available or is yet to be defined)
+     │
+ 333 │           "optimization"->ADHD.Optimization.patch(v)
+     │                                             ~
+     │
+     └─ source38/domain.exs:333:45: ADHD.Domain.patch/1
+
+     warning: ADHD.Archive.patch/1 is undefined (module ADHD.Archive is not available or is yet to be defined)
+     │
+ 334 │           "archive"->ADHD.Archive.patch(v)
+     │                                   ~
+     │
+     └─ source38/domain.exs:334:35: ADHD.Domain.patch/1
+
+     warning: ADHD.Retrieval.patch/1 is undefined (module ADHD.Retrieval is not available or is yet to be defined)
+     │
+ 335 │           "retrieval"->ADHD.Retrieval.patch(v)
+     │                                       ~
+     │
+     └─ source38/domain.exs:335:39: ADHD.Domain.patch/1
+
+     warning: ADHD.History.patch/1 is undefined (module ADHD.History is not available or is yet to be defined)
+     │
+ 336 │           "history"->ADHD.History.patch(v)
+     │                                   ~
+     │
+     └─ source38/domain.exs:336:35: ADHD.Domain.patch/1
+
+     warning: ADHD.Records.context/1 is undefined (module ADHD.Records is not available or is yet to be defined)
+     │
+ 175 │         optional(c,"context",&ADHD.Records.context/1)
+     │                                            ~
+     │
+     └─ source38/domain.exs:175:44: ADHD.Domain.agent/1
+
+Running ExUnit with seed: 741154, max_cases: 4
+
+.....
+Finished in 0.2 seconds (0.2s on load, 0.00s async, 0.02s sync)
+5 tests, 0 failures

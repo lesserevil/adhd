@@ -1,0 +1,155 @@
+{
+  "suite": "project-recovery-peer-catalog-epoch",
+  "started_at": "2026-10-22T04:27:35.230185+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "actual-authenticated-v2-peer-catalog-success-held-before-target-loss",
+      "passed": true,
+      "response_sha256": "47b018ca16ff8bf26f14b51a7f713a4bbfacd448a6ef12d70548e5852cdf261e"
+    },
+    {
+      "name": "same-vm-target-restored-to-new-epoch-while-blue-remains-current",
+      "passed": true,
+      "loss_witness": {
+        "nonce": "0cfcf8b3f5784fbabf68f4efaceb7da6",
+        "project_id": "project-red",
+        "reason": "killed",
+        "store_pid": "#PID<0.323.0>",
+        "vm_pid": "976167"
+      },
+      "old_epoch": "e755b62d015fb6b7dcb78e6412407a10",
+      "new_epoch": "5656c91e30a5fffd223f1cd6aedf6cbb"
+    },
+    {
+      "name": "released-old-real-peer-response-does-not-populate-restored-directory",
+      "passed": true,
+      "peer_status": "pending"
+    },
+    {
+      "name": "fresh-epoch-real-peer-refresh-succeeds-and-blue-originals-remain-usable",
+      "passed": true,
+      "fresh_response_sha256": "2056efaa65551ab0fad1d8096ff0ce56d39558af4a74c177392cf23a6ba36228",
+      "peer_catalog_revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782"
+    }
+  ],
+  "limitations": [
+    "Native model-free/eventing-disabled two-hub cache/epoch case; no Kafka, semantic provider, container or lifecycle admission claim."
+  ],
+  "prior_attempts": [
+    {
+      "report": "recovery-peer13.json",
+      "report_sha256": "f10ec12f9c0d2885090c6b82c336f876f083ebf99fc0c3ed5c45c903cd51fdf3",
+      "result": "Harness waited for fresh request before releasing old synchronous worker request; failure retained, corrected ordering does not change old-result rejection expectation."
+    },
+    {
+      "report": "recovery-peer13b.json",
+      "report_sha256": "445de0d95b8dbcb822aff25579ed8cc132205bf54c367701a55ec54d1d3885af",
+      "result": "Harness fresh-refresh3s deadline shorter than configured10s network timeout; corrected to10s+2s scheduling, immediate old-directory-empty assertion preserved."
+    }
+  ],
+  "artifact_sha256": "1741225b1a276770ec9f6631e63fe8646ee5f22808fad8a5acfe67a8aed11bd7",
+  "harness_sha256": "018698cdd7ed7de734d632b3fe1f11f3a7adb39c036d67170a8a903537c7f1ac",
+  "scope": "Actual native v2 peer HTTP catalog refresh across live target writer loss/restore; no Kafka/model/provider or container claim",
+  "limits": {
+    "startup_seconds": 150,
+    "relay_slots": 4,
+    "relay_requests": 128,
+    "hold_seconds": 10,
+    "epoch_transition_seconds": 8,
+    "fresh_refresh_seconds": 12
+  },
+  "dependency_sha256": {
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/tests/project_recovery_live_loss.exs": "a36c655fa35d1e7dab01feadfd5b99f2238e02c705570a62dd684082468b3447",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/tests/multi_support.py": "606c0cc117578fd43dff64c59bbb87746826077927c68db8a359f75fb1f6c24a",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/tests/project_recovery_restore.py": "cf086ac2ccbbdc024654199938f705bdab1f366ba25c8571fb7627ef8d7ec140",
+    "/home/horde/src/adhd/.worktrees/acceptance/_build/nr38b/frozen/components/hub/project-recovery/interface.schema.json": "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  },
+  "relay_observations": [
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:28:29.454Z",
+        "items": [
+          {
+            "aliases": [
+              "held-catalog"
+            ],
+            "canonical": true,
+            "description": "Actual peer canonical catalog marker",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "held-catalog",
+              "tenant": "fixture"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782",
+        "server_id": "b9a2c800d34e46cfa680aeed715f3b93",
+        "visible": true
+      },
+      "response_sha256": "47b018ca16ff8bf26f14b51a7f713a4bbfacd448a6ef12d70548e5852cdf261e",
+      "held_index": 0,
+      "released": true,
+      "write_succeeded": false
+    },
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:28:30.421Z",
+        "items": [
+          {
+            "aliases": [
+              "held-catalog"
+            ],
+            "canonical": true,
+            "description": "Actual peer canonical catalog marker",
+            "relationship": "contained",
+            "scope": {
+              "host": "github.com",
+              "provider": "github",
+              "resource": "held-catalog",
+              "tenant": "fixture"
+            }
+          }
+        ],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "286ed18c2b4657e4814a95c3d0381b08d134f0203c0c9461c48ce2557aa45782",
+        "server_id": "b9a2c800d34e46cfa680aeed715f3b93",
+        "visible": true
+      },
+      "response_sha256": "2056efaa65551ab0fad1d8096ff0ce56d39558af4a74c177392cf23a6ba36228",
+      "held_index": 1,
+      "released": true,
+      "write_succeeded": true
+    },
+    {
+      "status": 200,
+      "response": {
+        "generated_at": "2026-10-22T04:28:30.960Z",
+        "items": [],
+        "max_age_ms": 10000,
+        "next_cursor": null,
+        "project_id": "project-red",
+        "protocol_version": 2,
+        "revision": "7b610a9add1e8084a7b6ef37ad06f676673def9c88066474b002581eab7f9c91",
+        "server_id": "b9a2c800d34e46cfa680aeed715f3b93",
+        "visible": false
+      },
+      "response_sha256": "bdaf3f568b7b46299d388f909f10ce889cb30038507606835c0da0765e2454a9",
+      "held_index": null,
+      "released": false,
+      "write_succeeded": true
+    }
+  ],
+  "finished_at": "2026-10-22T04:28:31.019947+00:00"
+}

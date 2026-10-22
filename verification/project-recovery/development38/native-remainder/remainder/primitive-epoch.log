@@ -1,0 +1,24 @@
+Running ExUnit with seed: 169895, max_cases: 4
+
+..
+
+  1) test serialized target guard rejects stale origin before executing callback (ProjectEpochFencesTest)
+     tests/project_epoch_fences.exs:61
+     match (=) failed
+     code:  assert {:reply, {:ok, :read, _}, _} =
+              ADHD.Store.handle_call({:transaction, epoch("b"), [{"red", epoch("e")}], callback}, nil, %{
+                state: state
+              })
+     left:  {:reply, {:ok, :read, _}, _}
+     right: {:reply, {:error, "INTERNAL"},
+             %{
+               state: %{
+                 project_epoch: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+               }
+             }}
+     stacktrace:
+       tests/project_epoch_fences.exs:68: (test)
+
+
+Finished in 0.3 seconds (0.2s on load, 0.00s async, 0.1s sync)
+3 tests, 1 failure

@@ -1,0 +1,49 @@
+- main:
+  - complementary:
+    - strong: ADHD
+    - paragraph: Agentic Distributed Harness Depot
+    - navigation "Workspace":
+      - button "Overview"
+      - button "Information"
+      - button "Subscriptions"
+      - button "Activity"
+      - button "Projects"
+      - button "Recovery"
+      - button "Events"
+      - button "Feedback"
+      - button "Optimization"
+      - button "Settings"
+      - button "Users"
+      - button "Agents"
+    - button "Log out"
+    - text: Project
+    - combobox "Project":
+      - option "Shared project label (project-red)" [selected]
+      - option "Shared project label (project-blue)"
+      - option "Shared project label (project-hidden)"
+    - paragraph: "Project ID: project-red"
+  - article:
+    - heading "Recovery" [level=1]
+    - button "Refresh"
+    - paragraph: Last checked 10/22/2026, 7:24:28 AM
+    - paragraph: Complete your name and email in Users.
+    - paragraph: Recovery replaces only a missing or logically empty project. Current accounts, permissions, settings and other projects are preserved.
+    - paragraph: Target project-red · recovery_required
+    - group: Recovery settings
+    - paragraph: Place an offline project backup bundle in the configured backup directory before planning. Enter its backup ID and exact manifest SHA256. Completed restore starts a fresh event stream; data accepted after the backup is not recovered.
+    - text: Backup ID
+    - textbox "Backup ID": browser-backup
+    - text: Manifest SHA256
+    - textbox "Manifest SHA256": 12d9292d15d580c7dd1e680ace5ac11a15b165faa58294583fd6d3e78d7d3628
+    - text: Allow restore when initialized target files are missing
+    - checkbox "Allow restore when initialized target files are missing" [checked]
+    - button "Review restore plan"
+    - heading "Recovery status" [level=2]
+    - paragraph: recovery_required · 6 retained operations
+    - paragraph: plan · ready
+    - group: Details
+    - group: "Details { \"aliases\": [], \"backup\": { \"bytes\": 18702, \"configuration_sha256\": \"4284220c5495add3d2e79d70ea2cc82eff8275d85f157bf0f654f846b21976c7\", \"records\": 117, \"sequence\": 4, \"snapshot_sha256\": \"0e1393174a56ea2b8dc7b2167acf71d93967a903d8931a927ecfc5b2dfd18217\", \"storage_generation\": 12 }, \"backup_id\": \"browser-backup\", \"config_revision\": 4, \"created_at\": \"2026-10-22T07:24:28.932Z\", \"expires_at\": \"2026-10-22T07:39:28.932Z\", \"manifest_sha256\": \"12d9292d15d580c7dd1e680ace5ac11a15b165faa58294583fd6d3e78d7d3628\", \"mode\": \"restore\", \"plan_id\": \"restoreplan_bbe7ea70e945ed42e044c156b44d7cf8_5\", \"plan_sha256\": \"794a4167567bdd906b35fffd937844c20930eec21c6f840edfc2d3727bedccf8\", \"policy\": { \"max_pending_bytes\": 1073741824, \"max_pending_events\": 100000, \"max_pending_filter_jobs\": 256, \"max_pending_filter_jobs_per_subscription\": 64, \"retention_ms\": 604800000, \"topic_prefix\": \"adhd\" }, \"project_id\": \"project-red\", \"references\": { \"agents\": 2, \"proof_sha256\": \"83087d484e6878cc63ccf01cc47feb598e60c02e724803bf21824f035f37c82a\", \"users\": 0 }, \"selected\": { \"allocation_epoch\": \"c8fb777643edc88e8d79ec567d71ef0a\", \"project_epoch\": \"402935ef5168b8c62072296405d3c2c6\", \"route_generation\": 2, \"topic\": \"adhd.d0fa925dc97cc8cd.73786e979410fe19.r402935ef5168b8c62072296405d3c2c6.events.v1\", \"transport_enabled\": true }, \"server_id\": \"fc9d0ed33cfc200a58aacb3160a9f162\", \"target\": { \"availability\": \"missing\", \"project_epoch\": \"8bb8351aeaebf51f5fcc415dceb7ee77\", \"route_generation\": 1, \"watermark\": { \"sequence\": 0, \"state_sha256\": null, \"storage_generation\": 1 } } }"
+    - button "Apply reviewed plan"
+    - button "Refresh recovery status"
+  - status
+  - alert

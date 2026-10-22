@@ -1,0 +1,386 @@
+- main:
+  - complementary:
+    - strong: ADHD
+    - paragraph: Agentic Distributed Harness Depot
+    - navigation "Workspace":
+      - button "Overview"
+      - button "Information"
+      - button "Subscriptions"
+      - button "Activity"
+      - button "Projects"
+      - button "Recovery"
+      - button "Events"
+      - button "Feedback"
+      - button "Optimization"
+      - button "Settings"
+      - button "Users"
+      - button "Agents"
+    - button "Log out"
+    - text: Project
+    - combobox "Project":
+      - option "Shared project label (project-red)" [selected]
+      - option "Shared project label (project-blue)"
+      - option "Shared project label (project-hidden)"
+    - paragraph: "Project ID: project-red"
+  - article:
+    - heading "Projects" [level=1]
+    - button "Refresh"
+    - paragraph: Last checked 10/22/2026, 7:10:56 AM
+    - 'heading "Project settings: Shared project label" [level=2]'
+    - paragraph: Revision 6 · reload ready
+    - text: Override matcher
+    - checkbox "Override matcher"
+    - text: Override threshold ppm
+    - checkbox "Override threshold ppm"
+    - text: Override federation
+    - checkbox "Override federation" [checked]
+    - text: Override history
+    - checkbox "Override history"
+    - text: Override retrieval
+    - checkbox "Override retrieval"
+    - text: Override archive
+    - checkbox "Override archive"
+    - text: Override feedback
+    - checkbox "Override feedback"
+    - text: Override optimization
+    - checkbox "Override optimization"
+    - text: Override eventing
+    - checkbox "Override eventing" [checked]
+    - group "matcher":
+      - text: matcher model
+      - textbox "model": Nemotron-Deciffusion-8B-v2.1
+      - text: retry ms
+      - spinbutton "retry ms": "1000"
+      - text: timeout ms
+      - spinbutton "timeout ms": "3000"
+      - text: url
+      - textbox "url": http://127.0.0.1:34787/v1/systemone
+    - text: threshold ppm
+    - spinbutton "threshold ppm": "812345"
+    - group "federation":
+      - text: federation
+      - group "Information catalog":
+        - text: Information catalog
+        - group "Information sources":
+          - text: Information sources
+          - group "Source 1":
+            - text: Source 1 Source provider
+            - combobox "Source provider":
+              - option "github" [selected]
+              - option "slack"
+              - option "jira"
+              - option "other"
+            - text: Source host
+            - textbox "Source host": github.com
+            - text: Source tenant
+            - textbox "Source tenant": browser-desktop
+            - text: Source resource
+            - textbox "Source resource": owned-repo
+            - text: Source description
+            - textbox "Source description": Project-owned browser source desktop
+            - text: Information relationship
+            - combobox "Information relationship":
+              - option "contained" [selected]
+              - option "derived"
+              - option "referenced"
+            - text: Canonical owner
+            - checkbox "Canonical owner" [checked]
+            - text: Source aliases, one per line
+            - textbox "Source aliases, one per line"
+            - text: Approved publication IDs, one per line
+            - textbox "Approved publication IDs, one per line": publication_19e4d4341a94a4f9296d1056c93f9800_3
+            - button "Remove source"
+          - button "Add source"
+        - text: Publish information catalog
+        - checkbox "Publish information catalog" [checked]
+      - text: description
+      - textbox "description": Acceptance isolation fixture
+      - group "export publication ids":
+        - text: export publication ids One value per line
+        - textbox "One value per line"
+      - text: retry ms
+      - spinbutton "retry ms": "500"
+      - text: Share user identities
+      - checkbox "Share user identities"
+      - text: timeout ms
+      - spinbutton "timeout ms": "1000"
+    - group "History queries":
+      - text: History queries
+      - group "History run budgets":
+        - text: History run budgets History request byte budget
+        - spinbutton "History request byte budget": "262144"
+        - text: History call budget
+        - spinbutton "History call budget": "64"
+        - text: History primary record budget
+        - spinbutton "History primary record budget": "128"
+        - text: History active time budget (ms)
+        - spinbutton "History active time budget (ms)": "30000"
+      - text: History context depth
+      - spinbutton "History context depth": "2"
+      - text: History context record limit
+      - spinbutton "History context record limit": "32"
+      - text: Enable history queries
+      - checkbox "Enable history queries" [checked]
+      - text: Maximum history state (bytes)
+      - spinbutton "Maximum history state (bytes)": "33554432"
+      - text: History minimum confidence (ppm)
+      - spinbutton "History minimum confidence (ppm)": "500000"
+      - text: History evaluator model (blank uses subscription matcher)
+      - textbox "History evaluator model (blank uses subscription matcher)"
+      - text: History evaluator version
+      - textbox "History evaluator version": configured-model-v1
+      - text: History model request limit (bytes)
+      - spinbutton "History model request limit (bytes)": "6144"
+      - text: History model timeout (ms)
+      - spinbutton "History model timeout (ms)": "3000"
+      - text: History evaluator URL (blank uses subscription matcher)
+      - textbox "History evaluator URL (blank uses subscription matcher)"
+    - group "Retrieval indexes":
+      - text: Retrieval indexes
+      - group "Retrieval run budgets":
+        - text: Retrieval run budgets Retrieval request byte budget
+        - spinbutton "Retrieval request byte budget": "262144"
+        - text: Retrieval model call budget
+        - spinbutton "Retrieval model call budget": "32"
+        - text: Retrieval semantic record budget
+        - spinbutton "Retrieval semantic record budget": "32"
+        - text: Retrieval active time budget (ms)
+        - spinbutton "Retrieval active time budget (ms)": "30000"
+      - text: Index build batch size
+      - spinbutton "Index build batch size": "8"
+      - text: Enable retrieval
+      - checkbox "Enable retrieval" [checked]
+      - text: Maximum derived index state (bytes)
+      - spinbutton "Maximum derived index state (bytes)": "33554432"
+      - text: Maximum retrieval query state (bytes)
+      - spinbutton "Maximum retrieval query state (bytes)": "16777216"
+      - text: Maximum indexed publications
+      - spinbutton "Maximum indexed publications": "10000"
+      - text: Retrieval minimum usefulness (ppm)
+      - spinbutton "Retrieval minimum usefulness (ppm)": "500000"
+      - text: Retrieval evaluator model (blank uses subscription matcher)
+      - textbox "Retrieval evaluator model (blank uses subscription matcher)"
+      - text: Maximum model fragments per candidate
+      - spinbutton "Maximum model fragments per candidate": "4"
+      - text: Retrieval evaluator version
+      - textbox "Retrieval evaluator version": configured-model-v1
+      - group "Index recipe":
+        - text: Index recipe Index fragment size (bytes)
+        - spinbutton "Index fragment size (bytes)": "1024"
+        - text: Index context depth
+        - spinbutton "Index context depth": "1"
+        - text: Index context record limit
+        - spinbutton "Index context record limit": "8"
+        - text: Index communication context
+        - checkbox "Index communication context" [checked]
+        - text: Text ranking weight
+        - spinbutton "Text ranking weight": "1"
+        - text: Score semantic candidates
+        - checkbox "Score semantic candidates" [checked]
+        - text: Semantic ranking weight
+        - spinbutton "Semantic ranking weight": "2"
+        - text: Semantic candidate window
+        - spinbutton "Semantic candidate window": "32"
+        - text: Index tokenizer
+        - combobox "Index tokenizer":
+          - option "words" [selected]
+          - option "identifiers"
+      - text: Retrieval model request limit (bytes)
+      - spinbutton "Retrieval model request limit (bytes)": "6144"
+      - text: Retrieval model timeout (ms)
+      - spinbutton "Retrieval model timeout (ms)": "3000"
+      - text: Retrieval evaluator URL (blank uses subscription matcher)
+      - textbox "Retrieval evaluator URL (blank uses subscription matcher)"
+    - group "Archive questions":
+      - text: Archive questions Successful search audit rate (ppm)
+      - spinbutton "Successful search audit rate (ppm)": "100000"
+      - group "Archive stage budgets":
+        - text: Archive stage budgets
+        - group "Original support assessment":
+          - text: Original support assessment Request byte budget
+          - spinbutton "Request byte budget": "65536"
+          - text: Model call budget
+          - spinbutton "Model call budget": "1"
+          - text: Record budget
+          - spinbutton "Record budget": "128"
+          - text: Active time budget (ms)
+          - spinbutton "Active time budget (ms)": "30000"
+        - group "Sampled full scan audit":
+          - text: Sampled full scan audit Request byte budget
+          - spinbutton "Request byte budget": "262144"
+          - text: Model call budget
+          - spinbutton "Model call budget": "64"
+          - text: Record budget
+          - spinbutton "Record budget": "128"
+          - text: Active time budget (ms)
+          - spinbutton "Active time budget (ms)": "30000"
+        - group "Intent planning":
+          - text: Intent planning Request byte budget
+          - spinbutton "Request byte budget": "16384"
+          - text: Model call budget
+          - spinbutton "Model call budget": "1"
+          - text: Record budget
+          - spinbutton "Record budget": "1"
+          - text: Active time budget (ms)
+          - spinbutton "Active time budget (ms)": "3000"
+        - group "Candidate retrieval":
+          - text: Candidate retrieval Request byte budget
+          - spinbutton "Request byte budget": "262144"
+          - text: Model call budget
+          - spinbutton "Model call budget": "32"
+          - text: Record budget
+          - spinbutton "Record budget": "32"
+          - text: Active time budget (ms)
+          - spinbutton "Active time budget (ms)": "30000"
+        - group "Fallback full scan":
+          - text: Fallback full scan Request byte budget
+          - spinbutton "Request byte budget": "262144"
+          - text: Model call budget
+          - spinbutton "Model call budget": "64"
+          - text: Record budget
+          - spinbutton "Record budget": "128"
+          - text: Active time budget (ms)
+          - spinbutton "Active time budget (ms)": "30000"
+      - text: Default archive mode
+      - combobox "Default archive mode":
+        - option "search"
+        - option "scan"
+        - option "search_then_scan" [selected]
+      - text: Enable archive questions
+      - checkbox "Enable archive questions" [checked]
+      - text: Maximum archive workflow state (bytes)
+      - spinbutton "Maximum archive workflow state (bytes)": "33554432"
+      - text: Archive planner minimum confidence (ppm)
+      - spinbutton "Archive planner minimum confidence (ppm)": "500000"
+      - text: Archive planner model (blank uses history evaluator)
+      - textbox "Archive planner model (blank uses history evaluator)"
+      - text: Archive planner version
+      - textbox "Archive planner version": configured-model-v1
+      - text: Archive planner request limit (bytes)
+      - spinbutton "Archive planner request limit (bytes)": "6144"
+      - text: Archive planner timeout (ms)
+      - spinbutton "Archive planner timeout (ms)": "3000"
+      - text: Archive planner URL (blank uses history evaluator)
+      - textbox "Archive planner URL (blank uses history evaluator)"
+    - group "Feedback and replay":
+      - text: Feedback and replay
+      - group "Per-branch replay budgets":
+        - text: Per-branch replay budgets Replay request bytes per branch
+        - spinbutton "Replay request bytes per branch": "2097152"
+        - text: Replay model calls per branch
+        - spinbutton "Replay model calls per branch": "256"
+        - text: Replay work records per branch
+        - spinbutton "Replay work records per branch": "1024"
+        - text: Replay active time per branch (ms)
+        - spinbutton "Replay active time per branch (ms)": "120000"
+      - text: Replay native build batch
+      - spinbutton "Replay native build batch": "8"
+      - text: Capture terminal Archive attempts
+      - checkbox "Capture terminal Archive attempts" [checked]
+      - text: Maximum active replays
+      - spinbutton "Maximum active replays": "16"
+      - text: Maximum retained attempts
+      - spinbutton "Maximum retained attempts": "1024"
+      - text: Maximum retained replays
+      - spinbutton "Maximum retained replays": "256"
+      - text: Maximum feedback and replay state (bytes)
+      - spinbutton "Maximum feedback and replay state (bytes)": "33554432"
+    - group "Adaptive index optimization":
+      - text: Adaptive index optimization
+      - group "Aggregate proposal budgets":
+        - text: Aggregate proposal budgets Aggregate request bytes
+        - spinbutton "Aggregate request bytes": "16777216"
+        - text: Aggregate model calls
+        - spinbutton "Aggregate model calls": "512"
+        - text: Aggregate record work
+        - spinbutton "Aggregate record work": "16384"
+        - text: Aggregate active work (ms)
+        - spinbutton "Aggregate active work (ms)": "900000"
+      - text: Candidate index build batch
+      - spinbutton "Candidate index build batch": "8"
+      - text: Automatic proposal cooldown (ms)
+      - spinbutton "Automatic proposal cooldown (ms)": "300000"
+      - text: Enable adaptive index optimization
+      - checkbox "Enable adaptive index optimization"
+      - text: Maximum active proposals
+      - spinbutton "Maximum active proposals": "4"
+      - text: Maximum native storage growth (ppm)
+      - spinbutton "Maximum native storage growth (ppm)": "2000000"
+      - text: Maximum retained proposals
+      - spinbutton "Maximum retained proposals": "64"
+      - text: Maximum proposal and candidate state (bytes)
+      - spinbutton "Maximum proposal and candidate state (bytes)": "33554432"
+      - text: Maximum total request bytes delta
+      - spinbutton "Maximum total request bytes delta": "0"
+      - text: Maximum total model calls delta
+      - spinbutton "Maximum total model calls delta": "0"
+      - text: Maximum recipe variants
+      - spinbutton "Maximum recipe variants": "8"
+      - text: Minimum correction controls
+      - spinbutton "Minimum correction controls": "1"
+      - text: Minimum fresh held-out groups
+      - spinbutton "Minimum fresh held-out groups": "2"
+      - text: Minimum negation controls
+      - spinbutton "Minimum negation controls": "1"
+      - text: Minimum nonempty no-evidence controls
+      - spinbutton "Minimum nonempty no-evidence controls": "1"
+      - text: Minimum held-out positives
+      - spinbutton "Minimum held-out positives": "1"
+      - text: Minimum training positives
+      - spinbutton "Minimum training positives": "1"
+      - text: Minimum confirmed recall gain (ppm)
+      - spinbutton "Minimum confirmed recall gain (ppm)": "1"
+      - text: Minimum regression groups
+      - spinbutton "Minimum regression groups": "2"
+      - text: Minimum training groups
+      - spinbutton "Minimum training groups": "2"
+      - text: Optimization mode
+      - combobox "Optimization mode":
+        - option "review" [selected]
+        - option "automatic"
+      - text: Required independent confirmed gaps
+      - spinbutton "Required independent confirmed gaps": "2"
+    - group "Project event policy":
+      - text: Project event policy
+      - paragraph: Enable Override eventing to customize selected fields. Unselected fields inherit current server settings. Broker connection and credentials remain server settings.
+      - text: Override Event topic prefix
+      - checkbox "Override Event topic prefix" [checked]
+      - text: Event topic prefix
+      - textbox "Event topic prefix": browser_desktop
+      - text: Override Event retention (ms)
+      - checkbox "Override Event retention (ms)" [checked]
+      - text: Event retention (ms)
+      - spinbutton "Event retention (ms)": "3600000"
+      - text: Override Project maximum pending events
+      - checkbox "Override Project maximum pending events" [checked]
+      - text: Project maximum pending events
+      - spinbutton "Project maximum pending events": "10000"
+      - text: Override Project maximum pending bytes
+      - checkbox "Override Project maximum pending bytes" [checked]
+      - text: Project maximum pending bytes
+      - spinbutton "Project maximum pending bytes": "10485760"
+      - text: Override Project maximum pending filter jobs
+      - checkbox "Override Project maximum pending filter jobs" [checked]
+      - text: Project maximum pending filter jobs
+      - spinbutton "Project maximum pending filter jobs": "8"
+      - text: Override Project maximum pending filter jobs per subscription
+      - checkbox "Override Project maximum pending filter jobs per subscription" [checked]
+      - text: Project maximum pending filter jobs per subscription
+      - spinbutton "Project maximum pending filter jobs per subscription": "4"
+    - button "Validate settings"
+    - button "Save project settings"
+    - heading "Retrieval index" [level=2]
+    - paragraph: ready · archive watermark 127
+    - heading "Active index" [level=3]
+    - paragraph: 14 of 14 publications · ready
+    - paragraph: Index snapshot 127 · complete through 127
+    - group: Details
+    - heading "Previous index" [level=3]
+    - paragraph: 13 of 13 publications · ready
+    - paragraph: Index snapshot 125 · complete through 125
+    - group: Details
+    - button "Rebuild index"
+    - heading "Federation directory" [level=2]
+    - button "Refresh directory"
+  - status
+  - alert

@@ -1,0 +1,66 @@
+{
+  "schema": "adhd/controlled-sdk-image-result@1",
+  "passed": false,
+  "plan_sha256": "09aee394469f52201143aa64a8f9c47de888079c4f0d5bf758093e67576e4bd4",
+  "driver_sha256": "e2d255cda3506854976d516a8c6baa317401b2589333d37766378ada02aa39e8",
+  "frozen_inputs_unchanged": true,
+  "failure_type": null,
+  "image_config_identity": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+  "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+  "unrun_suites": [
+    "archive_sdk",
+    "history_sdk",
+    "retrieval_sdk"
+  ],
+  "rows": [
+    {
+      "suite": "feedback_sdk",
+      "argv": [
+        "/home/horde/src/adhd/.venv/bin/python",
+        "-B",
+        "/home/horde/src/adhd/_build/sk40c/frozen/tests/controlled_sdk_runtime.py",
+        "--plan",
+        "/home/horde/src/adhd/_build/sk40c/plan.json",
+        "--job",
+        "feedback_sdk",
+        "--reviewed-plan-sha256",
+        "09aee394469f52201143aa64a8f9c47de888079c4f0d5bf758093e67576e4bd4"
+      ],
+      "exit_code": 1,
+      "failure_type": null,
+      "cleanup_failure_type": null,
+      "cleanup": [
+        {
+          "kind": "native-producer",
+          "artifact_sha256": "c635c2429c9af646944f740194e841260ed6e102e5e148272a247883ed66ccd3",
+          "client_pid": 2096821,
+          "client_starttime": "20991186",
+          "native_vms": [
+            {
+              "pid": 2096821,
+              "starttime": "20991186",
+              "executable_sha256": "bcda8c7b99851d3486f04b86213d9570ba1fe90301f985747ef541224eddae2d",
+              "fence_mapped": true,
+              "maps_sha256": "a99bfab16dbc47bfd6d311fc14fee9959cb02dd84e7af7a6b24854a8677d6516"
+            }
+          ],
+          "observed_absent": true
+        },
+        {
+          "kind": "docker",
+          "name": "adhd-test-093bbfe0f2fc",
+          "image": "sha256:e2ca08e98cc9fae67e87dbd4bf578a60b6073f5e6263f11aed18c360032ffa21",
+          "client_pid": 2100535,
+          "client_starttime": "20993949",
+          "observed_absent": true
+        }
+      ],
+      "passed": false,
+      "elapsed_seconds": 59.89286207497935,
+      "log_sha256": "db838b5f3dd36004ba2d5301da2d767311df7a80aa3052f8e813908713288d2a",
+      "report_sha256": null,
+      "custody_report_sha256": "cd04fee33406fd8379835fd506554fda59a09929a93a20e5c84fab738c73c975"
+    }
+  ],
+  "scope": "Explicit current admitted image SDK17 only. Original11-suite image38 prefix100 remains historical, source38 aggregate remains false. No single-artifact117, native full matrix or release claim."
+}

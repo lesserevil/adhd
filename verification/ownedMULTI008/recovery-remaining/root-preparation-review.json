@@ -52,5 +52,42 @@
     "original_hostile_assertions_retained": 4,
     "finding": "Live actual image BEAM proc executable magic link can be read, but resolving its container path on the host fails. Corrected to readlink plus repeated PID starttime/namespace/command checks.",
     "application_execution": "UNSTARTED"
+  },
+  "http7": {
+    "commit": "cd38459",
+    "isolated_finalization_checks_passed": 7,
+    "original_assertions_retained": {
+      "acceptance": 55,
+      "agent_admission": 20,
+      "federation": 7,
+      "private": 5,
+      "rejections": 19,
+      "restore": 34,
+      "uninitialized_move": 11
+    },
+    "application_execution": "UNSTARTED"
+  },
+  "controlled": {
+    "commits": [
+      "52dfdab",
+      "409ef0e",
+      "38c64c3",
+      "87fcf49",
+      "808fc69"
+    ],
+    "isolated_checks_passed": 10,
+    "plan_sha256": "e3dc9dd286ba1bff304bd571669af861127b591d8856e278c5a0b0e683c50d7d",
+    "full_frozen_files": 261,
+    "external_bindings": 18,
+    "admission_bindings": 4,
+    "original_entrypoints_exact": 15,
+    "expected_groups": 117,
+    "application_execution": "UNSTARTED",
+    "scope": "Exact image38 and actual retained SDK producers. Native provider fence; image typed controlled endpoint selection and no redirects, without physical image egress isolation claim.",
+    "review_fixes": [
+      "Strict exact Docker missing-object classification",
+      "Known container identity before cleanup",
+      "File and directory fsync of exclusive once marker before compiler/child"
+    ]
   }
 }

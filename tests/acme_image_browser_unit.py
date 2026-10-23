@@ -1,5 +1,6 @@
 """Pure browser input custody and independent partial-start cleanup checks."""
 import asyncio
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -8,9 +9,22 @@ import unittest
 from unittest.mock import patch
 
 from acme_image_browser import browser_binding, verify_browser, inspect, run
+from acme_browser_flow import digest as flow_digest
 
 
 class BrowserInputs(unittest.TestCase):
+    def test_bootstrap_refuses_fifo_and_redirected_plan_before_read(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            fifo = root / 'fifo'
+            os.mkfifo(fifo)
+            with self.assertRaises(AssertionError): flow_digest(fifo)
+            plain = root / 'plan.json'
+            plain.write_text('{}')
+            alias = root / 'alias'
+            alias.symlink_to(plain)
+            with self.assertRaises(AssertionError): flow_digest(alias)
+
     def test_exact_tree_rejects_replaced_added_and_redirected_inputs(self):
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)

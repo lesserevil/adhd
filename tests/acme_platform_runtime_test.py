@@ -183,6 +183,22 @@ class Deployment(unittest.TestCase):
   self.assertFalse(scenario.managed_health(Client(URLError(ConnectionRefusedError(errno.ECONNREFUSED,'refused')))))
   for error in [URLError(OSError(errno.EHOSTUNREACH,'unreachable')),ValueError('wrong TLS')]:
    with self.assertRaises(type(error)):scenario.managed_health(Client(error))
+ def test_private_configured_origin_changes_headers_only(self):
+  class ActualClient:
+   def __init__(self,base):self.base=base;self.cookies=object();self.csrf='actual-csrf';self.calls=[]
+   def request(self,path,data=None,*,headers=None,timeout=5):
+    self.calls.append((path,data,headers,timeout));return 200,{},{}
+  client=scenario.private_bootstrap_client(ActualClient,'http://127.0.0.1:18866')
+  cookies=client.cookies;client.request('/admin/session');self.assertEqual(client.calls[-1][2],{})
+  client.select_configured_origin('https://one.acme.test:443')
+  client.request('/admin/api',{'op':'tls_status'},headers={'X-Existing':'kept'},timeout=3)
+  self.assertEqual(client.calls[-1],('/admin/api',{'op':'tls_status'},{'X-Existing':'kept','Origin':'https://one.acme.test:443'},3))
+  self.assertIs(client.cookies,cookies);self.assertEqual(client.csrf,'actual-csrf');self.assertEqual(client.base,'http://127.0.0.1:18866')
+  for origin in ['http://one.acme.test:443','https://foreign.test','https://one.acme.test:443/','https://one.acme.test:443\r\nX: y']:
+   with self.assertRaises(AssertionError):client.select_configured_origin(origin)
+  for headers in [{'Origin':'https://foreign.test'},{'origin':'https://one.acme.test:443'}]:
+   with self.assertRaises(AssertionError):client.request('/admin/api',headers=headers)
+  with self.assertRaises(AssertionError):scenario.private_bootstrap_client(ActualClient,'https://one.acme.test:443')
  def test_private_http_startup_only_refusal_reset_pending(self):
   class Client:
    base='http://127.0.0.1:18866'

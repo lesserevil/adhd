@@ -21,6 +21,22 @@ def wait(test,seconds,label):
  raise AssertionError(label)
 
 
+def private_bootstrap_client(client_type,base):
+ """Only the private transport Origin changes; session/CSRF/cookies stay genuine."""
+ assert re.fullmatch(r'http://127[.]0[.]0[.]1:[1-9][0-9]{0,4}',base)
+ class ConfiguredOriginClient(client_type):
+  configured_origin=None
+  def select_configured_origin(self,origin):
+   assert origin=='https://one.acme.test:443'
+   self.configured_origin=origin
+  def request(self,path,data=None,*,headers=None,timeout=5):
+   selected=dict(headers or {})
+   assert not any(key.lower()=='origin' for key in selected),'Bootstrap Origin is fixed by scenario'
+   if self.configured_origin is not None:selected['Origin']=self.configured_origin
+   return super().request(path,data,headers=selected,timeout=timeout)
+ return ConfiguredOriginClient(base)
+
+
 def private_startup_health(client):
  # Only the newly published private plain-HTTP socket has this startup allowance.
  assert re.fullmatch(r'http://127[.]0[.]0[.]1:[1-9][0-9]{0,4}',client.base)
@@ -70,6 +86,12 @@ def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password,cert
  # Relay and gateway are already owned by the driver before public enable.
  assert relay.server is not None
  admin.mutate('config_update',patch={'tls':tls_patch,'public_url':public_url})
+ # Configured publicURL controls Origin even while the private transport polls
+ # initial issuance. Prove oldOrigin denied; keep the actual existing session.
+ admin.api({'op':'tls_status'},expected=403)
+ admin.select_configured_origin(public_url)
+ admin.api({'op':'tls_status'})
+ check('configured_public_origin_transition_preserves_actual_private_session')
  initial=wait(lambda:(v if (v:=status())['https_state']=='ready' else None),35,'Real platform HTTP01 issuance')
  proofs=relay.snapshot();assert any(e['upstream_status']==200 for e in proofs['events'])
  assert not proofs['errors']

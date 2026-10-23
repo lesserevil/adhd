@@ -341,7 +341,7 @@ def execute(work,plan):
  from acme_runtime import PublicClient
  from acme_acceptance import initialize
  from acme_acceptance_fixtures import certificate_facts
- from acme_platform_scenario import run,wait
+ from acme_platform_scenario import run,wait,private_bootstrap_client
  from acme_platform_plan import recipe
  from kafka_oauth_custody import NamespaceLease
  verify(work,plan);request=plan['request'];target=plan['target'];ca=check_ca(plan)
@@ -390,7 +390,7 @@ def execute(work,plan):
     adapter.start()
     gateway=IssuerGateway(spec['gateway'],spec['subnet'],[adapter.client_ip()]);gateway.start()
     relay=ChallengeRelay(upstreams={'one.acme.test':('127.0.0.2',80)});relay.start()
-    admin=PublicClient('http://127.0.0.1:'+str(request['ownership'].get('private_http_port',18766)))
+    admin=private_bootstrap_client(PublicClient,'http://127.0.0.1:'+str(request['ownership'].get('private_http_port',18766)))
     assert wait(lambda: __import__('acme_platform_scenario').private_startup_health(admin),45,'Private Admin startup')
     password=adapter.exec(['/bin/cat','/config/initial-admin-password.txt'],sensitive=True).decode()
     password=re.search(r'^Password: (.+)$',password,re.M)[1];admin.login('admin',password)

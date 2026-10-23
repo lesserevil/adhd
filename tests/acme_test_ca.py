@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Owned loopback-only Pebble fixture; never contacts a public ACME service."""
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -39,6 +40,17 @@ def verify_fixture_tools(tools):
     return pins
 
 
+def parent_death_guard(expected_parent, prctl):
+    # Initialize libc in the single-threaded parent; only this scalar call and
+    # the parent-ID race check run between fork and exec. Never mutate the owner.
+    def child_only():
+        if prctl(1, signal.SIGKILL, 0, 0, 0) != 0:  # PR_SET_PDEATHSIG
+            os._exit(126)
+        if os.getppid() != expected_parent:
+            os._exit(127)
+    return child_only
+
+
 def run(args):
     verify_fixture_tools(args.tools)
     work = args.work.resolve()
@@ -72,6 +84,10 @@ def run(args):
       'dns':[str(binaries['dns']),'-dnsserver','127.0.0.1:19153','-management','127.0.0.1:19102',
         '-defaultIPv4','127.0.0.1','-defaultIPv6','','-http01','','-https01','','-tlsalpn01','','-doh',''],
       'pebble':[str(binaries['pebble']),'-config',str(work/'config.json'),'-dnsserver','127.0.0.1:19153','-strict']}
+    libc=ctypes.CDLL(None,use_errno=True)
+    libc.prctl.argtypes=[ctypes.c_int,ctypes.c_ulong,ctypes.c_ulong,ctypes.c_ulong,ctypes.c_ulong]
+    libc.prctl.restype=ctypes.c_int
+    guard=parent_death_guard(os.getpid(),libc.prctl)
     children=[];logs=[];stopped=False
     def stop(_number,_frame):
         nonlocal stopped
@@ -81,7 +97,7 @@ def run(args):
     try:
         for name in ('dns','pebble'):
             log=(work/(name+'.log')).open('xb');os.chmod(log.name,0o600);logs.append(log)
-            p=subprocess.Popen(argv[name],stdin=subprocess.DEVNULL,stdout=log,stderr=log,env=env,start_new_session=True)
+            p=subprocess.Popen(argv[name],stdin=subprocess.DEVNULL,stdout=log,stderr=log,env=env,start_new_session=True,preexec_fn=guard)
             children.append((name,p))
         context=ssl.create_default_context(cafile=str(work/'frontend-root.pem'))
         end=time.monotonic()+15
@@ -109,7 +125,7 @@ def run(args):
           'validity_seconds':90,'public_ca_calls':0,'config_sha256':SHA(work/'config.json'),
           'binary_sha256':{n:SHA(v) for n,v in binaries.items()},
           'processes':[{ 'name':n,'pid':p.pid,'start_ticks':Path('/proc',str(p.pid),'stat').read_text().split(') ')[1].split()[19]} for n,p in children],
-          'owner_pid':os.getpid(),'argv':argv,'lifetime_seconds':args.lifetime_seconds}
+          'owner_pid':os.getpid(),'parent_death_signal':'SIGKILL','parent_death_race_checked':True,'argv':argv,'lifetime_seconds':args.lifetime_seconds}
         (work/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
         print(json.dumps({'ready':True,'manifest':str(work/'manifest.json')}),flush=True)
         deadline=time.monotonic()+args.lifetime_seconds

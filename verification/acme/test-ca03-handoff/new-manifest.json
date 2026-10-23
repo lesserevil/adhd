@@ -1,0 +1,73 @@
+{
+  "schema": "adhd/acme-pebble-owned-fixture@1",
+  "ready": true,
+  "pebble_version": "v2.10.1",
+  "directory_url": "https://localhost:19100/dir",
+  "management_url": "https://localhost:19101",
+  "dns_management_url": "http://127.0.0.1:19102",
+  "dns_server": "127.0.0.1:19153",
+  "frontend_root": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/ca03/frontend-root.pem",
+  "frontend_root_sha256": "0c502e52627ff7de972c7e9e065640103b4589b4e2d23d3fcf21bef1e3c8c67c",
+  "issuer_root": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/ca03/issuer-root.pem",
+  "issuer_root_sha256": "3a25759e8023ab73562d9b086b8c42a4f68c514b6d42379c0510d06e64714584",
+  "validation_http_port": 8080,
+  "initial_domain_routes": {
+    "one.acme.test": "127.0.0.1",
+    "two.acme.test": "127.0.0.1"
+  },
+  "real_validation": true,
+  "nonce_validation": true,
+  "valid_nonce_random_reject_percent": 0,
+  "validity_seconds": 90,
+  "public_ca_calls": 0,
+  "config_sha256": "44f8cd15e94ad0a278b90e0f1746f326f147fe595ed7db29e331f79ac30e880a",
+  "binary_sha256": {
+    "pebble": "4e35cad137f20f62a8e71fd104b98417daa592e901bb01ab4227074ee1990e3c",
+    "dns": "00ec0f9680d5eecb23cb4073868a547db635775a52ba14e0392ed15c8004f1ed"
+  },
+  "processes": [
+    {
+      "name": "dns",
+      "pid": 3370235,
+      "start_ticks": "28041019"
+    },
+    {
+      "name": "pebble",
+      "pid": 3370240,
+      "start_ticks": "28041020"
+    }
+  ],
+  "owner_pid": 3370160,
+  "parent_death_signal": "SIGKILL",
+  "parent_death_race_checked": true,
+  "argv": {
+    "dns": [
+      "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/tools/testca-bin/pebble-challtestsrv-linux-amd64/linux/amd64/pebble-challtestsrv",
+      "-dnsserver",
+      "127.0.0.1:19153",
+      "-management",
+      "127.0.0.1:19102",
+      "-defaultIPv4",
+      "127.0.0.1",
+      "-defaultIPv6",
+      "",
+      "-http01",
+      "",
+      "-https01",
+      "",
+      "-tlsalpn01",
+      "",
+      "-doh",
+      ""
+    ],
+    "pebble": [
+      "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/tools/testca-bin/pebble-linux-amd64/linux/amd64/pebble",
+      "-config",
+      "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/ca03/config.json",
+      "-dnsserver",
+      "127.0.0.1:19153",
+      "-strict"
+    ]
+  },
+  "lifetime_seconds": 10800
+}

@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/driver.py", line 434, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/driver.py", line 431, in main
+    else:execute(work,plan)
+         ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/driver.py", line 415, in execute
+    if primary:raise primary
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/driver.py", line 351, in execute
+    before=json.loads((work/'bound/protected.json').read_bytes());protected(command,before)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/driver.py", line 235, in protected
+    current=json.loads(command(['docker','inspect',row['id']],capture=True,sensitive=True).stdout)[0]
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/frozen/tests/acme_platform_commands.py", line 138, in __call__
+    if check:assert result.returncode==0,'Owned CLI failed: '+argv[0]
+                    ^^^^^^^^^^^^^^^^^^^^
+AssertionError: Owned CLI failed: docker

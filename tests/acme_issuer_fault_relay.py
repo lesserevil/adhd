@@ -1,0 +1,230 @@
+"""Owned HTTPS issuer-availability fault relay; construction/import are inert.
+
+Pass mode forwards to the real fixed local Pebble with normal root/hostname
+verification and unchanged proxy Host. Fault mode substitutes ONLY /dir503/429,
+never ACME success/nonces/accounts/challenges/certificates. No key/body is logged.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import socketserver
+import stat
+import ssl
+import threading
+import time
+
+MAX_HEADER=16384
+MAX_BODY=1048576
+
+
+def headers(raw, response=False):
+    assert len(raw)<=MAX_HEADER and raw.endswith(b'\r\n\r\n')
+    rows=raw[:-4].split(b'\r\n');assert len(rows)<=65
+    first=rows.pop(0);result={}
+    for row in rows:
+        name,sep,value=row.partition(b':')
+        assert sep and re.fullmatch(rb'[!#$%&\'*+.^_`|~0-9A-Za-z-]+',name)
+        name=name.lower();value=value.strip()
+        assert name not in result and all(c==9 or 32<=c<127 for c in value)
+        result[name]=value
+    assert not (b'transfer-encoding'in result and b'content-length'in result)
+    if response:
+        status=re.fullmatch(rb'HTTP/1\.[01] ([2-5][0-9][0-9])(?: [^\r\n]*)?',first)
+        assert status
+        return int(status[1]),result
+    method,target,protocol=first.split(b' ')
+    assert method in (b'GET',b'HEAD',b'POST')and protocol in (b'HTTP/1.0',b'HTTP/1.1')
+    assert target.startswith(b'/')and not target.startswith(b'//')and all(33<=c<127 for c in target)
+    assert b'transfer-encoding'not in result
+    return method,target,result
+
+
+class Wire:
+    def __init__(self,sock,deadline):self.sock,self.deadline=sock,deadline;self.buffer=bytearray()
+    def recv(self,n):
+        remaining=self.deadline-time.monotonic()
+        if remaining<=0:raise TimeoutError('Owned exchange deadline')
+        self.sock.settimeout(min(3,remaining));return self.sock.recv(n)
+    def head(self):
+        while b'\r\n\r\n'not in self.buffer:
+            assert len(self.buffer)<MAX_HEADER
+            raw=self.recv(min(4096,MAX_HEADER-len(self.buffer)));assert raw
+            self.buffer.extend(raw)
+        end=self.buffer.index(b'\r\n\r\n')+4
+        value=bytes(self.buffer[:end]);del self.buffer[:end];return value
+    def exact(self,n):
+        assert 0<=n<=MAX_BODY
+        while len(self.buffer)<n:
+            raw=self.recv(min(4096,n-len(self.buffer)));assert raw
+            self.buffer.extend(raw)
+        value=bytes(self.buffer[:n]);del self.buffer[:n];return value
+    def line(self):
+        while b'\r\n'not in self.buffer:
+            assert len(self.buffer)<MAX_HEADER
+            raw=self.recv(min(4096,MAX_HEADER-len(self.buffer)));assert raw
+            self.buffer.extend(raw)
+        end=self.buffer.index(b'\r\n');value=bytes(self.buffer[:end]);del self.buffer[:end+2];return value
+    def body(self,h,*,head=False):
+        if head:return b''
+        if b'content-length'in h:
+            value=h[b'content-length'];assert re.fullmatch(rb'[0-9]{1,8}',value)
+            return self.exact(int(value))
+        if b'transfer-encoding'in h:
+            assert h[b'transfer-encoding'].lower()==b'chunked';result=bytearray()
+            while True:
+                size=self.line().split(b';',1)[0];assert re.fullmatch(rb'[a-fA-F0-9]{1,8}',size)
+                count=int(size,16);assert len(result)+count<=MAX_BODY
+                if count==0:
+                    total=0
+                    while True:
+                        line=self.line();total+=len(line)+2;assert total<=MAX_HEADER
+                        if not line:break
+                    return bytes(result)
+                result.extend(self.exact(count));assert self.exact(2)==b'\r\n'
+        result=bytearray(self.buffer);self.buffer.clear()
+        while True:
+            raw=self.recv(min(4096,MAX_BODY-len(result)+1))
+            if not raw:return bytes(result)
+            assert len(result)+len(raw)<=MAX_BODY;result.extend(raw)
+
+
+def fault_bytes(status,retry_seconds):
+    assert status in (429,503)and type(retry_seconds)is int and 1<=retry_seconds<=600
+    kind='rateLimited'if status==429 else 'serverInternal'
+    body=json.dumps({'type':'urn:ietf:params:acme:error:'+kind,'detail':'Owned isolated availability fault'}).encode()
+    return (f'HTTP/1.1 {status} Owned Fault\r\nContent-Type: application/problem+json\r\nRetry-After: {retry_seconds}\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n'.encode()+body)
+
+
+class IssuerFaultRelay:
+    def __init__(self,*,cert_file,key_file,root_file,cert_sha256,key_sha256,root_sha256,
+                 port=19103,max_requests=256,lifetime_seconds=600):
+        assert port==19103 and 1<=max_requests<=256 and 1<=lifetime_seconds<=600
+        self.files={}
+        for name,path,digest in [('cert',cert_file,cert_sha256),('key',key_file,key_sha256),('root',root_file,root_sha256)]:
+            path=Path(path).absolute();assert path==path.resolve(),'No redirected issuer fixture files'
+            assert re.fullmatch('[0-9a-f]{64}',digest)
+            # No process/network operation here. Actual fixture identity is
+            # supplied by the reviewed CA manifest/stock test-cert pins.
+            entry=path.lstat()
+            assert stat.S_ISREG(entry.st_mode)and entry.st_uid==os.getuid()and entry.st_nlink==1 and entry.st_size<=1048576
+            if name=='key':assert stat.S_IMODE(entry.st_mode)==0o600
+            assert hashlib.sha256(path.read_bytes()).hexdigest()==digest
+            self.files[name]=str(path)
+        self.port,self.max_requests,self.lifetime=port,max_requests,lifetime_seconds
+        self.server=self.thread=None;self.lock=threading.Lock();self.close_lock=threading.Lock();self.closing=threading.Event()
+        self.sockets=set();self.active=self.requests=0;self.events=[];self.errors=[]
+        self.mode='pass';self.retry_seconds=120;self.started=None;self.lifetime_timer=None
+
+    def set_fault(self,status=None,retry_seconds=120):
+        assert status is None or status in (429,503)
+        fault_bytes(status or 503,retry_seconds)
+        with self.lock:
+            assert self.active==0,'Mode changes only at observed exchange boundaries'
+            self.mode='pass'if status is None else status;self.retry_seconds=retry_seconds
+
+    def start(self):
+        assert self.server is None and not self.closing.is_set()
+        owner=self
+        server_context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);server_context.minimum_version=ssl.TLSVersion.TLSv1_2
+        server_context.load_cert_chain(self.files['cert'],self.files['key'])
+        upstream_context=ssl.create_default_context(cafile=self.files['root']);upstream_context.minimum_version=ssl.TLSVersion.TLSv1_2
+        class Server(socketserver.ThreadingTCPServer):
+            allow_reuse_address=False;daemon_threads=True;block_on_close=False
+            def process_request(self,request,address):
+                with owner.lock:
+                    if owner.active>=4 or owner.requests>=owner.max_requests or owner.closing.is_set()or time.monotonic()-owner.started>=owner.lifetime:
+                        request.close();owner.errors.append('scope-cap');return
+                    owner.active+=1;owner.requests+=1;owner.sockets.add(request)
+                try:super().process_request(request,address)
+                except BaseException:
+                    with owner.lock:owner.active-=1;owner.sockets.discard(request)
+                    request.close();raise
+            def handle_error(self,request,address):
+                with owner.lock:owner.errors.append('handler-error')
+        class Handler(socketserver.BaseRequestHandler):
+            def handle(self):
+                sockets=[self.request];deadline=time.monotonic()+10
+                def abort():
+                    for sock in list(sockets):
+                        try:sock.shutdown(socket.SHUT_RDWR)
+                        except OSError:pass
+                        try:sock.close()
+                        except OSError:pass
+                timer=threading.Timer(10,abort);timer.daemon=True;timer.start()
+                try:
+                    self.request.settimeout(3)
+                    client=server_context.wrap_socket(self.request,server_side=True,do_handshake_on_connect=False)
+                    sockets.append(client)
+                    with owner.lock:owner.sockets.add(client)
+                    client.do_handshake();wire=Wire(client,deadline)
+                    method,target,h=headers(wire.head())
+                    assert h.get(b'host')==b'localhost:19103'
+                    body=wire.body({b'content-length':h.get(b'content-length',b'0')})
+                    assert not wire.buffer,'Unexpected request pipeline/trailing bytes'
+                    with owner.lock:mode,retry=owner.mode,owner.retry_seconds
+                    event={'at_monotonic':time.monotonic(),'method':method.decode(),'directory':target==b'/dir',
+                           'request_bytes':len(body),'fault_status':None,'upstream_status':None}
+                    if mode!='pass'and method==b'GET'and target==b'/dir':
+                        client.sendall(fault_bytes(mode,retry));event.update(fault_status=mode,retry_seconds=retry)
+                    else:
+                        raw=socket.create_connection(('127.0.0.1',19100),timeout=min(3,max(.001,deadline-time.monotonic())))
+                        sockets.append(raw)
+                        upstream=upstream_context.wrap_socket(raw,server_hostname='localhost',do_handshake_on_connect=False);sockets.append(upstream)
+                        with owner.lock:owner.sockets.update([raw,upstream])
+                        upstream.do_handshake()
+                        allowed=(b'host',b'content-type',b'accept',b'user-agent')
+                        request=method+b' '+target+b' HTTP/1.1\r\n'+b''.join(k+b': '+v+b'\r\n'for k,v in h.items()if k in allowed)
+                        request+=b'Content-Length: '+str(len(body)).encode()+b'\r\nConnection: close\r\nAccept-Encoding: identity\r\n\r\n'+body
+                        upstream.sendall(request);response=Wire(upstream,deadline)
+                        status,rh=headers(response.head(),response=True)
+                        assert rh.get(b'content-encoding',b'identity').lower()==b'identity'
+                        payload=response.body(rh,head=method==b'HEAD')
+                        selected=(b'content-type',b'location',b'replay-nonce',b'link',b'retry-after')
+                        head=f'HTTP/1.1 {status} Upstream\r\n'.encode()+b''.join(k+b': '+v+b'\r\n'for k,v in rh.items()if k in selected)
+                        head+=b'Content-Length: '+str(len(payload)).encode()+b'\r\nConnection: close\r\n\r\n'
+                        client.sendall(head+payload);event.update(upstream_status=status,response_bytes=len(payload))
+                    assert time.monotonic()<=deadline
+                    event['completed_monotonic']=time.monotonic()
+                    with owner.lock:owner.events.append(event)
+                except BaseException as error:
+                    with owner.lock:owner.errors.append(type(error).__name__)
+                finally:
+                    timer.cancel();abort()
+                    with owner.lock:
+                        for sock in sockets:owner.sockets.discard(sock)
+                        owner.active-=1
+        self.started=time.monotonic()
+        self.server=Server(('127.0.0.1',self.port),Handler)
+        self.thread=threading.Thread(target=self.server.serve_forever,kwargs={'poll_interval':.05},daemon=True)
+        try:
+            self.thread.start()
+            self.lifetime_timer=threading.Timer(self.lifetime,self.close);self.lifetime_timer.daemon=True;self.lifetime_timer.start()
+            return self
+        except BaseException as error:
+            try:self.close()
+            except BaseException as cleanup:error.add_note('Owned issuer-relay startup cleanup: '+type(cleanup).__name__)
+            raise
+
+    def snapshot(self):
+        with self.lock:return {'requests':self.requests,'active':self.active,'events':list(self.events),
+          'errors':list(self.errors),'closed':self.closing.is_set()and not(self.thread and self.thread.is_alive())and self.active==0}
+
+    def close(self):
+        with self.close_lock:
+            self.closing.set()
+            if self.lifetime_timer:self.lifetime_timer.cancel()
+            with self.lock:sockets=list(self.sockets)
+            for sock in sockets:
+                try:sock.shutdown(socket.SHUT_RDWR)
+                except OSError:pass
+            if self.server:
+                if self.thread and self.thread.is_alive():self.server.shutdown()
+                self.server.server_close()
+            if self.thread:self.thread.join(timeout=2);assert not self.thread.is_alive()
+            deadline=time.monotonic()+12
+            while self.active:
+                assert time.monotonic()<deadline,'Owned HTTPS fault handlers not closed'
+                time.sleep(.02)

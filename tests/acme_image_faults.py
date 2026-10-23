@@ -32,6 +32,16 @@ def wait(test,seconds,label):
     raise AssertionError(label)
 
 
+def settle_public_observation(test):
+    """Local2s public-floor bound includes time spent inside the API callback."""
+    deadline=time.monotonic()+2
+    def observed():
+        value=test()
+        assert time.monotonic()<=deadline,'Public floor settle observation exceeded2s'
+        return value
+    return wait(observed,2,'Enabled settled retry must publish retained issuer floor')
+
+
 def floor(hub):
     value=json.loads(private_bytes(Path(hub)/'acme'/'issuer-retry.json',1024))
     assert set(value)=={'code','retry_at'}
@@ -186,7 +196,7 @@ def floor_phase(case,*,admin,secure,runtime,hub,issuer,issuer_root,password):
         due_observations.append({'at_monotonic':time.monotonic(),'acme_state':value['acme_state'],**compared})
         assert len(due_observations)<=128
         return compared
-    wait(observed_due,2,'Enabled settled retry must publish retained issuer floor')
+    settle_public_observation(observed_due)
     observe_until=time.monotonic()+3
     while time.monotonic()<observe_until:
         assert observed_due()is not None,'Settled future floor cannot disappear during original3s guard'

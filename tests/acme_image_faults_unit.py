@@ -129,3 +129,17 @@ class FaultGuards(unittest.TestCase):
                 public_floor_due({**status,'next_attempt_at':value},minimum)
         for patch_value in [{'enabled':False},{'acme_state':'ordering'}]:
             with self.assertRaises(AssertionError):public_floor_due({**status,**patch_value},minimum)
+
+    def test_public_floor_settle_rejects_late_valid_response_after_callback(self):
+        from acme_image_faults import settle_public_observation
+        valid={'public_next_attempt_at':'1970-01-01T00:02:00Z'}
+        for completed,passes in [(1.5,True),(3.0,False)]:
+            clock=[0.0]
+            def actual_observation():
+                clock[0]=completed
+                return valid
+            with patch('acme_image_faults.time.monotonic',side_effect=lambda:clock[0]):
+                if passes:self.assertEqual(settle_public_observation(actual_observation),valid)
+                else:
+                    with self.assertRaisesRegex(AssertionError,'exceeded2s'):
+                        settle_public_observation(actual_observation)

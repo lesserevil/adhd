@@ -1,0 +1,15 @@
+{
+  "scope": "Fixture-only enforced2s public floor settling; no runtime qualification",
+  "change": "A local absolute monotonic deadline is checked AFTER every public API callback and BEFORE accepting its result. A successful late response fails. Shared wait, existing5s API timeout and original3s guard remain unchanged.",
+  "files": {
+    "tests/acme_image_faults.py": "a319dbaa11a078a336af4f9c95dd987d5e0a68db26c424023f6095d74bab2f2a",
+    "tests/acme_image_faults_unit.py": "bfda10081c43514c9f69b13cd8cba5210c704880596310f54c020821b1720d16"
+  },
+  "checks": {
+    "pure_acme_checks": 62,
+    "passed": true,
+    "actual_wait_path_with_fake_clock": "1.5s valid accepted;3s valid rejected after callback",
+    "resources_started": false
+  },
+  "documentation_review": "Continuation of public-floor-preparation.json: stronger acceptance timing only; no app/spec/guide/authority claims changed."
+}

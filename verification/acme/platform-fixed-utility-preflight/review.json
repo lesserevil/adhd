@@ -1,0 +1,130 @@
+{
+  "schema": "adhd/acme-platform-fixed-utility-preflight@1",
+  "passed": true,
+  "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+  "created_only_archive_inspection_then_bounded_nonapp_helper": true,
+  "helper_security": "UID10001:10001/networknone/read-only/dropALL/no-new-privileges/64MiB/32pids; no app/default entrypoint/order/CA calls.",
+  "exact_container_id": "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed",
+  "owned_name": "adhd-acme-utility-c8b4e2e1061543b1",
+  "strictID_name_absence": true,
+  "archive_members": {
+    "bin": [
+      {
+        "name": "bin/busybox",
+        "type": "0",
+        "linkname": "",
+        "size": 804616
+      },
+      {
+        "name": "bin/cat",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/chmod",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/chown",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/cp",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/mkdir",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/sh",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/stat",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      }
+    ],
+    "usr/bin": [
+      {
+        "name": "bin/cut",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/find",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/id",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/readlink",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      },
+      {
+        "name": "bin/sha256sum",
+        "type": "2",
+        "linkname": "/bin/busybox",
+        "size": 0
+      }
+    ]
+  },
+  "archive_sha256": {
+    "bin.tar": "e67aa22b7c107e55fc572d24bc5f953c682e0139518b07ef4c12c858bdedecec",
+    "usr-bin.tar": "68e48c351078ee48b0a6276c53383340faca4b84a035e2980334ca9a5f24d7d0"
+  },
+  "actual_helper_program_sha256": "d870ae9d62166ac050a6bf83c12f01a57bd4305125a72225b573b181cc3961de",
+  "actual_helper_covers": [
+    "/bin/busybox readlink /proc/self/exe",
+    "/bin/sh and /bin/cat executable",
+    "id -u/-g",
+    "stat -c %u:%g",
+    "find/sh/sha256sum/cut/mkdir/cp/chmod/chown command availability",
+    "sha256sum+cut vector"
+  ],
+  "existing_actual_seed_state_regression": "verification/acme/seed-state-regression-positive/review.json validates exact Seed chmod/chown and StatePreflight stat/find flags on sameimage.",
+  "remaining_fixed_exec_inventory": {
+    "app_image": [
+      "/bin/sh -ec fixedSTATE and STATE_PREFLIGHT",
+      "/bin/cat privatepassword/procstat/proccmdline",
+      "/bin/busybox readlink proc1exe"
+    ],
+    "node_image": [
+      "crictl inspecti",
+      "ctr -n=k8s.io content get",
+      "cat /proc/PID/stat,cmdline",
+      "readlink /proc/PID/exe"
+    ],
+    "host_tools": [
+      "hash-bound docker/compose/kind/kubectl"
+    ]
+  },
+  "node_scope": "Pinned kindnode image remains separate immutableinput. Appimage utility proof is not a Kind node runtime qualification. Existing default node commands unchanged; actual ACMEKind pending.",
+  "pure_results": {
+    "production_UID_VM_custody": 3,
+    "runtime": 29
+  },
+  "prior_false_preserved": "verification/acme/platform-image42-sixth-negative/review.json"
+}

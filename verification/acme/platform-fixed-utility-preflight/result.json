@@ -1,0 +1,116 @@
+{
+  "passed": true,
+  "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+  "container_id": "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed",
+  "owned_name": "adhd-acme-utility-c8b4e2e1061543b1",
+  "program": "set -eu\n test \"$(id -u)\" = 10001; test \"$(id -g)\" = 10001\n test -x /bin/busybox; test -x /bin/sh; test -x /bin/cat\n test \"$(/bin/busybox readlink /proc/self/exe)\" = /bin/busybox\n for utility in cat sh id stat find sha256sum cut mkdir cp chmod chown; do command -v \"$utility\" >/dev/null; done\n test \"$(stat -c %u:%g /tmp)\" = 0:0\n test \"$(printf vector | sha256sum | cut -d\" \" -f1)\" = b0d51c58c8b9c1f458fadf16c7d375630ef51da4df81915893b05c0fa4ed8bc6\n printf ADHD_FIXED_UTILITIES_OK\n",
+  "scope": "Networknone/read-only/dropALL/UID10001 fixed utility protocol only; no app or orders.",
+  "strictID_name_absent": true,
+  "commands": [
+    {
+      "argv": [
+        "create",
+        "--name",
+        "adhd-acme-utility-c8b4e2e1061543b1",
+        "--network",
+        "none",
+        "--read-only",
+        "--user",
+        "10001:10001",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--memory",
+        "64m",
+        "--pids-limit",
+        "32",
+        "--entrypoint",
+        "/bin/busybox",
+        "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "sh",
+        "-ec",
+        "set -eu\n test \"$(id -u)\" = 10001; test \"$(id -g)\" = 10001\n test -x /bin/busybox; test -x /bin/sh; test -x /bin/cat\n test \"$(/bin/busybox readlink /proc/self/exe)\" = /bin/busybox\n for utility in cat sh id stat find sha256sum cut mkdir cp chmod chown; do command -v \"$utility\" >/dev/null; done\n test \"$(stat -c %u:%g /tmp)\" = 0:0\n test \"$(printf vector | sha256sum | cut -d\" \" -f1)\" = b0d51c58c8b9c1f458fadf16c7d375630ef51da4df81915893b05c0fa4ed8bc6\n printf ADHD_FIXED_UTILITIES_OK\n"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "1d3aa207e3d6ce4d654005f53bd3d48acd8457d3863569e32b87c70fbb447543",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "inspect",
+        "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "3da218bd8a0e4edc57383b023548a5b71053a74fa31655d34a4f660d2a93b3d3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "cp",
+        "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed:/bin",
+        "-"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "e67aa22b7c107e55fc572d24bc5f953c682e0139518b07ef4c12c858bdedecec",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "cp",
+        "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed:/usr/bin",
+        "-"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "68e48c351078ee48b0a6276c53383340faca4b84a035e2980334ca9a5f24d7d0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "start",
+        "-a",
+        "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "0c69df98a9341cebdfb8dd58b28c5bda4093d599a397f5cecf350553eece6fe8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "inspect",
+        "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "16522ce72282c489367f142147373e4ce46b096a87e03a6c8e8d1e717e9377dc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "rm",
+        "-f",
+        "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "1d3aa207e3d6ce4d654005f53bd3d48acd8457d3863569e32b87c70fbb447543",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "inspect",
+        "fbd96f435854e67ecdf69f4dd4b8954d7319ae785bdc80921e434ad1e4f2f6ed"
+      ],
+      "exit_code": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "aa8527e723a395d293e54fa4020d41bba527d4ab70882d8396253af45a8945ad"
+    },
+    {
+      "argv": [
+        "inspect",
+        "adhd-acme-utility-c8b4e2e1061543b1"
+      ],
+      "exit_code": 1,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_sha256": "87f9fb082456320c0c8cda39300925adc72b2298e0caf73fd40e62afa8ad2295"
+    }
+  ]
+}

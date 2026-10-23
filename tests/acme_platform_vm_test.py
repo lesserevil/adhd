@@ -24,7 +24,9 @@ class Custody(unittest.TestCase):
     if change:change(newer)
     return subprocess.CompletedProcess(argv,0,json.dumps([newer]).encode(),b'')
    self.assertEqual(argv[:5],['docker','exec','--user','10001:10001','a'*64])
-   self.assertIn(argv[5],['/bin/cat','/bin/readlink'])
+   self.assertIn(argv[5],['/bin/cat','/bin/busybox'])
+   if argv[-1]=='/proc/1/exe':self.assertEqual(argv[5:],['/bin/busybox','readlink','/proc/1/exe'])
+   else:self.assertEqual(argv[5],'/bin/cat')
    raw={'/proc/1/stat':rawstat(1,ns_ticks),'/proc/1/cmdline':b'beam\0/runtime/adhd/boot.exs\0/app/hub.exs\0["serve","/config/hub.json"]\0','/proc/1/exe':b'/usr/lib/erlang/erts/bin/beam.smp\n'}[argv[-1]]
    return subprocess.CompletedProcess(argv,0,raw,b'')
   with patch.object(Path,'read_bytes',read),patch.object(os,'readlink',side_effect=PermissionError('ForeignUID forbidden')):

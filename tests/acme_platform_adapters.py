@@ -211,11 +211,11 @@ def compose_vm_custody(command,row,image):
   assert 'no-new-privileges:true' in value['HostConfig']['SecurityOpt'] and value['RestartCount']==0
  declared(row);pid=row['State']['Pid'];assert type(pid) is int and pid>0
  host=Path('/proc')/str(pid);before=(host/'stat').read_bytes();deadline=time.monotonic()+30
- def read(program,path):
+ def read(*arguments):
   remaining=deadline-time.monotonic();assert remaining>0,'Compose VM custody deadline'
-  return command(['docker','exec','--user','10001:10001',identifier,program,path],capture=True,timeout=remaining).stdout
+  return command(['docker','exec','--user','10001:10001',identifier,*arguments],capture=True,timeout=remaining).stdout
  namespace_before=read('/bin/cat','/proc/1/stat')
- cmdline=read('/bin/cat','/proc/1/cmdline');exe=read('/bin/readlink','/proc/1/exe')
+ cmdline=read('/bin/cat','/proc/1/cmdline');exe=read('/bin/busybox','readlink','/proc/1/exe')
  namespace_after=read('/bin/cat','/proc/1/stat');after=(host/'stat').read_bytes()
  namespace_proof=vm.process_witness(cmdline,exe,namespace_before,namespace_after,1)
  host_proof=vm.process_witness(cmdline,exe,before,after,pid)

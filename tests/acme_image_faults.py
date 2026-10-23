@@ -6,6 +6,8 @@ foundation results, fault premises, and cleanup; none is implied by import.
 """
 from datetime import datetime,timezone
 import json
+import hashlib
+import re
 import os
 from pathlib import Path
 import signal
@@ -275,14 +277,71 @@ def policy_phase(case,*,admin,secure,runtime,hub,challenge,issuer_root):
     finally:challenge.release.set()
 
 
+
+def active_generation(hub):
+    value=json.loads(private_bytes(Path(hub)/'acme'/'state.json',2097152))['active']
+    assert isinstance(value,str)and re.fullmatch('[A-Za-z0-9_-]{32}',value)
+    return value
+
+
+def authenticate_resumed_loss(runtime,hub,issuer_root,password,previous_generation,previous_leaf,keys):
+    """Generation is synchronization only; real trusted HTTPS/auth is required."""
+    deadline=time.monotonic()+40
+    def budget(maximum=5):
+        remaining=deadline-time.monotonic()
+        assert remaining>0,'Original40s postrestart trusted leaf/auth bound'
+        return min(maximum,remaining)
+    while True:
+        budget();generation=active_generation(hub);budget()
+        if generation!=previous_generation:break
+        time.sleep(min(.05,budget()))
+    managed=PublicClient('https://two.acme.test:18443',trust=issuer_root)
+    def request(path,data=None,maximum=5):
+        assert maximum>0
+        reply=managed.request(path,data,timeout=budget(maximum))
+        assert time.monotonic()<=deadline,'Postrestart HTTPS observation exceeded40s'
+        return reply
+    # Only TCP refusal is pending availability. Trust/name/protocol failures
+    # remain failures; no plaintext login or Secure-cookie rewrite is used.
+    import errno
+    from urllib.error import URLError
+    startup_deadline=runtime.identities[-1]['started_monotonic']+45
+    while True:
+        assert time.monotonic()<min(deadline,startup_deadline)
+        try:
+            code,_,_=request('/health',maximum=min(1,startup_deadline-time.monotonic()));assert code==200
+            assert time.monotonic()<=startup_deadline,'Original45s managed startup bound'
+            break
+        except URLError as error:
+            if not isinstance(error.reason,OSError)or error.reason.errno!=errno.ECONNREFUSED:raise
+            time.sleep(min(.05,budget()))
+    code,_,_=request('/admin/login',{'username':'admin','password':password});assert code==200
+    code,session,_=request('/admin/session')
+    assert code==200 and session['authenticated']is True and session['user']['role']=='Admin'
+    managed.csrf=session['csrf']
+    code,resumed,_=request('/admin/api',{'op':'tls_status'});assert code==200
+    assert resumed['https_state']=='ready'and resumed['active_domains']==['two.acme.test']
+    assert resumed['certificate']['sha256']!=previous_leaf
+    facts=certificate_facts(managed.handshakes[-1]['der'],['two.acme.test'],datetime.now(timezone.utc))
+    assert facts['leaf_der_sha256']==resumed['certificate']['sha256']
+    assert account_facts(hub)[0]==keys
+    assert time.monotonic()<=deadline,'Postrestart account/trust observation exceeded40s'
+    return resumed,{'generation_changed':True,'active_generation_sha256':hashlib.sha256(generation.encode()).hexdigest(),
+      'fresh_verified_https_admin_session':True,'advertised_origin_matches_new_hostname':True,
+      'automatic_durable_resume_without_manual_renew':True,'absolute_postrestart_budget_seconds':40}
+
+
 def loss_phase(case,*,admin,secure,runtime,hub,challenge,issuer_root,password,target):
     assert case in LOSS_CASES
     before=admin.api({'op':'tls_status'});assert remaining(before)>=45
     keys,_=account_facts(hub)
+    previous_generation=active_generation(hub)
     challenge.set_mode('hold')
     killed=None;paired=None
     try:
-        admin.mutate('config_update',patch={'tls':{'acme':{'domains':['two.acme.test']}}})
+        admin.mutate('config_update',patch={'public_url':'https://two.acme.test:18443',
+          'tls':{'acme':{'domains':['two.acme.test']}}})
+        assert admin.api({'op':'config_get'})['config']['public_url']=='https://two.acme.test:18443'
         assert challenge.held.wait(20),'Real proof for new domain held before selected process loss'
         assert challenge.held_proof[1].split(':')[0]=='two.acme.test'
         assert secure.request('/health')[0]==200,'Prior valid leaf serves during actual new-domain proof'
@@ -307,17 +366,12 @@ def loss_phase(case,*,admin,secure,runtime,hub,challenge,issuer_root,password,ta
         wait(lambda:challenge.snapshot()['active']==0,5,'Real old challenge completes')
         challenge.set_mode('pass')
         runtime.start()
-        # Original private pre-TLS cookie/session remains valid on unchanged
-        # files; no new plaintext login or Secure-cookie rewriting is needed.
         assert account_facts(hub)[0]==keys
-        receipt,_=admin.mutate('tls_renew');assert receipt['accepted']is True
-        managed=PublicClient('https://two.acme.test:18443',trust=issuer_root)
-        resumed=new_leaf(admin,managed,before['certificate']['sha256'])
-        assert resumed['active_domains']==['two.acme.test']
-        assert account_facts(hub)[0]==keys
+        resumed,authentication=authenticate_resumed_loss(runtime,hub,issuer_root,password,
+          previous_generation,before['certificate']['sha256'],keys)
         return {'case':case,'passed':True,'selected_owned_child':killed,'other_writer_observed_closed_before_teardown':paired,
           'lock_observed_busy':True,'prior_leaf_served_during_new_domain_challenge':True,
-          'actual_postrestart_leaf_sha256':resumed['certificate']['sha256'],
+          'actual_postrestart_leaf_sha256':resumed['certificate']['sha256'],'authentication':authentication,
           'same_account_public_fingerprints':keys}
     finally:challenge.release.set()
 

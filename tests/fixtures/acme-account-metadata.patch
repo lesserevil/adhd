@@ -1,0 +1,49 @@
+--- a/tls.exs
++++ b/tls.exs
+@@ -474,6 +474,7 @@
+       D.check(ADHD.JSON.decode!(F.read(Path.join(root, "owner.json"))) == owner)
+       Enum.each(accounts[id]["keys"] || %{}, fn {relative, digest} ->
+         D.check(not String.starts_with?(relative, "/") and not (".." in Path.split(relative)))
++        validate_account_metadata(Path.join(root, relative))
+         D.check(:crypto.hash(:sha256, F.read(Path.join(root, relative))) |> Base.encode16(case: :lower) == digest)
+       end)
+       s
+@@ -488,8 +489,10 @@
+   defp remember_account_keys(s) do
+     accounts = Map.new(s.data["accounts"] || %{}, fn {id, value} ->
+       root = Path.join([s.root, "accounts", id])
++      D.check(ADHD.JSON.decode!(F.read(Path.join(root, "owner.json"))) == %{"owner" => s.owner, "identity" => id})
+       F.harden_tree(root)
+       keys = Path.wildcard(Path.join(root, "accounts/**/*.key")) |> Map.new(fn path ->
++        validate_account_metadata(path)
+         {Path.relative_to(path, root), :crypto.hash(:sha256, F.read(path)) |> Base.encode16(case: :lower)}
+       end)
+       # Never forget evidence of a previously initialized account key.
+@@ -498,6 +501,16 @@
+     end)
+     %{s | data: Map.put(s.data, "accounts", accounts)}
+   end
++  defp validate_account_metadata(key_path) do
++    # Lego creates a new private key if account.json disappears, even when its
++    # old key remains. Refuse damaged metadata before admitting that client.
++    value = F.read(Path.join(Path.dirname(key_path), "account.json"), 65536) |> ADHD.JSON.decode!()
++    D.check(is_map(value))
++    D.check(Enum.all?(~w(id email keyType server), fn key -> is_binary(value[key]) and byte_size(value[key]) > 0 end))
++    D.check(Map.has_key?(value, "registration") and (is_nil(value["registration"]) or is_map(value["registration"])))
++    if Map.has_key?(value, "origin"), do: D.check(is_binary(value["origin"]))
++    :ok
++  end
+   defp recover(s) do
+     if File.exists?(s.path <> ".acme-owner.json") or enabled?(s.config) do
+       s = initialize(s)
+--- a/tls_certificate.exs
++++ b/tls_certificate.exs
+@@ -160,6 +160,8 @@
+   end
+ 
+   def read(path), do: bounded_read(path, @private_max, true)
++  def read(path, maximum) when is_integer(maximum) and maximum > 0 and maximum <= @private_max,
++    do: bounded_read(path, maximum, true)
+ 
+   defp bounded_read(path, maximum, private) do
+     path = Path.expand(path)

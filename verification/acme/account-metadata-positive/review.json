@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "checks": 14,
+  "scope": "Actual cold recover/remember callbacks and private file/hash/fsync; initialized-state and guardian probe seams; certificate metadata placeholder, no actual app or cert recovery",
+  "files": {
+    "_build/acme/source42-01/tls.exs": "37e1f8b70e0ce266e63d986b409e61985def41df8bd2e0910efe02828ae443f6",
+    "_build/acme/source42-01/tls_certificate.exs": "00a1465469f29cf7d31f23c1aa4e7b05e20a48b3eb80811ca432f611e9f4ca76",
+    "tests/fixtures/acme-account-metadata.patch": "f4da068c0b8beae7fac7d036457d676f7c3cb9272280e5a326a0c5b363228587",
+    "tests/acme_account_metadata_contracts.exs": "5e9297f4e0ccac022ac476a56d30bf9cca6a9d3c9e657fff85690f20f7cb439f",
+    "_build/acme/diagnostic-ebin/sources.json": "c3d117914f6df3af7aad7f0c5a97e544a14692ad4561a0503933d652ff58df75"
+  },
+  "limits": [
+    "Synthetic account key and certificate placeholders; no live app/client/CA/real certificate claim.",
+    "Mutable account.json is shape-checked, not hashed as immutable registration state."
+  ],
+  "intermediate_fix_failure": {
+    "passed": false,
+    "failed": [
+      "valid-owner-registration-null",
+      "valid-registered-metadata"
+    ],
+    "cause": "Initial validator called missing ACMEFiles.read/2. Added guarded public overload to existing FD-identity/size-bounded private reader.",
+    "raw_sha256": "66ac96c76e92dcb3fd18898e8057d9a0e990ab3f10a366d3971a0aa1c48d645b"
+  }
+}

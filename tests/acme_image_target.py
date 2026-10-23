@@ -6,6 +6,8 @@ reviewed helper files. No Docker, hub, CA or compiler is invoked here.
 import hashlib
 import importlib
 import json
+import os
+import stat
 from pathlib import Path
 import re
 from acme_runtime import regular,sha
@@ -24,6 +26,16 @@ def closed(raw):
     return json.loads(raw,object_pairs_hook=unique)
 
 
+def tool_regular(path):
+    """Pinned executables may be root-owned; private evidence may not."""
+    path=Path(path).absolute()
+    assert path==path.resolve(strict=True),'Tool path redirected'
+    entry=path.lstat()
+    assert stat.S_ISREG(entry.st_mode)and entry.st_nlink==1
+    assert entry.st_uid in (0,os.getuid())and not entry.st_mode&0o022,'Unsafe tool custody'
+    return entry
+
+
 class AcceptedImageTarget:
     def __init__(self,plan):
         assert isinstance(plan,dict)and isinstance(plan.get('target'),dict),'Actual accepted image target required'
@@ -37,7 +49,8 @@ class AcceptedImageTarget:
             assert re.fullmatch('[0-9a-f]{64}',value[name])
         for name in ['manifest','artifact','admission','source_admission','receipt','rebuild','docker','cache_manifest']:
             path=Path(value[name]).absolute();assert path==path.resolve(strict=True)
-            regular(path);assert path.stat().st_size<=32*1024*1024
+            entry=tool_regular(path)if name=='docker'else regular(path)
+            assert entry.st_size<=32*1024*1024
             if name+'_sha256'in value:assert sha(path)==value[name+'_sha256']
         readers=value['reader_files']
         names={'image_compiled_inputs.py','image_compiled_admission.py','image_payload_audit.py'}

@@ -179,14 +179,31 @@ def runtime_class(target,mount_root):
                 return subprocess.CompletedProcess(['rebind-storage'],process.returncode),identity
             except BaseException as error:primary=error;raise
             finally:
-                try:
-                    image.stop(hard=primary is not None)
-                    if process:
-                        process.wait(timeout=15)
-                        identity.update(reaped=True,original_identity_absent=ticks(process.pid)!=identity['start_ticks'])
+                errors=[]
+                try:image.stop(hard=primary is not None)
+                except BaseException as error:errors.append(('image',error))
+                # The Docker client remains ours even when daemon cleanup fails.
+                # Reaping it must never depend on inspect/stop succeeding.
+                if process:
+                    try:
+                        try:process.wait(timeout=15)
+                        except subprocess.TimeoutExpired:
+                            assert ticks(process.pid)==identity['start_ticks'],'Owned offline client identity changed'
+                            os.killpg(process.pid,signal.SIGKILL)
+                            process.wait(timeout=5)
+                            errors.append(('client',AssertionError('Owned offline client required fallback kill')))
+                        identity.update(reaped=True,exit_code=process.returncode,
+                          original_identity_absent=ticks(process.pid)!=identity['start_ticks'])
                         assert identity['original_identity_absent']
-                    identity['container_lifecycle']=list(image.events);identity['runtime_custody']=list(image.runtime_rows)
-                except BaseException as error:
-                    if primary:primary.add_note('Owned image rebind cleanup: '+type(error).__name__)
-                    else:raise
+                    except BaseException as error:errors.append(('client',error))
+                identity['container_lifecycle']=list(image.events)
+                identity['runtime_custody']=list(image.runtime_rows)
+                identity['cleanup_errors']=[{'scope':scope,'type':type(error).__name__}for scope,error in errors]
+                if errors:
+                    if primary:
+                        for scope,error in errors:primary.add_note('Owned offline '+scope+' cleanup: '+type(error).__name__)
+                    else:
+                        failure=errors[0][1]
+                        for scope,error in errors[1:]:failure.add_note('Owned offline '+scope+' cleanup: '+type(error).__name__)
+                        raise failure
     return ImageRuntime

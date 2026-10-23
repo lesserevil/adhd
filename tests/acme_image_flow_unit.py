@@ -50,3 +50,43 @@ class FlowChecks(unittest.TestCase):
             self.assertIs(caught.exception,failure);self.assertEqual(popen.call_count,1)
             image.stop.assert_called_once();self.assertEqual(runtime.logs,[]);self.assertIsNone(runtime.image)
             self.assertTrue(all((root/name).stat().st_mode&0o777==0o600 for name in ['stdout.log','stderr.log']))
+
+    def test_tool_owner_policy_keeps_private_evidence_strict(self):
+        import os
+        import stat
+        from acme_image_target import tool_regular
+        from acme_runtime import regular
+        executable=Path('/usr/bin/docker')
+        # Actual root-owned executable, read-only metadata inspection only.
+        self.assertEqual(tool_regular(executable).st_uid,0)
+        if os.getuid()!=0:
+            with self.assertRaises(AssertionError):regular(executable)
+        for uid,mode in [(os.getuid()+9000,0o755),(0,0o777)]:
+            fake=SimpleNamespace(st_mode=stat.S_IFREG|mode,st_uid=uid,st_nlink=1)
+            with patch.object(Path,'lstat',return_value=fake):
+                with self.assertRaises(AssertionError):tool_regular(executable)
+
+    def test_offline_stop_failure_still_reaps_owned_client_and_retains_primary(self):
+        import subprocess
+        with tempfile.TemporaryDirectory()as d:
+            root=Path(d)
+            image=SimpleNamespace(argv=Mock(return_value=['/owned/docker','run','--network','host','image']),
+              env={},stop=Mock(side_effect=OSError('daemon unavailable')),events=[{'kind':'issued'}],runtime_rows=[])
+            target=Mock();target.image.return_value=image
+            runtime=runtime_class(target,root)(root,None,None,None,None,erlang=None)
+            process=Mock(pid=99123,returncode=-9)
+            process.wait.side_effect=[subprocess.TimeoutExpired('owned',15),-9]
+            primary=AssertionError('original custody mismatch')
+            with patch('acme_image_session.subprocess.Popen',return_value=process),\
+                 patch('acme_image_session.ticks',side_effect=[42,42,None]),\
+                 patch('acme_image_session.os.killpg')as kill,\
+                 patch.object(runtime,'_observe',side_effect=primary):
+                with self.assertRaises(AssertionError)as caught:
+                    runtime.offline_rebind({},root/'out',root/'err')
+            self.assertIs(caught.exception,primary)
+            kill.assert_called_once_with(99123,__import__('signal').SIGKILL)
+            self.assertEqual(process.wait.call_count,2)
+            row=runtime.offline_sessions[0]
+            self.assertTrue(row['reaped']);self.assertTrue(row['original_identity_absent'])
+            self.assertEqual(row['cleanup_errors'],[{'scope':'image','type':'OSError'},{'scope':'client','type':'AssertionError'}])
+            self.assertEqual(row['container_lifecycle'],image.events)

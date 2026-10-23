@@ -19,7 +19,9 @@ FILES=(
  'deploy/k8s/acme/public-service.yaml','deploy/init-config.py',
  'tests/acme_challenge_relay.py','tests/acme_runtime.py','tests/acme_acceptance_fixtures.py',
  'tests/acme_process_observer.py','tests/image_compiled_inputs.py',
- 'tests/kafka_oauth_custody.py','tests/container_fixture.py')
+ 'tests/kafka_oauth_custody.py','tests/container_fixture.py','tests/kafka_platform_vm.py',
+ 'tests/network_policy_image_custody.py','tests/acme_issuer_gateway.py','tests/acme_platform_adapters.py',
+ 'tests/acme_platform_commands.py','tests/acme_platform_scenario.py')
 CHECKS=(
  'actual_admitted_image_source_cache_tool_identity',
  'shipped_public_80_443_mappings_private_8766_boundary',
@@ -138,8 +140,8 @@ def prepare(args):
        'serial_only':True,'relay_owner_count':1,'public_ca_calls':0,'provider_calls':0,
        'scope':'New managed ACME platform gates only; not Kafka/model/federation or providerLoadBalancer/CNI qualification.',
        'required_before_freeze':['Actual proper receipt/export/context/admission and compiled image/tool/cache identity.',
-        'Root-reviewed bounded issuer-gateway implementation with actual owned bridge IP/client-source restrictions.',
-        'Concrete adapters for exact Compose rendered config and fresh Kind lifecycle/public scenario; all checks run as named, no declaration-as-pass.',
+        'Review concrete gateway/adapters and bind actual owned bridge IP/client-source restrictions.',
+        'Integrate concrete adapters/public scenario into final closed target driver; preserve all declared checks, no declaration-as-pass.',
         'Closed full helper/deployment/host tools/socket/kubeconfig/fresh resource identity and once-marker snapshot.',
         'Actual CA02 process/starttick/trust/remaining lease check at quiet boundary; acceptance relay ownership release.',
         'Root GO of fresh fully bound executable plan; no tool in this program starts any runtime.']}

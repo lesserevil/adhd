@@ -253,7 +253,8 @@ class NativeDiagnostic:
                 env['ERL_FLAGS'] += ' -public_key cacerts_path ' + erl_path(self.peer_trust)
             if self.peer_hosts:
                 inetrc = self.root/'fixture.inetrc'
-                data = '{lookup, [file]}.\n' + ''.join('{host, {127,0,0,1}, ['+json.dumps(host)+']}.\n' for host in self.peer_hosts)
+                assert set(self.peer_hosts) <= {'one.acme.test', 'two.acme.test'}
+                data = '{lookup, [file]}.\n{host, {127,0,0,1}, ' + json.dumps(list(self.peer_hosts)) + '}.\n'
                 if inetrc.exists():
                     regular(inetrc)
                     assert inetrc.read_text() == data

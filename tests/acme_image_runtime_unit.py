@@ -58,6 +58,19 @@ class ImageChecks(unittest.TestCase):
             self.assertEqual(with_env[position+1:],image.expected_cmd)
             self.assertNotIn('--entrypoint',with_env)
 
+    def test_peer_aliases_share_one_address_row_before_actual_image_launch(self):
+        from acme_image_session import runtime_class
+        with tempfile.TemporaryDirectory()as d:
+            root=Path(d);image=self.fixture(d);image.image_id=image.expected_image
+            runtime=runtime_class(Mock(),root)(root,None,None,None,None,erlang=None,
+              peer_hosts=('one.acme.test','two.acme.test'))
+            runtime.image=image
+            runtime._peer_environment(['/usr/bin/docker','run',image.image_id,'public-command'])
+            self.assertEqual((root/'owned-peer.inetrc').read_text(),
+              '{lookup, [file]}.\n{host, {127,0,0,1}, ["one.acme.test", "two.acme.test"]}.\n')
+            runtime.peer_hosts=('foreign.test',)
+            with self.assertRaises(AssertionError):runtime._peer_environment([image.image_id])
+
     def test_offline_public_rebind_replaces_serve_command_once(self):
         with tempfile.TemporaryDirectory()as d:
             root=Path(d);config=root/'hub.json';config.write_text('{}');config.chmod(0o600)

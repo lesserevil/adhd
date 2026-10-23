@@ -58,7 +58,7 @@ def runtime_class(target,mount_root):
             if self.peer_hosts:
                 assert set(self.peer_hosts)<={'one.acme.test','two.acme.test'}
                 inetrc=self.root/'owned-peer.inetrc'
-                text='{lookup, [file]}.\n'+''.join('{host, {127,0,0,1}, ['+json.dumps(x)+']}.\n'for x in self.peer_hosts)
+                text='{lookup, [file]}.\n{host, {127,0,0,1}, '+json.dumps(list(self.peer_hosts))+'}.\n'
                 if inetrc.exists():regular(inetrc);assert inetrc.read_text()==text
                 else:
                     fd=os.open(inetrc,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)

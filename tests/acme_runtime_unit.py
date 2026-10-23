@@ -50,6 +50,16 @@ class RuntimeChecks(unittest.TestCase):
             for name in ('stdout.log', 'stderr.log'):
                 self.assertEqual((root/name).stat().st_mode & 0o777, 0o600)
 
+    def test_native_peer_aliases_share_one_address_row_before_spawn(self):
+        with tempfile.TemporaryDirectory()as directory:
+            root=Path(directory);(root/'hub.json').write_text(json.dumps({'port':19001}))
+            runtime=NativeDiagnostic(root,root,root,'/usr/bin/false','0'*64,erlang='/owned/erlang/bin/erl',
+              peer_hosts=('one.acme.test','two.acme.test'))
+            with patch.object(runtime,'verify',return_value={}),patch('acme_runtime.subprocess.Popen',side_effect=OSError('injected')):
+                with self.assertRaises(OSError):runtime.start()
+            self.assertEqual((root/'fixture.inetrc').read_text(),
+              '{lookup, [file]}.\n{host, {127,0,0,1}, ["one.acme.test", "two.acme.test"]}.\n')
+
     def test_symlink_log_rejected_without_spawn_or_foreign_write(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

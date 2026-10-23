@@ -1,0 +1,34 @@
+{
+  "schema": "adhd/acme-platform-production-uid-custody@1",
+  "files": {
+    "tests/acme_platform_adapters.py": "3f47e01ec7240543c64b5df3c24224fb9edc765abddbd7bf7d84018ad0bdcd49",
+    "tests/acme_platform_vm_test.py": "e850869d2f70cf999bcee0817ab2c5841b5ac43987ceba9bc316a906cd5250d1"
+  },
+  "host_observation": {
+    "observer_uid": 1003,
+    "existing_uid10001_pids": [
+      3272300,
+      3272745,
+      3272832,
+      3275191,
+      3275192
+    ],
+    "host_exe_readlink": "PermissionError for all5; no runtime started"
+  },
+  "correction": "ACME-only exact-owned CID dockerexec as10001:10001 reads actual private PID1stat/cmdline/exe; canonical process_witness reused, PID1start equals hoststat start, immutable CID/Image/StartedAt/hostPID/RestartCount plus entrypoint/Cmd/UID/dropall/readonly/no-new-privileges before+after. Shared30s custody deadline.",
+  "generic_kafka_helper_changed": false,
+  "pure_checks": {
+    "new_custody": 3,
+    "runtime": 27
+  },
+  "runtime_or_container_starts": 0,
+  "actual_target_qualification": false,
+  "documentation_review": {
+    "surfaces": [
+      "docs/admin/acme.md (root draft)",
+      "deploy/app.compose.yaml",
+      "tests/acme_platform_plan.py"
+    ],
+    "conclusion": "Fixes qualification observer for existing production UID10001 without changing product or deployment defaults. Inert/unqualified limitations unchanged; proper final review remains root-owned."
+  }
+}

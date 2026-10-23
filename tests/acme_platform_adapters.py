@@ -151,6 +151,38 @@ class StateProbe(OwnedImage):
 
 
 
+def compose_vm_custody(command,row,image):
+ # Production UID10001 host /proc/exe is ptrace-protected from observerUID1003.
+ # Read exact container PID1 as the unchanged production UID instead; bind that
+ # kernel witness to host PID/startticks and immutable Docker identity twice.
+ identifier=owned(row,row['Name'].lstrip('/'),image)
+ def declared(value):
+  assert value['Id']==identifier and value['Image']==image
+  assert value['State']['Running'] and not value['State'].get('Paused') and not value['State'].get('Restarting') and not value['State'].get('Dead')
+  assert value['Config']['Entrypoint']==vm.ENTRYPOINT and value['Config']['Cmd']==vm.COMMAND
+  assert value['Config']['User']=='10001:10001' and value['HostConfig']['PidMode'] in ('',None)
+  assert value['HostConfig']['ReadonlyRootfs'] and value['HostConfig']['CapDrop']==['ALL']
+  assert 'no-new-privileges:true' in value['HostConfig']['SecurityOpt'] and value['RestartCount']==0
+ declared(row);pid=row['State']['Pid'];assert type(pid) is int and pid>0
+ host=Path('/proc')/str(pid);before=(host/'stat').read_bytes();deadline=time.monotonic()+30
+ def read(program,path):
+  remaining=deadline-time.monotonic();assert remaining>0,'Compose VM custody deadline'
+  return command(['docker','exec','--user','10001:10001',identifier,program,path],capture=True,timeout=remaining).stdout
+ namespace_before=read('/bin/cat','/proc/1/stat')
+ cmdline=read('/bin/cat','/proc/1/cmdline');exe=read('/bin/readlink','/proc/1/exe')
+ namespace_after=read('/bin/cat','/proc/1/stat');after=(host/'stat').read_bytes()
+ namespace_proof=vm.process_witness(cmdline,exe,namespace_before,namespace_after,1)
+ host_proof=vm.process_witness(cmdline,exe,before,after,pid)
+ assert namespace_proof['start_ticks']==host_proof['start_ticks'],'Container PID1 and Docker host PID disagree'
+ remaining=deadline-time.monotonic();assert remaining>0,'Compose VM custody deadline'
+ again=json.loads(command(['docker','inspect',identifier],capture=True,timeout=remaining).stdout)[0];declared(again)
+ assert (again['State']['Pid'],again['State']['StartedAt'])==(pid,row['State']['StartedAt'])
+ return {'scope':'actual Docker host PID bound to private container PID1, exec UID10001',
+   'container_id':identifier,'image':image,'entrypoint':vm.ENTRYPOINT,'process':host_proof,
+   'namespace_process':namespace_proof,'pid1_start_equals_host_start':True,'exec_user':'10001:10001',
+   'started_at':row['State']['StartedAt'],'restart_count':row['RestartCount']}
+
+
 class Compose:
  challenge_get=staticmethod(challenge_get)
  def __init__(self,command,root,work,image,name,seed_dir,state_dir,gateway,private_http_port=18766):
@@ -210,8 +242,7 @@ class Compose:
   assert own['IPAddress'] and own['Gateway']==self.gateway;return own['IPAddress']
  def custody(self):
   row=self.observe()
-  def command(argv,capture=True):return self.cmd(argv,capture=capture).stdout
-  return vm.compose(command,row['Id'],self.image)
+  return compose_vm_custody(self.cmd,row,self.image)
  def exec(self,argv,*,sensitive=False):return self.cmd(['docker','exec',self.observe()['Id'],*argv],capture=True,sensitive=sensitive).stdout
  def private_state(self):return self.state_probe.snapshot()
  def stop_hub(self):self.dc('stop','--timeout','60','hub',timeout=70)

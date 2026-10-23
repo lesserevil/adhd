@@ -26,6 +26,7 @@ from acme_challenge_relay import ChallengeRelay
 from acme_runtime import NativeDiagnostic, PublicClient, sha, regular, wait_managed_https
 from acme_continuity import OIDCContinuity, FederationContinuity
 from acme_rebind_acceptance import run_stopped_copy
+from acme_account_continuation import account_facts, renew_after_restart, missing_key_cold_fault
 
 
 def wait_for(test, seconds, label):
@@ -232,6 +233,9 @@ def run(args):
         assert cert['serial_number_hex'] == initial['certificate']['serial']
         assert secure.handshakes[-1]['verified_chain_and_hostname'] is True
         check('real issued certificate independently trusted and hostname verified', certificate=cert)
+        if args.account_continuation:
+            report['initial_account_witness'], _ = account_facts(hub)
+            check('actual maintained-client account keys have nonempty persisted public-key witnesses')
         for wrong, expected_error in ((PublicClient('https://two.acme.test:18443', trust=ca['issuer_root']),ssl.SSLError),
                                       (PublicClient('https://one.acme.test:18443', trust=ca['frontend_root']),ssl.SSLCertVerificationError)):
             try:
@@ -294,11 +298,21 @@ def run(args):
         assert persisted['certificate']['sha256'] == automatic['certificate']['sha256']
         assert secure.request('/health')[0] == 200
         check('unchanged-file cold restart retains active certificate and HTTPS')
+        expected_rebind_leaf = automatic['certificate']['sha256']
+        if args.account_continuation:
+            report['postrestart_account_renewal'] = renew_after_restart(admin,hub,ca['issuer_root'])
+            assert report['postrestart_account_renewal']['same_account_public_fingerprints'] == report['initial_account_witness']
+            expected_rebind_leaf = report['postrestart_account_renewal']['actual_new_leaf']['leaf_der_sha256']
+            check('actual real postrestart renewal preserves account public keys and registration')
         if args.rebind:
             runtime.stop()
-            report['rebind'] = run_stopped_copy(args,hub,work/'moved-hub',automatic['certificate']['sha256'],
+            report['rebind'] = run_stopped_copy(args,hub,work/'moved-hub',expected_rebind_leaf,
                                                ca['issuer_root'],runtime.identities)
             check('actual complete stopped-copy public CLI ACME rebind and moved trusted HTTPS')
+        if args.account_continuation:
+            runtime.stop()
+            report['missing_account_key'] = missing_key_cold_fault(runtime,hub,ca['issuer_root'],password)
+            check('known missing account key cold start rejects issuance while retaining valid HTTPS')
         report['passed'] = True
     except BaseException as error:
         primary = error
@@ -344,6 +358,7 @@ def main():
     parser.add_argument('--continuity', action='store_true', help='Explicit real OIDC and two-hub HTTPS federation stratum')
     parser.add_argument('--lego-sha256')
     parser.add_argument('--guardian-sha256')
+    parser.add_argument('--account-continuation',action='store_true',help='Explicit nonempty witness, actual postrestart renewal and cold key-loss stratum')
     parser.add_argument('--rebind',action='store_true',help='Actual stopped complete-copy public rebind after whole first-cut flow')
     args = parser.parse_args()
     def expired(signum, frame):

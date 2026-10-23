@@ -11,6 +11,7 @@ import ipaddress
 import json
 from pathlib import Path
 import re
+import stat
 import time
 from uuid import uuid4
 import yaml
@@ -134,18 +135,51 @@ STATE = r'''set -eu
 '''
 
 
+STATE_PREFLIGHT = r'''set -eu
+ test "$(id -u)" = 10001; test "$(id -g)" = 10001
+ for p in /state /state/config /state/data; do
+   test ! -L "$p"; test -d "$p"
+   test "$(stat -c %u:%g:%a "$p")" = 10001:10001:700
+ done
+ find /state -exec sh -ec 'for p do
+   test ! -L "$p"
+   if [ -d "$p" ]; then test "$(stat -c %u:%g:%a "$p")" = 10001:10001:700
+   else test -f "$p"; test "$(stat -c %u:%g:%a "$p")" = 10001:10001:600
+     test "$(stat -c %h "$p")" = 1
+   fi
+ done' sh {} +
+ test -f /state/config/hub.json; test -f /state/config/directory-root.pem
+ printf 'ADHD_STATE_PREFLIGHT uid=10001 gid=10001 private=ok\n'
+'''
+
+
 class StateProbe(OwnedImage):
- def __init__(self,command,image,config):
+ def __init__(self,command,image,config,state_root=None):
   self.command=command;self.image_id=identity(image);self.config=Path(config)
+  self.state_root=Path(state_root) if state_root is not None else None
+  self.preflight_proven=False
+  if self.state_root is not None:
+   assert self.state_root.is_absolute() and self.config==self.state_root/'config'
+   assert not any(c in str(self.state_root) for c in ',:\n\0')
   assert self.config.is_absolute() and not any(c in str(self.config) for c in ',:\n\0')
   self.probe_events=[];self.probe_active_name=self.probe_active_id=None;self.probe_cleanup_blocked=False
  def docker(self,*args,check=True):
   if args and args[0]=='run':
-   args=(args[0],'--user','10001:10001','--memory','64m','--pids-limit','32',
-         '--mount','type=bind,src='+str(self.config)+',dst=/config,readonly',*args[1:])
+   mount='type=bind,src='+str(self.state_root)+',dst=/state,readonly' if self.state_root is not None else 'type=bind,src='+str(self.config)+',dst=/config,readonly'
+   args=(args[0],'--user','10001:10001','--memory','64m','--pids-limit','32','--mount',mount,*args[1:])
   return self.command(['docker',*args],capture=True,check=check)
+ def preflight(self):
+  assert self.state_root is not None and not self.probe_cleanup_blocked
+  assert self.state_root.parent.resolve(strict=True)==self.state_root.parent
+  info=self.state_root.lstat()
+  assert stat.S_ISDIR(info.st_mode) and info.st_uid==info.st_gid==10001 and stat.S_IMODE(info.st_mode)==0o700
+  # Never traverse inaccessible private child paths from observer UID1003.
+  output=self.probe('/bin/sh','-ec',STATE_PREFLIGHT)
+  assert output==b'ADHD_STATE_PREFLIGHT uid=10001 gid=10001 private=ok\n' and not self.probe_cleanup_blocked
+  self.preflight_proven=True
  def snapshot(self):
-  lines=self.probe('/bin/sh','-ec',STATE).decode().splitlines()
+  program=STATE.replace('/config','/state/config') if self.state_root is not None else STATE
+  lines=self.probe('/bin/sh','-ec',program).decode().splitlines()
   assert lines and len(lines)<=4096 and all(re.fullmatch('[a-f0-9]{64} [a-f0-9]{64}',line) for line in lines)
   assert len(lines)==len(set(lines));return sorted(lines)
 
@@ -190,7 +224,7 @@ class Compose:
   self.command=command;self.root=Path(root);self.work=Path(work);self.image=identity(image)
   assert re.fullmatch('adhd-acme-[a-z0-9-]{1,40}',name)
   self.name=name;self.seed=Path(seed_dir);self.state=Path(state_dir);self.gateway=bridge_gateway(gateway)
-  self.ids=[];self.ledger=[];self.issued=False;self.networks=[];self.volumes=[];self.options=None;self.state_probe=StateProbe(self.cmd,self.image,self.state/'config')
+  self.ids=[];self.ledger=[];self.issued=False;self.networks=[];self.volumes=[];self.options=None;self.state_probe=StateProbe(self.cmd,self.image,self.state/'config',self.state)
   self.env={'ADHD_HUB_IMAGE':image,'ADHD_UID':'10001','ADHD_GID':'10001','ADHD_PORT':str(self.private_http_port),
             'ADHD_CONFIG_DIR':str(self.state/'config'),'ADHD_DATA_DIR':str(self.state/'data')}
  def cmd(self,argv,**kw):return self.command(argv,env=self.env,**kw)
@@ -208,7 +242,7 @@ class Compose:
   self.options=render_compose(self.root,self.work,self.gateway,self.private_http_port)
   # Parent creates/configures this complete private state using a separately owned seed probe.
   # Refuse host-owner fallback: actual runtime must always remain productionUID10001.
-  for p in [self.state/'config',self.state/'data']:assert p.is_dir() and p.stat().st_uid==10001
+  self.state_probe.preflight();assert self.state_probe.preflight_proven and not self.state_probe.probe_cleanup_blocked
   self.issued=True
   self.dc('up','-d','--no-deps','hub',timeout=90)
   return self.observe()

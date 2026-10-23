@@ -196,7 +196,7 @@ def prepare(args):
        'scope':'Actual ACME-only packaged Compose/Kind; no broker/model/CNI/providerLoadBalancer qualification',
        'owned_allowlist':{'compose_project':request['ownership']['compose_project'],'kind_cluster':request['ownership']['kind_cluster'],
         'kind_namespace':request['ownership']['kind_namespace'],'networks':request['networks'],
-        'probe_prefix':'adhd-accept-probe-','maximum_compose_probes':3,'pod_probe_prefix':'acme-state-',
+        'probe_prefix':'adhd-accept-probe-','maximum_compose_probes':4,'pod_probe_prefix':'acme-state-',
         'relay_bind':'127.0.0.1:8080','issuer_gateway_port':19104,'private_http':'127.0.0.1:'+str(request['ownership'].get('private_http_port',18766)),'public_bind':'127.0.0.2:80/443'},
        'bootstrap_argv':[tools['python']['path'],'-I','-S','-B','-X','pycache_prefix='+str(work/'parent-pycache'),str(work/'driver.py'),'--execute','--work',str(work),'--plan-sha256','<ACTUAL_PLAN_SHA256>']}
  dump(work/'plan.json',plan)
@@ -396,6 +396,9 @@ def execute(work,plan):
      row['runtime_custody']=getattr(adapter,'ledger',getattr(adapter,'pods',[]))
      if isinstance(adapter,Kind):row['kind_ownership']={'node_id':adapter.node_id,'node_config':adapter.node_config,'volume_proofs':adapter.volume_proofs,'namespace':adapter.lease.evidence(),'api_endpoint':adapter.api_endpoint,'kubeconfig_sha256':adapter.kubeconfig_sha,'image_proofs':adapter.image_proofs}
      row['state_probes']=getattr(getattr(adapter,'state_probe',None),'probe_events',getattr(adapter,'probes',[]))
+     if getattr(adapter,'state_probe',None) is not None:
+      row['state_probe_cleanup_blocked']=adapter.state_probe.probe_cleanup_blocked
+      row['state_preflight_proven']=adapter.state_probe.preflight_proven
     if cleanup:row['passed']=False
     if cleanup and phase_error is None:raise AssertionError('Owned platform cleanup incomplete')
   report['passed']=len(report['platforms'])==2 and all(r['passed'] for r in report['platforms']) and not report['unrun']

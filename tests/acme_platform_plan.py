@@ -104,7 +104,7 @@ def recipe(platform,private_http_port=18766):
   'Finally independently close relay/issuer gateway/clients/owned deployment; qualify only after all recorded resources absent and protected snapshot unchanged.'],
  'relay_ownership':'One explicit exclusive relay owner, coordinated with acceptance at quiet boundary; no native/fault/browser overlap.',
  'issuer_gateway':'New test-only byte-transparent TCP gateway bound to exact owned bridge-host IP19104, source-restricted to actual owned app/node IP. Forward unchanged TLS to127.0.0.1:19100. CA frontend SAN already includes pebble. No TLS termination/header/body rewriting, no0.0.0.0 bind.',
- 'state_evidence':'Hash-only stopped account/current certificate/private-key inventory with exact modes/UID, no private key/account content in durable report.'}
+ 'state_evidence':'Initial UID10001 read-only/network-none/drop-ALL owned probe verifies private state/config/data without inaccessible host-child traversal. Hash-only stopped account/current certificate/private-key inventory with exact modes/UID, no private key/account content in durable report.'}
  if platform=='compose':
   common.update(owned_project='adhd-acme-platform-compose01',
    preparation=['docker compose -f deploy/app.compose.yaml -f deploy/app.acme.compose.yaml -f fixture.compose.yaml config --format json'],
@@ -149,7 +149,7 @@ def prepare(args):
         'Review concrete gateway/adapters and bind actual owned bridge IP/client-source restrictions.',
         'Integrate concrete adapters/public scenario into final closed target driver; preserve all declared checks, no declaration-as-pass.',
         'Closed full helper/deployment/host tools/socket/kubeconfig/fresh resource identity and once-marker snapshot.',
-        'Actual CA02 process/starttick/trust/remaining lease check at quiet boundary; acceptance relay ownership release.',
+        'Actual current CA generation process/starttick/trust/remaining lease check at quiet boundary; acceptance relay ownership release.',
         'Root GO of fresh fully bound executable plan; no tool in this program starts any runtime.']}
  work.mkdir(parents=True,mode=0o700)
  output=work/'plan.json'

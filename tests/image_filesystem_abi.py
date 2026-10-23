@@ -85,14 +85,37 @@ def compile_caller(source,target):
          'sections_sha256':{k:hashlib.sha256(v.encode()).hexdigest() for k,v in sections.items()},'compiler_version':subprocess.check_output(['cc','--version'],text=True).splitlines()[0],'actual_image_loaded':False}
 
 
-def validate_compiled_admission(admission, image, artifact, context):
+def acme_context(context,manifest,artifact):
+    """Source-only preparation binding; never imports/evaluates the app."""
+    if not (context/'compiler-inputs.json').exists():return None,None,None
+    context=plain(context/'compiler-inputs.json').parent
+    inputs=json.loads((context/'compiler-inputs.json').read_bytes())
+    if inputs['schema']!='adhd/container-compiler-inputs@2':
+        assert inputs['schema']=='adhd/container-compiler-inputs@1'
+        return None,None,None
+    helper=plain(Path(__file__).with_name('image_compiled_inputs.py'))
+    code=helper.read_bytes();namespace={'__name__':'bound_compiler_inputs','__file__':str(helper)}
+    exec(compile(code,str(helper),'exec'),namespace)
+    binding=namespace['compiled_context'](context,manifest,artifact)
+    return binding,code,namespace
+
+
+def validate_compiled_admission(admission, image, artifact, context, *, binding=None):
     assert admission['schema'] == 'adhd/compiled40-admission-and-image-binding@1'
     assert admission['passed'] is True and admission['image_config_identity'] == image
     assert admission['artifact_sha256'] == artifact and admission['canonical_manifest_sha256'] == context
     audit = admission['compiled_runtime_audit']
     assert audit['passed'] is True and audit['image_id'] == image
     assert audit['artifact_sha256'] == artifact and audit['canonical_manifest_sha256'] == context
-    assert audit['cache_modules'] == 59 and audit['cache_entries'] == 65
+    if binding is None:
+        assert audit['cache_modules'] == 59 and audit['cache_entries'] == 65
+    else:
+        assert binding['source_sha256']==artifact and binding['canonical_manifest_sha256']==context
+        assert set(binding['acme_files'])=={'LICENSE.lego','LICENSE.musl','acme-build.json','acme-bundle.json','acme-guard','acme-pins.json','lego','lego-sbom.json'} and 'Elixir.ADHD.ACMEClient' in binding['payload_counts']['modules']
+        modules=binding['payload_counts']['modules']
+        assert len(modules)==len(set(modules))
+        assert type(audit['cache_modules']) is int and audit['cache_modules']==len(modules)
+        assert type(audit['cache_entries']) is int and audit['cache_entries']==len(modules)+6+len(binding['acme_files'])
     files = admission['files']
     assert 'manifest.json' not in files and files['cache-manifest.json'] == audit['cache_manifest_sha256']
     assert all(Path(name).name == name and name not in ('.', '..') and
@@ -117,12 +140,17 @@ def prepare(args):
   shutil.copyfile(plain(origin),inputs/name)
  shutil.copyfile(plain(Path(__file__).with_name('image_filesystem_abi_caller.c')),inputs/'image_filesystem_abi_caller.c')
  shutil.copyfile(plain(Path(__file__)),work/'run.py');shutil.copyfile(manifest,inputs/'manifest.json')
+ binding,validator,namespace=acme_context(manifest.parent,hashlib.sha256(raw).hexdigest(),meta['files']['hub.exs'])
+ if binding:
+  assert getattr(args,'admission_manifest',None),'New compiled source requires actual admission'
+  (inputs/'input-validator.py').write_bytes(validator)
  admission_binding=None
  assert bool(getattr(args,'admission_manifest',None)) == bool(getattr(args,'admission_sha256',None))
  if getattr(args,'admission_manifest',None):
   admission_path=plain(args.admission_manifest);assert sha(admission_path)==args.admission_sha256
   admission=json.loads(admission_path.read_text())
-  audit=validate_compiled_admission(admission,args.image,meta['files']['hub.exs'],hashlib.sha256(raw).hexdigest())
+  audit=validate_compiled_admission(admission,args.image,meta['files']['hub.exs'],hashlib.sha256(raw).hexdigest(),binding=binding)
+  if binding:namespace['compiled_admission'](manifest.parent,admission_path,args.admission_sha256,args.image,meta['files']['hub.exs'],required=True)
   (inputs/'admission').mkdir()
   for name,expected in {'manifest.json':args.admission_sha256,**admission['files']}.items():
    assert Path(name).name==name and name not in ('.','..')
@@ -140,6 +168,7 @@ def prepare(args):
        'directories':sorted(str(f.relative_to(work)) for f in work.rglob('*') if f.is_dir()),
        'observer_builds':builds,'caller':{'library':str(caller),'audit':caller_audit},
        'selected_families':list(families),'compiled_admission':admission_binding,
+       'compiled_target':binding,
        'cases':[{'source':s,'op':op} for s,ops in families.items() for op in ops],
        'limits':{'cases':sum(map(len,families.values())),'serial_containers':1,'boundary_seconds':10,'kernel_stop_seconds':2,'docker_seconds':30,
                  'network':'none','memory':'128m','cpus':1,'pids':32,'case_seconds':120,'cleanup_seconds':45,'provider_calls':0,'app_starts':0,'broker_calls':0},

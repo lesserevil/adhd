@@ -74,6 +74,24 @@ def verify(work,plan,host,closure):
     assert target==plan['source_binding']
     socket_path=Path(plan['docker_socket']);assert socket_path.resolve(strict=True)==socket_path
     st=socket_path.stat();assert stat.S_ISSOCK(st.st_mode) and [st.st_dev,st.st_ino]==plan['docker_socket_identity']
+    if 'qualified_export_prefix' in plan:verify_export_prefix(work,plan)
+
+
+def verify_export_prefix(work,plan):
+    prefix=plan['qualified_export_prefix']
+    assert sha(work/'bound/prior-plan.json')==prefix['prior_plan_sha256']
+    assert sha(work/'bound/prior-result.json')==prefix['prior_false_result_sha256']
+    before=json.loads((work/'bound/prior-plan.json').read_bytes())
+    result=json.loads((work/'bound/prior-result.json').read_bytes())
+    assert result['passed'] is False and result['plan_sha256']==prefix['prior_plan_sha256']
+    assert result['artifact_sha256']==before['artifact_sha256']==plan['artifact_sha256']
+    assert [r['name']for r in result['stages']if r['passed'] is True]==['export-schema','export-openapi']
+    assert not result['cleanup_errors']
+    assert [r['name']for r in plan['stages']]==['conservation26','scope-inventory','wire8']
+    for index,name in enumerate(('schema.json','openapi.json')):
+        original=before['stages'][index]
+        assert original['kind']=='export' and original['name']==result['stages'][index]['name'] and result['stages'][index]['exit_code']==0
+        assert sha(original['stdout'])==sha(work/'bound/exports'/name)==prefix['exports'][name]
 
 
 def broker(plan):

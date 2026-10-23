@@ -26,23 +26,29 @@ queue item or let `docs/roadmap/` become a plan archive.
 ## Authorized implementation batches
 
 **Current status:** [ACME-001](#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
-is in progress. Real HTTP-01 issuance, renewal, stopped-copy recovery, all fifteen
-fault scenarios, browser review and the whole Compose deployment have passed.
-Its next action is the whole Kubernetes deployment qualification, followed by final
-documentation review and the current-authority build/receipt/context bridge. The previous
-implementation program's 47 parents and 271 subtasks are complete. Its six final
+implementation and runtime qualification are complete. The
+[runtime composition](../../verification/acme/final-composition/manifest.json)
+binds real HTTP-01 issuance and renewal, stopped-copy recovery, all fifteen fault
+scenarios, desktop/mobile browser review and separate whole Compose and Kubernetes
+deployments to the admitted Linux amd64 image. Public issuer staging remains a
+separate owned-domain/network validation; isolated test-CA results do not establish
+public issuance. The [current receipt](../../verification/current.json) is the
+authority for accepted project qualification; the final documentation bridge is
+retained under `verification/acme/final-documentation-bridge`.
+
+The previous implementation program's 47 parents and 271 subtasks are complete. Its six final
 parents closed through the proper CLI after accepted runtime composition. The
 substantial completed plans are archived with compatibility links. The
 [final documentation-authority and receipt bridge](../../verification/source41-final-documentation-bridge/manifest.json)
 passed its full configured acceptance lifecycle, current declared verification,
-and complete container-context file-set and byte comparison. Its actual current
+and complete container-context file-set and byte comparison. Its historical checkpoint
 receipt binds the unchanged qualified application and container to the archived
 roadmap authority. The [property composition](../../verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
 retains the scoped runtime evidence; earlier failed attempts remain historical.
 
 The final independent review and tracker/retention audit are recorded with the
 [completion evidence](../../verification/final-roadmap-completion/manifest.json).
-ACME-001 is the new outstanding implementation item. Earlier qualification
+ACME-001 is the completed successor to that program. Earlier qualification
 status sentences in PROJECT.md and chronological entries below describe their
 own prior checkpoints; this queue and its final linked evidence give the current
 completion state. Their behavioral requirements and documented operating limits
@@ -62,7 +68,7 @@ and landing of this verified reconciliation.
 
 The following records describe their own earlier checkpoints. Their failures,
 unrun cases, then-current next actions and prior authority transitions remain
-historical; the single current next action is stated above. Passing prefixes
+historical; the current completion state is stated above. Passing prefixes
 never convert any retained false aggregate into a success.
 
 The [readiness successor](../../verification/eventing-readiness-candidate01/root-source-review.json)
@@ -1431,22 +1437,22 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 <a id="acme-001-obtain-and-renew-tls-certificates-through-built-in-acme"></a>
 
-### [ ] ACME-001 — Obtain and renew TLS certificates through built-in ACME
+### [x] ACME-001 — Obtain and renew TLS certificates through built-in ACME
 
 - **Priority:** P2
 - **Owner:** hub HTTPS listener and certificate lifecycle; hot Admin configuration; Compose/Kubernetes packaging
 - **Direction:** Add ACME support directly to ADHD so the application can obtain and manage its own SSL/TLS certificates.
-- **Conclusion:** Plan built-in ACME account, issuance and renewal management with native HTTPS certificate use. All setup, policy and status belong in Admin and take effect without restarting the hub, consistent with CONFIG-002. Preserve existing external TLS termination as an optional deployment choice. The first implementation selects HTTP-01 with a packaged pinned Lego client, a separate token-only challenge listener and native hot-reloaded HTTPS. DNS-01/provider integrations are outside this first supported profile. Source, protocol, certificate lifecycle/recovery, fault and browser qualification and the [whole Compose deployment](../../verification/acme/platform-compose-image42-positive/review.json) have passed. Kubernetes qualification and the final documentation/authority bridge remain open; original failed attempts retain their false results.
+- **Conclusion:** Implement built-in ACME account, issuance and renewal management with native HTTPS certificate use. All setup, policy and status belong in Admin and take effect without restarting the hub, consistent with CONFIG-002. Preserve existing external TLS termination as an optional deployment choice. The first implementation selects HTTP-01 with a packaged pinned Lego client, a separate token-only challenge listener and native hot-reloaded HTTPS. DNS-01/provider integrations are outside this first supported profile. The [runtime composition](../../verification/acme/final-composition/manifest.json) binds source, protocol, certificate lifecycle/recovery, all fifteen faults, browser review and separate whole Compose and Kubernetes qualifications. Original failed attempts retain their false results. Public issuer staging is explicitly unrun and requires an owned configured domain, external DNS, public port-80 routing and issuer connectivity.
 - **Depends on:** CONFIG-002, ROLE-001, KAFKA-007
 - **Implementation:**
-  - [ ] Define the server/listener/domain certificate model, issuer directory and contact settings, supported ACME challenge methods (including the HTTP-01/DNS-01 choice), staging/production separation and public DNS/network prerequisites. Specify ACME and Admin interfaces, errors, ownership and compatibility rigorously.
-  - [ ] Integrate a maintained ACME client inside the application for account registration, domain authorization, certificate issuance and automatic renewal; persist order/retry state, respect issuer retry and rate-limit signals, and resume safely after a crash or restart.
-  - [ ] Persist account keys, private keys, certificate chains and renewal metadata securely with restrictive permissions, credential redaction and documented backup/restore and key-rotation behavior. Keep DNS-provider credentials scoped to the supported challenge integration.
-  - [ ] Provide Admin-only setup and hot configuration for domains, issuer, challenge method, contact/account settings and any required credentials. Expose issuance/renewal progress, expiry and actionable failures; retain exactly the existing server-local role boundaries.
-  - [ ] Add native HTTPS certificate binding and atomic reload after issuance, renewal or Admin changes without hub restart. Keep a usable prior certificate on failed renewal, define safe first-certificate/expired-certificate behavior, and preserve A2A, OIDC origin/cookie rules and federation identity/security.
-  - [ ] Package durable certificate storage and least-privilege challenge exposure for Compose and Kubernetes; document direct HTTPS setup, optional external termination, supported challenge integrations, recovery and operational limits.
+  - [x] Define the server/listener/domain certificate model, issuer directory and contact settings, supported ACME challenge methods (including the HTTP-01/DNS-01 choice), staging/production separation and public DNS/network prerequisites. Specify ACME and Admin interfaces, errors, ownership and compatibility rigorously.
+  - [x] Integrate a maintained ACME client inside the application for account registration, domain authorization, certificate issuance and automatic renewal; persist order/retry state, respect issuer retry and rate-limit signals, and resume safely after a crash or restart.
+  - [x] Persist account keys, private keys, certificate chains and renewal metadata securely with restrictive permissions, credential redaction and documented backup/restore and key-rotation behavior. Keep DNS-provider credentials scoped to the supported challenge integration.
+  - [x] Provide Admin-only setup and hot configuration for domains, issuer, challenge method, contact/account settings and any required credentials. Expose issuance/renewal progress, expiry and actionable failures; retain exactly the existing server-local role boundaries.
+  - [x] Add native HTTPS certificate binding and atomic reload after issuance, renewal or Admin changes without hub restart. Keep a usable prior certificate on failed renewal, define safe first-certificate/expired-certificate behavior, and preserve A2A, OIDC origin/cookie rules and federation identity/security.
+  - [x] Package durable certificate storage and least-privilege challenge exposure for Compose and Kubernetes; document direct HTTPS setup, optional external termination, supported challenge integrations, recovery and operational limits.
 - **Evidence:**
-  - [ ] Use an isolated ACME test CA to verify real account/order/challenge/issuance flows, scheduled renewal, crash recovery and restart reuse of persisted accounts/certificates, with independent certificate-chain, hostname and expiry checks.
-  - [ ] Verify rejected challenges, invalid domains, CA outages, retry/rate limits and failed renewals preserve healthy service and valid prior certificates; test private-key/credential permissions, redacted diagnostics and unauthorized Admin access.
-  - [ ] Exercise initial Admin setup, live policy changes and certificate replacement without hub restart using independent HTTPS clients; verify A2A, OIDC and federation continue to enforce their current authentication and origin rules.
-  - [ ] Qualify documented Compose and Kubernetes challenge/storage configurations and review setup/recovery documentation. Record issuer-staging validation and owned-domain/network prerequisites separately from deterministic test-CA results; do not claim public issuance from a fixture alone.
+  - [x] Use an isolated ACME test CA to verify real account/order/challenge/issuance flows, scheduled renewal, crash recovery and restart reuse of persisted accounts/certificates, with independent certificate-chain, hostname and expiry checks.
+  - [x] Verify rejected challenges, invalid domains, CA outages, retry/rate limits and failed renewals preserve healthy service and valid prior certificates; test private-key/credential permissions, redacted diagnostics and unauthorized Admin access.
+  - [x] Exercise initial Admin setup, live policy changes and certificate replacement without hub restart using independent HTTPS clients; verify A2A, OIDC and federation continue to enforce their current authentication and origin rules.
+  - [x] Qualify documented Compose and Kubernetes challenge/storage configurations and review setup/recovery documentation. Record issuer-staging validation and owned-domain/network prerequisites separately from deterministic test-CA results; do not claim public issuance from a fixture alone.

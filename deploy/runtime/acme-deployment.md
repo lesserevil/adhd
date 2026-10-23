@@ -26,6 +26,12 @@ LoadBalancer Service for only80/443. The provider must forward TCP to the named
 ports; this template does not terminate TLS, create DNS records or claim enforcing
 NetworkPolicy. Keep the base hub ClusterIP/private access boundary for8766.
 
+The base Kubernetes template sets `ERL_FLAGS="+S 2:2 +Q 65536"`. Keep this
+bound when adapting the template: an extremely high inherited descriptor limit
+can otherwise make Erlang allocate its port table beyond the 1 GiB container
+limit before the hub starts. The bound does not change certificate or listener
+settings.
+
 The overlay and Service use the default internal listener ports, 8080 and 8443.
 If an Admin changes either listener port, update the corresponding Compose mapping
 or Kubernetes port/Service target as well. Hot application settings do not rewrite
@@ -50,3 +56,12 @@ requires `scripts/stage_container.py --acme-tools BUNDLE` alongside the ordinary
 verified artifact arguments. Missing tools fail staging for ACMEClient artifacts.
 Native source-tree binary fixtures are diagnostic assets, not a production
 installer or a substitute for actual packaged-image ACME qualification.
+
+Qualification uses the admitted Linux amd64 image with real isolated-CA issuance,
+manual and scheduled renewal, and replacement retaining the same certificate and
+private account. [Whole Compose and whole Kind checks](../../verification/acme/final-composition/manifest.json)
+were observed separately; the earlier combined matrix remains false. The Kind
+scope uses its local-path volume and NodePort forwarding, without a provider
+LoadBalancer, general CSI/CNI, broker or model qualification. A temporary host
+inotify ceiling used for the disposable Kind test was restored after cleanup.
+Public issuer staging remains a separate owned-domain/network validation.

@@ -40,7 +40,7 @@ broker, persistent volumes and optional model deployment. Earlier accepted
 profile-1 artifacts and their evidence remain a compatibility baseline; they do
 not qualify the combined architecture.
 
-The current source41 compiled candidate has passed the complete
+The prior profile 2.1 source41 compiled candidate passed the complete
 [13-program core gate (94 checks)](verification/ownedMULTI008/source41-core13-positive/audit.json)
 and [Compose11/Kind10 deployment programs](verification/ownedMULTI008/source41-baseline-platform-positive/audit.json).
 [Current qualification and limits](docs/admin/event-service.md#qualification)
@@ -49,6 +49,12 @@ The [complete recovery25](verification/recovery41-full25-positive/manifest.json)
 [requirement-by-requirement composition](verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
 complete the runtime evidence. The final documentation-authority/receipt/context
 bridge completes the recorded acceptance; no registry publication or release is claimed.
+
+Application profile 2.2 adds [managed HTTPS and hot ACME controls](docs/admin/acme.md).
+Its [runtime composition](verification/acme/final-composition/manifest.json) binds
+real isolated-CA issuance and renewal, fault recovery, browser review and separate
+whole Compose/Kubernetes deployments to the admitted Linux amd64 image.
+Public issuer staging still requires an owned domain and working external routing.
 
 Build the accepted portable Elixir artifact with the project's pinned Literate AI
 installation and Elixir/OTP toolchain on the supported Linux authoring host:

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- HTTPS: add native TLS with hot Admin ACME setup, pinned HTTP-01 issuance,
+  automatic renewal and private account/certificate recovery. Application profile
+  2.2 publishes the exact management contracts. The [runtime qualification](verification/acme/final-composition/manifest.json)
+  covers real isolated-CA issuance, all fifteen faults, browser review and separate
+  whole Compose/Kubernetes deployments on Linux amd64; public issuer staging
+  requires separately owned DNS and routing.
+
 - Hub API: replace the alternative single-project query/OIDC profile with the
   qualified multi-project Kafka/A2A interfaces, hot Admin authentication and
   scoped history/retrieval/archive operations. Retain the repository's generic

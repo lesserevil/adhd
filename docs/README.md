@@ -94,7 +94,9 @@ subscription and delivery observation, plus confirmed subscription management an
 pending-job retries. It uses a separate administrator credential.
 
 The [managed HTTPS guide](admin/acme.md) describes ACME setup, hot Admin controls,
-private certificate state and the current qualification boundary.
+private certificate state and the current qualification boundary. The
+[ACME runtime composition](../verification/acme/final-composition/manifest.json)
+records the separate certificate, fault, browser and deployment evidence.
 
 The [local model service](admin/model-service.md) runs the selected decision model
 in a pinned GPU container alongside the hub.

@@ -6,9 +6,11 @@ and its [closed interface input](../../components/hub/acme/interface.schema.json
 own the behavior. The published [schema](schema.json), [OpenAPI](openapi.json)
 and [scope inventory](scopes.json) are the client-facing profile. The
 [actual protocol proof](../../verification/acme/protocol22-qualified-positive/manifest.json)
-covers their accepted source and HTTP correspondence. Certificate, fault, browser
-and Compose checks have passed; Kubernetes and the final authority bridge remain
-in progress in the [active queue](../roadmap/active-work.md).
+covers their accepted source and HTTP correspondence. The separate
+[runtime composition](../../verification/acme/final-composition/manifest.json) covers
+certificate lifecycle/recovery, all fifteen fault scenarios, browser review and
+whole Compose and Kubernetes deployment checks. The [active queue](../roadmap/active-work.md)
+records completion and the current-authority receipt boundary.
 
 ## Configuration and listeners
 

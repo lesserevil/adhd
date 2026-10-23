@@ -4,8 +4,10 @@
 
 ACME-001 adds application-managed certificates and native HTTPS to application
 profile 2.2. Its [wire contracts and conformance](../protocol/README.md) are
-qualified. Certificate recovery, fault, browser and Compose qualification have
-passed; Kubernetes and the final authority bridge remain in progress. Earlier profile 2.1 artifacts do not provide these controls. See the
+qualified. The [runtime composition](../../verification/acme/final-composition/manifest.json)
+qualifies certificate recovery, all fifteen fault scenarios, desktop/mobile Admin
+and separate whole Compose and Kubernetes deployments on Linux amd64. Earlier
+profile 2.1 artifacts do not provide these controls. See the
 [roadmap evidence](../roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
 for the current qualification boundary.
 

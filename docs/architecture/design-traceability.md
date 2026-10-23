@@ -1,6 +1,6 @@
 # Design traceability
 
-<!-- literate-ai:authority-reviewed sha256:f4f4afb72ca706829c620e7a1f17ba0a3860037d0542760aebe353e36487f458 -->
+<!-- literate-ai:authority-reviewed sha256:1d34d207e3e878be70b1fb2611f6d96e3d5d7197e802560c1077be24b3ffdfdc -->
 
 [Project guide](../README.md) → design traceability
 
@@ -117,7 +117,7 @@ source, operator-supplied checkpoint and CUDA/base terms. The
 [hub and service inventory](../admin/event-service.md#artifact-and-license-inventory)
 separates application Apache-2.0 from external dependency licenses.
 
-## Managed certificate implementation in progress
+## Managed certificate qualification
 
 ACME-001 is additive application profile 2.2 authority under
 `components/hub/acme/{spec.md,interface.schema.json}`. It selects HTTP-01 through
@@ -133,8 +133,12 @@ artifact. The ACME [source lifecycle](../../verification/acme/source-lifecycle05
 and [protocol conformance](../../verification/acme/protocol22-qualified-positive/manifest.json)
 have passed. Certificate lifecycle/recovery, all fifteen fault scenarios, browser
 review and the [whole Compose deployment](../../verification/acme/platform-compose-image42-positive/review.json)
-have also passed. Kubernetes and the final authority bridge remain open in the
-[active queue](../roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme).
+have also passed. The [runtime composition](../../verification/acme/final-composition/manifest.json)
+adds the separate whole Kubernetes scope and retains every original failed result.
+The [active queue](../roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
+and [current receipt](../../verification/current.json) record the completed scope
+and final authority qualification. Public issuer staging requires separately owned
+DNS and external routing; isolated test-CA results do not establish public issuance.
 
 ## Historical integration checkpoints
 

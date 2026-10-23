@@ -16,10 +16,11 @@ rule. All other array order, constraints, literals and annotations remain strict
 The earlier failed fixture attempts remain recorded as failures.
 
 Profile 2.2 adds the global Admin TLS operations and TLS configuration described
-in the [managed HTTPS wire contract](acme.md). This is protocol qualification:
-certificate, fault, browser and Compose checks have also passed. Kubernetes and
-the final authority bridge remain pending. Protocol qualification alone does not
-claim those separate runtime scopes.
+in the [managed HTTPS wire contract](acme.md). The separate
+[runtime composition](../../verification/acme/final-composition/manifest.json)
+qualifies certificate, fault, browser and whole Compose and Kubernetes scopes.
+Protocol qualification alone does not establish those runtime properties.
+
 The [active work queue](../roadmap/active-work.md) owns that completion status.
 
 ## Interfaces and versions

@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/driver.py", line 455, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/driver.py", line 452, in main
+    else:execute(work,plan)
+         ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/driver.py", line 436, in execute
+    if primary:raise primary
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/driver.py", line 398, in execute
+    row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test:443',initialize,password,certificate_facts)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/frozen/tests/acme_platform_scenario.py", line 65, in run
+    initial_vm=adapter.custody();records.append(initial_vm)
+               ^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/frozen/tests/acme_platform_adapters.py", line 288, in custody
+    return compose_vm_custody(self.cmd,row,self.image)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/frozen/tests/acme_platform_adapters.py", line 218, in compose_vm_custody
+    cmdline=read('/bin/cat','/proc/1/cmdline');exe=read('/bin/readlink','/proc/1/exe')
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/frozen/tests/acme_platform_adapters.py", line 216, in read
+    return command(['docker','exec','--user','10001:10001',identifier,program,path],capture=True,timeout=remaining).stdout
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/frozen/tests/acme_platform_adapters.py", line 242, in cmd
+    def cmd(self,argv,**kw):return self.command(argv,env=self.env,**kw)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-06/frozen/tests/acme_platform_commands.py", line 138, in __call__
+    if check:assert result.returncode==0,'Owned CLI failed: '+argv[0]
+                    ^^^^^^^^^^^^^^^^^^^^
+AssertionError: Owned CLI failed: docker

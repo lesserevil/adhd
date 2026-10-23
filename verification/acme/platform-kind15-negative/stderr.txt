@@ -1,0 +1,27 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/driver.py", line 473, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/driver.py", line 470, in main
+    else:execute(work,plan)
+         ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/driver.py", line 453, in execute
+    if primary:raise primary
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/driver.py", line 399, in execute
+    adapter.start()
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/frozen/tests/acme_platform_adapters.py", line 454, in start
+    self.namespaced('rollout','status','deployment/hub','--timeout=45s',timeout=50)
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/frozen/tests/acme_platform_adapters.py", line 361, in namespaced
+    def namespaced(self,*args,**kw):return self.kubectl('-n',self.lease.name,*args,**kw)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/frozen/tests/acme_platform_adapters.py", line 360, in kubectl
+    return self.cmd(['kubectl','--kubeconfig',str(self.kubeconfig),*args],**kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/frozen/tests/acme_platform_adapters.py", line 357, in cmd
+    return self.command(args,**kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-15/frozen/tests/acme_platform_commands.py", line 138, in __call__
+    if check:assert result.returncode==0,'Owned CLI failed: '+argv[0]
+                    ^^^^^^^^^^^^^^^^^^^^
+AssertionError: Owned CLI failed: kubectl

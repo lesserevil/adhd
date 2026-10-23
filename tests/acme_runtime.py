@@ -35,6 +35,26 @@ def regular(path):
     return value
 
 
+def verified_preload_code(cache, binding):
+    """Match assembled-source atom availability using ONLY verified code files.
+
+    No name/atom comes from a snapshot, request, private product state or CA.
+    Called only by the isolated offline diagnostic CLI, before public dispatch.
+    """
+    cache=Path(cache)
+    beams=binding['beams']
+    assert isinstance(beams,dict) and 59<=len(beams)<=256
+    modules=[]
+    for name,digest in sorted(beams.items()):
+        assert re.fullmatch(r'Elixir(?:\.[A-Z][A-Za-z0-9_]*)+\.beam',name)
+        assert re.fullmatch('[0-9a-f]{64}',digest)
+        regular(cache/name)
+        assert sha(cache/name)==digest,'Verified offline module closure changed before dispatch'
+        modules.append(name[:-5])
+    return ('Enum.each('+json.dumps(modules)+', fn name -> module = String.to_atom(name); '
+            '{:module, ^module} = Code.ensure_loaded(module) end); ')
+
+
 def ticks(pid):
     try:
         return Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()[19]

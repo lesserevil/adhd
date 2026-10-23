@@ -16,7 +16,7 @@ import subprocess
 import time
 from uuid import uuid4
 
-from acme_runtime import NativeDiagnostic, PublicClient, regular, sha, ticks, wait_managed_https
+from acme_runtime import NativeDiagnostic, PublicClient, regular, sha, ticks, wait_managed_https, verified_preload_code
 from acme_acceptance_fixtures import certificate_facts
 
 
@@ -107,7 +107,8 @@ def run_stopped_copy(args, origin, destination, expected_leaf, issuer_root, orig
         stderr = destination/'acme-rebind.stderr'
         env = {'PATH':str(runtime.elixir.parent)+':'+str(runtime.erlang.parent)+':/usr/bin:/bin',
                'HOME':str(destination),'LANG':'C.UTF-8','ERL_FLAGS':'+S 2:2'}
-        code = '[payload] = System.argv(); result = ADHD.CLI.run(JSON.decode!(payload)); IO.puts(JSON.encode!(result))'
+        code = verified_preload_code(runtime.cache,binding) + '[payload] = System.argv(); result = ADHD.CLI.run(JSON.decode!(payload)); IO.puts(JSON.encode!(result))'
+        value['offline_preloaded_beams'] = binding['beams']
         with stdout.open('xb') as out, stderr.open('xb') as err:
             stdout.chmod(0o600)
             stderr.chmod(0o600)

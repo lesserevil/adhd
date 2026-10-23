@@ -1,0 +1,27 @@
+{
+  "scope": "Fixture-only serial relay TIME-WAIT correction; no product or runtime qualification",
+  "change": "Both exact-loopback owned relay server subclasses set SO_REUSEADDR and explicitly disable SO_REUSEPORT. Bind failures still propagate unchanged; lifecycle closure predicates untouched.",
+  "files": {
+    "tests/acme_issuer_fault_relay.py": "a8a8511f38d981cb83f35cc7739f838662462b89a91e6c22f7a5a714dee1ab78",
+    "tests/acme_challenge_relay.py": "e6a9bad6ab23f1ef071c980c057e754f88d8e9d033f14e1d01efaac4bef164cd",
+    "tests/acme_relay_binding_unit.py": "f9075158a117d999561acf838469549d16fd8643ea5e3d5ffc836d4db55de82d"
+  },
+  "tests": {
+    "pure_acme_checks": 60,
+    "passed": true,
+    "new_guards": 4,
+    "actual_stdlib_server_bind_with_fake_socket": true,
+    "live_listener_EADDRINUSE_propagation_both_relays": true,
+    "actual_resources_started": false
+  },
+  "historical_evidence": "Root retains preflight01 malformed synthetic User-Agent failure and preflight02 TIME-WAIT EADDRINUSE; neither relabeled successful.",
+  "limits": "No real socket bind/rebind was performed by this agent. Old already-created TIME-WAIT state came from the prior non-reuse server; first new root-owned preflight still requires its observed port premise.",
+  "documentation_review": {
+    "surfaces": [
+      "docs/admin/acme.md",
+      "docs/user/documentation-policy.md (actual root)",
+      "verification/acme-acceptance-design/image-fault-flow-preparation.json"
+    ],
+    "conclusion": "Experimental qualification remains open. This test fixture lifecycle correction changes no accepted app listener behavior or production networking guidance; no ordinary guide changes needed."
+  }
+}

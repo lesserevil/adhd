@@ -159,7 +159,9 @@ class IssuerFaultRelay:
         server_context.load_cert_chain(self.files['cert'],self.files['key'])
         upstream_context=ssl.create_default_context(cafile=self.files['root']);upstream_context.minimum_version=ssl.TLSVersion.TLSv1_2
         class Server(socketserver.ThreadingTCPServer):
-            allow_reuse_address=False;daemon_threads=True;block_on_close=False
+            # Rebind after owned TIME-WAIT; never share a live listener.
+            allow_reuse_address=True;allow_reuse_port=False
+            daemon_threads=True;block_on_close=False
             def process_request(self,request,address):
                 if owner._claim_request(request):
                     owner._spawn_worker(super().process_request_thread,request,address)

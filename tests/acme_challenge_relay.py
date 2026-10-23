@@ -76,7 +76,9 @@ class ChallengeRelay:
         owner = self
 
         class Server(socketserver.ThreadingTCPServer):
-            allow_reuse_address = False
+            # Rebind after owned TIME-WAIT; never share a live listener.
+            allow_reuse_address = True
+            allow_reuse_port = False
             daemon_threads = False
             block_on_close = True
 

@@ -134,6 +134,6 @@ if __name__=='__main__':
     parser.add_argument('--work',type=Path,required=True)
     parser.add_argument('--lifetime-seconds',type=int,default=3600)
     args=parser.parse_args()
-    if not 1<=args.lifetime_seconds<=7200:parser.error('bounded test fixture lifetime required')
+    if not 1<=args.lifetime_seconds<=10800:parser.error('bounded test fixture lifetime required')
     args.tools=args.tools.resolve()
     run(args)

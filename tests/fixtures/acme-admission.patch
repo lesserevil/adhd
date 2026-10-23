@@ -1,0 +1,104 @@
+--- a/tls.exs
++++ b/tls.exs
+@@ -137,21 +137,38 @@
+         receipt -> D.fail("IDEMPOTENCY_CONFLICT")
+         cmd["expected_revision"] != s.config["config_revision"] -> D.fail("CONFIG_CONFLICT")
+         not enabled?(s.config) -> D.fail("TLS_RENEW_UNAVAILABLE")
+-        s.trust_error or s.listener_error -> D.fail("CONFIG_APPLY_FAILED")
++        s.trust_error or s.listener_error or s.recovering -> D.fail("CONFIG_APPLY_FAILED")
+         true ->
+-          s = try do initialize(s) |> load_retry_floor() rescue _ -> D.fail("CONFIG_WRITE_FAILED") catch _, _ -> D.fail("CONFIG_WRITE_FAILED") end
++          s = admission_state(s)
+           result = %{"accepted" => true, "config_revision" => s.config["config_revision"]}
+           data = put_in(s.data, ["receipts", key], %{"digest" => digest, "result" => result})
+           # Persist the receipt and due request together before acknowledging it.
+-          rate_due = s.data["issuer_retry_at"] || 0
+-          data = data |> Map.put("next_attempt_at", max(D.ms(), rate_due)) |> Map.put("force_pending", true)
++          coalesced = is_map(s.job) and s.job.fingerprint == s.fingerprint
++          data = if coalesced do
++            # This exact in-flight policy already covers the request. Do not
++            # leave another force intent behind if its result is a hard failure.
++            data
++          else
++            rate_due = s.data["issuer_retry_at"] || 0
++            data |> Map.put("next_attempt_at", max(D.ms(), rate_due)) |> Map.put("force_pending", true)
++          end
+           s = save(%{s | data: data})
+-          send(self(), :force)
++          if not coalesced, do: send(self(), :force)
+           {:reply, {:ok, result}, s}
+       end
+     rescue _ -> {:reply, {:error, "CONFIG_WRITE_FAILED"}, s}
+     catch {:domain, code} -> {:reply, {:error, code}, s} end
+   end
++  defp admission_state(s) do
++    s = initialize(s) |> load_retry_floor()
++    if is_nil(s.job) do
++      if not ADHD.ACMEClient.lock_available?(s.root), do: D.fail("CONFIG_APPLY_FAILED")
++      remember_account_keys(s)
++    else
++      s
++    end
++  rescue _ -> D.fail("CONFIG_APPLY_FAILED")
++  catch _, _ -> D.fail("CONFIG_APPLY_FAILED") end
+   def handle_info(:force, s), do: {:noreply, maybe_start(s, true)}
+   def handle_info(:tick, s) do
+     Process.send_after(self(), :tick, 1000)
+@@ -332,12 +349,12 @@
+   defp public(s) do
+     t = s.config["tls"]; cert = s.certificate; d = s.data
+     https = cond do not t["enabled"] -> "disabled"; s.listener_error or not Map.has_key?(s.listeners, :https) -> "error"; is_map(s.data["last_error"]) and s.data["last_error"]["code"] == "ACME_STORAGE" and is_nil(cert) -> "error"; is_nil(cert) -> "waiting"; cert.metadata["not_before"] > D.ms() -> "error"; not ADHD.TLSCertificate.live?(cert) -> "expired"; true -> "ready" end
+-    acme = cond do not enabled?(s.config) -> "disabled"; s.trust_error or s.listener_error -> "error"; s.job != nil -> "ordering"; d["last_error"] && not d["last_error"]["retryable"] -> "error"; d["last_error"] -> "backoff"; true -> "idle" end
++    acme = cond do not enabled?(s.config) -> "disabled"; s.trust_error or s.listener_error or s.recovering -> "error"; s.job != nil -> "ordering"; d["last_error"] && not d["last_error"]["retryable"] -> "error"; d["last_error"] -> "backoff"; true -> "idle" end
+     metadata = if cert, do: cert.metadata |> Map.update!("not_before", &iso/1) |> Map.update!("not_after", &iso/1), else: nil
+     %{"enabled" => t["enabled"], "https_state" => https, "acme_state" => acme,
+       "domains" => t["acme"]["domains"], "active_domains" => if(https == "ready", do: cert.domains, else: []),
+       "certificate" => metadata, "last_attempt_at" => iso(d["last_attempt_at"]),
+-      "next_attempt_at" => if(enabled?(s.config) and is_nil(s.job) and not (s.trust_error or s.listener_error), do: iso(d["next_attempt_at"]), else: nil),
++      "next_attempt_at" => if(enabled?(s.config) and is_nil(s.job) and not (s.trust_error or s.listener_error or s.recovering), do: iso(d["next_attempt_at"]), else: nil),
+       "last_success_at" => iso(d["last_success_at"]), "last_error" => d["last_error"], "config_revision" => s.config["config_revision"]}
+   end
+   defp initialize(%{owner: owner} = s) when is_binary(owner) do
+@@ -439,7 +456,13 @@
+         D.check(cert.metadata == info["certificate"])
+         %{s | certificate: cert, active: id}
+       else s end
+-      if s.data["ordering"], do: %{s | recovering: true}, else: s
++      if s.data["ordering"] == true or not ADHD.ACMEClient.lock_available?(s.root) do
++        %{s | recovering: true, data: Map.put(s.data, "last_error", error("ACME_RECOVERY"))}
++      else
++        # Account bytes are examined only after actual old-writer closure. A
++        # damaged account blocks issuance while retaining the loaded valid leaf.
++        try do remember_account_keys(s) rescue _ -> storage_error(s) catch _, _ -> storage_error(s) end
++      end
+     else s end
+   end
+   defp validate_state(data) do
+@@ -451,7 +474,7 @@
+     for key <- ~w(ordering force_pending), do: D.optional(data, key, &D.check(is_boolean(&1)))
+     if data["last_error"] do
+       value = data["last_error"]
+-      D.check(is_map(value) and value["code"] in ~w(ACME_NETWORK ACME_AUTHORIZATION ACME_RATE_LIMIT ACME_ACCOUNT ACME_ORDER_TIMEOUT ACME_PROCESS ACME_CERTIFICATE ACME_STORAGE))
++      D.check(is_map(value) and value["code"] in ~w(ACME_NETWORK ACME_AUTHORIZATION ACME_RATE_LIMIT ACME_ACCOUNT ACME_ORDER_TIMEOUT ACME_PROCESS ACME_CERTIFICATE ACME_STORAGE ACME_CONFIG_CHANGED ACME_RECOVERY))
+       D.check(value == error(value["code"]))
+     end
+     D.object(data["receipts"])
+@@ -574,6 +597,8 @@
+       "ACME_ORDER_TIMEOUT" -> {"Certificate request timed out.", true}
+       "ACME_CERTIFICATE" -> {"Issued certificate validation failed.", false}
+       "ACME_STORAGE" -> {"Managed certificate state is unavailable.", false}
++      "ACME_CONFIG_CHANGED" -> {"Certificate request configuration changed.", true}
++      "ACME_RECOVERY" -> {"Interrupted certificate request requires recovery.", true}
+       _ -> {"Certificate client failed.", true}
+     end
+     %{"code" => code, "message" => message, "retryable" => retryable}
+--- a/tls_certificate.exs
++++ b/tls_certificate.exs
+@@ -57,6 +57,7 @@
+     if bytes == "" do
+       entries
+     else
++      D.check(length(entries) < 32)
+       [_, block, _label, rest] = Regex.run(~r/\A(-----BEGIN ([A-Z0-9 ]+)-----[ \t\r\n]+[A-Za-z0-9+\/= \t\r\n]+-----END \2-----)([\s\S]*)\z/, bytes)
+       [entry] = :public_key.pem_decode(block)
+       pem_blocks(rest, [entry | entries])

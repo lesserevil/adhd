@@ -291,6 +291,17 @@ def release_lease(descriptor,report,primary):
  report['cleanup_errors'].extend(errors)
 
 
+def seed_evidence(row,probe):
+ if probe is not None:
+  row['seed_probe']=list(probe.probe_events)
+  row['seed_probe_cleanup_blocked']=probe.probe_cleanup_blocked
+
+
+def initialize_seed(row,probe):
+ try:probe.initialize()
+ finally:seed_evidence(row,probe)
+
+
 def execute(work,plan):
  from acme_platform_commands import Commands
  from acme_platform_adapters import Compose,Kind,SeedProbe
@@ -326,7 +337,7 @@ def execute(work,plan):
   before=json.loads((work/'bound/protected.json').read_bytes());protected(command,before)
   for platform in plan['order']:
    verify(work,plan);ca=check_ca(plan)
-   adapter=gateway=relay=None;netid=None;phase_error=None;cleanup=[];netledger={'issued':False,'id':None}
+   adapter=gateway=relay=seed_probe=None;netid=None;phase_error=None;cleanup=[];netledger={'issued':False,'id':None}
    row={'platform':platform,'passed':False,'cleanup_errors':cleanup};report['platforms'].append(row);report['unrun'].remove(platform)
    local=work/'runtime'/platform;local.mkdir(mode=0o700)
    owner=request['ownership']['compose_project' if platform=='compose' else 'kind_cluster'];spec=request['networks'][platform]
@@ -338,7 +349,7 @@ def execute(work,plan):
     if platform=='compose':
      (local/'seed').mkdir(mode=0o700);(local/'state').mkdir(mode=0o700)
      dump(local/'seed/hub.json',seed);(local/'seed/directory-root.pem').write_text(trust);(local/'seed/directory-root.pem').chmod(0o600)
-     seed_probe=SeedProbe(command,target['image'],local/'seed',local/'state');seed_probe.initialize();row['seed_probe']=seed_probe.probe_events
+     seed_probe=SeedProbe(command,target['image'],local/'seed',local/'state');initialize_seed(row,seed_probe)
      adapter=Compose(command,work/'frozen',local,target['image'],owner,local/'seed',local/'state',spec['gateway'])
     else:
      adapter=Kind(command,work/'frozen',local,target['image'],owner,request['ownership']['node_image'],spec['gateway'],netid,spec['name'],
@@ -363,6 +374,7 @@ def execute(work,plan):
      except BaseException as error:
       cleanup.append({'resource':name,'failure_type':type(error).__name__})
       if phase_error:phase_error.add_note('Owned '+name+' cleanup failed: '+type(error).__name__)
+    seed_evidence(row,seed_probe)
     row['network_ownership']=dict(netledger)
     if gateway:row['gateway']=gateway.evidence()
     if relay:row['relay']=relay.snapshot()

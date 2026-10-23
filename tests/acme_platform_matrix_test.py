@@ -100,6 +100,19 @@ class Guards(unittest.TestCase):
   with patch.object(m.fcntl,'flock'),patch.object(m.os,'close'):
    m.release_lease(17,report,None)
   self.assertTrue(report['relay_lease_released']);self.assertEqual(report['cleanup_errors'],[])
+ def test_seed_initialize_failure_retains_issued_custody_and_primary(self):
+  original=TimeoutError('seed timeout');probe=SimpleNamespace(probe_events=[],probe_cleanup_blocked=False)
+  def initialize():
+   probe.probe_events.append({'name':'adhd-accept-probe-owned','id':'a'*64,'closed':False})
+   probe.probe_cleanup_blocked=True
+   raise original
+  probe.initialize=initialize;row={}
+  with self.assertRaises(TimeoutError) as caught:m.initialize_seed(row,probe)
+  self.assertIs(caught.exception,original)
+  self.assertEqual(row['seed_probe'],probe.probe_events);self.assertTrue(row['seed_probe_cleanup_blocked'])
+  # Phase finally refreshes the ledger even if later independent cleanup adds facts.
+  probe.probe_events.append({'cleanup':'unknown'});m.seed_evidence(row,probe)
+  self.assertEqual(len(row['seed_probe']),2)
  def test_template_declares_new_adapter_transitive_shipped_service(self):
   path=Path(__file__).with_name('acme_platform_plan.py')
   spec=importlib.util.spec_from_file_location('recipe',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)

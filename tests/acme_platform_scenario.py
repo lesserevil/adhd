@@ -8,7 +8,8 @@ from datetime import datetime, timezone
 import time
 import errno
 import re
-from urllib.error import URLError
+import ssl
+from urllib.error import URLError, HTTPError
 
 
 def wait(test,seconds,label):
@@ -18,6 +19,19 @@ def wait(test,seconds,label):
   if value:return value
   time.sleep(.1)
  raise AssertionError(label)
+
+
+def private_startup_health(client):
+ # Only the newly published private plain-HTTP socket has this startup allowance.
+ assert re.fullmatch(r'http://127[.]0[.]0[.]1:[1-9][0-9]{0,4}',client.base)
+ try:status=client.request('/health')[0]
+ except HTTPError:raise
+ except (URLError,OSError) as error:
+  reason=error.reason if isinstance(error,URLError) else error
+  if isinstance(reason,OSError) and not isinstance(reason,ssl.SSLError) and reason.errno in (errno.ECONNREFUSED,errno.ECONNRESET):return False
+  raise
+ assert status==200,'Private startup health status must be200'
+ return True
 
 
 def managed_health(secure):

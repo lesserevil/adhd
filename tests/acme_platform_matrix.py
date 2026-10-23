@@ -391,7 +391,7 @@ def execute(work,plan):
     gateway=IssuerGateway(spec['gateway'],spec['subnet'],[adapter.client_ip()]);gateway.start()
     relay=ChallengeRelay(upstreams={'one.acme.test':('127.0.0.2',80)});relay.start()
     admin=PublicClient('http://127.0.0.1:'+str(request['ownership'].get('private_http_port',18766)))
-    assert wait(lambda: __import__('acme_platform_scenario').managed_health(admin),45,'Private Admin startup')
+    assert wait(lambda: __import__('acme_platform_scenario').private_startup_health(admin),45,'Private Admin startup')
     password=adapter.exec(['/bin/cat','/config/initial-admin-password.txt'],sensitive=True).decode()
     password=re.search(r'^Password: (.+)$',password,re.M)[1];admin.login('admin',password)
     secure=PublicClient('https://one.acme.test:443',trust=work/'bound/issuer_root.pem',connect_ip='127.0.0.2')

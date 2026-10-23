@@ -1,6 +1,7 @@
 """Mocked transport/render/cleanup guards; no socket, compiler or resource starts."""
 import importlib.util
 import errno
+import ssl
 import json
 import subprocess
 import copy
@@ -10,7 +11,7 @@ import selectors
 import sys
 import tempfile
 import unittest
-from urllib.error import URLError
+from urllib.error import URLError, HTTPError
 from unittest.mock import patch
 import yaml
 
@@ -181,6 +182,29 @@ class Deployment(unittest.TestCase):
    def request(self,*a):raise self.error
   self.assertFalse(scenario.managed_health(Client(URLError(ConnectionRefusedError(errno.ECONNREFUSED,'refused')))))
   for error in [URLError(OSError(errno.EHOSTUNREACH,'unreachable')),ValueError('wrong TLS')]:
+   with self.assertRaises(type(error)):scenario.managed_health(Client(error))
+ def test_private_http_startup_only_refusal_reset_pending(self):
+  class Client:
+   base='http://127.0.0.1:18866'
+   def __init__(self,result):self.result=result
+   def request(self,path):
+    assert path=='/health'
+    if isinstance(self.result,BaseException):raise self.result
+    return (self.result,{})
+  self.assertTrue(scenario.private_startup_health(Client(200)))
+  for number in [errno.ECONNREFUSED,errno.ECONNRESET]:
+   for error in [OSError(number,'startup'),URLError(OSError(number,'startup'))]:
+    self.assertFalse(scenario.private_startup_health(Client(error)))
+  for error in [OSError(errno.ETIMEDOUT,'timeout'),URLError(OSError(errno.EHOSTUNREACH,'unreachable')),
+    ssl.SSLError(errno.ECONNRESET,'TLS reset is not plain startup'),URLError(ssl.SSLError(1,'wrong certificate')),
+    HTTPError(Client.base+'/health',503,'HTTP failure',{},None)]:
+   with self.subTest(error=error),self.assertRaises(type(error)):scenario.private_startup_health(Client(error))
+  for status in [302,403,500,503]:
+   with self.assertRaises(AssertionError):scenario.private_startup_health(Client(status))
+  value=Client(200);value.base='https://one.acme.test:443'
+  with self.assertRaises(AssertionError):scenario.private_startup_health(value)
+  # Existing trusted-HTTPS helper still propagates both raw and wrapped resets.
+  for error in [ConnectionResetError(errno.ECONNRESET,'reset'),URLError(ConnectionResetError(errno.ECONNRESET,'reset'))]:
    with self.assertRaises(type(error)):scenario.managed_health(Client(error))
  def test_per_resource_absence_does_not_accept_case_or_mixed_failures(self):
   for kind,message in [('volume','Error response from daemon: get MiXeD: no such volume'),('network','Error response from daemon: network MiXeD not found')]:

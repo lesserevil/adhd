@@ -1,0 +1,172 @@
+--- a/tls.exs
++++ b/tls.exs
+@@ -2,6 +2,7 @@
+   use GenServer
+   alias ADHD.Domain, as: D
+   alias ADHD.ACMEFiles, as: F
++  @status_table Module.concat(__MODULE__, Status)
+   def defaults do
+     %{"enabled" => false, "host" => "0.0.0.0", "port" => 8443,
+       "challenge_host" => "0.0.0.0", "challenge_port" => 8080,
+@@ -62,11 +63,29 @@
+   catch _, _ -> D.fail("CONFIG_APPLY_FAILED") end
+ 
+   def start_link(path, c), do: GenServer.start_link(__MODULE__, {path, c}, name: __MODULE__)
+-  def prepare(c), do: GenServer.call(__MODULE__, {:prepare, c}, 10000)
++  def prepare(c) do
++    server = Process.whereis(__MODULE__)
++    ticket = make_ref()
++    if is_pid(server) do
++      try do GenServer.call(server, {:prepare, ticket, c}, 10000)
++      catch :exit, _ -> send(server, {:cancel_prepare, ticket}); {:error, :unavailable} end
++    else {:error, :unavailable} end
++  end
+   def activate(prepared, c), do: GenServer.call(__MODULE__, {:activate, prepared, c}, 10000)
+-  def discard(prepared), do: GenServer.call(__MODULE__, {:discard, prepared})
+-  def status, do: GenServer.call(__MODULE__, :status)
+-  def renew(cmd, user), do: GenServer.call(__MODULE__, {:renew, cmd, user}, 10000)
++  def discard({:ok, %{ticket: ticket}}) do
++    if server = Process.whereis(__MODULE__), do: send(server, {:cancel_prepare, ticket})
++    :ok
++  end
++  def discard(prepared) do
++    GenServer.call(__MODULE__, {:discard, prepared})
++  catch :exit, _ -> :ok end
++  def status do
++    [{:state, view}] = :ets.lookup(@status_table, :state)
++    public(view)
++  rescue _ -> D.fail("DEPENDENCY_UNAVAILABLE") end
++  def renew(cmd, user) do
++    GenServer.call(__MODULE__, {:renew, cmd, user}, 10000)
++  catch :exit, _ -> {:error, "DEPENDENCY_UNAVAILABLE"} end
+   def snapshot, do: :persistent_term.get({__MODULE__, :certificate}, nil)
+   def challenge_snapshot, do: :persistent_term.get({__MODULE__, :challenge}, nil)
+   def format_status(status), do: status |> Map.put(:state, :redacted) |> Map.put(:message, :redacted) |> Map.put(:log, [])
+@@ -81,7 +100,7 @@
+       :persistent_term.put({__MODULE__, :certificate}, s.certificate)
+       :persistent_term.put({__MODULE__, :challenge}, nil)
+       Process.send_after(self(), :tick, 100)
+-      {:ok, s}
++      {:ok, publish_status(s)}
+     rescue _ -> {:stop, :managed_tls_unavailable}
+     catch _, _ -> {:stop, :managed_tls_unavailable} end
+   end
+@@ -97,7 +116,9 @@
+   catch _, _ -> %{storage_error(s) | listener_error: true} end
+ 
+   def handle_call(:status, _, s), do: {:reply, public(s), s}
+-  def handle_call({:prepare, c}, _, s) do
++  def handle_call({:prepare, c}, _, s), do: prepare_reply(s, c, nil)
++  def handle_call({:prepare, ticket, c}, _, s), do: prepare_reply(s, c, ticket)
++  defp prepare_reply(s, c, ticket) do
+     try do
+       # No network or order is started during a configuration transaction.
+       trust = read_trust(c)
+@@ -106,15 +127,22 @@
+       # creates no account/order/challenge and never publishes a certificate.
+       if enabled?(c), do: initialize(s)
+       p = prepare_listeners(s, c)
+-      {:reply, {:ok, %{listeners: p, trust: trust, fingerprint: fp}}, s}
++      prepared = %{listeners: p, trust: trust, fingerprint: fp}
++      {prepared, next} = if is_reference(ticket) do
++        prepared = Map.put(prepared, :ticket, ticket)
++        {prepared, Map.put(s, :preparations, Map.put(Map.get(s, :preparations, %{}), ticket, prepared))}
++      else {prepared, s} end
++      {:reply, {:ok, prepared}, next}
+     rescue _ -> {:reply, {:error, :unavailable}, s}
+     catch _, _ -> {:reply, {:error, :unavailable}, s} end
+   end
+   def handle_call({:discard, {:ok, p}}, _, s) do
+-    Enum.each(p.listeners, fn {_, socket} -> if socket, do: :gen_tcp.close(socket) end)
+-    {:reply, :ok, s}
++    if is_nil(p[:ticket]) or Map.has_key?(Map.get(s, :preparations, %{}), p.ticket), do: close_prepared(p)
++    {:reply, :ok, forget_prepared(s, p)}
+   end
+   def handle_call({:activate, {:ok, p}, c}, _, s) do
++    if p[:ticket], do: D.check(Map.get(Map.get(s, :preparations, %{}), p.ticket) == p)
++    s = forget_prepared(s, p)
+     old = s.fingerprint
+     repairing_bootstrap = s.trust_error or s.listener_error
+     s = activate_listeners(%{s | trust: p.trust, trust_error: false, listener_error: false}, p.listeners, c)
+@@ -125,7 +153,7 @@
+       data = Map.merge(s.data, %{"next_attempt_at" => if(floor > D.ms(), do: floor, else: nil), "last_error" => nil})
+       %{s | data: data, fingerprint: p.fingerprint}
+     else s end
+-    {:reply, :ok, s}
++    {:reply, :ok, publish_status(s)}
+   end
+   def handle_call({:renew, cmd, user}, _, s) do
+     try do
+@@ -154,7 +182,7 @@
+           end
+           s = save(%{s | data: data})
+           if not coalesced, do: send(self(), :force)
+-          {:reply, {:ok, result}, s}
++          {:reply, {:ok, result}, publish_status(s)}
+       end
+     rescue _ -> {:reply, {:error, "CONFIG_WRITE_FAILED"}, s}
+     catch {:domain, code} -> {:reply, {:error, code}, s} end
+@@ -169,25 +197,50 @@
+     end
+   rescue _ -> D.fail("CONFIG_APPLY_FAILED")
+   catch _, _ -> D.fail("CONFIG_APPLY_FAILED") end
+-  def handle_info(:force, s), do: {:noreply, maybe_start(s, true)}
++  def handle_info({:cancel_prepare, ticket}, s) do
++    case Map.get(Map.get(s, :preparations, %{}), ticket) do
++      nil -> {:noreply, s}
++      p -> close_prepared(p); {:noreply, forget_prepared(s, p)}
++    end
++  end
++  def handle_info(:force, s), do: {:noreply, publish_status(maybe_start(s, true))}
+   def handle_info(:tick, s) do
+     Process.send_after(self(), :tick, 1000)
+-    {:noreply, maybe_start(recover_closed(close_job(s)), false)}
++    {:noreply, publish_status(maybe_start(recover_closed(close_job(s)), false))}
+   end
+   def handle_info({:acme_result, ref, result}, %{job: %{ref: ref} = job} = s) do
+     Process.demonitor(job.monitor, [:flush])
+     :persistent_term.put({__MODULE__, :challenge}, nil)
+     # Port closure on cancellation is not proof the guardian has reaped its group.
+     s = %{s | job: Map.merge(job, %{closure_pending: true, result: result})}
+-    {:noreply, close_job(s)}
++    {:noreply, publish_status(close_job(s))}
+   end
+   def handle_info({:DOWN, monitor, :process, _, _}, %{job: %{monitor: monitor} = job} = s) do
+     :persistent_term.put({__MODULE__, :challenge}, nil)
+     s = %{s | job: Map.merge(job, %{closure_pending: true, result: {:error, "ACME_PROCESS", nil}})}
+-    {:noreply, close_job(s)}
++    {:noreply, publish_status(close_job(s))}
+   end
+   def handle_info({:close_listener, socket}, s), do: (:gen_tcp.close(socket); {:noreply, s})
+   def handle_info(_, s), do: {:noreply, s}
++  defp close_prepared(p), do: Enum.each(p.listeners, fn {_, socket} -> if socket, do: :gen_tcp.close(socket) end)
++  defp forget_prepared(s, %{ticket: ticket}), do: Map.put(s, :preparations, Map.delete(Map.get(s, :preparations, %{}), ticket))
++  defp forget_prepared(s, _), do: s
++
++  defp publish_status(s) do
++    # Only redacted public-state inputs enter this read-only snapshot. Status
++    # reads never wait behind certificate validation, fsync or process teardown.
++    if :ets.whereis(@status_table) == :undefined do
++      :ets.new(@status_table, [:named_table, :set, :protected, read_concurrency: true])
++    end
++    cert = if s.certificate, do: Map.take(s.certificate, [:metadata, :domains, :expires]), else: nil
++    t = s.config["tls"]
++    view = %{config: %{"config_revision" => s.config["config_revision"], "tls" => %{"enabled" => t["enabled"], "acme" => Map.take(t["acme"], ~w(enabled domains))}},
++      certificate: cert, data: Map.take(s.data, ~w(last_attempt_at next_attempt_at last_success_at last_error)),
++      listeners: Map.new(Map.keys(s.listeners), &{&1, true}), job: if(s.job, do: :active, else: nil),
++      trust_error: s.trust_error, listener_error: s.listener_error, recovering: s.recovering}
++    :ets.insert(@status_table, {:state, view})
++    s
++  end
+   defp close_job(%{job: %{closure_pending: true} = job} = s) do
+     if ADHD.ACMEClient.lock_available?(s.root) do
+       s = %{s | job: nil}
+@@ -436,7 +489,7 @@
+     accounts = Map.new(s.data["accounts"] || %{}, fn {id, value} ->
+       root = Path.join([s.root, "accounts", id])
+       F.harden_tree(root)
+-      keys = Path.wildcard(Path.join(root, "accounts/**/keys/*.key")) |> Map.new(fn path ->
++      keys = Path.wildcard(Path.join(root, "accounts/**/*.key")) |> Map.new(fn path ->
+         {Path.relative_to(path, root), :crypto.hash(:sha256, F.read(path)) |> Base.encode16(case: :lower)}
+       end)
+       # Never forget evidence of a previously initialized account key.

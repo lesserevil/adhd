@@ -1,0 +1,24 @@
+{
+  "scope": "Fixture-only public response parser correction; source/image unchanged",
+  "failure_evidence": "verification/acme-image42-foundation02-failure/manifest.json",
+  "normative_reference": "components/hub/identity/spec.md OIDC start and callback real redirects; actual server.exs routes302 with Location and raw empty body",
+  "change": "Allow empty body only on302 with nonemptyLocation before JSON parsing. NonemptyJSON still uses strict json.loads. Empty200JSON, missing/blankLocation, nonempty malformedJSON and other302whitespace remain failures.",
+  "preserved": [
+    "Original foundation18 check bytes/branches/assertions",
+    "Authentication/role/CSRF/nonce/destination assertions",
+    "No redirect following",
+    "One original request per call and existing5s timeout/response bound",
+    "Originalfalse02 and actual10prefix"
+  ],
+  "files": {
+    "tests/acme_runtime.py": "44e434ad54ee3f86268ffd0beef6c41b8279208337b61996ff60226dd838b9c5",
+    "tests/acme_runtime_unit.py": "e2768f714c1bcb825a04fdc363519fd63d9a68ca353b7006bb65148c3adbe47d"
+  },
+  "checks": {
+    "new_pure_methods": 2,
+    "actual_HTTPError302_empty_with_Location": true,
+    "blank200_and_malformed_rejected": true,
+    "resources_started": false
+  },
+  "documentation_review": "Root identity spec and current ACME Admin guide already describe real OIDC redirects/continuity as qualification required. No product behavior or accepted capability changes; root owns final documentation lifecycle."
+}

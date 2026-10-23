@@ -101,5 +101,38 @@ class RuntimeChecks(unittest.TestCase):
             connect.assert_not_called()
 
 
+    def test_only_documented_empty302_with_location_skips_json_body_parsing(self):
+        import io
+        from email.message import Message
+        from urllib.error import HTTPError
+        vectors=[(302,b'', '/admin',True),(200,b'', '/admin',False),
+          (302,b'',None,False),(302,b'','   ',False),(307,b'','/admin',False),
+          (302,b'{broken','/admin',False),(200,b'{broken',None,False),
+          (302,b' ', '/admin',False)]
+        for status,body,location,accepted in vectors:
+            with self.subTest(status=status,body=body,location=location):
+                headers=Message();headers['Content-Type']='application/json'
+                if location is not None:headers['Location']=location
+                reply=HTTPError('http://127.0.0.1:19001/admin/oidc/start',status,'fixture',headers,io.BytesIO(body))
+                client=PublicClient('http://127.0.0.1:19001');client.opener=Mock()
+                client.opener.open.side_effect=reply
+                if accepted:
+                    actual,value,retained=client.request('/admin/oidc/start')
+                    self.assertEqual((actual,value),(302,''));self.assertIs(retained,headers)
+                    self.assertEqual(retained['Location'],location)
+                else:
+                    with self.assertRaises(json.JSONDecodeError):client.request('/admin/oidc/start')
+                self.assertEqual(client.opener.open.call_count,1)
+
+    def test_nonempty_redirect_json_preserves_original_strict_value(self):
+        import io
+        from email.message import Message
+        from urllib.error import HTTPError
+        headers=Message();headers['Content-Type']='application/json';headers['Location']='/admin'
+        reply=HTTPError('http://127.0.0.1:19001/admin/oidc/start',302,'fixture',headers,io.BytesIO(b'{"valid":true}'))
+        client=PublicClient('http://127.0.0.1:19001');client.opener=Mock();client.opener.open.side_effect=reply
+        self.assertEqual(client.request('/admin/oidc/start')[:2],(302,{'valid':True}))
+
+
 if __name__ == '__main__':
     unittest.main()

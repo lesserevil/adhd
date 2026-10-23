@@ -152,7 +152,14 @@ class PublicClient:
         with response:
             body = response.read(262145)
             assert len(body) <= 262144, 'Public response bound'
-            value = json.loads(body) if response.headers.get_content_type() == 'application/json' else body.decode()
+            location=response.headers.get('Location')
+            if not body and response.status==302 and isinstance(location,str)and location.strip():
+                # Public OIDC start/callback are real empty302 redirects even
+                # with the server's generic JSON content type. Preserve headers;
+                # destination/authentication checks remain in the caller.
+                value=''
+            else:
+                value = json.loads(body) if response.headers.get_content_type() == 'application/json' else body.decode()
             return response.status, value, response.headers
 
     def api(self, command, expected=200):

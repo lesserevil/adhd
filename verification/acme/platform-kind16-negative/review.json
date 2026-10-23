@@ -1,0 +1,421 @@
+{
+  "schema": "adhd/acme-platform-kind16-negative@1",
+  "passed": false,
+  "authoritative_exit_code": 1,
+  "plan_sha256": "c8c166b048c25da1cd46dd919a062c06e12694a1d3ccc1ed9f47e77b3c441d99",
+  "selection": [
+    "kind"
+  ],
+  "Compose_unselected": true,
+  "whole_Kind_scenarios": 0,
+  "actual": "Both NodeReady guards and current-generation storage controller readiness initially passed. App Pod/PVC remained Pending; no app/init container started. Later controller status had ready/available0, unavailable1; actual controller container terminated exit1. Private controller log records timed-out GET to Kubernetes API service10.96.0.1:443 for its local-path-config, then daemon fatal. This proves observed controller API-service timeout, not its underlying networking cause. Original45s app rollout failed; no retry.",
+  "private_diagnostic_directory": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-16/runtime/kind/failure-diagnostics",
+  "safe_diagnostics": {
+    "attempted": true,
+    "files": [
+      {
+        "label": "node",
+        "exit_code": 0,
+        "stdout_sha256": "a97a0110a9ca453fe1fd8531815d3f1249716b4ef6baf433afdc2097fd2d381c",
+        "stdout_bytes": 6818,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "namespace",
+        "exit_code": 0,
+        "stdout_sha256": "6774cff3583eae2f0a06ccd9d1da3027b37b8c505347898fabaf906aa30ee3b3",
+        "stdout_bytes": 598,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "pods",
+        "exit_code": 0,
+        "stdout_sha256": "2ab34c3fdc39951b03e6f6a9b309b1468483288114f0a8cf8253f97ecf1fcc55",
+        "stdout_bytes": 9503,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "pvc",
+        "exit_code": 0,
+        "stdout_sha256": "b51976299f970705d34831cd427d3c62de0ef60e74633ad798d3297da5323ed5",
+        "stdout_bytes": 1725,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "events",
+        "exit_code": 0,
+        "stdout_sha256": "00ec377b50e0d62093a474f04c2d2e227d30bdf44562a58e904b37b21e9e3618",
+        "stdout_bytes": 5243,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "hub-log",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "init-log",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "storage-namespace",
+        "exit_code": 0,
+        "stdout_sha256": "919b9c7d2c016b9bf31355200d19895f86218eb42027006bfdbb005752e08b5e",
+        "stdout_bytes": 697,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "storage-controller",
+        "exit_code": 0,
+        "stdout_sha256": "ba654fc8d4c7e5d7bd430fdf924921e9cf6f93f41b19f65f1e46f9956e129cc4",
+        "stdout_bytes": 6577,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "storage-pods",
+        "exit_code": 0,
+        "stdout_sha256": "d13b15b76b1420692614b632e7c9b584c84e0c9edd170a6c93666b695b198ff2",
+        "stdout_bytes": 12145,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "storage-events",
+        "exit_code": 0,
+        "stdout_sha256": "8dbcb9c7406d8760a22ac6ab3a04abfd838987af736f5d8286e480bd51069a61",
+        "stdout_bytes": 10984,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "storage-pod-0",
+        "exit_code": 0,
+        "stdout_sha256": "2c425f9e78ae2bff1ee4e4ee76a69bb994ab0885ffde528e41aa13b13dc9f553",
+        "stdout_bytes": 9869,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "storage-log-0-0",
+        "exit_code": 0,
+        "stdout_sha256": "ecaae55dcce0c961510909042bf5e930fa59174aa4096ef2943a2dfabaff647c",
+        "stdout_bytes": 355,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "storage-pod-after-0",
+        "exit_code": 0,
+        "stdout_sha256": "2c425f9e78ae2bff1ee4e4ee76a69bb994ab0885ffde528e41aa13b13dc9f553",
+        "stdout_bytes": 9869,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "scheduler-namespace",
+        "exit_code": 0,
+        "stdout_sha256": "3c6ac76436ae6a34ae8019d844841f942e77f321befbe609038fd1b50e35fda7",
+        "stdout_bytes": 464,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "scheduler-pods",
+        "exit_code": 0,
+        "stdout_sha256": "30f4f9905b75a8aa7af8ea3e281e9ff1285a938b7428c859bdfb041884db0e59",
+        "stdout_bytes": 9417,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "scheduler-events",
+        "exit_code": 0,
+        "stdout_sha256": "c3349f36023ece266d07c721db34409a7a4cf3bb646356bc5a9234458e33a47f",
+        "stdout_bytes": 53148,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "scheduler-pod-0",
+        "exit_code": 0,
+        "stdout_sha256": "339e38a544398643db49a1045fcdebe618469b3a779c06db8069c15b34047eb4",
+        "stdout_bytes": 7525,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "scheduler-log-0-0",
+        "exit_code": 0,
+        "stdout_sha256": "5ecd9df6501d7854612e39110df6ed0e8b6abca84e083232d8c1096120c8e067",
+        "stdout_bytes": 17228,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      },
+      {
+        "label": "scheduler-pod-after-0",
+        "exit_code": 0,
+        "stdout_sha256": "339e38a544398643db49a1045fcdebe618469b3a779c06db8069c15b34047eb4",
+        "stdout_bytes": 7525,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_bytes": 0
+      }
+    ],
+    "safe_pods": [
+      {
+        "uid": "5973925f-ab6a-485b-93f0-468bfddef4ac",
+        "phase": "Pending",
+        "containers": []
+      }
+    ],
+    "safe_event_reasons": [
+      "OTHER",
+      "WaitForFirstConsumer",
+      "OTHER",
+      "OTHER"
+    ],
+    "errors": [],
+    "safe_node": {
+      "uid": "c261e805-3d1a-4188-bff8-b9bf0de0553f",
+      "conditions": [
+        {
+          "type": "MemoryPressure",
+          "status": "False"
+        },
+        {
+          "type": "DiskPressure",
+          "status": "False"
+        },
+        {
+          "type": "PIDPressure",
+          "status": "False"
+        },
+        {
+          "type": "Ready",
+          "status": "True"
+        }
+      ],
+      "taints": [],
+      "unschedulable": false
+    },
+    "system": {
+      "pods": [
+        {
+          "uid": "447be22c-58f9-4eae-8444-91dbda894000",
+          "role": "storage",
+          "phase": "Running"
+        },
+        {
+          "uid": "00e5963d-c7fc-4f30-82f6-de7573ccbca6",
+          "role": "scheduler",
+          "phase": "Running"
+        }
+      ],
+      "event_reasons": [
+        "FailedScheduling",
+        "Scheduled",
+        "Pulled",
+        "Created",
+        "Started",
+        "BackOff",
+        "OTHER",
+        "OTHER",
+        "FailedScheduling",
+        "Scheduled",
+        "Pulled",
+        "Created",
+        "Started",
+        "OTHER",
+        "FailedScheduling",
+        "Scheduled",
+        "Pulled",
+        "Created",
+        "Started",
+        "OTHER",
+        "OTHER",
+        "OTHER",
+        "OTHER",
+        "Pulled",
+        "Created",
+        "Started",
+        "Scheduled",
+        "Pulled",
+        "Created",
+        "Started",
+        "OTHER",
+        "Pulled",
+        "Created",
+        "Started",
+        "Pulled",
+        "Created",
+        "Started",
+        "OTHER",
+        "Scheduled",
+        "Pulled",
+        "Created",
+        "Started",
+        "BackOff",
+        "OTHER",
+        "Pulled",
+        "Created",
+        "Started",
+        "OTHER",
+        "OTHER"
+      ],
+      "controller": {
+        "uid": "c690667c-0424-4c55-8d94-8406a608f096",
+        "generation": 1,
+        "observed_generation": 1,
+        "replicas": 1,
+        "updatedReplicas": 1,
+        "readyReplicas": 0,
+        "availableReplicas": 0,
+        "unavailable_replicas": 1,
+        "ready": false
+      }
+    }
+  },
+  "node_readiness": [
+    {
+      "uid": "c261e805-3d1a-4188-bff8-b9bf0de0553f",
+      "conditions": [
+        {
+          "type": "MemoryPressure",
+          "status": "False"
+        },
+        {
+          "type": "DiskPressure",
+          "status": "False"
+        },
+        {
+          "type": "PIDPressure",
+          "status": "False"
+        },
+        {
+          "type": "Ready",
+          "status": "True"
+        }
+      ],
+      "taints": [],
+      "unschedulable": false,
+      "private_json_sha256": "89f51245bc34d3b368d89d2e509480f2eae1387da0f4944dbc3291cb0163584a"
+    },
+    {
+      "uid": "c261e805-3d1a-4188-bff8-b9bf0de0553f",
+      "conditions": [
+        {
+          "type": "MemoryPressure",
+          "status": "False"
+        },
+        {
+          "type": "DiskPressure",
+          "status": "False"
+        },
+        {
+          "type": "PIDPressure",
+          "status": "False"
+        },
+        {
+          "type": "Ready",
+          "status": "True"
+        }
+      ],
+      "taints": [],
+      "unschedulable": false,
+      "private_json_sha256": "89f51245bc34d3b368d89d2e509480f2eae1387da0f4944dbc3291cb0163584a"
+    }
+  ],
+  "storage_readiness": {
+    "uid": "c690667c-0424-4c55-8d94-8406a608f096",
+    "generation": 1,
+    "observed_generation": 1,
+    "replicas": 1,
+    "updatedReplicas": 1,
+    "readyReplicas": 1,
+    "availableReplicas": 1,
+    "unavailable_replicas": 0,
+    "ready": true,
+    "private_json_sha256": "941364b8c579f067502ff1c6f07d2d10b7acad35d40520f378427fc608560814"
+  },
+  "private_raw_diagnostics_not_copied": true,
+  "original45s_unchanged": true,
+  "no_retry": true,
+  "original_Compose9_positive_preserved": "verification/acme/platform-compose-image42-positive/review.json",
+  "files": {
+    "result.json": "2861630ba17c5a313f58e9eb27df67bd33d4906dc886608ea3e0fb6a09766862",
+    "independent-cleanup.json": "c5cb4f11342e2f7ee740365ecf435333e929ff936966cfda939dac069a6d24e3",
+    "stderr.txt": "437aa4abf592218492d6ef8b320868dfb44c68680a2e538a51bea84231f85536",
+    "plan.json": "c8c166b048c25da1cd46dd919a062c06e12694a1d3ccc1ed9f47e77b3c441d99"
+  },
+  "networking_evidence": {
+    "source_private_sha256": "c3349f36023ece266d07c721db34409a7a4cf3bb646356bc5a9234458e33a47f",
+    "events": [
+      {
+        "role": "kindnet",
+        "uid": "e29a263a-2974-474c-af0f-8c1562229ae0",
+        "reason": "Scheduled"
+      },
+      {
+        "role": "kindnet",
+        "uid": "e29a263a-2974-474c-af0f-8c1562229ae0",
+        "reason": "Pulled"
+      },
+      {
+        "role": "kindnet",
+        "uid": "e29a263a-2974-474c-af0f-8c1562229ae0",
+        "reason": "Created"
+      },
+      {
+        "role": "kindnet",
+        "uid": "e29a263a-2974-474c-af0f-8c1562229ae0",
+        "reason": "Started"
+      },
+      {
+        "role": "kube-proxy",
+        "uid": "cfa32804-c968-4c20-827b-4a65af45987a",
+        "reason": "Scheduled"
+      },
+      {
+        "role": "kube-proxy",
+        "uid": "cfa32804-c968-4c20-827b-4a65af45987a",
+        "reason": "Pulled"
+      },
+      {
+        "role": "kube-proxy",
+        "uid": "cfa32804-c968-4c20-827b-4a65af45987a",
+        "reason": "Created"
+      },
+      {
+        "role": "kube-proxy",
+        "uid": "cfa32804-c968-4c20-827b-4a65af45987a",
+        "reason": "Started"
+      },
+      {
+        "role": "kube-proxy",
+        "uid": "cfa32804-c968-4c20-827b-4a65af45987a",
+        "reason": "BackOff"
+      }
+    ],
+    "actual_kube_proxy_BackOff_observed": true,
+    "actual_proxy_container_logs_captured": false,
+    "actual_kindnet_container_logs_captured": false,
+    "underlying_proxy_failure_cause": "unknown; no mode change justified",
+    "scheduler_filtered_error_terms_found": false
+  },
+  "postrun_full_frozen_verify_exit_code": 0,
+  "postrun_protected_resources_unchanged": true,
+  "postrun_CA04_generation_minimum_lease_passed": true
+}

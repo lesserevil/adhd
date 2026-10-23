@@ -1,0 +1,1360 @@
+{
+  "schema": "adhd/acme-native-diagnostic@1",
+  "passed": true,
+  "checks": [
+    {
+      "name": "disabled bootstrap and authenticated renew rejection",
+      "passed": true
+    },
+    {
+      "name": "global TLS status and renewal enforce current Admin role",
+      "passed": true
+    },
+    {
+      "name": "original private HTTP health and authenticated A2A remain usable",
+      "passed": true
+    },
+    {
+      "name": "invalid DNS identifiers reject atomically",
+      "passed": true,
+      "vectors": 5
+    },
+    {
+      "name": "HTTPS port collision preserves config and revision",
+      "passed": true
+    },
+    {
+      "name": "real pending HTTP01 proof and narrow raw challenge surface",
+      "passed": true,
+      "attack_vectors": 14
+    },
+    {
+      "name": "real issued certificate independently trusted and hostname verified",
+      "passed": true,
+      "certificate": {
+        "leaf_der_sha256": "bc722e096e8b729044092ed7ddf934beba9883ca80251b73e690fa27b09be065",
+        "public_key_spki_sha256": "5bc1137bbafe63b5c960b7e19e200911321527ff47a42dabda2dd040a089cae2",
+        "serial_number_hex": "76f5684db3b681df",
+        "dns_names": [
+          "one.acme.test"
+        ],
+        "not_before": "2026-10-23T03:21:38+00:00",
+        "not_after": "2026-10-23T03:23:07+00:00",
+        "validity_seconds": 89.0,
+        "chain_trust_checked_here": false,
+        "key_pair_match": true
+      }
+    },
+    {
+      "name": "actual maintained-client account keys have nonempty persisted public-key witnesses",
+      "passed": true
+    },
+    {
+      "name": "wrong hostname and unrelated trust root fail closed",
+      "passed": true
+    },
+    {
+      "name": "actual authenticated A2A send poll ack and Admin over native HTTPS",
+      "passed": true
+    },
+    {
+      "name": "real signed PKCE OIDC callback over HTTPS and nonce CSRF cookie controls",
+      "passed": true
+    },
+    {
+      "name": "two actual ACME-issued hubs and trusted outbound HTTPS federation catalogs",
+      "passed": true
+    },
+    {
+      "name": "hot real leaf rotation and exact renew receipt replay",
+      "passed": true,
+      "certificate": {
+        "leaf_der_sha256": "f29c2e9f67111baafc81de50a0ffe09abf2babf6625f69edbb2a75c3cdbdfcdd",
+        "public_key_spki_sha256": "ebc04071c124f53a4a94ca9cbf41f918bcd449d5be3269b9e22555cddcb74c4d",
+        "serial_number_hex": "7b8d51d6a7d26952",
+        "dns_names": [
+          "one.acme.test"
+        ],
+        "not_before": "2026-10-23T03:22:06+00:00",
+        "not_after": "2026-10-23T03:23:35+00:00",
+        "validity_seconds": 89.0,
+        "chain_trust_checked_here": false
+      },
+      "same_vm": true
+    },
+    {
+      "name": "automatic renewal using real short-lived CA certificate",
+      "passed": true,
+      "certificate": {
+        "leaf_der_sha256": "5a78ac8b09093c26bffa001dc27295ee363a6671bdd676db03b8a6be5d8aad53",
+        "public_key_spki_sha256": "8e62bba14054881817a9aa3696c5b5149f067e3c31ce0ebeadaf6e93d4d33a03",
+        "serial_number_hex": "24baf71c4251fe9d",
+        "dns_names": [
+          "one.acme.test"
+        ],
+        "not_before": "2026-10-23T03:23:09+00:00",
+        "not_after": "2026-10-23T03:24:38+00:00",
+        "validity_seconds": 89.0,
+        "chain_trust_checked_here": false
+      },
+      "manual_submissions_after_previous_rotation": 0
+    },
+    {
+      "name": "unchanged-file cold restart retains active certificate and HTTPS",
+      "passed": true
+    },
+    {
+      "name": "actual real postrestart renewal preserves account public keys and registration",
+      "passed": true
+    },
+    {
+      "name": "actual complete stopped-copy public CLI ACME rebind and moved trusted HTTPS",
+      "passed": true
+    },
+    {
+      "name": "known missing account key cold start rejects issuance while retaining valid HTTPS",
+      "passed": true
+    }
+  ],
+  "scope": "Actual admitted compiled image/default ENTRYPOINT with real local issuer. Runtime proof only after all original cases and custody pass; no public CA/browser qualification inferred.",
+  "ca_manifest_sha256": "59612c07ad3ef3993e649415a23ce5f46e03fc3005084d636f4b70cb8c1c9fdc",
+  "contract_sha256": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60",
+  "source_manifest_sha256": null,
+  "public_ca_calls": 0,
+  "phase": "full",
+  "fixture_profile": "eventing disabled; matcher null; no broker or model calls",
+  "failure_type": null,
+  "actual_client_pair_sha256": {
+    "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+    "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb"
+  },
+  "initial_account_witness": {
+    "4deeaef2355215c10ba1bc7b79a9ed47e6db7c428df8a22081e51c3acc7d9796": {
+      "keys": [
+        {
+          "relative_path_sha256": "68c2b643912c0ca6358342a54e02fe9d397d7cc4694ed1abd3362fe347bbeae9",
+          "public_spki_sha256": "0df603ba20bb24cb470ba27df9ba98fda6368f220831e4f13ad37b8fc709a912"
+        }
+      ],
+      "registration_file_hashes": {
+        "54edc4c2eab4133aceba5c3948d51b55d06d94c2af34ddc6d76eebe428591963": "d800ec7b05a0b451873ed9804981b58e75c2bf296d4fab237f512257dd565a73"
+      }
+    }
+  },
+  "postrestart_account_renewal": {
+    "passed": true,
+    "actual_new_leaf": {
+      "leaf_der_sha256": "97d7a8a08d4542376c5e015a2e5faf1795883c5096b0ce762f445d7146fd1164",
+      "public_key_spki_sha256": "8b79b80f48e3ece42d59c209f545395477c171dca811a5c97900bad8e7b718d6",
+      "serial_number_hex": "3a5bb35f39f8eb",
+      "dns_names": [
+        "one.acme.test"
+      ],
+      "not_before": "2026-10-23T03:23:30+00:00",
+      "not_after": "2026-10-23T03:24:59+00:00",
+      "validity_seconds": 89.0,
+      "chain_trust_checked_here": false
+    },
+    "same_account_public_fingerprints": {
+      "4deeaef2355215c10ba1bc7b79a9ed47e6db7c428df8a22081e51c3acc7d9796": {
+        "keys": [
+          {
+            "relative_path_sha256": "68c2b643912c0ca6358342a54e02fe9d397d7cc4694ed1abd3362fe347bbeae9",
+            "public_spki_sha256": "0df603ba20bb24cb470ba27df9ba98fda6368f220831e4f13ad37b8fc709a912"
+          }
+        ],
+        "registration_file_hashes": {
+          "54edc4c2eab4133aceba5c3948d51b55d06d94c2af34ddc6d76eebe428591963": "d800ec7b05a0b451873ed9804981b58e75c2bf296d4fab237f512257dd565a73"
+        }
+      }
+    },
+    "registration_scope": "Same local registration files and public key fingerprints; CA registration-count claim requires independent issuer log proof"
+  },
+  "rebind": {
+    "passed": true,
+    "scope": "Actual stopped complete-server copy and public offline rebind; no original files edited",
+    "checks": [
+      {
+        "name": "public rebind preserves all account/certificate/key/state and product bytes",
+        "passed": true,
+        "unchanged_acme_files": 21
+      },
+      {
+        "name": "moved real TLS same leaf, Admin and A2A with original untouched",
+        "passed": true,
+        "certificate": {
+          "leaf_der_sha256": "97d7a8a08d4542376c5e015a2e5faf1795883c5096b0ce762f445d7146fd1164",
+          "public_key_spki_sha256": "8b79b80f48e3ece42d59c209f545395477c171dca811a5c97900bad8e7b718d6",
+          "serial_number_hex": "3a5bb35f39f8eb",
+          "dns_names": [
+            "one.acme.test"
+          ],
+          "not_before": "2026-10-23T03:23:30+00:00",
+          "not_after": "2026-10-23T03:24:59+00:00",
+          "validity_seconds": 89.0,
+          "chain_trust_checked_here": false
+        },
+        "original_tree_unchanged": true
+      }
+    ],
+    "cli_identity": {
+      "kind": "image-offline-cli",
+      "pid": 3762440,
+      "start_ticks": "28371627",
+      "reaped": true,
+      "actual_vm": {
+        "container_id": "554fbee15969be06eafb803ce61462c31264cc848d45ffb7ed81367b91302ad4",
+        "container_name": "adhd-multi-accept-d35bccf5b4084f69",
+        "host_vm_pid": 3762556,
+        "host_vm_start_ticks": "28371660",
+        "pid_namespace": "pid:[4026532560]",
+        "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "assets_sha256": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "default_entrypoint": true,
+        "default_command": false,
+        "public_command": "rebind-storage",
+        "command_sha256": "9614db1613c60da79d9aef2c9f0822339c9786c4965ff34d3bb9ddb504dfd92a",
+        "payload_verified": true,
+        "assets_verified": true,
+        "live_runtime_files_verified": 76,
+        "original_vm_identity_absent": true
+      },
+      "exit_code": 0,
+      "original_identity_absent": true,
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "554fbee15969be06eafb803ce61462c31264cc848d45ffb7ed81367b91302ad4",
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+        },
+        {
+          "action": "observed-absent",
+          "container_id": "554fbee15969be06eafb803ce61462c31264cc848d45ffb7ed81367b91302ad4",
+          "observed_absent": true,
+          "exit_code": 0
+        }
+      ],
+      "runtime_custody": [
+        {
+          "container_id": "554fbee15969be06eafb803ce61462c31264cc848d45ffb7ed81367b91302ad4",
+          "container_name": "adhd-multi-accept-d35bccf5b4084f69",
+          "host_vm_pid": 3762556,
+          "host_vm_start_ticks": "28371660",
+          "pid_namespace": "pid:[4026532560]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "rebind-storage",
+          "command_sha256": "9614db1613c60da79d9aef2c9f0822339c9786c4965ff34d3bb9ddb504dfd92a",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        }
+      ],
+      "cleanup_errors": []
+    },
+    "runtime_identities": [
+      {
+        "kind": "compiled-image",
+        "binding": {
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+          "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+          "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+          "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+          "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+          "cache_modules": 64,
+          "packaged_assets": {
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+          },
+          "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+        },
+        "pid": 3764560,
+        "start_ticks": "28373245",
+        "reaped": true,
+        "config_path_sha256": "1060d1de38987a17fe0121cd81d761c3307b19833f010dc653e3aa6a98ab4626",
+        "started_monotonic": 283732.046198351,
+        "client_pid": 3764471,
+        "client_start_ticks": "28373204",
+        "actual_vm": {
+          "container_id": "18a64b6cee6af3a92ce51d598bd486d248c71e5fc6e4d9c8bc6664a6054ec905",
+          "container_name": "adhd-multi-accept-4c5d1ef50a4945e5",
+          "host_vm_pid": 3764560,
+          "host_vm_start_ticks": "28373245",
+          "pid_namespace": "pid:[4026532560]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "d3e9f9b3047e90138d31a03d737c9571fce22b5429c5b827cb3c205c7ba11665",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        },
+        "checkpoints": [
+          "initial-ready"
+        ],
+        "first_health_monotonic": 283736.1156613,
+        "managed_https_readiness": [
+          {
+            "at_monotonic": 283736.117308258,
+            "http_status": 200
+          }
+        ],
+        "managed_https_ready_monotonic": 283736.221783069,
+        "exit_code": 0,
+        "client_original_identity_absent": true,
+        "original_identity_absent": true,
+        "observed_descendants": {
+          "scope": "Observed descendants only; polling cannot prove complete historical issuance of very short-lived children",
+          "rows": [
+            {
+              "pid": 3764624,
+              "start_ticks": "28373272",
+              "state": "S",
+              "parent_pid": 3764560,
+              "executable_basename": "erl_child_setup",
+              "first_observed_monotonic": 283734.216766154,
+              "original_identity_absent": true
+            }
+          ],
+          "errors": [],
+          "observer_closed": true
+        },
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "18a64b6cee6af3a92ce51d598bd486d248c71e5fc6e4d9c8bc6664a6054ec905",
+            "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+          },
+          {
+            "action": "observed-absent",
+            "container_id": "18a64b6cee6af3a92ce51d598bd486d248c71e5fc6e4d9c8bc6664a6054ec905",
+            "observed_absent": true,
+            "exit_code": 0
+          }
+        ],
+        "runtime_custody": [
+          {
+            "container_id": "18a64b6cee6af3a92ce51d598bd486d248c71e5fc6e4d9c8bc6664a6054ec905",
+            "container_name": "adhd-multi-accept-4c5d1ef50a4945e5",
+            "host_vm_pid": 3764560,
+            "host_vm_start_ticks": "28373245",
+            "pid_namespace": "pid:[4026532560]",
+            "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+            "assets_sha256": {
+              "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+              "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+              "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+              "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+              "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+              "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+              "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+              "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+            },
+            "default_entrypoint": true,
+            "default_command": false,
+            "public_command": "serve",
+            "command_sha256": "d3e9f9b3047e90138d31a03d737c9571fce22b5429c5b827cb3c205c7ba11665",
+            "payload_verified": true,
+            "assets_verified": true,
+            "live_runtime_files_verified": 76,
+            "original_vm_identity_absent": true
+          }
+        ]
+      }
+    ],
+    "binding": {
+      "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+      "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+      "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+      "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+      "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+      "cache_modules": 64,
+      "packaged_assets": {
+        "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+        "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+        "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+        "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+        "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+        "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+        "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+        "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+      },
+      "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+    },
+    "cleanup_errors": []
+  },
+  "missing_account_key": {
+    "passed": true,
+    "observed_status": {
+      "acme_state": "error",
+      "active_domains": [
+        "one.acme.test"
+      ],
+      "certificate": {
+        "not_after": "2026-10-23T03:24:59Z",
+        "not_before": "2026-10-23T03:23:30Z",
+        "serial": "3a5bb35f39f8eb",
+        "sha256": "97d7a8a08d4542376c5e015a2e5faf1795883c5096b0ce762f445d7146fd1164"
+      },
+      "config_revision": 7,
+      "domains": [
+        "one.acme.test"
+      ],
+      "enabled": true,
+      "https_state": "ready",
+      "last_attempt_at": "2026-10-23T03:23:25Z",
+      "last_error": {
+        "code": "ACME_STORAGE",
+        "message": "Managed certificate state is unavailable.",
+        "retryable": false
+      },
+      "last_success_at": "2026-10-23T03:23:30Z",
+      "next_attempt_at": null
+    },
+    "preserved_account_fingerprints": {
+      "4deeaef2355215c10ba1bc7b79a9ed47e6db7c428df8a22081e51c3acc7d9796": {
+        "keys": [
+          {
+            "relative_path_sha256": "68c2b643912c0ca6358342a54e02fe9d397d7cc4694ed1abd3362fe347bbeae9",
+            "public_spki_sha256": "0df603ba20bb24cb470ba27df9ba98fda6368f220831e4f13ad37b8fc709a912"
+          }
+        ],
+        "registration_file_hashes": {
+          "54edc4c2eab4133aceba5c3948d51b55d06d94c2af34ddc6d76eebe428591963": "d800ec7b05a0b451873ed9804981b58e75c2bf296d4fab237f512257dd565a73"
+        }
+      }
+    },
+    "key_restoration_scope": "Fixture restores exact original bytes only after stopping fault VM; product never reset witness/key"
+  },
+  "runtime_identities": [
+    {
+      "kind": "compiled-image",
+      "binding": {
+        "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+        "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+        "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+        "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+        "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+        "cache_modules": 64,
+        "packaged_assets": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+      },
+      "pid": 3747750,
+      "start_ticks": "28358075",
+      "reaped": true,
+      "config_path_sha256": "3527d83ad2e7f4b5f7908cb3787a31607dd4583db8f8568c5d143881a134fc9c",
+      "started_monotonic": 283580.402492149,
+      "client_pid": 3747691,
+      "client_start_ticks": "28358040",
+      "actual_vm": {
+        "container_id": "c4cd95fc305f461d13885d10c27cb923750389fd7e77096943e912a8ecc46023",
+        "container_name": "adhd-multi-accept-ba448e8dfd314562",
+        "host_vm_pid": 3747750,
+        "host_vm_start_ticks": "28358075",
+        "pid_namespace": "pid:[4026532560]",
+        "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "assets_sha256": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "default_entrypoint": true,
+        "default_command": false,
+        "public_command": "serve",
+        "command_sha256": "5d1ee1a6fc22fb74e6392c600cd58d4798fb9733403ba55335ae36980f5330db",
+        "payload_verified": true,
+        "assets_verified": true,
+        "live_runtime_files_verified": 76,
+        "original_vm_identity_absent": true
+      },
+      "checkpoints": [
+        "initial-ready",
+        "disabled bootstrap and authenticated renew rejection",
+        "global TLS status and renewal enforce current Admin role",
+        "original private HTTP health and authenticated A2A remain usable",
+        "invalid DNS identifiers reject atomically",
+        "HTTPS port collision preserves config and revision",
+        "real pending HTTP01 proof and narrow raw challenge surface",
+        "real issued certificate independently trusted and hostname verified",
+        "actual maintained-client account keys have nonempty persisted public-key witnesses",
+        "wrong hostname and unrelated trust root fail closed",
+        "actual authenticated A2A send poll ack and Admin over native HTTPS",
+        "real signed PKCE OIDC callback over HTTPS and nonce CSRF cookie controls",
+        "two actual ACME-issued hubs and trusted outbound HTTPS federation catalogs",
+        "hot real leaf rotation and exact renew receipt replay",
+        "automatic renewal using real short-lived CA certificate"
+      ],
+      "first_health_monotonic": 283585.24062397,
+      "exit_code": 0,
+      "client_original_identity_absent": true,
+      "original_identity_absent": true,
+      "observed_descendants": {
+        "scope": "Observed descendants only; polling cannot prove complete historical issuance of very short-lived children",
+        "rows": [
+          {
+            "pid": 3747810,
+            "start_ticks": "28358100",
+            "state": "S",
+            "parent_pid": 3747750,
+            "executable_basename": "erl_child_setup",
+            "first_observed_monotonic": 283582.560281388,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3748988,
+            "start_ticks": "28359096",
+            "state": "S",
+            "parent_pid": 3747810,
+            "executable_basename": "acme-guard",
+            "first_observed_monotonic": 283590.996455979,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3748989,
+            "start_ticks": "28359096",
+            "state": "R",
+            "parent_pid": 3748988,
+            "executable_basename": "lego",
+            "first_observed_monotonic": 283590.997094085,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3752230,
+            "start_ticks": "28362092",
+            "state": "S",
+            "parent_pid": 3747810,
+            "executable_basename": "acme-guard",
+            "first_observed_monotonic": 283620.965291126,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3752231,
+            "start_ticks": "28362093",
+            "state": "R",
+            "parent_pid": 3752230,
+            "executable_basename": "lego",
+            "first_observed_monotonic": 283620.965930197,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3758197,
+            "start_ticks": "28368405",
+            "state": "R",
+            "parent_pid": 3747810,
+            "executable_basename": "erl_child_setup",
+            "first_observed_monotonic": 283684.057189658,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3758198,
+            "start_ticks": "28368405",
+            "state": "S",
+            "parent_pid": 3758197,
+            "executable_basename": "lego",
+            "first_observed_monotonic": 283684.118042888,
+            "original_identity_absent": true
+          }
+        ],
+        "errors": [],
+        "observer_closed": true
+      },
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "c4cd95fc305f461d13885d10c27cb923750389fd7e77096943e912a8ecc46023",
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+        },
+        {
+          "action": "observed-absent",
+          "container_id": "c4cd95fc305f461d13885d10c27cb923750389fd7e77096943e912a8ecc46023",
+          "observed_absent": true,
+          "exit_code": 0
+        }
+      ],
+      "runtime_custody": [
+        {
+          "container_id": "c4cd95fc305f461d13885d10c27cb923750389fd7e77096943e912a8ecc46023",
+          "container_name": "adhd-multi-accept-ba448e8dfd314562",
+          "host_vm_pid": 3747750,
+          "host_vm_start_ticks": "28358075",
+          "pid_namespace": "pid:[4026532560]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "5d1ee1a6fc22fb74e6392c600cd58d4798fb9733403ba55335ae36980f5330db",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        }
+      ]
+    },
+    {
+      "kind": "compiled-image",
+      "binding": {
+        "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+        "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+        "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+        "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+        "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+        "cache_modules": 64,
+        "packaged_assets": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+      },
+      "pid": 3760173,
+      "start_ticks": "28369803",
+      "reaped": true,
+      "config_path_sha256": "3527d83ad2e7f4b5f7908cb3787a31607dd4583db8f8568c5d143881a134fc9c",
+      "started_monotonic": 283697.664976506,
+      "client_pid": 3760040,
+      "client_start_ticks": "28369766",
+      "actual_vm": {
+        "container_id": "82c5494ff8320dde1ef45033ab854685a54695912eba9341f554aeef581efbe6",
+        "container_name": "adhd-multi-accept-70bf768cf4cc4716",
+        "host_vm_pid": 3760173,
+        "host_vm_start_ticks": "28369803",
+        "pid_namespace": "pid:[4026532560]",
+        "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "assets_sha256": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "default_entrypoint": true,
+        "default_command": false,
+        "public_command": "serve",
+        "command_sha256": "5d1ee1a6fc22fb74e6392c600cd58d4798fb9733403ba55335ae36980f5330db",
+        "payload_verified": true,
+        "assets_verified": true,
+        "live_runtime_files_verified": 76,
+        "original_vm_identity_absent": true
+      },
+      "checkpoints": [
+        "initial-ready",
+        "unchanged-file cold restart retains active certificate and HTTPS",
+        "actual real postrestart renewal preserves account public keys and registration"
+      ],
+      "first_health_monotonic": 283701.577475635,
+      "managed_https_readiness": [
+        {
+          "at_monotonic": 283701.618167636,
+          "http_status": 200
+        }
+      ],
+      "managed_https_ready_monotonic": 283701.730585546,
+      "exit_code": 0,
+      "client_original_identity_absent": true,
+      "original_identity_absent": true,
+      "observed_descendants": {
+        "scope": "Observed descendants only; polling cannot prove complete historical issuance of very short-lived children",
+        "rows": [
+          {
+            "pid": 3760215,
+            "start_ticks": "28369820",
+            "state": "S",
+            "parent_pid": 3760173,
+            "executable_basename": "erl_child_setup",
+            "first_observed_monotonic": 283699.269150453,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3760724,
+            "start_ticks": "28370353",
+            "state": "S",
+            "parent_pid": 3760215,
+            "executable_basename": "acme-guard",
+            "first_observed_monotonic": 283703.574163995,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3760725,
+            "start_ticks": "28370353",
+            "state": "R",
+            "parent_pid": 3760724,
+            "executable_basename": "lego",
+            "first_observed_monotonic": 283703.574680353,
+            "original_identity_absent": true
+          }
+        ],
+        "errors": [],
+        "observer_closed": true
+      },
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "82c5494ff8320dde1ef45033ab854685a54695912eba9341f554aeef581efbe6",
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+        },
+        {
+          "action": "observed-absent",
+          "container_id": "82c5494ff8320dde1ef45033ab854685a54695912eba9341f554aeef581efbe6",
+          "observed_absent": true,
+          "exit_code": 0
+        }
+      ],
+      "runtime_custody": [
+        {
+          "container_id": "82c5494ff8320dde1ef45033ab854685a54695912eba9341f554aeef581efbe6",
+          "container_name": "adhd-multi-accept-70bf768cf4cc4716",
+          "host_vm_pid": 3760173,
+          "host_vm_start_ticks": "28369803",
+          "pid_namespace": "pid:[4026532560]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "5d1ee1a6fc22fb74e6392c600cd58d4798fb9733403ba55335ae36980f5330db",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        }
+      ]
+    },
+    {
+      "kind": "compiled-image",
+      "binding": {
+        "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+        "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+        "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+        "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+        "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+        "cache_modules": 64,
+        "packaged_assets": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+      },
+      "pid": 3766522,
+      "start_ticks": "28374580",
+      "reaped": true,
+      "config_path_sha256": "3527d83ad2e7f4b5f7908cb3787a31607dd4583db8f8568c5d143881a134fc9c",
+      "started_monotonic": 283745.497686807,
+      "client_pid": 3766453,
+      "client_start_ticks": "28374549",
+      "actual_vm": {
+        "container_id": "cc7ee4b981b86ff11a641d5e36cd58bdfe7adc909b8b81b9ea69e712162b496b",
+        "container_name": "adhd-multi-accept-63ec5df160504455",
+        "host_vm_pid": 3766522,
+        "host_vm_start_ticks": "28374580",
+        "pid_namespace": "pid:[4026532560]",
+        "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "assets_sha256": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "default_entrypoint": true,
+        "default_command": false,
+        "public_command": "serve",
+        "command_sha256": "5d1ee1a6fc22fb74e6392c600cd58d4798fb9733403ba55335ae36980f5330db",
+        "payload_verified": true,
+        "assets_verified": true,
+        "live_runtime_files_verified": 76,
+        "original_vm_identity_absent": true
+      },
+      "checkpoints": [
+        "initial-ready"
+      ],
+      "first_health_monotonic": 283748.641661618,
+      "managed_https_readiness": [
+        {
+          "at_monotonic": 283748.671046899,
+          "http_status": 200
+        }
+      ],
+      "managed_https_ready_monotonic": 283748.788587197,
+      "exit_code": 0,
+      "client_original_identity_absent": true,
+      "original_identity_absent": true,
+      "observed_descendants": {
+        "scope": "Observed descendants only; polling cannot prove complete historical issuance of very short-lived children",
+        "rows": [
+          {
+            "pid": 3766627,
+            "start_ticks": "28374600",
+            "state": "S",
+            "parent_pid": 3766522,
+            "executable_basename": "erl_child_setup",
+            "first_observed_monotonic": 283747.236838593,
+            "original_identity_absent": true
+          }
+        ],
+        "errors": [],
+        "observer_closed": true
+      },
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "cc7ee4b981b86ff11a641d5e36cd58bdfe7adc909b8b81b9ea69e712162b496b",
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+        },
+        {
+          "action": "observed-absent",
+          "container_id": "cc7ee4b981b86ff11a641d5e36cd58bdfe7adc909b8b81b9ea69e712162b496b",
+          "observed_absent": true,
+          "exit_code": 0
+        }
+      ],
+      "runtime_custody": [
+        {
+          "container_id": "cc7ee4b981b86ff11a641d5e36cd58bdfe7adc909b8b81b9ea69e712162b496b",
+          "container_name": "adhd-multi-accept-63ec5df160504455",
+          "host_vm_pid": 3766522,
+          "host_vm_start_ticks": "28374580",
+          "pid_namespace": "pid:[4026532560]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "5d1ee1a6fc22fb74e6392c600cd58d4798fb9733403ba55335ae36980f5330db",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        }
+      ]
+    }
+  ],
+  "peer_runtime_identities": [
+    {
+      "kind": "compiled-image",
+      "binding": {
+        "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+        "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+        "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+        "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+        "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+        "cache_modules": 64,
+        "packaged_assets": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+      },
+      "pid": 3750999,
+      "start_ticks": "28360951",
+      "reaped": true,
+      "config_path_sha256": "087e71074d787039cd7390a2a7bb71deb434b2c519006260f6530b5b2b94f569",
+      "started_monotonic": 283609.124649851,
+      "client_pid": 3750913,
+      "client_start_ticks": "28360912",
+      "actual_vm": {
+        "container_id": "25b3a0d7a10412dad34e572db394f27d271bc87e32c697188fda63d3f23dbb5e",
+        "container_name": "adhd-multi-accept-b7a9b1b68f8e4d9a",
+        "host_vm_pid": 3750999,
+        "host_vm_start_ticks": "28360951",
+        "pid_namespace": "pid:[4026532566]",
+        "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "assets_sha256": {
+          "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+          "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+          "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+          "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+          "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+          "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+          "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+          "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        "default_entrypoint": true,
+        "default_command": false,
+        "public_command": "serve",
+        "command_sha256": "85dcb0d0acd1c8dfea886dfd44cd14b7715d84cd24baf29b8c3c9bdaf85d97a2",
+        "payload_verified": true,
+        "assets_verified": true,
+        "live_runtime_files_verified": 76,
+        "original_vm_identity_absent": true
+      },
+      "checkpoints": [
+        "initial-ready"
+      ],
+      "first_health_monotonic": 283613.273834218,
+      "exit_code": 0,
+      "client_original_identity_absent": true,
+      "original_identity_absent": true,
+      "observed_descendants": {
+        "scope": "Observed descendants only; polling cannot prove complete historical issuance of very short-lived children",
+        "rows": [
+          {
+            "pid": 3751047,
+            "start_ticks": "28360978",
+            "state": "S",
+            "parent_pid": 3750999,
+            "executable_basename": "erl_child_setup",
+            "first_observed_monotonic": 283611.140678494,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3751688,
+            "start_ticks": "28361517",
+            "state": "S",
+            "parent_pid": 3751047,
+            "executable_basename": "acme-guard",
+            "first_observed_monotonic": 283615.19397201,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3751689,
+            "start_ticks": "28361517",
+            "state": "R",
+            "parent_pid": 3751688,
+            "executable_basename": "lego",
+            "first_observed_monotonic": 283615.19466087,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3757708,
+            "start_ticks": "28367823",
+            "state": "S",
+            "parent_pid": 3751047,
+            "executable_basename": "acme-guard",
+            "first_observed_monotonic": 283678.285126681,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3757709,
+            "start_ticks": "28367823",
+            "state": "R",
+            "parent_pid": 3757708,
+            "executable_basename": "lego",
+            "first_observed_monotonic": 283678.285720552,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3766247,
+            "start_ticks": "28374362",
+            "state": "S",
+            "parent_pid": 3751047,
+            "executable_basename": "acme-guard",
+            "first_observed_monotonic": 283743.635772986,
+            "original_identity_absent": true
+          },
+          {
+            "pid": 3766248,
+            "start_ticks": "28374362",
+            "state": "R",
+            "parent_pid": 3766247,
+            "executable_basename": "lego",
+            "first_observed_monotonic": 283743.63648758,
+            "original_identity_absent": true
+          }
+        ],
+        "errors": [],
+        "observer_closed": true
+      },
+      "container_lifecycle": [
+        {
+          "action": "started",
+          "container_id": "25b3a0d7a10412dad34e572db394f27d271bc87e32c697188fda63d3f23dbb5e",
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+        },
+        {
+          "action": "observed-absent",
+          "container_id": "25b3a0d7a10412dad34e572db394f27d271bc87e32c697188fda63d3f23dbb5e",
+          "observed_absent": true,
+          "exit_code": 0
+        }
+      ],
+      "runtime_custody": [
+        {
+          "container_id": "25b3a0d7a10412dad34e572db394f27d271bc87e32c697188fda63d3f23dbb5e",
+          "container_name": "adhd-multi-accept-b7a9b1b68f8e4d9a",
+          "host_vm_pid": 3750999,
+          "host_vm_start_ticks": "28360951",
+          "pid_namespace": "pid:[4026532566]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "85dcb0d0acd1c8dfea886dfd44cd14b7715d84cd24baf29b8c3c9bdaf85d97a2",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        }
+      ]
+    }
+  ],
+  "oidc_events": [
+    {
+      "stage": "configured",
+      "signed_token_exchanges": 2,
+      "nonce_rejection": true,
+      "csrf_rejection": true,
+      "https_cookies_checked": true
+    },
+    {
+      "stage": "after_rotation",
+      "same_oidc_user_and_session": true,
+      "verified_leaf_sha256": "f29c2e9f67111baafc81de50a0ffe09abf2babf6625f69edbb2a75c3cdbdfcdd"
+    }
+  ],
+  "federation_events": [
+    {
+      "stage": "before_rotation",
+      "two_real_servers": true,
+      "outbound_verified_https_catalogs": true,
+      "inbound_https_v2_catalog": true,
+      "wrong_peer_token_denied": true,
+      "actual_handshake_leaf_sha256": [
+        "927ef3bfe4e2cce2918744a9dc7b588a84e50936983da37423803c651c583075",
+        "bc722e096e8b729044092ed7ddf934beba9883ca80251b73e690fa27b09be065"
+      ],
+      "scope": "No source/discovery model answer quality claimed"
+    },
+    {
+      "stage": "after_rotation",
+      "two_real_servers": true,
+      "outbound_verified_https_catalogs": true,
+      "inbound_https_v2_catalog": true,
+      "wrong_peer_token_denied": true,
+      "actual_handshake_leaf_sha256": [
+        "927ef3bfe4e2cce2918744a9dc7b588a84e50936983da37423803c651c583075",
+        "f29c2e9f67111baafc81de50a0ffe09abf2babf6625f69edbb2a75c3cdbdfcdd"
+      ],
+      "scope": "No source/discovery model answer quality claimed"
+    }
+  ],
+  "relay": {
+    "requests": 18,
+    "active": 0,
+    "events": [
+      {
+        "at_monotonic": 283591.141165347,
+        "target_sha256": "aa9b3f9e6ad0be2e5ef49b4c73f2ac4448ecb6450a6a62a18650d817d1bb5ee4",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "7a7c4a1dd1e53d06d58ab1a0d9a9195bc0be20934bb51adb5cdbae007d3b1331",
+        "proof_bytes": 87,
+        "mode": "hold",
+        "hold_released": true,
+        "downstream_status": 200,
+        "completed_monotonic": 283591.524400681
+      },
+      {
+        "at_monotonic": 283591.146037206,
+        "target_sha256": "aa9b3f9e6ad0be2e5ef49b4c73f2ac4448ecb6450a6a62a18650d817d1bb5ee4",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "7a7c4a1dd1e53d06d58ab1a0d9a9195bc0be20934bb51adb5cdbae007d3b1331",
+        "proof_bytes": 87,
+        "mode": "hold",
+        "hold_released": true,
+        "downstream_status": 200,
+        "completed_monotonic": 283591.524960488
+      },
+      {
+        "at_monotonic": 283591.147546878,
+        "target_sha256": "aa9b3f9e6ad0be2e5ef49b4c73f2ac4448ecb6450a6a62a18650d817d1bb5ee4",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "7a7c4a1dd1e53d06d58ab1a0d9a9195bc0be20934bb51adb5cdbae007d3b1331",
+        "proof_bytes": 87,
+        "mode": "hold",
+        "hold_released": true,
+        "downstream_status": 200,
+        "completed_monotonic": 283591.524201711
+      },
+      {
+        "at_monotonic": 283615.321284238,
+        "target_sha256": "c8253f3f1d3dcd8c37344dfefdf4d4d36869bab6457f5bd8a8d2b6df79781440",
+        "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+        "upstream_status": 200,
+        "proof_sha256": "25db935ec862c3db02eafe6f7a07ec12f956e17c13b16d3e9be3e21abb390428",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283615.321347452
+      },
+      {
+        "at_monotonic": 283615.323441098,
+        "target_sha256": "c8253f3f1d3dcd8c37344dfefdf4d4d36869bab6457f5bd8a8d2b6df79781440",
+        "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+        "upstream_status": 200,
+        "proof_sha256": "25db935ec862c3db02eafe6f7a07ec12f956e17c13b16d3e9be3e21abb390428",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283615.323477158
+      },
+      {
+        "at_monotonic": 283615.324227495,
+        "target_sha256": "c8253f3f1d3dcd8c37344dfefdf4d4d36869bab6457f5bd8a8d2b6df79781440",
+        "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+        "upstream_status": 200,
+        "proof_sha256": "25db935ec862c3db02eafe6f7a07ec12f956e17c13b16d3e9be3e21abb390428",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283615.324309488
+      },
+      {
+        "at_monotonic": 283621.084669637,
+        "target_sha256": "e1980e079e65ebe6e6afe6434460054fa189623f785b098465731ea392032f77",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "55c0be77099cd0b9db253e55e41a343358e126221308473623a5cf3c20acab10",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283621.084766487
+      },
+      {
+        "at_monotonic": 283621.085401662,
+        "target_sha256": "e1980e079e65ebe6e6afe6434460054fa189623f785b098465731ea392032f77",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "55c0be77099cd0b9db253e55e41a343358e126221308473623a5cf3c20acab10",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283621.085485299
+      },
+      {
+        "at_monotonic": 283621.085970309,
+        "target_sha256": "e1980e079e65ebe6e6afe6434460054fa189623f785b098465731ea392032f77",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "55c0be77099cd0b9db253e55e41a343358e126221308473623a5cf3c20acab10",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283621.086058048
+      },
+      {
+        "at_monotonic": 283678.40008502,
+        "target_sha256": "6ded25633c34b012efd7075a764ab7e601dbd2e524c1be3c32bc7c1eef841d19",
+        "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+        "upstream_status": 200,
+        "proof_sha256": "7b6ce92218f79584d74b05038f4aaef5f69b0457e04988c7bf07ce1f6f5259f3",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283678.400165516
+      },
+      {
+        "at_monotonic": 283678.401348687,
+        "target_sha256": "6ded25633c34b012efd7075a764ab7e601dbd2e524c1be3c32bc7c1eef841d19",
+        "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+        "upstream_status": 200,
+        "proof_sha256": "7b6ce92218f79584d74b05038f4aaef5f69b0457e04988c7bf07ce1f6f5259f3",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283678.40141601
+      },
+      {
+        "at_monotonic": 283678.405590197,
+        "target_sha256": "6ded25633c34b012efd7075a764ab7e601dbd2e524c1be3c32bc7c1eef841d19",
+        "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+        "upstream_status": 200,
+        "proof_sha256": "7b6ce92218f79584d74b05038f4aaef5f69b0457e04988c7bf07ce1f6f5259f3",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283678.405650917
+      },
+      {
+        "at_monotonic": 283684.213472523,
+        "target_sha256": "5c5551871969eb892bb69a63341ae33c599a398f55c435e1a09402e26c370b2e",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "f3d823eecfdbe54beedec9cd41bca7f834a977602c73aac90772f0eb2bb3ba99",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283684.21354257
+      },
+      {
+        "at_monotonic": 283684.222478394,
+        "target_sha256": "5c5551871969eb892bb69a63341ae33c599a398f55c435e1a09402e26c370b2e",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "f3d823eecfdbe54beedec9cd41bca7f834a977602c73aac90772f0eb2bb3ba99",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283684.222540033
+      },
+      {
+        "at_monotonic": 283684.223037486,
+        "target_sha256": "5c5551871969eb892bb69a63341ae33c599a398f55c435e1a09402e26c370b2e",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "f3d823eecfdbe54beedec9cd41bca7f834a977602c73aac90772f0eb2bb3ba99",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283684.223100389
+      },
+      {
+        "at_monotonic": 283703.714324439,
+        "target_sha256": "b939569325702a447c467ffa96e5f0060bfa1398ea0040a8b6069360fdfc1d0c",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "540d6df26582f11262d0866dcc7c979fc25eb4fdc3b9a40fe3232657bf59327a",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283703.714396432
+      },
+      {
+        "at_monotonic": 283703.714534002,
+        "target_sha256": "b939569325702a447c467ffa96e5f0060bfa1398ea0040a8b6069360fdfc1d0c",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "540d6df26582f11262d0866dcc7c979fc25eb4fdc3b9a40fe3232657bf59327a",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283703.714621051
+      },
+      {
+        "at_monotonic": 283703.715892725,
+        "target_sha256": "b939569325702a447c467ffa96e5f0060bfa1398ea0040a8b6069360fdfc1d0c",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "540d6df26582f11262d0866dcc7c979fc25eb4fdc3b9a40fe3232657bf59327a",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 283703.715983556
+      }
+    ],
+    "errors": [],
+    "closed": true
+  },
+  "cleanup_errors": []
+}

@@ -97,6 +97,8 @@ class Commands:
    remaining=self.phase_deadline-time.monotonic();assert remaining>0,'Shared platform phase deadline'
    timeout=min(timeout,remaining)
   record=self.issue(argv,env);process=record['process'];primary=None
+  operation={'argv_sha256':record['argv_sha256'],'exit_code':None,'sensitive':sensitive,'raw_output_retained':False}
+  index=len(self.operations);self.operations.append(operation);buffers={}
   try:
    assert input is None or isinstance(input,bytes) and len(input)<=2*1024*1024
    pending=memoryview(input or b'');buffers={process.stdout:bytearray(),process.stderr:bytearray()}
@@ -132,18 +134,27 @@ class Commands:
    code=exit_code(completion)
    output,error=bytes(buffers[process.stdout]),bytes(buffers[process.stderr])
    result=subprocess.CompletedProcess(argv,code,output,error)
-   self.operations.append({'argv_sha256':record['argv_sha256'],'exit_code':code,
-                          'stdout_sha256':hashlib.sha256(output).hexdigest(),'stderr_sha256':hashlib.sha256(error).hexdigest(),
-                          'sensitive':sensitive,'raw_output_retained':False})
+   operation.update(exit_code=code,stdout_sha256=hashlib.sha256(output).hexdigest(),stderr_sha256=hashlib.sha256(error).hexdigest())
    if check:assert result.returncode==0,'Owned CLI failed: '+argv[0]
    return result
   except BaseException as error:
-   primary=error;raise
+   primary=error;operation['failure_type']=type(error).__name__;raise
   finally:
+   if not sensitive and buffers:
+    try:
+     body=bytes(buffers.get(process.stdout,b''))+b'\nSTDERR\n'+bytes(buffers.get(process.stderr,b''))
+     path=self.work/('cli-'+str(index)+'.log')
+     with path.open('xb') as log:log.write(body)
+     path.chmod(0o600);operation.update(raw_output_retained=True,private_log=str(path),private_log_sha256=hashlib.sha256(body).hexdigest())
+    except BaseException as capture_error:
+     operation['log_error']=type(capture_error).__name__
+     if primary:primary.add_note('CLI log capture failed: '+type(capture_error).__name__)
+     else:primary=capture_error
    try:self.stop(record)
    except BaseException as cleanup:
     if primary:primary.add_note('CLI cleanup failed: '+type(cleanup).__name__)
     else:raise
+   if primary is not None and 'log_error' in operation and operation.get('failure_type') is None:raise primary
  def start(self,argv):
   # The sole long-lived CLI is private loopback kubectl port-forward.
   assert argv[0]=='kubectl' and 'port-forward' in argv and '--address=127.0.0.1' in argv

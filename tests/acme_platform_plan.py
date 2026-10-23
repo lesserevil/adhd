@@ -21,7 +21,7 @@ FILES=(
  'tests/acme_process_observer.py','tests/image_compiled_inputs.py',
  'tests/kafka_oauth_custody.py','tests/container_fixture.py','tests/kafka_platform_vm.py',
  'tests/network_policy_image_custody.py','tests/acme_issuer_gateway.py','tests/acme_platform_adapters.py',
- 'tests/acme_platform_commands.py','tests/acme_platform_scenario.py')
+ 'tests/acme_platform_commands.py','tests/acme_platform_scenario.py','tests/acme_platform_matrix.py')
 CHECKS=(
  'actual_admitted_image_source_cache_tool_identity',
  'shipped_public_80_443_mappings_private_8766_boundary',

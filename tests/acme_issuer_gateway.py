@@ -11,7 +11,7 @@ class IssuerGateway:
                  concurrency=8, connection_seconds=40, max_bytes=4*1024*1024):
         net=ipaddress.ip_network(network,strict=True);address=ipaddress.ip_address(bind)
         addresses={str(ipaddress.ip_address(value)) for value in clients}
-        assert net.version==4 and net.is_private and address in net
+        assert net.version==4 and any(net.subnet_of(ipaddress.ip_network(v)) for v in ['10.0.0.0/8','172.16.0.0/12','192.168.0.0/16']) and address in net
         assert not address.is_loopback and not address.is_unspecified and not address.is_multicast
         assert addresses and str(address) not in addresses
         assert all(ipaddress.ip_address(value) in net and not ipaddress.ip_address(value).is_loopback for value in addresses)

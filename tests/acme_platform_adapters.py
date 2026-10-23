@@ -18,6 +18,7 @@ from container_fixture import OwnedImage
 from kafka_oauth_custody import NamespaceLease
 import kafka_platform_vm as vm
 import network_policy_image_custody as image_custody
+from kube_qualification_inputs import validate_kube_endpoint
 
 
 def identity(image):
@@ -60,7 +61,7 @@ def resource_absent(result,name,kind):
 
 def bridge_gateway(value):
  address=ipaddress.IPv4Address(value)
- assert address.is_private and not address.is_loopback and not address.is_unspecified and not address.is_multicast
+ assert any(address in ipaddress.ip_network(v) for v in ['10.0.0.0/8','172.16.0.0/12','192.168.0.0/16']) and not address.is_loopback and not address.is_unspecified and not address.is_multicast
  return str(address)
 
 
@@ -264,19 +265,21 @@ class Kind:
  def __init__(self,command,root,work,image,name,node_image,gateway,network_id,network_name,seed,image_reference,node_config_identity):
   self.command=command;self.root=Path(root);self.work=Path(work);self.image=identity(image)
   assert re.fullmatch('adhd-acme-[a-z0-9-]{1,40}',name)
-  assert re.fullmatch('[a-z0-9./_-]+@sha256:[a-f0-9]{64}',node_image) and re.fullmatch('[a-f0-9]{64}',network_id)
+  assert re.fullmatch('[a-z0-9./_:-]+@sha256:[a-f0-9]{64}',node_image) and re.fullmatch('[a-f0-9]{64}',network_id)
   assert re.fullmatch('[a-z0-9][a-z0-9./_-]*:[a-zA-Z0-9._-]+',image_reference)
   self.reference=image_reference;self.image_proofs=[];self.preexisting_volumes=None;self.volume_proofs=None
   self.name=name;self.node=name+'-control-plane';self.node_image=node_image;self.node_config=identity(node_config_identity)
   self.network_id=network_id;self.network_name=network_name;self.gateway=bridge_gateway(gateway);self.seed=seed
   self.kubeconfig=self.work/'kubeconfig';self.lease=NamespaceLease('adhd-final-'+name,uuid4().hex,prefix='adhd-final-')
-  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None
+  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None;self.kubeconfig_sha=None;self.api_endpoint=None
  def cmd(self,args,**kw):
   if self.cleanup_deadline is not None:
    remaining=self.cleanup_deadline-time.monotonic();assert remaining>0,'Kind cleanup deadline'
    kw['timeout']=min(kw.get('timeout',30),remaining)
   return self.command(args,**kw)
- def kubectl(self,*args,**kw):return self.cmd(['kubectl','--kubeconfig',str(self.kubeconfig),*args],**kw)
+ def kubectl(self,*args,**kw):
+  assert self.kubeconfig_sha and self.kubeconfig.resolve(strict=True)==self.kubeconfig and hashlib.sha256(self.kubeconfig.read_bytes()).hexdigest()==self.kubeconfig_sha
+  return self.cmd(['kubectl','--kubeconfig',str(self.kubeconfig),*args],**kw)
  def namespaced(self,*args,**kw):return self.kubectl('-n',self.lease.name,*args,**kw)
  def obj(self,*args):return json.loads(self.namespaced(*args,'-o','json',capture=True).stdout)
  def node_state(self):
@@ -313,7 +316,13 @@ class Kind:
   file(self.work/'kind.yaml',yaml.safe_dump(config).encode());self.issued=True
   self.cmd(['kind','create','cluster','--name',self.name,'--config',str(self.work/'kind.yaml'),'--kubeconfig',str(self.kubeconfig)],
            env={'KIND_EXPERIMENTAL_DOCKER_NETWORK':self.network_name},timeout=180)
-  assert self.node_state()
+  node=self.node_state();assert node
+  assert self.kubeconfig.resolve(strict=True)==self.kubeconfig and not self.kubeconfig.is_symlink()
+  self.kubeconfig.chmod(0o600)
+  self.api_endpoint=validate_kube_endpoint(yaml.safe_load(self.kubeconfig.read_bytes()),self.name)
+  ports=node['NetworkSettings']['Ports']['6443/tcp']
+  assert ports==[{'HostIp':self.api_endpoint['host'],'HostPort':str(self.api_endpoint['port'])}]
+  self.kubeconfig_sha=hashlib.sha256(self.kubeconfig.read_bytes()).hexdigest()
   local=json.loads(self.cmd(['docker','image','inspect',self.reference],capture=True).stdout)
   assert len(local)==1 and local[0]['Id']==self.image
   self.cmd(['kind','load','docker-image',self.reference,'--name',self.name],timeout=120)

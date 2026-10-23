@@ -217,7 +217,7 @@ class Commands(unittest.TestCase):
    self.assertEqual(actual[0],'/usr/bin/docker');self.assertEqual(env['DOCKER_HOST'],'unix:///run/docker.sock')
  def test_selector_failure_preserves_primary_and_closes_owned_child(self):
   with tempfile.TemporaryDirectory() as raw:
-   command=self.instance(Path(raw));record={'process':object()};closed=[]
+   command=self.instance(Path(raw));record={'process':object(),'argv_sha256':'a'*64};closed=[]
    with patch.object(command,'issue',return_value=record),patch.object(command,'stop',side_effect=lambda row:closed.append(row)),\
         patch.object(commands.selectors,'DefaultSelector',side_effect=OSError('controlled selector failure')):
     # Need stdout handles to reach the actual selector-construction point.

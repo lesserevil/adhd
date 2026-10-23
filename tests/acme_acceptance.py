@@ -105,7 +105,7 @@ def run(args):
     schema = json.loads(Path(args.schema).read_text())
     validator = Draft202012Validator({'$ref': '#/$defs/TLSStatus', '$defs': schema['$defs']}, format_checker=FormatChecker())
     report = {'schema': 'adhd/acme-native-diagnostic@1', 'passed': False, 'checks': [],
-              'scope': 'Source-bound diagnostic cache, real local Pebble and maintained client; not release/image qualification. Optional continuity covers actual OIDC and federation catalog/auth transport only, not full identity-policy or source/discovery model-quality regressions.',
+              'scope': getattr(NativeDiagnostic,'qualification_scope','Source-bound diagnostic cache, real local Pebble and maintained client; not release/image qualification. Optional continuity covers actual OIDC and federation catalog/auth transport only, not full identity-policy or source/discovery model-quality regressions.'),
               'ca_manifest_sha256': args.ca_manifest_sha256, 'contract_sha256': sha(args.schema),
               'source_manifest_sha256': args.cache_manifest_sha256, 'public_ca_calls': 0,
               'phase': args.phase,
@@ -116,16 +116,21 @@ def run(args):
     admin = None
     primary = None
     def check(name, **facts):
+        if runtime and hasattr(runtime,'checkpoint'):
+            runtime.checkpoint(name)
         report['checks'].append({'name': name, 'passed': True, **facts})
     try:
         if args.phase == 'full':
             assert args.lego_sha256 and args.guardian_sha256, 'Actual reviewed client pair hashes required before issuance'
-            pair = {}
-            for name, digest in (('lego',args.lego_sha256), ('acme-guard',args.guardian_sha256)):
-                path = Path(args.source)/'bin'/name
-                regular(path)
-                assert os.access(path,os.X_OK) and sha(path)==digest, 'Reviewed client pair drift'
-                pair[name] = digest
+            if getattr(NativeDiagnostic,'image_mode',False):
+                pair=NativeDiagnostic.binary_pair(args)
+            else:
+                pair = {}
+                for name, digest in (('lego',args.lego_sha256), ('acme-guard',args.guardian_sha256)):
+                    path = Path(args.source)/'bin'/name
+                    regular(path)
+                    assert os.access(path,os.X_OK) and sha(path)==digest, 'Reviewed client pair drift'
+                    pair[name] = digest
             report['actual_client_pair_sha256'] = pair
         hub = work / 'hub'
         with socket.socket() as sock:
@@ -351,8 +356,10 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('work', 'source', 'cache', 'elixir', 'erlang', 'cache-manifest-sha256', 'ca-manifest', 'ca-manifest-sha256', 'schema', 'configure'):
-        parser.add_argument('--' + name, required=True)
+    for name in ('work','ca-manifest','ca-manifest-sha256','schema','configure'):
+        parser.add_argument('--'+name,required=True)
+    for name in ('source','cache','elixir','erlang','cache-manifest-sha256'):
+        parser.add_argument('--'+name,required=not getattr(NativeDiagnostic,'image_mode',False))
     parser.add_argument('--execute', action='store_true', required=True)
     parser.add_argument('--phase', choices=('bootstrap', 'full'), default='bootstrap')
     parser.add_argument('--continuity', action='store_true', help='Explicit real OIDC and two-hub HTTPS federation stratum')

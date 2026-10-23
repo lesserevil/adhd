@@ -132,7 +132,7 @@ class FederationContinuity:
         password = re.search(r'^Password: (.+)$', (self.root/'initial-admin-password.txt').read_text(), re.M)[1]
         self.admin.login('admin', password)
         self.initialize(self.admin)
-        self.admin.mutate('config_update', patch={'tls': {'enabled': True, 'host': '127.0.0.1', 'port': 18444,
+        self.admin.mutate('config_update', patch={'public_url':'https://two.acme.test:18444','tls': {'enabled': True, 'host': '127.0.0.1', 'port': 18444,
                           'challenge_host': '127.0.0.3', 'challenge_port': 8080, 'acme': {
                               'enabled': True, 'directory_url': self.ca['directory_url'], 'email': 'operator@two.acme.test',
                               'domains': ['two.acme.test'], 'accept_terms': True, 'renew_before_days': 1,

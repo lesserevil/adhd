@@ -105,20 +105,25 @@ def run_stopped_copy(args, origin, destination, expected_leaf, issuer_root, orig
     try:
         stdout = destination/'acme-rebind.stdout'
         stderr = destination/'acme-rebind.stderr'
-        env = {'PATH':str(runtime.elixir.parent)+':'+str(runtime.erlang.parent)+':/usr/bin:/bin',
-               'HOME':str(destination),'LANG':'C.UTF-8','ERL_FLAGS':'+S 2:2'}
-        code = verified_preload_code(runtime.cache,binding) + '[payload] = System.argv(); result = ADHD.CLI.run(JSON.decode!(payload)); IO.puts(JSON.encode!(result))'
-        value['offline_preloaded_beams'] = binding['beams']
-        with stdout.open('xb') as out, stderr.open('xb') as err:
-            stdout.chmod(0o600)
-            stderr.chmod(0o600)
-            process = subprocess.Popen([str(runtime.elixir),'-pa',str(runtime.cache),'-e',code,'--',
-                                       json.dumps(['rebind-storage',request])],stdout=out,stderr=err,
-                                       env=env,start_new_session=True)
-            cli_ticks = ticks(process.pid)
-            value['cli_identity'] = {'pid':process.pid,'start_ticks':cli_ticks,'reaped':False}
-            process.wait(timeout=150)
-        assert process.returncode == 0 and stdout.stat().st_size <= 65536 and stderr.stat().st_size <= 65536
+        if hasattr(runtime,'offline_rebind'):
+            completed,cli_identity=runtime.offline_rebind(request,stdout,stderr,timeout=150)
+            value['cli_identity']=cli_identity
+            assert completed.returncode==0 and stdout.stat().st_size<=65536 and stderr.stat().st_size<=65536
+        else:
+            env = {'PATH':str(runtime.elixir.parent)+':'+str(runtime.erlang.parent)+':/usr/bin:/bin',
+                   'HOME':str(destination),'LANG':'C.UTF-8','ERL_FLAGS':'+S 2:2'}
+            code = verified_preload_code(runtime.cache,binding) + '[payload] = System.argv(); result = ADHD.CLI.run(JSON.decode!(payload)); IO.puts(JSON.encode!(result))'
+            value['offline_preloaded_beams'] = binding['beams']
+            with stdout.open('xb') as out, stderr.open('xb') as err:
+                stdout.chmod(0o600)
+                stderr.chmod(0o600)
+                process = subprocess.Popen([str(runtime.elixir),'-pa',str(runtime.cache),'-e',code,'--',
+                                           json.dumps(['rebind-storage',request])],stdout=out,stderr=err,
+                                           env=env,start_new_session=True)
+                cli_ticks = ticks(process.pid)
+                value['cli_identity'] = {'pid':process.pid,'start_ticks':cli_ticks,'reaped':False}
+                process.wait(timeout=150)
+            assert process.returncode == 0 and stdout.stat().st_size <= 65536 and stderr.stat().st_size <= 65536
         result = json.loads(stdout.read_text())
         assert result['rebound'] is True and result['server_id'] == request['expected_server_id']
         assert set(result['projects']) == {row['project_id']for row in request['stores']}

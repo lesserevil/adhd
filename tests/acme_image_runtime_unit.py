@@ -10,7 +10,7 @@ from acme_runtime import sha
 
 class ImageChecks(unittest.TestCase):
     def fixture(self,d):
-        root=Path(d);docker=root/'docker';docker.write_bytes(b'pinned executable fixture')
+        root=Path(d);docker=root/'docker';docker.write_bytes(b'pinned executable fixture');docker.chmod(0o700)
         manifest=root/'manifest.json';manifest.write_text(json.dumps({'schema':'adhd/container-inputs@1','files':{'hub.exs':'a'*64}}))
         return OwnedACMEImage('sha256:'+'b'*64,manifest,root,manifest_sha256=sha(manifest),artifact_sha256='a'*64,
           assets={'lego':{'path':'/app/bin/lego','sha256':'c'*64},'acme-guard':{'path':'/app/bin/acme-guard','sha256':'d'*64}},

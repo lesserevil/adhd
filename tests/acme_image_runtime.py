@@ -16,13 +16,17 @@ from acme_runtime import regular,sha,ticks
 
 class OwnedACMEImage(OwnedImage):
     def __init__(self, image, manifest, root, *, manifest_sha256, artifact_sha256,
-                 assets, docker, docker_sha256, socket_path, docker_config):
+                 assets, docker, docker_sha256, socket_path, docker_config, runtime_files=None):
         root=Path(root).resolve()
-        regular(manifest);regular(docker)
+        regular(manifest)
+        tool=Path(docker).lstat()
+        import stat
+        assert stat.S_ISREG(tool.st_mode)and tool.st_nlink==1 and tool.st_uid in (0,os.getuid())and not tool.st_mode&0o022
         assert re.fullmatch(r'sha256:[0-9a-f]{64}',image)
         assert sha(manifest)==manifest_sha256 and sha(docker)==docker_sha256
         assert Path(docker).is_absolute() and Path(socket_path).is_absolute()
-        assert set(assets)=={'lego','acme-guard'}
+        assert {'lego','acme-guard'}<=set(assets)
+        assert set(assets)<=set(['LICENSE.lego','LICENSE.musl','acme-build.json','acme-bundle.json','acme-guard','acme-pins.json','lego','lego-sbom.json'])
         for value in assets.values():
             assert set(value)=={'path','sha256'}
             p=PurePosixPath(value['path'])
@@ -36,6 +40,9 @@ class OwnedACMEImage(OwnedImage):
         self.env={'PATH':'/usr/bin:/bin','HOME':str(root),'LC_ALL':'C',
                   'DOCKER_HOST':'unix://'+str(socket_path),'DOCKER_CONFIG':str(Path(docker_config).resolve())}
         self.assets_verified=False;self.runtime_rows=[]
+        self.runtime_files=dict(runtime_files or {})
+        assert all(PurePosixPath(p).is_absolute()and str(PurePosixPath(p))==p and p.startswith('/runtime/adhd/')and '..'not in PurePosixPath(p).parts and re.fullmatch('[0-9a-f]{64}',v)for p,v in self.runtime_files.items())
+        self.expected_cmd=None;self.expected_network='host';self.last_exit_code=None
 
     def docker(self,*args,check=True):
         assert sha(self.docker_path)==self.docker_sha
@@ -62,16 +69,16 @@ class OwnedACMEImage(OwnedImage):
                 actual[path]=digest
             assert actual==expected,'Complete runtime payload differs from canonical manifest'
             self.image_config=json.loads(self.docker('image','inspect',self.expected_image).stdout)[0]['Config']
-            for value in self.assets.values():
-                raw=self.probe('sha256sum',value['path'])
-                assert len(raw)<=8192
-                assert raw.decode().strip()==value['sha256']+'  '+value['path'], 'Actual packaged client/guardian hash differs'
+            files={**self.runtime_files,**{v['path']:v['sha256']for v in self.assets.values()}}
+            raw=self.probe('sha256sum',*sorted(files))
+            self.check_hash_output(raw,files)
             self.assets_verified=True
 
     def argv(self,config_file):
         # Original security/resource/mounts/default ENTRYPOINT stay authoritative.
         result=super().argv(config_file)
         result[0]=self.docker_path
+        result.remove('--rm')
         self.config_file=str(config_file)
         return result
 
@@ -90,17 +97,29 @@ class OwnedACMEImage(OwnedImage):
         row=self.checked_row();assert row is not None and row['State']['Running']is True
         super().observe()
         assert row['Config']['Entrypoint']==self.image_config['Entrypoint']
-        assert row['Config']['Cmd']==self.image_config['Cmd']
-        assert row['HostConfig']['PidMode']!='host'
+        assert row['Config']['Cmd']==(self.expected_cmd if self.expected_cmd is not None else self.image_config['Cmd'])
+        assert row['HostConfig']['PidMode']in ('','private')
+        assert row['HostConfig']['NetworkMode']==self.expected_network
+        assert row['HostConfig']['Privileged']is False and row['HostConfig']['ReadonlyRootfs']is True
+        assert 'ALL'in row['HostConfig']['CapDrop']
+        assert 'no-new-privileges'in row['HostConfig']['SecurityOpt']
+        assert any(m['Type']=='bind'and m['Source']==str(self.root)and m['Destination']==str(self.root)for m in row['Mounts'])
         assert ('ADHD_CONFIG_FILE='+self.config_file) in row['Config']['Env']
         pid=row['State']['Pid'];start=ticks(pid)
         assert type(pid)is int and pid>0 and start is not None
         assert Path(os.readlink('/proc/'+str(pid)+'/exe')).name=='beam.smp','Inspected process is not actual BEAM VM'
+        namespace=os.readlink('/proc/'+str(pid)+'/ns/pid')
+        assert namespace!=os.readlink('/proc/self/ns/pid')
         if not self.runtime_rows or self.runtime_rows[-1]['container_id']!=row['Id']:
             self.runtime_rows.append({'container_id':row['Id'],'container_name':self.name,
-              'host_vm_pid':pid,'host_vm_start_ticks':start,'image':row['Image'],
+              'host_vm_pid':pid,'host_vm_start_ticks':start,'pid_namespace':namespace,'image':row['Image'],
               'assets_sha256':{k:v['sha256']for k,v in self.assets.items()},
               'default_entrypoint':True,'payload_verified':self.verified,'assets_verified':self.assets_verified})
+            files={**self.runtime_files,**{v['path']:v['sha256']for v in self.assets.values()}}
+            self.check_hash_output(self.docker('exec',row['Id'],'sha256sum',*sorted(files)).stdout,files)
+            again=self.checked_row()
+            assert again['Id']==row['Id']and again['State']['Pid']==pid and ticks(pid)==start
+            self.runtime_rows[-1]['live_runtime_files_verified']=len(files)
         else:
             actual=self.runtime_rows[-1]
             assert (actual['host_vm_pid'],actual['host_vm_start_ticks'])==(pid,start)
@@ -108,16 +127,29 @@ class OwnedACMEImage(OwnedImage):
     def absent(self):
         return self.checked_row()is None
 
+    @staticmethod
+    def check_hash_output(raw,expected):
+        assert len(raw)<=131072
+        observed={}
+        for line in raw.decode().splitlines():
+            digest,path=line.split('  ',1)
+            assert path not in observed
+            observed[path]=digest
+        assert observed==expected,'Actual runtime/cache/client file hashes differ'
+
     def stop(self,hard=False):
         if self.name is None:return
         row=self.checked_row()
         identifier=row['Id']if row else self.container_id
         if row:
-            # Validate actual known ID/name/image BEFORE any mutation. Never
-            # remove a foreign or replaced object merely because a name matches.
             self.container_id=row['Id']
-            if hard:self.docker('kill','--signal','KILL',identifier)
-            else:self.docker('stop','--time','8',identifier)
+            if row['State']['Running']:
+                if hard:self.docker('kill','--signal','KILL',identifier)
+                else:self.docker('stop','--time','8',identifier)
+            row=self.checked_row();assert row is not None and row['State']['Running']is False
+            self.last_exit_code=row['State']['ExitCode']
+            assert self.checked_row()['Id']==identifier
+            self.docker('rm',identifier)
         deadline=time.monotonic()+15
         while not self.absent():
             assert time.monotonic()<deadline,'Owned image absence deadline'
@@ -126,5 +158,5 @@ class OwnedACMEImage(OwnedImage):
             if item['container_id']==identifier:
                 item['original_vm_identity_absent']=ticks(item['host_vm_pid'])!=item['host_vm_start_ticks']
                 assert item['original_vm_identity_absent']
-        self.events.append({'action':'observed-absent','container_id':identifier,'observed_absent':True})
+        self.events.append({'action':'observed-absent','container_id':identifier,'observed_absent':True,'exit_code':self.last_exit_code})
         self.name=self.container_id=None

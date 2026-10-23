@@ -1,0 +1,79 @@
+{
+  "schema": "adhd/issuer-relay-directory-preflight@1",
+  "passed": true,
+  "requests": [
+    {
+      "expected_status": 200,
+      "actual_status": 200,
+      "verified_tls_root_and_hostname": true,
+      "body_sha256": "6a35de9e70bae75fac08aa92544452a107e8de8ce48f82af37e9ff7fb1bfc286",
+      "directory_links_remain_on_relay": true
+    },
+    {
+      "expected_status": 503,
+      "actual_status": 503,
+      "verified_tls_root_and_hostname": true,
+      "body_sha256": "b5404ebd5b8fd003dc2b5f56fc05c644260f33c0571dd69207199463cef4b28a",
+      "directory_links_remain_on_relay": false
+    },
+    {
+      "expected_status": 429,
+      "actual_status": 429,
+      "verified_tls_root_and_hostname": true,
+      "body_sha256": "5d9270df1ff7ffee949b821357fca510a558c29e24ceeb92f9161668c9c4d1f3",
+      "directory_links_remain_on_relay": false
+    }
+  ],
+  "orders": 0,
+  "generated_application_starts": 0,
+  "public_ca_calls": 0,
+  "plan_sha256": "f19ab3a4c41ec6f5100437cfcff499d795f85ce983f996735080711dd05c5bd8",
+  "driver_sha256": "53db7220fbd9e405a9660eb41a9fdb357a0bc6604e23f6651c7131c5f457f5d6",
+  "last_observed_status": 429,
+  "relay": {
+    "requests": 3,
+    "active": 0,
+    "events": [
+      {
+        "at_monotonic": 279488.945356682,
+        "method": "GET",
+        "directory": true,
+        "request_bytes": 0,
+        "fault_status": null,
+        "upstream_status": 200,
+        "response_bytes": 632,
+        "completed_monotonic": 279488.990977218
+      },
+      {
+        "at_monotonic": 279489.020443325,
+        "method": "GET",
+        "directory": true,
+        "request_bytes": 0,
+        "fault_status": 503,
+        "upstream_status": null,
+        "retry_seconds": 120,
+        "completed_monotonic": 279489.020505992
+      },
+      {
+        "at_monotonic": 279489.028227597,
+        "method": "GET",
+        "directory": true,
+        "request_bytes": 0,
+        "fault_status": 429,
+        "upstream_status": null,
+        "retry_seconds": 120,
+        "completed_monotonic": 279489.028305557
+      }
+    ],
+    "errors": [],
+    "error_total": 0,
+    "accept_thread_alive": false,
+    "worker_threads_alive": 0,
+    "exchange_timers_alive": 0,
+    "lifetime_timer_alive": false,
+    "recorded_worker_threads": 3,
+    "recorded_exchange_timers": 3,
+    "closed": true
+  },
+  "ca_original_identities_preserved": true
+}

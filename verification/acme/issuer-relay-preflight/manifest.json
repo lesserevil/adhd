@@ -1,0 +1,45 @@
+{
+  "schema": "adhd/acme-issuer-relay-live-preflight@1",
+  "passed": true,
+  "scope": "Actual isolated TestCA directory-only transport and serial relay rebind. No application, ACME order, certificate issuance, retry-floor durability, image or deployment qualification inferred.",
+  "attempt_passed": [
+    false,
+    false,
+    true,
+    true
+  ],
+  "first_failure": "Attempt01 synthetic stdlib client omitted User-Agent; strict Pebble returned400. Direct directory GETs with both Host ports reproduced the same documented error; maintained client already sends User-Agent. Sender corrected, app unchanged.",
+  "second_failure": "Attempt02 immediate fresh relay bind failedEADDRINUSE(98); root ss observation showed1TIME-WAIT row and0LISTEN at19103 after complete first close. Old server disabled SO_REUSEADDR. No foreign listener touched.",
+  "fixture_correction": "Rootd0dbe41/import7df3f2a enables SO_REUSEADDR and explicitly disables SO_REUSEPORT on exact owned loopback issuer and challenge relays. Closure predicates unchanged. Independently reviewed60 pure guards.",
+  "actual_positive03_04": {
+    "genuine_directory200": 2,
+    "injected_directory503": 2,
+    "injected_directory429": 2,
+    "normal_hostname_and_root_tls_verification": true,
+    "directory_urls_remain_local_relay": true,
+    "retry_after_seconds": 120,
+    "attempt04_preexisting_time_wait_rows": 3,
+    "attempt04_preexisting_listening_rows": 0,
+    "post04_listening_rows": 0,
+    "all_relay_workers_timers_and_sockets_closed": true,
+    "existing_ca_identities_preserved": true
+  },
+  "formal_lifecycle05": "Still active; no generated app/model/compiler job was started concurrently. Directory-only preflight exchanges consumed less than1s each.",
+  "public_ca_calls": 0,
+  "files": {
+    "attempt01/result.json": "6ff75edb6d34bd642352b633779710165a3ddf6e3bd15b007c3b13265fba281a",
+    "attempt01/direct-host-diagnosis.json": "09de76963e6f1a8fdca15431e3128d8fc79a1f59dbed6c28d022ea7091c7f084",
+    "attempt01/run.py": "6cec16eddcc38a5e10f1f69f2dd8ba294a789216801823fb3109a78124ab8bba",
+    "attempt01/plan.json": "88502825467e640f4a95a0047e680e0411bc02196c9c2f8102a3514045bcea97",
+    "attempt02/result.json": "defba37ddaad21936013e8e8531c15c0ebec9dc428ad79bfd720bdff3df2a650",
+    "attempt02/run.py": "53db7220fbd9e405a9660eb41a9fdb357a0bc6604e23f6651c7131c5f457f5d6",
+    "attempt02/plan.json": "88502825467e640f4a95a0047e680e0411bc02196c9c2f8102a3514045bcea97",
+    "attempt03/result.json": "7e806e2d48fa4b2ff5f33f086d313577fb9f8ec17520243b2783279a27b0df8f",
+    "attempt03/run.py": "53db7220fbd9e405a9660eb41a9fdb357a0bc6604e23f6651c7131c5f457f5d6",
+    "attempt03/plan.json": "f19ab3a4c41ec6f5100437cfcff499d795f85ce983f996735080711dd05c5bd8",
+    "attempt04/result.json": "1ae2307489b28b26bf9a47603798463cb5a22edacc15e192504e13da37967cbb",
+    "attempt04/pre-bind-observation.json": "6308f0ebcff3dda80670a7bbd8cb189cd02bca54f25529573647f49aa146fc0b",
+    "attempt04/run.py": "53db7220fbd9e405a9660eb41a9fdb357a0bc6604e23f6651c7131c5f457f5d6",
+    "attempt04/plan.json": "f19ab3a4c41ec6f5100437cfcff499d795f85ce983f996735080711dd05c5bd8"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "schema": "adhd/acme-owned-CA04-closure@1",
+  "manifest_sha256": "e71f5853c673399caec9f09d2c9a1d7d2b5b2c0bb692f67e12f731222d897d85",
+  "before": [
+    {
+      "name": "owner",
+      "pid": 4165059,
+      "start_ticks": "28598085",
+      "uid": 1003,
+      "argv": [
+        "/home/horde/src/adhd/.venv/bin/python",
+        "-B",
+        "tests/acme_test_ca.py",
+        "--tools",
+        "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/tools",
+        "--work",
+        "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/ca04",
+        "--lifetime-seconds",
+        "10800"
+      ],
+      "argv_sha256": "33630bfb244bff0d923a11392827a0ab070a503b99ff0f5d899c3b9cde97f482"
+    },
+    {
+      "name": "dns",
+      "pid": 4165393,
+      "start_ticks": "28598156",
+      "uid": 1003,
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/tools/testca-bin/pebble-challtestsrv-linux-amd64/linux/amd64/pebble-challtestsrv",
+        "-dnsserver",
+        "127.0.0.1:19153",
+        "-management",
+        "127.0.0.1:19102",
+        "-defaultIPv4",
+        "127.0.0.1",
+        "-defaultIPv6",
+        "",
+        "-http01",
+        "",
+        "-https01",
+        "",
+        "-tlsalpn01",
+        "",
+        "-doh",
+        ""
+      ],
+      "argv_sha256": "20ec1824545ffde8217cd1387c589725c748aa8877c76bb2aca6b77198e86283"
+    },
+    {
+      "name": "pebble",
+      "pid": 4165410,
+      "start_ticks": "28598157",
+      "uid": 1003,
+      "argv": [
+        "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/tools/testca-bin/pebble-linux-amd64/linux/amd64/pebble",
+        "-config",
+        "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/ca04/config.json",
+        "-dnsserver",
+        "127.0.0.1:19153",
+        "-strict"
+      ],
+      "argv_sha256": "98b53444be5a37e2ad30f5127e734a5cefac1afa1f46e65ce53e1de8d9889b47"
+    }
+  ],
+  "authorized_graceful_owner_signal": "pidfd SIGTERM",
+  "no_other_signals": true,
+  "actual_signal_monotonic": 291703.464348803,
+  "passed": true,
+  "owner_and_exact_children_currently_absent": true,
+  "existing_owner_reaped_both_children": {
+    "closed": [
+      {
+        "name": "pebble",
+        "pid": 4165410,
+        "exit_code": -15,
+        "absent": true
+      },
+      {
+        "name": "dns",
+        "pid": 4165393,
+        "exit_code": 0,
+        "absent": true
+      }
+    ],
+    "all_absent": true
+  },
+  "owned_ports_no_current_listeners": true,
+  "checked_TCP_ports": [
+    19100,
+    19101,
+    19102,
+    19153
+  ],
+  "checked_UDP_ports": [
+    19153
+  ],
+  "CA_evidence_and_manifests_preserved": true,
+  "fixture_cleanup_only_no_app_provider_or_protected_service_actions": true
+}

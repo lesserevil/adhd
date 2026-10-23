@@ -583,5 +583,5 @@ class SeedProbe(OwnedImage):
    'set -eu; test ! -e /state/config/hub.json; mkdir -p /state/config /state/data; '
    'cp /seed/hub.json /seed/directory-root.pem /state/config/; '
    'if [ -f /seed/initial-admin-password.txt ]; then cp /seed/initial-admin-password.txt /state/config/; fi; '
-   'chown -R 10001:10001 /state; '
-   'find /state -type d -exec chmod 700 {} +; find /state -type f -exec chmod 600 {} +')
+   'find /state -type d -exec chmod 700 {} +; find /state -type f -exec chmod 600 {} +; '
+   'chown -R 10001:10001 /state')

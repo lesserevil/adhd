@@ -67,6 +67,18 @@ class State(unittest.TestCase):
     calls,command=self.runner();probe=adapters.StateProbe(command,'sha256:'+'a'*64,state/'config',state)
     with self.host(state,**kw),self.assertRaises(AssertionError):probe.preflight()
     self.assertEqual(calls,[])
+ def test_seed_modes_set_while_owner_then_chown_without_extra_capabilities(self):
+  with tempfile.TemporaryDirectory() as raw:
+   root=Path(raw);seed=root/'seed';state=root/'state';seed.mkdir();state.mkdir()
+   (seed/'hub.json').write_text(json.dumps({'host':'0.0.0.0','port':8766,'store_path':'/data/hub.dets','matcher':None,'eventing':{'enabled':False},'projects':[{'settings':{}}]}))
+   calls,command=self.runner(output=b'')
+   probe=adapters.SeedProbe(command,'sha256:'+'a'*64,seed,state);probe.initialize()
+   run=calls[0];caps=[run[i+1] for i,v in enumerate(run) if v=='--cap-add']
+   self.assertEqual(caps,['CHOWN','DAC_OVERRIDE']);self.assertIn('--cap-drop',run);self.assertNotIn('FOWNER',run)
+   program=run[-1]
+   self.assertLess(program.index('find /state -type d -exec chmod 700'),program.index('chown -R 10001:10001'))
+   self.assertLess(program.index('find /state -type f -exec chmod 600'),program.index('chown -R 10001:10001'))
+   self.assertTrue(program.endswith('chown -R 10001:10001 /state'));self.assertTrue(probe.probe_events[0]['observed_absent'])
  def test_preflight_script_checks_complete_private_state(self):
   body=adapters.STATE_PREFLIGHT
   for required in ['id -u','id -g','/state /state/config /state/data','test ! -L','10001:10001:700','10001:10001:600','test -f','stat -c %h','/state/config/hub.json','/state/config/directory-root.pem']:self.assertIn(required,body)

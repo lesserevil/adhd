@@ -1,0 +1,37 @@
+{
+  "schema": "adhd/acme-module-capsule@1",
+  "scope": "Isolated exact TLS callback bodies with actual Domain/ACMEFiles; explicit lock and certificate parsing spies; no hub, issuer, socket or actual guardian/client execution. Not artifact/image admission.",
+  "capsule": {
+    "path": "tests/acme_admission_contracts.exs",
+    "sha256": "5a7f472a89a34647e6bbb4ee2b951aa8da5e7cf85f9f41bb01c1ca7cf7d4c946",
+    "commit": "a606041"
+  },
+  "certificate_source_sha256": "c359608d76b5ae5a39c2b2d1702f91b39611f417ca6d46d6fdabce51c43504e9",
+  "observations": [
+    {
+      "tls_source_sha256": "0dcc9a363642b5bcd5c8353584c118dc301c3dd1daad9d07f53ba66856114bbb",
+      "cases": 8,
+      "failures": 1,
+      "exit_code": 2,
+      "failure": "same-policy joined MID queued unexpected :force; seven other cases passed",
+      "session": 59445
+    },
+    {
+      "tls_source_sha256": "183b9177c54804cb9cfcd636fc1ce2123e53ef669ce55027e8996c3ce3e7fd52",
+      "cases": 8,
+      "failures": 0,
+      "exit_code": 0,
+      "session": 64208,
+      "duration_seconds": 45.4
+    }
+  ],
+  "properties": [
+    "same-fingerprint different MIDs persist distinct receipts without changing due/force or queuing force",
+    "exact replay and current Admin authorization precede admission",
+    "nonretryable completion schedules no extra attempt",
+    "retiring different policy preserves new manual intent and issuer floor",
+    "missing/changed/intact account witnesses with either ordering bit remain untouched while guardian busy",
+    "closed guardian proof precedes integrity IO and valid certificate remains retained"
+  ],
+  "transcript_scope": "Direct tool completion observations, not reconstructed stdout archive"
+}

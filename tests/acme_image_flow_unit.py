@@ -61,6 +61,9 @@ class FlowChecks(unittest.TestCase):
         self.assertEqual(tool_regular(executable).st_uid,0)
         if os.getuid()!=0:
             with self.assertRaises(AssertionError):regular(executable)
+        oversized=SimpleNamespace(st_mode=stat.S_IFREG|0o755,st_uid=0,st_nlink=1,st_size=129*1024*1024)
+        with patch.object(Path,'lstat',return_value=oversized):
+            with self.assertRaisesRegex(AssertionError,'128MiB'):tool_regular(executable)
         for uid,mode in [(os.getuid()+9000,0o755),(0,0o777)]:
             fake=SimpleNamespace(st_mode=stat.S_IFREG|mode,st_uid=uid,st_nlink=1)
             with patch.object(Path,'lstat',return_value=fake):

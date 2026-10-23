@@ -33,6 +33,7 @@ def tool_regular(path):
     entry=path.lstat()
     assert stat.S_ISREG(entry.st_mode)and entry.st_nlink==1
     assert entry.st_uid in (0,os.getuid())and not entry.st_mode&0o022,'Unsafe tool custody'
+    assert entry.st_size<=128*1024*1024,'Tool input exceeds128MiB bound'
     return entry
 
 
@@ -50,7 +51,7 @@ class AcceptedImageTarget:
         for name in ['manifest','artifact','admission','source_admission','receipt','rebuild','docker','cache_manifest']:
             path=Path(value[name]).absolute();assert path==path.resolve(strict=True)
             entry=tool_regular(path)if name=='docker'else regular(path)
-            assert entry.st_size<=32*1024*1024
+            if name!='docker':assert entry.st_size<=32*1024*1024
             if name+'_sha256'in value:assert sha(path)==value[name+'_sha256']
         readers=value['reader_files']
         names={'image_compiled_inputs.py','image_compiled_admission.py','image_payload_audit.py'}

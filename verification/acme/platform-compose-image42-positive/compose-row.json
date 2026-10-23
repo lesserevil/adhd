@@ -1,0 +1,509 @@
+{
+  "platform": "compose",
+  "passed": true,
+  "cleanup_errors": [],
+  "seed_probe": [
+    {
+      "owned_name": "adhd-accept-probe-4edb40378f7046c3",
+      "container_id": null,
+      "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "entrypoint": "/bin/sh",
+      "run_exit_code": 0,
+      "run_failure_type": null,
+      "foreign_object_not_removed": false,
+      "observed_absent": true,
+      "cleanup_failure_types": []
+    }
+  ],
+  "seed_probe_cleanup_blocked": false,
+  "replacement_readiness": {
+    "events": [
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287589.102056405
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287589.263416398
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287589.423610092
+      },
+      {
+        "type": "SSLEOFError",
+        "code": 8,
+        "reason": "UNEXPECTED_EOF_WHILE_READING",
+        "at_monotonic": 287589.589963462
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287589.742941631
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287589.868424223
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287590.025267439
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287590.182531808
+      },
+      {
+        "type": "SSLEOFError",
+        "code": 8,
+        "reason": "UNEXPECTED_EOF_WHILE_READING",
+        "at_monotonic": 287590.335697352
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287590.488701293
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287590.648230692
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287590.809173355
+      },
+      {
+        "type": "OSError",
+        "code": 104,
+        "reason": "ECONNRESET",
+        "at_monotonic": 287590.979033393
+      }
+    ],
+    "pending_count": 13,
+    "ready_monotonic": 287591.343440594
+  },
+  "scenario": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "actual_admitted_runtime_custody",
+        "passed": true,
+        "identity": {
+          "scope": "actual Docker host PID bound to private container PID1, exec UID10001",
+          "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": [
+            "elixir",
+            "/runtime/adhd/boot.exs",
+            "/app/hub.exs"
+          ],
+          "process": {
+            "pid": 182419,
+            "start_ticks": "28749962",
+            "executable_basename": "beam.smp",
+            "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+            "actual_compiled_boot_and_app_arguments": true
+          },
+          "namespace_process": {
+            "pid": 1,
+            "start_ticks": "28749962",
+            "executable_basename": "beam.smp",
+            "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+            "actual_compiled_boot_and_app_arguments": true
+          },
+          "pid1_start_equals_host_start": true,
+          "exec_user": "10001:10001",
+          "started_at": "2026-10-23T04:26:41.237271639Z",
+          "restart_count": 0
+        }
+      },
+      {
+        "name": "default_disabled_private_http_public_initialization",
+        "passed": true
+      },
+      {
+        "name": "configured_public_origin_transition_preserves_actual_private_session",
+        "passed": true
+      },
+      {
+        "name": "real_ca_http01_proof",
+        "passed": true,
+        "proofs": {
+          "requests": 3,
+          "active": 0,
+          "events": [
+            {
+              "at_monotonic": 287510.990844785,
+              "target_sha256": "71ad27cef5c1960d9fe3b4479152a772b85982f7a5bbb661264641f076ac1787",
+              "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+              "upstream_status": 200,
+              "proof_sha256": "cf6c56f98ffb16c45365823b093ac7eaa5d748744ed1c13cf2286d15d937d5fb",
+              "proof_bytes": 87,
+              "mode": "pass",
+              "downstream_status": 200,
+              "completed_monotonic": 287510.990923215
+            },
+            {
+              "at_monotonic": 287510.99188887,
+              "target_sha256": "71ad27cef5c1960d9fe3b4479152a772b85982f7a5bbb661264641f076ac1787",
+              "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+              "upstream_status": 200,
+              "proof_sha256": "cf6c56f98ffb16c45365823b093ac7eaa5d748744ed1c13cf2286d15d937d5fb",
+              "proof_bytes": 87,
+              "mode": "pass",
+              "downstream_status": 200,
+              "completed_monotonic": 287510.991954732
+            },
+            {
+              "at_monotonic": 287510.992893361,
+              "target_sha256": "71ad27cef5c1960d9fe3b4479152a772b85982f7a5bbb661264641f076ac1787",
+              "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+              "upstream_status": 200,
+              "proof_sha256": "cf6c56f98ffb16c45365823b093ac7eaa5d748744ed1c13cf2286d15d937d5fb",
+              "proof_bytes": 87,
+              "mode": "pass",
+              "downstream_status": 200,
+              "completed_monotonic": 287510.992948724
+            }
+          ],
+          "errors": [],
+          "closed": false
+        }
+      },
+      {
+        "name": "actual_trusted_hostname_verified_https_and_admin",
+        "passed": true
+      },
+      {
+        "name": "manual_hot_real_renew_and_exact_receipt_replay_same_vm",
+        "passed": true
+      },
+      {
+        "name": "scheduled_real_renew_without_manual_submission_same_vm",
+        "passed": true
+      },
+      {
+        "name": "replacement_new_runtime_same_leaf_account_https",
+        "passed": true,
+        "identity": {
+          "scope": "actual Docker host PID bound to private container PID1, exec UID10001",
+          "container_id": "aca6ec21d252bb5d725ebbf1cd69a6a8e368efe0bf125f605ec0679d1c762254",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": [
+            "elixir",
+            "/runtime/adhd/boot.exs",
+            "/app/hub.exs"
+          ],
+          "process": {
+            "pid": 195700,
+            "start_ticks": "28758702",
+            "executable_basename": "beam.smp",
+            "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+            "actual_compiled_boot_and_app_arguments": true
+          },
+          "namespace_process": {
+            "pid": 1,
+            "start_ticks": "28758702",
+            "executable_basename": "beam.smp",
+            "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+            "actual_compiled_boot_and_app_arguments": true
+          },
+          "pid1_start_equals_host_start": true,
+          "exec_user": "10001:10001",
+          "started_at": "2026-10-23T04:28:08.640516929Z",
+          "restart_count": 0
+        }
+      },
+      {
+        "name": "same_private_account_generation_owner_bytes_after_replacement",
+        "passed": true,
+        "private_state_sha256": "2a3d795acd6fc6a4ba865862541fe1c8c0abfea0d644b4c4854d248305668aad"
+      }
+    ],
+    "runtime_identities": [
+      {
+        "scope": "actual Docker host PID bound to private container PID1, exec UID10001",
+        "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+        "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "entrypoint": [
+          "elixir",
+          "/runtime/adhd/boot.exs",
+          "/app/hub.exs"
+        ],
+        "process": {
+          "pid": 182419,
+          "start_ticks": "28749962",
+          "executable_basename": "beam.smp",
+          "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+          "actual_compiled_boot_and_app_arguments": true
+        },
+        "namespace_process": {
+          "pid": 1,
+          "start_ticks": "28749962",
+          "executable_basename": "beam.smp",
+          "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+          "actual_compiled_boot_and_app_arguments": true
+        },
+        "pid1_start_equals_host_start": true,
+        "exec_user": "10001:10001",
+        "started_at": "2026-10-23T04:26:41.237271639Z",
+        "restart_count": 0
+      },
+      {
+        "scope": "actual Docker host PID bound to private container PID1, exec UID10001",
+        "container_id": "aca6ec21d252bb5d725ebbf1cd69a6a8e368efe0bf125f605ec0679d1c762254",
+        "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+        "entrypoint": [
+          "elixir",
+          "/runtime/adhd/boot.exs",
+          "/app/hub.exs"
+        ],
+        "process": {
+          "pid": 195700,
+          "start_ticks": "28758702",
+          "executable_basename": "beam.smp",
+          "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+          "actual_compiled_boot_and_app_arguments": true
+        },
+        "namespace_process": {
+          "pid": 1,
+          "start_ticks": "28758702",
+          "executable_basename": "beam.smp",
+          "actual_cmdline_sha256": "881ff33a69a2ee83f7ceb801b41cd69b74dffd28cd11095525ec2943908dfa83",
+          "actual_compiled_boot_and_app_arguments": true
+        },
+        "pid1_start_equals_host_start": true,
+        "exec_user": "10001:10001",
+        "started_at": "2026-10-23T04:28:08.640516929Z",
+        "restart_count": 0
+      }
+    ],
+    "scope": "ACME-only actual deployment. Parent adds shipped-listener/mount/security and strictcleanup/protected-resource checks after closure."
+  },
+  "network_ownership": {
+    "issued": true,
+    "id": "7bf3f573baefe220d0589e344c9a0ff9e03c430693f6d9edc6f8570e0bfb24ff"
+  },
+  "gateway": {
+    "bound_ip": "10.231.240.1",
+    "source_allowlist": [
+      "10.231.240.2"
+    ],
+    "port": 19104,
+    "target": "127.0.0.1:19100",
+    "tls_terminated": false,
+    "acme_bytes_rewritten": false,
+    "accepted": 3,
+    "connections": [
+      {
+        "client_allowed": true,
+        "bytes_to_ca": 8165,
+        "bytes_from_ca": 12625,
+        "failure_type": null
+      },
+      {
+        "client_allowed": true,
+        "bytes_to_ca": 7415,
+        "bytes_from_ca": 11962,
+        "failure_type": null
+      },
+      {
+        "client_allowed": true,
+        "bytes_to_ca": 5477,
+        "bytes_from_ca": 7924,
+        "failure_type": null
+      }
+    ],
+    "errors": [],
+    "error_count": 0,
+    "active_sockets": 0,
+    "all_threads_closed": true
+  },
+  "relay": {
+    "requests": 6,
+    "active": 0,
+    "events": [
+      {
+        "at_monotonic": 287510.990844785,
+        "target_sha256": "71ad27cef5c1960d9fe3b4479152a772b85982f7a5bbb661264641f076ac1787",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "cf6c56f98ffb16c45365823b093ac7eaa5d748744ed1c13cf2286d15d937d5fb",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 287510.990923215
+      },
+      {
+        "at_monotonic": 287510.99188887,
+        "target_sha256": "71ad27cef5c1960d9fe3b4479152a772b85982f7a5bbb661264641f076ac1787",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "cf6c56f98ffb16c45365823b093ac7eaa5d748744ed1c13cf2286d15d937d5fb",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 287510.991954732
+      },
+      {
+        "at_monotonic": 287510.992893361,
+        "target_sha256": "71ad27cef5c1960d9fe3b4479152a772b85982f7a5bbb661264641f076ac1787",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "cf6c56f98ffb16c45365823b093ac7eaa5d748744ed1c13cf2286d15d937d5fb",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 287510.992948724
+      },
+      {
+        "at_monotonic": 287516.57207179,
+        "target_sha256": "f17bd2f01c4d76057453fcfb8063fa10ede20ed6a9d42f5493a25315e62ed35a",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "567c1ec38d03b0a75e77333e34164f894cf43d5c24092fb35d41811d7974e4a2",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 287516.572131202
+      },
+      {
+        "at_monotonic": 287516.577798858,
+        "target_sha256": "f17bd2f01c4d76057453fcfb8063fa10ede20ed6a9d42f5493a25315e62ed35a",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "567c1ec38d03b0a75e77333e34164f894cf43d5c24092fb35d41811d7974e4a2",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 287516.577856618
+      },
+      {
+        "at_monotonic": 287516.579049145,
+        "target_sha256": "f17bd2f01c4d76057453fcfb8063fa10ede20ed6a9d42f5493a25315e62ed35a",
+        "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+        "upstream_status": 200,
+        "proof_sha256": "567c1ec38d03b0a75e77333e34164f894cf43d5c24092fb35d41811d7974e4a2",
+        "proof_bytes": 87,
+        "mode": "pass",
+        "downstream_status": 200,
+        "completed_monotonic": 287516.579098621
+      }
+    ],
+    "errors": [],
+    "closed": true
+  },
+  "runtime_custody": [
+    {
+      "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    },
+    {
+      "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    },
+    {
+      "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    },
+    {
+      "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    },
+    {
+      "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    },
+    {
+      "container_id": "8bc2e0f0664e71284df5833b793dc3c9eaf8246b8311e17604db701126cce29e",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    },
+    {
+      "container_id": "aca6ec21d252bb5d725ebbf1cd69a6a8e368efe0bf125f605ec0679d1c762254",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    },
+    {
+      "container_id": "aca6ec21d252bb5d725ebbf1cd69a6a8e368efe0bf125f605ec0679d1c762254",
+      "state_mounts": {
+        "/config": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/config",
+        "/data": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-12/runtime/compose/state/data"
+      }
+    }
+  ],
+  "state_probes": [
+    {
+      "owned_name": "adhd-accept-probe-20fec06e614c46a7",
+      "container_id": null,
+      "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "entrypoint": "/bin/sh",
+      "run_exit_code": 0,
+      "run_failure_type": null,
+      "foreign_object_not_removed": false,
+      "observed_absent": true,
+      "cleanup_failure_types": []
+    },
+    {
+      "owned_name": "adhd-accept-probe-321e4a4d75de48ea",
+      "container_id": null,
+      "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "entrypoint": "/bin/sh",
+      "run_exit_code": 0,
+      "run_failure_type": null,
+      "foreign_object_not_removed": false,
+      "observed_absent": true,
+      "cleanup_failure_types": []
+    },
+    {
+      "owned_name": "adhd-accept-probe-cf604cb414a2478e",
+      "container_id": null,
+      "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "entrypoint": "/bin/sh",
+      "run_exit_code": 0,
+      "run_failure_type": null,
+      "foreign_object_not_removed": false,
+      "observed_absent": true,
+      "cleanup_failure_types": []
+    }
+  ],
+  "state_probe_cleanup_blocked": false,
+  "state_preflight_proven": true
+}

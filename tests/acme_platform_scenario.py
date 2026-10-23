@@ -7,6 +7,7 @@ import hashlib
 from datetime import datetime, timezone
 import time
 import errno
+import re
 from urllib.error import URLError
 
 
@@ -24,6 +25,21 @@ def managed_health(secure):
  except URLError as error:
   if isinstance(error.reason,OSError) and error.reason.errno==errno.ECONNREFUSED:return False
   raise
+
+
+def public_certificate_time(value):
+ assert isinstance(value,str) and re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})',value)
+ parsed=datetime.fromisoformat(value.replace('Z','+00:00'))
+ assert parsed.tzinfo is not None and parsed.utcoffset() is not None
+ delta=parsed.astimezone(timezone.utc)-datetime(1970,1,1,tzinfo=timezone.utc)
+ return delta.days*86400000+delta.seconds*1000+delta.microseconds//1000
+
+
+def renewal_due_ms(certificate):
+ before=public_certificate_time(certificate['not_before'])
+ after=public_certificate_time(certificate['not_after'])
+ assert after>before
+ return after-min(86400000,(after-before)//3)
 
 
 def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password,certificate_facts):
@@ -74,7 +90,7 @@ def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password,cert
  # The90s testCA leaf's next natural rotation must be beyond this shared45s
  # cold-replacement phase; no clock mutation, CA replacement or retry is used.
  certificate=automatic['certificate']
- due=certificate['not_after']-min(86400000,(certificate['not_after']-certificate['not_before'])//3)
+ due=renewal_due_ms(certificate)
  assert due-int(time.time()*1000)>45000,'Fresh scheduled leaf lacks the required replacement window'
  previous_deadline=adapter.command.phase_deadline;deadline=time.monotonic()+45
  adapter.command.phase_deadline=deadline

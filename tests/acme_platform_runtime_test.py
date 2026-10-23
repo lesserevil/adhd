@@ -3,6 +3,8 @@ import importlib.util
 import errno
 import json
 import subprocess
+import copy
+from types import SimpleNamespace
 from pathlib import Path
 import selectors
 import sys
@@ -105,7 +107,7 @@ class Deployment(unittest.TestCase):
    work=Path(raw)
    adapters.Compose(denied,ROOT,work,'sha256:'+'a'*64,'adhd-acme-test',work/'seed',work/'state','172.30.0.1')
    adapters.Kind(denied,ROOT,work,'sha256:'+'a'*64,'adhd-acme-test','kindest/node@sha256:'+'b'*64,
-                 '172.30.0.1','c'*64,'owned-acme-network',{},'adhd-hub:actual')
+                 '172.30.0.1','c'*64,'owned-acme-network',{},'adhd-hub:actual','sha256:'+'d'*64)
  def test_compose_only_fixture_host_bind_changes(self):
   with tempfile.TemporaryDirectory() as raw:
    work=Path(raw);argv=adapters.render_compose(ROOT,work,'172.30.0.1');text=(work/'fixture.compose.yaml').read_text()
@@ -153,11 +155,48 @@ class Deployment(unittest.TestCase):
    self.assertFalse(adapters.resource_absent(good,'mixed',kind))
    self.assertFalse(adapters.resource_absent(subprocess.CompletedProcess([],1,b'[]',(message+'\ndaemon error').encode()),'MiXeD',kind))
    self.assertFalse(adapters.resource_absent(subprocess.CompletedProcess([],1,b'present',message.encode()),'MiXeD',kind))
+ def test_actual_public_iso_certificate_shape_keeps_exact_due_window(self):
+  certificate={'not_before':'2026-10-23T00:00:00Z','not_after':'2026-10-23T00:01:30Z'}
+  self.assertEqual(scenario.renewal_due_ms(certificate),scenario.public_certificate_time('2026-10-23T00:01:00Z'))
+ def test_aware_offsets_and_fractional_public_dates_are_not_float_units(self):
+  self.assertEqual(scenario.public_certificate_time('2026-10-23T02:01:00.123+02:00'),scenario.public_certificate_time('2026-10-23T00:01:00.123Z'))
+ def test_internal_numeric_naive_or_invalid_public_timestamps_reject(self):
+  for value in [1792713600000,True,'2026-10-23T00:01:00','2026-99-23T00:01:00Z','not-a-date']:
+   with self.assertRaises((AssertionError,ValueError)):scenario.public_certificate_time(value)
+  with self.assertRaises(AssertionError):scenario.renewal_due_ms({'not_before':'2026-10-23T00:01:30Z','not_after':'2026-10-23T00:00:00Z'})
+ def volume_fixture(self):
+  name='a'*64
+  mount={'Type':'volume','Name':name,'Driver':'local','Destination':'/var','Source':'/var/lib/docker/volumes/'+name+'/_data'}
+  volume={'Name':name,'Driver':'local','Scope':'local','CreatedAt':'2026-10-23T00:00:00Z','Mountpoint':mount['Source'],'Labels':{'com.docker.volume.anonymous':''},'Options':None}
+  return name,{'Config':{'Volumes':{'/var':{}}},'Mounts':[mount]},volume
+ def test_fresh_anonymous_volume_proof_rejects_named_shared_driver_or_rebound(self):
+  name,node,volume=self.volume_fixture()
+  self.assertEqual(adapters.anonymous_volume_proof(node,{name:volume},set())[0]['name'],name)
+  for key,value in [('Labels',{}),('Labels',{'owner':'foreign'}),('Driver','nfs'),('Scope','global'),('Options',{'device':'/foreign'}),('CreatedAt',''),('Mountpoint','/foreign')]:
+   bad=copy.deepcopy(volume);bad[key]=value
+   with self.subTest(key=key),self.assertRaises(AssertionError):adapters.anonymous_volume_proof(node,{name:bad},set())
+  with self.assertRaises(AssertionError):adapters.anonymous_volume_proof(node,{name:volume},{name})
+  bad=copy.deepcopy(node);bad['Config']['Volumes']={'/foreign':{}}
+  with self.assertRaises(AssertionError):adapters.anonymous_volume_proof(bad,{name:volume},set())
+ def test_node_actual_image_and_pinned_creation_reference_are_both_required(self):
+  name,node,volume=self.volume_fixture()
+  node.update(Name='/adhd-acme-test-control-plane',Id='e'*64,Image='sha256:'+'d'*64,
+     NetworkSettings={'Networks':{'owned-acme-network':{'NetworkID':'c'*64}}},HostConfig={'NetworkMode':'owned-acme-network'})
+  node['Config'].update(Image='kindest/node@sha256:'+'b'*64,Labels={'io.x-k8s.kind.cluster':'adhd-acme-test','io.x-k8s.kind.role':'control-plane'})
+  def command(argv,**kw):return subprocess.CompletedProcess(argv,0,json.dumps([volume if argv[1]=='volume' else node]).encode(),b'')
+  with tempfile.TemporaryDirectory() as raw:
+   instance=adapters.Kind(command,ROOT,Path(raw),'sha256:'+'a'*64,'adhd-acme-test','kindest/node@sha256:'+'b'*64,
+                 '172.30.0.1','c'*64,'owned-acme-network',{},'adhd-hub:actual','sha256:'+'d'*64)
+   instance.preexisting_volumes=set();self.assertEqual(instance.node_state()['Image'],'sha256:'+'d'*64)
+   node['Image']='sha256:'+'f'*64
+   with self.assertRaises(AssertionError):instance.node_state()
+   node['Image']='sha256:'+'d'*64;node['Config']['Image']='foreign:tag'
+   with self.assertRaises(AssertionError):instance.node_state()
  def test_state_probe_cleanup_keeps_original_failure(self):
   def denied(*a,**kw):raise AssertionError('No commands')
   with tempfile.TemporaryDirectory() as raw:
    instance=adapters.Kind(denied,ROOT,Path(raw),'sha256:'+'a'*64,'adhd-acme-test','kindest/node@sha256:'+'b'*64,
-                 '172.30.0.1','c'*64,'owned-acme-network',{},'adhd-hub:actual')
+                 '172.30.0.1','c'*64,'owned-acme-network',{},'adhd-hub:actual','sha256:'+'d'*64)
    with patch.object(instance,'obj',return_value={'items':[]}),\
         patch.object(instance,'namespaced',side_effect=ValueError('original create failure')),\
         patch.object(instance,'close_probe',side_effect=OSError('cleanup unknown')):
@@ -201,6 +240,25 @@ class Commands(unittest.TestCase):
    with patch.object(commands.time,'monotonic',return_value=2),patch.object(command,'issue') as issue:
     with self.assertRaisesRegex(AssertionError,'Shared platform phase deadline'):command(['docker','inspect','owned'])
     issue.assert_not_called()
+ def test_exited_leader_is_unreaped_until_group_closed(self):
+  with tempfile.TemporaryDirectory() as raw:
+   command=self.instance(Path(raw));events=[];state={'leader':True,'descendant':True}
+   class Process:
+    pid=123;returncode=None;stdin=stdout=stderr=None
+    def poll(self):raise AssertionError('Must not reap leader by polling')
+    def wait(self,timeout):events.append('reap');state['leader']=False;self.returncode=0
+   def ticks(pid):return ('leader' if pid==123 else 'descendant') if state['leader' if pid==123 else 'descendant'] else None
+   def members(pid):return {p:t for p in [123,456] if (t:=ticks(p)) is not None}
+   def kill(pid,sig):
+    self.assertTrue(state['leader']);events.append(sig)
+    if sig==commands.signal.SIGKILL:state['descendant']=False
+   record={'process':Process(),'closed':False,'start_ticks':'leader'}
+   with patch.object(commands,'ticks',side_effect=ticks),patch.object(commands,'group_members',side_effect=members),\
+        patch.object(commands,'exited_without_reaping',return_value=SimpleNamespace(si_code=commands.os.CLD_EXITED,si_status=0)),\
+        patch.object(commands.os,'killpg',side_effect=kill),patch.object(commands.time,'sleep'):
+    command.stop(record)
+   self.assertEqual(events,[commands.signal.SIGTERM,commands.signal.SIGKILL,'reap'])
+   self.assertTrue(record['closed']);self.assertEqual(len(record['observed_group_members']),2)
  def test_reused_pid_never_signalled(self):
   with tempfile.TemporaryDirectory() as raw:
    command=self.instance(Path(raw))

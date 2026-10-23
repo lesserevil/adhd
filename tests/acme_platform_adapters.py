@@ -103,8 +103,8 @@ def render_kind(root,namespace,image,seed,gateway,reference=None):
  init=deployment['spec']['template']['spec']['initContainers'][0]
  init['command'][-1]+='; if [ ! -e /state/config/directory-root.pem ]; then cp /seed/directory-root.pem /state/config/directory-root.pem; chmod 600 /state/config/directory-root.pem; fi'
  for port,number in zip(pub['spec']['ports'],[32080,32443]):port['nodePort']=number
- private={'apiVersion':'v1','kind':'Service','metadata':{'name':'hub'},
-          'spec':{'type':'ClusterIP','selector':{'app':'hub'},'ports':[{'port':8766,'targetPort':8766}]}}
+ private=next(row for row in yaml.safe_load_all((root/'deploy/k8s/events.yaml').read_text()) if row['kind']=='Service' and row['metadata']['name']=='hub')
+ private['spec'].setdefault('type','ClusterIP')
  secret={'apiVersion':'v1','kind':'Secret','metadata':{'name':'hub-seed'},'type':'Opaque',
          'stringData':{'hub.json':seed['hub.json'],'directory-root.pem':seed['directory-root.pem']}}
  docs=[pvc,deployment,pub,private,secret]
@@ -192,7 +192,7 @@ class Compose:
   mounts={m['Destination']:m for m in row['Mounts']}
   for target,source in [('/config',self.state/'config'),('/data',self.state/'data')]:
    assert mounts[target]['Source']==str(source) and mounts[target]['RW']
-  assert not any(p.startswith('/runtime') for p in mounts)
+  assert set(mounts)=={'/config','/data','/tmp'} and not any(p.startswith(('/runtime','/app')) for p in mounts)
   ports=row['NetworkSettings']['Ports']
   assert ports['8766/tcp']==[{'HostIp':'127.0.0.1','HostPort':'18766'}]
   assert ports['8080/tcp']==[{'HostIp':'127.0.0.2','HostPort':'80'}]
@@ -242,15 +242,32 @@ class Compose:
    assert not self.cmd(['docker',kind,'ls','-q','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.strip()
 
 
+def anonymous_volume_proof(node,volumes,preexisting):
+ """Same fresh anonymous/local/no-options predicates as the reviewed CNI gate."""
+ assert node['Config'].get('Volumes')=={'/var':{}}
+ mounts=[m for m in node['Mounts'] if m['Type']=='volume']
+ assert [m['Destination'] for m in mounts]==['/var']
+ result=[]
+ for mount in mounts:
+  name=mount['Name'];assert re.fullmatch('[a-f0-9]{64}',name) and name not in preexisting
+  assert mount['Driver']=='local';volume=volumes[name]
+  assert volume['Name']==name and volume['Driver']=='local' and volume['Scope']=='local'
+  assert volume['CreatedAt'] and volume['Mountpoint']==mount['Source']
+  assert volume.get('Labels')=={'com.docker.volume.anonymous':''} and not volume.get('Options')
+  result.append({'name':name,'destination':mount['Destination'],'driver':volume['Driver'],'scope':volume['Scope'],
+                 'created_at':volume['CreatedAt'],'mountpoint':volume['Mountpoint']})
+ return result
+
+
 class Kind:
  challenge_get=staticmethod(challenge_get)
- def __init__(self,command,root,work,image,name,node_image,gateway,network_id,network_name,seed,image_reference):
+ def __init__(self,command,root,work,image,name,node_image,gateway,network_id,network_name,seed,image_reference,node_config_identity):
   self.command=command;self.root=Path(root);self.work=Path(work);self.image=identity(image)
   assert re.fullmatch('adhd-acme-[a-z0-9-]{1,40}',name)
   assert re.fullmatch('[a-z0-9./_-]+@sha256:[a-f0-9]{64}',node_image) and re.fullmatch('[a-f0-9]{64}',network_id)
   assert re.fullmatch('[a-z0-9][a-z0-9./_-]*:[a-zA-Z0-9._-]+',image_reference)
-  self.reference=image_reference;self.image_proofs=[]
-  self.name=name;self.node=name+'-control-plane';self.node_image=node_image
+  self.reference=image_reference;self.image_proofs=[];self.preexisting_volumes=None;self.volume_proofs=None
+  self.name=name;self.node=name+'-control-plane';self.node_image=node_image;self.node_config=identity(node_config_identity)
   self.network_id=network_id;self.network_name=network_name;self.gateway=bridge_gateway(gateway);self.seed=seed
   self.kubeconfig=self.work/'kubeconfig';self.lease=NamespaceLease('adhd-final-'+name,uuid4().hex,prefix='adhd-final-')
   self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None
@@ -266,13 +283,20 @@ class Kind:
   p=self.cmd(['docker','inspect',self.node],capture=True,check=False)
   if absent(p,self.node):return None
   assert p.returncode==0;row=json.loads(p.stdout)[0]
-  identifier=owned(row,self.node)
+  identifier=owned(row,self.node,self.node_config)
+  assert row['Config']['Image']==self.node_image
+  assert row['Config']['Labels']['io.x-k8s.kind.role']=='control-plane'
   assert row['Config']['Labels']['io.x-k8s.kind.cluster']==self.name
   assert self.node_id in (None,identifier);self.node_id=identifier
   assert set(row['NetworkSettings']['Networks'])=={self.network_name}
+  assert row['NetworkSettings']['Networks'][self.network_name]['NetworkID']==self.network_id
   assert row['HostConfig']['NetworkMode']==self.network_name
   self.volume_names=sorted({m['Name'] for m in row['Mounts'] if m['Type']=='volume'})
-  assert all(re.fullmatch('[a-f0-9]{64}',name) for name in self.volume_names),'Only fresh anonymous node volumes eligible'
+  assert self.preexisting_volumes is not None
+  details={name:json.loads(self.cmd(['docker','volume','inspect',name],capture=True).stdout)[0] for name in self.volume_names}
+  proof=anonymous_volume_proof(row,details,self.preexisting_volumes)
+  assert self.volume_proofs is None or proof==self.volume_proofs,'Owned node volume identity changed'
+  self.volume_proofs=proof
   return row
  def start(self):
   assert not self.issued and self.node_state() is None
@@ -283,6 +307,9 @@ class Kind:
   config={'kind':'Cluster','apiVersion':'kind.x-k8s.io/v1alpha4','nodes':[{'role':'control-plane','image':self.node_image,
    'extraPortMappings':[{'containerPort':32080,'hostPort':80,'listenAddress':'127.0.0.2','protocol':'TCP'},
                        {'containerPort':32443,'hostPort':443,'listenAddress':'127.0.0.2','protocol':'TCP'}]}]}
+  original=json.loads(self.cmd(['docker','image','inspect',self.node_image],capture=True).stdout)
+  assert len(original)==1 and original[0]['Id']==self.node_config
+  self.preexisting_volumes=set(self.cmd(['docker','volume','ls','-q'],capture=True).stdout.decode().split())
   file(self.work/'kind.yaml',yaml.safe_dump(config).encode());self.issued=True
   self.cmd(['kind','create','cluster','--name',self.name,'--config',str(self.work/'kind.yaml'),'--kubeconfig',str(self.kubeconfig)],
            env={'KIND_EXPERIMENTAL_DOCKER_NETWORK':self.network_name},timeout=180)
@@ -308,6 +335,9 @@ class Kind:
   assert hub['image']==self.reference and hub['imagePullPolicy']=='Never'
   assert hub['securityContext']['readOnlyRootFilesystem'] and not hub['securityContext']['allowPrivilegeEscalation']
   assert hub['securityContext']['capabilities']['drop']==['ALL']
+  assert pod['securityContext']['runAsUser']==pod['securityContext']['runAsGroup']==10001 and not pod['automountServiceAccountToken']
+  assert {v['mountPath'] for v in hub['volumeMounts']}=={'/config','/data','/tmp'}
+  assert all(v['name']=='state' for v in hub['volumeMounts'] if v['mountPath'] in ('/config','/data'))
   status=next(c for c in row['status']['containerStatuses'] if c['name']=='hub')
   assert status['ready'] and status['restartCount']==0
   pvc=self.obj('get','pvc','hub-data');uid=pvc['metadata']['uid']
@@ -433,7 +463,11 @@ class Kind:
      for volume in self.volume_names:
       p=self.cmd(['docker','volume','inspect',volume],capture=True,check=False)
       if p.returncode==0:
-       assert json.loads(p.stdout)[0]['Name']==volume
+       info=json.loads(p.stdout)[0]
+       proof=next(v for v in self.volume_proofs if v['name']==volume)
+       assert info['Name']==volume and info['Driver']==proof['driver'] and info['Scope']==proof['scope']
+       assert info['CreatedAt']==proof['created_at'] and info['Mountpoint']==proof['mountpoint']
+       assert info.get('Labels')=={'com.docker.volume.anonymous':''} and not info.get('Options')
        self.cmd(['docker','volume','rm',volume])
       missing=self.cmd(['docker','volume','inspect',volume],capture=True,check=False)
       assert resource_absent(missing,volume,'volume')

@@ -14,7 +14,7 @@ import stat
 
 FILES=(
  'deploy/app.compose.yaml','deploy/app.acme.compose.yaml','deploy/events.compose.yaml',
- 'deploy/k8s/hub.yaml','deploy/k8s/private.yaml','deploy/k8s/kustomization.yaml',
+ 'deploy/k8s/hub.yaml','deploy/k8s/events.yaml','deploy/k8s/private.yaml','deploy/k8s/kustomization.yaml',
  'deploy/k8s/acme/kustomization.yaml','deploy/k8s/acme/hub-listeners.yaml',
  'deploy/k8s/acme/public-service.yaml','deploy/init-config.py',
  'tests/acme_challenge_relay.py','tests/acme_runtime.py','tests/acme_acceptance_fixtures.py',

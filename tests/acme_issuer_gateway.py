@@ -24,7 +24,12 @@ class IssuerGateway:
         self.lease=lease_seconds;self.limit=max_connections;self.concurrency=concurrency
         self.connection_seconds=connection_seconds;self.byte_limit=max_bytes
         self.listener=None;self.thread=None;self.stop_event=threading.Event();self.lock=threading.Lock()
-        self.active=set();self.workers=[];self.events=[];self.errors=[];self.accepted=0
+        self.active=set();self.workers=[];self.events=[];self.errors=[];self.error_count=0;self.accepted=0
+
+    def error(self,kind):
+        with self.lock:
+            self.error_count+=1
+            if len(self.errors)<128:self.errors.append(kind)
 
     def forward(self, incoming, peer):
         outgoing=None;sent=received=0;failure=None
@@ -67,7 +72,7 @@ class IssuerGateway:
                             except OSError:pass
         except BaseException as error:
             failure=type(error).__name__
-            with self.lock:self.errors.append(failure)
+            self.error(failure)
         finally:
             for stream in (incoming,outgoing):
                 if stream is not None:
@@ -99,14 +104,23 @@ class IssuerGateway:
                         if allowed:self.accepted+=1;self.active.add(stream)
                     if not allowed:
                         stream.close()
-                        with self.lock:self.errors.append('SourceOrConnectionBudget')
+                        self.error('SourceOrConnectionBudget')
                         continue
                     worker=threading.Thread(target=self.forward,args=(stream,address[0]),daemon=False)
-                    self.workers.append(worker);worker.start()
+                    self.workers.append(worker)
+                    try:worker.start()
+                    except BaseException:
+                        self.workers.remove(worker);stream.close()
+                        with self.lock:self.active.discard(stream)
+                        raise
             except BaseException as error:
-                with self.lock:self.errors.append(type(error).__name__)
+                self.error(type(error).__name__)
             finally:self.stop_event.set()
-        self.thread=threading.Thread(target=accept,daemon=False);self.thread.start()
+        self.thread=threading.Thread(target=accept,daemon=False)
+        try:self.thread.start()
+        except BaseException:
+            self.stop_event.set();server.close();self.listener=None;self.thread=None
+            raise
 
     def close(self):
         self.stop_event.set()
@@ -127,5 +141,5 @@ class IssuerGateway:
         with self.lock:
             return {'bound_ip':self.bind,'source_allowlist':sorted(self.clients),'port':19104,
                     'target':'127.0.0.1:19100','tls_terminated':False,'acme_bytes_rewritten':False,
-                    'accepted':self.accepted,'connections':list(self.events),'errors':list(self.errors),
+                    'accepted':self.accepted,'connections':list(self.events),'errors':list(self.errors),'error_count':self.error_count,
                     'active_sockets':len(self.active),'all_threads_closed':not any(t.is_alive() for t in [self.thread,*self.workers] if t)}

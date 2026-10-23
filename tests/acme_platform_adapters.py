@@ -50,6 +50,20 @@ def owned(state,name,image=None):
 def absent(result,name):return OwnedImage.probe_absence(result,name)
 
 
+def resource_absent(result,name,kind):
+ assert kind in ('network','volume')
+ prefix=r'(?i:(?:Error(?: response from daemon)?:\s*)?'
+ pattern=(prefix+r'network )'+re.escape(name)+r'(?i: not found)' if kind=='network' else
+          prefix+r'get\s+)'+re.escape(name)+r'(?i::\s+no such volume)')
+ return result.returncode==1 and result.stdout.strip() in (b'',b'[]') and re.fullmatch(pattern,result.stderr.decode(errors='replace').strip()) is not None
+
+
+def bridge_gateway(value):
+ address=ipaddress.IPv4Address(value)
+ assert address.is_private and not address.is_loopback and not address.is_unspecified and not address.is_multicast
+ return str(address)
+
+
 def validate_seed(raw):
  config=json.loads(raw)
  assert config['host']=='0.0.0.0' and config['port']==8766 and config['store_path']=='/data/hub.dets'
@@ -61,7 +75,7 @@ def validate_seed(raw):
 
 def render_compose(root,work,gateway):
  # Only host-bind addresses change; actual shipped target/listener ports stay80/443→8080/8443.
- ipaddress.IPv4Address(gateway)
+ bridge_gateway(gateway)
  fixture={'services':{'hub':{'extra_hosts':['pebble:'+gateway]}}}
  text=yaml.safe_dump(fixture)
  text+='    ports: !override '+json.dumps(['127.0.0.1:18766:8766','127.0.0.2:80:8080','127.0.0.2:443:8443'])+'\n'
@@ -70,7 +84,7 @@ def render_compose(root,work,gateway):
 
 
 def render_kind(root,namespace,image,seed,gateway,reference=None):
- identity(image);ipaddress.IPv4Address(gateway)
+ identity(image);bridge_gateway(gateway)
  validate_seed(seed['hub.json'])
  reference=reference or image
  assert re.fullmatch('[a-z0-9][a-z0-9./_-]*:[a-zA-Z0-9._-]+',reference) or reference==image
@@ -139,7 +153,7 @@ class Compose:
  def __init__(self,command,root,work,image,name,seed_dir,state_dir,gateway):
   self.command=command;self.root=Path(root);self.work=Path(work);self.image=identity(image)
   assert re.fullmatch('adhd-acme-[a-z0-9-]{1,40}',name)
-  self.name=name;self.seed=Path(seed_dir);self.state=Path(state_dir);self.gateway=gateway
+  self.name=name;self.seed=Path(seed_dir);self.state=Path(state_dir);self.gateway=bridge_gateway(gateway)
   self.ids=[];self.ledger=[];self.issued=False;self.networks=[];self.volumes=[];self.options=None;self.state_probe=StateProbe(self.cmd,self.image,self.state/'config')
   self.env={'ADHD_HUB_IMAGE':image,'ADHD_UID':'10001','ADHD_GID':'10001','ADHD_PORT':'18766',
             'ADHD_CONFIG_DIR':str(self.state/'config'),'ADHD_DATA_DIR':str(self.state/'data')}
@@ -149,10 +163,12 @@ class Compose:
  def inspect(self,identifier):
   p=self.cmd(['docker','inspect',identifier],capture=True,check=False)
   if absent(p,identifier):return None
-  assert p.returncode==0;return json.loads(p.stdout)[0]
+  assert p.returncode==0;row=json.loads(p.stdout)[0]
+  if re.fullmatch('[a-f0-9]{64}',identifier):assert row['Id']==identifier
+  return row
  def start(self):
   assert not self.issued
-  assert not self.cmd(['docker','ps','-aq','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.strip()
+  assert not self.cmd(['docker','ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.strip()
   self.options=render_compose(self.root,self.work,self.gateway)
   # Parent creates/configures this complete private state using a separately owned seed probe.
   # Refuse host-owner fallback: actual runtime must always remain productionUID10001.
@@ -161,8 +177,14 @@ class Compose:
   self.dc('up','-d','--no-deps','hub',timeout=90)
   return self.observe()
  def observe(self):
-  ids=self.dc('ps','-q','hub',capture=True).stdout.decode().split();assert len(ids)==1
+  ids=self.dc('ps','-q','hub',capture=True).stdout.decode().split();assert len(ids)==1 and re.fullmatch('[a-f0-9]{64}',ids[0])
   row=self.inspect(ids[0]);assert row and row['Image']==self.image
+  for name,network in row['NetworkSettings']['Networks'].items():
+   actual=json.loads(self.cmd(['docker','network','inspect',network['NetworkID']],capture=True).stdout)[0]
+   assert actual['Id']==network['NetworkID'] and actual['Name']==name
+   assert actual['Labels']['com.docker.compose.project']==self.name
+   record={'id':actual['Id'],'name':name}
+   if record not in self.networks:self.networks.append(record)
   assert row['Config']['Labels']['com.docker.compose.project']==self.name
   assert row['Config']['Labels']['com.docker.compose.service']=='hub'
   assert row['Config']['User']=='10001:10001' and row['HostConfig']['ReadonlyRootfs'] and row['RestartCount']==0
@@ -196,13 +218,25 @@ class Compose:
  def close(self):
   if not self.issued:return
   # Refresh only exact project-owned identities, including ambiguous-create outputs.
-  p=self.cmd(['docker','ps','-aq','--filter','label=com.docker.compose.project='+self.name],capture=True)
+  p=self.cmd(['docker','ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+self.name],capture=True)
   for identifier in p.stdout.decode().split():
+   assert re.fullmatch('[a-f0-9]{64}',identifier)
    row=self.inspect(identifier);assert row['Config']['Labels']['com.docker.compose.project']==self.name
    if identifier not in self.ids:self.ids.append(identifier)
+  volumes=self.cmd(['docker','volume','ls','-q','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.decode().split()
+  for name in volumes:
+   info=json.loads(self.cmd(['docker','volume','inspect',name],capture=True).stdout)[0]
+   assert info['Name']==name and info['Labels']['com.docker.compose.project']==self.name
+   if name not in self.volumes:self.volumes.append(name)
   self.dc('down','--remove-orphans','--timeout','60',timeout=90)
+  for name in self.volumes:
+   self.cmd(['docker','volume','rm',name])
+   assert resource_absent(self.cmd(['docker','volume','inspect',name],capture=True,check=False),name,'volume')
+  for network in self.networks:
+   for key in [network['id'],network['name']]:
+    assert resource_absent(self.cmd(['docker','network','inspect',key],capture=True,check=False),key,'network')
   for identifier in self.ids:assert absent(self.cmd(['docker','inspect',identifier],capture=True,check=False),identifier)
-  assert not self.cmd(['docker','ps','-aq','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.strip()
+  assert not self.cmd(['docker','ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.strip()
   for kind in ('network','volume'):
    # No deletion of protected resources or private retained host state.
    assert not self.cmd(['docker',kind,'ls','-q','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.strip()
@@ -217,7 +251,7 @@ class Kind:
   assert re.fullmatch('[a-z0-9][a-z0-9./_-]*:[a-zA-Z0-9._-]+',image_reference)
   self.reference=image_reference;self.image_proofs=[]
   self.name=name;self.node=name+'-control-plane';self.node_image=node_image
-  self.network_id=network_id;self.network_name=network_name;self.gateway=gateway;self.seed=seed
+  self.network_id=network_id;self.network_name=network_name;self.gateway=bridge_gateway(gateway);self.seed=seed
   self.kubeconfig=self.work/'kubeconfig';self.lease=NamespaceLease('adhd-final-'+name,uuid4().hex,prefix='adhd-final-')
   self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None
  def cmd(self,args,**kw):
@@ -238,6 +272,7 @@ class Kind:
   assert set(row['NetworkSettings']['Networks'])=={self.network_name}
   assert row['HostConfig']['NetworkMode']==self.network_name
   self.volume_names=sorted({m['Name'] for m in row['Mounts'] if m['Type']=='volume'})
+  assert all(re.fullmatch('[a-f0-9]{64}',name) for name in self.volume_names),'Only fresh anonymous node volumes eligible'
   return row
  def start(self):
   assert not self.issued and self.node_state() is None
@@ -318,6 +353,7 @@ class Kind:
       'resources':{'requests':{'memory':'16Mi','cpu':'10m'},'limits':{'memory':'64Mi','cpu':'1'}},
       'volumeMounts':[{'name':'state','mountPath':'/config','subPath':'config','readOnly':True}]}],
     'volumes':[{'name':'state','persistentVolumeClaim':{'claimName':'hub-data','readOnly':True}}]}}
+  primary=None
   try:
    made=json.loads(self.namespaced('create','-f','-','-o','json',input=json.dumps(pod).encode(),capture=True).stdout)
    row['uid']=made['metadata']['uid']
@@ -328,7 +364,13 @@ class Kind:
    lines=self.namespaced('logs',name,capture=True).stdout.decode().splitlines()
    assert lines and len(lines)<=4096 and all(re.fullmatch('[a-f0-9]{64} [a-f0-9]{64}',line) for line in lines)
    assert len(lines)==len(set(lines));return sorted(lines)
-  finally:self.close_probe(row)
+  except BaseException as error:
+   primary=error;raise
+  finally:
+   try:self.close_probe(row)
+   except BaseException as cleanup:
+    if primary:primary.add_note('State probe cleanup failed: '+type(cleanup).__name__)
+    else:raise
  def close_probe(self,row):
   p=self.namespaced('get','pod',row['name'],'--ignore-not-found=true','-o','json',capture=True)
   if p.stdout.strip():
@@ -394,7 +436,7 @@ class Kind:
        assert json.loads(p.stdout)[0]['Name']==volume
        self.cmd(['docker','volume','rm',volume])
       missing=self.cmd(['docker','volume','inspect',volume],capture=True,check=False)
-      assert missing.returncode==1 and missing.stdout.strip() in (b'',b'[]') and re.fullmatch(r'(?i:(?:error(?: response from daemon)?:\s*)?no such volume:\s*)'+re.escape(volume),missing.stderr.decode().strip())
+      assert resource_absent(missing,volume,'volume')
    except BaseException as error:errors.append(error)
   try:
    network=json.loads(self.cmd(['docker','network','inspect',self.network_id],capture=True).stdout)[0]
@@ -403,9 +445,9 @@ class Kind:
    self.cmd(['docker','network','rm',self.network_id])
    for key in [self.network_id,self.network_name]:
     missing=self.cmd(['docker','network','inspect',key],capture=True,check=False)
-    assert missing.returncode==1 and missing.stdout.strip() in (b'',b'[]') and re.fullmatch(r'(?i:(?:error(?: response from daemon)?:\s*)?network )'+re.escape(key)+r'(?i: not found)',missing.stderr.decode().strip())
+    assert resource_absent(missing,key,'network')
   except BaseException as error:errors.append(error)
-  if errors:raise ExceptionGroup('Owned Kind cleanup incomplete',errors)
+  if errors:raise BaseExceptionGroup('Owned Kind cleanup incomplete',errors)
 
 
 class SeedProbe(OwnedImage):

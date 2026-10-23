@@ -24,7 +24,7 @@ class Commands:
   assert environment['DOCKER_HOST'].startswith('unix://')
   assert environment['PATH']=='/usr/bin:/bin'
   self.tools={k:str(Path(v).absolute()) for k,v in tools.items()}
-  self.environment=dict(environment);self.work=Path(work);self.children=[];self.operations=[]
+  self.environment=dict(environment);self.work=Path(work);self.children=[];self.operations=[];self.phase_deadline=None
  def prepare(self,argv,env):
   assert isinstance(argv,list) and argv and argv[0] in self.tools
   assert all(isinstance(v,str) and '\0' not in v for v in argv)
@@ -66,6 +66,9 @@ class Commands:
   record['closed']=True
  def __call__(self,argv,*,env=None,input=None,capture=False,check=True,timeout=30,sensitive=False):
   assert 0<timeout<=180
+  if self.phase_deadline is not None:
+   remaining=self.phase_deadline-time.monotonic();assert remaining>0,'Shared platform phase deadline'
+   timeout=min(timeout,remaining)
   record=self.issue(argv,env);process=record['process'];primary=None
   try:
    assert input is None or isinstance(input,bytes) and len(input)<=2*1024*1024
@@ -120,7 +123,7 @@ class Commands:
   for record in reversed(self.children):
    try:self.stop(record)
    except BaseException as error:errors.append(error)
-  if errors:raise ExceptionGroup('Owned CLI closure failed',errors)
+  if errors:raise BaseExceptionGroup('Owned CLI closure failed',errors)
  def evidence(self):
   return {'children':[{k:v for k,v in row.items() if k!='process'} for row in self.children],
           'operations':self.operations,'all_closed':all(row['closed'] for row in self.children)}

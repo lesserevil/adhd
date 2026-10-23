@@ -4,6 +4,7 @@ A closed future driver owns the adapter, one ChallengeRelay, one issuer gateway,
 PublicClient factory, accepted image binding, and independent final cleanup.
 """
 import hashlib
+from datetime import datetime, timezone
 import time
 import errno
 from urllib.error import URLError
@@ -25,7 +26,7 @@ def managed_health(secure):
   raise
 
 
-def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password):
+def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password,certificate_facts):
  """Adapters/clients are real callers, never an injected ACME/client substitute."""
  checks=[];records=[]
  def check(name,**facts):checks.append({'name':name,'passed':True,**facts})
@@ -48,6 +49,7 @@ def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password):
  assert secure.request('/health')[0]==200
  assert secure.handshakes[-1]['verified_chain_and_hostname']
  assert hashlib.sha256(secure.handshakes[-1]['der']).hexdigest()==initial['certificate']['sha256']
+ original_cert=certificate_facts(secure.handshakes[-1]['der'],['one.acme.test'],datetime.now(timezone.utc))
  secure.login('admin',password)
  check('actual_trusted_hostname_verified_https_and_admin')
  # Future state/config reads and all sessions use HTTPS after enabling Secure cookies.
@@ -58,27 +60,41 @@ def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password):
  assert adapter.custody()==initial_vm
  assert secure.request('/health')[0]==200
  assert hashlib.sha256(secure.handshakes[-1]['der']).hexdigest()==manual['certificate']['sha256']
+ manual_cert=certificate_facts(secure.handshakes[-1]['der'],['one.acme.test'],datetime.now(timezone.utc))
+ for key in ['serial_number_hex','public_key_spki_sha256']:assert manual_cert[key]!=original_cert[key]
  check('manual_hot_real_renew_and_exact_receipt_replay_same_vm')
  automatic=wait(lambda:(v if (v:=status())['certificate']['sha256']!=manual['certificate']['sha256'] else None),100,'Real scheduled renewal')
  assert adapter.custody()==initial_vm
  assert secure.request('/health')[0]==200
  assert hashlib.sha256(secure.handshakes[-1]['der']).hexdigest()==automatic['certificate']['sha256']
+ automatic_cert=certificate_facts(secure.handshakes[-1]['der'],['one.acme.test'],datetime.now(timezone.utc))
+ for key in ['serial_number_hex','public_key_spki_sha256']:assert automatic_cert[key]!=manual_cert[key]
  check('scheduled_real_renew_without_manual_submission_same_vm')
  revision=admin.api({'op':'config_get'})['config_revision']
- adapter.stop_hub();before_state=adapter.private_state()
- assert before_state
- adapter.replace()
- # Only refused TCP while starting is retried by the parent client readiness helper;
- # TLS trust/name failures or HTTP errors must remain immediate failures.
- restarted=wait(lambda: managed_health(secure),45,'Replacement trusted HTTPS')
- assert restarted
- secure.login('admin',password)
- persisted=status();assert persisted['certificate']['sha256']==automatic['certificate']['sha256']
- assert admin.api({'op':'config_get'})['config_revision']==revision
- replacement=adapter.custody();records.append(replacement)
- assert replacement!=initial_vm
- assert secure.request('/health')[0]==200
- assert hashlib.sha256(secure.handshakes[-1]['der']).hexdigest()==automatic['certificate']['sha256']
+ # The90s testCA leaf's next natural rotation must be beyond this shared45s
+ # cold-replacement phase; no clock mutation, CA replacement or retry is used.
+ certificate=automatic['certificate']
+ due=certificate['not_after']-min(86400000,(certificate['not_after']-certificate['not_before'])//3)
+ assert due-int(time.time()*1000)>45000,'Fresh scheduled leaf lacks the required replacement window'
+ previous_deadline=adapter.command.phase_deadline;deadline=time.monotonic()+45
+ adapter.command.phase_deadline=deadline
+ try:
+  adapter.stop_hub();before_state=adapter.private_state()
+  assert before_state
+  adapter.replace()
+  # Only refused TCP while starting is retried by the parent client readiness helper;
+  # TLS trust/name failures or HTTP errors must remain immediate failures.
+  restarted=wait(lambda: managed_health(secure),max(0,deadline-time.monotonic()),'Replacement trusted HTTPS')
+  assert restarted
+  secure.login('admin',password)
+  persisted=status();assert persisted['certificate']['sha256']==automatic['certificate']['sha256']
+  assert admin.api({'op':'config_get'})['config_revision']==revision
+  replacement=adapter.custody();records.append(replacement)
+  assert replacement!=initial_vm
+  assert secure.request('/health')[0]==200
+  assert hashlib.sha256(secure.handshakes[-1]['der']).hexdigest()==automatic['certificate']['sha256']
+  assert time.monotonic()<=deadline,'Cold replacement exceeded shared45s'
+ finally:adapter.command.phase_deadline=previous_deadline
  check('replacement_new_runtime_same_leaf_account_https',identity=replacement)
  adapter.stop_hub();after_state=adapter.private_state()
  assert after_state==before_state

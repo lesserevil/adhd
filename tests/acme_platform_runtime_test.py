@@ -2,6 +2,7 @@
 import importlib.util
 import errno
 import json
+import subprocess
 from pathlib import Path
 import selectors
 import sys
@@ -78,6 +79,24 @@ class Gateway(unittest.TestCase):
   with patch.object(gateway.socket,'socket',return_value=stream):
    with self.assertRaises(OSError):self.create().start()
   self.assertTrue(stream.closed)
+ def test_thread_creation_failure_closes_listener(self):
+  class Socket:
+   closed=False
+   def bind(self,*a):pass
+   def listen(self,*a):pass
+   def settimeout(self,*a):pass
+   def close(self):self.closed=True
+  class Thread:
+   def __init__(self,*a,**kw):pass
+   def start(self):raise RuntimeError('controlled thread failure')
+  stream=Socket();value=self.create()
+  with patch.object(gateway.socket,'socket',return_value=stream),patch.object(gateway.threading,'Thread',Thread):
+   with self.assertRaisesRegex(RuntimeError,'controlled thread failure'):value.start()
+  self.assertTrue(stream.closed);self.assertIsNone(value.listener);value.close()
+ def test_error_evidence_is_bounded_and_never_hides_failure_count(self):
+  value=self.create()
+  for _ in range(200):value.error('RejectedSource')
+  proof=value.evidence();self.assertEqual(len(proof['errors']),128);self.assertEqual(proof['error_count'],200)
 
 class Deployment(unittest.TestCase):
  def test_both_adapter_constructors_inert(self):
@@ -127,6 +146,23 @@ class Deployment(unittest.TestCase):
   self.assertFalse(scenario.managed_health(Client(URLError(ConnectionRefusedError(errno.ECONNREFUSED,'refused')))))
   for error in [URLError(OSError(errno.EHOSTUNREACH,'unreachable')),ValueError('wrong TLS')]:
    with self.assertRaises(type(error)):scenario.managed_health(Client(error))
+ def test_per_resource_absence_does_not_accept_case_or_mixed_failures(self):
+  for kind,message in [('volume','Error response from daemon: get MiXeD: no such volume'),('network','Error response from daemon: network MiXeD not found')]:
+   good=subprocess.CompletedProcess([],1,b'[]',message.encode())
+   self.assertTrue(adapters.resource_absent(good,'MiXeD',kind))
+   self.assertFalse(adapters.resource_absent(good,'mixed',kind))
+   self.assertFalse(adapters.resource_absent(subprocess.CompletedProcess([],1,b'[]',(message+'\ndaemon error').encode()),'MiXeD',kind))
+   self.assertFalse(adapters.resource_absent(subprocess.CompletedProcess([],1,b'present',message.encode()),'MiXeD',kind))
+ def test_state_probe_cleanup_keeps_original_failure(self):
+  def denied(*a,**kw):raise AssertionError('No commands')
+  with tempfile.TemporaryDirectory() as raw:
+   instance=adapters.Kind(denied,ROOT,Path(raw),'sha256:'+'a'*64,'adhd-acme-test','kindest/node@sha256:'+'b'*64,
+                 '172.30.0.1','c'*64,'owned-acme-network',{},'adhd-hub:actual')
+   with patch.object(instance,'obj',return_value={'items':[]}),\
+        patch.object(instance,'namespaced',side_effect=ValueError('original create failure')),\
+        patch.object(instance,'close_probe',side_effect=OSError('cleanup unknown')):
+    with self.assertRaisesRegex(ValueError,'original create failure') as observed:instance.private_state()
+   self.assertTrue(any('cleanup' in note for note in observed.exception.__notes__))
 
 class Commands(unittest.TestCase):
  def instance(self,work):
@@ -159,6 +195,12 @@ class Commands(unittest.TestCase):
     self.assertTrue(issue.call_args.kwargs['persistent'])
     for argv in [['docker','run','arbitrary'],['kubectl','port-forward','--address=0.0.0.0']]:
      with self.assertRaises(AssertionError):command.start(argv)
+ def test_shared_phase_deadline_rejects_before_spawn(self):
+  with tempfile.TemporaryDirectory() as raw:
+   command=self.instance(Path(raw));command.phase_deadline=1
+   with patch.object(commands.time,'monotonic',return_value=2),patch.object(command,'issue') as issue:
+    with self.assertRaisesRegex(AssertionError,'Shared platform phase deadline'):command(['docker','inspect','owned'])
+    issue.assert_not_called()
  def test_reused_pid_never_signalled(self):
   with tempfile.TemporaryDirectory() as raw:
    command=self.instance(Path(raw))

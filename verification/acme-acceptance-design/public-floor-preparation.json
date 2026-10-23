@@ -1,0 +1,38 @@
+{
+  "scope": "Inert acceptance-strengthening only; actual image target remains unbound",
+  "requirement": "ACME scheduler and durable Retry-After minimum apply across cancellation, timeout, manual renewal, policy edit and restart; enabled settled public state must publish the future retry.",
+  "canonical_authority": "components/hub/acme/spec.md (current root), durable issuer floor and Scheduler/restart/public state sections",
+  "changes": [
+    "Compare next_attempt_at UTC whole seconds against exact private floor milliseconds; accept only display truncation within the same second or later",
+    "Allow at most2s for cancellation/first scheduler tick to expose a settled nonnull due time; transient null is recorded, never qualified",
+    "Retain original3s no-request/same-attempt/private-floor/leaf guard and assert public floor on every observation",
+    "Retain raw public nextAt, converted public milliseconds and exact private floor separately in bounded per-case evidence"
+  ],
+  "files": {
+    "tests/acme_image_faults.py": "f0eda38c37b173d6f5be8f0a04c6a5ed080d56e777728b21ca3ee71a347c75ec",
+    "tests/acme_image_faults_unit.py": "799d8b6788a519abb5db665548fcff45240fd0d16a3eb11defef275883a6d794"
+  },
+  "checks": {
+    "pure_acme_checks": 61,
+    "passed": true,
+    "new_comparison_vectors": [
+      "120987ms floor displays120000ms accepted",
+      "equivalent timezone accepted",
+      "local30s reset rejected",
+      "local31s reset rejected",
+      "preceding119s rejected",
+      "settled null rejected",
+      "timezone-less timestamp rejected",
+      "disabled or ordering cannot qualify settled floor"
+    ],
+    "resources_started": false
+  },
+  "preserved": [
+    "Original15 case list",
+    "Original3s guard",
+    "All original suite/order/startup/proof bounds",
+    "App source/cache/formal lifecycle05",
+    "Historical negative evidence"
+  ],
+  "documentation_review": "Reviewed experimental qualification and scheduler claims in root docs/admin/acme.md and canonical ACME spec. This strengthens test proof without changing product behavior/claims; final documentation lifecycle remains root-owned."
+}

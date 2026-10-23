@@ -45,6 +45,25 @@ def pending_floor(hub):
     except FileNotFoundError:return None
 
 
+def public_floor_due(status,minimum_ms):
+    """Compare RFC3339 public seconds with exact private UTC milliseconds.
+
+    Public timestamps intentionally truncate milliseconds. Compare whole UTC
+    seconds, so the correct same-second display passes without granting a local
+    30/31s reset any part of the separate 120s issuer minimum.
+    """
+    assert type(minimum_ms)is int and minimum_ms>=0
+    assert status['enabled']is True and status['acme_state']!='ordering'
+    value=status['next_attempt_at'];assert isinstance(value,str),'Settled future floor must be published'
+    date=datetime.fromisoformat(value.replace('Z','+00:00'))
+    assert date.tzinfo is not None,'Public due time must carry UTC offset'
+    delta=date.astimezone(timezone.utc)-datetime(1970,1,1,tzinfo=timezone.utc)
+    public_ms=(delta.days*86400+delta.seconds)*1000+delta.microseconds//1000
+    assert public_ms//1000>=minimum_ms//1000,'Published retry predates retained issuer floor'
+    return {'public_next_attempt_at':value,'public_due_unix_ms':public_ms,
+      'private_issuer_floor_unix_ms':minimum_ms,'comparison':'UTC whole seconds; public display truncates milliseconds'}
+
+
 def remaining(status):
     assert status['https_state']=='ready'and status['certificate']
     end=datetime.fromisoformat(status['certificate']['not_after'].replace('Z','+00:00'))
@@ -148,13 +167,29 @@ def floor_phase(case,*,admin,secure,runtime,hub,issuer,issuer_root,password):
         wait_managed_https(managed,runtime)
         admin=managed;admin.login('admin',password)
         assert account_facts(hub)[0]==keys
-    observe_until=time.monotonic()+3
-    while time.monotonic()<observe_until:
+    due_observations=[]
+    def observed_due():
         assert floor(hub)==durable
         value=admin.api({'op':'tls_status'})
+        assert value['enabled']is True
         assert value['last_attempt_at']==last
         assert issuer.snapshot()['requests']==count
         assert value['certificate']['sha256']==before['certificate']['sha256']
+        # Cancellation may expose the old active job or a pending scheduler
+        # tick. Neither is accepted as the settled result; allow at most2s.
+        if value['next_attempt_at']is None:
+            due_observations.append({'at_monotonic':time.monotonic(),
+              'acme_state':value['acme_state'],'public_next_attempt_at':None})
+            assert len(due_observations)<=128
+            return None
+        compared=public_floor_due(value,durable['retry_at'])
+        due_observations.append({'at_monotonic':time.monotonic(),'acme_state':value['acme_state'],**compared})
+        assert len(due_observations)<=128
+        return compared
+    wait(observed_due,2,'Enabled settled retry must publish retained issuer floor')
+    observe_until=time.monotonic()+3
+    while time.monotonic()<observe_until:
+        assert observed_due()is not None,'Settled future floor cannot disappear during original3s guard'
         time.sleep(.1)
     assert int(time.time()*1000)<durable['retry_at']
     resumed=None
@@ -179,7 +214,8 @@ def floor_phase(case,*,admin,secure,runtime,hub,issuer,issuer_root,password):
     return {'case':case,'passed':True,'actual_header_events':first,'durable_floor':durable,
       'header_observed_while_writer_lock_busy':True,'issuer_retry_seconds':120,'request_earliest_wall_ms':earliest_ms,'settled_error':failed['last_error'],
       'accepted_revision':accepted['config_revision'],'elapsed_seconds':time.monotonic()-started,
-      'guarded_seconds':3,'no_requests_before_floor_during_guard':True,'actual_resumed_order':resumed,
+      'guarded_seconds':3,'public_due_settle_bound_seconds':2,'public_due_observations':due_observations,
+      'no_requests_before_floor_during_guard':True,'actual_resumed_order':resumed,
       'scope':'Real post-floor trusted success only for issuer-floor-resume; other cases qualify their selected bounded transition guard'}
 
 

@@ -113,3 +113,19 @@ class FaultGuards(unittest.TestCase):
             with patch('acme_image_faults.floor',side_effect=failure):
                 with self.assertRaises(type(failure))as caught:pending_floor('/unused')
                 self.assertIs(caught.exception,failure)
+
+    def test_public_due_truncation_accepts_issuer_second_but_rejects_local_reset(self):
+        from acme_image_faults import public_floor_due
+        minimum=120987
+        status={'enabled':True,'acme_state':'backoff','next_attempt_at':'1970-01-01T00:02:00Z'}
+        observed=public_floor_due(status,minimum)
+        self.assertEqual(observed['public_due_unix_ms'],120000)
+        self.assertEqual(observed['private_issuer_floor_unix_ms'],minimum)
+        # Offset representation is the same instant, not a local-time shortcut.
+        public_floor_due({**status,'next_attempt_at':'1970-01-01T01:02:00+01:00'},minimum)
+        for value in ['1970-01-01T00:00:30Z','1970-01-01T00:00:31Z','1970-01-01T00:01:59Z',None,
+                      '1970-01-01T00:02:00']:
+            with self.subTest(value=value),self.assertRaises(AssertionError):
+                public_floor_due({**status,'next_attempt_at':value},minimum)
+        for patch_value in [{'enabled':False},{'acme_state':'ordering'}]:
+            with self.assertRaises(AssertionError):public_floor_due({**status,**patch_value},minimum)

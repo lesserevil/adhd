@@ -1,0 +1,206 @@
+{
+  "schema": "adhd/protocol22-acme-examples@1",
+  "application_profile": "2.2.0",
+  "scope": "Authored schema vectors validated against accepted native runtime exports; illustrative fake domains/revision only, not observed issuance outcomes or deployment instructions",
+  "valid": [
+    {
+      "name": "disabled-tls-defaults",
+      "definition": "TLSConfig",
+      "value": {
+        "enabled": false,
+        "host": "0.0.0.0",
+        "port": 8443,
+        "challenge_host": "0.0.0.0",
+        "challenge_port": 8080,
+        "acme": {
+          "enabled": false,
+          "directory_url": "https://acme-staging-v02.api.letsencrypt.org/directory",
+          "email": "",
+          "domains": [],
+          "accept_terms": false,
+          "renew_before_days": 30,
+          "retry_seconds": 300,
+          "order_timeout_ms": 120000,
+          "ca_cert_file": null
+        }
+      }
+    },
+    {
+      "name": "http01-staging-configuration",
+      "definition": "TLSConfig",
+      "value": {
+        "enabled": true,
+        "host": "0.0.0.0",
+        "port": 8443,
+        "challenge_host": "0.0.0.0",
+        "challenge_port": 8080,
+        "acme": {
+          "enabled": true,
+          "directory_url": "https://acme-staging-v02.api.letsencrypt.org/directory",
+          "email": "operator@example.org",
+          "domains": [
+            "hub.example.org"
+          ],
+          "accept_terms": true,
+          "renew_before_days": 30,
+          "retry_seconds": 300,
+          "order_timeout_ms": 120000,
+          "ca_cert_file": null
+        }
+      }
+    },
+    {
+      "name": "global-admin-status",
+      "definition": "TLSStatusCommand",
+      "value": {
+        "op": "tls_status"
+      }
+    },
+    {
+      "name": "revision-fenced-manual-renew",
+      "definition": "TLSRenewCommand",
+      "value": {
+        "op": "tls_renew",
+        "expected_revision": 7,
+        "confirm": true,
+        "message_id": "renew-example-1"
+      }
+    },
+    {
+      "name": "accepted-is-not-issued",
+      "definition": "TLSRenewResult",
+      "value": {
+        "accepted": true,
+        "config_revision": 7
+      }
+    },
+    {
+      "name": "disabled-redacted-status",
+      "definition": "TLSStatus",
+      "value": {
+        "enabled": false,
+        "https_state": "disabled",
+        "acme_state": "disabled",
+        "domains": [],
+        "active_domains": [],
+        "certificate": null,
+        "last_attempt_at": null,
+        "next_attempt_at": null,
+        "last_success_at": null,
+        "last_error": null,
+        "config_revision": 7
+      }
+    },
+    {
+      "name": "waiting-without-certificate",
+      "definition": "TLSStatus",
+      "value": {
+        "enabled": true,
+        "https_state": "waiting",
+        "acme_state": "idle",
+        "domains": [
+          "hub.example.org"
+        ],
+        "active_domains": [],
+        "certificate": null,
+        "last_attempt_at": null,
+        "next_attempt_at": null,
+        "last_success_at": null,
+        "last_error": null,
+        "config_revision": 7
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "no-project-selector-on-global-status",
+      "definition": "TLSStatusCommand",
+      "value": {
+        "op": "tls_status",
+        "project_id": "alpha"
+      }
+    },
+    {
+      "name": "renew-requires-confirmation",
+      "definition": "TLSRenewCommand",
+      "value": {
+        "op": "tls_renew",
+        "expected_revision": 7,
+        "confirm": false,
+        "message_id": "renew-example-1"
+      }
+    },
+    {
+      "name": "renew-requires-revision",
+      "definition": "TLSRenewCommand",
+      "value": {
+        "op": "tls_renew",
+        "confirm": true,
+        "message_id": "renew-example-1"
+      }
+    },
+    {
+      "name": "no-dns01-option",
+      "definition": "ACMEConfig",
+      "value": {
+        "enabled": true,
+        "directory_url": "https://acme-staging-v02.api.letsencrypt.org/directory",
+        "email": "operator@example.org",
+        "domains": [
+          "hub.example.org"
+        ],
+        "accept_terms": true,
+        "renew_before_days": 30,
+        "retry_seconds": 300,
+        "order_timeout_ms": 120000,
+        "ca_cert_file": null,
+        "challenge": "dns-01"
+      }
+    },
+    {
+      "name": "issuance-requires-tls",
+      "definition": "TLSConfig",
+      "value": {
+        "enabled": false,
+        "host": "0.0.0.0",
+        "port": 8443,
+        "challenge_host": "0.0.0.0",
+        "challenge_port": 8080,
+        "acme": {
+          "enabled": true,
+          "directory_url": "https://acme-staging-v02.api.letsencrypt.org/directory",
+          "email": "operator@example.org",
+          "domains": [
+            "hub.example.org"
+          ],
+          "accept_terms": true,
+          "renew_before_days": 30,
+          "retry_seconds": 300,
+          "order_timeout_ms": 120000,
+          "ca_cert_file": null
+        }
+      }
+    },
+    {
+      "name": "waiting-cannot-expose-active-domains",
+      "definition": "TLSStatus",
+      "value": {
+        "enabled": true,
+        "https_state": "waiting",
+        "acme_state": "idle",
+        "domains": [
+          "hub.example.org"
+        ],
+        "active_domains": [
+          "hub.example.org"
+        ],
+        "certificate": null,
+        "last_attempt_at": null,
+        "next_attempt_at": null,
+        "last_success_at": null,
+        "last_error": null,
+        "config_revision": 7
+      }
+    }
+  ]
+}

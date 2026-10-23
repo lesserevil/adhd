@@ -1,6 +1,6 @@
 # Multi-project and Kafka protocol profile
 
-This guide describes the current application 2.1 multi-project/eventing contract.
+This guide describes the multi-project/eventing contract retained in application 2.2.
 Its current schema/OpenAPI exports are linked in the [protocol inventory](README.md).
 An older accepted artifact is governed by its own advertised profile. Normative authority is
 `components/hub/multi/spec.md` and
@@ -27,9 +27,9 @@ Public protocol discovery must advertise supported peer versions [1,2], v2 path
 /federation/v2 and project-scoped/raw-filtered capabilities, with no private
 project list. The base schema profile is 2.0.0 because required multi-project
 selection and raw reason shapes change existing validation assumptions; peer
-wiremajor2 is separately explicit. The additive selective-recovery profile2.1
-publishes the current [schema/OpenAPI snapshots](README.md); its descriptor
-major and peer versions stay unchanged. A2A-Version remains1.0. Old-to-new federation
+wiremajor2 is separately explicit. The selective-recovery profile2.1 is retained in additive profile2.2, which
+adds [managed HTTPS](acme.md). The current [schema/OpenAPI snapshots](README.md)
+keep the same descriptor major and peer versions. A2A-Version remains1.0. Old-to-new federation
 works only through the configured legacy pair. New-to-old selects v1 only from
 explicit configured compatibility, never after a v2 auth/error failure.
 

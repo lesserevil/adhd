@@ -1,0 +1,97 @@
+{
+  "schema": "adhd/acme-platform-image42-preparation@1",
+  "prepared": true,
+  "executed": false,
+  "actual_plan_path": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/plan.json",
+  "plan_sha256": "8175b9c0b0afc5e0ff2f8fdee491f9d810abcd543157b3e23c6818268cf634e6",
+  "driver_sha256": "87c610fa510dd4d16471f1297f8ca07e4b6b827876b83e300501ee969b66139f",
+  "target": {
+    "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+    "image_reference": "adhd:acme42-01",
+    "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+    "context": "/home/horde/src/adhd/_build/acme/container42-01",
+    "admission": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/image42-qualification01/compiled-admission/manifest.json",
+    "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+    "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f"
+  },
+  "root_GO_required": true,
+  "execution_started_marker_absent": true,
+  "results_absent": true,
+  "frozen_file_count": 569,
+  "bound_file_count": 19,
+  "private_client_files": 2,
+  "full_isolated_verify_exit_code": 0,
+  "full_isolated_parent_flags": [
+    "-I",
+    "-S",
+    "-B",
+    "-X pycache_prefix=<freshowned>"
+  ],
+  "host_closure_sha256": "e3faf570a591d900ff2d134ce60f6bba2468695e20acd773edf2d18a643e3fd0",
+  "order": [
+    "compose",
+    "kind"
+  ],
+  "owned_allowlist": {
+    "compose_project": "adhd-acme-compose01",
+    "kind_cluster": "adhd-acme-kind01",
+    "kind_namespace": "adhd-final-adhd-acme-kind01",
+    "networks": {
+      "compose": {
+        "name": "adhd-acme-compose01_default",
+        "subnet": "10.231.240.0/24",
+        "gateway": "10.231.240.1",
+        "nonce": "426e0a458a4412e4c6b7f7dc01e8d9c5"
+      },
+      "kind": {
+        "name": "adhd-acme-kind01-network",
+        "subnet": "10.231.241.0/24",
+        "gateway": "10.231.241.1",
+        "nonce": "cc4228df15d054b2e778715ef311e7a6"
+      }
+    },
+    "probe_prefix": "adhd-accept-probe-",
+    "maximum_compose_probes": 3,
+    "pod_probe_prefix": "acme-state-",
+    "relay_bind": "127.0.0.1:8080",
+    "issuer_gateway_port": 19104,
+    "private_http": "127.0.0.1:18866",
+    "public_bind": "127.0.0.2:80/443"
+  },
+  "ca_generation": {
+    "manifest_sha256": "59612c07ad3ef3993e649415a23ce5f46e03fc3005084d636f4b70cb8c1c9fdc",
+    "generation_issuer_root_sha256": "3a25759e8023ab73562d9b086b8c42a4f68c514b6d42379c0510d06e64714584",
+    "frontend_root_sha256": "0c502e52627ff7de972c7e9e065640103b4589b4e2d23d3fcf21bef1e3c8c67c",
+    "owner_pid": 3370160,
+    "processes": [
+      {
+        "name": "dns",
+        "pid": 3370235,
+        "start_ticks": "28041019"
+      },
+      {
+        "name": "pebble",
+        "pid": 3370240,
+        "start_ticks": "28041020"
+      }
+    ],
+    "lifetime_seconds": 10800,
+    "actual_live_lease_revalidated": false
+  },
+  "execute_argv_for_root_GO": [
+    "/home/horde/src/adhd/.venv/bin/python",
+    "-I",
+    "-S",
+    "-B",
+    "-X",
+    "pycache_prefix=/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/parent-pycache",
+    "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01/driver.py",
+    "--execute",
+    "--work",
+    "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-01",
+    "--plan-sha256",
+    "8175b9c0b0afc5e0ff2f8fdee491f9d810abcd543157b3e23c6818268cf634e6"
+  ],
+  "scope": "Actual ACME-only packaged Compose/Kind; no broker/model/CNI/providerLoadBalancer qualification",
+  "pending": "Root independent full-plan review and serial HTTP01lane GO; no platform qualification or app start here."
+}

@@ -1,0 +1,36 @@
+{
+  "scope": "Shipped Kubernetes runtime Erlang port-table bound only; no source/image/memory/security/entrypoint change",
+  "runtime_started": false,
+  "accepted_Kind_pass_claimed": false,
+  "causal_controlled_diagnostic": "verification/acme/erlang-port-table-diagnostic/audit.json",
+  "diagnostic_commit": "b5b4051",
+  "actual_target_image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+  "manifest_delta": {
+    "ERL_FLAGS": "+S 2:2 +Q 65536",
+    "memory_limit": "1Gi",
+    "cpu_limit": "2",
+    "user": 10001,
+    "default_entrypoint_override": false
+  },
+  "fixture_guards": "Exactly one fixed ERL_FLAGS entry; reject missing/duplicate/unbounded/valueFrom/conflicting RTS configuration. Kind actual custody retains /proc/1/limits private hash+parsed inherited nofile, PID1 start equals actual VM witness and same Pod UID/container state after read. No ninth-check recount/addition.",
+  "tests": {
+    "passed": true,
+    "count": 91,
+    "command": "PYTHONPATH=tests /home/horde/src/adhd/.venv/bin/python -B -m unittest acme_k8s_runtime_flags_test acme_deploy_templates_test acme_platform_runtime_test acme_platform_vm_test acme_platform_matrix_test acme_platform_node_ready_test acme_platform_storage_ready_test acme_platform_diagnostics_test acme_platform_plan_test"
+  },
+  "files": {
+    "deploy/k8s/hub.yaml": "5ecaf9170c6abf52c26ce8f406ba117849a519051cb78827c7fcc7befa2cb663",
+    "tests/acme_platform_adapters.py": "664d7d7bb16a9f6263c52b5860868425e657b9bf5a838ad4cd92759e501c6c7f",
+    "tests/acme_k8s_runtime_flags_test.py": "451aaf8e4d68854596af599a0b4c76456a7f0d54337a210f202dc99a72037c14"
+  },
+  "kernel_summary_sha256": "99c56dbf183e0c752575217ec160ed6e4e9f52c4cbd8a636f7a505c0d774ef50",
+  "host_inotify_restoration_owner": "Root; original128 restored separately in257d36c. No current lease, new runtime requires fresh rootGO/lease.",
+  "documentation_review": {
+    "reviewed": [
+      "root/docs/admin/acme.md",
+      "docs/admin/operations.md",
+      "deploy/k8s/hub.yaml"
+    ],
+    "disposition": "Original1Gi/CPU2/resource/private-security boundary remains accurate. This fixes deployment startup on extreme inherited nofile hosts; does not prove Kind ACME qualification. Parent owns final operator docs/authority review after all runtime gates. No ordinary guide edits here."
+  }
+}

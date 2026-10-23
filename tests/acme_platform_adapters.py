@@ -87,6 +87,15 @@ def render_compose(root,work,gateway,private_http_port=18766):
  return ['-f',str(root/'deploy/app.compose.yaml'),'-f',str(root/'deploy/app.acme.compose.yaml'),'-f',str(work/'fixture.compose.yaml')]
 
 
+def bounded_runtime_flags(hub):
+ # Preserve scheduler/CPU policy; prevent a host-inherited RLIMIT from sizing a
+ # billion-entry Erlang port table under the unchanged 1Gi pod memory limit.
+ rows=[v for v in hub['env'] if v.get('name')=='ERL_FLAGS']
+ assert rows==[{'name':'ERL_FLAGS','value':'+S 2:2 +Q 65536'}],'Bounded shipped Kubernetes runtime flags required'
+ assert not any(v.get('name') in ('ERL_AFLAGS','ERL_ZFLAGS','ELIXIR_ERL_OPTIONS','ERL_MAX_PORTS') for v in hub['env']),'Conflicting runtime flags'
+ return rows[0]['value']
+
+
 def render_kind(root,namespace,image,seed,gateway,reference=None):
  identity(image);bridge_gateway(gateway)
  validate_seed(seed['hub.json'])
@@ -99,6 +108,7 @@ def render_kind(root,namespace,image,seed,gateway,reference=None):
  patch=yaml.safe_load((root/'deploy/k8s/acme/hub-listeners.yaml').read_text())
  # Match the shipped kustomize strategic merge: named ports appended; original8766 retained.
  hub=deployment['spec']['template']['spec']['containers'][0]
+ bounded_runtime_flags(hub)
  hub['ports']+=patch['spec']['template']['spec']['containers'][0]['ports']
  for container in deployment['spec']['template']['spec']['initContainers']+[hub]:
   container['image']=reference;container['imagePullPolicy']='Never'
@@ -544,7 +554,24 @@ class Kind:
  def custody(self):
   row=self.observe();self.image_identity(row)
   def command(argv,capture=True):return self.cmd(argv,capture=capture).stdout
-  return vm.kind(command,self.node_id,row,self.image)
+  proof=vm.kind(command,self.node_id,row,self.image)
+  flags=bounded_runtime_flags(next(c for c in row['spec']['containers'] if c['name']=='hub'))
+  def read(name):
+   raw=self.namespaced('exec',row['metadata']['name'],'-c','hub','--','/bin/busybox','cat','/proc/1/'+name,capture=True).stdout
+   assert len(raw)<=16384
+   return raw
+  before=read('stat');limits=read('limits');after=read('stat')
+  def start(raw):
+   assert raw.split(b' ',1)[0]==b'1'
+   return raw.decode().rsplit(')',1)[1].split()[19]
+  assert start(before)==start(after)==proof['process']['start_ticks']
+  matches=re.findall(rb'^Max open files\s+(\d+|unlimited)\s+(\d+|unlimited)\s+files\s*$',limits,re.M)
+  assert len(matches)==1
+  again=self.observe();assert again['metadata']['uid']==row['metadata']['uid'] and again['status']['containerStatuses']==row['status']['containerStatuses']
+  path=self.work/('pid1-limits-'+uuid4().hex+'.txt');file(path,limits)
+  proof['inherited_open_files']={'soft':matches[0][0].decode(),'hard':matches[0][1].decode(),'pid1_start_matches_actual_VM':True,
+   'private_limits_sha256':hashlib.sha256(limits).hexdigest(),'runtime_flags':flags}
+  return proof
  def exec(self,args,*,sensitive=False):
   return self.namespaced('exec',self.observe()['metadata']['name'],'-c','hub','--',*args,capture=True,sensitive=sensitive).stdout
  def private_state(self):

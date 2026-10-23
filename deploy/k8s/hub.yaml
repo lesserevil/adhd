@@ -61,6 +61,8 @@ spec:
         image: adhd-hub:qualified
         imagePullPolicy: IfNotPresent
         env:
+        - name: ERL_FLAGS
+          value: "+S 2:2 +Q 65536"
         - name: ADHD_CONFIG_FILE
           value: /config/hub.json
         ports:

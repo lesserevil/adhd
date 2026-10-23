@@ -1,0 +1,61 @@
+defmodule ADHD.ArchiveProtocol do
+  alias ADHD.Protocol,as: P
+  alias ADHD.HistoryProtocol,as: H
+  defp nullable(v),do: H.nullable(v)
+  defp count,do: H.count()
+  defp digest,do: H.digest()
+  def config_props do
+    %{"enabled"=>P.bool(),"default_mode"=>P.enum(~w(search scan search_then_scan)),"url"=>nullable(P.str(2048) |> Map.put("format","uri")),"model"=>nullable(P.str(512)),"operator_version"=>P.str(),
+      "timeout_ms"=>P.int(100,30000),"request_bytes"=>P.int(1024,65536),"min_confidence_ppm"=>P.int(1,1000000),"max_state_bytes"=>P.int(1048576,268435456),"audit_rate_ppm"=>P.int(0,1000000),"budget"=>P.ref("ArchiveBudget")}
+  end
+  def extend(defs) do
+    hp=defs["HistoryQuery"]["properties"];gap=defs["RecordRead"]["properties"]["gaps"]["items"]
+    modes=P.enum(~w(search scan search_then_scan));states=P.enum(~w(pending completed partial cancelled invalidated));outcomes=hp["outcome"]
+    error=P.obj(%{"code"=>P.enum(~w(REQUIRES_SCAN CHILD_CHANGED SCAN_DISABLED RETRIEVAL_DISABLED MODEL_ERROR CONFIG_CHANGED CONTEXT_LIMIT RESOURCE_LIMIT WORKER_ERROR CANCELLED BUDGET_RECORDS BUDGET_CALLS BUDGET_BYTES BUDGET_TIME)),"message"=>P.str(256),"retryable"=>P.bool()})
+    budget=P.obj(Map.new(ADHD.Archive.stages(),&{&1,P.ref("HistoryBudget")}));budget_input=P.obj(Map.new(ADHD.Archive.stages(),&{&1,P.ref("HistoryBudgetInput")}),[])
+    usage=P.obj(Map.new(ADHD.Archive.stages()++["total"],&{&1,hp["usage"]})) |> Map.put("x-archiveUsage",true)
+    answer=hp["answer"] |> put_in(["properties","uncertainty"],P.array(P.enum(hp["answer"]["properties"]["uncertainty"]["items"]["enum"]++~w(candidate_only scan_required incomplete_audit audit_changed_answer comparison_unavailable)),16) |> Map.put("uniqueItems",true))
+    planner_policy=P.obj(%{"enabled"=>P.bool(),"request_bytes"=>P.int(1024,65536),"min_confidence_ppm"=>P.int(1,1000000)})
+    planner_descriptor=P.obj(%{"adapter_version"=>P.str(),"operator_version"=>P.str(),"model"=>P.str(512),"template_sha256"=>digest(),"identity"=>digest(),"policy"=>planner_policy})
+    policy=P.obj(%{"adapter_version"=>P.str(),"policy_version"=>P.str(),"runtime"=>P.str(),"planner"=>planner_descriptor,"history"=>hp["evaluator"],"retrieval"=>P.ref("RetrievalEvaluator"),"audit_rate_ppm"=>P.int(0,1000000),"identity"=>digest()})
+    template=ADHD.ArchivePolicy.template();labels = ~w(bounded complete unknown)
+    request=P.obj(%{"model"=>P.str(512),"state"=>P.obj(%{"question"=>P.str(4096)}),"questions"=>P.obj(%{"intent"=>P.obj(%{"type"=>%{"const"=>"choice"},"instructions"=>%{"const"=>template["instructions"]},"criteria"=>%{"const"=>template["criteria"]}})})})
+    recorded=request |> put_in(["properties","questions","properties","intent","properties","instructions"],P.str(8192)) |> put_in(["properties","questions","properties","intent","properties","criteria"],P.obj(Map.new(labels,&{&1,P.str(4096)})))
+    probability=%{"type"=>"number","minimum"=>0,"maximum"=>1};choice=H.choice(labels,P.obj(Map.new(labels,&{&1,probability})))
+    response=P.obj(%{"model"=>P.str(512),"answers"=>P.obj(%{"intent"=>choice}),"usage"=>%{"type"=>"object","additionalProperties"=>P.ref("JSON")},"metrics"=>%{"type"=>"object","additionalProperties"=>P.ref("JSON")},"scoring"=>%{"type"=>"object","additionalProperties"=>P.ref("JSON")}},~w(model answers))
+    intent=P.obj(%{"source"=>P.enum(~w(empty requested guard model error)),"decision"=>P.enum(labels),"requires_complete"=>P.bool(),"matched_terms"=>P.array(P.enum(template["guard_words"]),35) |> Map.put("uniqueItems",true),"raw_choice"=>nullable(P.enum(labels)),"confidence_ppm"=>nullable(P.int(0,1000000)),"error"=>nullable(error)})
+    decimal=%{"type"=>"string","pattern"=>"^(?:0|[1-9][0-9]{0,77})$","maxLength"=>78,"x-maxBytes"=>78}
+    sample=P.obj(%{"plan_id"=>P.str(),"policy"=>%{"const"=>"uniform256-threshold-v1"},"rate_ppm"=>P.int(0,1000000),"probability_numerator"=>decimal,"probability_denominator"=>%{"const"=>Integer.to_string(:erlang.bsl(1,256))},"draw_hex"=>nullable(digest()),"eligible"=>P.bool(),"selected"=>P.bool(),"population"=>P.enum(~w(undetermined successful_search fallback_only scan_only))}) |> Map.put("x-archiveSample",true)
+    assessment=P.obj(%{"answer"=>answer,"record_ids"=>H.ids(128),"context_ids"=>H.ids(128),"gaps"=>P.array(gap,128),"truncated"=>P.bool(),"evaluator"=>hp["evaluator"]})
+    common=%{"request_json"=>P.str(65536),"request_sha256"=>digest(),"bytes"=>P.int(1,65536),"time_ms"=>count()}
+    planner_eval=P.obj(Map.merge(common,%{"stage"=>%{"const"=>"planner"},"request"=>P.ref("ArchiveRecordedPlannerRequest"),"response"=>P.ref("ArchivePlannerResponse")}))
+    assessment_eval=P.obj(Map.merge(common,%{"stage"=>%{"const"=>"assessment"},"record_ids"=>H.ids(128),"context_identities"=>P.array(digest(),128),"gaps"=>P.array(gap,128),"truncated"=>P.bool(),"request"=>P.ref("HistoryRecordedModelRequest"),"response"=>P.ref("HistoryModelResponse")})) |> Map.put("x-archiveOriginals",true)
+    evals=Enum.map([planner_eval,assessment_eval],&(&1 |> Map.put("x-jsonOf",%{"request_json"=>"request"}) |> Map.put("x-sha256Of",%{"request_sha256"=>"request_json"}) |> Map.put("x-choiceExchange",true) |> Map.put("x-byteLengthOf",%{"bytes"=>"request_json"})))
+    evaluation=%{"oneOf"=>evals}
+    child=nullable(P.obj(%{"query_id"=>P.str(),"run"=>P.int(1,16),"last_status"=>states}));children=P.obj(Map.new(~w(retrieval scan audit),&{&1,child}))
+    comparison=P.obj(%{"reference"=>P.enum(~w(fallback audit)),"completed_scope"=>P.bool(),"candidate_assessment"=>nullable(outcomes),"scan_assessment"=>outcomes,"answer_changed"=>nullable(P.bool()),"provisional"=>%{"const"=>true}})
+    coverage=P.obj(%{"total"=>count(),"search_indexed"=>count(),"candidate_ids"=>H.ids(64),"assessed_ids"=>H.ids(128),"expanded_ids"=>H.ids(128),"context_gaps"=>P.array(gap,128),"context_truncated"=>P.bool(),"scan_primary_complete"=>P.bool(),"scan_final_complete"=>P.bool(),"audit_primary_complete"=>P.bool(),"audit_final_complete"=>P.bool(),"full_scope_evaluated"=>P.bool(),"answer_scope"=>P.enum(~w(unexamined candidate_only partial_scope full_scope)),"comparison_complete"=>P.bool()})
+    query=P.obj(%{"id"=>P.str(),"owner_id"=>P.identifier(),"project_id"=>P.identifier(),"question"=>P.str(4096),"scope"=>P.ref("HistoryScope"),"snapshot"=>hp["snapshot"],"mode"=>modes,"complete"=>P.bool(),"limit"=>P.int(1,64),"status"=>states,"phase"=>P.enum(~w(planning searching assessing scanning auditing done)),"outcome"=>outcomes,"created_at"=>P.time(),"updated_at"=>P.time(),"run"=>P.int(1,16),"plan_id"=>P.str(),"policy"=>P.ref("ArchivePolicy"),"budget"=>P.ref("ArchiveBudget"),"usage"=>P.ref("ArchiveUsage"),"coverage"=>coverage,"answer"=>P.ref("ArchiveAnswer"),
+      "path"=>P.array(P.enum(~w(empty plan search assess scan audit)),6) |> Map.put("uniqueItems",true),"fallback_reasons"=>P.array(P.enum(~w(requested_scan complete_required uncertain_intent planner_error no_candidates index_unavailable retrieval_partial retrieval_error context_incomplete evidence_insufficient evidence_conflict assessment_error audit_sample)),16) |> Map.put("uniqueItems",true),"intent"=>nullable(P.ref("ArchiveIntent")),"sample"=>P.ref("ArchiveSample"),"children"=>children,"search"=>nullable(P.ref("RetrievalQuery")),"assessment"=>nullable(P.ref("ArchiveAssessment")),"scan"=>nullable(P.ref("HistoryQuery")),"audit"=>nullable(P.ref("HistoryQuery")),"comparison"=>nullable(comparison),"evaluations"=>P.array(P.ref("ArchiveEvaluation"),64),"next_offset"=>nullable(P.int(0,1000000)),"evaluation_count"=>count(),"prior_runs"=>P.array(P.int(1,15),15) |> Map.put("uniqueItems",true),"error"=>nullable(error),"continuable"=>P.bool()})
+    query=Map.put(query,"x-archiveBindings",true)
+    config=config_props();budget_patch=P.obj(Map.new(ADHD.Archive.stages(),fn stage->{stage,nullable(P.obj(Map.new(H.budget_props(),fn {k,v}->{k,nullable(v)} end),[]))} end),[])
+    patch=config |> Map.put("budget",budget_patch) |> Map.new(fn {k,v}->{k,nullable(v)} end) |> P.obj([])
+    additions=%{"ArchiveBudget"=>budget,"ArchiveBudgetInput"=>budget_input,"ArchiveUsage"=>usage,"ArchiveAnswer"=>answer,"ArchivePolicy"=>policy,"ArchivePlannerDescriptor"=>planner_descriptor,"ArchivePlannerRequest"=>request,"ArchiveRecordedPlannerRequest"=>recorded,"ArchivePlannerResponse"=>response,"ArchiveIntent"=>intent,"ArchiveSample"=>sample,"ArchiveAssessment"=>assessment,"ArchiveEvaluation"=>evaluation,"ArchiveQuery"=>query,"ArchiveConfig"=>P.obj(config),"ArchiveConfigPatch"=>patch,
+      "ArchivePlannerExchange"=>P.obj(%{"request"=>P.ref("ArchivePlannerRequest"),"response"=>P.ref("ArchivePlannerResponse")}) |> Map.put("x-choiceExchange",true),"ArchiveRecordedPlannerExchange"=>P.obj(%{"request"=>P.ref("ArchiveRecordedPlannerRequest"),"response"=>P.ref("ArchivePlannerResponse")}) |> Map.put("x-choiceExchange",true)}
+    defs=Map.merge(defs,additions) |> put_in(["PublicConfig","properties","archive"],P.ref("ArchiveConfig")) |> put_in(["MergePatch","properties","archive"],nullable(P.ref("ArchiveConfigPatch")))
+    defs=Enum.reduce(ADHD.Archive.operations(),defs,fn op,acc->
+      command=case op do
+        "query_archive"->P.command(op,%{"question"=>P.str(4096),"mode"=>modes,"scope"=>P.ref("HistoryScopeInput"),"complete"=>P.bool(),"limit"=>P.int(1,64),"budget"=>P.ref("ArchiveBudgetInput")},~w(question))
+        "get_archive_query"->P.command(op,Map.put(H.page_props(),"query_id",P.str()),~w(query_id))
+        "continue_archive_query"->P.command(op,%{"query_id"=>P.str(),"restart"=>P.bool(),"mode"=>modes,"budget"=>P.ref("ArchiveBudgetInput")},~w(query_id))
+        _->P.command(op,%{"query_id"=>P.str()},~w(query_id))
+      end
+      acc |> Map.put("agent_"<>op,command) |> Map.put("result_"<>op,P.obj(%{"query"=>P.ref("ArchiveQuery")}))
+    end)
+    defs=update_in(defs,["AgentResult","anyOf"],&(&1++Enum.map(ADHD.Archive.operations(),fn op->P.ref("result_"<>op) end)))
+    job=P.obj(%{"kind"=>%{"const"=>"archive"},"query"=>P.ref("ArchiveQuery")})
+    defs=Enum.reduce(~w(admin_result_query_job admin_result_cancel_query_job),defs,fn key,acc->update_in(acc,[key,"oneOf"],&(&1++[job])) end)
+    defs=update_in(defs,["admin_result_query_jobs","properties","items","items","oneOf"],&(&1++[job]))
+    put_in(defs,["admin_query_jobs","properties","kind"],P.enum(~w(discovery source history retrieval archive)))
+  end
+end

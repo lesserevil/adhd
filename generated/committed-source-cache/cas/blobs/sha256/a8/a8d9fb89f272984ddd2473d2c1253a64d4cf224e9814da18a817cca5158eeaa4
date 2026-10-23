@@ -1,0 +1,391 @@
+defmodule ADHD.JSON do
+  # A structural pass rejects duplicate keys before the standard decoder is used.
+  def decode!(s) when is_binary(s) do
+    true = String.valid?(s)
+    {_, rest} = value(String.trim_leading(s))
+    "" = String.trim(rest)
+    JSON.decode!(s)
+  end
+  defp value("{" <> s), do: object(String.trim_leading(s), MapSet.new())
+  defp value("[" <> s), do: array(String.trim_leading(s))
+  defp value("\"" <> _ = s), do: string(s)
+  defp value(s) do
+    [token] = Regex.run(~r/\A(?:true|false|null|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)/, s)
+    {nil, binary_part(s, byte_size(token), byte_size(s)-byte_size(token))}
+  end
+  defp string(s) do
+    [token] = Regex.run(~r/\A"(?:[^"\\\x00-\x1f]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/u, s)
+    {JSON.decode!(token), binary_part(s, byte_size(token), byte_size(s)-byte_size(token))}
+  end
+  defp object("}" <> rest, _), do: {nil, rest}
+  defp object(s, keys) do
+    {key, rest} = string(s)
+    false = MapSet.member?(keys, key)
+    ":" <> rest = String.trim_leading(rest)
+    {_, rest} = value(String.trim_leading(rest))
+    case String.trim_leading(rest) do
+      "}" <> tail -> {nil, tail}
+      "," <> tail ->
+        tail = String.trim_leading(tail)
+        true = String.starts_with?(tail, "\"")
+        object(tail, MapSet.put(keys, key))
+    end
+  end
+  defp array("]" <> rest), do: {nil, rest}
+  defp array(s) do
+    {_, rest} = value(s)
+    case String.trim_leading(rest) do
+      "]" <> tail -> {nil, tail}
+      "," <> tail ->
+        tail = String.trim_leading(tail)
+        false = String.starts_with?(tail, "]")
+        array(tail)
+    end
+  end
+end
+
+defmodule ADHD.Domain do
+  @ops ~w(list_projects update_subscription list_retrieval_attempts get_retrieval_attempt replay_retrieval get_retrieval_replay continue_retrieval_replay cancel_retrieval_replay retrieve get_retrieval continue_retrieval cancel_retrieval retrieval_index query_archive get_archive_query continue_archive_query cancel_archive_query query_history get_history_query continue_history_query cancel_history_query publish_record get_record cancel_source_query federation_directory get_source_query identity_matches source_query ack cancel_federated_query federated_query get get_federated_query list_subscriptions poll publish search send subscribe unsubscribe whoami)
+  def operations, do: Enum.sort(@ops)
+  def fail(code \\ "INVALID_PARAMS"), do: throw({:domain, code})
+  def check(true), do: :ok
+  def check(_), do: fail()
+  def object(v), do: check(is_map(v) and not is_struct(v))
+  def keys(v, allowed, required \\ []) do
+    object(v)
+    check(Enum.all?(Map.keys(v), &(&1 in allowed)))
+    check(Enum.all?(required, &Map.has_key?(v, &1)))
+  end
+  def string(v, max, blank \\ false) do
+    check(is_binary(v) and String.valid?(v) and byte_size(v) <= max and (blank or String.trim(v) != ""))
+  end
+  def id(v), do: string(v, 128)
+  def identifier(v) do
+    string(v, 128)
+    check(Regex.match?(~r/\A[A-Za-z0-9_.-]+\z/, v))
+  end
+  def integer(v, lo, hi), do: check(is_integer(v) and v >= lo and v <= hi)
+  def boolean(v), do: check(is_boolean(v))
+  def optional(m, k, fun), do: if(Map.has_key?(m,k), do: fun.(m[k]), else: :ok)
+  def list(v, max, min \\ 0) do
+    check(is_list(v) and length(v) >= min and length(v) <= max)
+  end
+  def distinct(v), do: check(length(Enum.uniq(v)) == length(v))
+  def url(v, base \\ false) do
+    string(v, 2048)
+    u = URI.parse(v)
+    check(u.scheme in ["http","https"] and is_binary(u.host) and u.host != "" and is_nil(u.userinfo) and is_nil(u.fragment))
+    if base, do: check(u.path in [nil,"","/"] and is_nil(u.query))
+    v
+  end
+  def datetime(v, utc \\ false) do
+    string(v,64)
+    case DateTime.from_iso8601(v) do
+      {:ok, dt, offset} ->
+        if utc, do: check(offset == 0 and String.ends_with?(v,"Z"))
+        DateTime.to_iso8601(dt)
+      _ -> fail()
+    end
+  end
+  def now, do: DateTime.utc_now() |> DateTime.truncate(:millisecond) |> DateTime.to_iso8601()
+  def epoch(v),do: (DateTime.from_iso8601(v) |> elem(1) |> DateTime.to_unix(:millisecond))
+  def at(ms),do: DateTime.from_unix!(ms,:millisecond) |> DateTime.to_iso8601()
+  def ms, do: System.system_time(:millisecond)
+  def opaque, do: :crypto.strong_rand_bytes(24) |> Base.url_encode64(padding: false)
+  def same(a,b) when is_binary(a) and is_binary(b) do
+    :crypto.hash(:sha256,a) |> :crypto.hash_equals(:crypto.hash(:sha256,b))
+  end
+  def same(_, _), do: false
+  def canonical(v) when is_map(v), do: Enum.map(Enum.sort(Map.keys(v)), fn k -> {k,canonical(v[k])} end)
+  def canonical(v) when is_list(v), do: Enum.map(v,&canonical/1)
+  def canonical(v), do: v
+  def digest(v), do: :crypto.hash(:sha256, :erlang.term_to_binary(canonical(v))) |> Base.encode16(case: :lower)
+
+  def content(c, arbitrary) do
+    check(Map.has_key?(c,"text") or Map.has_key?(c,"data"))
+    optional(c,"text",&string(&1,65536))
+    if not arbitrary, do: optional(c,"data",&object/1)
+    check(byte_size(Map.get(c,"text","")) + (if Map.has_key?(c,"data"),do: byte_size(JSON.encode!(c["data"])),else: 0) <= 65536)
+  end
+  def source(s) do
+    keys(s,~w(kind id item_id uri),~w(kind id))
+    identifier(s["kind"]); string(s["id"],256)
+    optional(s,"item_id",&string(&1,512)); optional(s,"uri",&url/1)
+  end
+  def filters(c, required) do
+    optional(c,"query",&string(&1,256))
+    optional(c,"information_type",&identifier/1)
+    optional(c,"source_kind",&identifier/1)
+    optional(c,"source_id",&string(&1,256))
+    optional(c,"limit",&integer(&1,1,100))
+    if required, do: check(Enum.any?(~w(query information_type source_kind source_id),&Map.has_key?(c,&1)))
+  end
+  def agent(c) do
+    object(c)
+    op = c["op"]
+    fields = case op do
+      x when x in ["whoami","list_projects","list_subscriptions","federation_directory","identity_matches"] -> []
+      "subscribe" -> ~w(description filter mode selectors)
+      "update_subscription" -> ~w(subscription_id expected_revision description filter mode selectors paused)
+      "unsubscribe" -> ["subscription_id"]
+      "publish_record" -> ~w(text data information_type source occurred_at context)
+      "get_record" -> ~w(publication_id watermark max_depth limit)
+      "publish" -> ~w(text data information_type source occurred_at)
+      "send" -> ~w(recipient_id text data)
+      "poll" -> ["limit"]
+      "ack" -> ["delivery_ids"]
+      "get" -> ["publication_id"]
+      "search" -> ~w(query information_type source_kind source_id limit)
+      "retrieval_index" -> []
+      "retrieve" -> ~w(question scope limit budget)
+      "get_retrieval" -> ~w(query_id run offset limit)
+      "continue_retrieval" -> ~w(query_id restart budget)
+      "cancel_retrieval" -> ~w(query_id)
+      "list_retrieval_attempts" -> ~w(classification offset limit)
+      "get_retrieval_attempt" -> ~w(attempt_id)
+      "replay_retrieval" -> ~w(attempt_id candidate_recipe baseline corpus limit budget)
+      "get_retrieval_replay" -> ~w(query_id run offset limit)
+      "continue_retrieval_replay" -> ~w(query_id restart budget)
+      "cancel_retrieval_replay" -> ~w(query_id)
+      "query_archive" -> ~w(question scope mode complete limit budget)
+      "get_archive_query" -> ~w(query_id run offset limit)
+      "continue_archive_query" -> ~w(query_id restart mode budget)
+      "cancel_archive_query" -> ~w(query_id)
+      "query_history" -> ~w(question scope complete budget)
+      "get_history_query" -> ~w(query_id run offset limit)
+      "continue_history_query" -> ~w(query_id restart budget)
+      "cancel_history_query" -> ~w(query_id)
+      "source_query" -> ~w(question sources aliases deadline_ms project_ids)
+      x when x in ~w(get_source_query cancel_source_query) -> ["query_id"]
+      "federated_query" -> ~w(question deadline_ms)
+      x when x in ["get_federated_query","cancel_federated_query"] -> ["query_id"]
+      _ -> fail()
+    end
+    keys(c,["op","project_id"|fields],["op"])
+    optional(c,"project_id",&identifier/1)
+    case op do
+      "subscribe" -> ADHD.Eventing.subscription(c)
+      "update_subscription" -> ADHD.Eventing.subscription(c);id(c["subscription_id"]);integer(c["expected_revision"],1,9007199254740991);optional(c,"paused",&boolean/1)
+      "unsubscribe" -> id(c["subscription_id"])
+      op when op in ~w(publish publish_record) ->
+        content(c,true)
+        optional(c,"information_type",&identifier/1)
+        optional(c,"source",&source/1)
+        optional(c,"occurred_at",&datetime/1)
+        optional(c,"context",&ADHD.Records.context/1)
+      "get_record" -> ADHD.Records.read_args(c)
+      "send" -> identifier(c["recipient_id"]); content(c,false)
+      "poll" -> optional(c,"limit",&integer(&1,1,100))
+      "ack" -> list(c["delivery_ids"],100,1); Enum.each(c["delivery_ids"],&id/1); distinct(c["delivery_ids"])
+      "get" -> id(c["publication_id"])
+      "search" -> filters(c,true)
+      x when x in ~w(source_query get_source_query cancel_source_query) -> ADHD.SourceQueries.validate(c)
+      x when x in ~w(retrieve get_retrieval continue_retrieval cancel_retrieval retrieval_index) -> ADHD.Retrieval.validate(c)
+      x when x in ~w(list_retrieval_attempts get_retrieval_attempt replay_retrieval get_retrieval_replay continue_retrieval_replay cancel_retrieval_replay) -> ADHD.Feedback.validate(c)
+      x when x in ~w(query_archive get_archive_query continue_archive_query cancel_archive_query) -> ADHD.Archive.validate(c)
+      x when x in ~w(query_history get_history_query continue_history_query cancel_history_query) -> ADHD.History.validate(c)
+      "federated_query" -> string(c["question"],4096); optional(c,"deadline_ms",&integer(&1,1000,120000))
+      x when x in ["get_federated_query","cancel_federated_query"] -> id(c["query_id"])
+      _ -> :ok
+    end
+    %{"valid"=>true,"op"=>op}
+  end
+
+  def admin(%{"op"=>op}=c) when op in ~w(project_restore_plan project_restore_apply project_restore_status) do
+    ADHD.ProjectRestore.validate(c)
+    %{"valid"=>true,"op"=>op}
+  end
+  def admin(c) do
+    object(c)
+    op = c["op"]
+    {fields,required} = case op do
+      x when x in ~w(overview config_get users agents federation_directory retrieval_index list_projects eventing_status resource_status tls_status) -> {[],[]}
+      "repair_eventing" -> {~w(offset expected_checkpoint expected_digest action reason message_id confirm),~w(offset expected_checkpoint expected_digest action reason message_id confirm)}
+      "replay_events" -> {~w(from_sequence to_sequence expected_watermark subscriptions reason message_id confirm),~w(from_sequence to_sequence expected_watermark subscriptions reason message_id confirm)}
+      "eventing_audit" -> {~w(offset limit),[]}
+      "eventing_replay" -> {~w(replay_id),~w(replay_id)}
+      "publications" -> {~w(query information_type source_kind source_id limit),[]}
+      "publication" -> {["publication_id"],["publication_id"]}
+      "record" -> {~w(publication_id watermark max_depth limit),~w(publication_id)}
+      "subscriptions" -> {~w(agent_id offset limit),[]}
+      "deliveries" -> {~w(agent_id limit),[]}
+      "jobs" -> {~w(status limit),[]}
+      "update_subscription" -> {~w(subscription_id expected_revision mode selectors filter description paused confirm message_id),~w(subscription_id expected_revision mode selectors confirm message_id)}
+      "create_subscription" -> {~w(agent_id description filter mode selectors message_id),~w(agent_id message_id)}
+      "remove_subscription" -> {~w(subscription_id confirm message_id),~w(subscription_id confirm message_id)}
+      "retry_jobs" -> {~w(confirm message_id),~w(confirm message_id)}
+      "replay_attempt" -> {~w(attempt_id candidate_recipe baseline corpus limit budget expected_revision message_id confirm),~w(attempt_id candidate_recipe expected_revision message_id confirm)}
+      "retire_replay" -> {~w(query_id expected_revision message_id confirm),~w(query_id expected_revision message_id confirm)}
+      "optimization_status" -> {[],[]}
+      "index_proposals" -> {~w(status offset limit),[]}
+      "index_proposal" -> {~w(proposal_id offset limit),~w(proposal_id)}
+      "propose_index" -> {~w(training_attempt_ids budget expected_revision message_id confirm),~w(expected_revision message_id confirm)}
+      "evaluate_index" -> {~w(proposal_id held_out_attempt_ids regression_attempt_ids expected_revision message_id confirm),~w(proposal_id held_out_attempt_ids regression_attempt_ids expected_revision message_id confirm)}
+      "continue_index_proposal" -> {~w(proposal_id budget retry_failed expected_revision message_id confirm),~w(proposal_id expected_revision message_id confirm)}
+      x when x in ~w(cancel_index_proposal retire_index_proposal) -> {~w(proposal_id expected_revision message_id confirm),~w(proposal_id expected_revision message_id confirm)}
+      "promote_index" -> {~w(proposal_id expected_selection_revision expected_revision message_id confirm),~w(proposal_id expected_selection_revision expected_revision message_id confirm)}
+      "rollback_index" -> {~w(budget expected_selection_revision expected_revision message_id confirm),~w(expected_selection_revision expected_revision message_id confirm)}
+      "reset_index_selection" -> {~w(expected_selection_revision expected_revision message_id confirm),~w(expected_selection_revision expected_revision message_id confirm)}
+      "feedback_status" -> {[],[]}
+      "feedback_attempts" -> {~w(classification offset limit agent_id),[]}
+      "feedback_attempt" -> {~w(attempt_id),~w(attempt_id)}
+      x when x in ~w(feedback_cohorts feedback_clusters) -> {~w(offset limit),[]}
+      "save_retrieval_label" -> {~w(attempt_id expected_label_revision label expected_revision message_id confirm),~w(attempt_id expected_label_revision label expected_revision message_id confirm)}
+      "query_jobs" -> {~w(limit agent_id kind),[]}
+      "query_job" -> {~w(query_id run offset limit),["query_id"]}
+      "cancel_query_job" -> {~w(query_id message_id confirm),~w(query_id message_id confirm)}
+      "identity_matches" -> {["user_id"],["user_id"]}
+      "rebuild_index" -> {~w(expected_revision message_id confirm),~w(expected_revision message_id confirm)}
+      "refresh_federation" -> {~w(expected_revision message_id confirm),~w(expected_revision message_id confirm)}
+      "tls_renew" -> {~w(expected_revision confirm message_id),~w(expected_revision confirm message_id)}
+      "config_update" -> {~w(expected_revision patch confirm message_id),~w(expected_revision patch confirm message_id)}
+      "config_validate" -> {~w(expected_revision patch),~w(expected_revision patch)}
+      "save_user" -> {~w(user expected_revision message_id confirm),~w(user expected_revision message_id confirm)}
+      "update_profile" -> {~w(name email password current_password expected_revision message_id confirm),~w(name email expected_revision message_id confirm)}
+      "create_agent" -> {~w(agent_id token owner_user_id project_ids expected_revision message_id confirm),~w(agent_id token expected_revision message_id confirm)}
+      "private_delivery" -> {["delivery_id"],["delivery_id"]}
+      "test_oidc" -> {["settings"],["settings"]}
+      "link_oidc" -> {~w(user_id expected_revision confirm),~w(user_id expected_revision confirm)}
+      _ -> fail()
+    end
+    keys(c,["op","project_id"|fields],["op"|required])
+    if op in ~w(tls_status tls_renew) and Map.has_key?(c,"project_id"), do: fail()
+    optional(c,"project_id",&identifier/1)
+    optional(c,"project_ids",fn v->list(v,256);distinct(v);Enum.each(v,&identifier/1) end)
+    optional(c,"limit",&integer(&1,1,100))
+    optional(c,"kind",&check(&1 in ~w(discovery source history retrieval archive replay optimization)))
+    for k <- ~w(publication_id subscription_id delivery_id user_id query_id), do: optional(c,k,&id/1)
+    optional(c,"agent_id",&identifier/1)
+    optional(c,"description",&string(&1,4096))
+    optional(c,"message_id",&id/1)
+    optional(c,"confirm",&check(&1 == true))
+    optional(c,"expected_revision",&integer(&1,1,9_223_372_036_854_775_807))
+    optional(c,"patch",&patch/1)
+    if op not in ADHD.Optimization.operations(),do: optional(c,"status",&check(&1 in ~w(pending done cancelled)))
+    optional(c,"owner_user_id",fn x -> if x != nil, do: id(x) end)
+    optional(c,"token",&credential(&1,24))
+    optional(c,"name",&string(&1,256))
+    optional(c,"email",&email/1)
+    optional(c,"password",&string(&1,1024))
+    optional(c,"current_password",&string(&1,1024))
+    if op in ADHD.Feedback.admin_operations(),do: ADHD.Feedback.validate_admin(c)
+    if op in ADHD.Optimization.operations(),do: ADHD.Optimization.validate(c)
+    if op == "query_job", do: ADHD.History.read_options(c)
+    if op == "record", do: ADHD.Records.read_args(c)
+    if op == "publications", do: filters(c,false)
+    if op in ADHD.Eventing.controls(),do: ADHD.Eventing.validate_control(c)
+    if op=="subscriptions",do: optional(c,"offset",&integer(&1,0,9_007_199_254_740_991))
+    if op in ~w(create_subscription update_subscription),do: ADHD.Eventing.subscription(c)
+    if op == "save_user", do: user_input(c["user"])
+    if op == "test_oidc", do: oidc(c["settings"])
+    %{"valid"=>true,"op"=>op}
+  end
+  def credential(value,min) do
+    string(value,4096);check(byte_size(value)>=min and Regex.match?(~r{\A[A-Za-z0-9._~+/-]+=*\z},value))
+  end
+  def credential?(value,min) do
+    try do credential(value,min);true rescue _->false catch _,_->false end
+  end
+  def email(x) do
+    string(x,320)
+    check(Regex.match?(~r/\A[^\s@]+@[^\s@]+\z/u,x))
+  end
+  def patch(p) do
+    keys(p,~w(project_id store_path agents host port public_url matcher threshold_ppm admin_token federation agent_owners auth history retrieval archive feedback optimization projects agent_projects eventing resources recovery tls))
+    Enum.each(p,fn {k,v}->
+      if v != nil do
+        case k do
+          "tls"->object(v)
+          "recovery"->ADHD.ProjectRestore.patch(v)
+          "projects"->list(v,256,1)
+          "agent_projects"->object(v)
+          "resources"->ADHD.Resources.normalize(%{"resources"=>v})
+          "eventing"->keys(v,~w(enabled rest_url topic_prefix timeout_ms retry_ms bearer_token tls_ca_pem retention_ms max_pending_events max_pending_bytes max_pending_filter_jobs max_pending_filter_jobs_per_subscription));ADHD.Eventing.config(%{"eventing"=>Map.reject(v,fn {_,value}->is_nil(value) end)})
+          "project_id"->identifier(v)
+          "store_path"->string(v,4096)
+          "host"->check(v in ["127.0.0.1","0.0.0.0"])
+          "port"->integer(v,1,65535)
+          "public_url"->url(v,true)
+          "threshold_ppm"->integer(v,1,1000000)
+          "admin_token"->credential(v,32)
+          "agents"->object(v); Enum.each(v,fn {a,t}->identifier(a); if t != nil,do: credential(t,24) end)
+          "agent_owners"->object(v); Enum.each(v,fn {a,u}->identifier(a); if u != nil,do: id(u) end)
+          "matcher"->
+            keys(v,~w(url model timeout_ms retry_ms))
+            optional_nonnull(v,"url",&url/1); optional_nonnull(v,"model",&string(&1,512))
+            for field<-~w(timeout_ms retry_ms),do: optional_nonnull(v,field,&integer(&1,100,30000))
+          "federation"->
+            keys(v,~w(description export_publication_ids peers timeout_ms retry_ms catalog share_identities))
+            optional_nonnull(v,"share_identities",&boolean/1)
+            optional_nonnull(v,"catalog",fn cat->keys(cat,~w(visible entries));optional_nonnull(cat,"visible",&boolean/1);optional_nonnull(cat,"entries",fn entries->list(entries,256);Enum.each(entries,&ADHD.Directory.entry(&1,true)) end) end)
+            optional_nonnull(v,"description",&string(&1,4096))
+            optional_nonnull(v,"timeout_ms",&integer(&1,100,10000)); optional_nonnull(v,"retry_ms",&integer(&1,100,30000))
+            optional_nonnull(v,"export_publication_ids",fn ids->list(ids,32); distinct(ids); Enum.each(ids,&id/1) end)
+            optional_nonnull(v,"peers",fn peers->
+              list(peers,16)
+              Enum.each(peers,fn peer->
+                keys(peer,~w(project_id server_id project_pairs url token inbound_token),~w(url))
+                if peer["server_id"],do: identifier(peer["server_id"]),else: identifier(peer["project_id"])
+                optional(peer,"project_pairs",fn pairs->list(pairs,256,1);Enum.each(pairs,fn pair->keys(pair,~w(local_project_id remote_project_id),~w(local_project_id remote_project_id));identifier(pair["local_project_id"]);identifier(pair["remote_project_id"]) end) end)
+                url(peer["url"],true)
+                for name<-~w(token inbound_token),do: optional(peer,name,&credential(&1,24))
+              end)
+              distinct(Enum.map(peers,&(&1["server_id"] || &1["project_id"])))
+            end)
+          "feedback"->ADHD.Feedback.patch(v)
+          "optimization"->ADHD.Optimization.patch(v)
+          "archive"->ADHD.Archive.patch(v)
+          "retrieval"->ADHD.Retrieval.patch(v)
+          "history"->ADHD.History.patch(v)
+          "auth"->
+            keys(v,~w(mode allow_admin_token session_ttl_ms oidc))
+            optional_nonnull(v,"mode",&check(&1 in ~w(local oidc both)))
+            optional_nonnull(v,"allow_admin_token",&boolean/1)
+            optional_nonnull(v,"session_ttl_ms",&integer(&1,60000,86400000))
+            optional_nonnull(v,"oidc",&oidc_patch/1)
+        end
+      end
+    end)
+  end
+  def optional_nonnull(m,k,fun),do: if(Map.has_key?(m,k) and m[k] != nil,do: fun.(m[k]),else: :ok)
+  def oidc_patch(p) do
+    keys(p,~w(provider_id issuer client_id client_secret redirect_uri scopes groups_claim role_groups default_role timeout_ms))
+    optional_nonnull(p,"provider_id",&identifier/1)
+    for k<-~w(issuer redirect_uri),do: optional_nonnull(p,k,&url/1)
+    optional_nonnull(p,"client_id",&string(&1,512)); optional_nonnull(p,"client_secret",&string(&1,4096))
+    optional_nonnull(p,"groups_claim",&string(&1,128)); optional_nonnull(p,"timeout_ms",&integer(&1,100,10000))
+    optional_nonnull(p,"default_role",&check(&1 in ~w(Admin Developer Viewer)))
+    optional_nonnull(p,"scopes",fn a->list(a,16); distinct(a); Enum.each(a,&string(&1,256)) end)
+    optional_nonnull(p,"role_groups",fn g->keys(g,~w(Admin Developer Viewer)); Enum.each(Map.values(g),fn a->if a != nil,do: (list(a,64); distinct(a); Enum.each(a,&string(&1,256))) end) end)
+  end
+  def user_input(u) do
+    keys(u,~w(id username name email role disabled password provider role_source project_ids),~w(name email role))
+    string(u["name"],256); email(u["email"])
+    check(u["role"] in ~w(Admin Developer Viewer))
+    optional(u,"id",&id/1); optional(u,"username",&identifier/1)
+    optional(u,"password",&string(&1,1024)); optional(u,"disabled",&boolean/1)
+    optional(u,"provider",&check(&1 in ~w(local oidc)))
+    optional(u,"role_source",&check(&1 in ~w(manual groups)))
+    if not Map.has_key?(u,"id") do
+      identifier(u["username"]); string(u["password"],1024)
+      check(Map.get(u,"provider","local") == "local")
+    end
+  end
+  def oidc(o) do
+    keys(o,~w(provider_id issuer client_id client_secret redirect_uri scopes groups_claim role_groups default_role timeout_ms),~w(provider_id issuer client_id redirect_uri scopes role_groups))
+    identifier(o["provider_id"])
+    for k <- ~w(issuer redirect_uri) do
+      url(o[k]); u=URI.parse(o[k]); check(u.scheme == "https" or u.host in ["localhost","127.0.0.1"])
+    end
+    check(is_nil(URI.parse(o["issuer"]).query))
+    check(String.ends_with?(o["redirect_uri"],"/admin/oidc/callback"))
+    string(o["client_id"],512); optional(o,"client_secret",&string(&1,4096))
+    list(o["scopes"],16,3); Enum.each(o["scopes"],&string(&1,256)); distinct(o["scopes"])
+    check(Enum.all?(~w(openid profile email),&(&1 in o["scopes"])))
+    optional(o,"groups_claim",&string(&1,128))
+    keys(o["role_groups"],~w(Admin Developer Viewer),~w(Admin Developer Viewer))
+    Enum.each(Map.values(o["role_groups"]),fn a -> list(a,64); distinct(a); Enum.each(a,&string(&1,256)) end)
+    optional(o,"default_role",&check(&1 in [nil,"Admin","Developer","Viewer"]))
+    optional(o,"timeout_ms",&integer(&1,100,10000))
+  end
+end

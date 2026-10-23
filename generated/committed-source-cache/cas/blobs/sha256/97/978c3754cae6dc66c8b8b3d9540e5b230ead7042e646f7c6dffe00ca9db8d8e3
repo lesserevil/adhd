@@ -1,0 +1,354 @@
+defmodule ADHD.Optimization do
+  alias ADHD.Domain,as: D
+  alias ADHD.Directory,as: F
+  alias ADHD.Feedback,as: B
+  alias ADHD.FeedbackGroups,as: G
+  alias ADHD.History,as: H
+  alias ADHD.Retrieval,as: X
+  alias ADHD.Selection,as: S
+  @ops ~w(optimization_status index_proposals index_proposal propose_index evaluate_index continue_index_proposal cancel_index_proposal promote_index rollback_index reset_index_selection retire_index_proposal)
+  @reads ~w(optimization_status index_proposals index_proposal)
+  @statuses ~w(pending awaiting_evaluation qualified promoted rejected partial cancelled invalidated retired)
+  @thresholds ~w(recurrence_groups min_training_groups min_held_out_groups min_regression_groups min_positive_training min_positive_held_out min_no_evidence_controls min_negation_controls min_correction_controls min_recall_gain_ppm max_total_calls_delta max_total_bytes_delta max_native_growth_ppm)
+  def operations,do: @ops
+  def reads,do: @reads
+  def defaults,do: %{"enabled"=>false,"mode"=>"review","max_state_bytes"=>33554432,"max_proposals"=>64,"max_active_proposals"=>4,"max_variants"=>8,"build_batch"=>8,"recurrence_groups"=>2,"min_training_groups"=>2,"min_held_out_groups"=>2,"min_regression_groups"=>2,"min_positive_training"=>1,"min_positive_held_out"=>1,"min_no_evidence_controls"=>1,"min_negation_controls"=>1,"min_correction_controls"=>1,"min_recall_gain_ppm"=>1,"max_total_calls_delta"=>0,"max_total_bytes_delta"=>0,"max_native_growth_ppm"=>2000000,"cooldown_ms"=>300000,"budget"=>%{"records"=>16384,"calls"=>512,"bytes"=>16777216,"time_ms"=>900000}}
+  def budget_bounds,do: [{"records",1,1000000},{"calls",1,100000},{"bytes",1024,268435456},{"time_ms",100,86400000}]
+  def validate_budget(value) do
+    D.keys(value,~w(records calls bytes time_ms));for {k,lo,hi}<-budget_bounds(),do: D.optional(value,k,&D.integer(&1,lo,hi));:ok
+  end
+  def config(c) do
+    value=Map.get(c,"optimization",%{});D.keys(value,Map.keys(defaults()));D.optional(value,"enabled",&D.boolean/1);D.optional(value,"mode",&D.check(&1 in ~w(review automatic)))
+    for {k,lo,hi}<-[{"max_state_bytes",1048576,268435456},{"max_proposals",1,1024},{"max_active_proposals",1,16},{"max_variants",1,8},{"build_batch",1,64},{"min_recall_gain_ppm",1,1000000},{"max_total_calls_delta",-100000,100000},{"max_total_bytes_delta",-268435456,268435456},{"max_native_growth_ppm",1000000,8000000},{"cooldown_ms",1000,86400000}],do: D.optional(value,k,&D.integer(&1,lo,hi))
+    for k<-Enum.take(@thresholds,9),do: D.optional(value,k,&D.integer(&1,1,64))
+    D.optional(value,"budget",&validate_budget/1)
+    full=Map.merge(defaults(),value) |> Map.put("budget",Map.merge(defaults()["budget"],Map.get(value,"budget",%{})))
+    D.check(full["max_active_proposals"]<=full["max_proposals"]);full
+  end
+  def patch(value) do
+    D.keys(value,Map.keys(defaults()));clean=Map.new(Enum.reject(value,fn {_,v}->v==nil end))
+    clean=if is_map(clean["budget"]),do: Map.update!(clean,"budget",fn b->Map.new(Enum.reject(b,fn {_,v}->v==nil end)) end),else: clean
+    checked=if Map.has_key?(clean,"max_proposals") and not Map.has_key?(clean,"max_active_proposals"),do: Map.put(clean,"max_active_proposals",min(defaults()["max_active_proposals"],clean["max_proposals"])),else: clean
+    config(%{"optimization"=>checked});:ok
+  end
+  def empty,do: %{"schema"=>1,"proposals"=>%{},"signatures"=>%{},"last_proposal_at"=>nil,"last_error"=>nil}
+  def active?(q),do: q["status"] in ~w(pending awaiting_evaluation qualified partial)
+  def error(code,retryable \\ false),do: %{"code"=>code,"message"=>case code do
+    "MIN_EVIDENCE"->"More independent confirmed groups and required controls are needed."
+    "NO_IMPROVEMENT"->"No bounded candidate met confirmed recall, answer and cost gates."
+    "HELD_OUT_EXPOSED"->"The held-out evidence was already used by another proposal or candidate."
+    "BASE_CHANGED"->"The operator base recipe changed; create a new proposal."
+    "SELECTION_CHANGED"->"The effective index selection changed; create a new proposal."
+    "POLICY_CHANGED"->"Interpretation or qualification criteria changed; create a new proposal."
+    "LABEL_CHANGED"->"A selected independent assertion changed; create a new proposal."
+    "COHORT_CHANGED"->"Independent cohort membership changed; review selected evidence."
+    "CHILD_CHANGED"->"An internal paired replay was independently changed."
+    "QUALITY_REGRESSION"->"The winner did not meet all final answer, recall and cost gates."
+    "GENERATION_UNAVAILABLE"->"The required raw candidate generation is unavailable."
+    "NO_PREVIOUS_SELECTION"->"No previous recipe is retained for rollback."
+    "OPTIMIZATION_DISABLED"->"Enable optimization before creating or promoting a learned recipe."
+    _->"Index qualification reached a declared dependency, evidence or resource limit."
+  end,"retryable"=>retryable}
+  def state_bytes(s),do: :erlang.external_size(s.optimization)
+  def capacity?(s,c),do: state_bytes(s)<=config(c)["max_state_bytes"]-65536
+  def put(s,q),do: put_in(s,[:optimization,"proposals",q["id"]],q)
+  def lookup(s,id),do: s.optimization["proposals"][id] || D.fail("NOT_FOUND")
+  def validate(cmd) do
+    D.optional(cmd,"expected_revision",&D.integer(&1,1,9007199254740991))
+    D.optional(cmd,"offset",&D.integer(&1,0,1000000));D.optional(cmd,"limit",&D.integer(&1,1,64));D.optional(cmd,"status",&D.check(&1 in @statuses));D.optional(cmd,"budget",&validate_budget/1);D.optional(cmd,"retry_failed",&D.boolean/1)
+    for k<-~w(proposal_id),do: D.optional(cmd,k,&D.id/1)
+    D.optional(cmd,"expected_selection_revision",&D.integer(&1,0,9007199254740991))
+    for key<-~w(training_attempt_ids held_out_attempt_ids regression_attempt_ids) do
+      D.optional(cmd,key,fn ids->D.list(ids,64,1);D.distinct(ids);Enum.each(ids,&D.id/1) end)
+    end
+    :ok
+  end
+  def policy(c,s) do
+    resolved=X.resolve(c,s)
+    F.digest(%{"adapter_version"=>"adhd-native-optimizer-v1","runtime"=>X.normalization(),"retrieval"=>X.descriptor(resolved)["identity"],"history"=>ADHD.HistoryEvaluator.descriptor(c)["identity"],"archive"=>ADHD.ArchivePolicy.descriptor(resolved,"search_then_scan",false)["identity"],"gates"=>Map.take(config(c),@thresholds)})
+  end
+  def neighbors(recipe,max_count) do
+    alternatives=[Map.put(recipe,"context_depth",min(4,recipe["context_depth"]+1)),Map.put(recipe,"include_context",true),Map.put(recipe,"context_limit",min(64,recipe["context_limit"]*2)),Map.put(recipe,"chunk_bytes",max(128,div(recipe["chunk_bytes"],2))),Map.put(recipe,"chunk_bytes",min(4096,recipe["chunk_bytes"]*2)),Map.put(recipe,"tokenizer",if(recipe["tokenizer"]=="words",do: "identifiers",else: "words")),Map.put(recipe,"semantic_window",min(128,recipe["semantic_window"]*2)),if(recipe["semantic"],do: Map.put(recipe,"semantic_weight",min(16,recipe["semantic_weight"]+1)),else: recipe)]
+    alternatives |> Enum.reject(&(&1==recipe)) |> Enum.uniq() |> Enum.take(max_count) |> Enum.map(&X.validate_recipe/1)
+  end
+  def structural(recipe),do: Map.take(recipe,~w(tokenizer chunk_bytes context_depth context_limit include_context))
+  def frozen_case(_s,a,label,group) do
+    %{"attempt_id"=>a["value"]["id"],"group_id"=>group["value"]["id"],"cohort"=>label["cohort"],"label"=>label,"evidence_identity"=>a["value"]["evidence_identity"],"snapshot"=>a["value"]["snapshot"],"question_key"=>a["question_key"],"group_keys"=>group["keys"],"owner_id"=>a["value"]["owner_id"]}
+  end
+  def prepare_cases(s,c,ids,cohort,automatic \\ false) do
+    groups=G.build(s.feedback);feedback=Map.put(s.feedback,"cohorts",groups);current_recipe=X.recipe_identity(X.effective(X.resolve(c,s))["recipe"])
+    pool=if ids,do: Enum.map(ids,&B.lookup(s,&1)),else: Map.values(s.feedback["attempts"])
+    rows=pool |> Enum.sort_by(&{&1["value"]["captured_at"],&1["value"]["id"]},:desc) |> Enum.flat_map(fn a->
+      label=B.latest(s,a["value"]["id"]);group=G.find(feedback,a)
+      eligible=label != nil and label["cohort"]==cohort and Map.has_key?(c["agents"],a["value"]["owner_id"])
+      eligible=eligible and (not automatic or cohort != "training" or a["value"]["recipe_identity"]==current_recipe)
+      if eligible,do: [frozen_case(s,a,label,group)],else: if(ids,do: D.fail("MIN_EVIDENCE"),else: [])
+    end)
+    unique=Enum.uniq_by(rows,& &1["group_id"]);if ids != nil and length(unique) != length(rows),do: D.fail("COHORT_CONFLICT")
+    Enum.take(unique,64)
+  end
+  def signature(c,s,cases,recipes),do: F.digest(%{"base"=>S.base_identity(c),"selection"=>s.retrieval_selection["revision"],"policy"=>policy(c,s),"cases"=>Enum.map(cases,&Map.take(&1,~w(group_id label evidence_identity))),"recipes"=>recipes})
+  def prepare_proposal(s,c,cmd,automatic \\ false) do
+    if not config(c)["enabled"],do: D.fail("UNAVAILABLE")
+    cases=prepare_cases(s,c,cmd["training_attempt_ids"],"training",automatic)
+    v=config(c);if length(cases)<v["min_training_groups"],do: D.fail("MIN_EVIDENCE")
+    gaps=Enum.count(cases,fn item->
+      a=B.lookup(s,item["attempt_id"]);original=B.source_run(s,a);search=original["search"]
+      a["value"]["status"]=="completed" and search != nil and search["status"]=="completed" and search["error"]==nil and B.adjudicated(a,item["label"]) in ~w(confirmed_retrieval_gap confirmed_context_assembly_gap)
+    end)
+    positives=Enum.count(cases,&(&1["label"]["expectation"] in ~w(supported conflicting)))
+    if gaps<v["recurrence_groups"] or positives<v["min_positive_training"],do: D.fail("MIN_EVIDENCE")
+    baseline=X.effective(X.resolve(c,s))["recipe"];recipes=neighbors(baseline,v["max_variants"])
+    %{"cases"=>cases,"recipes"=>recipes,"baseline"=>baseline,"policy"=>policy(c,s),"signature"=>signature(c,s,cases,recipes),"base_identity"=>S.base_identity(c),"selection_revision"=>s.retrieval_selection["revision"]}
+  end
+  def cases_current?(s,c,cases) do
+    feedback=s.feedback
+    Enum.all?(cases,fn item->
+      a=s.feedback["attempts"][item["attempt_id"]];label=B.latest(s,item["attempt_id"]);group=if a,do: G.find(feedback,a)
+      a != nil and Map.has_key?(c["agents"],item["owner_id"]) and label==item["label"] and a["value"]["evidence_identity"]==item["evidence_identity"] and group != nil and group["value"]["id"]==item["group_id"] and group["keys"]==item["group_keys"]
+    end)
+  end
+  def build_zero,do: %{"status"=>"unstarted","indexed"=>0,"total"=>0,"processed"=>0,"reused"=>0,"watermark"=>nil,"native_bytes"=>0,"manifest_identity"=>nil,"error"=>nil}
+  def variant(recipe,baseline),do: %{"recipe"=>recipe,"recipe_identity"=>X.recipe_identity(recipe),"changes_index"=>structural(recipe) != structural(baseline),"status"=>"pending","summary"=>nil,"error"=>nil}
+  def new(s,c,cmd,p,prepared) do
+    if prepared["base_identity"] != S.base_identity(c) or prepared["selection_revision"] != s.retrieval_selection["revision"] or prepared["policy"] != policy(c,s) or not cases_current?(s,c,prepared["cases"]),do: D.fail("CONFIG_CONFLICT")
+    existing=s.optimization["signatures"][prepared["signature"]]
+    if existing do {%{"proposal"=>public(lookup(s,existing))},s} else
+      if not config(c)["enabled"],do: D.fail("UNAVAILABLE")
+      if map_size(s.optimization["proposals"])>=config(c)["max_proposals"] or Enum.count(s.optimization["proposals"],fn {_,q}->active?(q) end)>=config(c)["max_active_proposals"],do: D.fail("RESOURCE_EXHAUSTED")
+      seq=s.seq+1;now=D.now();{id,s}=ADHD.Allocator.allocate(s,"proposal")
+      kind=if p["id"]=="optimizer",do: "automatic",else: if(p["id"]=="legacy-admin",do: "legacy_token",else: "human_session")
+      q=%{"id"=>id,"seq"=>seq,"operation"=>"optimize","created_at"=>now,"updated_at"=>now,"requester_kind"=>kind,"requester_id"=>p["id"],"status"=>"pending","phase"=>"training","run"=>1,"base_identity"=>prepared["base_identity"],"base_recipe"=>S.base(c),"baseline_recipe"=>prepared["baseline"],"selection_revision"=>prepared["selection_revision"],"policy_identity"=>prepared["policy"],"runtime"=>X.normalization(),"training"=>prepared["cases"],"held_out"=>[],"regression"=>[],"variants"=>Enum.map(prepared["recipes"],&variant(&1,prepared["baseline"])),"winner_identity"=>nil,"signature"=>prepared["signature"],"budget"=>Map.merge(config(c)["budget"],Map.get(cmd,"budget",%{})),"usage"=>H.usage_zero(),"base_usage"=>H.usage_zero(),"children"=>[],"child_paid"=>%{},"cases"=>[],"evaluation"=>nil,"build"=>build_zero(),"generation"=>nil,"index_manifest"=>nil,"watermark"=>nil,"evidence_available"=>true,"global_evidence_available"=>false,"error"=>nil,"cursor"=>%{"variant"=>0,"case"=>0},"history"=>[]}
+      next=put(%{s|seq: seq},q) |> put_in([:optimization,"signatures",q["signature"]],id) |> put_in([:optimization,"last_proposal_at"],now)
+      if not capacity?(next,c),do: D.fail("RESOURCE_EXHAUSTED")
+      {%{"proposal"=>public(q)},next}
+    end
+  end
+  def selected_cases(q),do: q["training"]++q["held_out"]++q["regression"]
+  def case_guard(s,c,cases) do
+    Enum.find_value(cases,fn item->
+      a=s.feedback["attempts"][item["attempt_id"]];group=if a,do: G.find(s.feedback,a)
+      cond do
+        not Map.has_key?(c["agents"],item["owner_id"])->"OWNER_REMOVED"
+        a==nil->"MISSING_ORIGINALS"
+        B.latest(s,item["attempt_id"]) != item["label"] or a["value"]["evidence_identity"] != item["evidence_identity"]->"LABEL_CHANGED"
+        group==nil or group["value"]["id"] != item["group_id"] or group["keys"] != item["group_keys"]->"COHORT_CHANGED"
+        true->nil
+      end
+    end)
+  end
+  def guard(s,c,q) do
+    cond do
+      S.base_identity(c) != q["base_identity"]->"BASE_CHANGED"
+      s.retrieval_selection["revision"] != q["selection_revision"]->"SELECTION_CHANGED"
+      policy(c,s) != q["policy_identity"]->"POLICY_CHANGED"
+      true->case_guard(s,c,selected_cases(q))
+    end
+  end
+  def stop(q,status,code,retryable \\ false),do: Map.merge(q,%{"status"=>status,"error"=>error(code,retryable),"updated_at"=>D.now()})
+  def public(q,opts \\ %{}) do
+    summary=Map.take(q,~w(id operation created_at updated_at requester_kind requester_id status phase run base_identity selection_revision baseline_recipe winner_identity signature budget evaluation build evidence_available error))
+    summary=Map.merge(summary,%{"training_groups"=>length(q["training"]),"held_out_groups"=>length(q["held_out"]),"regression_groups"=>length(q["regression"]),"usage"=>H.usage_public(q),"continuable"=>q["status"]=="partial" and q["run"]<16 and q["evidence_available"]})
+    if opts["summary"] do summary else
+      offset=Map.get(opts,"offset",0);limit=Map.get(opts,"limit",16)
+      {cases,_}=Enum.drop(q["cases"],offset) |> Enum.reduce_while({[],0},fn row,{acc,n}->size=byte_size(JSON.encode!(row));if length(acc)>=limit or n+size>262144,do: {:halt,{acc,n}},else: {:cont,{acc++[row],n+size}} end)
+      Map.merge(summary,%{"base_recipe"=>q["base_recipe"],"policy_identity"=>q["policy_identity"],"runtime"=>q["runtime"],"training_attempt_ids"=>Enum.map(q["training"],& &1["attempt_id"]),"held_out_attempt_ids"=>Enum.map(q["held_out"],& &1["attempt_id"]),"regression_attempt_ids"=>Enum.map(q["regression"],& &1["attempt_id"]),"variants"=>q["variants"],"children"=>q["children"],"cases"=>cases,"case_count"=>length(q["cases"]),"next_offset"=>if(offset+length(cases)<length(q["cases"]),do: offset+length(cases),else: nil),"index_manifest"=>q["index_manifest"],"watermark"=>q["watermark"],"global_evidence_available"=>q["global_evidence_available"]})
+    end
+  end
+  def prepare_evaluation(s,c,cmd) do
+    q=lookup(s,cmd["proposal_id"]);D.check(q["status"]=="awaiting_evaluation" and q["winner_identity"] != nil)
+    held=prepare_cases(s,c,cmd["held_out_attempt_ids"],"held_out");regression=prepare_cases(s,c,cmd["regression_attempt_ids"],"regression")
+    all=q["training"]++held++regression;D.check(length(Enum.uniq_by(all,& &1["group_id"]))==length(all));v=config(c)
+    positive=Enum.count(held,&(&1["label"]["expectation"] in ~w(supported conflicting)))
+    final=held++regression
+    noev=Enum.count(final,fn item->a=B.lookup(s,item["attempt_id"]);item["label"]["expectation"]=="no_evidence" and a["primary_ids"] != [] end)
+    neg=Enum.count(final,&("negation" in &1["label"]["tags"]));correction=Enum.count(final,&("correction" in &1["label"]["tags"]))
+    if length(held)<v["min_held_out_groups"] or length(regression)<v["min_regression_groups"] or positive<v["min_positive_held_out"] or noev<v["min_no_evidence_controls"] or neg<v["min_negation_controls"] or correction<v["min_correction_controls"],do: D.fail("MIN_EVIDENCE")
+    feedback=Map.put(s.feedback,"cohorts",G.build(s.feedback))
+    for item<-held do
+      group=G.find(feedback,B.lookup(s,item["attempt_id"]))
+      if group["value"]["exposed"],do: D.fail("HELD_OUT_EXPOSED")
+    end
+    %{"held_out"=>held,"regression"=>regression,"proposal_identity"=>F.digest(Map.drop(q,~w(updated_at))),"policy"=>policy(c,s)}
+  end
+  def evaluate(s,c,cmd,prepared) do
+    q=lookup(s,cmd["proposal_id"]);D.check(q["status"]=="awaiting_evaluation")
+    if prepared["proposal_identity"] != F.digest(Map.drop(q,~w(updated_at))) or prepared["policy"] != policy(c,s) or guard(s,c,q) != nil or not cases_current?(s,c,prepared["held_out"]++prepared["regression"]),do: D.fail("CONFIG_CONFLICT")
+    exposure=%{"job_id"=>q["id"],"kind"=>"optimization","recipe_identity"=>q["winner_identity"],"policy_identity"=>q["policy_identity"],"created_at"=>D.now()}
+    feedback=s.feedback |> Map.put("cohorts",G.build(s.feedback))
+    feedback=Enum.reduce(prepared["held_out"],feedback,fn item,acc->G.expose(acc,B.lookup(s,item["attempt_id"]),exposure) end)
+    index=Enum.find_index(q["variants"],&(&1["recipe_identity"]==q["winner_identity"]))
+    next=Map.merge(q,%{"held_out"=>prepared["held_out"],"regression"=>prepared["regression"],"status"=>"pending","phase"=>"evaluating","cursor"=>%{"variant"=>index,"case"=>0},"updated_at"=>D.now(),"error"=>nil})
+    state=put(%{s|feedback: feedback},next);if not capacity?(state,c),do: D.fail("RESOURCE_EXHAUSTED")
+    {%{"proposal"=>public(next)},state}
+  end
+  def sync(s,q) do
+    Enum.reduce(q["children"],q,fn ref,job->
+      main=s.replay_queries[ref["replay_id"]]
+      pair=if main do if main["run"]==ref["run"],do: main,else: main["prior"][Integer.to_string(ref["run"])] end
+      if pair do
+        costs=ADHD.Replay.usage(pair)["total"];paid=Map.get(job["child_paid"],ref["replay_id"],H.usage_zero())
+        job=Enum.reduce(Map.keys(H.usage_zero()),job,fn key,acc->update_in(acc,["usage",key],&(&1+max(0,costs["cumulative_"<>key]-paid[key]))) end)
+        put_in(job,["child_paid",ref["replay_id"]],Map.new(Map.keys(H.usage_zero()),&{&1,costs["cumulative_"<>&1]}))
+      else job end
+    end)
+  end
+  def children_current?(s,q),do: Enum.all?(q["children"],fn ref->child=s.replay_queries[ref["replay_id"]];child != nil and child["run"]==ref["run"] and child["evidence_available"] and child["requester_kind"]=="optimization" and child["requester_id"]==q["id"] and child["attempt_id"]==ref["attempt_id"] and child["candidate"]["recipe_identity"]==ref["variant_identity"] and child["baseline"]["recipe"]==q["baseline_recipe"] and child["status"] != "cancelled" end)
+  def blocked_history(s,c) do
+    Enum.reduce(s.optimization["proposals"],MapSet.new(),fn {_,parent},blocked->
+      if not config(c)["enabled"] or parent["status"] != "pending" or guard(s,c,parent) != nil do
+        Enum.reduce(parent["children"],blocked,fn ref,acc->
+          child=s.replay_queries[ref["replay_id"]]
+          if child != nil and child["run"]==ref["run"] and child["requester_kind"]=="optimization" and child["requester_id"]==parent["id"] do
+            Enum.reduce(Map.values(child["children"]),acc,fn h,set->if h,do: MapSet.put(set,{h["query_id"],h["run"]}),else: set end)
+          else acc end
+        end)
+      else blocked end
+    end)
+  end
+  def history_allowed?(s,c,q),do: not MapSet.member?(blocked_history(s,c),{q["id"],q["run"]})
+  def cancel_children(s,q) do
+    Enum.reduce(q["children"],s,fn ref,state->child=state.replay_queries[ref["replay_id"]]
+      if child != nil and child["run"]==ref["run"] and ADHD.Replay.active?(child) do
+        {state,child}=ADHD.Replay.cancel(state,child);ADHD.Replay.put(state,child)
+      else state end
+    end)
+  end
+  def cancel(s,q) do
+    if active?(q) do
+      state=cancel_children(s,q);q=sync(state,q) |> stop("cancelled","CANCELLED");{state,Map.put(q,"generation",nil)}
+    else {s,q} end
+  end
+  def raw_available?(s,q) do
+    q["evidence_available"] and Enum.all?(q["children"],fn ref->
+      child=s.replay_queries[ref["replay_id"]]
+      run=if child,do: if(child["run"]==ref["run"],do: child,else: child["prior"][Integer.to_string(ref["run"])])
+      run != nil and run["evidence_available"]
+    end)
+  end
+  def refresh(s,c,q) do
+    q=Map.put(q,"evidence_available",raw_available?(s,q))
+    if q["global_evidence_available"] and q["generation"]==nil do
+      raw=Enum.any?([s.retrieval_index["active"],s.retrieval_index["previous"]],fn gen->gen != nil and q["index_manifest"] != nil and gen["manifest"]["id"]==q["index_manifest"]["id"] end)
+      refresh_current(s,c,Map.put(q,"global_evidence_available",raw))
+    else refresh_current(s,c,q) end
+  end
+  defp refresh_current(s,c,q) do
+    if q["status"] in ~w(pending awaiting_evaluation qualified partial) do
+      code=guard(s,c,q) || if(not children_current?(s,q),do: "CHILD_CHANGED")
+      if code do state=cancel_children(s,q);{state,sync(state,q) |> stop("invalidated",code)} else {s,sync(s,q)} end
+    else {s,q} end
+  end
+  def continue(s,c,cmd) do
+    q=lookup(s,cmd["proposal_id"]);D.check(q["status"]=="partial" and q["evidence_available"] and q["run"]<16)
+    if guard(s,c,q) != nil or not children_current?(s,q),do: D.fail("CONFIG_CONFLICT")
+    q=sync(s,q);history=q["history"]++[%{"run"=>q["run"],"status"=>q["status"],"error"=>q["error"],"usage"=>H.usage_public(q),"at"=>D.now()}]
+    next=q |> Map.merge(%{"status"=>"pending","error"=>nil,"run"=>q["run"]+1,"history"=>history,"updated_at"=>D.now(),"budget"=>Map.merge(config(c)["budget"],Map.get(cmd,"budget",%{})),"retry_failed"=>Map.get(cmd,"retry_failed",false)})
+    {%{"proposal"=>public(next)},put(s,next)}
+  end
+  def retire(s,c,cmd) do
+    q=lookup(s,cmd["proposal_id"]);D.check(q["status"] not in ~w(pending))
+    state=cancel_children(s,q)
+    state=Enum.reduce(q["children"],state,fn ref,acc->child=acc.replay_queries[ref["replay_id"]]
+      if child != nil and child["run"]==ref["run"] and child["status"] != "pending" and child["requester_id"]==q["id"] do elem(ADHD.Replay.retire(acc,c,%{"query_id"=>child["id"]}),1) else acc end
+    end)
+    next=sync(state,q) |> Map.merge(%{"status"=>"retired","phase"=>"done","generation"=>nil,"evidence_available"=>false,"global_evidence_available"=>false,"updated_at"=>D.now()})
+    {%{"proposal"=>public(next)},put(state,next)}
+  end
+  def status(s,c,prepared) do
+    %{"enabled"=>config(c)["enabled"],"mode"=>config(c)["mode"],"proposals"=>map_size(s.optimization["proposals"]),"active"=>Enum.count(s.optimization["proposals"],fn {_,q}->active?(q) end),"eligible_training_groups"=>prepared["training"],"fresh_held_out_groups"=>prepared["held"],"regression_groups"=>prepared["regression"],"last_proposal_at"=>s.optimization["last_proposal_at"],"last_error"=>s.optimization["last_error"],"selection"=>S.view(s,c),"state_bytes"=>state_bytes(s)}
+  end
+  defp principal(headers,c) do
+    p=ADHD.Identity.principal(headers,c);if p["role"] != "Admin",do: D.fail("FORBIDDEN");p
+  end
+  defp cached(s,cmd,actor) do
+    if is_binary(cmd["message_id"]) do
+      case s.admin_idempotency[{actor,cmd["message_id"]}] do nil->:miss;%{command: ^cmd,result: r}->{:hit,r};_->D.fail("IDEMPOTENCY_CONFLICT") end
+    else :miss end
+  end
+  def manage(cmd,headers) do
+    c=ADHD.Config.get();principal(headers,c)
+    found=ADHD.Store.call(fn s->{cached(s,cmd,principal(headers,ADHD.Config.get())["id"]),s} end) |> ADHD.Store.unwrap()
+    case found do
+      {:hit,r}->r
+      :miss->
+        snapshot=ADHD.Store.snapshot() |> ADHD.Store.unwrap()
+        prepared=case cmd["op"] do
+          "propose_index"->prepare_proposal(snapshot,c,cmd)
+          "evaluate_index"->prepare_evaluation(snapshot,c,cmd)
+          "optimization_status"->
+            groups=G.build(snapshot.feedback) |> Map.values();%{"training"=>Enum.count(groups,&(&1["value"]["cohort"]=="training")),"held"=>Enum.count(groups,&(&1["value"]["cohort"]=="held_out" and not &1["value"]["exposed"])),"regression"=>Enum.count(groups,&(&1["value"]["cohort"]=="regression"))}
+          _->nil
+        end
+        result=ADHD.Store.call(fn s->
+          now=ADHD.Config.get();p=principal(headers,now)
+          case cached(s,cmd,p["id"]) do
+            {:hit,r}->{r,s}
+            :miss->
+              if cmd["op"] not in @reads and cmd["expected_revision"] != now["config_revision"],do: D.fail("CONFIG_CONFLICT")
+              {r,state}=admin(s,now,cmd,p,prepared)
+              state=if cmd["op"] in @reads,do: state,else: put_in(state,[:admin_idempotency,{p["id"],cmd["message_id"]}],%{command: cmd,result: r})
+              {r,state}
+          end
+        end)
+        case result do {:error,"CONFIG_CONFLICT"}->throw({:config_conflict,ADHD.Config.get()["config_revision"]});_->ADHD.Store.unwrap(result) end
+    end
+  end
+  def admin(s,c,cmd,p,prepared) do
+    case cmd["op"] do
+      "optimization_status"->{%{"status"=>status(s,c,prepared)},s}
+      "index_proposals"->
+        rows=s.optimization["proposals"] |> Map.values() |> Enum.filter(&(cmd["status"]==nil or &1["status"]==cmd["status"])) |> Enum.sort_by(&{-&1["seq"],&1["id"]})
+        offset=Map.get(cmd,"offset",0);limit=Map.get(cmd,"limit",16);items=Enum.slice(rows,offset,limit) |> Enum.map(&public(&1,%{"summary"=>true}))
+        {%{"items"=>items,"next_offset"=>if(offset+length(items)<length(rows),do: offset+length(items),else: nil)},s}
+      "index_proposal"->q=lookup(s,cmd["proposal_id"]);{s,q}=refresh(s,c,q);{%{"proposal"=>public(q,cmd)},put(s,q)}
+      "propose_index"->new(s,c,cmd,p,prepared)
+      "evaluate_index"->evaluate(s,c,cmd,prepared)
+      "continue_index_proposal"->continue(s,c,cmd)
+      "cancel_index_proposal"->q=lookup(s,cmd["proposal_id"]);{state,q}=cancel(s,q);{%{"proposal"=>public(q)},put(state,q)}
+      "retire_index_proposal"->retire(s,c,cmd)
+      "reset_index_selection"->
+        if cmd["expected_selection_revision"] != s.retrieval_selection["revision"],do: D.fail("CONFIG_CONFLICT")
+        state=S.reset(s,D.opaque());{%{"selection"=>S.view(state,c)},state}
+      "promote_index"->ADHD.OptimizationWorker.promote(s,c,cmd,p)
+      "rollback_index"->ADHD.OptimizationWorker.rollback(s,c,cmd,p)
+    end
+  end
+  def upgrade(s) do
+    value=s.optimization;fields = ~w(schema proposals signatures last_proposal_at last_error);D.keys(value,fields,fields);D.check(value["schema"]==1);D.object(value["proposals"]);D.object(value["signatures"]);D.check(map_size(value["proposals"])<=1024)
+    for {id,q}<-value["proposals"] do
+      fields = ~w(id seq operation created_at updated_at requester_kind requester_id status phase run base_identity base_recipe baseline_recipe selection_revision policy_identity runtime training held_out regression variants winner_identity signature budget usage base_usage children child_paid cases evaluation build generation index_manifest watermark evidence_available global_evidence_available error cursor history)
+      D.keys(q,fields++["retry_failed"],fields);D.check(q["phase"] in ~w(training awaiting_evaluation evaluating building ready done));D.integer(q["selection_revision"],0,9007199254740991);D.string(q["runtime"],128)
+      for key<-~w(evidence_available global_evidence_available),do: D.boolean(q[key])
+      D.keys(q["cursor"],~w(variant case),~w(variant case));D.integer(q["cursor"]["variant"],0,8);D.integer(q["cursor"]["case"],0,128);D.list(q["history"],15);D.object(q["child_paid"])
+      for cohort<-~w(training held_out regression) do
+        D.list(q[cohort],64);D.distinct(Enum.map(q[cohort],& &1["group_id"]))
+        for item<-q[cohort],do: D.check(item["cohort"]==cohort and is_list(item["group_keys"]))
+      end
+      D.distinct(Enum.map(selected_cases(q),& &1["group_id"]))
+      D.distinct(Enum.map(q["children"],& &1["replay_id"]))
+      for ref<-q["children"] do
+        fields = ~w(replay_id run attempt_id cohort variant_identity last_status);D.keys(ref,fields,fields);D.id(ref["replay_id"]);D.integer(ref["run"],1,16);D.check(ref["cohort"] in ~w(training held_out regression));D.check(Enum.any?(q[ref["cohort"]],&(&1["attempt_id"]==ref["attempt_id"])))
+      end
+      D.check(id==q["id"]);D.id(id);D.integer(q["seq"],0,s.seq);D.integer(q["run"],1,16);D.check(q["status"] in @statuses and q["operation"] in ~w(optimize rollback));D.check(q["requester_kind"] in ~w(human_session legacy_token automatic));D.id(q["requester_id"])
+      D.datetime(q["created_at"],true);D.datetime(q["updated_at"],true);X.validate_recipe(q["baseline_recipe"]);X.validate_recipe(q["base_recipe"]);validate_budget(q["budget"])
+      for key<-~w(base_identity policy_identity signature),do: D.check(Regex.match?(~r/\A[a-f0-9]{64}\z/,q[key]))
+      D.list(q["variants"],8);D.list(q["children"],640);D.list(q["cases"],640)
+      for item<-q["variants"],do: X.validate_recipe(item["recipe"])
+      for item<-selected_cases(q) do
+        a=B.lookup(s,item["attempt_id"]);D.check(item["label"] in Map.get(s.feedback["labels"],item["attempt_id"],[]) and item["evidence_identity"]==a["value"]["evidence_identity"] and item["snapshot"]==a["value"]["snapshot"])
+      end
+      for usage<-[q["usage"],q["base_usage"]] do D.keys(usage,Map.keys(H.usage_zero()),Map.keys(H.usage_zero()));for n<-Map.values(usage),do: D.integer(n,0,9007199254740991) end
+    end
+    proposals=Map.new(value["proposals"],fn {id,q}->
+      if q["generation"] do
+        checked=ADHD.RetrievalIndex.upgrade(%{s|retrieval_index: Map.put(ADHD.RetrievalIndex.empty(),"active",q["generation"])})
+        if checked.retrieval_index["active"]==nil do
+          {id,q |> Map.merge(%{"generation"=>nil,"global_evidence_available"=>false}) |> stop("partial","GENERATION_UNAVAILABLE",true)}
+        else {id,q} end
+      else {id,q} end
+    end)
+    put_in(s,[:optimization,"proposals"],proposals)
+  end
+
+end

@@ -1,0 +1,344 @@
+defmodule ADHD.TLSCertificate do
+  require Record
+  Record.defrecordp(:certificate, :OTPCertificate, Record.extract(:OTPCertificate, from_lib: "public_key/include/OTP-PUB-KEY.hrl"))
+  Record.defrecordp(:tbs, :OTPTBSCertificate, Record.extract(:OTPTBSCertificate, from_lib: "public_key/include/OTP-PUB-KEY.hrl"))
+  Record.defrecordp(:validity, :Validity, Record.extract(:Validity, from_lib: "public_key/include/OTP-PUB-KEY.hrl"))
+  alias ADHD.Domain, as: D
+
+  def load(chain, key, domains, allow_expired \\ false) do
+    D.check(byte_size(chain) <= 1_048_576 and byte_size(key) <= 65_536)
+    entries = pem_entries(chain)
+    certs = Enum.map(entries, fn {:Certificate, der, :not_encrypted} -> der end)
+    D.check(length(certs) in 1..10)
+    [leaf | _] = certs
+    cert = :public_key.pkix_decode_cert(leaf, :otp)
+    body = certificate(cert, :tbsCertificate)
+    D.integer(tbs(body, :serialNumber), 1, :erlang.bsl(1, 159) - 1)
+    times = tbs(body, :validity)
+    before = time(validity(times, :notBefore))
+    expires = time(validity(times, :notAfter))
+    D.check(before <= D.ms() and (allow_expired or expires > D.ms()))
+    extensions = tbs(body, :extensions)
+    extensions = if is_list(extensions), do: extensions, else: []
+    D.distinct(Enum.map(extensions, &elem(&1, 1)))
+    [sans] = for {:Extension, {2,5,29,17}, _, values} <- extensions, do: values
+    names = Enum.map(sans, fn {:dNSName, name} -> to_string(name) end)
+    D.check(Enum.sort(names) == Enum.sort(domains))
+    for {:Extension, {2,5,29,37}, _, uses} <- extensions, do: D.check({1,3,6,1,5,5,7,3,1} in uses)
+    for {:Extension, oid, true, _} <- extensions, do: D.check(oid in [{2,5,29,15}, {2,5,29,17}, {2,5,29,19}, {2,5,29,37}])
+    for {:Extension, {2,5,29,15}, _, uses} <- extensions, do: D.check(:digitalSignature in uses)
+    for {:Extension, {2,5,29,19}, _, constraints} <- extensions, do: D.check(elem(constraints, 1) != true)
+    Enum.each(domains, fn domain -> D.check(covers?(cert, domain)) end)
+    validate_path(certs, cert, allow_expired)
+    Enum.chunk_every(certs, 2, 1, :discard) |> Enum.each(fn [child, issuer] ->
+      issuer_cert = :public_key.pkix_decode_cert(issuer, :otp)
+      D.check(:public_key.pkix_is_issuer(:public_key.pkix_decode_cert(child, :otp), issuer_cert))
+      D.check(:public_key.pkix_verify(child, public_key(issuer_cert)))
+    end)
+    [entry] = pem_entries(key)
+    private = :public_key.pem_entry_decode(entry)
+    public = public_key(cert)
+    proof = :crypto.strong_rand_bytes(32)
+    D.check(:public_key.verify(proof, :sha256, :public_key.sign(proof, :sha256, private), public))
+    %{cert: cert, certs: certs, key: {elem(entry, 0), elem(entry, 1)},
+      domains: domains, expires: expires,
+      metadata: %{"sha256" => :crypto.hash(:sha256, leaf) |> Base.encode16(case: :lower),
+        "serial" => Integer.to_string(tbs(body, :serialNumber), 16) |> String.downcase(),
+        "not_before" => before, "not_after" => expires}}
+  end
+
+  # Consume every non-whitespace byte, rather than pem_decode's permissive
+  # search for usable blocks amid arbitrary prefix/suffix material.
+  def pem_entries(bytes) when is_binary(bytes) do
+    pem_blocks(bytes, []) |> Enum.reverse()
+  end
+  defp pem_blocks(bytes, entries) do
+    bytes = Regex.replace(~r/\A[ \t\r\n]*/, bytes, "")
+    if bytes == "" do
+      entries
+    else
+      D.check(length(entries) < 32)
+      [_, block, _label, rest] = Regex.run(~r/\A(-----BEGIN ([A-Z0-9 ]+)-----[ \t\r\n]+[A-Za-z0-9+\/= \t\r\n]+-----END \2-----)([\s\S]*)\z/, bytes)
+      [entry] = :public_key.pem_decode(block)
+      pem_blocks(rest, [entry | entries])
+    end
+  end
+
+  defp validate_path([_], _, _), do: :ok
+  defp validate_path(certs, leaf, allow_expired) do
+    last = List.last(certs)
+    issuer = :public_key.pkix_decode_cert(last, :otp)
+    body = certificate(issuer, :tbsCertificate)
+    validity = tbs(body, :validity)
+    D.check(time(validity(validity, :notBefore)) <= D.ms() and time(validity(validity, :notAfter)) > D.ms())
+    extensions = tbs(body, :extensions)
+    [{:BasicConstraints, true, path_length}] = for {:Extension, {2,5,29,19}, _, value} <- extensions, do: value
+    D.check(path_length == :asn1_NOVALUE or (is_integer(path_length) and path_length >= length(certs) - 2))
+    for {:Extension, {2,5,29,15}, _, uses} <- extensions, do: D.check(:keyCertSign in uses)
+    for {:Extension, {2,5,29,37}, _, uses} <- extensions, do: D.check({1,3,6,1,5,5,7,3,1} in uses)
+    # The final supplied issuer is an explicit structural anchor, not an added
+    # client trust root. Fail closed on critical anchor constraints we cannot apply.
+    for {:Extension, oid, true, _} <- extensions, do: D.check(oid in [{2,5,29,15}, {2,5,29,19}, {2,5,29,37}])
+    verify = fn current, event, state ->
+      case event do
+        {:bad_cert, :cert_expired} -> if allow_expired and current == leaf, do: {:valid, state}, else: {:fail, :cert_expired}
+        {:bad_cert, reason} -> {:fail, reason}
+        {:extension, _} -> {:unknown, state}
+        _ -> {:valid, state}
+      end
+    end
+    {:ok, _} = :public_key.pkix_path_validation(last, Enum.reverse(Enum.drop(certs, -1)), [{:verify_fun, {verify, nil}}])
+    :ok
+  end
+
+  defp public_key(cert) do
+    {:OTPSubjectPublicKeyInfo, {:PublicKeyAlgorithm, algorithm, parameters}, public} = tbs(certificate(cert, :tbsCertificate), :subjectPublicKeyInfo)
+    D.check(algorithm in [{1,2,840,113549,1,1,1}, {1,2,840,10045,2,1}])
+    case public do
+      {:ECPoint, _} ->
+        D.check(parameters in [{:namedCurve, {1,2,840,10045,3,1,7}}, {:namedCurve, {1,3,132,0,34}}])
+        {public, parameters}
+      {:RSAPublicKey, modulus, exponent} ->
+        D.check(modulus >= :erlang.bsl(1, 2047) and modulus < :erlang.bsl(1, 8192) and exponent >= 65537 and exponent <= 4294967295)
+        public
+    end
+  end
+
+  def covers?(cert, name), do: :public_key.pkix_verify_hostname(cert, [{:dns_id, String.to_charlist(name)}])
+  def live?(nil), do: false
+  def live?(cert), do: cert.metadata["not_before"] <= D.ms() and cert.expires > D.ms()
+  def options(cert) do
+    [certs_keys: [%{cert: cert.certs, key: cert.key}], versions: [:"tlsv1.3", :"tlsv1.2"],
+      reuse_sessions: false, active: false, mode: :binary,
+      sni_fun: fn name ->
+        if live?(cert) and covers?(cert.cert, to_string(name)), do: [], else: :unrecognized
+      end]
+  end
+
+  defp time({kind, value}) when kind in [:utcTime, :generalTime] do
+    value = to_string(value)
+    full = if kind == :utcTime do
+      {year, _} = Integer.parse(binary_part(value, 0, 2))
+      (if year >= 50, do: "19", else: "20") <> value
+    else
+      value
+    end
+    <<year::binary-size(4), month::binary-size(2), day::binary-size(2), hour::binary-size(2), minute::binary-size(2), second::binary-size(2), "Z">> = full
+    {:ok, date} = Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day))
+    {:ok, time} = Time.new(String.to_integer(hour), String.to_integer(minute), String.to_integer(second))
+    {:ok, result} = DateTime.new(date, time, "Etc/UTC")
+    DateTime.to_unix(result, :millisecond)
+  end
+end
+
+defmodule ADHD.ACMEFiles do
+  alias ADHD.Domain, as: D
+  @private_max 2_097_152
+  @tree_max 1_073_741_824
+  @tree_records 100_000
+
+  def directory(path) do
+    path = Path.expand(path)
+    parents = parents_snapshot(path)
+    created = case File.lstat(path) do
+      {:error, :enoent} ->
+        :ok = File.mkdir(path)
+        File.chmod!(path, 0o700)
+        true
+      {:ok, %{type: :directory, uid: uid, mode: mode}} ->
+        D.check(uid == owner() and Bitwise.band(mode, 0o077) == 0)
+        false
+      _ -> D.fail("CONFIG_APPLY_FAILED")
+    end
+    D.check(parents_snapshot(path) == parents)
+    if created do
+      sync_directory(path)
+      # A generation entry must reach its parent before state.json names it.
+      sync_directory(Path.dirname(path))
+    end
+    path
+  end
+
+  def read(path), do: bounded_read(path, @private_max, true)
+  def read(path, maximum) when is_integer(maximum) and maximum > 0 and maximum <= @private_max,
+    do: bounded_read(path, maximum, true)
+
+  defp bounded_read(path, maximum, private) do
+    path = Path.expand(path)
+    parents = parents_snapshot(path)
+    before = regular(path, private)
+    D.check(before.size >= 0 and before.size <= maximum)
+    {:ok, file} = :file.open(String.to_charlist(path), [:read, :binary, :raw])
+    try do
+      D.check(identity(handle_stat(file)) == identity(before))
+      bytes = case :file.read(file, maximum + 1) do
+        {:ok, value} -> value
+        :eof -> <<>>
+        _ -> D.fail("CONFIG_APPLY_FAILED")
+      end
+      D.check(byte_size(bytes) == before.size and byte_size(bytes) <= maximum)
+      :eof = :file.read(file, 1)
+      D.check(identity(handle_stat(file)) == identity(before))
+      D.check(identity(regular(path, private)) == identity(before))
+      D.check(parents_snapshot(path) == parents)
+      bytes
+    after
+      :file.close(file)
+    end
+  end
+
+  def write(path, bytes) do
+    D.check(is_binary(bytes) and byte_size(bytes) <= @private_max)
+    path = Path.expand(path)
+    parents = parents_snapshot(path)
+    before = target_identity(path)
+    temporary = path <> "." <> D.opaque()
+    {:ok, file} = :file.open(String.to_charlist(temporary), [:write, :binary, :exclusive, :raw])
+    try do
+      opened = handle_stat(file)
+      # O_EXCL refuses a preexisting temporary symlink. Content is written only
+      # after privacy and opened-handle/path identity have been established.
+      D.check(opened.type == :regular and opened.uid == owner() and opened.links == 1)
+      D.check(entry(File.lstat!(temporary)) == entry(opened))
+      File.chmod!(temporary, 0o600)
+      private = handle_stat(file)
+      D.check(Bitwise.band(private.mode, 0o7777) == 0o600)
+      D.check(entry(private) == entry(opened))
+      :ok = :file.write(file, bytes)
+      :ok = :file.sync(file)
+      written = handle_stat(file)
+      D.check(written.size == byte_size(bytes) and entry(written) == entry(opened))
+      D.check(identity(regular(temporary, true)) == identity(written))
+      D.check(parents_snapshot(path) == parents and target_identity(path) == before)
+      File.rename!(temporary, path)
+      renamed = handle_stat(file)
+      D.check(entry(renamed) == entry(written) and renamed.size == written.size and renamed.mode == written.mode)
+      D.check(identity(regular(path, true)) == identity(renamed))
+      sync_directory(Path.dirname(path))
+      :ok
+    after
+      # Only remove the still-open inode; an observed substituted object stays.
+      try do
+        current_handle = handle_stat(file)
+        case File.lstat(temporary) do
+          {:ok, current} -> if entry(current) == entry(current_handle), do: File.rm(temporary)
+          _ -> :ok
+        end
+      after
+        :file.close(file)
+      end
+    end
+  end
+
+  def harden_tree(path) do
+    path = Path.expand(path)
+    parents = parents_snapshot(path)
+    harden(path, 0, {0, 0})
+    D.check(parents_snapshot(path) == parents)
+    :ok
+  end
+
+  defp harden(path, depth, {records, bytes}) do
+    D.check(depth <= 32 and records < @tree_records)
+    case File.lstat!(path) do
+      %{type: :directory, uid: uid} = before ->
+        D.check(uid == owner())
+        File.chmod!(path, 0o700)
+        D.check(entry(File.lstat!(path)) == entry(before))
+        names = File.ls!(path) |> Enum.sort()
+        result = Enum.reduce(names, {records + 1, bytes}, fn name, acc ->
+          D.check(name not in [".", ".."] and not String.contains?(name, ["/", <<0>>]))
+          harden(Path.join(path, name), depth + 1, acc)
+        end)
+        D.check(Enum.sort(File.ls!(path)) == names and entry(File.lstat!(path)) == entry(before))
+        # Persist descendant file data/modes first, then their directory entries.
+        sync_directory(path)
+        result
+      %{type: :regular, uid: uid, links: 1, size: size} = before ->
+        D.check(uid == owner() and size <= @private_max and bytes + size <= @tree_max)
+        {:ok, file} = :file.open(String.to_charlist(path), [:read, :binary, :raw])
+        try do
+          D.check(identity(handle_stat(file)) == identity(before))
+          File.chmod!(path, 0o600)
+          current = handle_stat(file)
+          D.check(entry(current) == entry(before) and Bitwise.band(current.mode, 0o7777) == 0o600)
+          :ok = :file.sync(file)
+          D.check(identity(handle_stat(file)) == identity(regular(path, true)))
+        after
+          :file.close(file)
+        end
+        {records + 1, bytes + size}
+      _ -> D.fail("CONFIG_APPLY_FAILED")
+    end
+  end
+
+  defp target_identity(path) do
+    case File.lstat(path) do
+      {:error, :enoent} -> nil
+      {:ok, _} -> identity(regular(path, true))
+      _ -> D.fail("CONFIG_APPLY_FAILED")
+    end
+  end
+
+  defp regular(path, private) do
+    %{type: :regular, links: 1} = s = File.lstat!(path)
+    if private, do: D.check(s.uid == owner() and Bitwise.band(s.mode, 0o077) == 0)
+    s
+  end
+
+  defp handle_stat(file) do
+    {:ok, stat} = :file.read_file_info(file)
+    File.Stat.from_record(stat)
+  end
+
+  defp identity(s), do: Map.take(s, ~w(type uid gid mode links inode major_device minor_device size mtime ctime)a)
+  defp entry(s), do: Map.take(s, ~w(type uid gid links inode major_device minor_device)a)
+  defp parent_identity(s), do: Map.take(s, ~w(type uid gid mode inode major_device minor_device)a)
+  defp owner, do: :persistent_term.get({__MODULE__, :uid})
+
+  def parents!(path) do
+    parents_snapshot(path)
+    :ok
+  end
+
+  defp parents_snapshot(path) do
+    {_, entries} = Path.dirname(Path.expand(path)) |> Path.split() |> Enum.reduce({nil, []}, fn part, {parent, acc} ->
+      current = if is_nil(parent), do: part, else: Path.join(parent, part)
+      %{type: :directory} = stat = File.lstat!(current)
+      {current, [{current, parent_identity(stat)} | acc]}
+    end)
+    entries
+  end
+
+  defp sync_directory(path) do
+    %{type: :directory} = before = File.lstat!(path)
+    {:ok, file} = :file.open(String.to_charlist(path), [:read, :raw, :directory])
+    try do
+      D.check(entry(handle_stat(file)) == entry(before))
+      :ok = :file.sync(file)
+      D.check(entry(File.lstat!(path)) == entry(before))
+    after
+      :file.close(file)
+    end
+  end
+
+  def public_ca(path) do
+    bytes = bounded_read(path, 1_048_576, false)
+    entries = ADHD.TLSCertificate.pem_entries(bytes)
+    D.check(length(entries) in 1..32)
+    Enum.each(entries, fn {:Certificate, der, :not_encrypted} -> :public_key.pkix_decode_cert(der, :otp) end)
+    bytes
+  end
+
+  def init_owner(config_path) do
+    parents!(config_path)
+    probe = Path.join(System.tmp_dir!(), "adhd-acme-uid-" <> D.opaque())
+    {:ok, file} = :file.open(String.to_charlist(probe), [:write, :binary, :exclusive, :raw])
+    try do
+      %{uid: uid} = File.lstat!(probe)
+      :persistent_term.put({__MODULE__, :uid}, uid)
+    after
+      :file.close(file); File.rm(probe)
+    end
+  end
+end

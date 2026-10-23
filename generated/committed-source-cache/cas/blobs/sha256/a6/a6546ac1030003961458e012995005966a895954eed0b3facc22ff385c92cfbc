@@ -1,0 +1,1092 @@
+defmodule ADHD.Protocol do
+
+  # Generated from the closed ACME authority. No runtime filesystem schema reads.
+  @acme_authority_sha256 "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60"
+  @acme_authority JSON.decode!(~S"""
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:adhd:acme:1",
+  "title": "ACME001 additive contract input for application profile2.2; not accepted2.1 runtime exports",
+  "$defs": {
+    "Revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "MessageId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "x-maxBytes": 128,
+      "pattern": "\\S"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
+      "maxLength": 20
+    },
+    "NullableTimestamp": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "Domain": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 253,
+      "pattern": "^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    },
+    "Domains": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Domain"
+      },
+      "maxItems": 20,
+      "uniqueItems": true
+    },
+    "BindAddress": {
+      "type": "string",
+      "maxLength": 45,
+      "anyOf": [
+        {
+          "format": "ipv4"
+        },
+        {
+          "format": "ipv6"
+        }
+      ]
+    },
+    "DirectoryURL": {
+      "type": "string",
+      "minLength": 9,
+      "maxLength": 2048,
+      "format": "uri",
+      "pattern": "^https://[^/?#@\\s]+(?:/[^?#\\s]*)?$"
+    },
+    "Email": {
+      "type": "string",
+      "maxLength": 254,
+      "x-maxBytes": 254,
+      "anyOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[^\\s@\\x00-\\x1f\\x7f]+@[^\\s@\\x00-\\x1f\\x7f]+\\.[^\\s@\\x00-\\x1f\\x7f]+$"
+        }
+      ]
+    },
+    "CACertFile": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-maxBytes": 4096,
+          "pattern": "^[^\\x00-\\x1f\\x7f]+$"
+        }
+      ]
+    },
+    "ACMEConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "directory_url": {
+          "$ref": "#/$defs/DirectoryURL",
+          "default": "https://acme-staging-v02.api.letsencrypt.org/directory"
+        },
+        "email": {
+          "$ref": "#/$defs/Email",
+          "default": ""
+        },
+        "domains": {
+          "$ref": "#/$defs/Domains",
+          "default": []
+        },
+        "accept_terms": {
+          "type": "boolean",
+          "default": false
+        },
+        "renew_before_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90,
+          "default": 30
+        },
+        "retry_seconds": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 86400,
+          "default": 300
+        },
+        "order_timeout_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 600000,
+          "default": 120000
+        },
+        "ca_cert_file": {
+          "$ref": "#/$defs/CACertFile",
+          "default": null
+        }
+      },
+      "required": [
+        "enabled",
+        "directory_url",
+        "email",
+        "domains",
+        "accept_terms",
+        "renew_before_days",
+        "retry_seconds",
+        "order_timeout_ms",
+        "ca_cert_file"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "properties": {
+              "email": {
+                "minLength": 3
+              },
+              "domains": {
+                "minItems": 1
+              },
+              "accept_terms": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TLSConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "host": {
+          "$ref": "#/$defs/BindAddress",
+          "default": "0.0.0.0"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8443
+        },
+        "challenge_host": {
+          "$ref": "#/$defs/BindAddress",
+          "default": "0.0.0.0"
+        },
+        "challenge_port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8080
+        },
+        "acme": {
+          "$ref": "#/$defs/ACMEConfig"
+        }
+      },
+      "required": [
+        "enabled",
+        "host",
+        "port",
+        "challenge_host",
+        "challenge_port",
+        "acme"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "acme": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            },
+            "required": [
+              "acme"
+            ]
+          },
+          "then": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Certificate": {
+      "type": "object",
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "serial": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9a-f][0-9a-f]*)$",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "not_before": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "not_after": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "sha256",
+        "serial",
+        "not_before",
+        "not_after"
+      ],
+      "additionalProperties": false
+    },
+    "LastError": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_NETWORK"
+            },
+            "message": {
+              "const": "Certificate authority connection failed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_AUTHORIZATION"
+            },
+            "message": {
+              "const": "Domain authorization failed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_RATE_LIMIT"
+            },
+            "message": {
+              "const": "Certificate authority rate limit reached."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_ACCOUNT"
+            },
+            "message": {
+              "const": "Certificate authority account is unavailable."
+            },
+            "retryable": {
+              "const": false
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_ORDER_TIMEOUT"
+            },
+            "message": {
+              "const": "Certificate request timed out."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_PROCESS"
+            },
+            "message": {
+              "const": "Certificate client failed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_CERTIFICATE"
+            },
+            "message": {
+              "const": "Issued certificate validation failed."
+            },
+            "retryable": {
+              "const": false
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_STORAGE"
+            },
+            "message": {
+              "const": "Managed certificate state is unavailable."
+            },
+            "retryable": {
+              "const": false
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_CONFIG_CHANGED"
+            },
+            "message": {
+              "const": "Certificate request configuration changed."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "ACME_RECOVERY"
+            },
+            "message": {
+              "const": "Interrupted certificate request requires recovery."
+            },
+            "retryable": {
+              "const": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TLSStatus": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "https_state": {
+          "enum": [
+            "disabled",
+            "waiting",
+            "ready",
+            "expired",
+            "error"
+          ]
+        },
+        "acme_state": {
+          "enum": [
+            "disabled",
+            "idle",
+            "ordering",
+            "backoff",
+            "error"
+          ]
+        },
+        "domains": {
+          "$ref": "#/$defs/Domains"
+        },
+        "active_domains": {
+          "$ref": "#/$defs/Domains"
+        },
+        "certificate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Certificate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_attempt_at": {
+          "$ref": "#/$defs/NullableTimestamp"
+        },
+        "next_attempt_at": {
+          "$ref": "#/$defs/NullableTimestamp"
+        },
+        "last_success_at": {
+          "$ref": "#/$defs/NullableTimestamp"
+        },
+        "last_error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LastError"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "config_revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "enabled",
+        "https_state",
+        "acme_state",
+        "domains",
+        "active_domains",
+        "certificate",
+        "last_attempt_at",
+        "next_attempt_at",
+        "last_success_at",
+        "last_error",
+        "config_revision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "https_state": {
+                "const": "disabled"
+              },
+              "acme_state": {
+                "const": "disabled"
+              },
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "https_state": {
+                "enum": [
+                  "waiting",
+                  "ready",
+                  "expired",
+                  "error"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "waiting"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "certificate": {
+                "type": "null"
+              },
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "ready"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "certificate": {
+                "$ref": "#/$defs/Certificate"
+              },
+              "active_domains": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "expired"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "certificate": {
+                "$ref": "#/$defs/Certificate"
+              },
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "https_state": {
+                "const": "error"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "active_domains": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "acme_state": {
+                "const": "backoff"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "next_attempt_at": {
+                "$ref": "#/$defs/Timestamp"
+              },
+              "last_error": {
+                "$ref": "#/$defs/LastError"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "acme_state": {
+                "const": "ordering"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "last_attempt_at": {
+                "$ref": "#/$defs/Timestamp"
+              },
+              "next_attempt_at": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "acme_state": {
+                "const": "disabled"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "next_attempt_at": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TLSStatusCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "tls_status"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false
+    },
+    "TLSRenewCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "tls_renew"
+        },
+        "confirm": {
+          "const": true
+        },
+        "message_id": {
+          "$ref": "#/$defs/MessageId"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "op",
+        "expected_revision",
+        "confirm",
+        "message_id"
+      ],
+      "additionalProperties": false
+    },
+    "TLSRenewResult": {
+      "type": "object",
+      "properties": {
+        "accepted": {
+          "const": true
+        },
+        "config_revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "accepted",
+        "config_revision"
+      ],
+      "additionalProperties": false
+    },
+    "AdminCommand": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TLSStatusCommand"
+        },
+        {
+          "$ref": "#/$defs/TLSRenewCommand"
+        }
+      ]
+    },
+    "TLSRenewUnavailable": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "const": "TLS_RENEW_UNAVAILABLE"
+            },
+            "message": {
+              "const": "Managed ACME renewal is disabled."
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
+""")
+  def acme_authority_sha256, do: @acme_authority_sha256
+
+  defp acme_name(name) do
+    if String.starts_with?(name, ["TLS", "ACME"]), do: name, else: "ACME" <> name
+  end
+  defp acme_refs(value) when is_map(value) do
+    Map.new(value, fn
+      {"$ref", "#/$defs/" <> name} -> {"$ref", "#/$defs/" <> acme_name(name)}
+      {key, item} -> {key, acme_refs(item)}
+    end)
+  end
+  defp acme_refs(value) when is_list(value), do: Enum.map(value, &acme_refs/1)
+  defp acme_refs(value), do: value
+
+  # Configuration files admit optional defaulted members; normalized public
+  # snapshots remain fully closed. Cross-field requirements still apply.
+  defp acme_input(%{"type" => "object", "properties" => props} = value) do
+    value |> Map.put("required", [])
+      |> Map.put("properties", Map.new(props, fn {key, item} -> {key, acme_input(item)} end))
+  end
+  defp acme_input(%{"$ref" => "#/$defs/ACMEConfig"}) do
+    @acme_authority["$defs"]["ACMEConfig"] |> acme_refs() |> acme_input()
+  end
+  defp acme_input(value), do: value
+
+  # RFC7396 patches need not be valid complete configurations before merging.
+  # Object members are optional and nullable; arrays replace complete arrays.
+  defp acme_patch(%{"$ref" => "#/$defs/" <> name}, defs), do: acme_patch(Map.fetch!(defs, name), defs)
+  defp acme_patch(%{"type" => "object", "properties" => props}, defs) do
+    obj(Map.new(props, fn {key, item} -> {key, %{"anyOf" => [acme_patch(item, defs), %{"type" => "null"}]}} end), [])
+  end
+  defp acme_patch(value, _defs), do: value
+
+  defp extend_acme(defs) do
+    added = Map.new(@acme_authority["$defs"], fn {name, value} -> {acme_name(name), acme_refs(value)} end)
+    # Keep integer-token constraints from the existing protocol profile.
+    added = acme_integer_tokens(added)
+    defs = Map.merge(defs, added)
+    input = acme_input(defs["TLSConfig"])
+    input = update_in(input, ["allOf", Access.at(0), "then"], &Map.put(&1, "required", ["enabled"]))
+    input = update_in(input, ["properties", "acme", "allOf", Access.at(0), "then"], &Map.put(&1, "required", ~w(email domains accept_terms)))
+    defs = Map.put(defs, "TLSConfigInput", input)
+    defs = Map.put(defs, "TLSMergePatch", acme_patch(defs["TLSConfig"], defs))
+    defs = Map.merge(defs, %{
+      "admin_tls_status" => ref("TLSStatusCommand"),
+      "admin_tls_renew" => ref("TLSRenewCommand"),
+      "admin_result_tls_status" => ref("TLSStatus"),
+      "admin_result_tls_renew" => ref("TLSRenewResult")
+    })
+    defs = update_in(defs, ["AdminCommand", "oneOf"], &(&1 ++ Enum.map(~w(tls_status tls_renew), fn name -> ref("admin_" <> name) end)))
+    defs = update_in(defs, ["AdminResult", "anyOf"], &(&1 ++ Enum.map(~w(tls_status tls_renew), fn name -> ref("admin_result_" <> name) end)))
+    defs = put_in(defs, ["PublicConfig", "properties", "tls"], ref("TLSConfig"))
+    defs = put_in(defs, ["MergePatch", "properties", "tls"], %{"anyOf" => [ref("TLSMergePatch"), %{"type" => "null"}]})
+    detail = added["TLSRenewUnavailable"]["properties"]["error"]
+    condition = %{"if" => %{"properties" => %{"code" => %{"const" => "TLS_RENEW_UNAVAILABLE"}}, "required" => ["code"]}, "then" => detail}
+    update_in(defs, ["Error", "properties", "error", "allOf"], &((&1 || []) ++ [condition]))
+  end
+  defp acme_integer_tokens(value) when is_map(value) do
+    value = Map.new(value, fn {key, item} -> {key, acme_integer_tokens(item)} end)
+    if value["type"] == "integer", do: Map.put(value, "x-integerToken", true), else: value
+  end
+  defp acme_integer_tokens(value) when is_list(value), do: Enum.map(value, &acme_integer_tokens/1)
+  defp acme_integer_tokens(value), do: value
+
+  defp acme_openapi(paths) do
+    token = %{"type" => "string", "minLength" => 22, "maxLength" => 256, "pattern" => "^[A-Za-z0-9_-]+$"}
+    operation = %{
+      "summary" => "HTTP-01 proof on the separate challenge listener only",
+      "description" => "Not served by the private application HTTP listener. Public CA validation requires TCP80 routing to this configured challenge listener. Only current pending domain/token proofs are exposed.",
+      "security" => [],
+      "parameters" => [%{"name" => "token", "in" => "path", "required" => true, "schema" => token}],
+      "responses" => %{
+        "200" => %{"description" => "Exact active key authorization", "content" => %{"text/plain" => %{"schema" => %{"type" => "string", "minLength" => 1, "maxLength" => 1024}}}},
+        "404" => %{"description" => "Unknown path, Host or inactive token; empty response"},
+        "405" => %{"description" => "Only GET is supported; empty response"}
+      }
+    }
+    Map.put(paths, "/.well-known/acme-challenge/{token}", %{
+      "x-adhd-listener" => "acme-challenge",
+      "servers" => [%{"url" => "http://{challenge_host}:{challenge_port}", "variables" => %{"challenge_host" => %{"default" => "127.0.0.1"}, "challenge_port" => %{"default" => "8080"}}}],
+      "get" => operation
+    })
+  end
+  def descriptor,do: %{"protocol"=>"adhd","version"=>2,"agent"=>%{"protocol"=>"A2A","version"=>"1.0","path"=>"/a2a"},"admin"=>%{"version"=>1,"path"=>"/admin/api"},"federation"=>%{"versions"=>[1,2],"path"=>"/federation/v2","legacy_path"=>"/federation"},"schema_url"=>"/protocol/schema"}
+  def card(c) do
+    %{"name"=>"ADHD","description"=>"Agentic Distributed Harness Depot (ADHD): a private A2A information hub for agent coordination.","version"=>"0.1.0","supportedInterfaces"=>[%{"url"=>c["public_url"]<>"/a2a","protocolBinding"=>"JSONRPC","protocolVersion"=>"1.0"}],"capabilities"=>%{"streaming"=>false,"pushNotifications"=>false,"extendedAgentCard"=>false},"defaultInputModes"=>["application/json"],"defaultOutputModes"=>["application/json"],"securitySchemes"=>%{"bearer"=>%{"httpAuthSecurityScheme"=>%{"scheme"=>"Bearer"}}},"securityRequirements"=>[%{"schemes"=>%{"bearer"=>[]}}],"skills"=>[%{"id"=>"project-coordination","name"=>"Project coordination","description"=>"Publish, subscribe, search and exchange project information","tags"=>["coordination"]}]}
+  end
+  def str(max \\ 128),do: %{"type"=>"string","minLength"=>1,"maxLength"=>max,"x-maxBytes"=>max,"pattern"=>"\\S"}
+  def identifier,do: Map.put(str(),"pattern","^[A-Za-z0-9._-]{1,128}$")
+  def token_schema(min),do: str(4096) |> Map.put("x-minBytes",min) |> Map.put("pattern","^[A-Za-z0-9._~+/-]+=*$")
+  def int(lo,hi),do: %{"type"=>"integer","x-integerToken"=>true,"minimum"=>lo,"maximum"=>hi}
+  def ref(name),do: %{"$ref"=>"#/$defs/"<>name}
+  def array(item,max \\ 100,min \\ 0),do: %{"type"=>"array","items"=>item,"minItems"=>min,"maxItems"=>max}
+  def obj(props,required \\ nil),do: %{"type"=>"object","properties"=>props,"required"=>required || Map.keys(props),"additionalProperties"=>false}
+  def enum(v),do: if(Enum.all?(v,&is_integer/1),do: %{"enum"=>v,"type"=>"integer","x-integerToken"=>true},else: %{"enum"=>v})
+  def time,do: Map.merge(str(64),%{"format"=>"date-time"})
+  def bool,do: %{"type"=>"boolean"}
+  def command(op,props \\ %{},required \\ []) do
+    obj(Map.merge(%{"op"=>%{"const"=>op},"project_id"=>identifier()},props),["op"|required])
+  end
+  def admin(op,props \\ %{},required \\ []),do: obj(Map.put(props,"op",%{"const"=>op}),["op"|required])
+  def schema do
+    source=obj(%{"kind"=>identifier(),"id"=>str(256),"item_id"=>str(512),"uri"=>Map.put(str(2048),"format","uri")},~w(kind id))
+    publication=obj(%{"id"=>str(),"project_id"=>identifier(),"author_id"=>identifier(),"text"=>%{"type"=>"string","maxLength"=>65536,"x-maxBytes"=>65536},"data"=>ref("JSON"),"created_at"=>time(),"information_type"=>identifier(),"source"=>ref("Source"),"occurred_at"=>time()})
+    subscription=obj(%{"id"=>str(),"project_id"=>identifier(),"agent_id"=>identifier(),"description"=>str(4096),"created_at"=>time()})
+    delivery_props=%{"id"=>str(),"project_id"=>identifier(),"recipient_id"=>identifier(),"sender_id"=>identifier(),"kind"=>enum(~w(message publication)),"text"=>%{"type"=>"string","maxLength"=>65536,"x-maxBytes"=>65536},"data"=>ref("JSON"),"created_at"=>time(),"publication_id"=>str(),"matches"=>array(ref("Match"),10000),"information_type"=>identifier(),"source"=>ref("Source"),"occurred_at"=>time()}
+    delivery=obj(delivery_props,~w(id project_id recipient_id sender_id kind text data created_at)) |> Map.put("allOf",[%{"if"=>%{"properties"=>%{"kind"=>%{"const"=>"publication"}}},"then"=>%{"required"=>~w(publication_id matches information_type source occurred_at)}}])
+    filter=%{"query"=>str(256),"information_type"=>identifier(),"source_kind"=>identifier(),"source_id"=>str(256),"limit"=>int(1,100)}
+    content=%{"text"=>str(65536),"data"=>ref("JSON")}
+    content_rule=%{"anyOf"=>[%{"required"=>["text"]},%{"required"=>["data"]}]}
+    commands=Map.new(ADHD.Domain.operations(),fn op ->
+      value=case op do
+        "subscribe"->command(op,%{"description"=>str(4096)},["description"])
+        "unsubscribe"->command(op,%{"subscription_id"=>str()},["subscription_id"])
+        "get"->command(op,%{"publication_id"=>str()},["publication_id"])
+        "publish"->command(op,Map.merge(content,%{"information_type"=>identifier(),"source"=>ref("Source"),"occurred_at"=>time()})) |> Map.merge(content_rule)
+        "send"->command(op,Map.merge(content,%{"recipient_id"=>identifier(),"data"=>%{"type"=>"object","additionalProperties"=>ref("JSON")}}),["recipient_id"]) |> Map.merge(content_rule)
+        "poll"->command(op,%{"limit"=>int(1,100)})
+        "ack"->command(op,%{"delivery_ids"=>array(str(),100,1)|>Map.put("uniqueItems",true)},["delivery_ids"])
+        "search"->command(op,filter) |> Map.put("anyOf",Enum.map(~w(query information_type source_kind source_id),&%{"required"=>[&1]}))
+        "federated_query"->command(op,%{"question"=>str(4096),"deadline_ms"=>int(1000,120000)},["question"])
+        x when x in ~w(get_federated_query cancel_federated_query)->command(op,%{"query_id"=>str()},["query_id"])
+        _->command(op)
+      end
+      {"agent_"<>op,value}
+    end)
+    mutation=%{"message_id"=>str(),"confirm"=>%{"const"=>true},"expected_revision"=>int(1,9_223_372_036_854_775_807)}
+    user_input=obj(%{"id"=>str(),"username"=>identifier(),"name"=>str(256),"email"=>str(320),"role"=>enum(~w(Admin Developer Viewer)),"disabled"=>bool(),"password"=>str(1024),"provider"=>enum(~w(local oidc)),"role_source"=>enum(~w(manual groups))},~w(name email role))
+    admin_defs=%{
+      "link_oidc"=>admin("link_oidc",%{"user_id"=>str(),"expected_revision"=>int(1,9_223_372_036_854_775_807),"confirm"=>%{"const"=>true}},~w(user_id expected_revision confirm)),
+      "overview"=>admin("overview"),"publications"=>admin("publications",filter),"publication"=>admin("publication",%{"publication_id"=>str()},["publication_id"]),
+      "subscriptions"=>admin("subscriptions",%{"agent_id"=>identifier(),"limit"=>int(1,100)}),"deliveries"=>admin("deliveries",%{"agent_id"=>identifier(),"limit"=>int(1,100)}),"jobs"=>admin("jobs",%{"status"=>enum(~w(pending done cancelled)),"limit"=>int(1,100)}),
+      "create_subscription"=>admin("create_subscription",%{"agent_id"=>identifier(),"description"=>str(4096),"message_id"=>str()},~w(agent_id description message_id)),
+      "remove_subscription"=>admin("remove_subscription",%{"subscription_id"=>str(),"confirm"=>%{"const"=>true},"message_id"=>str()},~w(subscription_id confirm message_id)),
+      "retry_jobs"=>admin("retry_jobs",%{"confirm"=>%{"const"=>true},"message_id"=>str()},~w(confirm message_id)),
+      "config_get"=>admin("config_get"),"users"=>admin("users"),"agents"=>admin("agents"),
+      "config_update"=>admin("config_update",Map.put(mutation,"patch",ref("MergePatch")),~w(expected_revision patch message_id confirm)),
+      "config_validate"=>admin("config_validate",%{"expected_revision"=>int(1,9_223_372_036_854_775_807),"patch"=>ref("MergePatch")},~w(expected_revision patch)),
+      "save_user"=>admin("save_user",Map.put(mutation,"user",user_input),~w(user expected_revision message_id confirm)),
+      "update_profile"=>admin("update_profile",Map.merge(mutation,%{"name"=>str(256),"email"=>str(320),"password"=>str(1024),"current_password"=>str(1024)}),~w(name email expected_revision message_id confirm)),
+      "create_agent"=>admin("create_agent",Map.merge(mutation,%{"agent_id"=>identifier(),"token"=>token_schema(24),"owner_user_id"=>%{"oneOf"=>[str(),%{"type"=>"null"}]}}),~w(agent_id token expected_revision message_id confirm)),
+      "private_delivery"=>admin("private_delivery",%{"delivery_id"=>str()},["delivery_id"]),"test_oidc"=>admin("test_oidc",%{"settings"=>ref("OIDC")},["settings"])
+    } |> Map.new(fn {k,v}->{"admin_"<>k,v} end)
+    oidc_props=%{"provider_id"=>identifier(),"issuer"=>str(2048),"client_id"=>str(512),"client_secret"=>str(4096),"redirect_uri"=>str(2048),"scopes"=>array(str(256),16,3),"groups_claim"=>str(),"role_groups"=>obj(Map.new(~w(Admin Developer Viewer),&{&1,array(str(256),64)})),"default_role"=>enum([nil,"Admin","Developer","Viewer"]),"timeout_ms"=>int(100,10000)}
+    peer=obj(%{"project_id"=>identifier(),"url"=>str(2048),"token"=>token_schema(24),"inbound_token"=>token_schema(24)})
+    config_props=%{"project_id"=>identifier(),"store_path"=>str(4096),"agents"=>%{"type"=>"object","additionalProperties"=>token_schema(24)},"host"=>%{"const"=>"127.0.0.1"},"port"=>int(1,65535),"public_url"=>str(2048),"threshold_ppm"=>int(1,1000000),"admin_token"=>token_schema(32),"matcher"=>obj(%{"url"=>str(2048),"model"=>str(512),"timeout_ms"=>int(100,30000),"retry_ms"=>int(100,30000)},~w(url model)),"federation"=>obj(%{"catalog"=>ref("CatalogConfig"),"share_identities"=>bool(),"description"=>str(4096),"peers"=>array(peer,16),"export_publication_ids"=>array(str(),32),"timeout_ms"=>int(100,10000),"retry_ms"=>int(100,30000)},~w(description peers)),"auth"=>obj(%{"mode"=>enum(~w(local oidc both)),"allow_admin_token"=>bool(),"session_ttl_ms"=>int(60000,86400000),"oidc"=>ref("OIDC")},~w(mode allow_admin_token)),"agent_owners"=>%{"type"=>"object","additionalProperties"=>%{"oneOf"=>[str(),%{"type"=>"null"}]}}}
+    patch=obj(Map.new(config_props,fn {k,v}->{k,%{"anyOf"=>[v,%{"type"=>"null"}]}} end),[])
+    defs=%{
+      "JSON"=>%{"oneOf"=>[%{"type"=>"null"},bool(),%{"type"=>"number"},%{"type"=>"string"},%{"type"=>"array","items"=>ref("JSON")},%{"type"=>"object","additionalProperties"=>ref("JSON")}]},
+      "Source"=>source,"Publication"=>publication,"Subscription"=>subscription,"Delivery"=>delivery,"OIDC"=>obj(oidc_props,~w(provider_id issuer client_id redirect_uri scopes role_groups)),"MergePatch"=>patch,
+      "Match"=>obj(%{"subscription_id"=>str(),"probability_ppm"=>int(0,1000000),"threshold_ppm"=>int(1,1000000),"model"=>str(512)}),
+      "PeerResponse"=>obj(%{"project_id"=>identifier(),"matched"=>bool(),"probability_ppm"=>int(0,1000000),"description"=>%{"type"=>"string","maxLength"=>4096,"x-maxBytes"=>4096},"publications"=>array(ref("Publication"),32),"model"=>str(512)}),
+      "Query"=>obj(%{"id"=>str(),"project_id"=>identifier(),"owner_id"=>str(),"question"=>str(4096),"created_at"=>time(),"deadline_at"=>time(),"status"=>enum(~w(pending completed partial cancelled)),"peers"=>array(obj(%{"project_id"=>identifier(),"status"=>enum(~w(pending responded failed))}),16),"responses"=>array(ref("PeerResponse"),16)}),
+      "PeerSubmit"=>obj(%{"op"=>%{"const"=>"submit"},"origin_project_id"=>str(),"query_id"=>str(),"question"=>str(4096),"deadline_at"=>time()}),
+      "PeerStatus"=>obj(%{"op"=>%{"const"=>"status"},"origin_project_id"=>str(),"query_id"=>str()}),
+      "Error"=>obj(%{"error"=>obj(%{"code"=>str(),"message"=>str(256),"current_revision"=>int(1,9_223_372_036_854_775_807)},~w(code message))}),
+      "Login"=>obj(%{"username"=>identifier(),"password"=>str(1024)}),
+      "Health"=>obj(%{"status"=>%{"const"=>"ready"}}),
+      "AgentCommand"=>%{"oneOf"=>Enum.map(ADHD.Domain.operations(),&ref("agent_"<>&1))},
+      "AdminCommand"=>%{"oneOf"=>Enum.map(Enum.sort(Map.keys(admin_defs)),&ref/1)}
+    } |> Map.merge(commands) |> Map.merge(admin_defs)
+    defs=update_in(defs,["PeerResponse"],&Map.put(&1,"allOf",[%{"if"=>%{"properties"=>%{"matched"=>%{"const"=>false}},"required"=>["matched"]},"then"=>%{"properties"=>%{"description"=>%{"const"=>""},"publications"=>%{"maxItems"=>0}}}}]))
+    defs=Enum.reduce(~w(submit status),defs,fn op,acc ->
+      base=acc[if(op=="submit",do: "PeerSubmit",else: "PeerStatus")]
+      Map.put(acc,"PeerV1_"<>op,base |> put_in(["properties","protocol_version"],%{"const"=>1,"type"=>"integer","x-integerToken"=>true}) |> Map.update!("required",&["protocol_version"|&1]))
+    end)
+    defs=wire_defs(defs,config_props,oidc_props) |> ADHD.DirectoryProtocol.extend() |> ADHD.RecordsProtocol.extend() |> ADHD.HistoryProtocol.extend() |> ADHD.RetrievalProtocol.extend() |> ADHD.ArchiveProtocol.extend() |> ADHD.FeedbackProtocol.extend() |> ADHD.OptimizationProtocol.extend() |> ADHD.MultiProtocol.extend() |> ADHD.ProjectRecoveryProtocol.extend() |> extend_acme()
+    %{"$schema"=>"https://json-schema.org/draft/2020-12/schema","$id"=>"urn:adhd:protocol:2.2","title"=>"ADHD wire protocol 2.2","$defs"=>defs,"anyOf"=>[ref("AgentCommand"),ref("AdminCommand"),ref("Publication"),ref("Delivery"),ref("Query")]}
+  end
+  defp response_defs do
+    agent=%{
+      "whoami"=>obj(%{"agent_id"=>identifier(),"project_id"=>identifier()}),
+      "subscribe"=>obj(%{"subscription"=>ref("Subscription")}),
+      "list_subscriptions"=>obj(%{"subscriptions"=>array(ref("Subscription"),10000)}),
+      "unsubscribe"=>obj(%{"unsubscribed"=>str()}),
+      "publish"=>obj(%{"publication"=>ref("Publication"),"matching"=>%{"const"=>"pending"}}),
+      "send"=>obj(%{"delivery"=>ref("Delivery")}),"poll"=>obj(%{"deliveries"=>array(ref("Delivery"))}),
+      "ack"=>obj(%{"acknowledged"=>array(str(),100,1)}),"get"=>obj(%{"publication"=>ref("Publication")}),
+      "search"=>obj(%{"publications"=>array(ref("Publication"))})}
+    agent=Enum.reduce(~w(federated_query get_federated_query cancel_federated_query),agent,fn op,a->Map.put(a,op,obj(%{"query"=>ref("Query")})) end)
+    agent=Map.new(agent,fn {k,v}->{"result_"<>k,v} end)
+    user=obj(%{"id"=>str(),"username"=>identifier(),"name"=>%{"type"=>"string","maxLength"=>256,"x-maxBytes"=>256},"email"=>%{"type"=>"string","maxLength"=>320,"x-maxBytes"=>320},"role"=>enum(~w(Admin Developer Viewer)),"disabled"=>bool(),"access_allowed"=>bool(),"provider"=>enum(~w(local oidc)),"oidc"=>%{"oneOf"=>[%{"type"=>"null"},obj(%{"issuer"=>str(2048),"subject"=>str(4096),"provider_id"=>identifier()})]},"groups"=>array(str(256),256),"profile_complete"=>bool(),"role_source"=>enum(~w(manual groups))},~w(id name email role provider))
+    revision=int(1,9_223_372_036_854_775_807)
+    counters=obj(Map.new(~w(agents publications subscriptions queued_deliveries pending_jobs completed_jobs cancelled_jobs),&{&1,int(0,9_223_372_036_854_775_807)}))
+    overview_agent=obj(%{"agent_id"=>identifier(),"subscriptions"=>int(0,9_223_372_036_854_775_807),"queued_deliveries"=>int(0,9_223_372_036_854_775_807)})
+    matcher=obj(%{"status"=>enum(~w(ready unavailable)),"checked_at"=>time(),"model"=>str(512)})
+    page=fn item->obj(%{"items"=>array(item),"truncated"=>bool()}) end
+    delivery_meta=obj(%{"delivery_id"=>str(),"recipient_id"=>identifier(),"kind"=>enum(~w(message publication)),"created_at"=>time(),"acknowledged"=>bool(),"publication_id"=>str()},~w(delivery_id recipient_id kind created_at acknowledged))
+    job=obj(%{"job_id"=>str(),"publication_id"=>str(),"subscription_id"=>str(),"recipient_id"=>identifier(),"status"=>enum(~w(pending done cancelled)),"retry_at"=>int(0,9_223_372_036_854_775_807)})
+    admin=%{
+      "link_oidc"=>obj(%{"authorization_url"=>str(8192)}),
+      "overview"=>obj(%{"project_id"=>identifier(),"counts"=>counters,"agents"=>array(overview_agent,1000),"matcher"=>matcher}),
+      "publication"=>agent["result_get"],"publications"=>page.(ref("Publication")),"subscriptions"=>page.(ref("Subscription")),"deliveries"=>page.(delivery_meta),"jobs"=>page.(job),
+      "create_subscription"=>agent["result_subscribe"],"remove_subscription"=>obj(%{"removed"=>%{"const"=>true},"subscription_id"=>str()}),"retry_jobs"=>obj(%{"retried"=>int(0,9_223_372_036_854_775_807)}),
+      "config_get"=>obj(%{"config_revision"=>revision,"config"=>ref("PublicConfig"),"secrets"=>%{"type"=>"object","additionalProperties"=>bool()},"reload_status"=>enum(~w(ready error))}),
+      "config_update"=>obj(%{"config_revision"=>revision,"applied"=>%{"const"=>true},"admin_url"=>str(2048)}),"config_validate"=>obj(%{"valid"=>%{"const"=>true},"config_revision"=>revision}),
+      "save_user"=>obj(%{"user"=>ref("User"),"config_revision"=>revision}),"update_profile"=>obj(%{"user"=>ref("User"),"config_revision"=>revision}),
+      "users"=>obj(%{"users"=>array(ref("User"),1000)}),"agents"=>obj(%{"agents"=>array(obj(%{"agent_id"=>identifier(),"owner_user_id"=>%{"oneOf"=>[str(),%{"type"=>"null"}]},"token_set"=>bool()}),1000)}),
+      "create_agent"=>obj(%{"agent_id"=>identifier(),"owner_user_id"=>%{"oneOf"=>[str(),%{"type"=>"null"}]},"config_revision"=>revision}),
+      "private_delivery"=>obj(%{"delivery"=>ref("Delivery")}),"test_oidc"=>obj(%{"valid"=>%{"const"=>true},"issuer"=>str(2048),"redirect_uri"=>str(2048)})}
+    admin=Map.new(admin,fn {k,v}->{"admin_result_"<>k,v} end)
+    methods=obj(Map.new(~w(local oidc key),&{&1,bool()}))
+    Map.merge(agent,admin) |> Map.merge(%{"User"=>user,"AgentResult"=>%{"anyOf"=>Enum.map(Enum.sort(Map.keys(agent)),&ref/1)},"AdminResult"=>%{"anyOf"=>Enum.map(Enum.sort(Map.keys(admin)),&ref/1)},
+      "Session"=>%{"oneOf"=>[obj(%{"authenticated"=>%{"const"=>true},"user"=>ref("User"),"csrf"=>str(256),"config_revision"=>revision}),obj(%{"authenticated"=>%{"const"=>false},"methods"=>methods})]},
+      "LoginResult"=>obj(%{"user"=>ref("User"),"csrf"=>str(256)}),"LogoutResult"=>obj(%{"logged_out"=>%{"const"=>true}})})
+  end
+  defp patch_schema(%{"$ref"=>"#/$defs/CatalogConfig"},o),do: patch_schema(ADHD.DirectoryProtocol.config(),o)
+  defp patch_schema(%{"$ref"=>"#/$defs/OIDC"},o),do: patch_schema(o,o)
+  defp patch_schema(%{"type"=>"object","properties"=>properties}=s,o) do
+    s |> Map.put("required",[]) |> Map.put("properties",Map.new(properties,fn {k,v}->{k,%{"anyOf"=>[patch_schema(v,o),%{"type"=>"null"}]}} end))
+  end
+  defp patch_schema(s,_),do: s
+  defp wire_defs(defs,config_props,oidc_props) do
+    part=%{"oneOf"=>[obj(%{"data"=>ref("AgentCommand"),"mediaType"=>str(256)},["data"]),obj(%{"text"=>str(1048576),"mediaType"=>str(256)},["text"])]}
+    message=obj(%{"messageId"=>str(),"role"=>%{"const"=>"ROLE_USER"},"parts"=>array(part,1,1),"contextId"=>str(4096),"metadata"=>ref("JSON"),"extensions"=>array(str(2048),100),"referenceTaskIds"=>array(str(),100)},~w(messageId role parts))
+    rpc=obj(%{"jsonrpc"=>%{"const"=>"2.0"},"id"=>%{"type"=>["string","integer"]},"method"=>%{"const"=>"SendMessage"},"params"=>obj(%{"message"=>message,"configuration"=>%{"type"=>"object","additionalProperties"=>ref("JSON")},"metadata"=>ref("JSON")},["message"])})
+    public_oidc=obj(Map.delete(oidc_props,"client_secret"),~w(provider_id issuer client_id redirect_uri scopes role_groups))
+    peer=obj(%{"project_id"=>identifier(),"url"=>str(2048)})
+    public_props=config_props |> Map.delete("admin_token") |> Map.put("config_revision",int(1,9_223_372_036_854_775_807)) |> Map.put("users",array(ref("User"),1000)) |> Map.put("agents",%{"type"=>"object","additionalProperties"=>obj(%{})})
+    public_props=put_in(public_props,["auth","properties","oidc"],public_oidc)
+    public_props=put_in(public_props,["federation","properties","peers"],array(peer,16))
+    peer_result=obj(%{"query_id"=>str(),"status"=>enum(~w(pending completed expired)),"response"=>ref("PeerResponse")},~w(query_id status))
+    descriptor=obj(%{"protocol"=>%{"const"=>"adhd"},"version"=>%{"const"=>1,"type"=>"integer","x-integerToken"=>true},"agent"=>obj(%{"protocol"=>%{"const"=>"A2A"},"version"=>%{"const"=>"1.0"},"path"=>%{"const"=>"/a2a"}}),"admin"=>obj(%{"version"=>%{"const"=>1,"type"=>"integer","x-integerToken"=>true},"path"=>%{"const"=>"/admin/api"}}),"federation"=>obj(%{"versions"=>%{"const"=>[1]},"path"=>%{"const"=>"/federation/v1"},"legacy_path"=>%{"const"=>"/federation"}}),"schema_url"=>%{"const"=>"/protocol/schema"}})
+    extras=%{"RPCRequest"=>rpc,"Descriptor"=>descriptor,"PublicConfig"=>obj(public_props,~w(project_id store_path agents matcher)),"login"=>ref("Login"),"peer_command"=>%{"oneOf"=>[ref("PeerSubmit"),ref("PeerStatus")]},"peer_v1_command"=>%{"oneOf"=>[ref("PeerV1_submit"),ref("PeerV1_status")]},"PeerResult"=>peer_result,"PeerV1Result"=>peer_result |> put_in(["properties","protocol_version"],%{"const"=>1,"type"=>"integer","x-integerToken"=>true}) |> Map.update!("required",&["protocol_version"|&1])}
+    success_message=obj(%{"messageId"=>str(),"contextId"=>str(4096),"role"=>%{"const"=>"ROLE_AGENT"},"parts"=>array(obj(%{"data"=>ref("AgentResult")}),1,1)})
+    success=obj(%{"jsonrpc"=>%{"const"=>"2.0"},"id"=>%{"type"=>["string","integer"]},"result"=>obj(%{"message"=>success_message})})
+    detail=obj(%{"@type"=>%{"const"=>"type.googleapis.com/google.rpc.ErrorInfo"},"reason"=>str(),"domain"=>%{"const"=>"adhd.hub"},"metadata"=>obj(%{"code"=>str()})})
+    rpc_error=obj(%{"jsonrpc"=>%{"const"=>"2.0"},"id"=>%{"type"=>["string","integer","null"]},"error"=>obj(%{"code"=>enum([-32700,-32600,-32601,-32602,-32603,-32000]),"message"=>str(256),"data"=>array(detail,1,1)},~w(code message))})
+    state=%{"oneOf"=>[obj(%{"publication"=>ref("Publication")}),obj(%{"project"=>obj(%{"project_id"=>identifier(),"description"=>str(4096),"publications"=>array(ref("Publication"),32)})})]}
+    model_request=obj(%{"model"=>str(512),"state"=>state,"questions"=>obj(%{"relevance"=>obj(%{"type"=>%{"const"=>"noul"},"instructions"=>str(8192)})})})
+    # Providers may attach non-secret serving metadata; only answers.relevance is
+    # required by this adapter. Its type and finite [0,1] value remain exact.
+    model_answer=obj(%{"model"=>str(512),"answers"=>obj(%{"relevance"=>obj(%{"type"=>%{"const"=>"noul"},"noul"=>%{"type"=>"number","minimum"=>0,"maximum"=>1}})})}) |> Map.put("additionalProperties",ref("JSON"))
+    v1_error=defs["Error"] |> put_in(["properties","protocol_version"],%{"const"=>1,"type"=>"integer","x-integerToken"=>true}) |> Map.update!("required",&["protocol_version"|&1])
+    unsupported=defs["Error"] |> put_in(["properties","supported"],%{"const"=>[1]}) |> Map.update!("required",&["supported"|&1])
+    extras=extras |> Map.put("PeerV1Error",v1_error) |> Map.put("UnsupportedVersion",unsupported)
+    extras=extras |> Map.put("RPCResponse",%{"oneOf"=>[success,rpc_error]}) |> Map.put("SystemOneRequest",model_request) |> Map.put("SystemOneResponse",model_answer)
+    defs |> Map.merge(response_defs()) |> Map.merge(extras) |> Map.put("MergePatch",patch_schema(obj(config_props,[]),obj(oidc_props,~w(provider_id issuer client_id redirect_uri scopes role_groups))))
+  end
+
+  def openapi do
+    schemas=schema()["$defs"]
+    paths=Map.new([{"/health",:get,"Health"},{"/.well-known/agent-card.json",:get,nil},{"/protocol",:get,nil},{"/protocol/schema",:get,nil},{"/protocol/openapi",:get,nil},{"/",:get,nil},{"/admin",:get,nil},{"/admin/",:get,nil},{"/admin/assets/app.js",:get,nil},{"/admin/assets/app.css",:get,nil},{"/admin/session",:get,nil},{"/admin/login",:post,"Login"},{"/admin/logout",:post,nil},{"/admin/oidc/start",:get,nil},{"/admin/oidc/callback",:get,nil},{"/admin/api",:post,"AdminCommand"},{"/a2a",:post,"RPCRequest"},{"/federation",:post,"peer_command"},{"/federation/v1",:post,"peer_v1_command"}],fn {path,method,name}->
+      operation=%{"summary"=>path,"responses"=>%{"200"=>%{"description"=>"Successful response"},"400"=>%{"description"=>"Invalid request"},"401"=>%{"description"=>"Authentication required"},"403"=>%{"description"=>"Forbidden"}}}
+      operation=if method==:post and name,do: Map.put(operation,"requestBody",%{"required"=>true,"content"=>%{"application/json"=>%{"schema"=>%{"$ref"=>"#/components/schemas/"<>name}}}}),else: operation
+      {path,%{Atom.to_string(method)=>operation}}
+    end)
+    response=fn name->%{"description"=>"Successful response","content"=>%{"application/json"=>%{"schema"=>%{"$ref"=>"#/components/schemas/"<>name}}}} end
+    profiles=[{"/.well-known/agent-card.json","get","AgentCard"},{"/health","get","Health"},{"/protocol","get","Descriptor"},{"/admin/session","get","Session"},{"/admin/login","post","LoginResult"},{"/admin/logout","post","LogoutResult"},{"/admin/api","post","AdminResult"},{"/a2a","post","RPCResponse"},{"/federation","post","PeerResult"},{"/federation/v1","post","PeerV1Result"}]
+    paths=Enum.reduce(profiles,paths,fn {path,method,name},acc->
+      op=acc[path][method]
+      responses=Map.put(op["responses"],"200",response.(name))
+      responses=Enum.reduce(~w(400 401 403 404 409 413 415 429 500 503),responses,fn status,m->Map.put(m,status,%{"description"=>"Request rejected; see normative error/status profile","content"=>%{"application/json"=>%{"schema"=>%{"$ref"=>"#/components/schemas/"<>if(path=="/federation/v1",do: "PeerV1Error",else: "Error")}}}}) end)
+      responses=if path in ["/federation","/federation/v1"],do: Map.put(responses,"202",response.(name)),else: responses
+      op=Map.put(op,"responses",responses)
+      op=cond do
+        path=="/admin/api" or path=="/admin/logout" -> Map.put(op,"security",[%{"bearer"=>[]},%{"session"=>[],"csrf"=>[]}])
+        path in ["/a2a","/federation","/federation/v1"] -> Map.put(op,"security",[%{"bearer"=>[]}])
+        true -> op
+      end
+      op=if path in ["/admin/api","/admin/logout","/admin/login"],do: Map.put(op,"parameters",[%{"name"=>"Origin","in"=>"header","required"=>path=="/admin/login","description"=>"Required for cookie/password requests; configured public origin or actual loopback origin","schema"=>%{"type"=>"string","format"=>"uri"}}]),else: op
+      put_in(acc,[path,method],op)
+    end)
+    redirect=%{"description"=>"Redirect defined by the OIDC authorization-code/PKCE profile","headers"=>%{"Location"=>%{"schema"=>%{"type"=>"string"}}}}
+    paths=Enum.reduce(~w(/admin/oidc/start /admin/oidc/callback),paths,fn path,acc->put_in(acc,[path,"get","responses"],%{"302"=>redirect,"400"=>%{"description"=>"OIDC_ERROR: rejected flow or unavailable provider"},"403"=>%{"description"=>"User not admitted by local role policy"}}) end)
+    # Rewrite local references for OpenAPI's schema namespace.
+    schemas=rewrite(schemas)
+    paths=Map.merge(paths,ADHD.MultiProtocol.extra_paths()) |> ADHD.ProjectRecoveryProtocol.openapi() |> acme_openapi()
+    %{"openapi"=>"3.1.0","info"=>%{"title"=>"ADHD protocol","version"=>"2.2.0"},"paths"=>paths,"components"=>%{"schemas"=>schemas,"securitySchemes"=>%{"csrf"=>%{"type"=>"apiKey","in"=>"header","name"=>"X-CSRF-Token"},"bearer"=>%{"type"=>"http","scheme"=>"bearer"},"session"=>%{"type"=>"apiKey","in"=>"cookie","name"=>"adhd_session"}}}}
+  end
+  defp rewrite(v) when is_map(v),do: Map.new(v,fn {k,x}->{k,if(k=="$ref",do: String.replace(x,"#/$defs/","#/components/schemas/"),else: rewrite(x))} end)
+  defp rewrite(v) when is_list(v),do: Enum.map(v,&rewrite/1)
+  defp rewrite(v),do: v
+end

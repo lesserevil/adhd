@@ -1,0 +1,75 @@
+defmodule ADHD.FeedbackProtocol do
+  alias ADHD.Protocol,as: P
+  alias ADHD.HistoryProtocol,as: H
+  defp nullable(v),do: H.nullable(v)
+  defp count,do: H.count()
+  defp digest,do: H.digest()
+  defp ids(max \\ 128),do: H.ids(max)
+  defp props(defs,key),do: defs[key]["properties"]
+  def config_props,do: %{"enabled"=>P.bool(),"max_state_bytes"=>P.int(1048576,268435456),"max_attempts"=>P.int(1,16384),"max_replays"=>P.int(1,4096),"max_active_replays"=>P.int(1,64),"build_batch"=>P.int(1,64),"budget"=>P.ref("HistoryBudget")}
+  def extend(defs) do
+    ap=props(defs,"ArchiveQuery");hp=props(defs,"HistoryQuery");rp=props(defs,"RetrievalQuery")
+    gap=props(defs,"RecordRead")["gaps"]["items"];statuses=P.enum(~w(pending completed partial cancelled invalidated));cohort=P.enum(~w(training held_out regression))
+    error=P.obj(%{"code"=>P.enum(~w(BASELINE_UNAVAILABLE OWNER_REMOVED CHILD_CHANGED POLICY_CHANGED LABEL_CHANGED HELD_OUT_EXPOSED COHORT_CONFLICT MISSING_ORIGINALS RETRIEVAL_DISABLED SCAN_DISABLED CONTEXT_LIMIT MODEL_ERROR RESOURCE_LIMIT WORKER_ERROR CANCELLED BUDGET_RECORDS BUDGET_CALLS BUDGET_BYTES BUDGET_TIME)),"message"=>P.str(256),"retryable"=>P.bool()})
+    status=P.obj(%{"enabled"=>P.bool(),"attempts"=>count(),"replays"=>count(),"active_replays"=>count(),"unrecorded_runs"=>count(),"state_bytes"=>nullable(count()),"last_error"=>nullable(P.ref("FeedbackError"))})
+    label_props=%{"expectation"=>P.enum(~w(supported conflicting no_evidence)),"support_ids"=>ids(),"cohort"=>cohort,"tags"=>P.array(P.enum(~w(negation correction)),2) |> Map.put("uniqueItems",true),"note"=>%{"type"=>"string","maxLength"=>2048,"x-maxBytes"=>2048},"confirmed"=>%{"const"=>true}}
+    label_input=P.obj(label_props) |> Map.put("allOf",[%{"if"=>%{"properties"=>%{"expectation"=>%{"const"=>"no_evidence"}}},"then"=>%{"properties"=>%{"support_ids"=>%{"maxItems"=>0}}},"else"=>%{"properties"=>%{"support_ids"=>%{"minItems"=>1}}}}])
+    label=P.obj(Map.merge(label_props,%{"revision"=>P.int(1,16),"actor_kind"=>P.enum(~w(human_session legacy_token)),"actor_id"=>P.str(),"created_at"=>P.time(),"evidence_identity"=>digest(),"identity"=>digest()})) |> Map.put("allOf",label_input["allOf"])
+    scan=P.obj(%{"query_id"=>P.str(),"run"=>P.int(1,16),"status"=>statuses,"outcome"=>hp["outcome"],"evaluator"=>hp["evaluator"],"primary_complete"=>P.bool(),"final_complete"=>P.bool(),"examined"=>count(),"total"=>count(),"expanded_count"=>count(),"expanded_identity"=>digest(),"gaps"=>P.array(gap,128),"truncated"=>P.bool(),"usage"=>hp["usage"],"error"=>hp["error"]})
+    summary=Map.take(ap,~w(plan_id run owner_id project_id question scope snapshot created_at status mode answer assessment comparison sample path fallback_reasons coverage usage)) |> Map.merge(%{"id"=>P.str(),"archive_query_id"=>P.str(),"captured_at"=>P.time(),"complete_required"=>P.bool(),"primary_count"=>count(),"primary_identity"=>digest(),"evidence_identity"=>digest(),"original_policy"=>ap["policy"],"recipe"=>nullable(P.ref("RetrievalRecipe")),"recipe_identity"=>nullable(digest()),"candidates"=>rp["candidates"],"scan"=>nullable(P.ref("FeedbackScanSummary")),"audit"=>nullable(P.ref("FeedbackScanSummary")),"diagnosis"=>P.enum(ADHD.Feedback.classifications() -- ~w(confirmed_retrieval_gap confirmed_context_assembly_gap confirmed_interpretation_gap confirmed_supported_search adjudicated_no_evidence incomplete_assessment)),"adjudicated_diagnosis"=>nullable(P.enum(~w(confirmed_retrieval_gap confirmed_context_assembly_gap confirmed_interpretation_gap confirmed_supported_search adjudicated_no_evidence incomplete_assessment))),"label_revision"=>P.int(0,16),"cohort"=>nullable(cohort),"exposed"=>P.bool()})
+    exposure=P.obj(%{"job_id"=>P.str(),"kind"=>P.enum(~w(replay optimization)),"recipe_identity"=>digest(),"policy_identity"=>digest(),"created_at"=>P.time()})
+    group=P.obj(%{"id"=>digest(),"cohort"=>nullable(cohort),"attempt_ids"=>ids(16384),"owners"=>ids(16384),"groups"=>count(),"observations"=>count(),"plans"=>count(),"exposed"=>P.bool(),"exposures"=>P.array(exposure,256)})
+    policy=P.obj(%{"adapter_version"=>P.str(),"runtime"=>P.str(),"global_retrieval_identity"=>digest(),"baseline_evaluator"=>P.ref("RetrievalEvaluator"),"candidate_evaluator"=>P.ref("RetrievalEvaluator"),"history_evaluator"=>hp["evaluator"],"archive_policy_identity"=>digest(),"requires_complete"=>P.bool(),"identity"=>digest()})
+    coverage=P.obj(%{"primary_count"=>count(),"indexed"=>count(),"semantic_examined"=>count(),"returned_ids"=>ids(64),"assessed_ids"=>ids(),"expanded_ids"=>ids(),"gaps"=>P.array(gap,128),"truncated"=>P.bool(),"primary_complete"=>P.bool(),"final_complete"=>P.bool(),"answer_scope"=>P.enum(~w(unexamined candidate_only partial_scope full_scope))})
+    reason=nullable(P.enum(~w(unlabeled changed_corpus incomplete retired policy_changed label_changed missing_originals)))
+    metrics=P.obj(%{"eligible"=>P.bool(),"reason"=>reason,"expected_gold"=>nullable(count()),"retrieved_gold"=>nullable(count()),"retrieval_recall_ppm"=>nullable(P.int(0,1000000)),"answer_pass"=>nullable(P.bool()),"false_support"=>nullable(P.bool()),"fallback"=>P.bool(),"full_scope"=>P.bool()})
+    comparison=P.obj(Map.merge(Map.new(~w(retrieval_gain_ppm fallback_delta calls_delta bytes_delta time_ms_delta native_bytes_delta),&{&1,nullable(P.int(-9007199254740991,9007199254740991))}),%{"eligible"=>P.bool(),"reason"=>reason,"answer_regressions"=>nullable(count()),"false_supports"=>nullable(count()),"provisional"=>%{"const"=>true}}))
+    branch=P.obj(%{"status"=>statuses,"phase"=>P.enum(~w(building ranking scoring assessing scanning done)),"recipe"=>P.ref("RetrievalRecipe"),"recipe_identity"=>digest(),"indexed"=>count(),"total"=>count(),"input_manifest_identity"=>nullable(digest()),"candidates"=>rp["candidates"],"assessment"=>ap["assessment"],"scan"=>nullable(P.ref("HistoryQuery")),"coverage"=>P.ref("ReplayCoverage"),"answer"=>ap["answer"],"usage"=>hp["usage"],"comparison_usage"=>hp["usage"],"native_bytes"=>count(),"metrics"=>P.ref("ReplayMetrics"),"error"=>nullable(P.ref("FeedbackError"))})
+    retrieval=defs["RetrievalEvaluation"] |> put_in(["properties","branch"],P.enum(~w(baseline candidate))) |> put_in(["properties","stage"],%{"const"=>"retrieval"}) |> Map.update!("required",&(&1++~w(branch stage))) |> Map.put("x-byteLengthOf",%{"bytes"=>"request_json"})
+    assessment=Enum.find(defs["ArchiveEvaluation"]["oneOf"],&(&1["properties"]["stage"]["const"]=="assessment"))
+    assessment=assessment |> put_in(["properties","stage"],%{"const"=>"assessment"}) |> put_in(["properties","branch"],P.enum(~w(baseline candidate))) |> Map.update!("required",&(&1++["branch"]))
+    # Assessment evidence is the closed existing Archive assessment variant.
+    child=P.obj(%{"query_id"=>P.str(),"run"=>P.int(1,16),"last_status"=>statuses})
+    query=P.obj(%{"id"=>P.str(),"owner_id"=>P.identifier(),"requester_kind"=>P.enum(~w(agent human_session legacy_token)),"requester_id"=>P.str(),"attempt_id"=>P.str(),"question"=>P.str(4096),"project_id"=>P.identifier(),"scope"=>P.ref("HistoryScope"),"snapshot"=>ap["snapshot"],"original_snapshot"=>ap["snapshot"],"corpus"=>P.enum(~w(frozen current)),"baseline_origin"=>P.enum(~w(recorded current)),"created_at"=>P.time(),"updated_at"=>P.time(),"status"=>statuses,"phase"=>P.enum(~w(baseline candidate done)),"run"=>P.int(1,16),"policy"=>P.ref("ReplayPolicy"),"budget"=>P.ref("HistoryBudget"),"usage"=>P.obj(Map.new(~w(baseline candidate total),&{&1,hp["usage"]})),"label"=>nullable(P.ref("FeedbackLabel")),"label_revision"=>P.int(0,16),"baseline"=>P.ref("ReplayBranch"),"candidate"=>P.ref("ReplayBranch"),"children"=>P.obj(Map.new(~w(baseline candidate),&{&1,nullable(child)})),"comparison"=>P.ref("ReplayComparison"),"evaluations"=>P.array(P.ref("ReplayEvaluation"),64),"evaluation_count"=>count(),"next_offset"=>nullable(P.int(0,1000000)),"prior_runs"=>P.array(P.int(1,15),15) |> Map.put("uniqueItems",true),"evidence_available"=>P.bool(),"error"=>nullable(P.ref("FeedbackError")),"continuable"=>P.bool()}) |> Map.put("x-replayBindings",true) |> Map.put("x-replayUsage",true)
+    cp=config_props();patch=P.obj(Map.new(cp,fn {k,v}->{k,nullable(if(k=="budget",do: P.obj(Map.new(H.budget_props(),fn {key,value}->{key,nullable(value)} end),[]),else: v))} end),[])
+    limits=Enum.map(1..64,fn n->%{"if"=>%{"required"=>["max_active_replays"],"properties"=>%{"max_active_replays"=>%{"const"=>n}}},"then"=>%{"properties"=>%{"max_replays"=>%{"minimum"=>n}}}} end)
+    patch=Map.put(patch,"allOf",limits)
+    additions=%{"RetrievalRecipeInput"=>P.obj(ADHD.RetrievalProtocol.recipe_props(),[]),"FeedbackConfig"=>Map.put(P.obj(cp),"allOf",limits),"FeedbackConfigPatch"=>patch,"FeedbackError"=>error,"FeedbackStatus"=>status,"FeedbackLabelInput"=>label_input,"FeedbackLabel"=>label,"FeedbackScanSummary"=>scan,"FeedbackAttemptSummary"=>P.obj(summary),"FeedbackAttempt"=>P.obj(Map.merge(summary,%{"labels"=>P.array(P.ref("FeedbackLabel"),16),"group_id"=>digest()})),"FeedbackCohort"=>group,"FeedbackCluster"=>P.obj(%{"id"=>digest(),"diagnosis"=>P.enum(ADHD.Feedback.classifications()),"recipe_identity"=>nullable(digest()),"policy_identity"=>digest(),"context_complete"=>P.bool(),"observations"=>count(),"groups"=>count(),"plans"=>count(),"attempt_ids"=>ids(16384),"owners"=>ids(16384)}),"ReplayPolicy"=>policy,"ReplayCoverage"=>coverage,"ReplayMetrics"=>metrics,"ReplayComparison"=>comparison,"ReplayBranch"=>branch,"ReplayEvaluation"=>%{"oneOf"=>[retrieval,assessment]},"ReplayQuery"=>query}
+    defs=Map.merge(defs,additions) |> put_in(["PublicConfig","properties","feedback"],P.ref("FeedbackConfig")) |> put_in(["MergePatch","properties","feedback"],nullable(P.ref("FeedbackConfigPatch")))
+    listing=%{"classification"=>P.enum(ADHD.Feedback.classifications()),"offset"=>P.int(0,1000000),"limit"=>P.int(1,64)}
+    replay=%{"attempt_id"=>P.str(),"candidate_recipe"=>P.ref("RetrievalRecipeInput"),"baseline"=>P.enum(~w(recorded current)),"corpus"=>P.enum(~w(frozen current)),"limit"=>P.int(1,64),"budget"=>P.ref("HistoryBudgetInput")}
+    list_result=P.obj(%{"items"=>P.array(P.ref("FeedbackAttemptSummary"),64),"next_offset"=>nullable(P.int(0,1000000)),"status"=>P.ref("FeedbackStatus")})
+    get_result=P.obj(%{"attempt"=>P.ref("FeedbackAttempt")});replay_result=P.obj(%{"query"=>P.ref("ReplayQuery")})
+    defs=Enum.reduce(ADHD.Feedback.operations(),defs,fn op,acc->
+      {params,required,result}=case op do
+        "list_retrieval_attempts"->{listing,[],list_result}
+        "get_retrieval_attempt"->{%{"attempt_id"=>P.str()},~w(attempt_id),get_result}
+        "replay_retrieval"->{replay,~w(attempt_id candidate_recipe),replay_result}
+        "get_retrieval_replay"->{Map.put(H.page_props(),"query_id",P.str()),~w(query_id),replay_result}
+        "continue_retrieval_replay"->{%{"query_id"=>P.str(),"restart"=>P.bool(),"budget"=>P.ref("HistoryBudgetInput")},~w(query_id),replay_result}
+        _->{%{"query_id"=>P.str()},~w(query_id),replay_result}
+      end
+      acc |> Map.put("agent_"<>op,P.command(op,params,required)) |> Map.put("result_"<>op,result)
+    end)
+    defs=update_in(defs,["AgentResult","anyOf"],&(&1++Enum.map(ADHD.Feedback.operations(),fn op->P.ref("result_"<>op) end)))
+    mutation=%{"expected_revision"=>P.int(1,9007199254740991),"message_id"=>P.str(),"confirm"=>%{"const"=>true}}
+    defs=Enum.reduce(ADHD.Feedback.admin_operations(),defs,fn op,acc->
+      {params,required,result}=case op do
+        "feedback_attempts"->{Map.put(listing,"agent_id",P.identifier()),[],list_result}
+        "feedback_attempt"->{%{"attempt_id"=>P.str()},~w(attempt_id),get_result}
+        "feedback_status"->{%{},[],P.obj(%{"status"=>P.ref("FeedbackStatus")})}
+        "feedback_cohorts"->{Map.take(listing,~w(offset limit)),[],P.obj(%{"items"=>P.array(P.ref("FeedbackCohort"),64),"next_offset"=>nullable(P.int(0,1000000))})}
+        "feedback_clusters"->{Map.take(listing,~w(offset limit)),[],P.obj(%{"items"=>P.array(P.ref("FeedbackCluster"),64),"next_offset"=>nullable(P.int(0,1000000))})}
+        "save_retrieval_label"->{Map.merge(mutation,%{"attempt_id"=>P.str(),"expected_label_revision"=>P.int(0,16),"label"=>P.ref("FeedbackLabelInput")}),~w(attempt_id expected_label_revision label expected_revision message_id confirm),P.obj(%{"attempt_id"=>P.str(),"label"=>P.ref("FeedbackLabel")})}
+        "replay_attempt"->{Map.merge(mutation,replay),~w(attempt_id candidate_recipe expected_revision message_id confirm),replay_result}
+        "retire_replay"->{Map.put(mutation,"query_id",P.str()),~w(query_id expected_revision message_id confirm),replay_result}
+      end
+      acc |> Map.put("admin_"<>op,P.admin(op,params,required)) |> Map.put("admin_result_"<>op,result)
+    end)
+    defs=update_in(defs,["AdminCommand","oneOf"],&(&1++Enum.map(ADHD.Feedback.admin_operations(),fn op->P.ref("admin_"<>op) end)))
+    job=P.obj(%{"kind"=>%{"const"=>"replay"},"query"=>P.ref("ReplayQuery")})
+    defs=Enum.reduce(~w(admin_result_query_job admin_result_cancel_query_job),defs,fn key,acc->update_in(acc,[key,"oneOf"],&(&1++[job])) end)
+    defs=update_in(defs,["admin_result_query_jobs","properties","items","items","oneOf"],&(&1++[job]))
+    put_in(defs,["admin_query_jobs","properties","kind"],P.enum(~w(discovery source history retrieval archive replay)))
+  end
+end

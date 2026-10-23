@@ -1,0 +1,1371 @@
+defmodule ADHD.Config do
+  use GenServer
+  alias ADHD.Domain, as: D
+
+  def start_link(path) do
+    GenServer.start_link(__MODULE__, Path.expand(path), name: __MODULE__)
+  end
+
+  def root do
+    :persistent_term.get({__MODULE__, :config}, %{})
+  end
+
+  def get do
+    ADHD.Projects.view(root(), ADHD.Scope.id())
+  end
+
+  def format_status(_reason, [_dictionary, _state]) do
+    [data: [{~c"State", :redacted}]]
+  end
+
+  def format_status(status) do
+    status
+    |> Map.put(:state, :redacted)
+    |> Map.put(:message, :redacted)
+    |> Map.put(:reason, :redacted)
+    |> Map.put(:log, [])
+  end
+
+  def generation do
+    D.digest(get())
+  end
+
+  def request(cmd, headers) do
+    GenServer.call(__MODULE__, {:request, cmd, headers}, 60000)
+  end
+
+  def merge(_, nil) do
+    nil
+  end
+
+  def merge(old, patch) when is_map(patch) do
+    Enum.reduce(
+      patch,
+      if is_map(old) do
+        old
+      else
+        %{}
+      end,
+      fn {k, v}, acc ->
+        if is_nil(v) do
+          Map.delete(acc, k)
+        else
+          Map.put(acc, k, merge(acc[k], v))
+        end
+      end
+    )
+  end
+
+  def merge(_, patch) do
+    patch
+  end
+
+  def init(path) do
+    try do
+      recover(path)
+      if File.exists?(path) do
+        safe_file(path)
+        :ok=ADHD.LocalLegacy.preflight_seed(path,File.read!(path) |> ADHD.JSON.decode!())
+      end
+      ADHD.Migration.recover(path)
+
+      if not File.exists?(path) do
+        bootstrap(path)
+      end
+
+      safe_file(path)
+      seed = File.read!(path) |> ADHD.JSON.decode!()
+      :ok=ADHD.LocalLegacy.preflight_seed(path,seed)
+      seed = ADHD.Migration.config(path,seed)
+
+      if is_list(seed["projects"]) and (seed["users"] || []) == [] and
+           not Map.has_key?(seed, "auth") and is_nil(seed["admin_token"]) do
+        bootstrap(path, seed |> Map.delete("users"))
+      end
+
+      raw = File.read!(path)
+      c = raw |> ADHD.JSON.decode!() |> validate(Path.dirname(path))
+
+      {raw, c} =
+        if ADHD.Projects.multi?(c) and not is_binary(c["server_id"]) do
+          c = Map.put(c, "server_id", ADHD.Projects.server(c))
+          raw = JSON.encode!(c)
+          atomic(path, raw)
+          {raw, c}
+        else
+          {raw, c}
+        end
+
+      safe_file(path <> ".journal")
+
+      journal =
+        if File.exists?(path <> ".journal") do
+          ADHD.JSON.decode!(File.read!(path <> ".journal"))
+        else
+          %{}
+        end
+
+      :persistent_term.put({__MODULE__, :config}, c)
+      :ok = ADHD.StorageRegistry.load(path, c)
+      Process.send_after(self(), :reload, 500)
+      {:ok, %{path: path, config: c, journal: journal, raw: raw, reload: "ready"}}
+    rescue
+      _ -> {:stop, :invalid_configuration}
+    catch
+      _, _ -> {:stop, :invalid_configuration}
+    end
+  end
+
+  def safe_file(path) do
+    case File.lstat(path) do
+      {:ok, %{type: :regular}} -> :ok
+      {:error, :enoent} -> :ok
+      _ -> D.fail("CONFIG_WRITE_FAILED")
+    end
+  end
+
+  def atomic(path, value) do
+    safe_file(path)
+    temp = path <> ".tmp-" <> D.opaque()
+    {:ok, f} = File.open(temp, [:write, :binary, :exclusive])
+
+    try do
+      :ok = File.chmod(temp, 384)
+      :ok = IO.binwrite(f, value)
+      :ok = :file.sync(f)
+    after
+      File.close(f)
+    end
+
+    File.rename!(temp, path)
+
+    case :file.open(String.to_charlist(Path.dirname(path)), [:read, :raw, :directory]) do
+      {:ok, d} ->
+        :file.sync(d)
+        :file.close(d)
+
+      _ ->
+        :ok
+    end
+  end
+
+  def recover(path) do
+    txn = path <> ".transaction"
+    safe_file(txn)
+
+    if File.exists?(txn) do
+      r = ADHD.JSON.decode!(File.read!(txn))
+
+      case r["kind"] do
+        "registry_adoption" ->
+          ADHD.StorageRegistry.recover_adoption(path, r)
+
+        "project_restore" ->
+          ADHD.ProjectRestore.recover_decision(path, r)
+
+        "metadata_rebind" ->
+          ADHD.ProjectRestore.recover_rebind(path, r)
+
+        nil ->
+          ADHD.Store.install_moves(Map.get(r, "store_moves", []))
+
+          if r["storage_registry"] do
+            ADHD.StorageRegistry.persist(path, r["storage_registry"])
+          end
+
+          atomic(path, JSON.encode!(r["config"]))
+          atomic(path <> ".journal", JSON.encode!(r["journal"]))
+
+          if r["index_reset"] == nil and r["index_resets"] in [nil, []] and
+               r["eventing_transition"] == nil do
+            File.rm!(txn)
+          end
+
+        _ ->
+          D.fail("CONFIG_WRITE_FAILED")
+      end
+    end
+  end
+
+  def bootstrap(path, seed \\ %{}) do
+    parent = Path.dirname(path)
+    File.mkdir_p!(parent)
+    File.chmod!(parent, 448)
+    pass = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
+
+    u = %{
+      "id" => D.opaque(),
+      "username" => "admin",
+      "name" => "admin",
+      "email" => "",
+      "role" => "Admin",
+      "disabled" => false,
+      "provider" => "local",
+      "oidc" => nil,
+      "groups" => [],
+      "profile_complete" => false,
+      "built_in" => true,
+      "password_hash" => ADHD.Identity.hash(pass)
+    }
+
+    c = %{
+      "project_id" => "shared-project",
+      "store_path" => "hub.dets",
+      "port" => 8766,
+      "agents" => %{},
+      "matcher" => nil,
+      "eventing" => %{"enabled" => true},
+      "users" => [u],
+      "auth" => %{"mode" => "local", "allow_admin_token" => false},
+      "config_revision" => 1
+    }
+
+    c = Map.merge(c, seed)
+
+    c =
+      if is_list(seed["projects"]) and not Map.has_key?(seed, "project_id") do
+        Map.delete(c, "project_id")
+      else
+        c
+      end
+
+    c =
+      if map_size(seed) > 0 and not Map.has_key?(seed, "eventing") do
+        Map.put(c, "eventing", %{"enabled" => false})
+      else
+        c
+      end
+
+    provision = path <> ".provision"
+    safe_file(provision)
+
+    if File.exists?(provision) do
+      r = ADHD.JSON.decode!(File.read!(provision))
+      initial = Path.join(parent, "initial-admin-password.txt")
+
+      if File.exists?(initial) do
+        safe_file(initial)
+
+        [_, saved] =
+          Regex.run(~r/\AUsername: admin\nPassword: ([A-Za-z0-9_-]+)\n\z/, File.read!(initial))
+
+        admin = Enum.find(r["config"]["users"], &(&1["username"] == "admin"))
+        D.check(ADHD.Identity.verify(saved, admin["password_hash"]))
+        finish_bootstrap(path, r["config"], saved)
+      else
+        saved = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
+
+        next =
+          update_in(r["config"], ["users"], fn users ->
+            Enum.map(users, &Map.put(&1, "password_hash", ADHD.Identity.hash(saved)))
+          end)
+
+        atomic(provision, JSON.encode!(%{"config" => next}))
+        finish_bootstrap(path, next, saved)
+      end
+    else
+      initial = Path.join(parent, "initial-admin-password.txt")
+      D.check(not File.exists?(initial))
+      atomic(provision, JSON.encode!(%{"config" => c}))
+      finish_bootstrap(path, c, pass)
+    end
+  end
+
+  defp finish_bootstrap(path, c, password) do
+    initial = Path.join(Path.dirname(path), "initial-admin-password.txt")
+    text = "Username: admin\nPassword: " <> password <> "\n"
+
+    if File.exists?(initial) do
+      safe_file(initial)
+      D.check(File.read!(initial) == text)
+    else
+      {:ok, f} = File.open(initial, [:write, :binary, :exclusive])
+      File.chmod!(initial, 384)
+      IO.binwrite(f, text)
+      :file.sync(f)
+      File.close(f)
+    end
+
+    atomic(path, JSON.encode!(c))
+    File.rm!(path <> ".provision")
+  end
+
+  def validate(c, base) do
+    c =
+      if Map.has_key?(c, "recovery") do
+        Map.update!(c, "recovery", &ADHD.ProjectRestore.normalize(&1, base))
+      else
+        c
+      end
+
+    value = validate_base(c, base) |> ADHD.Resources.normalize() |> ADHD.TLS.normalize(base)
+
+    if ADHD.Projects.multi?(value) do
+      Enum.each(value["projects"], fn project ->
+        settings = project["settings"]
+
+        if is_map(settings["federation"]) do
+          D.keys(
+            settings["federation"],
+            ~w(description export_publication_ids catalog share_identities timeout_ms retry_ms)
+          )
+        end
+
+        view = merge(value, settings)
+
+        view =
+          if view["federation"] do
+            Map.put(
+              view,
+              "federation",
+              Map.merge(
+                %{
+                  "description" =>
+                    if project["description"] in [nil, ""] do
+                      project["name"]
+                    else
+                      project["description"]
+                    end,
+                  "peers" => []
+                },
+                view["federation"]
+              )
+            )
+          else
+            view
+          end
+
+        validate_base(view, base)
+      end)
+    end
+
+    value
+  end
+
+  def validate_base(c, base) do
+    D.keys(
+      c,
+      ~w(project_id store_path agents host port public_url matcher threshold_ppm admin_token federation config_revision users agent_owners auth history retrieval archive feedback optimization projects agent_projects server_id eventing resources recovery tls),
+      ~w(store_path agents)
+    )
+
+    c =
+      Map.update(c, "users", [], fn users ->
+        Enum.map(users, fn u ->
+          if u["username"] == "admin" and u["provider"] == "local" do
+            Map.put(u, "built_in", true)
+          else
+            u
+          end
+        end)
+      end)
+
+    c =
+      if is_map(c["auth"]) do
+        a = Map.put_new(c["auth"], "session_ttl_ms", 3_600_000)
+
+        a =
+          if is_map(a["oidc"]) do
+            Map.put(
+              a,
+              "oidc",
+              a["oidc"]
+              |> Map.put_new("groups_claim", "groups")
+              |> Map.put_new("default_role", nil)
+              |> Map.put_new("timeout_ms", 3000)
+            )
+          else
+            a
+          end
+
+        Map.put(c, "auth", a)
+      else
+        c
+      end
+
+    c =
+      if is_map(c["federation"]) do
+        Map.put(
+          c,
+          "federation",
+          c["federation"]
+          |> Map.put_new("timeout_ms", 1000)
+          |> Map.put_new("retry_ms", 500)
+          |> Map.put_new("export_publication_ids", [])
+          |> Map.put_new("catalog", %{"visible" => true, "entries" => []})
+          |> Map.put_new("share_identities", false)
+        )
+      else
+        c
+      end
+
+    if c["project_id"] != nil do
+      D.identifier(c["project_id"])
+    end
+
+    D.string(c["store_path"], 4096)
+    D.object(c["agents"])
+    D.check(map_size(c["agents"]) <= 1000)
+
+    Enum.each(c["agents"], fn {id, t} ->
+      D.identifier(id)
+      token(t, 24)
+    end)
+
+    tokens = Map.values(c["agents"])
+    D.distinct(tokens)
+
+    D.optional(c, "admin_token", fn t ->
+      token(t, 32)
+      D.check(t not in tokens)
+    end)
+
+    D.check(Map.get(c, "host", "127.0.0.1") in ["127.0.0.1", "0.0.0.0"])
+    port = Map.get(c, "port", 8766)
+    D.integer(port, 1, 65535)
+    public = Map.get(c, "public_url", "http://127.0.0.1:#{port}")
+    D.url(public, true)
+    m = c["matcher"]
+
+    if m != nil do
+      D.keys(m, ~w(url model timeout_ms retry_ms), ~w(url model))
+      D.url(m["url"])
+      D.string(m["model"], 512)
+
+      for k <- ~w(timeout_ms retry_ms) do
+        D.optional(m, k, &D.integer(&1, 100, 30000))
+      end
+    end
+
+    c =
+      Map.put(c, "history", ADHD.History.config(c))
+      |> Map.put("retrieval", ADHD.Retrieval.config(c))
+      |> Map.put("archive", ADHD.Archive.config(c))
+      |> Map.put("feedback", ADHD.Feedback.config(c))
+      |> Map.put("optimization", ADHD.Optimization.config(c))
+
+    D.optional(c, "threshold_ppm", &D.integer(&1, 1, 1_000_000))
+    D.optional(c, "config_revision", &D.integer(&1, 1, 9_223_372_036_854_775_807))
+
+    if c["federation"] do
+      f = c["federation"]
+      ADHD.Directory.validate(f)
+
+      D.keys(
+        f,
+        ~w(description export_publication_ids peers timeout_ms retry_ms catalog share_identities),
+        ~w(description peers)
+      )
+
+      D.string(f["description"], 4096)
+      D.list(f["peers"], 16)
+      D.optional(f, "timeout_ms", &D.integer(&1, 100, 10000))
+      D.optional(f, "retry_ms", &D.integer(&1, 100, 30000))
+      ids = Map.get(f, "export_publication_ids", [])
+      D.list(ids, 32)
+      D.distinct(ids)
+      Enum.each(ids, &D.id/1)
+      ADHD.FederationV2.validate_config(c)
+    end
+
+    users = Map.get(c, "users", [])
+    D.list(users, 1000)
+
+    Enum.each(users, fn u ->
+      D.keys(
+        u,
+        ~w(id username name email role disabled provider oidc password_hash groups profile_complete role_source oidc_signed_in oidc_binding built_in project_ids),
+        ~w(id name email role provider)
+      )
+
+      D.id(u["id"])
+      D.check(u["role"] in ~w(Admin Developer Viewer))
+      D.check(u["provider"] in ~w(local oidc))
+
+      incomplete =
+        u["profile_complete"] == false and (u["provider"] == "oidc" or u["username"] == "admin")
+
+      D.string(u["name"], 256, incomplete)
+      D.string(u["email"], 320, incomplete)
+
+      if u["email"] != "" do
+        D.email(u["email"])
+      end
+
+      for k <- ~w(disabled profile_complete oidc_signed_in) do
+        D.optional(u, k, &D.boolean/1)
+      end
+
+      if u["provider"] == "local" do
+        D.identifier(u["username"])
+        D.check(is_nil(u["oidc"]))
+        ADHD.Identity.validate_hash(u["password_hash"])
+      else
+        D.keys(u["oidc"], ~w(issuer subject provider_id), ~w(issuer subject provider_id))
+        D.url(u["oidc"]["issuer"])
+        D.string(u["oidc"]["subject"], 4096)
+        D.identifier(u["oidc"]["provider_id"])
+        D.check(not Map.has_key?(u, "password_hash"))
+      end
+
+      D.optional(u, "built_in", &D.boolean/1)
+
+      if u["built_in"] == true do
+        D.check(u["provider"] == "local")
+      end
+
+      D.optional(u, "groups", fn groups ->
+        D.list(groups, 256)
+        Enum.each(groups, &D.string(&1, 256))
+      end)
+
+      D.optional(u, "role_source", &D.check(&1 in ~w(manual groups)))
+
+      D.optional(u, "oidc_binding", fn binding ->
+        D.check(is_binary(binding) and Regex.match?(~r/\A[0-9a-f]{64}\z/, binding))
+      end)
+    end)
+
+    D.distinct(Enum.map(users, & &1["id"]))
+    D.distinct(Enum.filter(users, &(&1["provider"] == "local")) |> Enum.map(& &1["username"]))
+    owners = Map.get(c, "agent_owners", %{})
+    D.object(owners)
+
+    Enum.each(owners, fn {agent, owner} ->
+      D.check(Map.has_key?(c["agents"], agent))
+      D.check(is_nil(owner) or Enum.any?(users, &(&1["id"] == owner)))
+    end)
+
+    if c["auth"] do
+      a = c["auth"]
+      D.keys(a, ~w(mode allow_admin_token session_ttl_ms oidc), ~w(mode allow_admin_token))
+      D.check(a["mode"] in ~w(local oidc both))
+      D.boolean(a["allow_admin_token"])
+      D.optional(a, "session_ttl_ms", &D.integer(&1, 60000, 86_400_000))
+
+      if a["oidc"] do
+        D.oidc(a["oidc"])
+      end
+
+      if a["mode"] in ~w(oidc both) do
+        D.check(is_map(a["oidc"]))
+      end
+
+      local =
+        Enum.any?(
+          users,
+          &(&1["provider"] == "local" and &1["role"] == "Admin" and &1["disabled"] != true and
+              is_map(&1["password_hash"]))
+        )
+
+      oidc =
+        Enum.any?(
+          users,
+          &(&1["provider"] == "oidc" and ADHD.Identity.role(&1, c) == "Admin" and
+              &1["oidc_signed_in"] == true and
+              &1["oidc_binding"] == D.digest(Map.drop(a["oidc"], ["role_groups", "default_role"])))
+        )
+
+      if not ((a["allow_admin_token"] and D.credential?(c["admin_token"], 32)) or
+                (local and a["mode"] in ~w(local both)) or (oidc and a["mode"] in ~w(oidc both))) do
+        D.fail("CONFIG_APPLY_FAILED")
+      end
+    end
+
+    c = ADHD.Eventing.normalize(c)
+
+    c
+    |> Map.put("store_path", Path.expand(c["store_path"], base))
+    |> Map.put_new("host", "127.0.0.1")
+    |> Map.put("port", port)
+    |> Map.put("public_url", public)
+    |> Map.put_new("threshold_ppm", 900_000)
+    |> Map.put_new("config_revision", 1)
+    |> Map.put_new("users", [])
+    |> Map.put_new("agent_owners", %{})
+    |> Map.put(
+      "matcher",
+      if m do
+        m |> Map.put_new("timeout_ms", 3000) |> Map.put_new("retry_ms", 1000)
+      end
+    )
+    |> ADHD.Projects.normalize()
+  end
+
+  def token(t, min) do
+    D.string(t, 65536)
+    D.check(byte_size(t) >= min)
+  end
+
+  def redacted(c) do
+    {v, secrets} = redact(c, "", %{})
+    {v, secrets}
+  end
+
+  defp redact(m, path, secrets) when is_map(m) do
+    Enum.reduce(m, {%{}, secrets}, fn {k, v}, {out, sec} ->
+      p = path <> "/" <> String.replace(String.replace(k, "~", "~0"), "/", "~1")
+
+      cond do
+        k in ~w(oidc_signed_in oidc_binding built_in) ->
+          {out, sec}
+
+        path == "/agents" ->
+          {Map.put(out, k, %{}), Map.put(sec, p, not is_nil(v))}
+
+        k in ~w(admin_token token inbound_token client_secret password_hash bearer_token) ->
+          {out, Map.put(sec, p, not is_nil(v))}
+
+        true ->
+          {vv, ss} = redact(v, p, sec)
+          {Map.put(out, k, vv), ss}
+      end
+    end)
+  end
+
+  defp redact(a, path, s) when is_list(a) do
+    Enum.with_index(a)
+    |> Enum.reduce({[], s}, fn {v, i}, {out, sec} ->
+      {vv, ss} = redact(v, path <> "/" <> to_string(i), sec)
+      {out ++ [vv], ss}
+    end)
+  end
+
+  defp redact(v, _, s) do
+    {v, s}
+  end
+
+  def finish_store_recovery do
+    GenServer.call(__MODULE__, :finish_store_recovery, 30000)
+  end
+
+  def handle_call(:finish_store_recovery, _, x) do
+    txn = x.path <> ".transaction"
+    safe_file(txn)
+
+    if File.exists?(txn) do
+      decision = ADHD.JSON.decode!(File.read!(txn))
+
+      if is_nil(decision["kind"]) do
+        finish_index_resets(decision, x.config)
+        finish_eventing_transition(decision, x.config)
+        File.rm!(txn)
+      end
+    end
+
+    remember_filter_adapters(x.config)
+    {:reply, :ok, x}
+  end
+
+  def handle_call({:oidc_user, user, generation, link, headers}, _, x) do
+    try do
+      if D.digest(x.config["auth"]["oidc"]) != generation do
+        D.fail("OIDC_ERROR")
+      end
+
+      users = x.config["users"]
+
+      existing =
+        Enum.find(users, fn u ->
+          u["provider"] == "oidc" and u["oidc"]["issuer"] == user["oidc"]["issuer"] and
+            u["oidc"]["subject"] == user["oidc"]["subject"]
+        end)
+
+      base =
+        if link do
+          ADHD.Identity.link_principal(link, headers, x.config)
+
+          if link.revision != x.config["config_revision"] do
+            D.fail("CONFIG_CONFLICT")
+          end
+
+          target = Enum.find(users, &(&1["id"] == link.target)) || D.fail("NOT_FOUND")
+
+          if target["provider"] != "local" or target["username"] == "admin" or
+               target["disabled"] == true do
+            D.fail("CONFIG_APPLY_FAILED")
+          end
+
+          if existing && existing["id"] != target["id"] do
+            D.fail("IDENTITY_CONFLICT")
+          end
+
+          target
+          |> Map.drop(~w(username password_hash))
+          |> Map.put("provider", "oidc")
+          |> Map.put("role_source", "manual")
+        else
+          existing || user
+        end
+
+      verified =
+        Map.take(user, ~w(oidc groups name email oidc_signed_in oidc_binding profile_complete))
+
+      user = Map.merge(base, verified)
+      effective = ADHD.Identity.role(user, x.config)
+
+      if is_nil(effective) do
+        D.fail("FORBIDDEN")
+      end
+
+      user = Map.put(user, "role", effective)
+
+      users =
+        if Enum.any?(users, &(&1["id"] == user["id"])) do
+          Enum.map(users, fn u ->
+            if u["id"] == user["id"] do
+              user
+            else
+              u
+            end
+          end)
+        else
+          users ++ [user]
+        end
+
+      c =
+        x.config
+        |> Map.put("users", users)
+        |> Map.update!("config_revision", &(&1 + 1))
+        |> validate(Path.dirname(x.path))
+
+      next = commit(x, c, x.journal)
+      {:reply, {:ok, user}, next}
+    rescue
+      _ -> {:reply, {:error, "OIDC_ERROR"}, x}
+    catch
+      {:domain, code} -> {:reply, {:error, code}, x}
+      _, _ -> {:reply, {:error, "OIDC_ERROR"}, x}
+    end
+  end
+
+  def handle_call({:request, cmd, headers}, _, x) do
+    ADHD.Scope.begin_work()
+
+    try do
+      p = ADHD.Identity.principal(headers, x.config)
+      D.admin(cmd)
+
+      result =
+        case cmd["op"] do
+          "config_get" ->
+            require_admin(p)
+            {v, s} = redacted(x.config)
+            s = Map.put_new(s, "/admin_token", false)
+
+            s =
+              if is_map(x.config["auth"]["oidc"]) do
+                Map.put_new(s, "/auth/oidc/client_secret", false)
+              else
+                s
+              end
+
+            v =
+              Map.put(
+                v,
+                "users",
+                Enum.map(x.config["users"], &ADHD.Identity.public(&1, x.config))
+              )
+
+            {%{
+               "config_revision" => x.config["config_revision"],
+               "config" => v,
+               "secrets" => s,
+               "reload_status" => x.reload
+             }, x}
+
+          "tls_status" ->
+            require_admin(p)
+            {ADHD.TLS.status(), x}
+
+          "tls_renew" ->
+            require_admin(p)
+            case ADHD.TLS.renew(cmd, p) do
+              {:ok, result} -> {result, x}
+              {:error, code} -> D.fail(code)
+            end
+
+          op when op in ~w(project_restore_plan project_restore_apply project_restore_status) ->
+            require_admin(p)
+
+            case ADHD.ProjectRestore.accept(cmd, p, x.config, x.path) do
+              {:ok, result} -> {result, x}
+              {:error, code} -> D.fail(code)
+              {:error, code, _} -> D.fail(code)
+            end
+
+          _ ->
+            mutate(cmd, p, x)
+        end
+
+      {r, next} = result
+      {:reply, {:ok, r}, next}
+    rescue
+      _ -> {:reply, {:error, "CONFIG_WRITE_FAILED"}, x}
+    catch
+      {:domain, code} -> {:reply, {:error, code}, x}
+    end
+  end
+
+  def handle_call({:recovery_admin, cmd, principal}, _, x) do
+    ADHD.Scope.begin_work()
+    {:reply, ADHD.ProjectRestore.accept(cmd, principal, x.config, x.path), x}
+  end
+
+  def handle_call({:recovery_phase, phase, id, payload}, _, x) do
+    ADHD.Scope.begin_work()
+
+    result =
+      try do
+        apply(ADHD.RecoveryCoordinator, phase, [x, id, payload])
+      rescue
+        _ -> {:error, "RESTORE_IO_ERROR", "io"}
+      catch
+        {:recovery, code, reason} -> {:error, code, reason}
+        {:domain, code} -> {:error, code}
+      end
+
+    {:reply, result, x}
+  end
+
+  def recovery_request(cmd, principal) do
+    GenServer.call(__MODULE__, {:recovery_admin, cmd, principal}, 60000)
+  end
+
+  def recovery_decide(id, prepared) do
+    GenServer.call(__MODULE__, {:recovery_phase, :decide, id, prepared}, 60000)
+  end
+
+  def recovery_activate(id, decision) do
+    GenServer.call(__MODULE__, {:recovery_phase, :activate, id, decision}, 60000)
+  end
+
+  def recovery_finalize(id, decision) do
+    GenServer.call(__MODULE__, {:recovery_phase, :finalize, id, decision}, 60000)
+  end
+
+  def require_admin(p) do
+    if p["role"] != "Admin" do
+      D.fail("FORBIDDEN")
+    end
+  end
+
+  defp mutate(cmd, p, x) do
+    old = x.config
+
+    if cmd["op"] != "create_agent" do
+      require_admin(p)
+    end
+
+    if cmd["op"] == "create_agent" and p["role"] not in ~w(Admin Developer) do
+      D.fail("FORBIDDEN")
+    end
+
+    if cmd["op"] == "create_agent" and p["role"] == "Developer" and
+         Map.has_key?(cmd, "owner_user_id") and cmd["owner_user_id"] != p["id"] do
+      D.fail("FORBIDDEN")
+    end
+
+    digest = D.digest(cmd)
+
+    key =
+      if is_binary(cmd["message_id"]) do
+        D.digest([p["id"], cmd["message_id"]])
+      else
+        nil
+      end
+
+    receipt =
+      if key do
+        x.journal[key]
+      else
+        nil
+      end
+
+    cond do
+      receipt && receipt["digest"] == digest ->
+        {receipt["result"], x}
+
+      receipt ->
+        D.fail("IDEMPOTENCY_CONFLICT")
+
+      true ->
+        if cmd["expected_revision"] != old["config_revision"] do
+          D.fail("CONFIG_CONFLICT")
+        end
+
+        proposed =
+          case cmd["op"] do
+            op when op in ~w(config_update config_validate) ->
+              patch = cmd["patch"]
+
+              if Map.has_key?(patch, "config_revision") or Map.has_key?(patch, "users") do
+                D.fail()
+              end
+
+              merged = merge(old, patch) |> retain_peer_secrets(old, patch)
+
+              if Map.has_key?(patch, "port") and not Map.has_key?(patch, "public_url") and
+                   old["public_url"] == "http://127.0.0.1:#{old["port"]}" do
+                Map.put(merged, "public_url", "http://127.0.0.1:#{patch["port"]}")
+              else
+                merged
+              end
+
+            "create_agent" ->
+              id = cmd["agent_id"]
+
+              if Map.has_key?(old["agents"], id) do
+                D.fail("IDEMPOTENCY_CONFLICT")
+              end
+
+              if p["role"] == "Developer" and ADHD.Projects.retained_agent?(old, id) do
+                D.fail("IDEMPOTENCY_CONFLICT")
+              end
+
+              owner =
+                if p["role"] == "Developer" do
+                  if Map.has_key?(cmd, "owner_user_id") and cmd["owner_user_id"] != p["id"] do
+                    D.fail("FORBIDDEN")
+                  end
+
+                  p["id"]
+                else
+                  cmd["owner_user_id"]
+                end
+
+              next =
+                old |> put_in(["agents", id], cmd["token"]) |> put_in(["agent_owners", id], owner)
+
+              if ADHD.Projects.multi?(old) do
+                grants = Map.get(cmd, "project_ids", [])
+                ADHD.Projects.check_ids(grants, old)
+
+                if p["role"] == "Developer" and
+                     not Enum.all?(grants, &(&1 in ADHD.Projects.user_ids(p, old))) do
+                  D.fail("FORBIDDEN")
+                end
+
+                put_in(next, ["agent_projects", id], grants)
+              else
+                next
+              end
+
+            "refresh_federation" ->
+              old
+
+            "save_user" ->
+              save_user(old, cmd["user"])
+
+            "update_profile" ->
+              if p["id"] == "legacy-admin" do
+                D.fail("FORBIDDEN")
+              end
+
+              u = Enum.find(old["users"], &(&1["id"] == p["id"])) || D.fail("NOT_FOUND")
+
+              if is_binary(cmd["password"]) and
+                   not ADHD.Identity.verify(cmd["current_password"], u["password_hash"]) do
+                D.fail("FORBIDDEN")
+              end
+
+              input =
+                Map.take(cmd, ~w(name email password))
+                |> Map.merge(%{"id" => u["id"], "role" => u["role"]})
+
+              save_user(old, input)
+
+            _ ->
+              D.fail()
+          end
+
+        proposed = validate(proposed, Path.dirname(x.path))
+        ADHD.Projects.validate_registry(proposed, old)
+        ADHD.Projects.validate_aliases(proposed, old)
+
+        if cmd["op"] == "config_validate" do
+          ADHD.TLS.validate_inputs(proposed)
+          {%{"valid" => true, "config_revision" => old["config_revision"]}, x}
+        else
+          proposed = Map.put(proposed, "config_revision", old["config_revision"] + 1)
+          base = %{"config_revision" => proposed["config_revision"]}
+
+          r =
+            case cmd["op"] do
+              "create_agent" ->
+                Map.merge(base, %{
+                  "agent_id" => cmd["agent_id"],
+                  "owner_user_id" => proposed["agent_owners"][cmd["agent_id"]]
+                })
+
+              op when op in ~w(save_user update_profile) ->
+                input =
+                  if op == "save_user" do
+                    cmd["user"]["id"]
+                  else
+                    p["id"]
+                  end
+
+                u =
+                  if input do
+                    Enum.find(proposed["users"], &(&1["id"] == input))
+                  else
+                    List.last(proposed["users"])
+                  end
+
+                Map.put(base, "user", ADHD.Identity.public(u, proposed))
+
+              "refresh_federation" ->
+                Map.put(base, "queued", true)
+
+              _ ->
+                Map.merge(base, %{
+                  "applied" => true,
+                  "admin_url" => proposed["public_url"] <> "/admin"
+                })
+            end
+
+          journal = Map.put(x.journal, key, %{"digest" => digest, "result" => r})
+
+          explicit_recipe =
+            cmd["op"] == "config_update" and is_map(cmd["patch"]) and
+              Map.has_key?(cmd["patch"], "retrieval") and
+              (cmd["patch"]["retrieval"] == nil or
+                 (is_map(cmd["patch"]["retrieval"]) and
+                    Map.has_key?(cmd["patch"]["retrieval"], "recipe")))
+
+          {r, commit(x, proposed, journal, explicit_recipe)}
+        end
+    end
+  end
+
+  def save_user(c, input) do
+    users = c["users"]
+
+    old =
+      if input["id"] do
+        Enum.find(users, &(&1["id"] == input["id"])) || D.fail("NOT_FOUND")
+      else
+        %{
+          "id" => D.opaque(),
+          "provider" => "local",
+          "disabled" => false,
+          "groups" => [],
+          "oidc" => nil
+        }
+      end
+
+    u = Map.merge(old, Map.drop(input, ["password"])) |> Map.put("profile_complete", true)
+
+    if u["provider"] != old["provider"] do
+      D.fail("FORBIDDEN")
+    end
+
+    u =
+      if input["password"] do
+        Map.put(u, "password_hash", ADHD.Identity.hash(input["password"]))
+      else
+        u
+      end
+
+    Map.put(
+      c,
+      "users",
+      if input["id"] do
+        Enum.map(users, fn v ->
+          if v["id"] == u["id"] do
+            u
+          else
+            v
+          end
+        end)
+      else
+        users ++ [u]
+      end
+    )
+  end
+
+  defp retain_peer_secrets(c, old, patch) do
+    if is_map(patch["federation"]) and Map.has_key?(patch["federation"], "peers") and
+         is_list(c["federation"]["peers"]) do
+      peers =
+        Enum.map(c["federation"]["peers"], fn peer ->
+          previous =
+            Enum.find(
+              get_in(old, ["federation", "peers"]) || [],
+              &(ADHD.FederationV2.peer_key(&1) == ADHD.FederationV2.peer_key(peer))
+            ) || %{}
+
+          Enum.reduce(~w(token inbound_token), peer, fn k, p ->
+            if not Map.has_key?(p, k) and previous[k] do
+              Map.put(p, k, previous[k])
+            else
+              p
+            end
+          end)
+        end)
+
+      put_in(c, ["federation", "peers"], peers)
+    else
+      c
+    end
+  end
+
+  def changed_credentials(c, old) do
+    for {id, value} <- c["agents"], old["agents"][id] != value do
+      D.credential(value, 24)
+    end
+
+    if is_binary(c["admin_token"]) and c["admin_token"] != old["admin_token"] do
+      D.credential(c["admin_token"], 32)
+    end
+
+    for peer <- ADHD.Directory.peers(c) do
+      previous =
+        Enum.find(
+          get_in(old, ["federation", "peers"]) || [],
+          &(ADHD.FederationV2.peer_key(&1) == ADHD.FederationV2.peer_key(peer))
+        ) || %{}
+
+      for key <- ~w(token inbound_token), peer[key] != previous[key] do
+        D.credential(peer[key], 24)
+      end
+    end
+  end
+
+  defp finish_index_resets(decision, c) do
+    resets =
+      decision["index_resets"] ||
+        if decision["index_reset"] do
+          [Map.put(decision["index_reset"], "project_id", c["project_id"])]
+        else
+          []
+        end
+
+    for reset <- resets, ADHD.StorageRegistry.availability(c, reset["project_id"]) == "ready" do
+      D.keys(reset, ~w(id project_id), ~w(id project_id))
+      D.id(reset["id"])
+
+      ADHD.Projects.scope(c, reset["project_id"], fn _ ->
+        ADHD.Store.call(fn state -> {:ok, ADHD.Selection.reset(state, reset["id"])} end)
+        |> ADHD.Store.unwrap()
+      end)
+    end
+
+    :ok
+  end
+
+  defp remember_filter_adapters(c) do
+    for id <- ADHD.Projects.ids(c), ADHD.StorageRegistry.availability(c, id) == "ready" do
+      ADHD.Projects.scope(c, id, fn view ->
+        ADHD.Store.call(fn state -> {:ok, ADHD.Eventing.remember_adapter(state, view)} end)
+        |> ADHD.Store.unwrap()
+      end)
+    end
+
+    :ok
+  end
+
+  defp finish_eventing_transition(decision, c) do
+    if decision["eventing_transition"] do
+      transition = decision["eventing_transition"]
+      D.keys(transition, ["id"], ["id"])
+      D.id(transition["id"])
+
+      for id <- ADHD.Projects.ids(c), ADHD.StorageRegistry.availability(c, id) == "ready" do
+        ADHD.Projects.scope(c, id, fn view ->
+          ADHD.Store.call(fn state ->
+            {:ok, ADHD.Eventing.apply_transition(state, view, transition["id"])}
+          end)
+          |> ADHD.Store.unwrap()
+        end)
+      end
+    end
+
+    :ok
+  end
+
+  def commit(x, c, journal, explicit_recipe \\ false) do
+    if File.exists?(x.path <> ".transaction") do
+      D.fail("CONFIG_APPLY_IN_PROGRESS")
+    end
+
+    if c["store_path"] != x.config["store_path"] and is_pid(Process.whereis(ADHD.ProjectRestore)) and
+         ADHD.ProjectRestore.staging?() do
+      D.fail("RESTORE_BUSY")
+    end
+
+    ADHD.Projects.validate_transition(c, x.config)
+    changed_credentials(c, x.config)
+    transition = ADHD.Eventing.preflight(c, x.config)
+
+    if Enum.any?(Map.values(ADHD.Identity.methods(x.config))) and
+         not Enum.any?(Map.values(ADHD.Identity.methods(c))) do
+      D.fail("CONFIG_APPLY_FAILED")
+    end
+
+    listener =
+      if is_pid(Process.whereis(ADHD.Server)) and
+           (c["port"] != x.config["port"] or c["host"] != x.config["host"]) do
+        ADHD.Server.prepare(c["port"], c["host"])
+      else
+        nil
+      end
+
+    if match?({:error, _}, listener) do
+      D.fail("CONFIG_APPLY_FAILED")
+    end
+
+    tls_listener = if Process.whereis(ADHD.TLS), do: ADHD.TLS.prepare(c), else: nil
+    if match?({:error, _}, tls_listener) do
+      if listener, do: ADHD.Server.discard(listener)
+      D.fail("CONFIG_APPLY_FAILED")
+    end
+
+    ticket = make_ref()
+    Process.put(ticket, %{committed: false, moves: nil})
+
+    try do
+      safe_file(x.path)
+      safe_file(x.path <> ".journal")
+      safe_file(x.path <> ".transaction")
+
+      if File.read!(x.path) != x.raw do
+        D.fail("CONFIG_CONFLICT")
+      end
+
+      raw = JSON.encode!(c)
+
+      reset =
+        for id <- ADHD.Projects.ids(c),
+            id in ADHD.Projects.ids(x.config),
+            explicit_recipe or
+              ADHD.Selection.base_identity(ADHD.Projects.view(c, id)) !=
+                ADHD.Selection.base_identity(ADHD.Projects.view(x.config, id)) do
+          %{"id" => D.opaque(), "project_id" => id}
+        end
+
+      registry = ADHD.StorageRegistry.for_config(c, x.config)
+      moves = ADHD.Store.prepare_moves(c, x.config)
+      Process.put(ticket, %{committed: false, moves: moves})
+
+      decision = %{
+        "config" => c,
+        "journal" => journal,
+        "index_resets" => reset,
+        "store_moves" => ADHD.Store.move_decision(moves),
+        "storage_registry" => registry
+      }
+
+      decision =
+        if transition do
+          Map.put(decision, "eventing_transition", transition)
+        else
+          decision
+        end
+
+      if moves.entries == [] and Process.whereis(ADHD.Store) do
+        ADHD.Store.call(fn s -> {:ok, ADHD.Store.rename(s, c["project_id"])} end)
+        |> ADHD.Store.unwrap()
+      end
+
+      atomic(x.path <> ".transaction", JSON.encode!(decision))
+      Process.put(ticket, %{committed: true, moves: moves})
+      ADHD.Store.install_moves(decision["store_moves"])
+
+      if registry do
+        ADHD.StorageRegistry.persist(x.path, registry)
+      end
+
+      # Every target writer remains frozen under the durable decision while its
+      # selected route is published; Storage.open must validate that new route.
+      ADHD.Store.activate_moves(moves)
+      atomic(x.path, raw)
+      atomic(x.path <> ".journal", JSON.encode!(journal))
+      :persistent_term.put({__MODULE__, :config}, c)
+      ADHD.Resources.refresh()
+      ADHD.Projects.prepare(c, x.config)
+      ADHD.Store.release_moves(moves)
+      finish_eventing_transition(decision, c)
+      remember_filter_adapters(c)
+      ADHD.Projects.workers(c)
+      finish_index_resets(decision, c)
+
+      for id <- ADHD.Projects.ids(c), ADHD.StorageRegistry.availability(c, id) == "ready" do
+        ADHD.Projects.scope(c, id, fn view ->
+          ADHD.Store.call(fn state ->
+            {:ok,
+             ADHD.Directory.reconcile(state, view)
+             |> Map.update!(:directory, fn peers ->
+               Map.new(peers, fn {peer, v} -> {peer, Map.put(v, "retry_at", 0)} end)
+             end)}
+          end)
+          |> ADHD.Store.unwrap()
+        end)
+      end
+
+      if Process.whereis(ADHD.Identity) do
+        GenServer.call(ADHD.Identity, {:configuration, c})
+      end
+
+      if listener do
+        ADHD.Server.activate(listener)
+      end
+
+      if tls_listener do
+        ADHD.TLS.activate(tls_listener, c)
+      end
+
+      File.rm!(x.path <> ".transaction")
+      %{x | config: c, journal: journal, raw: raw, reload: "ready"}
+    catch
+      kind, reason ->
+        state = Process.get(ticket)
+
+        if state.committed do
+          ADHD.Store.fail_stop_moves(state.moves)
+        else
+          if state.moves do
+            ADHD.Store.abort_moves(state.moves)
+          end
+
+          if listener do
+            ADHD.Server.discard(listener)
+          end
+          if tls_listener, do: ADHD.TLS.discard(tls_listener)
+
+          :erlang.raise(kind, reason, __STACKTRACE__)
+        end
+    after
+      Process.delete(ticket)
+    end
+  end
+
+  def handle_info(:reload, x) do
+    ADHD.Scope.begin_work()
+
+    next =
+      try do
+        safe_file(x.path)
+        raw = File.read!(x.path)
+
+        if raw != x.raw do
+          c =
+            ADHD.JSON.decode!(raw)
+            |> validate(Path.dirname(x.path))
+            |> Map.put("config_revision", x.config["config_revision"] + 1)
+
+          commit(%{x | raw: raw}, c, x.journal)
+        else
+          %{x | reload: "ready"}
+        end
+      rescue
+        _ -> %{x | reload: "error"}
+      catch
+        _, _ -> %{x | reload: "error"}
+      end
+
+    Process.send_after(self(), :reload, 500)
+    {:noreply, next}
+  end
+end

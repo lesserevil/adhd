@@ -1,0 +1,209 @@
+defmodule ADHD.RecoveryFiles do
+  # Bundle reads never invoke an archiver, writable DETS opener or atom creator.
+  alias ADHD.Domain, as: D
+  def sha(bytes),do: Base.encode16(:crypto.hash(:sha256,bytes),case: :lower)
+  def fail(reason),do: throw({:recovery,"RESTORE_INVALID_BACKUP",reason})
+  def ancestors(path) do
+    path=Path.expand(path)
+    Enum.reduce(Path.split(path),nil,fn part,parent ->
+      current=if is_nil(parent),do: part,else: Path.join(parent,part)
+      case File.lstat(current) do
+        {:ok,%{type: type}} when type in [:regular,:directory]->:ok
+        _->fail("path")
+      end
+      current
+    end)
+    path
+  end
+  def mkdir_private(path,uid) do
+    Enum.reduce(Path.split(Path.expand(path)),nil,fn part,parent->
+      current=if is_nil(parent),do: part,else: Path.join(parent,part)
+      case File.lstat(current) do
+        {:error,:enoent}->
+          :ok=File.mkdir(current);:ok=File.chmod(current,0o700)
+          private(current,:directory,uid)
+          {:ok,directory}=:file.open(String.to_charlist(Path.dirname(current)),[:read,:raw,:directory])
+          try do :ok=:file.sync(directory) after :file.close(directory) end
+        {:ok,%{type: :directory}}->:ok
+        _->fail("path")
+      end
+      current
+    end)
+    private(path,:directory,uid)
+    :ok
+  end
+  def private(path,kind,uid) do
+    ancestors(path)
+    case File.lstat(path) do
+      {:ok,s}->
+        if s.type != kind or s.uid != uid or Bitwise.band(s.mode,0o077) != 0 or (kind==:regular and s.links != 1),do: fail("path")
+        s
+      _->fail("path")
+    end
+  end
+  def identity(s),do: {s.major_device,s.minor_device,s.inode,s.size,s.uid,s.mode,s.mtime,s.ctime,s.links}
+  def fingerprint(path,uid) do
+    case File.lstat(path) do
+      {:error,:enoent}->nil
+      _->
+        s=private(path,:regular,uid)
+        %{"major_device"=>s.major_device,"minor_device"=>s.minor_device,"inode"=>Integer.to_string(s.inode),"size"=>s.size,"uid"=>s.uid,"mode"=>s.mode,"links"=>s.links,"mtime"=>:calendar.datetime_to_gregorian_seconds(s.mtime),"ctime"=>:calendar.datetime_to_gregorian_seconds(s.ctime)}
+    end
+  end
+  def read(path,maximum,uid,expected \\ nil) do
+    before=private(path,:regular,uid)
+    if before.size>maximum or before.size<0,do: fail("limits")
+    {:ok,file}=:file.open(String.to_charlist(path),[:read,:binary,:raw])
+    try do
+      {:ok,opened}=:file.read_file_info(file)
+      # File.Stat.from_record compares the opened handle, not a second pathname.
+      if identity(File.Stat.from_record(opened)) != identity(before),do: fail("path")
+      bytes=case :file.read(file,maximum+1) do {:ok,b}->b;:eof-><<>>;_->fail("io") end
+      if byte_size(bytes) != before.size or :file.read(file,1) != :eof,do: fail("limits")
+      if identity(private(path,:regular,uid)) != identity(before),do: fail("path")
+      if expected && (byte_size(bytes) != expected["bytes"] or sha(bytes) != expected["sha256"]),do: fail("hash")
+      {bytes,identity(before)}
+    after :file.close(file) end
+  end
+  def json(bytes) do
+    try do ADHD.JSON.decode!(bytes) rescue _->fail("schema") catch _,_->fail("schema") end
+  end
+  def integer(value,min,max),do: if(not is_integer(value) or value<min or value>max,do: fail("schema"))
+  def hex(value,n),do: if(not is_binary(value) or byte_size(value) != n or not Regex.match?(~r/\A[0-9a-f]+\z/,value),do: fail("schema"))
+  def keys(value,required),do: if(not is_map(value) or Enum.sort(Map.keys(value)) != Enum.sort(required),do: fail("schema"))
+  def json_id(value) do
+    try do D.identifier(value) catch _,_->fail("schema") end
+  end
+end
+
+defmodule ADHD.RecoveryTerm do
+  alias ADHD.RecoveryFiles,as: F
+  # Validate lengths and reject executable/external tags before the VM allocates
+  # decoded containers. Only scalar/collection ETF used by native snapshots is admitted.
+  def preflight(<<131,body::binary>>,limits) do
+    batch=Map.get(limits,"scan_batch_records",256)
+    deadline=Map.get(limits,"deadline_ms",System.monotonic_time(:millisecond)+Map.get(limits,"timeout_ms",300000))
+    Process.put({__MODULE__,:budget},{0,batch,deadline})
+    try do
+      if term(body,0) != <<>>,do: F.fail("schema")
+      :ok
+    after Process.delete({__MODULE__,:budget}) end
+  end
+  defp tick(depth) do
+    if depth>128,do: F.fail("limits")
+    {n,batch,deadline}=Process.get({__MODULE__,:budget})
+    if rem(n,batch)==0 do
+      if System.monotonic_time(:millisecond)>=deadline,do: throw({:recovery,"RESTORE_TIMEOUT","timeout"})
+      Process.sleep(0)
+    end
+    Process.put({__MODULE__,:budget},{n+1,batch,deadline})
+  end
+  defp bytes(rest,n) when n<=byte_size(rest),do: binary_part(rest,n,byte_size(rest)-n)
+  defp bytes(_,_),do: F.fail("schema")
+  defp many(rest,0,_),do: rest
+  defp many(rest,n,d) when n<=byte_size(rest),do: many(term(rest,d+1),n-1,d)
+  defp many(_,_,_),do: F.fail("schema")
+  defp term(body,d) do
+    tick(d)
+    case body do
+      <<97,_::8,rest::binary>>->rest
+      <<98,_::32,rest::binary>>->rest
+      <<70,_::64,rest::binary>>->rest
+      <<tag,n::16,rest::binary>> when tag in [100,118]->bytes(rest,n)
+      <<tag,n::8,rest::binary>> when tag in [115,119]->bytes(rest,n)
+      <<104,n::8,rest::binary>>->many(rest,n,d)
+      <<105,n::32,rest::binary>>->many(rest,n,d)
+      <<106,rest::binary>>->rest
+      <<107,n::16,rest::binary>>->bytes(rest,n)
+      <<109,n::32,rest::binary>>->bytes(rest,n)
+      <<108,n::32,rest::binary>>->
+        tail=many(rest,n,d)
+        case tail do <<106,remaining::binary>>->remaining;_->F.fail("schema") end
+      <<116,n::32,rest::binary>>->many(rest,n*2,d)
+      <<110,n::8,sign::8,rest::binary>> when sign in [0,1]->bytes(rest,n)
+      <<111,n::32,sign::8,rest::binary>> when sign in [0,1]->bytes(rest,n)
+      _->F.fail("schema")
+    end
+  end
+end
+
+defmodule ADHD.ProjectBackup do
+  alias ADHD.RecoveryFiles,as: F
+  @safe 9007199254740991
+  def read_bundle(config_path,c,cmd,limits,progress \\ fn _->:ok end) do
+    id=cmd["backup_id"]
+    if not is_binary(id) or byte_size(id) not in 1..128 or id in [".",".."] or not Regex.match?(~r/\A[A-Za-z0-9_.-]+\z/,id),do: F.fail("path")
+    F.hex(cmd["manifest_sha256"],64)
+    uid=File.stat!(config_path).uid
+    root=limits["backup_root"];F.private(root,:directory,uid)
+    dir=Path.join(root,id);F.private(dir,:directory,uid)
+    {bytes,manifest_identity}=F.read(Path.join(dir,"manifest.json"),min(65536,limits["max_backup_bytes"]),uid)
+    if F.sha(bytes) != cmd["manifest_sha256"],do: F.fail("hash")
+    manifest=F.json(bytes);manifest(manifest)
+    total=byte_size(bytes)+manifest["snapshot"]["bytes"]+manifest["configuration"]["bytes"]
+    if total>limits["max_backup_bytes"],do: F.fail("limits")
+    if manifest["server_id"] != c["server_id"] or manifest["project_id"] != cmd["project_id"],do: F.fail("identity")
+    live=ADHD.Projects.ids(c) |> Enum.map(&Path.expand(ADHD.Projects.store_path(c,&1)))
+    paths=Enum.map(["project.snapshot","server-config.json"],&Path.join(dir,&1))
+    metadata=[config_path,config_path<>".journal",config_path<>".transaction",config_path<>".stores",config_path<>".stores.marker",config_path<>".recovery"]
+    anchors=Enum.map(live,&Path.dirname/1)++Enum.map(metadata,&Path.expand/1)
+    overlap=fn a,b->a==b or String.starts_with?(a,b<>"/") or String.starts_with?(b,a<>"/") end
+    if Enum.any?(anchors,fn anchor->overlap.(Path.expand(dir),anchor) end),do: F.fail("path")
+    if Enum.any?(paths,fn p->Path.expand(p) in live++metadata end),do: F.fail("path")
+    {snapshot,snapshot_identity}=F.read(hd(paths),limits["max_backup_bytes"],uid,manifest["snapshot"])
+    {configuration,configuration_identity}=F.read(List.last(paths),1048576,uid,manifest["configuration"])
+    state=decode_snapshot(snapshot,limits)
+    progress.(%{"bytes_read"=>total,"records_checked"=>0})
+    %{manifest: manifest,state: state,config: F.json(configuration),identities: %{manifest: manifest_identity,snapshot: snapshot_identity,configuration: configuration_identity},bytes: total}
+  end
+  def manifest(m) do
+    F.keys(m,~w(schema server_id project_id aliases captured_at source snapshot configuration principal_proof))
+    if m["schema"] != "adhd/project-backup@1",do: F.fail("schema")
+    for key<-~w(server_id project_id),do: F.json_id(m[key])
+    if not is_list(m["aliases"]) or length(m["aliases"])>256 or length(Enum.uniq(m["aliases"])) != length(m["aliases"]),do: F.fail("alias")
+    Enum.each(m["aliases"],&F.json_id/1)
+    if m["aliases"] != Enum.sort(m["aliases"]) or m["project_id"] in m["aliases"],do: F.fail("alias")
+    if not is_binary(m["captured_at"]) or not String.ends_with?(m["captured_at"],"Z"),do: F.fail("schema")
+    case DateTime.from_iso8601(m["captured_at"] || "") do {:ok,_,0}->:ok;_->F.fail("schema") end
+    F.keys(m["source"],~w(route_generation project_epoch allocation_epoch storage_generation sequence))
+    for key<-~w(route_generation storage_generation sequence),do: F.integer(m["source"][key],0,@safe)
+    for key<-~w(project_epoch allocation_epoch), value=m["source"][key],not is_nil(value),do: F.hex(value,32)
+    for {key,name,cap}<-[{"snapshot","project.snapshot",1073741824},{"configuration","server-config.json",1048576}] do
+      d=m[key];F.keys(d,~w(name bytes sha256));if d["name"] != name,do: F.fail("path")
+      F.integer(d["bytes"],1,cap);F.hex(d["sha256"],64)
+    end
+    if m["principal_proof"] != %{"kind"=>"configuration-v1"},do: F.fail("schema")
+    :ok
+  end
+  def decode_snapshot(bytes,limits \\ %{})
+  def decode_snapshot(<<"ADHDSTATE",1,digest::binary-size(32),body::binary>>,limits) do
+    if not :crypto.hash_equals(digest,:crypto.hash(:sha256,body)),do: F.fail("snapshot_integrity")
+    # ETF COMPRESSED tag80 would allocate according to untrusted expanded size.
+    case body do <<131,80,_::binary>>->F.fail("limits");<<131,_::binary>>->:ok;_->F.fail("schema") end
+    ADHD.RecoveryTerm.preflight(body,limits)
+    try do
+      {state,used}=:erlang.binary_to_term(body,[:safe,:used])
+      if used != byte_size(body),do: F.fail("schema")
+      safe_term(state,0)
+      if not is_map(state) or state[:schema] not in [1,2,3,4],do: F.fail("schema")
+      state
+    rescue _->F.fail("schema") end
+  end
+  def decode_snapshot(_,_),do: F.fail("snapshot_integrity")
+  defp safe_term(_,depth) when depth>128,do: F.fail("limits")
+  defp safe_term(v,_) when is_binary(v) or is_integer(v) or is_float(v) or is_atom(v),do: :ok
+  defp safe_term(v,d) when is_map(v) do
+    if is_struct(v) do
+      keys=Enum.sort(Map.keys(v))
+      if Map.get(v,:__struct__) != MapSet or keys != [:__struct__,:map] or not is_map(Map.get(v,:map)),do: F.fail("schema")
+      expected=[]
+      if not Enum.all?(v.map,fn {_,value}->value==expected end),do: F.fail("schema")
+      Enum.each(v.map,fn {member,_}->safe_term(member,d+1) end)
+    else
+      Enum.each(v,fn {k,x}->safe_term(k,d+1);safe_term(x,d+1) end)
+    end
+  end
+  defp safe_term(v,d) when is_tuple(v),do: v |> Tuple.to_list() |> Enum.each(&safe_term(&1,d+1))
+  defp safe_term(v,d) when is_list(v),do: Enum.each(v,&safe_term(&1,d+1))
+  defp safe_term(_,_),do: F.fail("schema")
+end

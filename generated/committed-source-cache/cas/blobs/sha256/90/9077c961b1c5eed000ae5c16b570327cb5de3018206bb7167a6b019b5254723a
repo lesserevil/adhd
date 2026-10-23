@@ -1,0 +1,237 @@
+defmodule ADHD.Scope do
+  def id, do: Process.get(:adhd_project)
+  def put(id), do: Process.put(:adhd_project,id)
+  def epoch, do: Process.get(:adhd_project_epoch)
+  def put_epoch(epoch), do: Process.put(:adhd_project_epoch,epoch)
+  # Only an independently scheduled NEW unit may clear an old captured fence.
+  def begin_work do
+    Process.delete(:adhd_project_epoch)
+    Process.delete(:adhd_project_fences)
+    :ok
+  end
+  def depend(project,epoch) do
+    if not is_nil(epoch),do: Process.put(:adhd_project_fences,Enum.uniq([{project,epoch}|Process.get(:adhd_project_fences,[])]))
+    :ok
+  end
+  def fences do
+    own=if is_nil(epoch()),do: [],else: [{id(),epoch()}]
+    Enum.uniq(own++Process.get(:adhd_project_fences,[]))
+  end
+  def current? do
+    Enum.all?(fences(),fn {project,captured}->captured==ADHD.StorageRegistry.epoch(project) end)
+  end
+  def with_project(id,fun) do
+    previous=id();previous_epoch=epoch();previous_fences=Process.get(:adhd_project_fences,[])
+    if previous != id do
+      depend(previous,previous_epoch)
+      put_epoch(nil)
+    end
+    put(id)
+    try do fun.() after put(previous);put_epoch(previous_epoch);Process.put(:adhd_project_fences,previous_fences) end
+  end
+  def spawn(fun) do
+    id=id();captured=epoch();dependencies=Process.get(:adhd_project_fences,[])
+    Kernel.spawn(fn -> put(id);put_epoch(captured);Process.put(:adhd_project_fences,dependencies);fun.() end)
+  end
+end
+
+defmodule ADHD.Projects do
+  alias ADHD.Domain, as: D
+  def multi?(c),do: is_list(c["projects"])
+  def all(c),do: c["projects"] || [%{"id"=>c["project_id"],"name"=>c["project_id"],"description"=>"","status"=>"active","settings"=>%{}}]
+  def find(c,id),do: Enum.find(all(c),&(&1["id"]==id)) || D.fail("PROJECT_NOT_FOUND")
+  def ids(c),do: Enum.map(all(c),& &1["id"])
+  def table(id),do: {:global,{ADHD.Store,id}}
+  def store_name(c),do: if(not multi?(c) or c["project_id"]==ADHD.Config.root()["project_id"],do: ADHD.Store,else: table(c["project_id"]))
+  def server(c) do
+    c["server_id"] || case (ADHD.Storage.local_legacy_state(c["store_path"],c["project_id"],nil,ADHD.LocalLegacy.limits(c)) |> ADHD.LocalLegacy.validate(c,c["project_id"])) do
+      %{validated: %{server_id: id}}->id
+      %{validated: nil}->ADHD.Directory.server_id()
+    end
+  end
+  def normalize(c) do
+    if multi?(c) do
+      D.list(c["projects"],256,1)
+      projects=Enum.map(c["projects"],fn p->
+        D.keys(p,~w(id name status description settings),~w(id name));D.identifier(p["id"]);D.string(p["name"],256)
+        D.check(Map.get(p,"status","active") in ~w(active archived));D.string(Map.get(p,"description",""),4096,true)
+        settings=Map.get(p,"settings",%{});D.keys(settings,~w(matcher threshold_ppm federation history retrieval archive feedback optimization eventing))
+        settings=if Map.has_key?(settings,"eventing"),do: Map.put(settings,"eventing",ADHD.Eventing.project_policy(settings["eventing"])),else: settings
+        p |> Map.put("settings",settings) |> Map.put_new("status","active") |> Map.put_new("description","") |> Map.put_new("settings",%{})
+      end)
+      D.distinct(Enum.map(projects,& &1["id"]))
+      c=Map.put(c,"projects",projects)
+      if c["project_id"] != nil,do: find(c,c["project_id"])
+      grants=Map.get(c,"agent_projects",%{});D.object(grants)
+      Enum.each(grants,fn {a,projects}->D.check(Map.has_key?(c["agents"],a));check_ids(projects,c) end)
+      Enum.each(Map.get(c,"users",[]),fn u->check_ids(Map.get(u,"project_ids",[]),c) end)
+      c=Map.put(c,"agent_projects",grants)
+      grants=Map.new(grants,fn {a,projects}->
+        owner=get_in(c,["agent_owners",a]);u=Enum.find(Map.get(c,"users",[]),&(&1["id"]==owner))
+        allowed=if u,do: user_ids(Map.put(u,"role",ADHD.Identity.role(u,c)),c),else: ids(c)
+        {a,Enum.filter(projects,&(&1 in allowed))}
+      end)
+      c=Map.put(c,"agent_projects",grants)
+      if c["server_id"],do: ADHD.Directory.server_id(c["server_id"])
+      c
+    else c end
+  end
+  def check_ids(v,c),do: (D.list(v,256);D.distinct(v);Enum.each(v,fn id->D.identifier(id);D.check(id in ids(c)) end))
+  def user_ids(u,c) do
+    if u["role"]=="Admin",do: ids(c),else: if(multi?(c),do: Map.get(u,"project_ids",[]),else: ids(c))
+  end
+  def agent_ids(a,c) do
+    grants=if multi?(c),do: Map.get(c["agent_projects"],a,[]),else: ids(c)
+    owner=get_in(c,["agent_owners",a]);u=Enum.find(c["users"] || [],&(&1["id"]==owner))
+    if u do
+      role=ADHD.Identity.role(u,c)
+      if role==nil or role=="Viewer",do: [],else: Enum.filter(grants,&(&1 in user_ids(Map.put(u,"role",role),c)))
+    else grants end
+  end
+  def list(c,allowed),do: %{"projects"=>Enum.filter(all(c),&(&1["id"] in allowed)) |> Enum.map(&Map.take(&1,~w(id name status description)))}
+  def select(c,allowed,requested) do
+    cond do
+      is_binary(requested) and requested in allowed->find(c,requested);requested
+      is_binary(requested)->
+        matches=Enum.filter(allowed,fn id->requested in ADHD.Store.project_aliases(c,id) end)
+        case matches do [id]->id;_->D.fail("PROJECT_NOT_FOUND") end
+      requested != nil->D.fail("PROJECT_NOT_FOUND")
+      length(allowed)==1->hd(allowed)
+      length(allowed)==0->D.fail("PROJECT_NOT_FOUND")
+      true->D.fail("PROJECT_REQUIRED")
+    end
+  end
+  # Consult complete atomic snapshots, never open a second DETS writer or call
+  # a Store while Config is handling a mutation. Check every project, including
+  # projects not admitted to the prospective owner. Unknown evidence fails closed.
+  def retained_agent?(c,agent) do
+    server=c["server_id"] || case ADHD.Storage.read_snapshot(c["store_path"]) do
+      %{server_id: value}->value
+      _->D.fail("CONFIG_WRITE_FAILED")
+    end
+    ADHD.Directory.server_id(server)
+    Enum.reduce(ids(c),false,fn id,found->
+      entry=ADHD.StorageRegistry.entry(id)
+      never_initialized=is_map(entry) and entry["initialized"]==false and entry["availability"]=="uninitialized"
+      if never_initialized do
+        paths=[store_path(c,id),ADHD.Storage.snapshot_path(store_path(c,id))]
+        if not Enum.all?(paths,&(File.lstat(&1)=={:error,:enoent})),do: D.fail("CONFIG_WRITE_FAILED")
+        found
+      else
+      state=ADHD.Storage.read_snapshot(store_path(c,id))
+      D.check(is_map(state) and state[:server_id]==server)
+      D.check(state[:project]==id or id in Map.get(state,:aliases,[]))
+      for field<-[:idempotency,:deliveries,:publications,:subscriptions,:jobs],do: D.object(state[field])
+      retained=Enum.any?(state.idempotency,fn {{actor,_},_}->actor==agent end) or
+        Enum.any?(state.deliveries,fn {_,row}->row.value["recipient_id"]==agent or row.value["sender_id"]==agent end) or
+        Enum.any?(state.publications,fn {_,row}->row.value["author_id"]==agent end) or
+        Enum.any?(state.subscriptions,fn {_,row}->row.value["agent_id"]==agent end) or
+        Enum.any?(state.jobs,fn {_,job}->job.recipient_id==agent end)
+      found or retained
+      end
+    end)
+  catch
+    # Recovery codecs use restore-specific throws. At the ownership gate this
+    # means unavailable evidence, not permission to mint an identity or stop
+    # the shared configuration coordinator.
+    {:recovery, _code, _reason} -> D.fail("CONFIG_WRITE_FAILED")
+  end
+
+  def store_path(c,id),do: ADHD.StorageRegistry.route(c,id)
+  def view(c,nil),do: c
+  def view(c,id) do
+    if multi?(c) do
+      project=find(c,id)
+      agents=Map.filter(c["agents"],fn {a,_}->id in agent_ids(a,c) end)
+      path=store_path(c,id)
+      result=c |> ADHD.Config.merge(project["settings"]) |> Map.put("project_id",id) |> Map.put("store_path",path) |> Map.put("agents",agents) |> Map.put("project_status",project["status"]) |> Map.merge(ADHD.StorageRegistry.fields(c,id))
+      if result["federation"] do
+        federation=Map.merge(%{"description"=>project["name"],"peers"=>[],"export_publication_ids"=>[],"catalog"=>%{"visible"=>true,"entries"=>[]},"share_identities"=>false,"timeout_ms"=>1000,"retry_ms"=>500},result["federation"])
+        result |> Map.put("federation",federation) |> put_in(["federation","peers"],ADHD.FederationV2.project_peers(result))
+      else result end
+    else c end
+  end
+  def writable(c,op) do
+    writes = ~w(publish publish_record send subscribe update_subscription query_history query_archive retrieve replay_retrieval source_query federated_query rebuild_index propose_index evaluate_index promote_index rollback_index replay_attempt replay_events)
+    if c["project_status"]=="archived" and op in writes,do: D.fail("PROJECT_ARCHIVED")
+  end
+  def scope(c,id,fun),do: ADHD.Scope.with_project(id,fn->fun.(view(c,id)) end)
+  def validate_aliases(c,old) do
+    for id<-ids(old),alias_id<-ADHD.Store.project_aliases(old,id),alias_id in ids(c) do
+      canonical=if multi?(old),do: id,else: c["project_id"]
+      if alias_id != canonical,do: D.fail("CONFIG_APPLY_FAILED")
+    end
+    :ok
+  end
+  def validate_registry(c,old) do
+    if multi?(old) do
+      if not multi?(c) or not Enum.all?(ids(old),&(&1 in ids(c))) or c["project_id"] != old["project_id"] or c["server_id"] != old["server_id"],do: D.fail("CONFIG_APPLY_FAILED")
+    end
+    :ok
+  end
+  def validate_transition(c,old) do
+    validate_registry(c,old)
+    validate_aliases(c,old)
+    # New registry entries cannot overwrite or initialize over unrelated files.
+    for id<-ids(c)--ids(old) do
+      path=view(c,id)["store_path"]
+      for file<-[path,ADHD.Storage.snapshot_path(path)] do
+        case File.lstat(file) do {:error,:enoent}->:ok;_->D.fail("CONFIG_APPLY_FAILED") end
+      end
+      D.check(File.dir?(Path.dirname(c["store_path"])))
+      File.mkdir_p!(Path.dirname(path))
+      probe=path<>".preflight-"<>D.opaque()
+      {:ok,f}=File.open(probe,[:write,:binary,:exclusive])
+      try do :ok=:file.sync(f) after File.close(f);File.rm!(probe) end
+    end
+    :ok
+  end
+  def prepare(c,old) do
+    validate_transition(c,old)
+    if multi?(c) do
+      for p<-all(c),p["id"] != c["project_id"], ADHD.StorageRegistry.availability(c,p["id"])=="ready" do
+        config=view(c,p["id"])
+        unless :global.whereis_name({ADHD.Store,p["id"]}) != :undefined do
+          scope(c,p["id"],fn _->ADHD.Store.start_selected(config) end)
+        end
+      end
+    end
+    :ok
+  end
+  def workers(c) do
+    for id<-ids(c),ADHD.StorageRegistry.availability(c,id)=="ready" do
+      key={__MODULE__,:workers,id}
+      unless :persistent_term.get(key,false) do
+        :persistent_term.put(key,true)
+        scope(c,id,fn _->ADHD.Workers.start() end)
+      end
+    end
+    :ok
+  end
+  def model_available(c,op) do
+    effective=case op do
+      "query_history"->[ADHD.History.effective(c)]
+      "retrieve"->[ADHD.Retrieval.effective(c)]
+      "query_archive"->[ADHD.Archive.effective(c)]
+      "replay_retrieval"->[ADHD.Retrieval.effective(c),ADHD.Archive.effective(c)]
+      _->[]
+    end
+    if Enum.any?(effective,fn e->not is_binary(e["url"]) or not is_binary(e["model"]) end),do: D.fail("MODEL_UNAVAILABLE")
+    :ok
+  end
+  def agent_command(actor,mid,cmd) do
+    c=ADHD.Config.root();allowed=agent_ids(actor,c)
+    case cmd["op"] do
+      "list_projects"->list(c,allowed)
+      "whoami" when not is_map_key(cmd,"project_id")->if(multi?(c),do: Map.merge(%{"agent_id"=>actor,"project_ids"=>allowed},if(length(allowed)==1,do: %{"project_id"=>hd(allowed)},else: %{})),else: ADHD.Store.command(actor,mid,cmd) |> ADHD.Store.unwrap())
+      _->
+        id=select(c,allowed,cmd["project_id"])
+        scope(c,id,fn config->
+          if ADHD.StorageRegistry.loaded?(),do: ADHD.StorageRegistry.admit(c,id)
+          writable(config,cmd["op"])
+          model_available(config,cmd["op"])
+          ADHD.Store.command(actor,mid,cmd) |> ADHD.Store.unwrap()
+        end)
+    end
+  end
+end

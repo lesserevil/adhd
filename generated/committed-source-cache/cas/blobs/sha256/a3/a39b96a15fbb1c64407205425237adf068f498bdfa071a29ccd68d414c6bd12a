@@ -1,0 +1,6 @@
+Enum.each(System.argv(), fn path ->
+  expanded = Path.expand(path)
+  source = Path.expand("..",__DIR__)
+  if expanded in ["/",source,Path.dirname(source)] or String.starts_with?(source,expanded<>"/"), do: raise("Unsafe output directory")
+  File.rm_rf!(expanded)
+end)

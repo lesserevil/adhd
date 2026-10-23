@@ -1,0 +1,61 @@
+defmodule ADHD.RetrievalProtocol do
+  alias ADHD.Protocol,as: P
+  alias ADHD.HistoryProtocol,as: H
+  defp count,do: H.count()
+  defp digest,do: H.digest()
+  defp nullable(v),do: H.nullable(v)
+  defp ids(max \\ 10000),do: H.ids(max)
+  def recipe_props,do: %{"tokenizer"=>P.enum(~w(words identifiers)),"chunk_bytes"=>P.int(128,4096),"context_depth"=>P.int(0,4),"context_limit"=>P.int(1,64),"include_context"=>P.bool(),"semantic"=>P.bool(),"semantic_window"=>P.int(1,128),"lexical_weight"=>P.int(0,16),"semantic_weight"=>P.int(0,16)}
+  def config_props,do: %{"enabled"=>P.bool(),"url"=>nullable(P.str(2048) |> Map.put("format","uri")),"model"=>nullable(P.str(512)),"operator_version"=>P.str(),"timeout_ms"=>P.int(100,30000),
+    "request_bytes"=>P.int(1024,65536),"min_confidence_ppm"=>P.int(1,1000000),"max_index_bytes"=>P.int(1048576,268435456),"max_query_bytes"=>P.int(1048576,268435456),"max_records"=>P.int(1,10000),"build_batch"=>P.int(1,64),"model_fragments"=>P.int(1,16),"budget"=>P.ref("HistoryBudget"),"recipe"=>P.ref("RetrievalRecipe")}
+  def extend(defs) do
+    identity=defs["ContextualRecord"]["properties"]["identity"];gap=defs["RecordRead"]["properties"]["gaps"]["items"]
+    fragment=P.obj(%{"origin_publication_id"=>P.str(),"origin_identity"=>identity,"origin_context_identity"=>digest(),"field"=>P.enum(~w(text data context.question context.subject context.conversation context.task context.external.snapshot information_type author_id created_at occurred_at source.kind source.id source.item_id source.uri)),
+      "start"=>count(),"end"=>count(),"text"=>%{"type"=>"string","minLength"=>1,"x-minBytes"=>1,"maxLength"=>4096,"x-maxBytes"=>4096},"sha256"=>digest()}) |> Map.put("x-sha256Of",%{"sha256"=>"text"}) |> Map.put("x-utf8Span",true)
+    index_error=P.obj(%{"code"=>P.enum(~w(RESOURCE_LIMIT INVALID_DERIVED_STATE BUILD_INTERRUPTED RECIPE_CHANGED)),"message"=>P.str(256),"retryable"=>P.bool()})
+    recipe=P.obj(recipe_props()) |> Map.put("allOf",[%{"anyOf"=>[%{"properties"=>%{"lexical_weight"=>%{"minimum"=>1}}},%{"properties"=>%{"semantic_weight"=>%{"minimum"=>1}}}]},%{"if"=>%{"properties"=>%{"semantic"=>%{"const"=>true}},"required"=>["semantic"]},"then"=>%{"properties"=>%{"semantic_weight"=>%{"minimum"=>1}}}}])
+    manifest=P.obj(%{"id"=>P.str(),"adapter_version"=>P.str(),"runtime"=>P.str(),"recipe"=>P.ref("RetrievalRecipe"),"recipe_identity"=>digest(),"server_id"=>defs["RecordRead"]["properties"]["snapshot"]["properties"]["server_id"],
+      "watermark"=>count(),"source_watermark"=>count(),"total"=>count(),"indexed"=>count(),"excluded"=>count(),"fragments"=>count(),"bytes"=>count(),"source_manifest_identity"=>digest(),"context_gaps"=>P.array(gap,128),"truncated"=>P.bool(),"created_at"=>P.time(),"updated_at"=>P.time(),"status"=>P.enum(~w(building ready partial failed)),"error"=>nullable(index_error),"build_processed"=>count(),"build_total"=>count()})
+    index_read=P.obj(%{"enabled"=>P.bool(),"status"=>P.enum(~w(missing building ready stale partial failed disabled)),"desired_recipe_identity"=>digest(),"publication_watermark"=>count(),"rebuild_requested"=>P.bool(),"active"=>nullable(P.ref("RetrievalIndexManifest")),"previous"=>nullable(P.ref("RetrievalIndexManifest")),"building"=>nullable(P.ref("RetrievalIndexManifest")),"error"=>nullable(index_error)})
+    view=P.obj(%{"origin_publication_id"=>P.str(),"field"=>fragment["properties"]["field"],"text"=>fragment["properties"]["text"]})
+    model_candidate=P.obj(%{"publication_id"=>P.str(),"fragments"=>P.array(view,16,1),"truncated"=>P.bool()})
+    model_request=P.obj(%{"model"=>P.str(512),"state"=>P.obj(%{"question"=>P.str(4096),"candidate"=>model_candidate}),"questions"=>P.obj(%{"useful"=>P.obj(%{"type"=>%{"const"=>"noul"},"instructions"=>%{"const"=>ADHD.Retrieval.instructions()}})})})
+    recorded=put_in(model_request,["properties","questions","properties","useful","properties","instructions"],P.str(8192))
+    typed=P.obj(%{"type"=>%{"const"=>"noul"},"noul"=>%{"type"=>"number","minimum"=>0,"maximum"=>1}})
+    telemetry=%{"type"=>"object","additionalProperties"=>P.ref("JSON")}
+    response=P.obj(%{"model"=>P.str(512),"answers"=>P.obj(%{"useful"=>typed}),"usage"=>telemetry,"metrics"=>telemetry,"scoring"=>telemetry},~w(model answers))
+    evaluation=P.obj(%{"publication_id"=>P.str(),"identity"=>identity,"context_identity"=>digest(),"index_input_identity"=>digest(),"fragments"=>P.array(P.ref("RetrievalFragment"),16,1),"request"=>P.ref("RetrievalRecordedModelRequest"),"request_json"=>P.str(65536),"request_sha256"=>digest(),"response"=>response,
+      "bytes"=>P.int(1,65536),"time_ms"=>count(),"fragment_truncated"=>P.bool(),"materialization"=>P.enum(~w(active previous reconstructed))}) |> Map.put("x-jsonOf",%{"request_json"=>"request"}) |> Map.put("x-sha256Of",%{"request_sha256"=>"request_json"}) |> Map.put("x-noulExchange",true) |> Map.put("x-fragmentProjection",true)
+    candidate=P.obj(%{"publication_id"=>P.str(),"identity"=>identity,"context_identity"=>digest(),"index_input_identity"=>digest(),"rank"=>P.int(1,64),"lexical_ppm"=>P.int(0,1000000),"semantic_ppm"=>nullable(P.int(0,1000000)),"score_ppm"=>P.int(0,1000000),"assessment"=>P.enum(~w(scored unassessed)),"fragments"=>P.array(P.ref("RetrievalFragment"),16,1),"context_gaps"=>P.array(gap,128),"truncated"=>P.bool()})
+      |> Map.put("allOf",[%{"if"=>%{"properties"=>%{"semantic_ppm"=>%{"type"=>"null"}},"required"=>["semantic_ppm"]},"then"=>%{"properties"=>%{"assessment"=>%{"const"=>"unassessed"}}},"else"=>%{"properties"=>%{"assessment"=>%{"const"=>"scored"}}}}])
+    policy=P.obj(%{"enabled"=>P.bool(),"request_bytes"=>P.int(1024,65536),"min_confidence_ppm"=>P.int(1,1000000),"model_fragments"=>P.int(1,16),"recipe_identity"=>digest()})
+    evaluator=P.obj(%{"adapter_version"=>P.str(),"runtime"=>P.str(),"operator_version"=>P.str(),"model"=>P.str(512),"template_sha256"=>digest(),"identity"=>digest(),"policy"=>policy})
+    error=P.obj(%{"code"=>P.enum(~w(INDEX_NOT_READY INDEX_STALE INDEX_CHANGED CONTEXT_LIMIT MODEL_ERROR RESOURCE_LIMIT BUDGET_RECORDS BUDGET_CALLS BUDGET_BYTES BUDGET_TIME CONFIG_CHANGED CANCELLED)),"message"=>P.str(256),"retryable"=>P.bool()})
+    coverage=P.obj(%{"total"=>count(),"indexed"=>count(),"lexically_ranked"=>count(),"semantic_target"=>count(),"semantic_examined"=>count(),"semantic_remaining"=>count(),"unexamined"=>count(),"exhaustive"=>%{"const"=>false},"expanded_ids"=>ids(),"reconstructed"=>P.bool(),"context_gaps"=>P.array(gap,128),"truncated"=>P.bool()})
+    query=P.obj(%{"id"=>P.str(),"owner_id"=>P.identifier(),"project_id"=>P.identifier(),"question"=>P.str(4096),"scope"=>P.ref("HistoryScope"),"snapshot"=>defs["RecordRead"]["properties"]["snapshot"],"input_manifest_identity"=>nullable(digest()),"limit"=>P.int(1,64),"status"=>P.enum(~w(pending completed partial cancelled invalidated)),"created_at"=>P.time(),"updated_at"=>P.time(),"run"=>P.int(1,16),"recipe"=>P.ref("RetrievalRecipe"),"recipe_identity"=>digest(),"evaluator"=>P.ref("RetrievalEvaluator"),"index"=>nullable(P.ref("RetrievalIndexManifest")),"budget"=>P.ref("HistoryBudget"),"usage"=>defs["HistoryQuery"]["properties"]["usage"],"coverage"=>coverage,"candidates"=>P.array(P.ref("RetrievalCandidate"),64),"evaluations"=>P.array(P.ref("RetrievalEvaluation"),64),"next_offset"=>nullable(P.int(0,1000000)),"evaluation_count"=>count(),"prior_runs"=>P.array(P.int(1,15),15) |> Map.put("uniqueItems",true),"error"=>nullable(error),"continuable"=>P.bool()})
+    config=config_props();recipe_patch=P.obj(Map.new(recipe_props(),fn {k,v}->{k,nullable(v)} end),[])
+    config_patch=config |> Map.put("recipe",recipe_patch) |> Map.put("budget",P.obj(Map.new(H.budget_props(),fn {k,v}->{k,nullable(v)} end),[])) |> Map.new(fn {k,v}->{k,nullable(v)} end) |> P.obj([])
+    additions=%{"RetrievalRecipe"=>recipe,"RetrievalRecipePatch"=>recipe_patch,"RetrievalFragment"=>fragment,"RetrievalIndexManifest"=>manifest,"RetrievalIndexRead"=>index_read,"RetrievalCandidate"=>candidate,"RetrievalEvaluator"=>evaluator,"RetrievalQuery"=>query,"RetrievalEvaluation"=>evaluation,
+      "RetrievalModelRequest"=>model_request,"RetrievalRecordedModelRequest"=>recorded,"RetrievalModelResponse"=>response,"RetrievalModelExchange"=>P.obj(%{"request"=>P.ref("RetrievalModelRequest"),"response"=>response}) |> Map.put("x-noulExchange",true),
+      "RetrievalRecordedModelExchange"=>P.obj(%{"request"=>P.ref("RetrievalRecordedModelRequest"),"response"=>response}) |> Map.put("x-noulExchange",true),"RetrievalConfig"=>P.obj(config),"RetrievalConfigPatch"=>config_patch}
+    defs=Map.merge(defs,additions) |> put_in(["PublicConfig","properties","retrieval"],P.ref("RetrievalConfig")) |> put_in(["MergePatch","properties","retrieval"],nullable(P.ref("RetrievalConfigPatch")))
+    defs=Enum.reduce(ADHD.Retrieval.operations(),defs,fn op,acc->
+      command=case op do
+        "retrieve"->P.command(op,%{"question"=>P.str(4096),"scope"=>P.ref("HistoryScopeInput"),"limit"=>P.int(1,64),"budget"=>P.ref("HistoryBudgetInput")},~w(question))
+        "get_retrieval"->P.command(op,Map.put(H.page_props(),"query_id",P.str()),~w(query_id))
+        "continue_retrieval"->P.command(op,%{"query_id"=>P.str(),"restart"=>P.bool(),"budget"=>P.ref("HistoryBudgetInput")},~w(query_id))
+        "cancel_retrieval"->P.command(op,%{"query_id"=>P.str()},~w(query_id))
+        _->P.command(op)
+      end
+      acc |> Map.put("agent_"<>op,command) |> Map.put("result_"<>op,if(op=="retrieval_index",do: P.obj(%{"index"=>P.ref("RetrievalIndexRead")}),else: P.obj(%{"query"=>P.ref("RetrievalQuery")})))
+    end)
+    defs=update_in(defs,["AgentResult","anyOf"],&(&1++Enum.map(ADHD.Retrieval.operations(),fn op->P.ref("result_"<>op) end)))
+    defs=Map.merge(defs,%{"admin_retrieval_index"=>P.admin("retrieval_index"),"admin_rebuild_index"=>P.admin("rebuild_index",%{"expected_revision"=>P.int(1,9_223_372_036_854_775_807),"message_id"=>P.str(),"confirm"=>%{"const"=>true}},~w(expected_revision message_id confirm)),"admin_result_retrieval_index"=>P.obj(%{"index"=>P.ref("RetrievalIndexRead")}),"admin_result_rebuild_index"=>P.obj(%{"index"=>P.ref("RetrievalIndexRead")})})
+    defs=update_in(defs,["AdminCommand","oneOf"],&(&1++Enum.map(~w(retrieval_index rebuild_index),fn op->P.ref("admin_"<>op) end)))
+    defs=update_in(defs,["AdminResult","anyOf"],&(&1++Enum.map(~w(retrieval_index rebuild_index),fn op->P.ref("admin_result_"<>op) end)))
+    job=P.obj(%{"kind"=>%{"const"=>"retrieval"},"query"=>P.ref("RetrievalQuery")})
+    defs=Enum.reduce(~w(admin_result_query_job admin_result_cancel_query_job),defs,fn key,acc->update_in(acc,[key,"oneOf"],&(&1++[job])) end)
+    defs=update_in(defs,["admin_result_query_jobs","properties","items","items","oneOf"],&(&1++[job]))
+    put_in(defs,["admin_query_jobs","properties","kind"],P.enum(~w(discovery source history retrieval)))
+  end
+end

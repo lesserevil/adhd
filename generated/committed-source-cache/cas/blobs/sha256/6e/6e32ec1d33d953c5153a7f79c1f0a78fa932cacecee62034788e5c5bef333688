@@ -1,0 +1,206 @@
+defmodule ADHD.RecoveryCheckpoint do
+  # Pure parser for the modern checksummed DETSv9 set layout. Format source:
+  # OTP stdlib dets_v9.erl (HEADSZ/HEADEND, cache_segps, slot_objects,
+  # free_lists_from_file); no DETS/native decoder runs before this guard.
+  import Bitwise
+  @base 1336
+  @origin 5432
+  @arena_end @origin + (1 <<< 31)
+  @magic 0x00ABCDEF
+  @active 0x12345678
+  @free 0x03ABCDEF
+  @slots 33_554_432
+
+  def preflight(bytes, limits) when is_binary(bytes) and is_map(limits) do
+    maximum = Map.get(limits, "max_backup_bytes", 1_073_741_824)
+    batch = Map.get(limits, "scan_batch_records", 256)
+    deadline = Map.get(limits, "deadline_ms", System.monotonic_time(:millisecond) + 300_000)
+    if not is_integer(maximum) or maximum < 1 or byte_size(bytes) > maximum,
+      do: fail("limits")
+    if not is_integer(batch) or batch < 1 or not is_integer(deadline), do: fail("schema")
+    previous = Process.get({__MODULE__, :budget})
+    Process.put({__MODULE__, :budget}, {0, batch, deadline, byte_size(bytes) * 2 + 2048})
+    try do
+      parse(bytes, limits)
+    rescue
+      _ -> fail("schema")
+    after
+      if is_nil(previous), do: Process.delete({__MODULE__, :budget}),
+        else: Process.put({__MODULE__, :budget}, previous)
+    end
+  end
+  def preflight(_, _), do: fail("schema")
+
+  defp parse(b, limits) do
+    tick()
+    <<fl::32, @magic::32, closed::32, 1::32, 9::32, m::32, nslots::32,
+      1::32, objects::32, keys::32, minimum::32, maximum::32, method::32,
+      n::32, counters::binary-size(112), checksum::binary-size(16), base::32>> = take(b, 0, 188)
+    if closed not in [0, 1] or method not in [0, 1] or objects not in [0, 1] or keys != objects,
+      do: fail("schema")
+    if checksum == <<0::128>> or checksum != :crypto.hash(:md5, take(b, 12, 156)),
+      do: fail("schema")
+    if take(b, 188, 124) != <<0::992>>, do: fail("schema")
+    if m < 256 or band(m, m - 1) != 0 or n > m or nslots != m + n or
+         nslots > @slots or minimum < 256 or minimum > m or nslots > maximum or
+         maximum > @slots or Enum.any?([n, m, nslots, minimum, maximum], &(rem(&1, 256) != 0)),
+      do: fail("schema")
+    # Actual hub tables have one stable key and never grow the hash directory.
+    # Reject imported/custom-minimum layouts rather than infer allocator ancestry.
+    if minimum != 256 or m != 256 or nslots != 256 or n != 0 or base not in [0, @origin],
+      do: fail("schema")
+    if closed == 0 do
+      {:needs_repair, :not_closed}
+    else
+      if objects != 1 or byte_size(b) < @base + 16 or
+           word(b, byte_size(b) - 4) + base != byte_size(b) or fl < @base or fl > byte_size(b) - 16,
+        do: fail("schema")
+      # Physical allocations (only their actual readable extent) must be disjoint.
+      physical = interval(:gb_trees.empty(), 0, @base)
+      parts = div(nslots - 1, 256 * 512) + 1
+      {physical, occupied} = Enum.reduce(0..255, {physical, []}, fn p, {ranges, found} ->
+        tick()
+        ptr = word(b, 312 + 4 * p)
+        if p >= parts do
+          if ptr != 0, do: fail("schema")
+          {ranges, found}
+        else
+          if ptr != @base, do: fail("schema")
+          ranges = allocation(b, ranges, ptr, 2048, fl)
+          scan_part(b, ptr, p, nslots, fl, ranges, found)
+        end
+      end)
+      [{slot, ptr, size}] = occupied
+      if slot != hash_slot(method, m, n), do: fail("schema")
+      physical = allocation(b, physical, ptr, size, fl)
+      allocated = 1 <<< power(size, 1, 0)
+      aligned(ptr, allocated)
+      physical = if allocated == size, do: physical,
+        else: interval(physical, ptr + size, ptr + allocated)
+      <<^size::32, @active::32, object_size::32>> = take(b, ptr, 12)
+      if object_size < 5 or size != object_size + 8, do: fail("schema")
+      expected = bucket_counters(size)
+      if counters != expected, do: fail("schema")
+      # Integer-only free-list blocks cannot smuggle external terms. Free blocks
+      # can extend beyond physical EOF and overlap the serialized free-list tail,
+      # but must never overlap any reachable live allocation or each other.
+      ranges = free_lists(b, fl, byte_size(b) - 4, 0, -1, physical)
+      partition(:gb_trees.iterator(ranges), 0)
+      term = take(b, ptr + 12, object_size - 4)
+      ADHD.RecoveryTerm.preflight(term, limits)
+      tick()
+      case :erlang.binary_to_term(term, [:safe, :used]) do
+        {{:state, state}, used} when is_map(state) and used == byte_size(term) -> {:ok, state}
+        _ -> fail("schema")
+      end
+    end
+  end
+
+  defp scan_part(b, ptr, part, nslots, fl, ranges, found) do
+    Enum.reduce(0..511, {ranges, found}, fn s, {ranges, found} ->
+      tick()
+      seg = part * 512 + s
+      address = word(b, ptr + s * 4)
+      if seg * 256 >= nslots do
+        if address != 0, do: fail("schema")
+        {ranges, found}
+      else
+        if address != @base + 2048, do: fail("schema")
+        ranges = allocation(b, ranges, address, 2048, fl)
+        found = Enum.reduce(0..255, found, fn k, acc ->
+          tick()
+          <<size::32, object::32>> = take(b, address + 8 * k, 8)
+          case {size, object} do
+            {0, 0} -> acc
+            {size, object} when size >= 13 and object >= @base ->
+              if acc != [], do: fail("schema")
+              [{seg * 256 + k, object, size}]
+            _ -> fail("schema")
+          end
+        end)
+        {ranges, found}
+      end
+    end)
+  end
+
+  defp free_lists(b, pos, finish, last_class, last_address, ranges) do
+    tick()
+    <<size::32, @free::32, class::32>> = take(b, pos, 12)
+    cond do
+      class == 12345 ->
+        if size != 12 or pos + 12 != finish, do: fail("schema")
+        ranges
+      class not in 5..31 or class < last_class or size < 16 or size > 4096 or rem(size, 4) != 0 or pos + size > finish ->
+        fail("schema")
+      true ->
+        previous = if class == last_class, do: last_address, else: -1
+        {ranges, address} = free_addresses(take(b, pos + 12, size - 12), class, previous, ranges)
+        free_lists(b, pos + size, finish, class, address, ranges)
+    end
+  end
+  defp free_addresses(<<>>, _, previous, ranges), do: {ranges, previous}
+  defp free_addresses(<<address::32, rest::binary>>, class, previous, ranges) do
+    tick()
+    if address <= previous, do: fail("schema")
+    aligned(address, 1 <<< (class - 1))
+    next = address + (1 <<< (class - 1))
+    if next > 0x1_0000_0000, do: fail("schema")
+    free_addresses(rest, class, address, interval(ranges, address, next))
+  end
+
+  defp aligned(address, size) do
+    # New tables use the post-directory origin; native free-list reload sets
+    # head.base to BASE. Splitting/coalescing can retain either alignment family.
+    if address < @origin or address + size > @arena_end or
+         (rem(address - @origin, size) != 0 and rem(address - @base, size) != 0),
+      do: fail("schema")
+  end
+  defp partition(iterator, finish) do
+    tick()
+    case :gb_trees.next(iterator) do
+      {next, ^finish, rest} when next <= @arena_end -> partition(rest, next)
+      :none when finish == @arena_end -> :ok
+      _ -> fail("schema")
+    end
+  end
+
+  defp allocation(b, ranges, address, size, fl) do
+    if address < @base or size < 1 or address + size > fl or address + size > byte_size(b),
+      do: fail("schema")
+    interval(ranges, address, address + size)
+  end
+  defp interval(ranges, first, finish) do
+    # Nonoverlapping intervals ordered by their end are also ordered by start.
+    case :gb_trees.next(:gb_trees.iterator_from(first + 1, ranges)) do
+      {_end, start, _} when start < finish -> fail("schema")
+      _ -> :ok
+    end
+    :gb_trees.insert(finish, first, ranges)
+  end
+  defp bucket_counters(size) do
+    power = power(size, 1, 0)
+    for exponent <- 4..31, into: <<>>, do: <<(if exponent == power, do: 1, else: 0)::32>>
+  end
+  defp power(size, value, exponent) when value >= size, do: exponent
+  defp power(size, value, exponent), do: power(size, value * 2, exponent + 1)
+  defp hash_slot(method, m, n) do
+    hash = if method == 1, do: :erlang.phash2(:state), else: apply(:erlang, :phash, [:state, 0x03FFFFFF]) - 1
+    first = rem(hash, m)
+    if first < n, do: rem(hash, m * 2), else: first
+  end
+  defp word(b, pos), do: (case take(b, pos, 4) do <<v::32>> -> v end)
+  defp take(b, pos, count) when pos >= 0 and count >= 0 and pos + count <= byte_size(b),
+    do: binary_part(b, pos, count)
+  defp take(_, _, _), do: fail("schema")
+  defp tick do
+    {n, batch, deadline, maximum} = Process.get({__MODULE__, :budget})
+    if n >= maximum, do: fail("limits")
+    if rem(n, batch) == 0 do
+      if System.monotonic_time(:millisecond) >= deadline,
+        do: throw({:recovery, "RESTORE_TIMEOUT", "timeout"})
+      Process.sleep(0)
+    end
+    Process.put({__MODULE__, :budget}, {n + 1, batch, deadline, maximum})
+  end
+  defp fail(reason), do: throw({:recovery, "RESTORE_INVALID_BACKUP", reason})
+end

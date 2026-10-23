@@ -1,0 +1,10 @@
+[export, objects, out] = System.argv()
+root = Path.expand("..", __DIR__)
+files = ~w(domain.exs allocator.exs storage_registry.exs project_backup.exs project_backup_validation.exs recovery_checkpoint.exs recovery_work.exs storage_rebind.exs recovery_coordinator.exs project_restore.exs projects.exs resources.exs records.exs records_protocol.exs history_evaluator.exs history.exs history_protocol.exs retrieval.exs selection.exs retrieval_index.exs retrieval_jobs.exs retrieval_protocol.exs archive_policy.exs archive.exs archive_worker.exs archive_protocol.exs feedback_groups.exs feedback.exs replay.exs replay_worker.exs feedback_protocol.exs optimization.exs optimization_worker.exs optimization_protocol.exs storage.exs directory.exs source_queries.exs directory_protocol.exs multi_protocol.exs project_recovery_protocol.exs protocol.exs eventing.exs federation_v2.exs migration.exs store.exs tls_certificate.exs acme_client.exs tls.exs config.exs identity.exs workers.exs web.exs server.exs cli.exs tests/litai_test.exs main.exs)
+body = Enum.map_join(files, "\n", &File.read!(Path.join(root,&1)))
+# Parse before export; the runtime also compiles every embedded module on invocation.
+Code.string_to_quoted!(body)
+for dir <- [objects,out,Path.dirname(export)], do: File.mkdir_p!(dir)
+temp = export <> ".new"
+File.write!(temp,body)
+File.rename!(temp,export)

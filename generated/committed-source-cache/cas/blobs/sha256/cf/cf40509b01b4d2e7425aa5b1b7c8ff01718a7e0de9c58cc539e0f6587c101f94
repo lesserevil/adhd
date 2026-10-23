@@ -1,0 +1,239 @@
+defmodule ADHD.StorageRegistry do
+  # Config is the sole durable transaction coordinator. Reads are memory-only.
+  alias ADHD.Domain, as: D
+  alias ADHD.RecoveryFiles, as: F
+  @safe 9007199254740991
+  def paths(config_path) do
+    path=Path.expand(config_path)
+    %{registry: path<>".stores",marker: path<>".stores.marker",journal: path<>".recovery",decision: path<>".transaction"}
+  end
+  def loaded?,do: :persistent_term.get({__MODULE__,:current},nil) != nil
+  def current,do: :persistent_term.get({__MODULE__,:current},nil)
+  def publish(config_path,registry) do
+    validate(registry,config_path,registry["server_id"])
+    :persistent_term.put({__MODULE__,:current},%{path: Path.expand(config_path),registry: registry})
+    :ok
+  end
+  def entry(id) do
+    case current() do nil->nil;x->x.registry["projects"][id] end
+  end
+  def epoch(id) do
+    id=id || ADHD.Config.root()["project_id"]
+    case entry(id) do nil->nil;e->e["project_epoch"] end
+  end
+  def legacy_path(c,id),do: if(not is_list(c["projects"]) or id==c["project_id"],do: c["store_path"],else: Path.join(c["store_path"]<>".projects",ADHD.Directory.digest(id)<>".dets"))
+  def route(c,id) do
+    case entry(id) do
+      nil->legacy_path(c,id)
+      e->
+        if e["initialized"] and c["store_path"] != ADHD.Config.root()["store_path"],do: selected_path(c,id,e["project_epoch"]),else: Path.expand(e["storage_anchor"])
+    end
+  end
+  def availability(c,id) do
+    case entry(id) do
+      nil->if(loaded?(),do: "uninitialized",else: "ready")
+      %{"initialized"=>false}=e->e["availability"]
+      e->
+        # Startup publishes missing/blocked status; avoid disk I/O per request.
+        status=Map.get(e,"availability","ready")
+        if status=="ready" and :persistent_term.get({__MODULE__,:started},false) and is_nil(ADHD.Store.writer(c,id)),do: "recovery_required",else: status
+    end
+  end
+  def halt(id) do
+    current=current();entry=current.registry["projects"][id]
+    next=current.registry |> put_in(["projects",id],Map.put(entry,"availability","recovery_required")) |> seal()
+    persist(current.path,next)
+  end
+  def startup_complete,do: :persistent_term.put({__MODULE__,:started},true)
+  def admit(c,id) do
+    ADHD.Projects.find(c,id)
+    if availability(c,id) != "ready",do: D.fail("RECOVERY_REQUIRED")
+    :ok
+  end
+  def fields(c,id) do
+    case entry(id) do
+      nil->%{}
+      e->%{"route_generation"=>e["generation"],"project_epoch"=>e["project_epoch"],"allocation_epoch"=>e["allocation_epoch"],"topic_generation"=>e["topic_generation"],"project_availability"=>availability(c,id)}
+    end
+  end
+  def selected_path(c,id,epoch),do: Path.join([c["store_path"]<>".projects",ADHD.Directory.digest(id),"generation-"<>epoch,"state.dets"])
+  def checksum(registry),do: F.sha(ADHD.Directory.canonical(Map.delete(registry,"integrity_sha256")))
+  def seal(registry),do: Map.put(registry,"integrity_sha256",checksum(registry))
+  def validate(r,config_path,server) do
+    D.keys(r,~w(schema config_file server_id projects reserved_epochs integrity_sha256 revision),~w(schema config_file server_id projects reserved_epochs integrity_sha256))
+    if Map.has_key?(r,"revision"),do: D.integer(r["revision"],0,@safe)
+    D.check(r["schema"]==1 and r["config_file"]==Path.expand(config_path) and r["server_id"]==server)
+    ADHD.Directory.server_id(server);F.hex(r["integrity_sha256"],64)
+    D.check(:crypto.hash_equals(r["integrity_sha256"],checksum(r)))
+    D.object(r["projects"]);D.check(map_size(r["projects"])<=256)
+    D.check(is_list(r["reserved_epochs"]));D.distinct(r["reserved_epochs"])
+    Enum.each(r["reserved_epochs"],&F.hex(&1,32))
+    for {id,e}<-r["projects"] do
+      D.identifier(id)
+      D.keys(e,~w(server_id project_id aliases initialized generation project_epoch allocation_epoch topic_generation storage_anchor state_sha256 sequence storage_generation availability),~w(server_id project_id aliases initialized generation project_epoch allocation_epoch topic_generation storage_anchor state_sha256 sequence storage_generation availability))
+      D.check(e["server_id"]==server and e["project_id"]==id)
+      D.list(e["aliases"],256);D.distinct(e["aliases"]);Enum.each(e["aliases"],&D.identifier/1)
+      D.check(id not in e["aliases"]);D.boolean(e["initialized"])
+      for field<-~w(generation sequence storage_generation),do: D.integer(e[field],0,@safe)
+      for field<-~w(project_epoch allocation_epoch topic_generation),not is_nil(e[field]),do: F.hex(e[field],32)
+      D.string(e["storage_anchor"],4096);D.check(Path.type(e["storage_anchor"])==:absolute)
+      if e["state_sha256"],do: F.hex(e["state_sha256"],64)
+      D.check(e["availability"] in ~w(ready uninitialized recovery_required restoring))
+      if e["initialized"] do
+        D.check(e["generation"]>0 and is_binary(e["project_epoch"]) and is_binary(e["allocation_epoch"]))
+        D.check(e["project_epoch"] in r["reserved_epochs"] and e["allocation_epoch"] in r["reserved_epochs"])
+        D.check(e["project_epoch"] != e["allocation_epoch"])
+        D.check(e["topic_generation"] in [nil,e["project_epoch"]])
+        D.check(is_binary(e["state_sha256"]))
+      end
+      if not e["initialized"],do: D.check(e["generation"]==0 and e["project_epoch"]==nil and e["allocation_epoch"]==nil and e["topic_generation"]==nil and e["availability"] in ["uninitialized","recovery_required"])
+    end
+    active_epochs=Enum.flat_map(r["projects"],fn {_,e}->if e["initialized"],do: [e["project_epoch"],e["allocation_epoch"]],else: [] end)
+    D.distinct(active_epochs)
+    bindings=Enum.flat_map(r["projects"],fn {id,e}->[id|e["aliases"]] end)
+    D.distinct(bindings);D.distinct(Enum.map(r["projects"],fn {_,e}->Path.expand(e["storage_anchor"]) end))
+    :ok
+  end
+  def for_config(c,old) do
+    case current() do
+      nil->nil
+      x->
+        r=x.registry
+        projects=Map.new(ADHD.Projects.ids(c),fn id->
+          previous=r["projects"][id]
+          e=previous || %{"server_id"=>c["server_id"],"project_id"=>id,"aliases"=>[],"initialized"=>false,"generation"=>0,"project_epoch"=>nil,"allocation_epoch"=>nil,"topic_generation"=>nil,"storage_anchor"=>Path.expand(legacy_path(c,id)),"state_sha256"=>nil,"sequence"=>0,"storage_generation"=>0,"availability"=>"uninitialized"}
+          if c["store_path"] != old["store_path"] do
+            if e["initialized"] and e["availability"] != "ready",do: D.fail("CONFIG_APPLY_FAILED")
+            if not e["initialized"] do
+              unless Enum.all?([e["storage_anchor"], ADHD.Storage.snapshot_path(e["storage_anchor"])], &(File.lstat(&1)=={:error,:enoent})),do: D.fail("CONFIG_APPLY_FAILED")
+            end
+            target=if e["initialized"],do: selected_path(c,id,e["project_epoch"]),else: Path.expand(legacy_path(c,id))
+            if not e["initialized"] do
+              unless Enum.all?([target, ADHD.Storage.snapshot_path(target)], &(File.lstat(&1)=={:error,:enoent})),do: D.fail("CONFIG_APPLY_FAILED")
+            end
+            {id,Map.put(e,"storage_anchor",target)}
+          else {id,e} end
+        end)
+        seal(Map.put(r,"projects",projects))
+    end
+  end
+  def load(config_path,c) do
+    :persistent_term.put({__MODULE__,:started},false)
+    files=paths(config_path);uid=File.stat!(config_path).uid
+    reg=File.exists?(files.registry);mark=File.exists?(files.marker)
+    if reg != mark,do: D.fail("CONFIG_WRITE_FAILED")
+    registry=if reg do
+      {bytes,_}=F.read(files.registry,268435456,uid)
+      r=F.json(bytes);validate(r,config_path,c["server_id"])
+      {marker,_}=F.read(files.marker,65536,uid);m=F.json(marker)
+      D.keys(m,~w(schema config_file server_id),~w(schema config_file server_id))
+      D.check(m==%{"schema"=>1,"config_file"=>Path.expand(config_path),"server_id"=>c["server_id"]})
+      D.check(Enum.sort(Map.keys(r["projects"]))==Enum.sort(ADHD.Projects.ids(c)))
+      entries=Map.new(r["projects"],fn {id,e}->
+        path=e["storage_anchor"]
+        present=Enum.map([path,ADHD.Storage.snapshot_path(path)],&File.lstat/1)
+        availability=cond do
+          not e["initialized"]->if(Enum.all?(present,&match?({:error,:enoent},&1)),do: "uninitialized",else: "recovery_required")
+          blocked_decision?(files.decision,id)->"recovery_required"
+          Enum.all?(present,&match?({:error,:enoent},&1))->"recovery_required"
+          Enum.any?(present,fn value->case value do {:ok,%{type: :regular}}->false;{:error,:enoent}->false;_->true end end)->"recovery_required"
+          true->"ready"
+        end
+        {id,Map.put(e,"availability",availability)}
+      end)
+      seal(Map.put(r,"projects",entries))
+    else
+      initial(config_path,c)
+    end
+    publish(config_path,registry)
+  end
+  defp blocked_decision?(path,id) do
+    case File.lstat(path) do
+      {:error,:enoent}->false
+      {:ok,_}->
+        decision=F.json(File.read!(path))
+        decision["kind"]=="project_restore" and decision["plan"]["project_id"]==id
+      _->D.fail("CONFIG_WRITE_FAILED")
+    end
+  end
+  defp initial(config_path,c) do
+    files=paths(config_path)
+    # Prove every local input before creating any native staging table.
+    verified=Map.new(ADHD.Projects.ids(c),fn id->
+      path=Path.expand(legacy_path(c,id))
+      proof=ADHD.Storage.local_legacy_state(path,id,c["server_id"],ADHD.LocalLegacy.limits(c)) |> ADHD.LocalLegacy.validate(c,id)
+      {id,proof}
+    end)
+    {projects,epochs,moves,sources}=Enum.reduce(ADHD.Projects.ids(c),{%{},[],[],[]},fn id,{entries,reserved,moves,sources}->
+      path=Path.expand(legacy_path(c,id))
+      proof=verified[id]
+      source=if proof.validated,do: ADHD.Scope.with_project(id,fn->ADHD.Store.upgrade(proof.validated,id) end)
+      base=%{"server_id"=>c["server_id"],"project_id"=>id,"aliases"=>[],"initialized"=>false,"generation"=>0,"project_epoch"=>nil,"allocation_epoch"=>nil,"topic_generation"=>nil,"storage_anchor"=>path,"state_sha256"=>nil,"sequence"=>0,"storage_generation"=>0,"availability"=>"uninitialized"}
+      if is_nil(source) do
+        {Map.put(entries,id,base),reserved,moves,[proof|sources]}
+      else
+        D.check(source.server_id==c["server_id"])
+        epoch=fresh(reserved);allocation=fresh([epoch|reserved]);target=selected_path(c,id,epoch)
+        entry=Map.merge(base,%{"aliases"=>Enum.sort(source.aliases--[id]),"initialized"=>true,"generation"=>1,"project_epoch"=>epoch,"allocation_epoch"=>allocation,"storage_anchor"=>target,"availability"=>"ready"})
+        state=source |> headers(entry) |> ADHD.Storage.next()
+        stage_dir=target<>".stage";D.check(not File.exists?(stage_dir));F.mkdir_private(stage_dir,File.stat!(config_path).uid)
+        stage=Path.join(stage_dir,"state.dets");stage_proof=ADHD.Storage.write_closed(stage,state)
+        entry=Map.merge(entry,%{"state_sha256"=>stage_proof["digest"],"sequence"=>stage_proof["sequence"],"storage_generation"=>stage_proof["generation"]})
+        move=Map.merge(stage_proof,%{"source"=>path,"target"=>target,"stage"=>stage,"stage_dir"=>stage_dir})
+        {Map.put(entries,id,entry),[epoch,allocation|reserved],[move|moves],[proof|sources]}
+      end
+    end)
+    registry=seal(%{"schema"=>1,"config_file"=>Path.expand(config_path),"server_id"=>c["server_id"],"projects"=>projects,"reserved_epochs"=>epochs})
+    marker=%{"schema"=>1,"config_file"=>Path.expand(config_path),"server_id"=>c["server_id"]}
+    decision=%{"kind"=>"registry_adoption","server_id"=>c["server_id"],"config_sha256"=>F.sha(File.read!(config_path)),"registry"=>registry,"marker"=>marker,"store_moves"=>moves,"recovery_journal"=>ADHD.ProjectRestore.empty_journal(config_path,c,epochs)}
+    # Keep the exact current config as matching evidence beside offline old stores.
+    backup=config_path<>".pre-registry"
+    if not File.exists?(backup),do: ADHD.Storage.atomic_private(backup,File.read!(config_path))
+    Enum.each(sources,&ADHD.Storage.verify_local_legacy/1)
+    ADHD.Storage.atomic_private(files.decision,JSON.encode!(decision))
+    recover_adoption(config_path,decision)
+    registry
+  end
+  def fresh(reserved) do
+    epoch=Base.encode16(:crypto.strong_rand_bytes(16),case: :lower)
+    if epoch in reserved,do: fresh(reserved),else: epoch
+  end
+  def write(config_path,registry) do
+    validate(registry,config_path,registry["server_id"])
+    ADHD.Storage.atomic_private(paths(config_path).registry,JSON.encode!(registry))
+  end
+  def persist(config_path,registry) do
+    write(config_path,registry)
+    publish(config_path,registry)
+  end
+  def recover_adoption(config_path,decision) do
+    D.check(decision["kind"]=="registry_adoption")
+    D.check(F.sha(File.read!(config_path))==decision["config_sha256"])
+    validate(decision["registry"],config_path,decision["server_id"])
+    ADHD.Store.install_moves(decision["store_moves"])
+    files=paths(config_path)
+    if File.exists?(files.journal) do
+      D.check(ADHD.RecoveryFiles.json(File.read!(files.journal))==decision["recovery_journal"])
+    else
+      ADHD.Storage.atomic_private(files.journal,JSON.encode!(decision["recovery_journal"]))
+    end
+    ADHD.Storage.atomic_private(files.marker,JSON.encode!(decision["marker"]))
+    ADHD.Storage.atomic_private(files.registry,JSON.encode!(decision["registry"]))
+    File.rm!(files.decision)
+    :ok
+  end
+  def headers(state,entry) do
+    counter=if state[:schema]==4 and state[:allocation_epoch]==entry["allocation_epoch"],do: state[:allocation_counter],else: 0
+    D.integer(counter,0,@safe)
+    state |> Map.merge(%{schema: 4,route_generation: entry["generation"],project_epoch: entry["project_epoch"],allocation_epoch: entry["allocation_epoch"],allocation_counter: counter})
+  end
+  def check_header(state,e) do
+    D.check(state[:schema]==4 and state[:server_id]==e["server_id"] and state[:project]==e["project_id"])
+    D.check(state[:route_generation]==e["generation"] and state[:project_epoch]==e["project_epoch"] and state[:allocation_epoch]==e["allocation_epoch"])
+    D.integer(state[:allocation_counter],0,@safe)
+    D.check(is_integer(state[:seq]) and state.seq>=e["sequence"])
+    D.check(is_integer(state[:storage_generation]) and state.storage_generation>=e["storage_generation"])
+    if state.seq==e["sequence"] and state.storage_generation==e["storage_generation"],do: D.check(F.sha(ADHD.Storage.bytes(state))==e["state_sha256"])
+    :ok
+  end
+end

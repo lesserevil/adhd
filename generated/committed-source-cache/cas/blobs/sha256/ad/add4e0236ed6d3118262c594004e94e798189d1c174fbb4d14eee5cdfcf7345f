@@ -1,0 +1,422 @@
+defmodule ADHD.StorageRebind do
+  alias ADHD.{Domain,RecoveryFiles,Storage,StorageRegistry,ProjectRestore,ProjectBackup,ProjectBackupValidation,Directory}
+  @metadata_limit 1073741824
+  @safe 9007199254740991
+
+  # Offline only. The operator supplies the complete copied set and confirms its
+  # previous owner is stopped; this is not a distributed ownership lease.
+  def run(request) do
+    validate_request(request)
+    path=Path.expand(request["config_file"])
+    try do
+      require!(not is_pid(Process.whereis(ADHD.Config)),"RESTORE_CONFLICT")
+      uid=owner()
+      {config_bytes,_}=RecoveryFiles.read(path,1048576,uid)
+      config=RecoveryFiles.json(config_bytes)
+      {journal_bytes,_}=RecoveryFiles.read(path<>".recovery",@metadata_limit,uid)
+      journal=RecoveryFiles.json(journal_bytes)
+      validate_journal(journal,config)
+      digest=Directory.digest(request);key=receipt_key(request["message_id"])
+      receipt=Map.get(journal,"rebind_receipts",%{})[key]
+      if receipt do
+        require!(receipt["digest"]==digest,"IDEMPOTENCY_CONFLICT")
+        # A retained decision still needs cleanup/recovery before returning; an
+        # unrelated transaction never authorizes deleting its decision.
+        case File.lstat(path<>".transaction") do
+          {:error,:enoent}->:ok
+          _->decision=read_decision(path,uid);require!(decision["request_sha256"]==digest,"RECOVERY_REQUIRED");recover(path,decision)
+        end
+        verify_completed(path,config,receipt["result"],uid)
+        receipt["result"]
+      else
+        case File.lstat(path<>".transaction") do
+          {:error,:enoent}->prepare(request,config_bytes,config,journal_bytes,journal,uid)
+          _->
+            decision=read_decision(path,uid)
+            require!(decision["request_sha256"]==digest,"RECOVERY_REQUIRED")
+            recover(path,decision);decision["result"]
+        end
+      end
+    rescue _->Domain.fail("RESTORE_CONFLICT")
+    catch
+      {:domain,code} when code in ~w(RESTORE_CONFLICT RECOVERY_REQUIRED IDEMPOTENCY_CONFLICT)->Domain.fail(code)
+      _,_->Domain.fail(if(File.exists?(path<>".transaction"),do: "RECOVERY_REQUIRED",else: "RESTORE_CONFLICT"))
+    end
+  end
+
+  defp prepare(req,config_bytes,config,journal_bytes,journal,uid) do
+    path=Path.expand(req["config_file"]);paths=StorageRegistry.paths(path)
+    require!(RecoveryFiles.sha(config_bytes)==req["expected_config_sha256"],"RESTORE_CONFLICT")
+    require!(RecoveryFiles.sha(journal_bytes)==req["expected_recovery_journal_sha256"],"RESTORE_CONFLICT")
+    require!(config["server_id"]==req["expected_server_id"],"RESTORE_CONFLICT")
+    # Validate raw settings without inspecting the old store anchor or publishing
+    # configuration. All initialized routes below use only explicit new paths.
+    normalized=ADHD.Config.validate(config,Path.dirname(path))
+    {registry_bytes,_}=RecoveryFiles.read(paths.registry,@metadata_limit,uid)
+    {marker_bytes,_}=RecoveryFiles.read(paths.marker,65536,uid)
+    require!(RecoveryFiles.sha(registry_bytes)==req["expected_registry_sha256"] and RecoveryFiles.sha(marker_bytes)==req["expected_marker_sha256"],"RESTORE_CONFLICT")
+    registry=RecoveryFiles.json(registry_bytes);old=registry["config_file"]
+    absolute(old);StorageRegistry.validate(registry,old,config["server_id"])
+    marker=RecoveryFiles.json(marker_bytes)
+    require!(marker==%{"schema"=>1,"config_file"=>old,"server_id"=>config["server_id"]},"RESTORE_CONFLICT")
+    require!(journal["config_file"]==old,"RESTORE_CONFLICT")
+    require!(Enum.sort(Map.keys(registry["projects"]))==Enum.sort(ADHD.Projects.ids(normalized)),"RESTORE_CONFLICT")
+    config_journal=configuration_journal(path,config,req["expected_config_journal_sha256"],uid)
+    initialized=registry["projects"] |> Enum.filter(fn {_,e}->e["initialized"] end) |> Enum.map(&elem(&1,0)) |> Enum.sort()
+    mappings=Enum.map(req["stores"],&Map.update!(&1,"store_path",fn p->Path.expand(p) end)) |> Enum.sort_by(& &1["project_id"])
+    require!(Enum.map(mappings,& &1["project_id"])==initialized,"RESTORE_CONFLICT")
+    metadata=[path,path<>".journal",paths.registry,paths.marker,paths.journal,paths.decision,path<>".acme-owner.json",Path.join(Path.dirname(path),"acme")]
+    products=Enum.flat_map(mappings,fn m->[m["store_path"],Storage.snapshot_path(m["store_path"])] end)
+    require!(length(Enum.uniq(metadata++products))==length(metadata++products),"RESTORE_CONFLICT")
+    require!(not Enum.any?(metadata++products,fn p->Enum.any?(metadata++products,fn q->p != q and nested?(p,q) end) end),"RESTORE_CONFLICT")
+    require!(map_size(journal["receipts"])+map_size(Map.get(journal,"rebind_receipts",%{}))<ProjectRestore.effective(path,normalized)["max_operations"],"RESTORE_CONFLICT")
+    limits=ProjectRestore.effective(path,normalized) |> Map.put("deadline_ms",System.monotonic_time(:millisecond)+ProjectRestore.effective(path,normalized)["timeout_ms"])
+    {acme,acme_replacements}=ADHD.ACMERebind.capture(path,old,uid,limits)
+    # Exactly one read-only table is active at a time. No source/old-path opener.
+    for mapping<-mappings,do: verify_store(mapping,registry["projects"][mapping["project_id"]],normalized,Map.put(limits,"deadline_ms",System.monotonic_time(:millisecond)+limits["timeout_ms"]),uid)
+    revision=Map.get(registry,"revision",0)+1;Domain.integer(revision,1,@safe)
+    projects=Map.new(registry["projects"],fn {id,entry}->
+      case Enum.find(mappings,&(&1["project_id"]==id)) do nil->{id,entry};m->{id,Map.put(entry,"storage_anchor",m["store_path"])} end
+    end)
+    result=%{"rebound"=>true,"server_id"=>config["server_id"],"registry_revision"=>revision,"projects"=>initialized}
+    next_registry=registry |> Map.put("config_file",path) |> Map.put("projects",projects) |> Map.put("revision",revision) |> StorageRegistry.seal()
+    StorageRegistry.validate(next_registry,path,config["server_id"])
+    next_marker=%{marker|"config_file"=>path}
+    operations=Map.new(journal["operations"],fn {id,op}->{id,if(op["kind"]=="plan" and op["state"]=="ready",do: Map.put(op,"state","stale"),else: op)} end)
+    receipt=%{"digest"=>Directory.digest(req),"result"=>result}
+    next_journal=journal |> Map.put("config_file",path) |> Map.put("operations",operations) |> Map.update("rebind_receipts",%{receipt_key(req["message_id"])=>receipt},&Map.put(&1,receipt_key(req["message_id"]),receipt)) |> seal()
+    validate_journal(next_journal,config)
+    stage_dir=path<>".rebind-"<>Domain.opaque()
+    require!(not Enum.any?(products++metadata,&nested?(&1,stage_dir)),"RESTORE_CONFLICT")
+    :ok=File.mkdir(stage_dir);:ok=File.chmod(stage_dir,0o700)
+    try do
+      sync_dir(stage_dir)
+      replacement_values=[{"registry",paths.registry,registry_bytes,next_registry},{"marker",paths.marker,marker_bytes,next_marker},{"journal",paths.journal,journal_bytes,next_journal}]++acme_replacements
+      replacements=for {name,target,old_bytes,value}<-replacement_values do
+        bytes=JSON.encode!(value);require!(byte_size(bytes)<=@metadata_limit,"RESTORE_CONFLICT");stage=Path.join(stage_dir,name<>".json")
+        Storage.atomic_private(stage,bytes)
+        %{"target"=>target,"stage"=>stage,"old_sha256"=>RecoveryFiles.sha(old_bytes),"new_sha256"=>RecoveryFiles.sha(bytes),"bytes"=>byte_size(bytes)}
+      end
+      decision=%{"schema"=>1,"kind"=>"metadata_rebind","config_file"=>path,"server_id"=>config["server_id"],"request_sha256"=>Directory.digest(req),"message_id"=>req["message_id"],"stage_dir"=>stage_dir,"config_sha256"=>RecoveryFiles.sha(config_bytes),"config_journal_sha256"=>config_journal,"maximum_bytes"=>limits["max_backup_bytes"],"stores"=>mappings,"replacements"=>replacements,"result"=>result,"acme"=>acme} |> seal()
+      # Recheck every input after staging and before the single durable decision.
+      verify_inputs(decision,uid,false)
+      require!(absent?(paths.decision),"RESTORE_CONFLICT")
+      require!(byte_size(JSON.encode!(decision))<=10485760,"RESTORE_CONFLICT")
+      Storage.atomic_private(paths.decision,JSON.encode!(decision))
+      recover(path,decision)
+      result
+    rescue e->
+      if absent?(paths.decision),do: cleanup_stage(stage_dir,uid)
+      reraise e,__STACKTRACE__
+    catch kind,reason->
+      if absent?(paths.decision),do: cleanup_stage(stage_dir,uid)
+      :erlang.raise(kind,reason,__STACKTRACE__)
+    end
+  end
+
+  # Startup invokes this before publishing config or opening any project writer.
+  def recover(path,decision) do
+    try do
+      path=Path.expand(path);uid=owner();validate_decision(decision,path)
+      require!(read_decision(path,uid)==decision,"RECOVERY_REQUIRED")
+      verify_inputs(decision,uid,true)
+      for replacement<-decision["replacements"] do
+        {current,_}=RecoveryFiles.read(replacement["target"],@metadata_limit,uid)
+        hash=RecoveryFiles.sha(current)
+        if hash != replacement["new_sha256"] do
+          require!(hash==replacement["old_sha256"],"RECOVERY_REQUIRED")
+          {bytes,_}=RecoveryFiles.read(replacement["stage"],replacement["bytes"],uid,%{"bytes"=>replacement["bytes"],"sha256"=>replacement["new_sha256"]})
+          Storage.atomic_private(replacement["target"],bytes)
+        end
+      end
+      # Verify the completed receipt independently of the decision before cleanup.
+      {bytes,_}=RecoveryFiles.read(path<>".recovery",@metadata_limit,uid)
+      j=RecoveryFiles.json(bytes);{config,_}=RecoveryFiles.read(path,1048576,uid);validate_journal(j,RecoveryFiles.json(config))
+      receipt=Map.get(j,"rebind_receipts",%{})[receipt_key(decision["message_id"])]
+      require!(receipt==%{"digest"=>decision["request_sha256"],"result"=>decision["result"]},"RECOVERY_REQUIRED")
+      # Remove/fsync the decision first: a subsequent normal startup is now safe
+      # even if bounded owned-stage cleanup is interrupted.
+      :ok=File.rm(path<>".transaction");sync_dir(path<>".transaction")
+      cleanup_stage(decision["stage_dir"],uid)
+      :ok
+    rescue _->Domain.fail("RECOVERY_REQUIRED")
+    catch _,_->Domain.fail("RECOVERY_REQUIRED") end
+  end
+
+  defp verify_inputs(d,uid,decided) do
+    {config,_}=RecoveryFiles.read(d["config_file"],1048576,uid)
+    require!(RecoveryFiles.sha(config)==d["config_sha256"],"RECOVERY_REQUIRED")
+    configuration_journal(d["config_file"],RecoveryFiles.json(config),d["config_journal_sha256"],uid)
+    if Map.has_key?(d,"acme"),do: ADHD.ACMERebind.verify(d["acme"],d["config_file"],uid,decided)
+    for r<-d["replacements"] do
+      {current,_}=RecoveryFiles.read(r["target"],@metadata_limit,uid);hash=RecoveryFiles.sha(current)
+      require!(hash in if(decided,do: [r["old_sha256"],r["new_sha256"]],else: [r["old_sha256"]]),"RECOVERY_REQUIRED")
+      if hash != r["new_sha256"] do
+        RecoveryFiles.read(r["stage"],r["bytes"],uid,%{"bytes"=>r["bytes"],"sha256"=>r["new_sha256"]})
+      end
+    end
+    for m<-d["stores"] do
+      checkpoint=RecoveryFiles.private(m["store_path"],:regular,uid);snapshot=RecoveryFiles.private(Storage.snapshot_path(m["store_path"]),:regular,uid)
+      require!(checkpoint.size+snapshot.size<=d["maximum_bytes"],"RECOVERY_REQUIRED")
+      for {path,key}<- [{m["store_path"],"checkpoint_sha256"},{Storage.snapshot_path(m["store_path"]),"snapshot_sha256"}] do
+        {bytes,_}=RecoveryFiles.read(path,d["maximum_bytes"],uid);require!(RecoveryFiles.sha(bytes)==m[key],"RECOVERY_REQUIRED")
+      end
+    end
+    :ok
+  end
+  defp verify_store(m,entry,c,limits,uid) do
+    require!(entry["generation"]==m["expected_route_generation"],"RESTORE_CONFLICT")
+    path=m["store_path"];snapshot=Storage.snapshot_path(path)
+    a=RecoveryFiles.private(path,:regular,uid);b=RecoveryFiles.private(snapshot,:regular,uid)
+    require!(a.size+b.size<=limits["max_backup_bytes"],"RESTORE_CONFLICT")
+    {checkpoint_bytes,checkpoint_identity}=RecoveryFiles.read(path,limits["max_backup_bytes"],uid)
+    {snapshot_bytes,snapshot_identity}=RecoveryFiles.read(snapshot,limits["max_backup_bytes"],uid)
+    require!(RecoveryFiles.sha(checkpoint_bytes)==m["checkpoint_sha256"] and RecoveryFiles.sha(snapshot_bytes)==m["snapshot_sha256"],"RESTORE_CONFLICT")
+    state=ProjectBackup.decode_snapshot(snapshot_bytes,limits)
+    require!(state[:schema]==4 and state[:server_id]==c["server_id"] and state[:project]==m["project_id"],"RESTORE_CONFLICT")
+    for {native,key}<- [{:route_generation,"generation"},{:project_epoch,"project_epoch"},{:allocation_epoch,"allocation_epoch"}],do: require!(state[native]==entry[key],"RESTORE_CONFLICT")
+    require!(Enum.sort(state.aliases--[state.project])==Enum.sort(entry["aliases"]),"RESTORE_CONFLICT")
+    require!(state.seq>=entry["sequence"] and state.storage_generation>=entry["storage_generation"],"RESTORE_CONFLICT")
+    if state.storage_generation==entry["storage_generation"],do: require!(RecoveryFiles.sha(Storage.bytes(state))==entry["state_sha256"],"RESTORE_CONFLICT")
+    ProjectBackupValidation.validate_staged(state,c,state.project,limits,fn _->:ok end)
+    # validate/5 supplies original/current principal proof; here both configurations
+    # are the same copied full-server config and headers bind the current generation.
+    source=%{"sequence"=>state.seq,"storage_generation"=>state.storage_generation,"route_generation"=>state.route_generation,"project_epoch"=>state.project_epoch,"allocation_epoch"=>state.allocation_epoch}
+    bundle=%{state: state,config: c,manifest: %{"server_id"=>state.server_id,"project_id"=>state.project,"aliases"=>Enum.sort(state.aliases--[state.project]),"source"=>source}}
+    ProjectBackupValidation.validate(bundle,c,state.project,limits,fn _->:ok end)
+    safe_checkpoint=case ADHD.RecoveryCheckpoint.preflight(checkpoint_bytes,limits) do
+      {:ok,value}->value
+      {:needs_repair,:not_closed}->Domain.fail("RESTORE_CONFLICT")
+    end
+    ProjectBackupValidation.validate_staged(safe_checkpoint,c,state.project,limits,fn _->:ok end)
+    {:ok,table}=:dets.open_file(:adhd_rebind_verify,[file: String.to_charlist(path),access: :read,type: :set,repair: false])
+    try do
+      require!(:dets.info(table,:size)==1,"RESTORE_CONFLICT")
+      [{:state,checkpoint}]=:dets.lookup(table,:state)
+      require!(checkpoint==safe_checkpoint,"RESTORE_CONFLICT")
+      require!(is_map(checkpoint) and checkpoint[:server_id]==state.server_id and checkpoint[:project] in state.aliases,"RESTORE_CONFLICT")
+      require!(is_integer(checkpoint[:storage_generation]) and checkpoint.storage_generation<=state.storage_generation and is_integer(checkpoint[:seq]) and checkpoint.seq<=state.seq,"RESTORE_CONFLICT")
+      if checkpoint.storage_generation==state.storage_generation,do: require!(Storage.bytes(checkpoint)==Storage.bytes(state),"RESTORE_CONFLICT")
+      for key<-[:route_generation,:project_epoch,:allocation_epoch],do: require!(checkpoint[key]==state[key],"RESTORE_CONFLICT")
+    after :dets.close(table) end
+    require!(RecoveryFiles.identity(RecoveryFiles.private(path,:regular,uid))==checkpoint_identity and RecoveryFiles.identity(RecoveryFiles.private(snapshot,:regular,uid))==snapshot_identity,"RESTORE_CONFLICT")
+    :ok
+  end
+
+  defp verify_completed(path,c,result,uid) do
+    {bytes,_}=RecoveryFiles.read(path<>".stores",@metadata_limit,uid);r=RecoveryFiles.json(bytes)
+    StorageRegistry.validate(r,path,c["server_id"])
+    require!(Map.get(r,"revision",0)>=result["registry_revision"],"RECOVERY_REQUIRED")
+    {bytes,_}=RecoveryFiles.read(path<>".stores.marker",65536,uid)
+    require!(RecoveryFiles.json(bytes)==%{"schema"=>1,"config_file"=>path,"server_id"=>c["server_id"]},"RECOVERY_REQUIRED")
+    if File.exists?(path<>".acme-owner.json") or File.exists?(Path.join(Path.dirname(path),"acme")) do
+      ADHD.ACMERebind.capture(path,path,uid,%{"max_records"=>1000000,"max_backup_bytes"=>@metadata_limit,"deadline_ms"=>System.monotonic_time(:millisecond)+300000})
+    end
+    :ok
+  end
+  defp configuration_journal(path,c,expected,uid) do
+    if is_nil(expected) do
+      require!(absent?(path<>".journal") and Map.get(c,"config_revision",1)<=1,"RESTORE_CONFLICT")
+      nil
+    else
+      {bytes,_}=RecoveryFiles.read(path<>".journal",@metadata_limit,uid);require!(RecoveryFiles.sha(bytes)==expected,"RESTORE_CONFLICT")
+      j=RecoveryFiles.json(bytes);Domain.object(j)
+      for {key,row}<-j do
+        hex(key);Domain.keys(row,~w(digest result),~w(digest result));hex(row["digest"]);Domain.object(row["result"])
+        if row["result"]["config_revision"],do: Domain.integer(row["result"]["config_revision"],1,Map.get(c,"config_revision",1))
+      end
+      expected
+    end
+  end
+  defp validate_journal(j,c) do
+    absolute(j["config_file"]);ProjectRestore.validate_metadata(j,j["config_file"],c)
+    for {key,r}<-Map.get(j,"rebind_receipts",%{}) do
+      hex(key);Domain.keys(r,~w(digest result),~w(digest result));hex(r["digest"]);result(r["result"]);require!(r["result"]["server_id"]==c["server_id"] and Enum.all?(r["result"]["projects"],&(&1 in ADHD.Projects.ids(c))),"RESTORE_CONFLICT")
+    end
+    :ok
+  end
+  defp validate_request(r) do
+    try do
+      fields = ~w(config_file expected_server_id expected_config_sha256 expected_config_journal_sha256 expected_registry_sha256 expected_recovery_journal_sha256 expected_marker_sha256 stores message_id confirm confirm_stopped)
+      Domain.keys(r,fields,fields);absolute(r["config_file"]);Domain.identifier(r["expected_server_id"])
+      for key<-fields -- ~w(config_file expected_server_id stores message_id confirm confirm_stopped),not is_nil(r[key]),do: hex(r[key])
+      for key<-~w(expected_config_sha256 expected_registry_sha256 expected_recovery_journal_sha256 expected_marker_sha256),do: hex(r[key])
+      require!(r["confirm"]==true and r["confirm_stopped"]==true,"INVALID_PARAMS");Domain.id(r["message_id"])
+      Domain.list(r["stores"],256)
+      for m<-r["stores"] do
+        fields = ~w(project_id store_path expected_route_generation snapshot_sha256 checkpoint_sha256);Domain.keys(m,fields,fields)
+        Domain.identifier(m["project_id"]);absolute(m["store_path"]);Domain.integer(m["expected_route_generation"],1,@safe);hex(m["snapshot_sha256"]);hex(m["checkpoint_sha256"])
+      end
+      Domain.distinct(Enum.map(r["stores"],& &1["project_id"]));Domain.distinct(Enum.map(r["stores"],& &1["store_path"]))
+      :ok
+    rescue _->Domain.fail("INVALID_PARAMS") catch _,_->Domain.fail("INVALID_PARAMS") end
+  end
+  defp validate_decision(d,path) do
+    fields = ~w(schema kind config_file server_id request_sha256 message_id stage_dir config_sha256 config_journal_sha256 maximum_bytes stores replacements result integrity_sha256)
+    Domain.keys(d,fields++["acme"],fields);require!(d["schema"]==1 and d["kind"]=="metadata_rebind" and d["config_file"]==path,"RECOVERY_REQUIRED")
+    require!(d["integrity_sha256"]==Directory.digest(Map.delete(d,"integrity_sha256")),"RECOVERY_REQUIRED")
+    absolute(d["stage_dir"]);require!(String.starts_with?(d["stage_dir"],path<>".rebind-") and Path.dirname(d["stage_dir"])==Path.dirname(path),"RECOVERY_REQUIRED")
+    Domain.integer(d["maximum_bytes"],65536,@metadata_limit)
+    result(d["result"]);require!(d["result"]["server_id"]==d["server_id"],"RECOVERY_REQUIRED")
+    for key<-~w(request_sha256 config_sha256),do: hex(d[key])
+    if d["config_journal_sha256"],do: hex(d["config_journal_sha256"])
+    Domain.id(d["message_id"]);Domain.list(d["replacements"],5,3)
+    names = ~w(registry marker journal)
+    extra=if Map.has_key?(d,"acme") do
+      ADHD.ACMERebind.validate(d["acme"],path)
+      if d["acme"]["initialized"],do: [{path<>".acme-owner.json","acme-witness"},{Path.join([Path.dirname(path),"acme","owner.json"]),"acme-owner"}],else: []
+    else
+      []
+    end
+    targets=Enum.map(d["replacements"],& &1["target"])
+    require!(targets==[path<>".stores",path<>".stores.marker",path<>".recovery"]++Enum.map(extra,&elem(&1,0)),"RECOVERY_REQUIRED")
+    for {r,name}<-Enum.zip(d["replacements"],names++Enum.map(extra,&elem(&1,1))) do
+      Domain.keys(r,~w(target stage old_sha256 new_sha256 bytes),~w(target stage old_sha256 new_sha256 bytes));hex(r["old_sha256"]);hex(r["new_sha256"]);Domain.integer(r["bytes"],1,@metadata_limit)
+      require!(r["stage"]==Path.join(d["stage_dir"],name<>".json"),"RECOVERY_REQUIRED")
+    end
+    Domain.list(d["stores"],256);require!(Enum.sort(Enum.map(d["stores"],& &1["project_id"]))==d["result"]["projects"],"RECOVERY_REQUIRED")
+    for m<-d["stores"] do
+      Domain.keys(m,~w(project_id store_path expected_route_generation snapshot_sha256 checkpoint_sha256),~w(project_id store_path expected_route_generation snapshot_sha256 checkpoint_sha256));absolute(m["store_path"]);Domain.identifier(m["project_id"]);Domain.integer(m["expected_route_generation"],1,@safe);hex(m["snapshot_sha256"]);hex(m["checkpoint_sha256"])
+    end
+    :ok
+  end
+  defp result(r) do
+    Domain.keys(r,~w(rebound server_id registry_revision projects),~w(rebound server_id registry_revision projects));require!(r["rebound"]==true,"RECOVERY_REQUIRED")
+    Directory.server_id(r["server_id"]);Domain.integer(r["registry_revision"],1,@safe);Domain.list(r["projects"],256);Domain.distinct(r["projects"]);Enum.each(r["projects"],&Domain.identifier/1)
+  end
+  defp read_decision(path,uid) do
+    try do
+      {bytes,_}=RecoveryFiles.read(path<>".transaction",10485760,uid);d=RecoveryFiles.json(bytes);validate_decision(d,path);d
+    rescue _->Domain.fail("RECOVERY_REQUIRED") catch _,_->Domain.fail("RECOVERY_REQUIRED") end
+  end
+  defp cleanup_stage(dir,uid) do
+    case File.lstat(dir) do
+      {:error,:enoent}->:ok
+      _->
+        RecoveryFiles.private(dir,:directory,uid)
+        files=File.ls!(dir);require!(Enum.all?(files,&(&1 in ~w(registry.json marker.json journal.json acme-witness.json acme-owner.json))),"RECOVERY_REQUIRED")
+        for name<-files do path=Path.join(dir,name);RecoveryFiles.private(path,:regular,uid);:ok=File.rm(path) end
+        :ok=File.rmdir(dir);sync_dir(dir)
+    end
+  end
+  defp seal(v),do: Map.put(v,"integrity_sha256",Directory.digest(Map.delete(v,"integrity_sha256")))
+  defp receipt_key(mid),do: Directory.digest(["offline-owner",mid])
+  defp nested?(a,b),do: String.starts_with?(a,b<>"/") or String.starts_with?(b,a<>"/")
+  defp absolute(path) do
+    Domain.string(path,4096);require!(not String.contains?(path,<<0>>) and Path.type(path)==:absolute,"INVALID_PARAMS")
+  end
+  defp hex(v),do: RecoveryFiles.hex(v,64)
+  defp owner do
+    case File.stat("/proc/self") do {:ok,s}->s.uid;_->Domain.fail("RESTORE_CONFLICT") end
+  end
+  defp absent?(p),do: match?({:error,:enoent},File.lstat(p))
+  defp sync_dir(path) do
+    {:ok,dir}=:file.open(String.to_charlist(Path.dirname(path)),[:read,:raw,:directory])
+    try do :ok=:file.sync(dir) after :file.close(dir) end
+  end
+  defp require!(true,_),do: :ok
+  defp require!(_,code),do: Domain.fail(code)
+end
+
+defmodule ADHD.ACMERebind do
+  # Metadata-only extension of the existing offline transaction. No account,
+  # certificate, key or lifecycle-state content is rewritten or initialized.
+  alias ADHD.RecoveryFiles, as: F
+  @maximum 1073741824
+  @records 1000000
+  def capture(path,old,uid,limits) do
+    root=root(path);witness=path<>".acme-owner.json"
+    if absent?(root) and absent?(witness) do
+      {%{"initialized"=>false},[]}
+    else
+      F.private(root,:directory,uid)
+      check(absent?(Path.join(root,"client.lock")) or ADHD.ACMEClient.lock_available?(root))
+      {wb,_}=F.read(witness,4096,uid);w=F.json(wb)
+      F.keys(w,~w(config_path owner phase))
+      check(w["config_path"]==ADHD.Domain.digest(Path.expand(old)) and w["phase"]=="ready")
+      check(is_binary(w["owner"]) and Regex.match?(~r/\A[A-Za-z0-9_-]{32}\z/,w["owner"]))
+      {ob,_}=F.read(Path.join(root,"owner.json"),4096,uid)
+      check(F.json(ob)==Map.delete(w,"phase"))
+      # Missing initialized state or any required private subtree is an error,
+      # never an invitation to create a fresh account/certificate store.
+      for name<-~w(accounts attempts generations),do: F.private(Path.join(root,name),:directory,uid)
+      F.read(Path.join(root,"state.json"),2097152,uid)
+      deadline=limits["deadline_ms"]
+      max_bytes=min(limits["max_backup_bytes"],@maximum)
+      max_records=min(Map.get(limits,"max_records",@records),@records)
+      {files,dirs,_}=walk(root,"",uid,deadline,max_bytes,max_records,{[],[],0})
+      proof=%{"initialized"=>true,"old_config_path"=>w["config_path"],"owner"=>w["owner"],"files"=>Enum.sort_by(files,& &1["path"]),"directories"=>Enum.sort(dirs),"maximum_bytes"=>max_bytes}
+      validate(proof,path)
+      nw=Map.put(w,"config_path",ADHD.Domain.digest(Path.expand(path)))
+      {proof,[{"acme-witness",witness,wb,nw},{"acme-owner",Path.join(root,"owner.json"),ob,Map.delete(nw,"phase")}]}
+    end
+  end
+  def validate(%{"initialized"=>false}=p,_path),do: F.keys(p,["initialized"])
+  def validate(p,_path) do
+    F.keys(p,~w(initialized old_config_path owner files directories maximum_bytes))
+    check(p["initialized"]==true)
+    F.hex(p["old_config_path"],64)
+    check(is_binary(p["owner"]) and Regex.match?(~r/\A[A-Za-z0-9_-]{32}\z/,p["owner"]))
+    F.integer(p["maximum_bytes"],1,@maximum)
+    check(is_list(p["files"]) and is_list(p["directories"]) and length(p["files"])+length(p["directories"])<=@records)
+    for f<-p["files"] do
+      F.keys(f,~w(path bytes sha256));relative(f["path"]);F.integer(f["bytes"],0,p["maximum_bytes"]);F.hex(f["sha256"],64)
+      check(f["path"]!="owner.json")
+    end
+    for d<-p["directories"],do: relative(d)
+    check(Enum.map(p["files"],& &1["path"])==Enum.sort(Enum.uniq(Enum.map(p["files"],& &1["path"]))))
+    check(p["directories"]==Enum.sort(Enum.uniq(p["directories"])))
+    check(Enum.all?(~w(accounts attempts generations),&(&1 in p["directories"])))
+    check(Enum.any?(p["files"],&(&1["path"]=="state.json")))
+    check(Enum.sum(Enum.map(p["files"],& &1["bytes"]))<=p["maximum_bytes"])
+    :ok
+  end
+  def verify(%{"initialized"=>false},path,_uid,_decided) do
+    check(absent?(root(path)) and absent?(path<>".acme-owner.json"))
+  end
+  def verify(p,path,uid,decided) do
+    validate(p,path);root=root(path)
+    F.private(root,:directory,uid)
+    check(absent?(Path.join(root,"client.lock")) or ADHD.ACMEClient.lock_available?(root))
+    {wb,_}=F.read(path<>".acme-owner.json",4096,uid)
+    {ob,_}=F.read(Path.join(root,"owner.json"),4096,uid)
+    old=%{"owner"=>p["owner"],"config_path"=>p["old_config_path"]}
+    new=Map.put(old,"config_path",ADHD.Domain.digest(Path.expand(path)))
+    choices=if decided,do: [old,new],else: [old]
+    check(F.json(ob) in choices)
+    check(F.json(wb) in Enum.map(choices,&Map.put(&1,"phase","ready")))
+    {files,dirs,_}=walk(root,"",uid,System.monotonic_time(:millisecond)+300000,p["maximum_bytes"],@records,{[],[],0})
+    check(Enum.sort_by(files,& &1["path"])==p["files"] and Enum.sort(dirs)==p["directories"])
+    :ok
+  end
+  defp walk(root,relative,uid,deadline,max_bytes,max_records,{files,dirs,total}) do
+    check(System.monotonic_time(:millisecond)<deadline)
+    path=if relative=="",do: root,else: Path.join(root,relative)
+    before=F.private(path,:directory,uid)
+    names=File.ls!(path)|>Enum.sort()
+    check(length(names)+length(files)+length(dirs)<=max_records)
+    result=Enum.reduce(names,{files,dirs,total},fn name,{fs,ds,n}->
+      check(name not in [".",".."] and not String.contains?(name,["/",<<0>>]))
+      r=if relative=="",do: name,else: relative<>"/"<>name
+      child=Path.join(root,r)
+      case File.lstat!(child).type do
+        :directory->walk(root,r,uid,deadline,max_bytes,max_records,{fs,[r|ds],n})
+        :regular->
+          check(System.monotonic_time(:millisecond)<deadline)
+          {bytes,_}=F.read(child,max_bytes-n,uid)
+          if r=="owner.json",do: {fs,ds,n},else: {[%{"path"=>r,"bytes"=>byte_size(bytes),"sha256"=>F.sha(bytes)}|fs],ds,n+byte_size(bytes)}
+        _->check(false)
+      end
+    end)
+    check(Enum.sort(File.ls!(path))==names)
+    check(F.identity(F.private(path,:directory,uid))==F.identity(before))
+    result
+  end
+  defp relative(p) do
+    check(is_binary(p) and byte_size(p)>0 and byte_size(p)<=4096 and Path.type(p)==:relative and Path.join(Path.split(p))==p and not Enum.any?(Path.split(p),&(&1 in [".",".."])) and not String.contains?(p,<<0>>))
+  end
+  defp root(path),do: Path.join(Path.dirname(Path.expand(path)),"acme")
+  defp absent?(path),do: match?({:error,:enoent},File.lstat(path))
+  defp check(true),do: :ok
+  defp check(_),do: ADHD.Domain.fail("RESTORE_CONFLICT")
+end

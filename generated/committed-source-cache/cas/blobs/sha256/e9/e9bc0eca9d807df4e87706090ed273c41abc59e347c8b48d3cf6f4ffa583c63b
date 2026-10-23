@@ -1,0 +1,106 @@
+defmodule ADHD.ACMEClient do
+  alias ADHD.Domain, as: D
+  alias ADHD.ACMEFiles, as: F
+  @asset_root Path.expand("bin", __DIR__)
+  def run(c, state, attempt, webroot, force, trust, deadline) do
+    try do
+      a = c["tls"]["acme"]
+      # Account identity is isolated by issuer/contact/trust. HTTP-01 is the only
+      # enabled solver, and no inherited provider/client environment is admitted.
+      identity = D.digest([a["directory_url"], a["email"], trust])
+      account = Path.join([state, "accounts", identity])
+      D.check(File.dir?(account)); F.directory(account)
+      {guard, lego} = executables()
+      remaining = deadline - System.monotonic_time(:millisecond) - 500
+      if remaining <= 0, do: throw(:order_timeout)
+      argv = ["--lock-file", Path.join(state, "client.lock"), "--timeout-ms", to_string(remaining), "--grace-ms", "250", "--", lego,
+        "--log.format", "json", "--log.level", "error", "run", "--path", account,
+        "--server", a["directory_url"], "--email", a["email"], "--accept-tos", "--key-type", "EC256"] ++
+        Enum.flat_map(a["domains"], &["--domains", &1]) ++
+        ["--http", "--http.webroot", webroot, "--renew-days", to_string(a["renew_before_days"]),
+         "--no-random-sleep", "--ari-disable", "--http-timeout", "10", "--cert.timeout", "30", "--user-agent", "ADHD-ACME/1"] ++
+        (if force, do: ["--renew-force"], else: [])
+      env = Enum.map(System.get_env(), fn {key, _} -> {String.to_charlist(key), false} end) ++
+        [{~c"PATH", ~c"/usr/bin:/bin"}, {~c"HOME", String.to_charlist(attempt)},
+         {~c"ADHD_ACME_RETRY_FILE", String.to_charlist(Path.join(state, "issuer-retry.json"))}]
+      env = if trust do
+        roots = Path.join(attempt, "ca.pem"); F.write(roots, trust)
+        env ++ [{~c"LEGO_CA_CERTIFICATES", String.to_charlist(roots)}]
+      else env end
+      port = Port.open({:spawn_executable, String.to_charlist(guard)}, [:binary, :exit_status, :stderr_to_stdout, :use_stdio, :hide,
+        {:args, Enum.map(argv, &String.to_charlist/1)}, {:env, env}])
+      result = collect(port, deadline, "", nil, 0)
+      case result do
+        {:exit, 0, _} ->
+          F.harden_tree(account)
+          domain = hd(a["domains"])
+          chain = F.read(Path.join([account, "certificates", domain <> ".crt"]))
+          key = F.read(Path.join([account, "certificates", domain <> ".key"]))
+          {:ok, chain, key}
+        {:exit, 124, _} -> {:error, "ACME_ORDER_TIMEOUT", nil}
+        {:exit, _, metadata} when is_map(metadata) -> {:error, metadata["code"], metadata["retry_at"]}
+        {:exit, _, _} -> {:error, "ACME_PROCESS", nil}
+        :cancelled -> {:error, "ACME_PROCESS", nil}
+        :timeout -> {:error, "ACME_ORDER_TIMEOUT", nil}
+      end
+    rescue _ -> {:error, "ACME_PROCESS", nil}
+    catch :order_timeout -> {:error, "ACME_ORDER_TIMEOUT", nil}; _, _ -> {:error, "ACME_PROCESS", nil}
+    end
+  end
+  def lock_available?(state) do
+    try do
+      {guard, _} = executables()
+      port = Port.open({:spawn_executable, String.to_charlist(guard)}, [:binary, :exit_status, :stderr_to_stdout, :use_stdio, :hide,
+        {:args, Enum.map(["--probe-lock", Path.join(state, "client.lock")], &String.to_charlist/1)}])
+      probe(port, System.monotonic_time(:millisecond) + 2000)
+    rescue _ -> false
+    catch _, _ -> false end
+  end
+  defp probe(port, deadline) do
+    if System.monotonic_time(:millisecond) >= deadline do
+      Port.close(port); false
+    else
+      receive do
+        {^port, {:exit_status, 0}} -> true
+        {^port, {:exit_status, _}} -> false
+        {^port, {:data, _}} -> probe(port, deadline)
+      after max(1, deadline - System.monotonic_time(:millisecond)) -> Port.close(port); false end
+    end
+  end
+  defp collect(port, deadline, pending, metadata, total) do
+    if System.monotonic_time(:millisecond) >= deadline or total > 65536 do
+      Port.close(port)
+      :timeout
+    else
+    receive do
+      {^port, {:data, bytes}} ->
+        # Retain only one bounded line. Raw output never enters state/API/logs.
+        pending = pending <> bytes
+        parts = String.split(pending, "\n")
+        tail = List.last(parts)
+        metadata = Enum.reduce(Enum.drop(parts, -1), metadata, &metadata/2)
+        tail = if byte_size(tail) <= 65536, do: tail, else: ""
+        collect(port, deadline, tail, metadata, total + byte_size(bytes))
+      {^port, {:exit_status, status}} -> {:exit, status, metadata(pending, metadata)}
+      :cancel -> Port.close(port); :cancelled
+    after
+      max(1, deadline - System.monotonic_time(:millisecond)) ->
+        Port.close(port); :timeout
+    end
+    end
+  end
+  defp metadata("ADHD_ACME_RESULT " <> json, old) when byte_size(json) <= 1024 do
+    value = ADHD.JSON.decode!(json)
+    if Map.keys(value) |> Enum.sort() == ~w(code retry_at) and
+       value["code"] in ~w(ACME_NETWORK ACME_AUTHORIZATION ACME_RATE_LIMIT ACME_ACCOUNT ACME_PROCESS) and
+       (is_nil(value["retry_at"]) or (is_integer(value["retry_at"]) and value["retry_at"] >= 0 and value["retry_at"] <= 253402300799000)) do
+      value
+    else old end
+  rescue _ -> old
+  catch _, _ -> old end
+  defp metadata(_, old), do: old
+  defp executables do
+    root = Enum.find([@asset_root, "/runtime/adhd"], fn dir -> File.regular?(Path.join(dir, "lego")) and File.regular?(Path.join(dir, "acme-guard")) end) || D.fail("DEPENDENCY_UNAVAILABLE")
+    {Path.join(root, "acme-guard"), Path.join(root, "lego")}
+  end
+end

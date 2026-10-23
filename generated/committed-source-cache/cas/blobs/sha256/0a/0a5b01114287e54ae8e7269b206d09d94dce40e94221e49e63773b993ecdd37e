@@ -1,0 +1,336 @@
+defmodule ADHD.Archive do
+  alias ADHD.Domain,as: D
+  alias ADHD.History,as: H
+  alias ADHD.HistoryEvaluator,as: E
+  alias ADHD.Retrieval,as: X
+  alias ADHD.RetrievalJobs,as: J
+  alias ADHD.Records,as: R
+  alias ADHD.ArchivePolicy,as: P
+  @ops ~w(query_archive get_archive_query continue_archive_query cancel_archive_query)
+  @stages ~w(planner retrieval assessment scan audit)
+  @modes ~w(search scan search_then_scan)
+  def operations,do: @ops
+  def stages,do: @stages
+  def budget_defaults,do: %{"planner"=>%{"records"=>1,"calls"=>1,"bytes"=>16384,"time_ms"=>3000},"retrieval"=>X.budget_defaults(),"assessment"=>%{"records"=>128,"calls"=>1,"bytes"=>65536,"time_ms"=>30000},"scan"=>H.budget_defaults(),"audit"=>H.budget_defaults()}
+  def defaults,do: %{"enabled"=>true,"default_mode"=>"search_then_scan","url"=>nil,"model"=>nil,"operator_version"=>"configured-model-v1","timeout_ms"=>3000,"request_bytes"=>6144,"min_confidence_ppm"=>500000,"max_state_bytes"=>33554432,"audit_rate_ppm"=>100000,"budget"=>budget_defaults()}
+  def validate_budget(value) do
+    D.keys(value,@stages);for stage<-@stages,do: D.optional(value,stage,&H.validate_budget/1);value
+  end
+  def merge_budget(base,value),do: Map.new(@stages,fn key->{key,Map.merge(base[key],Map.get(value,key,%{}))} end)
+  def config(c) do
+    value=Map.get(c,"archive",%{});D.keys(value,Map.keys(defaults()))
+    D.optional(value,"enabled",&D.boolean/1);D.optional(value,"default_mode",&D.check(&1 in @modes));D.optional(value,"operator_version",&D.string(&1,128))
+    D.optional(value,"url",fn v->if v != nil,do: D.url(v) end);D.optional(value,"model",fn v->if v != nil,do: D.string(v,512) end)
+    for {key,lo,hi}<-[{"timeout_ms",100,30000},{"request_bytes",1024,65536},{"min_confidence_ppm",1,1000000},{"max_state_bytes",1048576,268435456},{"audit_rate_ppm",0,1000000}],do: D.optional(value,key,&D.integer(&1,lo,hi))
+    D.optional(value,"budget",&validate_budget/1)
+    Map.merge(defaults(),value) |> Map.put("budget",merge_budget(budget_defaults(),Map.get(value,"budget",%{})))
+  end
+  def effective(c),do: config(c) |> Map.update!("url",&(&1 || H.effective(c)["url"])) |> Map.update!("model",&(&1 || H.effective(c)["model"]))
+  def patch(value) do
+    D.keys(value,Map.keys(defaults()));clean=Map.new(Enum.reject(value,fn {_,v}->v==nil end))
+    clean=if is_map(clean["budget"]) do
+      Map.update!(clean,"budget",fn budgets->Map.new(for {stage,v}<-budgets,v != nil,do: {stage,if(is_map(v),do: Map.new(Enum.reject(v,fn {_,x}->x==nil end)),else: v)}) end)
+    else clean end
+    config(%{"archive"=>clean});:ok
+  end
+  def validate(cmd) do
+    case cmd["op"] do
+      "query_archive"->D.string(cmd["question"],4096);D.optional(cmd,"scope",&H.validate_scope/1);D.optional(cmd,"complete",&D.boolean/1);D.optional(cmd,"limit",&D.integer(&1,1,64))
+      "get_archive_query"->D.id(cmd["query_id"]);H.read_options(cmd)
+      "continue_archive_query"->D.id(cmd["query_id"]);D.optional(cmd,"restart",&D.boolean/1)
+      "cancel_archive_query"->D.id(cmd["query_id"])
+    end
+    D.optional(cmd,"mode",&D.check(&1 in @modes));D.optional(cmd,"budget",&validate_budget/1);:ok
+  end
+  def usage_zero,do: Map.new(@stages,&{&1,H.usage_zero()})
+  def active?(q),do: q["status"] in ~w(pending partial invalidated)
+  def put(s,q),do: put_in(s,[:archive_queries,q["id"]],q)
+  def capacity?(s,c),do: :erlang.external_size(s.archive_queries)<=effective(c)["max_state_bytes"]-65536
+  def charge(q,stage,key,n),do: update_in(q,["usage",stage,key],&(&1+n))
+  def error(code,retryable),do: %{"code"=>code,"message"=>case code do
+    "REQUIRES_SCAN"->"This question requires a full-scope scan; explicitly restart in a scan-capable mode."
+    "CHILD_CHANGED"->"An archive child was independently changed; explicitly restart this frozen question."
+    "SCAN_DISABLED"->"Full-scope history scanning is disabled."
+    "RETRIEVAL_DISABLED"->"Candidate retrieval is disabled."
+    "MODEL_ERROR"->"The archive evaluator did not return a valid decision."
+    "CONFIG_CHANGED"->"Archive policy changed; explicitly restart this frozen question."
+    "CONTEXT_LIMIT"->"Complete original evidence exceeds the configured assessment bounds."
+    "RESOURCE_LIMIT"->"Archive operational state exceeds its resource bound."
+    "WORKER_ERROR"->"The archive worker could not finish this step."
+    "CANCELLED"->"Archive question cancelled."
+    _->"The archive stage cannot finish within its declared run budget."
+  end,"retryable"=>retryable}
+  def stop(q,status,code,retryable) do
+    answer=q["answer"]
+    answer=if code=="CONFIG_CHANGED" or (answer["assessment"]=="unexamined" and code not in ~w(CANCELLED REQUIRES_SCAN)),do: Map.put(answer,"assessment","unavailable"),else: answer
+    tag=case code do "CONFIG_CHANGED"->"configuration_changed";"REQUIRES_SCAN"->"scan_required";"CANCELLED"->"cancelled";_->nil end
+    answer=if tag,do: Map.update!(answer,"uncertainty",&Enum.uniq(&1++[tag])),else: answer
+    Map.merge(q,%{"status"=>status,"phase"=>if(status in ~w(cancelled invalidated),do: "done",else: q["phase"]),"updated_at"=>D.now(),"error"=>error(code,retryable),"answer"=>answer})
+  end
+  def settle(q) do
+    if q["inflight"] do
+      marker=q["inflight"]
+      q |> charge(marker["stage"],"time_ms",marker["timeout_ms"]) |> charge(marker["stage"],"uncertain_calls",1) |> Map.put("inflight",nil)
+    else q end
+  end
+  defp owned(s,actor,id) do
+    q=s.archive_queries[id] || D.fail("NOT_FOUND");if q["owner_id"] != actor,do: D.fail("NOT_FOUND");q
+  end
+  def child_state(s,stage,ref) do
+    child=if stage=="retrieval",do: s.retrieval_queries[ref["query_id"]],else: s.history_queries[ref["query_id"]]
+    selected=if child && child["run"]==ref["run"],do: child,else: if(child,do: child["prior"][Integer.to_string(ref["run"])],else: nil)
+    {child,selected}
+  end
+  def sync_costs(s,q) do
+    Enum.reduce(~w(retrieval scan audit),q,fn stage,acc->
+      ref=acc["children"][stage]
+      if ref do
+        {_,selected}=child_state(s,stage,ref)
+        if selected do
+          total=H.usage_add(selected["base_usage"],selected["usage"]);paid=Map.get(acc["child_paid"],ref["query_id"],H.usage_zero())
+          delta=Map.new(total,fn {key,n}->{key,max(0,n-paid[key])} end)
+          acc |> update_in(["usage",stage],&H.usage_add(&1,delta)) |> put_in(["child_paid",ref["query_id"]],total)
+        else acc end
+      else acc end
+    end)
+  end
+  def cancel_children(s,q) do
+    Enum.reduce(~w(retrieval scan audit),s,fn stage,acc->
+      ref=q["children"][stage]
+      if ref do
+        {child,_}=child_state(acc,stage,ref)
+        if child && child["run"]==ref["run"] && child["owner_id"]==q["owner_id"] do
+          if stage=="retrieval",do: put_in(acc,[:retrieval_queries,ref["query_id"]],J.cancel(child)),else: put_in(acc,[:history_queries,ref["query_id"]],H.cancel(child))
+        else acc end
+      else acc end
+    end)
+  end
+  def invalidate(s,_c,q) do
+    s=cancel_children(s,q);q=sync_costs(s,q) |> settle() |> stop("invalidated","CONFIG_CHANGED",false);{s,q}
+  end
+  def refresh(s,c,q) do
+    c=X.resolve(c,s)
+    q=sync_costs(s,q)
+    if q["status"]=="pending" and q["policy"]["identity"] != P.descriptor(c,q["mode"],q["complete"])["identity"],do: invalidate(s,c,q),else: {s,q}
+  end
+  def cancel(s,q) do
+    if active?(q) do s=cancel_children(s,q);{s,sync_costs(s,q) |> settle() |> stop("cancelled","CANCELLED",false)} else {s,q} end
+  end
+  defp plan(s,q,c,cmd) do
+    mode=Map.get(cmd,"mode",q["mode"])
+    {id,s}=ADHD.Allocator.allocate(s,"archiveplan")
+    {s,Map.merge(q,%{"plan_id"=>id,"mode"=>mode,"policy"=>P.descriptor(c,mode,q["complete"]),"phase"=>"planning","intent"=>nil,
+      "children"=>%{"retrieval"=>nil,"scan"=>nil,"audit"=>nil},"child_paid"=>%{},"search"=>nil,"assessment"=>nil,"scan"=>nil,"audit"=>nil,"answer"=>E.empty_answer(),
+      "path"=>[],"fallback_reasons"=>[],"evaluations"=>[],"comparison"=>nil,"audit_draw"=>P.draw(),"audit_eligible"=>false,"population"=>if(mode=="scan",do: "scan_only",else: "undetermined")})}
+  end
+  def agent(s,c,actor,cmd) do
+    c=X.resolve(c,s)
+    validate(cmd)
+    case cmd["op"] do
+      "query_archive"->
+        if not effective(c)["enabled"],do: D.fail("UNAVAILABLE")
+        if map_size(s.archive_queries)>=1024 or Enum.count(s.archive_queries,fn {_,q}->active?(q) end)>=64,do: D.fail("RESOURCE_EXHAUSTED")
+        input=Map.get(cmd,"scope",%{});mark=Map.get(input,"watermark",R.watermark(s));D.check(mark<=R.watermark(s));scope=input |> Map.delete("watermark") |> Map.put("kind","local_archive")
+        seq=s.seq+1;{id,s}=ADHD.Allocator.allocate(s,"archive");now=D.now()
+        q=%{"id"=>id,"seq"=>seq,"owner_id"=>actor,"project_id"=>c["project_id"],"question"=>cmd["question"],"scope"=>scope,"snapshot"=>%{"server_id"=>s.server_id,"watermark"=>mark},
+          "complete"=>Map.get(cmd,"complete",false),"limit"=>Map.get(cmd,"limit",8),"status"=>"pending","created_at"=>now,"updated_at"=>now,"run"=>1,"mode"=>Map.get(cmd,"mode",effective(c)["default_mode"]),
+          "primary_ids"=>H.primary_ids(s,scope,mark),"budget"=>merge_budget(effective(c)["budget"],Map.get(cmd,"budget",%{})),"usage"=>usage_zero(),"base_usage"=>usage_zero(),"prior"=>%{},"error"=>nil,"inflight"=>nil}
+        {s,q}=plan(s,q,c,cmd)
+        next=put(%{s|seq: seq},q);if not capacity?(next,c),do: D.fail("RESOURCE_EXHAUSTED")
+        {%{"query"=>public(q,%{"summary"=>true})},next}
+      op->
+        original=owned(s,actor,cmd["query_id"]);{s,q}=refresh(s,c,original)
+        {s,q}=case op do
+          "get_archive_query"->{s,q}
+          "cancel_archive_query"->cancel(s,q)
+          "continue_archive_query"->continue(s,c,q,cmd)
+        end
+        {%{"query"=>public(q,if(op=="get_archive_query",do: cmd,else: %{"summary"=>true}))},put(s,q)}
+    end
+  end
+  defp continue(s,c,q,cmd) do
+    D.check(q["status"] != "pending");if q["run"]>=16,do: D.fail("RESOURCE_EXHAUSTED")
+    restart=Map.get(cmd,"restart",false);D.check(not Map.has_key?(cmd,"mode") or restart)
+    D.check(q["status"] not in ~w(completed cancelled invalidated) or restart)
+    if not restart and q["error"] && q["error"]["code"] in ~w(REQUIRES_SCAN CHILD_CHANGED CONTEXT_LIMIT),do: D.fail()
+    if not restart and q["policy"]["identity"] != P.descriptor(c,q["mode"],q["complete"])["identity"] do invalidate(s,c,q) else
+      if not effective(c)["enabled"],do: D.fail("UNAVAILABLE")
+      if not active?(q) and Enum.count(s.archive_queries,fn {_,v}->active?(v) end)>=64,do: D.fail("RESOURCE_EXHAUSTED")
+      {s,q}=if restart,do: (state=cancel_children(s,q);{state,sync_costs(state,q)}),else: {s,sync_costs(s,q)}
+      q=settle(q);prior=Map.drop(q,["prior"])
+      base=Map.new(@stages,fn stage->{stage,H.usage_add(q["base_usage"][stage],q["usage"][stage])} end)
+      next=q |> Map.put("prior",Map.put(q["prior"],Integer.to_string(q["run"]),prior)) |> Map.merge(%{"run"=>q["run"]+1,"status"=>"pending","updated_at"=>D.now(),"usage"=>usage_zero(),"base_usage"=>base,"error"=>nil,"inflight"=>nil,"budget"=>merge_budget(effective(c)["budget"],Map.get(cmd,"budget",%{}))})
+      {s,next}=if restart,do: plan(s,next,c,cmd),else: {s,if(next["phase"]=="planning" and next["intent"] && next["intent"]["source"]=="error",do: Map.put(next,"intent",nil),else: next)}
+      if not capacity?(put(s,next),c),do: D.fail("RESOURCE_EXHAUSTED");{s,next}
+    end
+  end
+  def enter(q,phase,stage),do: q |> Map.put("phase",phase) |> Map.put("updated_at",D.now()) |> Map.update!("path",&Enum.uniq(&1++[stage]))
+  def reason(q,code),do: Map.update!(q,"fallback_reasons",&Enum.uniq(&1++[code]))
+  def blocking_gaps?(gaps,ids),do: Enum.any?(gaps,fn gap->gap["reason"] != "cycle" or gap["target_id"] not in ids end)
+  def coverage(q) do
+    full=q["audit"] || q["scan"];assessment=q["assessment"];search=q["search"];empty=q["primary_ids"]==[]
+    answer_scope=cond do empty->"full_scope";full && full["coverage"]["primary_complete"] && full["coverage"]["final_complete"]->"full_scope";full && full["coverage"]["examined"]>0->"partial_scope";assessment != nil->"candidate_only";true->"unexamined" end
+    gaps=cond do full->full["coverage"]["gaps"];assessment->assessment["gaps"];search->search["coverage"]["context_gaps"];true->[] end
+    truncated=cond do full->full["coverage"]["truncated"];assessment->assessment["truncated"];true->false end
+    %{"total"=>length(q["primary_ids"]),"search_indexed"=>if(search,do: search["coverage"]["indexed"],else: 0),"candidate_ids"=>if(search,do: Enum.map(search["candidates"],& &1["publication_id"]),else: []),
+      "assessed_ids"=>if(assessment,do: assessment["record_ids"],else: []),"expanded_ids"=>if(full,do: Enum.take(full["coverage"]["expanded_ids"],128),else: if(assessment,do: assessment["context_ids"],else: [])),"context_gaps"=>gaps,"context_truncated"=>truncated or (full != nil and length(full["coverage"]["expanded_ids"])>128),
+      "scan_primary_complete"=>q["scan"] != nil and q["scan"]["coverage"]["primary_complete"],"scan_final_complete"=>q["scan"] != nil and q["scan"]["coverage"]["final_complete"],
+      "audit_primary_complete"=>q["audit"] != nil and q["audit"]["coverage"]["primary_complete"],"audit_final_complete"=>q["audit"] != nil and q["audit"]["coverage"]["final_complete"],"full_scope_evaluated"=>answer_scope=="full_scope","answer_scope"=>answer_scope,"comparison_complete"=>q["comparison"] != nil and q["comparison"]["completed_scope"]}
+  end
+  def public(q,opts \\ %{}) do
+    run=Map.get(opts,"run",q["run"]);v=if run==q["run"],do: q,else: q["prior"][Integer.to_string(run)] || D.fail("NOT_FOUND")
+    offset=Map.get(opts,"offset",0);limit=Map.get(opts,"limit",16)
+    {evals,_}=if opts["summary"],do: {[],0},else: Enum.drop(v["evaluations"],offset) |> Enum.reduce_while({[],0},fn item,{acc,n}->bytes=byte_size(JSON.encode!(item));if length(acc)>=limit or n+bytes>262144,do: {:halt,{acc,n}},else: {:cont,{acc++[item],n+bytes}} end)
+    next=if offset+length(evals)<length(v["evaluations"]),do: offset+length(evals),else: nil
+    stages=Map.new(@stages,fn stage->{stage,H.usage_public(%{"usage"=>v["usage"][stage],"base_usage"=>v["base_usage"][stage]})} end)
+    total=Map.new(Map.keys(stages["planner"]),fn key->{key,Enum.sum(Enum.map(stages,fn {_,values}->values[key] end))} end)
+    cov=coverage(v)
+    answer=if cov["answer_scope"]=="candidate_only",do: Map.update!(v["answer"],"uncertainty",&Enum.uniq(&1++["candidate_only"])),else: v["answer"]
+    v |> Map.take(~w(id owner_id project_id question scope snapshot mode complete limit status phase created_at updated_at run plan_id policy budget children search assessment scan audit comparison path fallback_reasons intent))
+      |> Map.merge(%{"outcome"=>answer["assessment"],"usage"=>Map.put(stages,"total",total),"coverage"=>cov,"answer"=>answer,"sample"=>P.sample(v),"evaluations"=>evals,"next_offset"=>next,"evaluation_count"=>length(v["evaluations"]),"prior_runs"=>Map.keys(q["prior"]) |> Enum.map(&String.to_integer/1) |> Enum.filter(&(&1<run)) |> Enum.sort(),
+        "error"=>if(opts["summary"] != true and next==offset and evals==[] and next != nil,do: error("RESOURCE_LIMIT",false),else: v["error"]),"continuable"=>v["status"] in ~w(partial cancelled invalidated) and run<16})
+  end
+  def consistent_children?(s,q) do
+    Enum.all?(~w(retrieval scan audit),fn stage->
+      ref=q["children"][stage]
+      if ref do
+        {child,_}=child_state(s,stage,ref)
+        child != nil and child["run"]==ref["run"] and child["status"] != "cancelled" and child["owner_id"]==q["owner_id"] and child["question"]==q["question"] and child["scope"]==q["scope"] and child["snapshot"]==q["snapshot"] and child["primary_ids"]==q["primary_ids"]
+      else true end
+    end)
+  end
+  def completed(s,q) do
+    s=cancel_children(s,q);q=sync_costs(s,q)
+    refs=Map.new(q["children"],fn {stage,ref}->
+      if ref do
+        {_,selected}=child_state(s,stage,ref);{stage,if(selected,do: Map.put(ref,"last_status",selected["status"]),else: ref)}
+      else {stage,nil} end
+    end)
+    {s,Map.merge(q,%{"status"=>"completed","phase"=>"done","updated_at"=>D.now(),"error"=>nil,"children"=>refs})}
+  end
+  def upgrade(s) do
+    D.object(s.archive_queries);D.check(map_size(s.archive_queries)<=1024)
+    for {id,q}<-s.archive_queries do
+      D.check(id==q["id"]);validate_stored(s,q,false)
+      for {run,prior}<-q["prior"] do
+        D.check(run==Integer.to_string(prior["run"]) and prior["run"]<q["run"]);validate_stored(s,prior,true)
+        for key<-~w(id seq owner_id project_id question scope snapshot complete limit primary_ids created_at),do: D.check(prior[key]==q[key])
+      end
+    end
+    s
+  end
+  defp validate_stored(s,q,prior) do
+    required = ~w(id seq owner_id project_id question scope snapshot complete limit status created_at updated_at run mode primary_ids budget usage base_usage error inflight plan_id policy phase intent children child_paid search assessment scan audit answer path fallback_reasons evaluations comparison audit_draw audit_eligible population)
+    fields=if prior,do: required,else: required++["prior"];D.keys(q,fields,fields)
+    D.id(q["id"]);D.identifier(q["owner_id"]);D.identifier(q["project_id"]);D.string(q["question"],4096);D.integer(q["seq"],0,s.seq);D.integer(q["run"],1,16);D.integer(q["limit"],1,64);D.boolean(q["complete"])
+    D.check(q["mode"] in @modes and q["status"] in ~w(pending completed partial cancelled invalidated) and q["phase"] in ~w(planning searching assessing scanning auditing done))
+    D.datetime(q["created_at"],true);D.datetime(q["updated_at"],true);D.id(q["plan_id"])
+    D.keys(q["snapshot"],~w(server_id watermark),~w(server_id watermark));D.check(q["snapshot"]["server_id"]==s.server_id);D.integer(q["snapshot"]["watermark"],0,R.watermark(s));H.validate_scope(Map.delete(q["scope"],"kind"));D.check(q["scope"]["kind"]=="local_archive")
+    D.check(q["primary_ids"]==H.primary_ids(s,q["scope"],q["snapshot"]["watermark"]))
+    D.keys(q["budget"],@stages,@stages);validate_budget(q["budget"])
+    for values<-[q["usage"],q["base_usage"]] do
+      D.keys(values,@stages,@stages)
+      for value<-Map.values(values) do
+        D.keys(value,~w(records calls bytes time_ms uncertain_calls),~w(records calls bytes time_ms uncertain_calls));for n<-Map.values(value),do: D.integer(n,0,9007199254740991)
+      end
+    end
+    D.check(is_binary(q["audit_draw"]) and Regex.match?(~r/\A[0-9a-f]{64}\z/,q["audit_draw"]));D.boolean(q["audit_eligible"]);D.check(q["population"] in ~w(undetermined fallback_only scan_only))
+    D.keys(q["children"],~w(retrieval scan audit),~w(retrieval scan audit));D.object(q["child_paid"])
+    for {stage,ref}<-q["children"],ref != nil do
+      D.keys(ref,~w(query_id run last_status),~w(query_id run last_status));D.id(ref["query_id"]);D.integer(ref["run"],1,16)
+      {_,child}=child_state(s,stage,ref);D.check(child != nil and child["owner_id"]==q["owner_id"] and child["question"]==q["question"] and child["scope"]==q["scope"] and child["snapshot"]==q["snapshot"])
+    end
+    for {id,values}<-q["child_paid"] do
+      D.check(Enum.any?(q["children"],fn {_,ref}->ref != nil and ref["query_id"]==id end));D.keys(values,~w(records calls bytes time_ms uncertain_calls),~w(records calls bytes time_ms uncertain_calls));for n<-Map.values(values),do: D.integer(n,0,9007199254740991)
+    end
+    D.list(q["path"],6);D.distinct(q["path"]);D.check(Enum.all?(q["path"],&(&1 in ~w(empty plan search assess scan audit))))
+    for evaluation<-q["evaluations"] do
+      D.check(evaluation["request_sha256"]==X.hash(evaluation["request_json"]) and evaluation["request"]==ADHD.JSON.decode!(evaluation["request_json"]))
+      request=evaluation["request"];D.check(request["state"]["question"]==q["question"] and evaluation["bytes"]==byte_size(evaluation["request_json"]))
+      if evaluation["stage"]=="planner" do
+        D.check(request["model"]==q["policy"]["planner"]["model"]);D.keys(request["questions"]["intent"]["criteria"],~w(bounded complete unknown),~w(bounded complete unknown));P.validate(evaluation["response"],request)
+      else
+        D.check(evaluation["stage"]=="assessment" and request["model"]==q["policy"]["history"]["model"]);E.validate(evaluation["response"],request)
+        records=request["state"]["records"];D.check(evaluation["record_ids"]==Enum.map(records,& &1["publication"]["id"]) and evaluation["context_identities"]==Enum.map(records,& &1["context_identity"]))
+        for record<-records do
+          id=record["publication"]["id"];D.check(Map.has_key?(s.publications,id) and s.publications[id].seq<=q["snapshot"]["watermark"] and record==R.record(s,%{"project_id"=>q["project_id"]},id))
+        end
+      end
+    end
+    validate_policy(q["policy"],q["mode"],q["complete"])
+    validate_answer(s,q,q["answer"])
+    D.list(q["evaluations"],64);D.list(q["fallback_reasons"],16);D.distinct(q["fallback_reasons"])
+    D.check(Enum.all?(q["fallback_reasons"],&(&1 in ~w(requested_scan complete_required uncertain_intent planner_error no_candidates index_unavailable retrieval_partial retrieval_error context_incomplete evidence_insufficient evidence_conflict assessment_error audit_sample))))
+    validate_error(q["error"])
+    if q["intent"] do
+      v=q["intent"];fields = ~w(source decision requires_complete matched_terms raw_choice confidence_ppm error);D.keys(v,fields,fields)
+      D.check(v["source"] in ~w(empty requested guard model error) and v["decision"] in ~w(bounded complete unknown));D.boolean(v["requires_complete"])
+      D.list(v["matched_terms"],35);D.distinct(v["matched_terms"]);D.check(Enum.all?(v["matched_terms"],&(&1 in P.template()["guard_words"])))
+      D.check(v["raw_choice"]==nil or v["raw_choice"] in ~w(bounded complete unknown));if v["confidence_ppm"] != nil,do: D.integer(v["confidence_ppm"],0,1000000);validate_error(v["error"])
+      if v["source"]=="model" do
+        D.check(v["matched_terms"]==[] and v["error"]==nil and v["confidence_ppm"] != nil)
+        decision=if v["confidence_ppm"]>=q["policy"]["planner"]["policy"]["min_confidence_ppm"],do: v["raw_choice"],else: "unknown"
+        D.check(v["decision"]==decision and v["requires_complete"]==(decision != "bounded"))
+      end
+    end
+    if q["assessment"] do
+      v=q["assessment"];fields = ~w(answer record_ids context_ids gaps truncated evaluator);D.keys(v,fields,fields);validate_answer(s,q,v["answer"])
+      D.check(v["evaluator"]==q["policy"]["history"]);D.boolean(v["truncated"]);D.list(v["record_ids"],128);D.distinct(v["record_ids"])
+      D.check(Enum.all?(v["record_ids"],&(Map.has_key?(s.publications,&1) and s.publications[&1].seq<=q["snapshot"]["watermark"])))
+      D.check(v["context_ids"]==Enum.reject(v["record_ids"],&(&1 in q["primary_ids"])));D.list(v["gaps"],128)
+    end
+    D.check(not q["audit_eligible"] or (q["assessment"] != nil and q["assessment"]["answer"]["assessment"]=="direct"))
+    if q["comparison"] do
+      v=q["comparison"];fields = ~w(reference completed_scope candidate_assessment scan_assessment answer_changed provisional);D.keys(v,fields,fields)
+      D.check(v["reference"] in ~w(audit fallback) and v["provisional"]==true);D.boolean(v["completed_scope"]);D.check(v["answer_changed"]==nil or is_boolean(v["answer_changed"]))
+      D.check(v["completed_scope"] or v["answer_changed"]==nil)
+    end
+    if q["inflight"] do
+      v=q["inflight"];fields = ~w(stage nonce request request_json request_sha256 records gaps truncated timeout_ms budget_limited);D.keys(v,fields,fields)
+      D.check(v["stage"] in ~w(planner assessment));D.string(v["nonce"],256);D.integer(v["timeout_ms"],1,30000);D.boolean(v["truncated"]);D.boolean(v["budget_limited"])
+      D.check(v["request_sha256"]==X.hash(v["request_json"]) and v["request"]==ADHD.JSON.decode!(v["request_json"]) and v["request"]["state"]["question"]==q["question"])
+      model=q["policy"][if(v["stage"]=="planner",do: "planner",else: "history")]["model"];D.check(v["request"]["model"]==model)
+      D.list(v["records"],128);D.list(v["gaps"],128)
+      if v["stage"]=="planner",do: D.check(v["records"]==[] and v["gaps"]==[] and not v["truncated"]),else: D.check(v["records"]==v["request"]["state"]["records"])
+      for record<-v["records"] do id=record["publication"]["id"];D.check(s.publications[id].seq<=q["snapshot"]["watermark"] and record==R.record(s,%{"project_id"=>q["project_id"]},id)) end
+    end
+    if not prior,do: (D.object(q["prior"]);D.check(map_size(q["prior"])<=15))
+  end
+
+  defp digest(value),do: D.check(is_binary(value) and Regex.match?(~r/\A[0-9a-f]{64}\z/,value))
+  defp validate_policy(p,mode,complete) do
+    fields = ~w(adapter_version policy_version runtime planner history retrieval audit_rate_ppm identity);D.keys(p,fields,fields)
+    for key<-~w(adapter_version policy_version runtime),do: D.string(p[key],512)
+    digest(p["identity"]);D.integer(p["audit_rate_ppm"],0,1000000)
+    for key<-~w(planner history retrieval) do
+      v=p[key];fields = ~w(adapter_version operator_version model template_sha256 identity policy)++if(key=="retrieval",do: ["runtime"],else: [])
+      D.keys(v,fields,fields);for k<-~w(adapter_version operator_version model),do: D.string(v[k],512)
+      digest(v["identity"]);digest(v["template_sha256"])
+      policy=v["policy"];fields = ~w(enabled request_bytes min_confidence_ppm)++case key do "history"->~w(context_depth context_limit);"retrieval"->~w(recipe_identity model_fragments);_->[] end
+      D.keys(policy,fields,fields);D.boolean(policy["enabled"]);D.integer(policy["request_bytes"],1024,65536);D.integer(policy["min_confidence_ppm"],1,1000000)
+      if key=="history",do: (D.integer(policy["context_depth"],0,4);D.integer(policy["context_limit"],1,64))
+      if key=="retrieval",do: (digest(policy["recipe_identity"]);D.integer(policy["model_fragments"],1,16);D.string(v["runtime"],512))
+    end
+    binding=Map.drop(p,~w(identity planner history retrieval)) |> Map.merge(%{"planner_identity"=>p["planner"]["identity"],"history_identity"=>p["history"]["identity"],"retrieval_identity"=>p["retrieval"]["identity"],"mode"=>mode,"complete"=>complete})
+    D.check(p["identity"]==ADHD.Directory.digest(binding))
+  end
+  defp validate_error(nil),do: :ok
+  defp validate_error(v) do
+    D.keys(v,~w(code message retryable),~w(code message retryable));D.string(v["message"],256);D.boolean(v["retryable"])
+    D.check(v["code"] in ~w(REQUIRES_SCAN CHILD_CHANGED SCAN_DISABLED RETRIEVAL_DISABLED MODEL_ERROR CONFIG_CHANGED CONTEXT_LIMIT RESOURCE_LIMIT WORKER_ERROR CANCELLED BUDGET_RECORDS BUDGET_CALLS BUDGET_BYTES BUDGET_TIME))
+  end
+  defp validate_answer(s,q,v) do
+    D.keys(v,~w(assessment selection excerpts support_ids contradiction_ids uncertainty),~w(assessment selection excerpts support_ids contradiction_ids uncertainty))
+    D.check(v["assessment"] in ~w(unexamined direct inferred insufficient no_evidence conflicting unavailable));D.check(v["selection"]==nil or (is_binary(v["selection"]) and Regex.match?(~r/\A(?:quote_[0-9]+|joint|unknown|conflict)\z/,v["selection"])))
+    for key<-~w(support_ids contradiction_ids) do
+      D.list(v[key],128);D.distinct(v[key]);D.check(Enum.all?(v[key],&(Map.has_key?(s.publications,&1) and s.publications[&1].seq<=q["snapshot"]["watermark"])))
+    end
+    D.list(v["excerpts"],128);D.list(v["uncertainty"],16);D.distinct(v["uncertainty"])
+    for excerpt<-v["excerpts"] do
+      fields = ~w(publication_id identity context_identity field value);D.keys(excerpt,fields,fields);id=excerpt["publication_id"]
+      D.check(id in v["support_ids"]);record=R.record(s,%{"project_id"=>q["project_id"]},id);{field,value}=E.original_value(record)
+      D.check(excerpt["identity"]==record["identity"] and excerpt["context_identity"]==record["context_identity"] and excerpt["field"]==field and excerpt["value"]==value)
+    end
+  end
+
+end

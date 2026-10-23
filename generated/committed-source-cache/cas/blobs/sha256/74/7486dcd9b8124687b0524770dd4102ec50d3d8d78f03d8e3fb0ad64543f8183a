@@ -1,0 +1,339 @@
+defmodule ADHD.Feedback do
+  alias ADHD.Domain,as: D
+  alias ADHD.Directory,as: F
+  alias ADHD.Archive,as: A
+  alias ADHD.History,as: H
+  alias ADHD.Records,as: R
+  @observed ~w(successful_search_unchecked successful_search_audited provisional_retrieval_gap provisional_answer_difference possible_archive_gap required_scan index_unavailable incomplete_comparison unclassified)
+  @adjudicated ~w(confirmed_retrieval_gap confirmed_context_assembly_gap confirmed_interpretation_gap confirmed_supported_search adjudicated_no_evidence incomplete_assessment)
+  @agent ~w(list_retrieval_attempts get_retrieval_attempt replay_retrieval get_retrieval_replay continue_retrieval_replay cancel_retrieval_replay)
+  @admin ~w(feedback_attempts feedback_attempt feedback_status feedback_cohorts feedback_clusters save_retrieval_label replay_attempt retire_replay)
+  def operations,do: @agent
+  def admin_operations,do: @admin
+  def classifications,do: @observed++@adjudicated
+  def defaults,do: %{"enabled"=>true,"max_state_bytes"=>33554432,"max_attempts"=>1024,"max_replays"=>256,"max_active_replays"=>16,"build_batch"=>8,"budget"=>%{"records"=>1024,"calls"=>256,"bytes"=>2097152,"time_ms"=>120000}}
+  def config(c) do
+    value=Map.get(c,"feedback",%{});D.keys(value,Map.keys(defaults()))
+    D.optional(value,"enabled",&D.boolean/1)
+    for {key,lo,hi}<-[{"max_state_bytes",1048576,268435456},{"max_attempts",1,16384},{"max_replays",1,4096},{"max_active_replays",1,64},{"build_batch",1,64}],do: D.optional(value,key,&D.integer(&1,lo,hi))
+    D.optional(value,"budget",&H.validate_budget/1)
+    merged=Map.merge(defaults(),value) |> Map.put("budget",Map.merge(defaults()["budget"],Map.get(value,"budget",%{})))
+    D.check(merged["max_active_replays"]<=merged["max_replays"]);merged
+  end
+  def patch(value) do
+    D.keys(value,Map.keys(defaults()));clean=Map.new(Enum.reject(value,fn {_,v}->v==nil end))
+    clean=if is_map(clean["budget"]),do: Map.update!(clean,"budget",&Map.new(Enum.reject(&1,fn {_,v}->v==nil end))),else: clean
+    checked=if Map.has_key?(clean,"max_replays") and not Map.has_key?(clean,"max_active_replays"),do: Map.put(clean,"max_active_replays",min(defaults()["max_active_replays"],clean["max_replays"])),else: clean
+    config(%{"feedback"=>checked});:ok
+  end
+  def empty,do: %{"schema"=>1,"attempts"=>%{},"labels"=>%{},"cohorts"=>%{},"exposures"=>%{},"label_epoch"=>0,"exposure_epoch"=>0,"last_error"=>nil,"capture_blocked"=>nil}
+  def bytes(s),do: :erlang.external_size(s.feedback)+:erlang.external_size(s.replay_queries)
+  def capacity?(s,c),do: bytes(s)<=config(c)["max_state_bytes"]-65536
+  def error(code,retryable \\ true),do: %{"code"=>code,"message"=>case code do
+    "BASELINE_UNAVAILABLE"->"No recorded recipe is available; explicitly select a current baseline."
+    "OWNER_REMOVED"->"The original agent owner is no longer registered."
+    "COHORT_CONFLICT"->"The label revision or joined cohort changed; review current feedback."
+    "HELD_OUT_EXPOSED"->"This held-out evidence has already been used for another candidate."
+    "MISSING_ORIGINALS"->"The frozen original evidence is unavailable."
+    "LABEL_CHANGED"->"The confirmed label changed; explicitly restart the replay."
+    "POLICY_CHANGED"->"Replay interpretation policy changed; explicitly restart."
+    "CHILD_CHANGED"->"The replay child was independently changed; explicitly restart."
+    "RESOURCE_LIMIT"->"Feedback or replay reached its configured resource limit."
+    "CANCELLED"->"Replay cancelled."
+    _->"The replay step could not finish within its declared policy and budget."
+  end,"retryable"=>retryable}
+  def page_options(cmd) do
+    D.optional(cmd,"offset",&D.integer(&1,0,1000000));D.optional(cmd,"limit",&D.integer(&1,1,64))
+    D.optional(cmd,"classification",&D.check(&1 in classifications()));:ok
+  end
+  def validate(cmd) do
+    case cmd["op"] do
+      "list_retrieval_attempts"->page_options(cmd)
+      "get_retrieval_attempt"->D.id(cmd["attempt_id"])
+      _->ADHD.Replay.validate(cmd)
+    end
+  end
+  def validate_admin(cmd) do
+    case cmd["op"] do
+      "feedback_attempts"->page_options(cmd);D.optional(cmd,"agent_id",&D.identifier/1)
+      "feedback_attempt"->D.id(cmd["attempt_id"])
+      "feedback_status"->:ok
+      op when op in ~w(feedback_cohorts feedback_clusters)->page_options(cmd)
+      "save_retrieval_label"->D.id(cmd["attempt_id"]);D.integer(cmd["expected_label_revision"],0,16);validate_label(cmd["label"])
+      "replay_attempt"->ADHD.Replay.validate(Map.put(cmd,"op","replay_retrieval"))
+      "retire_replay"->D.id(cmd["query_id"])
+    end
+  end
+  def validate_label(value) do
+    fields = ~w(expectation support_ids cohort tags note confirmed);D.keys(value,fields,fields)
+    D.check(value["expectation"] in ~w(supported conflicting no_evidence));D.check(value["cohort"] in ~w(training held_out regression))
+    D.list(value["support_ids"],128);D.distinct(value["support_ids"]);Enum.each(value["support_ids"],&D.id/1)
+    D.check((value["expectation"]=="no_evidence" and value["support_ids"]==[]) or (value["expectation"] != "no_evidence" and value["support_ids"] != []))
+    D.list(value["tags"],2);D.distinct(value["tags"]);D.check(Enum.all?(value["tags"],&(&1 in ~w(negation correction))));D.string(value["note"],2048,true);D.check(value["confirmed"]==true)
+  end
+  def key(q),do: "attempt-"<>F.digest([q["id"],q["plan_id"],q["run"]])
+  def terminal?(q),do: q["status"] in ~w(completed partial cancelled invalidated)
+  def runs(main),do: [Map.delete(main,"prior")|Map.values(main["prior"])]
+  def quiescent?(s,q),do: q["inflight"]==nil and Enum.all?(q["children"],fn {stage,ref}->
+    if ref do {_,child}=A.child_state(s,stage,ref);child != nil and child["status"] != "pending" else true end
+  end)
+  def eligible(s,owner \\ nil),do: s.archive_queries |> Map.values() |> Enum.flat_map(&runs/1) |> Enum.filter(&(terminal?(&1) and quiescent?(s,&1) and (owner==nil or &1["owner_id"]==owner)))
+  def lookup(s,id,owner \\ nil) do
+    a=s.feedback["attempts"][id] || D.fail("NOT_FOUND");if owner != nil and a["value"]["owner_id"] != owner,do: D.fail("NOT_FOUND");a
+  end
+  def latest(s,id),do: s.feedback["labels"][id] |> then(fn labels->if labels in [nil,[]],do: nil,else: List.last(labels) end)
+  def scan_summary(nil),do: nil
+  def scan_summary(q) do
+    cov=q["coverage"]
+    %{"query_id"=>q["id"],"run"=>q["run"],"status"=>q["status"],"outcome"=>q["outcome"],"evaluator"=>q["evaluator"],"primary_complete"=>cov["primary_complete"],"final_complete"=>cov["final_complete"],"examined"=>cov["examined"],"total"=>cov["total"],"expanded_count"=>length(cov["expanded_ids"]),"expanded_identity"=>F.digest(cov["expanded_ids"]),"gaps"=>cov["gaps"],"truncated"=>cov["truncated"],"usage"=>q["usage"],"error"=>q["error"]}
+  end
+  def full?(q,primary) do
+    q != nil and q["status"]=="completed" and q["error"]==nil and q["coverage"]["primary_complete"] and q["coverage"]["final_complete"] and not q["coverage"]["truncated"] and not A.blocking_gaps?(q["coverage"]["gaps"],primary++q["coverage"]["expanded_ids"])
+  end
+  def observation(q) do
+    full=q["audit"] || q["scan"];search=q["search"];assessment=q["assessment"]
+    cond do
+      q["status"] != "completed" or q["error"] != nil->"incomplete_comparison"
+      search==nil->"required_scan"
+      search["error"] != nil and search["error"]["code"] in ~w(INDEX_NOT_READY INDEX_STALE INDEX_CHANGED)->"index_unavailable"
+      full != nil and not full?(full,q["primary_ids"])->"incomplete_comparison"
+      q["comparison"] != nil and q["comparison"]["answer_changed"]==true->"provisional_answer_difference"
+      full != nil and full["outcome"] in ~w(no_evidence insufficient)->"possible_archive_gap"
+      search["candidates"]==[] and full != nil and full["outcome"] in ~w(direct inferred conflicting)->"provisional_retrieval_gap"
+      assessment != nil and assessment["answer"]["assessment"]=="direct" and q["audit"] != nil->"successful_search_audited"
+      assessment != nil and assessment["answer"]["assessment"]=="direct"->"successful_search_unchecked"
+      true->"unclassified"
+    end
+  end
+  def prepare_attempt(s,c,main,run) do
+    q=if run==main["run"],do: Map.delete(main,"prior"),else: main["prior"][Integer.to_string(run)];D.check(terminal?(q))
+    public=A.public(main,%{"run"=>run,"summary"=>true});cc=Map.put(c,"project_id",q["project_id"])
+    primary=Enum.map(q["primary_ids"],fn id->record=R.record(s,cc,id);%{"id"=>id,"record_sha256"=>F.digest(record)} end)
+    identity=F.digest(%{"question"=>q["question"],"scope"=>q["scope"],"snapshot"=>q["snapshot"],"primary"=>primary,"context_policy"=>q["policy"]["history"]["policy"]})
+    recipe=if q["search"],do: q["search"]["recipe"],else: nil
+    value=Map.take(public,~w(plan_id run owner_id project_id question scope snapshot created_at status mode assessment comparison sample path fallback_reasons coverage usage))
+      |> Map.merge(%{"id"=>key(q),"archive_query_id"=>q["id"],"captured_at"=>D.now(),"complete_required"=>q["complete"] or (q["intent"] != nil and q["intent"]["requires_complete"]),"primary_count"=>length(q["primary_ids"]),"primary_identity"=>F.digest(primary),"evidence_identity"=>identity,"original_policy"=>q["policy"],"recipe"=>recipe,"recipe_identity"=>if(q["search"],do: q["search"]["recipe_identity"],else: nil),"candidates"=>if(q["search"],do: q["search"]["candidates"],else: []),"scan"=>scan_summary(q["scan"]),"audit"=>scan_summary(q["audit"]),"answer"=>public["answer"],"diagnosis"=>observation(q)})
+    %{"value"=>value,"primary_ids"=>q["primary_ids"],"question_key"=>F.digest([s.server_id,normalize(q["question"])]),"archive_identity"=>F.digest(q),"limit"=>q["limit"]}
+  end
+  defp block_capture(s,c) do
+    s |> put_in([:feedback,"last_error"],error("RESOURCE_LIMIT")) |> put_in([:feedback,"capture_blocked"],%{"limits"=>F.digest(Map.take(config(c),~w(max_attempts max_state_bytes))),"bytes"=>bytes(s)})
+  end
+  def normalize(value),do: value |> String.normalize(:nfkc) |> String.downcase() |> String.split() |> Enum.join(" ")
+  def start,do: ADHD.Scope.spawn(fn->capture_loop() end)
+  defp capture_loop do
+    ADHD.Scope.begin_work()
+    worked=try do capture_step() rescue _->capture_error() catch _,_->capture_error() end
+    Process.sleep(if worked,do: 20,else: 200);capture_loop()
+  end
+  defp capture_error do
+    try do ADHD.Store.call(fn s->err=error("WORKER_ERROR");{false,if(s.feedback["last_error"]==err,do: s,else: put_in(s,[:feedback,"last_error"],err))} end) rescue _->:ok catch _,_->:ok end
+    false
+  end
+  def capture_step do
+    c=ADHD.Config.get()
+    if c["project_status"]=="archived" or not config(c)["enabled"] do false else
+      selected=ADHD.Store.call(fn s->
+        limits=F.digest(Map.take(config(c),~w(max_attempts max_state_bytes)));blocked=s.feedback["capture_blocked"]
+        if blocked != nil and blocked["limits"]==limits and bytes(s)>=blocked["bytes"] do {nil,s} else
+          q=Enum.find(eligible(s),&(not Map.has_key?(s.feedback["attempts"],key(&1))));{if(q,do: {q["id"],q["run"]}),s}
+        end
+      end) |> ADHD.Store.unwrap()
+      if selected do
+        {id,run}=selected;s=ADHD.Store.snapshot() |> ADHD.Store.unwrap();main=s.archive_queries[id];q=if run==main["run"],do: Map.delete(main,"prior"),else: main["prior"][Integer.to_string(run)]
+        prepared=prepare_attempt(s,c,main,run)
+        ADHD.Store.call(fn state->
+          now=ADHD.Config.get();live=state.archive_queries[id];live=if run==live["run"],do: Map.delete(live,"prior"),else: live["prior"][Integer.to_string(run)]
+          cond do
+            now["project_status"]=="archived" or not config(now)["enabled"] or live != q or Map.has_key?(state.feedback["attempts"],key(q))->{false,state}
+            map_size(state.feedback["attempts"])>=config(now)["max_attempts"]->{false,block_capture(state,now)}
+            true->
+              next=put_in(state,[:feedback,"attempts",key(q)],prepared)
+              if capacity?(next,now),do: {true,next |> put_in([:feedback,"last_error"],nil) |> put_in([:feedback,"capture_blocked"],nil)},else: {false,block_capture(state,now)}
+          end
+        end) |> ADHD.Store.unwrap()
+      else false end
+    end
+  end
+  def group(s,a),do: ADHD.FeedbackGroups.find(s.feedback,a)
+  def adjudicated(a,label) do
+    if label==nil do nil else
+      v=a["value"];expected=label["support_ids"];returned=Enum.map(v["candidates"],& &1["publication_id"])
+      primary_gold=Enum.filter(expected,&(&1 in a["primary_ids"]))
+      inputs=if v["assessment"],do: v["assessment"]["record_ids"],else: []
+      outcome=if v["assessment"],do: v["assessment"]["answer"]["assessment"],else: nil
+      cond do
+        label["expectation"]=="no_evidence" and v["answer"]["assessment"] in ~w(no_evidence insufficient)->"adjudicated_no_evidence"
+        primary_gold != [] and Enum.any?(primary_gold,&(&1 not in returned))->"confirmed_retrieval_gap"
+        returned != [] and Enum.any?(expected,&(&1 not in inputs)) and v["assessment"]==nil and "context_incomplete" in v["fallback_reasons"]->"confirmed_context_assembly_gap"
+        v["assessment"]==nil->"incomplete_assessment"
+        Enum.any?(expected,&(&1 not in inputs))->"confirmed_context_assembly_gap"
+        (label["expectation"]=="supported" and outcome=="direct") or (label["expectation"]=="conflicting" and outcome=="conflicting")->"confirmed_supported_search"
+        true->"confirmed_interpretation_gap"
+      end
+    end
+  end
+  def public(s,a,full \\ false) do
+    id=a["value"]["id"];label=latest(s,id);g=group(s,a)
+    value=Map.merge(a["value"],%{"adjudicated_diagnosis"=>adjudicated(a,label),"label_revision"=>if(label,do: label["revision"],else: 0),"cohort"=>if(label,do: label["cohort"],else: if(g,do: g["value"]["cohort"],else: nil)),"exposed"=>if(g,do: g["value"]["exposed"],else: false)})
+    if full,do: Map.merge(value,%{"labels"=>Map.get(s.feedback["labels"],id,[]),"group_id"=>if(g,do: g["value"]["id"],else: F.digest("q:"<>a["question_key"]))}),else: value
+  end
+  def status(s,c,owner \\ nil) do
+    attempts=Enum.count(s.feedback["attempts"],fn {_,a}->owner==nil or a["value"]["owner_id"]==owner end)
+    replays=Enum.filter(s.replay_queries,fn {_,q}->owner==nil or q["owner_id"]==owner end)
+    %{"enabled"=>config(c)["enabled"],"attempts"=>attempts,"replays"=>length(replays),"active_replays"=>Enum.count(replays,fn {_,q}->q["status"] in ~w(pending partial invalidated) end),"unrecorded_runs"=>max(0,length(s.archive_queries |> Map.values() |> Enum.flat_map(&runs/1) |> Enum.filter(&(terminal?(&1) and (owner==nil or &1["owner_id"]==owner))))-attempts),"state_bytes"=>if(owner==nil,do: bytes(s),else: nil),"last_error"=>s.feedback["last_error"]}
+  end
+  def list(s,c,cmd,owner \\ nil) do
+    offset=Map.get(cmd,"offset",0);limit=Map.get(cmd,"limit",32)
+    rows=s.feedback["attempts"] |> Map.values() |> Enum.filter(&(owner==nil or &1["value"]["owner_id"]==owner)) |> Enum.sort_by(&{&1["value"]["created_at"],&1["value"]["id"]},:desc) |> Enum.map(&public(s,&1))
+    rows=Enum.filter(rows,&(cmd["classification"]==nil or cmd["classification"] in [&1["diagnosis"],&1["adjudicated_diagnosis"]]))
+    if Enum.at(rows,offset) != nil and byte_size(JSON.encode!(Enum.at(rows,offset)))>262144,do: D.fail("RESOURCE_EXHAUSTED")
+    {items,_}=rows |> Enum.drop(offset) |> Enum.reduce_while({[],0},fn row,{acc,n}->bytes=byte_size(JSON.encode!(row));if length(acc)>=limit or n+bytes>262144,do: {:halt,{acc,n}},else: {:cont,{acc++[row],n+bytes}} end)
+    %{"items"=>items,"next_offset"=>if(offset+length(items)<length(rows),do: offset+length(items),else: nil),"status"=>status(s,c,owner)}
+  end
+  def agent(s,c,owner,cmd) do
+    case cmd["op"] do
+      "list_retrieval_attempts"->{list(s,c,cmd,owner),s}
+      "get_retrieval_attempt"->{%{"attempt"=>public(s,lookup(s,cmd["attempt_id"],owner),true)},s}
+      _->ADHD.Replay.agent(s,c,owner,cmd)
+    end
+  end
+
+  def source_run(s,a) do
+    main=s.archive_queries[a["value"]["archive_query_id"]] || D.fail("MISSING_ORIGINALS")
+    run=a["value"]["run"];q=if run==main["run"],do: Map.delete(main,"prior"),else: main["prior"][Integer.to_string(run)]
+    if q==nil or F.digest(q) != a["archive_identity"],do: D.fail("MISSING_ORIGINALS")
+    q
+  end
+  def prepare_label(s,c,cmd,principal) do
+    a=lookup(s,cmd["attempt_id"]);old=latest(s,cmd["attempt_id"]);revision=if old,do: old["revision"],else: 0
+    if revision != cmd["expected_label_revision"],do: D.fail("COHORT_CONFLICT")
+    if revision>=16,do: D.fail("RESOURCE_EXHAUSTED")
+    q=source_run(s,a);input=cmd["label"];ids=input["support_ids"];cc=Map.put(c,"project_id",q["project_id"])
+    if input["expectation"]=="no_evidence" do
+      if q["primary_ids"] != [] and not full?(q["audit"] || q["scan"],q["primary_ids"]),do: D.fail("INVALID_PARAMS")
+    else
+      missing=Enum.reject(ids,&(&1 in q["primary_ids"]))
+      policy=q["policy"]["history"]["policy"]
+      missing=Enum.reduce_while(q["primary_ids"],missing,fn id,remaining->
+        if remaining==[] do {:halt,[]} else
+          read=R.read(s,cc,%{"publication_id"=>id,"watermark"=>q["snapshot"]["watermark"],"max_depth"=>policy["context_depth"],"limit"=>policy["context_limit"]})
+          found=Enum.map([read["record"]|read["related"]],& &1["publication"]["id"])
+          {:cont,Enum.reject(remaining,&(&1 in found))}
+        end
+      end)
+      D.check(missing==[])
+    end
+    label=input |> Map.put("revision",revision+1) |> Map.put("actor_kind",if(principal["id"]=="legacy-admin",do: "legacy_token",else: "human_session")) |> Map.put("actor_id",principal["id"]) |> Map.put("created_at",D.now()) |> Map.put("evidence_identity",a["value"]["evidence_identity"])
+    label=Map.put(label,"identity",F.digest(label));labels=Map.put(s.feedback["labels"],a["value"]["id"],Map.get(s.feedback["labels"],a["value"]["id"],[])++[label])
+    groups=ADHD.FeedbackGroups.build(s.feedback,labels)
+    %{"label"=>label,"labels"=>labels,"cohorts"=>groups,"label_epoch"=>s.feedback["label_epoch"],"exposure_epoch"=>s.feedback["exposure_epoch"],"attempt_identity"=>a["archive_identity"]}
+  end
+  def clusters(s) do
+    cohorts=ADHD.FeedbackGroups.build(s.feedback);feedback=Map.put(s.feedback,"cohorts",cohorts)
+    rows=Enum.map(s.feedback["attempts"],fn {id,a}->
+      value=a["value"];assessment=value["assessment"]
+      complete=assessment != nil and not assessment["truncated"] and not A.blocking_gaps?(assessment["gaps"],assessment["record_ids"])
+      key=%{"diagnosis"=>adjudicated(a,latest(s,id)) || value["diagnosis"],"recipe_identity"=>value["recipe_identity"],"policy_identity"=>value["original_policy"]["identity"],"context_complete"=>complete}
+      group=ADHD.FeedbackGroups.find(feedback,a);{key,id,value,group["value"]["id"]}
+    end)
+    rows |> Enum.group_by(&elem(&1,0)) |> Enum.map(fn {key,members}->
+      key |> Map.merge(%{"id"=>F.digest(key),"observations"=>length(members),"groups"=>Enum.map(members,&elem(&1,3)) |> Enum.uniq() |> length(),"plans"=>Enum.map(members,fn {_,_,v,_}->v["plan_id"] end) |> Enum.uniq() |> length(),"attempt_ids"=>Enum.map(members,&elem(&1,1)) |> Enum.sort(),"owners"=>Enum.map(members,fn {_,_,v,_}->v["owner_id"] end) |> Enum.uniq() |> Enum.sort()})
+    end) |> Enum.sort_by(&{-&1["observations"],&1["id"]})
+  end
+  defp cached(s,cmd,actor) do
+    if is_binary(cmd["message_id"]) do
+      case s.admin_idempotency[{actor,cmd["message_id"]}] do
+        %{command: ^cmd,result: result}->{:hit,result}
+        nil->:miss
+        _->D.fail("IDEMPOTENCY_CONFLICT")
+      end
+    else :miss end
+  end
+  defp admin_principal(headers,c) do
+    principal=ADHD.Identity.principal(headers,c)
+    if principal["role"] != "Admin",do: D.fail("FORBIDDEN")
+    principal
+  end
+  def manage(cmd,headers) do
+    c=ADHD.Config.get();p=admin_principal(headers,c)
+    existing=ADHD.Store.call(fn s->principal=admin_principal(headers,ADHD.Config.get());{cached(s,cmd,principal["id"]),s} end) |> ADHD.Store.unwrap()
+    case existing do
+      {:hit,result}->result
+      :miss->
+        snapshot=ADHD.Store.snapshot() |> ADHD.Store.unwrap()
+        prepared=case cmd["op"] do
+          "save_retrieval_label"->prepare_label(snapshot,c,cmd,p)
+          "feedback_cohorts"->%{"rows"=>ADHD.FeedbackGroups.build(snapshot.feedback) |> Map.values() |> Enum.map(& &1["value"]) |> Enum.sort_by(& &1["id"]),"label_epoch"=>snapshot.feedback["label_epoch"],"exposure_epoch"=>snapshot.feedback["exposure_epoch"],"attempts"=>map_size(snapshot.feedback["attempts"])}
+          "feedback_clusters"->%{"rows"=>clusters(snapshot),"label_epoch"=>snapshot.feedback["label_epoch"],"exposure_epoch"=>snapshot.feedback["exposure_epoch"],"attempts"=>map_size(snapshot.feedback["attempts"])}
+          _->nil
+        end
+        result=ADHD.Store.call(fn s->
+          now=ADHD.Config.get();principal=admin_principal(headers,now)
+          case cached(s,cmd,principal["id"]) do
+            {:hit,value}->{value,s}
+            :miss->
+              if is_binary(cmd["message_id"]) and cmd["expected_revision"] != now["config_revision"],do: D.fail("CONFIG_CONFLICT")
+              {value,next}=admin_apply(s,now,cmd,principal,prepared)
+              next=if is_binary(cmd["message_id"]),do: put_in(next,[:admin_idempotency,{principal["id"],cmd["message_id"]}],%{command: cmd,result: value}),else: next
+              {value,next}
+          end
+        end)
+        case result do {:error,"CONFIG_CONFLICT"}->throw({:config_conflict,ADHD.Config.get()["config_revision"]});_->ADHD.Store.unwrap(result) end
+    end
+  end
+  def admin_apply(s,c,cmd,p,prepared) do
+    case cmd["op"] do
+      "feedback_attempts"->{list(s,c,cmd,cmd["agent_id"]),s}
+      "feedback_attempt"->{%{"attempt"=>public(s,lookup(s,cmd["attempt_id"]),true)},s}
+      "feedback_status"->{%{"status"=>status(s,c)},s}
+      op when op in ~w(feedback_cohorts feedback_clusters)->
+        if s.feedback["label_epoch"] != prepared["label_epoch"] or s.feedback["exposure_epoch"] != prepared["exposure_epoch"] or map_size(s.feedback["attempts"]) != prepared["attempts"],do: D.fail("COHORT_CONFLICT")
+        rows=prepared["rows"]
+        offset=Map.get(cmd,"offset",0);limit=Map.get(cmd,"limit",32)
+        if Enum.at(rows,offset) != nil and byte_size(JSON.encode!(Enum.at(rows,offset)))>262144,do: D.fail("RESOURCE_EXHAUSTED")
+        {items,_}=Enum.drop(rows,offset) |> Enum.reduce_while({[],0},fn row,{acc,n}->size=byte_size(JSON.encode!(row));if length(acc)>=limit or n+size>262144,do: {:halt,{acc,n}},else: {:cont,{acc++[row],n+size}} end)
+        {%{"items"=>items,"next_offset"=>if(offset+length(items)<length(rows),do: offset+length(items),else: nil)},s}
+      "save_retrieval_label"->
+        a=lookup(s,cmd["attempt_id"])
+        if s.feedback["label_epoch"] != prepared["label_epoch"] or s.feedback["exposure_epoch"] != prepared["exposure_epoch"] or a["archive_identity"] != prepared["attempt_identity"],do: D.fail("COHORT_CONFLICT")
+        next=s |> put_in([:feedback,"labels"],prepared["labels"]) |> put_in([:feedback,"cohorts"],prepared["cohorts"]) |> update_in([:feedback,"label_epoch"],&(&1+1))
+        if not capacity?(next,c),do: D.fail("RESOURCE_EXHAUSTED")
+        {%{"attempt_id"=>a["value"]["id"],"label"=>prepared["label"]},next}
+      "replay_attempt"->ADHD.Replay.admin_create(s,c,cmd,p)
+      "retire_replay"->ADHD.Replay.retire(s,c,cmd)
+    end
+  end
+
+  def upgrade(s) do
+    f=s.feedback;fields = ~w(schema attempts labels cohorts exposures label_epoch exposure_epoch last_error capture_blocked);D.keys(f,fields,fields);D.check(f["schema"]==1)
+    for key<-~w(attempts labels cohorts exposures),do: D.object(f[key])
+    for key<-~w(label_epoch exposure_epoch),do: D.integer(f[key],0,9007199254740991)
+    D.check(map_size(f["attempts"])<=16384)
+    for {id,a}<-f["attempts"] do
+      D.keys(a,~w(value primary_ids question_key archive_identity limit),~w(value primary_ids question_key archive_identity limit));D.id(id);D.integer(a["limit"],1,64)
+      v=a["value"];q=source_run(s,a);D.check(id==v["id"] and id==key(q) and a["primary_ids"]==q["primary_ids"])
+      D.check(a["question_key"]==F.digest([s.server_id,normalize(v["question"])]))
+      for k<-~w(owner_id project_id question scope snapshot plan_id run),do: D.check(v[k]==q[k])
+      D.check(v["original_policy"]==q["policy"] and v["diagnosis"] in @observed);D.datetime(v["captured_at"],true)
+    end
+    for {id,labels}<-f["labels"] do
+      a=lookup(s,id);D.list(labels,16,1)
+      for {label,n}<-Enum.with_index(labels,1) do
+        fields = ~w(revision expectation support_ids cohort tags note confirmed actor_kind actor_id created_at evidence_identity identity);D.keys(label,fields,fields)
+        validate_label(Map.take(label,~w(expectation support_ids cohort tags note confirmed)))
+        D.check(label["revision"]==n and label["actor_kind"] in ~w(human_session legacy_token));D.id(label["actor_id"]);D.datetime(label["created_at"],true)
+        D.check(label["evidence_identity"]==a["value"]["evidence_identity"] and label["identity"]==F.digest(Map.delete(label,"identity")))
+        for source<-label["support_ids"],do: D.check(Map.has_key?(s.publications,source) and s.publications[source].seq<=a["value"]["snapshot"]["watermark"])
+      end
+    end
+    for {key,rows}<-f["exposures"] do
+      D.check(is_binary(key) and Regex.match?(~r/\A[qs]:[a-f0-9]{64}\z/,key));D.list(rows,256,1)
+      for row<-rows do
+        fields = ~w(job_id kind recipe_identity policy_identity created_at);D.keys(row,fields,fields);D.id(row["job_id"]);D.check(row["kind"] in ~w(replay optimization));D.datetime(row["created_at"],true)
+        for key<-~w(recipe_identity policy_identity),do: D.check(is_binary(row[key]) and Regex.match?(~r/\A[a-f0-9]{64}\z/,row[key]))
+      end
+    end
+    put_in(s,[:feedback,"cohorts"],ADHD.FeedbackGroups.build(f))
+  end
+
+end

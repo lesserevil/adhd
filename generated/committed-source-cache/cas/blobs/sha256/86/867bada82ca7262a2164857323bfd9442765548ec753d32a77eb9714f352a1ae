@@ -1,0 +1,328 @@
+defmodule ADHD.Directory do
+  alias ADHD.Domain, as: D
+  alias ADHD.Store, as: S
+  @providers ~w(github slack jira other)
+  def server_id,do: Base.encode16(:crypto.strong_rand_bytes(16),case: :lower)
+  def server_id(v),do: D.check(is_binary(v) and Regex.match?(~r/\A[0-9a-f]{32}\z/,v))
+  def canonical(v) when is_map(v),do: "{"<>Enum.map_join(Enum.sort(Map.keys(v)),",",fn k->JSON.encode!(k)<>":"<>canonical(v[k]) end)<>"}"
+  def canonical(v) when is_list(v),do: "["<>Enum.map_join(v,",",&canonical/1)<>"]"
+  def canonical(v),do: JSON.encode!(v)
+  def digest(v),do: :crypto.hash(:sha256,canonical(v)) |> Base.encode16(case: :lower)
+  def scope(v) do
+    D.keys(v,~w(provider host tenant resource),~w(provider host tenant resource))
+    D.check(v["provider"] in @providers)
+    D.string(v["host"],253)
+    host=v["host"];D.check(host==ascii_lower(host))
+    if String.contains?(host,":") do
+      case :inet.parse_address(String.to_charlist(host)) do
+        {:ok,ip} when tuple_size(ip)==8->:ok
+        _->D.fail()
+      end
+    else
+      D.check(Enum.all?(String.split(host,"."),&Regex.match?(~r/\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\z/,&1)))
+    end
+    D.string(v["tenant"],256); D.string(v["resource"],256)
+    v
+  end
+  def selector(v) do
+    D.keys(v,~w(provider host tenant alias),~w(provider host tenant alias))
+    scope(Map.delete(v,"alias") |> Map.put("resource",v["alias"]))
+    v
+  end
+  def aliases(entry) do
+    ids=Map.get(entry,"aliases",[]);D.list(ids,16);D.distinct(ids)
+    Enum.each(ids,&D.string(&1,256))
+  end
+  def entry(v,private \\ false) do
+    fields= ~w(scope aliases description relationship canonical)
+    fields=if private,do: fields++["export_publication_ids"],else: fields
+    D.keys(v,fields,~w(scope description relationship canonical))
+    scope(v["scope"]);aliases(v);D.string(v["description"],4096)
+    D.check(v["relationship"] in ~w(contained derived referenced));D.boolean(v["canonical"])
+    D.check(not v["canonical"] or v["relationship"]=="contained")
+    if private do
+      ids=Map.get(v,"export_publication_ids",[]);D.list(ids,32);D.distinct(ids);Enum.each(ids,&D.id/1)
+    end
+    v
+  end
+  def validate(f) do
+    D.optional(f,"share_identities",&D.boolean/1)
+    if Map.has_key?(f,"catalog") do
+      cat=f["catalog"];D.keys(cat,~w(visible entries),~w(visible entries));D.boolean(cat["visible"])
+      D.list(cat["entries"],256);Enum.each(cat["entries"],&entry(&1,true))
+      D.distinct(Enum.map(cat["entries"],&digest(&1["scope"])))
+      D.check(byte_size(JSON.encode!(Enum.map(cat["entries"],&public_entry/1)))<=131072)
+    end
+    :ok
+  end
+  def public_entry(e),do: e |> Map.delete("export_publication_ids") |> Map.put_new("aliases",[])
+  def catalog(c),do: get_in(c,["federation","catalog"]) || %{"visible"=>true,"entries"=>[]}
+  def local(c,kind) do
+    visible=if kind=="catalog",do: c["federation"] != nil and catalog(c)["visible"],else: get_in(c,["federation","share_identities"])==true
+    visible=visible and c["project_status"] != "archived"
+    rows=if visible do
+      if kind=="catalog" do
+        Enum.map(catalog(c)["entries"],&public_entry/1) |> Enum.sort_by(&digest(&1["scope"]))
+      else
+        c["users"] |> Enum.filter(&(&1["disabled"] != true and &1["profile_complete"]==true and email_key(&1["email"]) != nil))
+        |> Enum.map(&%{"user_id"=>&1["id"],"name"=>&1["name"],"email"=>&1["email"]}) |> Enum.sort_by(& &1["user_id"])
+      end
+    else [] end
+    %{"visible"=>visible,"items"=>rows,"revision"=>digest(%{"visible"=>visible,"items"=>rows})}
+  end
+  def email_key(email) when is_binary(email) do
+    email=String.trim(email)
+    case String.split(email,"@") do
+      [local,domain] when local != "" and domain != "" ->
+        if Regex.match?(~r/\s/u,email),do: nil,else: local<>"@"<>ascii_lower(domain)
+      _->nil
+    end
+  end
+  def email_key(_),do: nil
+  def ascii_lower(s),do: for(<<b<-s>>,into: "",do: <<if(b in ?A..?Z,do: b+32,else: b)>>)
+  def peers(c),do: get_in(c,["federation","peers"]) || []
+  def peer_key(p),do: ADHD.FederationV2.peer_key(p)
+  def find_peer(c,server,project),do: Enum.find(peers(c),fn p->p["project_id"]==project and (if is_nil(server),do: is_nil(p["server_id"]),else: p["server_id"]==server) end)
+  def pair_id(p),do: {p["server_id"],p["project_id"]}
+  def fresh?(snapshot),do: is_map(snapshot) and snapshot["expires_ms"]>D.ms()
+  def reconcile(s,c) do
+    ids=Enum.map(peers(c),&peer_key/1)
+    directory=Map.take(s.directory,ids)
+    pins=Map.reject(s.owner_pins,fn {_,v}->v["server_id"] != s.server_id and not Enum.any?(peers(c),&(pair_id(&1)==pair_id(v) or (is_nil(&1["server_id"]) and &1["project_id"]==v["project_id"]))) end)
+    %{s|directory: directory,owner_pins: pins}
+  end
+  def wire(cmd,peer,_config) do
+    c=ADHD.Config.get()
+    if peer not in peers(c),do: D.fail("UNAUTHORIZED")
+    kind=cmd["op"]
+    D.check(kind in ~w(catalog identities))
+    D.keys(cmd,~w(op origin_project_id cursor),~w(op origin_project_id))
+    D.identifier(cmd["origin_project_id"])
+    if cmd["origin_project_id"] != peer["project_id"],do: D.fail("FORBIDDEN")
+    snapshot=local(c,kind);revision=snapshot["revision"]
+    offset=if Map.has_key?(cmd,"cursor") do
+      D.string(cmd["cursor"],256)
+      case Base.url_decode64(cmd["cursor"],padding: false) do
+        {:ok,text}->
+          case String.split(text,":") do
+            [^kind,^revision,n]->
+              case Integer.parse(n) do
+                {offset,""} when offset>0 and rem(offset,64)==0->offset
+                _->D.fail()
+              end
+            [^kind,_,_]->D.fail("SNAPSHOT_CHANGED")
+            _->D.fail()
+          end
+        _->D.fail()
+      end
+    else 0 end
+    rows=snapshot["items"];D.check(offset==0 or offset<length(rows))
+    next=offset+64
+    cursor=if next<length(rows),do: Base.url_encode64(kind<>":"<>revision<>":"<>Integer.to_string(next),padding: false),else: nil
+    id=S.snapshot() |> S.unwrap() |> Map.fetch!(:server_id)
+    {200,%{"server_id"=>id,"project_id"=>c["project_id"],"revision"=>revision,"generated_at"=>D.now(),"max_age_ms"=>10000,"visible"=>snapshot["visible"],"items"=>Enum.slice(rows,offset,64),"next_cursor"=>cursor}}
+  end
+  def fetch(peer,c,kind) do
+    do_fetch(peer,c,kind,nil,nil,[],MapSet.new())
+  end
+  defp do_fetch(peer,c,kind,cursor,first,items,cursors) do
+    command=%{"protocol_version"=>1,"op"=>kind,"origin_project_id"=>c["project_id"]}
+    command=if cursor,do: Map.put(command,"cursor",cursor),else: command
+    {status,value}=ADHD.FederationV2.request(peer,c,command,"/federation/v1",c["federation"]["timeout_ms"])
+    D.check(status==200)
+    D.keys(value,~w(protocol_version server_id project_id revision generated_at max_age_ms visible items next_cursor),~w(protocol_version server_id project_id revision generated_at max_age_ms visible items next_cursor))
+    D.check(value["protocol_version"]===1 and value["project_id"]==peer["project_id"])
+    server_id(value["server_id"]);D.check(Regex.match?(~r/\A[0-9a-f]{64}\z/,value["revision"]))
+    D.datetime(value["generated_at"],true);D.check(value["max_age_ms"]===10000);D.boolean(value["visible"])
+    generated=D.epoch(value["generated_at"]);D.check(generated<=D.ms()+1000 and generated+value["max_age_ms"]>D.ms())
+    D.list(value["items"],64)
+    Enum.each(value["items"],fn row->
+      if kind=="catalog" do entry(row) else
+        D.keys(row,~w(user_id name email),~w(user_id name email));D.id(row["user_id"]);D.string(row["name"],256);D.string(row["email"],320);D.check(email_key(row["email"]) != nil)
+      end
+    end)
+    if first,do: D.check(Enum.all?(~w(server_id project_id revision visible),&(value[&1]==first[&1])))
+    first=first || value
+    rows=items++value["items"];D.check(length(rows)<=if(kind=="catalog",do: 256,else: 1000))
+    D.distinct(Enum.map(rows,fn r->if kind=="catalog",do: digest(r["scope"]),else: r["user_id"] end))
+    next=value["next_cursor"]
+    if kind=="catalog",do: D.check(byte_size(JSON.encode!(rows))<=131072)
+    if next do
+      D.string(next,256);D.check(not MapSet.member?(cursors,next) and value["items"] != [])
+      do_fetch(peer,c,kind,next,first,rows,MapSet.put(cursors,next))
+    else
+      D.check(value["visible"] or rows==[])
+      D.check(value["revision"]==digest(%{"visible"=>value["visible"],"items"=>rows}))
+      D.check(D.epoch(first["generated_at"])+first["max_age_ms"]>D.ms())
+      first |> Map.put("items",rows) |> Map.put("next_cursor",nil) |> Map.put("expires_ms",D.epoch(first["generated_at"])+first["max_age_ms"]) |> Map.put("observed_at",D.now())
+    end
+  end
+  def refresh(index) do
+    c=ADHD.Config.get();s=S.snapshot() |> S.unwrap()
+    eligible=peers(c) |> Enum.with_index() |> Enum.filter(fn {peer,n}->
+      cache=s.directory[peer_key(peer)]
+      rem(n,3)==index and (is_nil(cache) or Map.get(cache,"retry_at",0)<=D.ms())
+    end) |> Enum.map(&elem(&1,0)) |> Enum.sort_by(&peer_key/1)
+    last=Process.get(:last_directory_peer,"")
+    selected=Enum.find(eligible,&(peer_key(&1)>last)) || List.first(eligible)
+    if selected do
+      peer=selected;id=peer_key(peer);Process.put(:last_directory_peer,id);generation=D.digest(c)
+      result=try do
+        cat=fetch(peer,c,"catalog");people=fetch(peer,c,"identities")
+        D.check(cat["server_id"]==people["server_id"] and cat["server_id"] != s.server_id)
+        {:ok,cat,people}
+      rescue _->:failed catch _,_->:failed end
+      retry_at=ADHD.Net.retry_at(c["federation"]["retry_ms"],D.ms()+120000)
+      S.call(fn current->
+        now=ADHD.Config.get()
+        if generation != D.digest(now) do {:ok,reconcile(current,now)} else
+          current=reconcile(current,c);cache=current.directory[id] || %{}
+          next=case result do
+            {:ok,cat,people}->
+              if cache["server_id"] && cache["server_id"] != cat["server_id"] do
+                Map.merge(cache,%{"status"=>"identity_conflict","retry_at"=>retry_at})
+              else
+                %{"server_id"=>cat["server_id"],"project_id"=>cat["project_id"],"status"=>"ready","catalog"=>cat,"identities"=>people,"retry_at"=>D.ms()+2000}
+              end
+            _->Map.merge(cache,%{"status"=>"unavailable","retry_at"=>retry_at})
+          end
+          current=put_in(current,[:directory,id],next)
+          duplicates=if next["server_id"],do: Enum.filter(current.directory,fn {other,v}->
+            other_peer=Enum.find(peers(c),&(peer_key(&1)==other))
+            legacy_alias=is_nil(peer["server_id"]) and is_map(other_peer) and is_nil(other_peer["server_id"])
+            other != id and v["server_id"]==next["server_id"] and (v["project_id"]==next["project_id"] or legacy_alias)
+          end),else: []
+          current=if duplicates != [] do
+            ids=[id|Enum.map(duplicates,&elem(&1,0))]
+            Enum.reduce(ids,current,fn key,acc->update_in(acc,[:directory,key],&Map.merge(&1,%{"status"=>"identity_conflict","retry_at"=>retry_at})) end)
+          else current end
+          {:ok,current}
+        end
+      end)
+      true
+    else false end
+  end
+  def view(s,c) do
+    current=local(c,"catalog")
+    rows=Enum.map(peers(c),fn p->
+      cache=s.directory[peer_key(p)] || %{};cat=cache["catalog"]
+      ready=fresh?(cat) and cache["status"]=="ready"
+      %{"project_id"=>p["project_id"],"server_id"=>cache["server_id"] || p["server_id"],"status"=>cond do
+        cache["status"]=="identity_conflict"->"identity_conflict"
+        ready and not cat["visible"]->"withheld"
+        ready->"ready"
+        cache==%{}->"pending"
+        true->"unavailable"
+      end,"revision"=>if(ready,do: cat["revision"],else: nil),"expires_at"=>if(ready,do: D.at(cat["expires_ms"]),else: nil),"catalog"=>if(ready and cat["visible"],do: cat["items"],else: [])}
+    end)
+    %{"server_id"=>s.server_id,"project_id"=>c["project_id"],"catalog"=>current,"peers"=>rows}
+  end
+  def coverage(s,c) do
+    fields=if ADHD.Projects.multi?(ADHD.Config.root()) or Enum.any?(peers(c),& &1["server_id"]),do: ~w(server_id project_id status),else: ~w(project_id status)
+    Enum.map(view(s,c)["peers"],&Map.take(&1,fields))
+  end
+  def matches(s,c,id) do
+    u=Enum.find(c["users"],&(&1["id"]==id)) || D.fail("NOT_FOUND")
+    key=email_key(u["email"])
+    rows=Enum.map(peers(c),fn p->
+      cache=s.directory[peer_key(p)] || %{};people=cache["identities"]
+      ready=cache["status"]=="ready" and fresh?(people)
+      status=cond do
+        cache["status"]=="identity_conflict"->"identity_conflict"
+        ready and not people["visible"]->"identities_withheld"
+        ready->"ready"
+        cache==%{}->"pending"
+        true->"unavailable"
+      end
+      found=if ready and people["visible"] and key do
+        Enum.filter(people["items"],&(email_key(&1["email"])==key)) |> Enum.map(&Map.merge(&1,%{"server_id"=>cache["server_id"],"project_id"=>p["project_id"],"observed_at"=>people["observed_at"],"expires_at"=>D.at(people["expires_ms"])}))
+      else [] end
+      coverage=%{"project_id"=>p["project_id"],"status"=>status}
+      coverage=if p["server_id"],do: Map.put(coverage,"server_id",p["server_id"]),else: coverage
+      {coverage,found}
+    end)
+    %{"user_id"=>id,"matches"=>Enum.flat_map(rows,&elem(&1,1)),"coverage"=>Enum.map(rows,&elem(&1,0))}
+  end
+  def snapshots(s,c) do
+    own=local(c,"catalog") |> Map.merge(%{"server_id"=>s.server_id,"project_id"=>c["project_id"],"expires_ms"=>D.ms()+10000})
+    others=Enum.flat_map(peers(c),fn p->
+      cache=s.directory[peer_key(p)] || %{};cat=cache["catalog"]
+      if cache["status"]=="ready" and fresh?(cat),do: [cat],else: []
+    end)
+    imported=Map.get(c,"_scope_snapshots",[])
+    locals=ADHD.FederationV2.local_catalogs(c,Map.get(c,"_query_project_ids",[c["project_id"]]))
+    base=if c["project_id"] in Map.get(c,"_query_project_ids",[c["project_id"]]),do: [own|others],else: []
+    base++locals++imported |> Enum.uniq_by(fn cat->{cat["server_id"],cat["project_id"],cat["revision"]} end)
+  end
+  def complete?(s,c) do
+    local_complete=if c["project_id"] in Map.get(c,"_query_project_ids",[c["project_id"]]) do
+      Enum.all?(peers(c),fn p->
+        cache=s.directory[peer_key(p)] || %{};cat=cache["catalog"]
+        cache["status"]=="ready" and fresh?(cat) and cat["visible"]
+      end)
+    else true end
+    local_complete and Map.get(c,"_scope_complete",true)
+  end
+  def local_claims(scope) do
+    root=ADHD.Config.root()
+    ADHD.Projects.all(root) |> Enum.flat_map(fn p->
+      view=ADHD.Projects.view(root,p["id"])
+      if Enum.any?(catalog(view)["entries"],&(&1["scope"]==scope and &1["canonical"])),do: [{root["server_id"],p["id"]}],else: []
+    end) |> Enum.uniq()
+  end
+  def local_conflict?(scope),do: length(local_claims(scope))>1
+  def resolve(s,c,scope) do
+    key=digest(scope);snapshots=snapshots(s,c);previous=s.owner_pins[key]
+    previous=if not is_nil(previous) and previous["server_id"]==s.server_id and previous["project_id"] not in Map.get(c,"_query_project_ids",[c["project_id"]]),do: nil,else: previous
+    claims=Enum.filter(snapshots,fn cat->cat["visible"] and Enum.any?(cat["items"],&(&1["scope"]==scope and &1["canonical"])) end)
+    claim_ids=Enum.uniq(Enum.map(claims,&pair_id/1))
+    all_local=local_claims(scope)
+    claimed=Enum.uniq(claim_ids++all_local)
+    revoked=previous && (Enum.any?(snapshots,fn cat->pair_id(cat)==pair_id(previous) and cat["visible"] and not Enum.any?(cat["items"],&(&1["scope"]==scope and &1["canonical"])) end))
+    effective=if previous && not revoked,do: Enum.uniq([pair_id(previous)|claimed]),else: claimed
+    cond do
+      length(effective)>1->{"conflict",nil,s}
+      not complete?(s,c) and is_nil(previous)->{"pending",previous,s}
+      claims==[] and previous->{if(revoked,do: "revoked",else: "unavailable"),previous,s}
+      claims==[]->{"unknown",nil,s}
+      true->
+        owner=hd(claims);pin=Map.take(owner,~w(server_id project_id revision)) |> Map.put("scope",scope)
+        if not Map.has_key?(s.owner_pins,key) and map_size(s.owner_pins)>=4352,do: D.fail("RESOURCE_EXHAUSTED")
+        {"ready",pin,put_in(s,[:owner_pins,key],pin)}
+    end
+  end
+  def scope_config(c,project_ids) do
+    root=ADHD.Config.root();ids=Enum.uniq(project_ids || [c["project_id"]])
+    results=Enum.map(ids--[c["project_id"]],fn id->
+      ADHD.Projects.scope(root,id,fn view->
+        state=S.snapshot() |> S.unwrap()
+        {snapshots(state,view),complete?(state,view),coverage(state,view),id,state[:project_epoch]}
+      end)
+    end)
+    for {_,_,_,id,captured}<-results,do: ADHD.Scope.depend(id,captured)
+    if not ADHD.Scope.current?(),do: D.fail("RECOVERY_REQUIRED")
+    c |> Map.put("_query_project_ids",ids) |> Map.put("_scope_snapshots",Enum.flat_map(results,&elem(&1,0))) |> Map.put("_scope_complete",Enum.all?(results,&elem(&1,1))) |> Map.put("_scope_coverage",Enum.flat_map(results,&elem(&1,2)))
+  end
+  def query_coverage(s,c) do
+    ids=Map.get(c,"_query_project_ids",[c["project_id"]])
+    if not ADHD.Projects.multi?(ADHD.Config.root()) and ids==[c["project_id"]] do coverage(s,c) else
+      root=ADHD.Config.root()
+      known=(if c["project_id"] in ids,do: coverage(s,c),else: [])++Map.get(c,"_scope_coverage",[])
+      expected=Enum.flat_map(ids,fn id->
+        view=ADHD.Projects.view(root,id)
+        Enum.map(peers(view),fn p->
+          Enum.find(known,fn row->row["project_id"]==p["project_id"] and (is_nil(p["server_id"]) or row["server_id"]==p["server_id"]) end) || %{"server_id"=>p["server_id"],"project_id"=>p["project_id"],"status"=>"pending"}
+        end)
+      end)
+      local=Enum.map(ids,&%{"server_id"=>s.server_id,"project_id"=>&1,"status"=>"ready"})
+      Enum.uniq_by(local++expected,&pair_id/1)
+    end
+  end
+  def alias_scope(s,c,selector) do
+    normalize=fn text->if selector["provider"]=="github",do: ascii_lower(text),else: text end
+    scopes=for cat<-snapshots(s,c),cat["visible"],entry<-cat["items"],
+      Map.take(entry["scope"],~w(provider host tenant))==Map.take(selector,~w(provider host tenant)),
+      Enum.any?(entry["aliases"],&(normalize.(&1)==normalize.(selector["alias"]))),do: entry["scope"]
+    case Enum.uniq(scopes) do [one]->{:ok,one};[]->{:error,"unknown"};_->{:error,"ambiguous"} end
+  end
+end

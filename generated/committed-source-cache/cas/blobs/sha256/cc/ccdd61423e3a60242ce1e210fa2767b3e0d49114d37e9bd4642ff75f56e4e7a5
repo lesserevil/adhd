@@ -1,0 +1,134 @@
+defmodule ADHD.Records do
+  alias ADHD.Domain, as: D
+  alias ADHD.Directory, as: F
+  @relations ~w(reply supports corrects related)
+  @groups ~w(subject conversation task)
+  def context(value) do
+    D.keys(value,~w(question subject conversation task links external))
+    D.optional(value,"question",&D.string(&1,4096))
+    for key<-@groups,do: D.optional(value,key,&D.string(&1,512))
+    D.optional(value,"links",fn links->
+      D.list(links,16);D.distinct(links)
+      for link<-links do
+        D.keys(link,~w(relation publication_id),~w(relation publication_id));D.id(link["publication_id"])
+        D.check(link["relation"] in @relations)
+      end
+    end)
+    D.optional(value,"external",fn refs->
+      D.list(refs,4)
+      for ref<-refs do
+        D.keys(ref,~w(uri snapshot sha256),~w(uri));D.url(ref["uri"])
+        D.optional(ref,"snapshot",&D.string(&1,4096))
+        if Map.has_key?(ref,"sha256") do
+          hash=ref["sha256"];D.check(is_binary(hash) and Regex.match?(~r/\A[0-9a-f]{64}\z/,hash))
+          D.check(is_binary(ref["snapshot"]) and hash==hash(ref["snapshot"]))
+        end
+      end
+    end)
+    D.check(byte_size(F.canonical(value))<=24576)
+    value
+  end
+  def hash(v),do: :crypto.hash(:sha256,v) |> Base.encode16(case: :lower)
+  def identity(s,id),do: "urn:adhd:record:"<>s.server_id<>":"<>id
+  def watermark(s),do: Enum.reduce(s.publications,0,fn {_,r},acc->max(acc,r.seq) end)
+  def read_args(cmd) do
+    D.id(cmd["publication_id"])
+    D.optional(cmd,"watermark",&D.integer(&1,0,9007199254740991))
+    D.optional(cmd,"max_depth",&D.integer(&1,0,4))
+    D.optional(cmd,"limit",&D.integer(&1,1,64))
+  end
+  def attach(s,id,cmd) do
+    context=cmd["context"]
+    links=Enum.map(if(is_map(context),do: Map.get(context,"links",[]),else: []),fn link->
+      target=link["publication_id"]
+      Map.put(link,"target_identity",if(Map.has_key?(s.publications,target) and s.publications[target].seq<s.publications[id].seq,do: identity(s,target),else: nil))
+    end)
+    put_in(s,[:contexts,id],%{"context"=>context,"links"=>links})
+  end
+  def upgrade(s) do
+    D.object(s.contexts)
+    for {id,value}<-s.contexts do
+      D.check(Map.has_key?(s.publications,id));D.keys(value,~w(context links),~w(context links))
+      if value["context"] != nil,do: context(value["context"])
+      submitted=if value["context"],do: Map.get(value["context"],"links",[]),else: []
+      D.check(length(value["links"])==length(submitted))
+      for {resolved,link}<-Enum.zip(value["links"],submitted) do
+        D.keys(resolved,~w(relation publication_id target_identity),~w(relation publication_id target_identity))
+        D.check(Map.drop(resolved,["target_identity"])==link)
+        target=resolved["target_identity"]
+        if target != nil do
+          row=s.publications[link["publication_id"]]
+          D.check(row != nil and row.seq<s.publications[id].seq and target==identity(s,link["publication_id"]))
+        end
+      end
+    end
+    s
+  end
+  def record(s,c,id) do
+    row=s.publications[id] || D.fail("NOT_FOUND")
+    ctx=s.contexts[id] || %{"context"=>nil,"links"=>[]}
+    %{"publication"=>Map.put(row.value,"project_id",c["project_id"]),"identity"=>identity(s,id),"context"=>ctx["context"],
+      "context_identity"=>F.digest(ctx),"links"=>ctx["links"]}
+  end
+  def reply(s,c,cmd,result) do
+    pub=result["publication"] || result["record"]["publication"]
+    reply=if cmd["op"]=="publish_record",do: %{"record"=>record(s,c,pub["id"]),"matching"=>"pending"},else: %{"publication"=>pub,"matching"=>"pending"}
+    Map.merge(reply,Map.take(result,["eventing"]))
+  end
+  def read(s,c,cmd) do
+    read_args(cmd)
+    mark=Map.get(cmd,"watermark",watermark(s));D.check(mark<=watermark(s))
+    id=cmd["publication_id"];root=s.publications[id]
+    if is_nil(root) or root.seq>mark,do: D.fail("NOT_FOUND")
+    max_depth=Map.get(cmd,"max_depth",2);limit=Map.get(cmd,"limit",32)
+    state=%{queue: [{id,0}],seen: MapSet.new([id]),ids: [],gaps: [],truncated: false}
+    state=walk(s,state,mark,max_depth,limit)
+    %{"snapshot"=>%{"server_id"=>s.server_id,"watermark"=>mark},"record"=>record(s,c,id),
+      "related"=>Enum.map(Enum.reject(state.ids,&(&1==id)),&record(s,c,&1)),"gaps"=>Enum.take(state.gaps,128),"truncated"=>state.truncated or length(state.gaps)>128}
+  end
+  defp gap(x,origin,relation,target,reason) do
+    g=%{"origin_id"=>origin,"relation"=>relation,"target_id"=>target,"reason"=>reason}
+    %{x|gaps: if(length(x.gaps)<129,do: x.gaps++[g],else: x.gaps),truncated: x.truncated or reason in ~w(depth limit)}
+  end
+  defp walk(_s,%{queue: []}=x,_mark,_depth,_limit),do: x
+  defp walk(s,%{queue: [{id,depth}|rest]}=x,mark,max_depth,limit) do
+    x=%{x|queue: rest,ids: x.ids++[id]}
+    ctx=s.contexts[id] || %{"context"=>nil,"links"=>[]}
+    x=Enum.reduce(ctx["links"],x,fn link,acc->
+      target=link["publication_id"]
+      cond do
+        is_nil(link["target_identity"])->gap(acc,id,link["relation"],target,"unresolved")
+        s.publications[target].seq>mark->gap(acc,id,link["relation"],target,"outside_snapshot")
+        true->acc
+      end
+    end)
+    x=Enum.reduce(if(ctx["context"],do: Map.get(ctx["context"],"external",[]),else: []),x,fn ext,acc->
+      if is_nil(ext["snapshot"]),do: gap(acc,id,"external",ext["uri"],"missing_snapshot"),else: acc
+    end)
+    neighbors=neighbors(s,id,ctx,mark)
+    x=Enum.reduce(neighbors,x,fn {target,relation,explicit},acc->
+      cond do
+        MapSet.member?(acc.seen,target)->if(explicit,do: gap(acc,id,relation,target,"cycle"),else: acc)
+        depth>=max_depth->gap(acc,id,relation,target,"depth")
+        MapSet.size(acc.seen)>=limit->gap(acc,id,relation,target,"limit")
+        true->%{acc|seen: MapSet.put(acc.seen,target),queue: acc.queue++[{target,depth+1}]}
+      end
+    end)
+    walk(s,x,mark,max_depth,limit)
+  end
+  defp neighbors(s,id,ctx,mark) do
+    outgoing=for link<-ctx["links"],link["target_identity"] != nil,s.publications[link["publication_id"]].seq<=mark,
+      do: {link["publication_id"],link["relation"],true}
+    others=Enum.flat_map(s.publications,fn {other,row}->
+      if other==id or row.seq>mark do [] else
+        target=s.contexts[other] || %{"context"=>nil,"links"=>[]}
+        incoming=for link<-target["links"],link["target_identity"]==identity(s,id),do: {other,link["relation"],true}
+        groups=if ctx["context"] && target["context"] do
+          for key<-@groups,is_binary(ctx["context"][key]),ctx["context"][key]==target["context"][key],do: {other,key,false}
+        else [] end
+        incoming++groups
+      end
+    end)
+    (outgoing++others) |> Enum.uniq() |> Enum.sort_by(fn {target,relation,explicit}->{s.publications[target].seq,target,not explicit,relation} end)
+  end
+end

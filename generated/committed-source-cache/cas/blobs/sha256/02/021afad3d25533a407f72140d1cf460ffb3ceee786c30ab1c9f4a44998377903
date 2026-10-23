@@ -1,0 +1,465 @@
+defmodule ADHD.ProjectBackupValidation do
+  # Pure backup proof. No writer, live configuration lookup, credential exchange,
+  # migration worker or provider request is permitted on this path.
+  @safe 9007199254740991
+  @maps [:subscriptions,:publications,:deliveries,:jobs,:idempotency,:sources,:admin_idempotency,:queries,:incoming,:directory,:owner_pins,:source_queries,:source_incoming,:contexts,:history_queries,:retrieval_queries,:archive_queries,:replay_queries]
+  def validate(bundle,current,target,limits,progress) do
+    budget={0,limits["max_records"],limits["scan_batch_records"],limits["deadline_ms"],progress}
+    Process.put({__MODULE__,:budget},budget)
+    Process.put({__MODULE__,:agents},MapSet.new())
+    Process.put({__MODULE__,:users},MapSet.new())
+    try do
+      raw=bundle.state;backup=bundle.config;m=bundle.manifest
+      walk(raw)
+      check(is_map(raw) and raw[:schema] in [1,2,3,4])
+      known= @maps ++ [:schema,:project,:seq,:aliases,:server_id,:storage_generation,:eventing,:optimization,:retrieval_selection,:retrieval_index,:feedback,:project_migration,:route_generation,:project_epoch,:allocation_epoch,:allocation_counter,:recovery_work_audit]
+      check(Enum.all?(Map.keys(raw),&(&1 in known)))
+      check(raw[:project]==target and m["project_id"]==target and current["server_id"]==m["server_id"])
+      server=raw[:server_id] || backup["server_id"]
+      check(server==m["server_id"] and (is_nil(backup["server_id"]) or backup["server_id"]==server))
+      pulse()
+      uint(raw[:seq]);uint(Map.get(raw,:storage_generation,0))
+      source=m["source"]
+      check(source["sequence"]==raw.seq and source["storage_generation"]==Map.get(raw,:storage_generation,0))
+      for {key,name}<- [{:route_generation,"route_generation"},{:project_epoch,"project_epoch"},{:allocation_epoch,"allocation_epoch"}] do
+        expected=Map.get(raw,key,if(key==:route_generation,do: 0,else: nil))
+        check(source[name]==expected)
+      end
+      if raw.schema==4 do
+        positive(raw[:route_generation]);hex(raw[:project_epoch],32);hex(raw[:allocation_epoch],32)
+        check(raw.project_epoch != raw.allocation_epoch);uint(raw[:allocation_counter])
+      else check(not Enum.any?([:route_generation,:project_epoch,:allocation_epoch,:allocation_counter,:recovery_work_audit],&Map.has_key?(raw,&1))) end
+      aliases=Map.get(raw,:aliases,[raw.project]);check(is_list(aliases) and length(aliases)<=256 and Enum.uniq(aliases)==aliases)
+      Enum.each(aliases,&identifier/1)
+      check(Enum.sort(Enum.reject(aliases,&(&1==target)))==m["aliases"])
+      ADHD.Directory.server_id(server)
+      check(target in aliases)
+      check(if(is_list(backup["projects"]),do: Enum.any?(backup["projects"],&(&1["id"]==target)),else: backup["project_id"] in aliases))
+      s=defaults(raw,server)
+      defs=ADHD.Protocol.schema()["$defs"]
+      core(s,defs)
+      features(s)
+      lineage(s)
+      eventing(s,defs)
+      federation(s,defs)
+      receipts(s,defs)
+      principal_refs(s)
+      proof=ownership(backup,current)
+      current_aliases=case Enum.find(Map.get(current,"projects",[]),&(&1["id"]==target)) do nil->[];p->Map.get(p,"aliases",[]) end
+      union=Enum.sort(Enum.uniq(aliases++current_aliases)) |> Enum.reject(&(&1==target))
+      pulse()
+      {n,_,_,_,_}=Process.get({__MODULE__,:budget});progress.(%{records_checked: n})
+      %{state: s,references: proof,records: n,aliases: union}
+    rescue
+      _->invalid("schema")
+    catch
+      {:recovery,_,_}=reason->throw(reason)
+      _,_->invalid("schema")
+    after
+      for key<-[:budget,:agents,:users],do: Process.delete({__MODULE__,key})
+    end
+  end
+  # Local adoption has already proven the configured files and current config.
+  # It imports no grants or credentials. This pure seam validates the complete
+  # legacy graph BEFORE Store.upgrade can replace malformed derived state.
+  def validate_local(raw,current,target,limits,progress) do
+    Process.put({__MODULE__,:budget},{0,limits["max_records"],limits["scan_batch_records"],limits["deadline_ms"],progress})
+    Process.put({__MODULE__,:agents},MapSet.new())
+    Process.put({__MODULE__,:users},MapSet.new())
+    try do
+      walk(raw);pulse()
+      check(is_map(raw) and raw[:schema] in [1,2,3])
+      known=@maps ++ [:schema,:project,:seq,:aliases,:server_id,:storage_generation,:eventing,:optimization,:retrieval_selection,:retrieval_index,:feedback,:project_migration]
+      check(Enum.all?(Map.keys(raw),&(&1 in known)))
+      identifier(target);identifier(raw[:project]);uint(raw[:seq]);uint(Map.get(raw,:storage_generation,0))
+      server=current["server_id"];ADHD.Directory.server_id(server)
+      check(is_nil(raw[:server_id]) or raw[:server_id]==server)
+      aliases=Map.get(raw,:aliases,[raw.project])
+      check(is_list(aliases) and length(aliases)<=256 and Enum.uniq(aliases)==aliases)
+      Enum.each(aliases,&identifier/1)
+      check(raw.project in aliases and target in aliases)
+      check(if(is_list(current["projects"]),do: Enum.any?(current["projects"],&(&1["id"]==target)),else: current["project_id"]==target))
+      s=defaults(raw,server)
+      defs=ADHD.Protocol.schema()["$defs"]
+      core(s,defs);features(s);lineage(s);eventing(s,defs);federation(s,defs);receipts(s,defs);principal_refs(s)
+      proof=ownership(current,current)
+      {n,_,_,_,_}=Process.get({__MODULE__,:budget});progress.(%{records_checked: n})
+      %{state: s,references: proof,records: n,aliases: Enum.sort(aliases--[target])}
+    rescue
+      _->invalid("schema")
+    catch
+      {:recovery,_,_}=reason->throw(reason)
+      _,_->invalid("schema")
+    after
+      for key<-[:budget,:agents,:users],do: Process.delete({__MODULE__,key})
+    end
+  end
+  # Installation changes headers and appends recovery metadata after the source
+  # manifest proof. Validate/count that exact staged generation independently.
+  # This API does not substitute for validate/5's original ownership proof.
+  def validate_staged(state,current,target,limits,progress) do
+    Process.put({__MODULE__,:budget},{0,limits["max_records"],limits["scan_batch_records"],limits["deadline_ms"],progress})
+    Process.put({__MODULE__,:agents},MapSet.new());Process.put({__MODULE__,:users},MapSet.new())
+    try do
+      walk(state);pulse()
+      if Map.has_key?(limits,"max_backup_bytes"),do: check(:erlang.external_size(state,[{:minor_version,2}])+42<=limits["max_backup_bytes"])
+      check(state[:schema]==4 and state[:project]==target and state[:server_id]==current["server_id"])
+      positive(state[:route_generation]);hex(state[:project_epoch],32);hex(state[:allocation_epoch],32)
+      check(state.project_epoch != state.allocation_epoch);uint(state[:allocation_counter]);uint(state[:seq]);uint(state[:storage_generation])
+      check(is_list(state[:aliases]) and length(state.aliases)<=256 and target in state.aliases and length(Enum.uniq(state.aliases))==length(state.aliases))
+      Enum.each(state.aliases,&identifier/1);Enum.each(@maps,&object(state[&1]))
+      defs=ADHD.Protocol.schema()["$defs"]
+      core(state,defs);features(state);lineage(state);eventing(state,defs);federation(state,defs);receipts(state,defs)
+      pulse()
+      {n,_,_,_,_}=Process.get({__MODULE__,:budget});progress.(%{records_checked: n})
+      %{state: state,records: n}
+    rescue _->invalid("schema")
+    catch {:recovery,_,_}=reason->throw(reason);_,_->invalid("schema")
+    after for key<-[:budget,:agents,:users],do: Process.delete({__MODULE__,key}) end
+  end
+  defp invalid(reason),do: throw({:recovery,"RESTORE_INVALID_BACKUP",reason})
+  defp conflict(reason),do: throw({:recovery,"RESTORE_CONFLICT",reason})
+  defp check(true),do: :ok
+  defp check(_),do: invalid("schema")
+  defp pulse do
+    {n,_,_,deadline,progress}=Process.get({__MODULE__,:budget})
+    if System.monotonic_time(:millisecond)>=deadline,do: throw({:recovery,"RESTORE_TIMEOUT","timeout"})
+    if rem(n,256)==0,do: progress.(%{records_checked: n})
+    Process.sleep(0)
+  end
+  defp tick do
+    {n,max,batch,deadline,progress}=Process.get({__MODULE__,:budget})
+    if n>=max,do: invalid("limits")
+    if rem(n,batch)==0 do
+      if System.monotonic_time(:millisecond)>=deadline,do: throw({:recovery,"RESTORE_TIMEOUT","timeout"})
+      progress.(%{records_checked: n});Process.sleep(0)
+    end
+    Process.put({__MODULE__,:budget},{n+1,max,batch,deadline,progress})
+  end
+  # Count retained containers/records, not scalar fields; each receipt, historical
+  # run, frozen target and nested evidence object consumes the same finite budget.
+  defp walk(%MapSet{}=value),do: (tick();Enum.each(value,&walk/1))
+  defp walk(value) when is_map(value) do
+    tick();Enum.each(value,fn {k,v}->check(is_atom(k) or is_binary(k) or is_tuple(k) or is_integer(k));walk(v) end)
+  end
+  defp walk(value) when is_tuple(value),do: (tick();value |> Tuple.to_list() |> Enum.each(&walk/1))
+  defp walk(value) when is_list(value),do: (tick();Enum.each(value,&walk/1))
+  defp walk(value) when is_binary(value) or is_integer(value) or is_float(value) or is_atom(value),do: :ok
+  defp walk(_),do: invalid("schema")
+  defp uint(v),do: check(is_integer(v) and v>=0 and v<=@safe)
+  defp positive(v),do: (uint(v);check(v>0))
+  defp identifier(v),do: ADHD.Domain.identifier(v)
+  defp hex(v,n),do: check(is_binary(v) and byte_size(v)==n and Regex.match?(~r/\A[0-9a-f]+\z/,v))
+  defp object(v),do: check(is_map(v) and not is_struct(v))
+  defp defaults(raw,server) do
+    base=Map.new(@maps,&{&1,%{}}) |> Map.merge(%{server_id: server,aliases: [raw.project],storage_generation: 0,
+      eventing: ADHD.Eventing.empty(),optimization: ADHD.Optimization.empty(),retrieval_selection: ADHD.Selection.empty(),retrieval_index: ADHD.RetrievalIndex.empty(),feedback: ADHD.Feedback.empty()})
+    s=Map.merge(base,raw)
+    Enum.each(@maps,&object(s[&1]))
+    pubs=Map.new(s.publications,fn {id,row}->{id,Map.update!(row,:value,fn p->p |> Map.put_new("information_type","message") |> Map.put_new("source",%{"kind"=>"agent","id"=>p["author_id"]}) |> Map.put_new("occurred_at",p["created_at"]) end)} end)
+    deliveries=Map.new(s.deliveries,fn {id,row}->
+      value=row.value
+      value=if value["kind"]=="publication" do
+        original=pubs[value["publication_id"]] || invalid("schema")
+        Map.merge(value,Map.take(original.value,~w(information_type source occurred_at)))
+      else value end
+      {id,Map.put(row,:value,value)}
+    end)
+    %{s|publications: pubs,deliveries: deliveries}
+  end
+  defp core(s,defs) do
+    for {field,type}<-[{:publications,"Publication"},{:subscriptions,"Subscription"},{:deliveries,"Delivery"}],{id,row}<-s[field] do
+      object(row);uint(row[:seq]);check(row.seq<=s.seq and row[:value]["id"]==id)
+      identifier(id);schema(row.value,defs[type],defs);check(row.value["project_id"] in s.aliases)
+      if field==:deliveries do
+        check(is_boolean(row[:ack]))
+        if row.value["kind"]=="publication" do
+          p=s.publications[row.value["publication_id"]] || invalid("schema")
+          check(row.value["sender_id"]==p.value["author_id"] and row.value["text"]==p.value["text"] and row.value["data"]==p.value["data"])
+        end
+      end
+    end
+    for {id,j}<-s.jobs do
+      object(j);check(j[:id]==id and j[:status] in [:pending,:done,:cancelled]);uint(j[:seq]);check(j.seq<=s.seq)
+      check(Map.has_key?(s.publications,j[:publication_id]));identifier(j[:recipient_id]);identifier(j[:subscription_id])
+      if Map.has_key?(j,:subscription_revision),do: positive(j.subscription_revision)
+      ADHD.Domain.integer(j[:retry_at],-@safe,@safe);ADHD.Domain.string(j[:description],4096);if Map.has_key?(j,:threshold_ppm),do: ADHD.Domain.integer(j[:threshold_ppm],1,1000000)
+    end
+  end
+  # Native feature validators are pure. Reject every lossy fallback rather than
+  # accepting an invalid generation or silently rebuilding away retained evidence.
+  defp features(s) do
+    {_,_,_,deadline,_}=Process.get({__MODULE__,:budget})
+    task=Task.async(fn->
+      try do
+      Enum.reduce([ADHD.Records,ADHD.History,ADHD.Selection,ADHD.RetrievalIndex,ADHD.RetrievalJobs,ADHD.Archive,ADHD.Feedback,ADHD.Replay,ADHD.Optimization],s,fn module,state->
+        next=module.upgrade(state);check(next==state);state
+      end)
+      rescue _->:invalid catch _,_->:invalid end
+    end)
+    case Task.yield(task,max(0,deadline-System.monotonic_time(:millisecond))) || Task.shutdown(task,:brutal_kill) do
+      {:ok,result} when is_map(result)->:ok
+      nil->throw({:recovery,"RESTORE_TIMEOUT","timeout"})
+      _->invalid("schema")
+    end
+  end
+  defp lineage(s) do
+    for {_,rows}<-s.feedback["exposures"],r<-rows do
+      collection=if r["kind"]=="replay",do: s.replay_queries,else: s.optimization["proposals"]
+      check(Map.has_key?(collection,r["job_id"]))
+    end
+    for field<-[:queries,:history_queries,:retrieval_queries,:archive_queries,:replay_queries],{_,q}<-s[field],do: check(q["project_id"] in s.aliases)
+    for {_,q}<-s.source_queries,do: check(q.value["project_id"] in s.aliases)
+    for {_,q}<-s.replay_queries do
+      if q["requester_kind"]=="optimization",do: check(Map.has_key?(s.optimization["proposals"],q["requester_id"]))
+    end
+    for {_,q}<-s.optimization["proposals"],child<-q["children"] do
+      replay=s.replay_queries[child["replay_id"]] || invalid("schema")
+      check(replay["run"]>=child["run"] and Map.has_key?(s.feedback["attempts"],child["attempt_id"]))
+    end
+    for selection<-[s.retrieval_selection["selected"],s.retrieval_selection["previous"]],not is_nil(selection),id=selection["proposal_id"],not is_nil(id),do: check(Map.has_key?(s.optimization["proposals"],id))
+  end
+  defp eventing(s,defs) do
+    e=s.eventing;object(e);check(Enum.all?(Map.keys(e),&(&1 in Map.keys(ADHD.Eventing.empty())++[:transition_id,:transitions,:restore_history])));check(e[:version]==1);uint(e[:sequence]);uint(e[:next_offset]);object(e[:events]);object(e[:quarantine])
+    for {id,row}<-e.events do
+      object(row);event=row[:event];schema(event,defs["EventEnvelope"],defs)
+      p=s.publications[id] || invalid("schema")
+      check(event["event_id"]==id and event["publication_id"]==id and event["server_id"]==s.server_id and event["project_id"] in s.aliases and event["publication"]==p.value and event["project_sequence"]==p.seq)
+      check(row[:state] in [:pending,:published,:observed,:materialized]);optional_offset(row[:offset]);uint(row[:bytes]);ADHD.Domain.integer(row[:retry_at],-@safe,@safe);check(is_boolean(row[:broker_observed]))
+      for sub<-Map.get(row,:subscriptions,[])++Map.get(row,:replay_targets,[]) do
+        schema(Map.drop(sub,["_filter_policy","_replay_id"]),defs["Subscription"],defs)
+        agent(sub["agent_id"])
+        if sub["_filter_policy"] do
+          policy=sub["_filter_policy"];object(policy);ADHD.Domain.integer(policy["threshold_ppm"],1,1000000)
+          matcher=policy["matcher"];if matcher do
+            object(matcher);ADHD.Domain.url(matcher["url"]);ADHD.Domain.string(matcher["model"],512)
+            for k<-~w(timeout_ms retry_ms),do: ADHD.Domain.integer(matcher[k],100,30000)
+          end
+        end
+        if sub["_replay_id"],do: check(Map.has_key?(Map.get(e,:replays,%{}),sub["_replay_id"]))
+      end
+    end
+    for {key,jobid}<-Map.get(e,:filter_jobs,%{}) do
+      check(is_tuple(key) and tuple_size(key)==3)
+      {pub,sub,rev}=key;j=s.jobs[jobid] || invalid("schema")
+      check(j.publication_id==pub and j.subscription_id==sub and j.subscription_revision==rev)
+    end
+    if Map.has_key?(e,:filter_schema) do
+      check(e.filter_schema==1 and is_struct(e.filter_ready,MapSet))
+      for id<-e.filter_ready,do: check(Map.has_key?(s.jobs,id))
+      for {seq,id}<-:gb_trees.to_list(e.filter_index) do
+        row=e.events[id] || invalid("schema");check(seq==row.event["project_sequence"] and row[:filter_remaining]>0)
+      end
+    end
+    for key<-[:filter_cursor,:filter_unavailable,:deferred_filters,:control_revision],Map.has_key?(e,key),do: uint(e[key])
+    check(e.sequence<=s.seq)
+    for h<-Map.get(e,:transitions,[]) do
+      object(h);ADHD.Domain.id(h["id"]);if h["previous_binding"],do: hex(h["previous_binding"],64)
+      physical(%{next_offset: h["previous_next_offset"],binding: h["previous_binding"],quarantine: h["quarantine"],gap: nil,last_error: nil},defs)
+      ADHD.Domain.datetime(h["at"],true)
+    end
+    physical(e,defs)
+    for h<-Map.get(e,:restore_history,[]) do
+      check(s.schema==4);object(h);check(Enum.sort(Map.keys(h))==Enum.sort([:binding,:next_offset,:quarantine,:gap,:last_error,:offsets]))
+      physical(h,defs);object(h.offsets)
+      for {id,offset}<-h.offsets,do: (check(Map.has_key?(e.events,id));optional_offset(offset))
+    end
+    for row<-Map.get(e,:audit,[]) do
+      object(row);check(row["project_id"] in s.aliases);human(row["actor_id"])
+    end
+    for {id,r}<-Map.get(e,:replays,%{}) do
+      check(id==r["id"]);for pub<-r["event_ids"],do: check(Map.has_key?(s.publications,pub))
+    end
+    for a<-Map.get(s,:recovery_work_audit,[]) do
+      check(s.schema==4);check(Enum.sort(Map.keys(a))==~w(at project_epoch work));hex(a["project_epoch"],32);ADHD.Domain.datetime(a["at"],true)
+      for w<-a["work"] do
+        check(Enum.sort(Map.keys(w))==~w(action id kind));check(w["action"] in ~w(superseded-inflight expired resume-pinned-idempotent))
+        field=Enum.find([:history_queries,:retrieval_queries,:archive_queries,:replay_queries,:queries,:source_queries],&(Atom.to_string(&1)==w["kind"]))
+        check(field != nil and Map.has_key?(s[field],w["id"]))
+      end
+    end
+  end
+  defp optional_offset(nil),do: :ok
+  defp optional_offset(v),do: uint(v)
+  defp physical(e,defs) do
+    uint(e[:next_offset]);if e[:binding],do: hex(e.binding,64)
+    if e[:gap],do: schema(e.gap,defs["EventingGap"],defs)
+    if e[:last_error],do: schema(e.last_error,defs["EventingError"],defs)
+    object(e[:quarantine]);for {key,q}<-e.quarantine do
+      if key != "invalid-offset",do: (case Integer.parse(key) do {offset,""}->uint(offset);_->invalid("schema") end)
+      object(q);hex(q["digest"],64);ADHD.Domain.datetime(q["at"],true);ADHD.Domain.string(q["reason"],256)
+    end
+  end
+  defp federation(s,defs) do
+    for {id,q}<-s.queries do check(q["id"]==id);schema(q,defs["Query"],defs) end
+    for {id,q}<-s.source_queries do
+      check(q[:value]["id"]==id);schema(q.value,defs["SourceQuery"],defs)
+      check(is_list(q[:peer_ids]) and Enum.all?(q.peer_ids,&is_binary/1));object(q[:attempts])
+      for project<-Map.get(q,:scope_projects,[s.project]),do: identifier(project)
+    end
+    for {digest,pin}<-s.owner_pins do
+      hex(digest,64);object(pin);ADHD.Directory.scope(pin["scope"]);check(digest==ADHD.Directory.digest(pin["scope"]))
+      ADHD.Directory.server_id(pin["server_id"]);identifier(pin["project_id"]);hex(pin["revision"],64)
+    end
+    for {key,cache}<-s.directory do
+      check(is_binary(key));object(cache)
+      for kind<-~w(catalog identities),snapshot=cache[kind],not is_nil(snapshot) do
+        object(snapshot);ADHD.Directory.server_id(snapshot["server_id"]);identifier(snapshot["project_id"]);hex(snapshot["revision"],64)
+        check(is_boolean(snapshot["visible"]) and is_list(snapshot["items"]))
+        check(snapshot["visible"] or snapshot["items"]==[])
+        check(snapshot["revision"]==ADHD.Directory.digest(Map.take(snapshot,~w(visible items))))
+        for item<-snapshot["items"] do
+          if kind=="catalog",do: ADHD.Directory.entry(item),else: (identifier(item["user_id"]);ADHD.Domain.string(item["name"],256);ADHD.Domain.string(item["email"],320))
+        end
+      end
+    end
+    # Evidence handed to remote jobs must always refer to accepted local originals.
+    for field<-[:incoming,:source_incoming],{_,q}<-s[field] do
+      object(q);check(q[:status] in ["pending","completed","cancelled","done","expired"])
+      evidence=q[:evidence];if evidence do
+        object(evidence);check(evidence["project_id"] in s.aliases)
+        for p<-Map.get(evidence,"publications",[]) do
+          original=s.publications[p["id"]] || invalid("schema");check(p==original.value)
+        end
+      end
+    end
+  end
+  defp receipts(s,defs) do
+    for {key,r}<-s.idempotency do
+      check(is_tuple(key) and tuple_size(key)==2);{actor,mid}=key;agent(actor);ADHD.Domain.id(mid);receipt(s,r,defs);receipt_actor(r[:result],actor)
+    end
+    for {key,r}<-s.sources do
+      check(is_tuple(key) and tuple_size(key)==4);{actor,kind,source,item}=key
+      agent(actor);identifier(kind);ADHD.Domain.string(source,256);ADHD.Domain.string(item,512);object(r);receipt_result(s,r[:result],defs)
+      check(r[:command]["source"]["kind"]==kind and r[:command]["source"]["id"]==source and r[:command]["source"]["item_id"]==item)
+      receipt_actor(r[:result],actor)
+      pub=r[:publication_id] || r["publication_id"] || r[:id] || r["id"]
+      if pub,do: check(Map.has_key?(s.publications,pub))
+    end
+    for {key,r}<-s.admin_idempotency do
+      case key do {actor,mid}->human(actor);ADHD.Domain.id(mid);mid when is_binary(mid)->ADHD.Domain.id(mid);human("legacy-admin");_->invalid("schema") end
+      object(r);check(Enum.sort(Map.keys(r))==[:command,:result]);schema(r.command,defs["AdminCommand"],defs);receipt_result(s,r.result,defs)
+    end
+  end
+  defp receipt(s,r,defs) do
+    object(r);check(Enum.sort(Map.keys(r))==[:command,:result]);schema(r.command,defs["AgentCommand"],defs);receipt_result(s,r.result,defs)
+  end
+  defp receipt_result(s,result,defs) do
+    object(result)
+    if result["publication"] do
+      p=result["publication"];schema(Map.put_new(p,"information_type","message") |> Map.put_new("source",%{"kind"=>"agent","id"=>p["author_id"]}) |> Map.put_new("occurred_at",p["created_at"]),defs["Publication"],defs)
+      original=s.publications[p["id"]] || invalid("schema");check(Map.take(original.value,Map.keys(p))==p)
+    end
+    if result["delivery"] do
+      d=result["delivery"];original=s.deliveries[d["id"]] || invalid("schema");check(Map.take(original.value,Map.keys(d))==d)
+    end
+    if result["record"] do
+      r=result["record"];receipt_result(s,%{"publication"=>r["publication"]},defs)
+      check(r["identity"]==ADHD.Records.identity(s,r["publication"]["id"]))
+    end
+    if result["subscription"],do: (schema(result["subscription"],defs["Subscription"],defs);agent(result["subscription"]["agent_id"]))
+    if result["eventing"] do
+      schema(result["eventing"],defs["EventMetadata"],defs);check(Map.has_key?(s.publications,result["eventing"]["event_id"]))
+    end
+  end
+  defp receipt_actor(r,actor) do
+    for {key,owner}<-[{"publication","author_id"},{"subscription","agent_id"},{"delivery","sender_id"},{"query","owner_id"}],value=r[key],not is_nil(value),Map.has_key?(value,owner),do: check(value[owner]==actor)
+    if r["record"],do: check(r["record"]["publication"]["author_id"]==actor)
+  end
+  defp agent(id),do: (identifier(id);Process.put({__MODULE__,:agents},MapSet.put(Process.get({__MODULE__,:agents}),id)))
+  defp human("legacy-admin"),do: :ok
+  defp human(id),do: (identifier(id);Process.put({__MODULE__,:users},MapSet.put(Process.get({__MODULE__,:users}),id)))
+  defp principal_refs(s) do
+    for {_,r}<-s.publications,do: agent(r.value["author_id"])
+    for {_,r}<-s.subscriptions,do: agent(r.value["agent_id"])
+    for {_,r}<-s.deliveries do agent(r.value["sender_id"]);agent(r.value["recipient_id"]) end
+    for {_,j}<-s.jobs,do: agent(j[:recipient_id])
+    for field<-[:queries,:history_queries,:retrieval_queries,:archive_queries,:replay_queries],{_,q}<-s[field] do
+      if q["owner_id"],do: agent(q["owner_id"])
+      if q["requester_kind"]=="human_session",do: human(q["requester_id"])
+      if q["requester_kind"]=="agent",do: agent(q["requester_id"])
+    end
+    for {_,q}<-s.source_queries,do: agent(q.value["owner_id"])
+    for {_,labels}<-s.feedback["labels"],l<-labels,do: human(l["actor_id"])
+    for {_,a}<-s.feedback["attempts"],do: agent(a["value"]["owner_id"])
+    for {_,q}<-s.optimization["proposals"],q["requester_kind"]=="human_session",do: human(q["requester_id"])
+  end
+  defp users(c) do
+    rows=Map.get(c,"users",[]);check(is_list(rows));ids=Enum.map(rows,& &1["id"]);check(length(Enum.uniq(ids))==length(ids));Map.new(rows,&{&1["id"],&1})
+  end
+  defp principal_binding(user) do
+    case user["provider"] do
+      "local"->identifier(user["username"]);%{"provider"=>"local","username"=>user["username"]}
+      "oidc"->o=user["oidc"];check(is_map(o));for k<-~w(provider_id issuer subject),do: ADHD.Domain.string(o[k],2048);%{"provider"=>"oidc","oidc"=>Map.take(o,~w(provider_id issuer subject))}
+      _->conflict("owner_unprovable")
+    end
+  end
+  defp ownership(old,current) do
+    original=users(old);now=users(current)
+    agents=Process.get({__MODULE__,:agents}) |> Enum.sort()
+    fingerprints=Enum.map(agents,fn id->
+      a=old["agents"][id];b=current["agents"][id];if not is_binary(a) or not is_binary(b),do: conflict("owner_missing")
+      owner=get_in(old,["agent_owners",id]);next=get_in(current,["agent_owners",id]);if owner != next,do: conflict("owner_changed")
+      if owner do human(owner);{id,owner} else
+        if :crypto.hash(:sha256,a) != :crypto.hash(:sha256,b),do: conflict("owner_unprovable")
+        {id,:crypto.hash(:sha256,a)}
+      end
+    end)
+    humans=Process.get({__MODULE__,:users}) |> Enum.sort()
+    bindings=Enum.map(humans,fn id->a=original[id];b=now[id];if not is_map(a) or not is_map(b),do: conflict("owner_missing");one=principal_binding(a);if one != principal_binding(b),do: conflict("owner_changed");{id,one} end)
+    digest=:crypto.hash(:sha256,:erlang.term_to_binary({fingerprints,bindings},[:deterministic])) |> Base.encode16(case: :lower)
+    %{"agents"=>length(agents),"users"=>length(humans),"proof_sha256"=>digest}
+  end
+  # Restricted JSON Schema evaluator for the reviewed runtime's public value
+  # definitions. It validates data, never executes schema-controlled code.
+  defp schema(value,rule,defs) do
+    pulse()
+    check(valid?(value,rule,defs))
+  end
+  defp valid?(v,true,_),do: json?(v)
+  defp valid?(_,false,_),do: false
+  defp valid?(v,r,d) when is_map(r) do
+    base=cond do
+      r["$ref"]->valid?(v,d[String.replace_prefix(r["$ref"],"#/$defs/","")],d)
+      true->true
+    end
+    base and (not Map.has_key?(r,"const") or v===r["const"]) and
+      (is_nil(r["enum"]) or Enum.any?(r["enum"],&(&1===v))) and
+      (is_nil(r["oneOf"]) or Enum.count(r["oneOf"],&valid?(v,&1,d))==1) and
+      (is_nil(r["anyOf"]) or Enum.any?(r["anyOf"],&valid?(v,&1,d))) and
+      Enum.all?(Map.get(r,"allOf",[]),&valid?(v,&1,d)) and
+      (is_nil(r["not"]) or not valid?(v,r["not"],d)) and
+      (is_nil(r["if"]) or valid?(v,if(valid?(v,r["if"],d),do: Map.get(r,"then",%{}),else: Map.get(r,"else",%{})),d)) and
+      typed?(v,r,d)
+  end
+  defp valid?(_,_,_),do: false
+  defp typed?(v,r,d) do
+    type=r["type"]
+    cond do
+      is_list(type)->Enum.any?(type,&typed?(v,Map.put(r,"type",&1),d))
+      type=="null"->is_nil(v)
+      type=="boolean"->is_boolean(v)
+      type=="integer"->is_integer(v) and bounds?(v,r)
+      type=="number" or (is_nil(type) and is_number(v))->is_number(v) and bounds?(v,r)
+      type=="string" or (is_nil(type) and is_binary(v))->is_binary(v) and String.valid?(v) and String.length(v)>=Map.get(r,"minLength",0) and String.length(v)<=Map.get(r,"maxLength",@safe) and byte_size(v)>=Map.get(r,"x-minBytes",0) and byte_size(v)<=Map.get(r,"x-maxBytes",@safe) and (is_nil(r["pattern"]) or Regex.match?(Regex.compile!(r["pattern"]),v)) and format?(v,r["format"])
+      type=="array" or (is_nil(type) and is_list(v))->is_list(v) and length(v)>=Map.get(r,"minItems",0) and length(v)<=Map.get(r,"maxItems",@safe) and (r["uniqueItems"] != true or length(Enum.uniq(v))==length(v)) and Enum.all?(v,&valid?(&1,Map.get(r,"items",%{}),d))
+      type=="object" or (is_nil(type) and is_map(v))->object_schema?(v,r,d)
+      is_nil(type)->true
+      true->false
+    end
+  end
+  defp object_schema?(v,r,d) do
+    is_map(v) and not is_struct(v) and Enum.all?(Map.keys(v),&is_binary/1) and Enum.all?(Map.get(r,"required",[]),&Map.has_key?(v,&1)) and Enum.all?(v,fn {k,x}->
+      case Map.fetch(Map.get(r,"properties",%{}),k) do {:ok,rule}->valid?(x,rule,d);:error->case Map.get(r,"additionalProperties",true) do true->json?(x);false->false;rule->valid?(x,rule,d) end end
+    end)
+  end
+  defp bounds?(v,r),do: (not Map.has_key?(r,"minimum") or v>=r["minimum"]) and (not Map.has_key?(r,"maximum") or v<=r["maximum"])
+  defp format?(v,"date-time"),do: match?({:ok,_,0},DateTime.from_iso8601(v)) and String.ends_with?(v,"Z")
+  defp format?(v,"ipv6") do
+    case :inet.parse_address(String.to_charlist(v)) do {:ok,ip} when tuple_size(ip)==8->true;_->false end
+  end
+  defp format?(_, _),do: true
+  defp json?(v) when is_map(v),do: not is_struct(v) and Enum.all?(v,fn {k,x}->is_binary(k) and json?(x) end)
+  defp json?(v) when is_list(v),do: Enum.all?(v,&json?/1)
+  defp json?(v),do: is_binary(v) or is_number(v) or v in [nil,true,false]
+end

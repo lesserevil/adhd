@@ -1,0 +1,303 @@
+defmodule ADHD.Identity do
+  use GenServer
+  alias ADHD.Domain, as: D
+  def start_link, do: GenServer.start_link(__MODULE__,nil,name: __MODULE__)
+  def format_status(_reason,[_dictionary,_state]),do: [data: [{~c"State",:redacted}]]
+  def format_status(status),do: status |> Map.put(:state,:redacted) |> Map.put(:message,:redacted) |> Map.put(:reason,:redacted) |> Map.put(:log,[])
+  def init(_) do
+    {:ok,%{sessions: %{},flows: %{},attempts: [],active: 0,dummy: hash(D.opaque())}}
+  end
+  def hash(password) do
+    salt=:crypto.strong_rand_bytes(16)
+    key=:crypto.pbkdf2_hmac(:sha256,password,salt,600000,32)
+    %{"algorithm"=>"PBKDF2-HMAC-SHA256","iterations"=>600000,"salt"=>Base.encode64(salt),"key"=>Base.encode64(key)}
+  end
+  def validate_hash(h) do
+    D.keys(h,~w(algorithm iterations salt key),~w(algorithm iterations salt key))
+    D.check(h["algorithm"]=="PBKDF2-HMAC-SHA256")
+    D.integer(h["iterations"],600000,10_000_000)
+    D.check(byte_size(Base.decode64!(h["salt"]))>=16 and byte_size(Base.decode64!(h["key"]))==32)
+  end
+  def verify(password,h) when is_binary(password) and is_map(h) do
+    key=:crypto.pbkdf2_hmac(:sha256,password,Base.decode64!(h["salt"]),h["iterations"],32)
+    :crypto.hash_equals(key,Base.decode64!(h["key"]))
+  rescue
+    _ -> false
+  end
+  def verify(_,_),do: false
+  def public(u,c \\ nil) do
+    value=Map.drop(u,~w(password_hash oidc_signed_in oidc_binding built_in))
+    if c do
+      effective=role(u,c)
+      value |> Map.put("role",effective || u["role"]) |> Map.put("access_allowed",effective != nil)
+    else value end
+  end
+  def role(u,c) do
+    cond do
+      u["disabled"]==true -> nil
+      u["provider"]=="oidc" and c["auth"]["mode"] not in ~w(oidc both) -> nil
+      u["provider"]=="local" and c["auth"]["mode"] not in ~w(local both) -> nil
+      u["provider"]=="oidc" and (u["oidc"]["issuer"] != c["auth"]["oidc"]["issuer"] or u["oidc"]["provider_id"] != c["auth"]["oidc"]["provider_id"]) -> nil
+      u["provider"]=="oidc" and u["role_source"] != "manual" ->
+        o=c["auth"]["oidc"]
+        if o && u["oidc"]["issuer"]==o["issuer"] and u["oidc"]["provider_id"]==o["provider_id"] do
+          Enum.find(~w(Admin Developer Viewer),fn r -> Enum.any?(Map.get(o["role_groups"],r,[]),&(&1 in Map.get(u,"groups",[]))) end) || o["default_role"]
+        end
+      true -> u["role"]
+    end
+  end
+  def methods(c),do: %{"local"=>c["auth"] != nil and c["auth"]["mode"] in ~w(local both),"oidc"=>c["auth"] != nil and c["auth"]["mode"] in ~w(oidc both),"key"=>is_binary(c["admin_token"]) and (c["auth"]==nil or c["auth"]["allow_admin_token"]==true)}
+  def bearer(headers) do
+    case headers["authorization"] do
+      "Bearer "<>token -> token
+      _ -> nil
+    end
+  end
+  def agent(headers,c) do
+    token=bearer(headers)
+    Enum.find_value(c["agents"],fn {id,t}->if D.same(token,t),do: id end) || D.fail("UNAUTHORIZED")
+  end
+  def peer(headers,c) do
+    f=c["federation"] || D.fail("NOT_FOUND")
+    token=bearer(headers)
+    Enum.find(f["peers"],&D.same(token,&1["inbound_token"])) || D.fail("UNAUTHORIZED")
+  end
+  def cookie(headers,name) do
+    String.split(Map.get(headers,"cookie",""),";") |> Enum.find_value(fn pair ->
+      case String.split(String.trim(pair),"=",parts: 2) do
+        [^name,v] -> v
+        _ -> nil
+      end
+    end)
+  end
+  def origin(headers,c,required \\ false) do
+    o=headers["origin"]
+    host=Map.get(headers,"host","")
+    local=if host in ["127.0.0.1:#{c["port"]}","localhost:#{c["port"]}"],do: "http://"<>host,else: nil
+    public=URI.parse(c["public_url"]) |> Map.put(:path,nil) |> URI.to_string()
+    if (required and is_nil(o)) or (o && o not in Enum.reject([local,public],&is_nil/1)),do: D.fail("FORBIDDEN")
+  end
+  def principal(headers,c,mutation \\ true) do
+    t=bearer(headers)
+    if methods(c)["key"] and D.same(t,c["admin_token"]) do
+      origin(headers,c)
+      %{"id"=>"legacy-admin","role"=>"Admin","provider"=>"key"}
+    else
+      session=GenServer.call(__MODULE__,{:session,cookie(headers,"adhd_session"),c})
+      if is_nil(session),do: D.fail("UNAUTHORIZED")
+      {user,csrf}=session
+      if mutation do
+        origin(headers,c,true)
+        if not D.same(headers["x-csrf-token"],csrf),do: D.fail("FORBIDDEN")
+      end
+      user
+    end
+  end
+  def session(headers,c) do
+    case GenServer.call(__MODULE__,{:session,cookie(headers,"adhd_session"),c}) do
+      nil -> %{"authenticated"=>false,"methods"=>methods(c)}
+      {u,csrf} -> %{"authenticated"=>true,"user"=>public(u,c),"csrf"=>csrf,"config_revision"=>c["config_revision"]}
+    end
+  end
+  def login(command,headers,c) do
+    origin(headers,c,true)
+    D.keys(command,~w(username password),~w(username password))
+    D.string(command["username"],128); D.string(command["password"],1024)
+    if not methods(c)["local"],do: D.fail("UNAUTHORIZED")
+    permit=GenServer.call(__MODULE__,{:permit,command["username"]})
+    case permit do
+      {:ok,dummy} ->
+        try do
+          user=Enum.find(c["users"],&(&1["username"]==command["username"] and &1["provider"]=="local"))
+          valid=verify(command["password"],if(user,do: user["password_hash"],else: dummy))
+          if not valid or is_nil(user) or is_nil(role(user,ADHD.Config.get())),do: D.fail("UNAUTHORIZED")
+          GenServer.call(__MODULE__,{:issue,user["id"],nil,ADHD.Config.get()})
+        after
+          GenServer.cast(__MODULE__,:release)
+        end
+      _ -> D.fail("RATE_LIMITED")
+    end
+  end
+  def logout(headers,c) do
+    principal(headers,c)
+    GenServer.call(__MODULE__,{:logout,cookie(headers,"adhd_session")})
+    %{"logged_out"=>true}
+  end
+  def handle_call({:permit,name},_,s) do
+    attempts=Enum.filter(s.attempts,fn {time,_}->time>D.ms()-60000 end)
+    if length(attempts)>=30 or Enum.count(attempts,fn {_,n}->n==name end)>=5 or s.active>=4 do
+      {:reply,:limited,%{s|attempts: attempts}}
+    else
+      {:reply,{:ok,s.dummy},%{s|attempts: [{D.ms(),name}|attempts],active: s.active+1}}
+    end
+  end
+  def handle_call({:issue,id,expiry,c},_,s) do
+    sessions=Map.reject(s.sessions,fn {_,v}->v.expiry<=D.ms() end)
+    if map_size(sessions)>=1000,do: D.fail("RATE_LIMITED")
+    user=Enum.find(c["users"],&(&1["id"]==id))
+    token=Base.url_encode64(:crypto.strong_rand_bytes(32),padding: false)
+    csrf=Base.url_encode64(:crypto.strong_rand_bytes(32),padding: false)
+    exp=min(expiry || D.ms()+86400000,D.ms()+Map.get(c["auth"],"session_ttl_ms",3600000))
+    item=%{id: id,csrf: csrf,expiry: exp,issued_at: D.ms(),binding: user_binding(user,c)}
+    result={token,%{"user"=>public(Map.put(user,"role",role(user,c)),c),"csrf"=>csrf}}
+    {:reply,result,%{s|sessions: Map.put(sessions,token,item)}}
+  end
+  def handle_call({:session,token,c},_,s) do
+    item=s.sessions[token]
+    user=if item,do: Enum.find(c["users"],&(&1["id"]==item.id))
+    valid=item && user && min(item.expiry,item.issued_at+Map.get(c["auth"],"session_ttl_ms",3600000))>D.ms() && item.binding==user_binding(user,c) && role(user,c)
+    if valid do
+      {:reply,{Map.put(user,"role",role(user,c)),item.csrf},s}
+    else
+      {:reply,nil,%{s|sessions: Map.delete(s.sessions,token)}}
+    end
+  end
+  def handle_call({:logout,token},_,s),do: {:reply,:ok,%{s|sessions: Map.delete(s.sessions,token)}}
+  def handle_call({:flow,key,value},_,s) do
+    flows=Map.reject(s.flows,fn {_,v}->v.expires<=D.ms() end)
+    if map_size(flows)>=128,do: D.fail("RATE_LIMITED")
+    {:reply,:ok,%{s|flows: Map.put(flows,key,value)}}
+  end
+  def handle_call({:consume,key},_,s) do
+    {flow,flows}=Map.pop(s.flows,key)
+    {:reply,flow,%{s|flows: flows}}
+  end
+  def handle_call({:configuration,c},_,s) do
+    sessions=Map.filter(s.sessions,fn {_,item}->
+      u=Enum.find(c["users"],&(&1["id"]==item.id))
+      u != nil and role(u,c) != nil and item.binding==user_binding(u,c)
+    end)
+    flows=Map.filter(s.flows,fn {_,flow}->methods(c)["oidc"] and flow.generation==D.digest(c["auth"]["oidc"]) end)
+    {:reply,:ok,%{s|sessions: sessions,flows: flows}}
+  end
+  def handle_cast(:release,s),do: {:noreply,%{s|active: max(0,s.active-1)}}
+  def user_binding(u,c) do
+    o=if u["provider"]=="oidc",do: Map.drop(c["auth"]["oidc"] || %{},["role_groups","default_role"]),else: nil
+    D.digest(%{"password_hash"=>u["password_hash"],"provider"=>u["provider"],"enabled"=>methods(c)[u["provider"]],"oidc"=>o})
+  end
+  def cookie_header(token,c,name \\ "adhd_session",expire \\ false) do
+    name<>"="<>token<>"; Path=/admin; HttpOnly; SameSite=Lax"<>(if URI.parse(c["public_url"]).scheme=="https",do: "; Secure",else: "")<>(if expire,do: "; Max-Age=0",else: "")
+  end
+  def oidc_metadata(o) do
+    D.oidc(o)
+    m=ADHD.Net.json(:get,String.trim_trailing(o["issuer"],"/")<>"/.well-known/openid-configuration",nil,[],Map.get(o,"timeout_ms",3000))
+    D.check(m["issuer"]==o["issuer"])
+    D.check("RS256" in m["id_token_signing_alg_values_supported"])
+    D.check("code" in m["response_types_supported"])
+    for k <- ~w(authorization_endpoint token_endpoint jwks_uri) do
+      D.url(m[k]); u=URI.parse(m[k]); D.check(u.scheme=="https" or u.host in ["localhost","127.0.0.1"])
+    end
+    m
+  end
+  def oidc_start(c,link \\ nil) do
+    if not methods(c)["oidc"],do: D.fail("NOT_FOUND")
+    o=c["auth"]["oidc"]; metadata=oidc_metadata(o)
+    state=Base.url_encode64(:crypto.strong_rand_bytes(32),padding: false)
+    nonce=Base.url_encode64(:crypto.strong_rand_bytes(32),padding: false)
+    verifier=Base.url_encode64(:crypto.strong_rand_bytes(32),padding: false)
+    challenge=:crypto.hash(:sha256,verifier) |> Base.url_encode64(padding: false)
+    :ok=GenServer.call(__MODULE__,{:flow,state,%{nonce: nonce,verifier: verifier,expires: D.ms()+300000,generation: D.digest(o),metadata: metadata,link: link}})
+    query=URI.encode_query(%{"response_type"=>"code","client_id"=>o["client_id"],"redirect_uri"=>o["redirect_uri"],"scope"=>Enum.join(o["scopes"]," "),"state"=>state,"nonce"=>nonce,"code_challenge"=>challenge,"code_challenge_method"=>"S256"})
+    endpoint=URI.parse(metadata["authorization_endpoint"])
+    existing=URI.decode_query(endpoint.query || "")
+    merged=Map.merge(existing,URI.decode_query(query))
+    {URI.to_string(%{endpoint|query: URI.encode_query(merged)}),cookie_header(state,c,"adhd_oidc_state")}
+  end
+  def link_start(cmd,headers,c,p) do
+    if p["role"] != "Admin",do: D.fail("FORBIDDEN")
+    if cmd["expected_revision"] != c["config_revision"],do: D.fail("CONFIG_CONFLICT")
+    target=Enum.find(c["users"],&(&1["id"]==cmd["user_id"])) || D.fail("NOT_FOUND")
+    if target["provider"] != "local" or (target["username"]=="admin" or target["built_in"]==true) or target["disabled"]==true,do: D.fail("CONFIG_APPLY_FAILED")
+    binding=if p["provider"]=="key",do: D.digest(c["admin_token"]),else: D.digest(cookie(headers,"adhd_session"))
+    link=%{target: target["id"],admin_id: p["id"],legacy: p["provider"]=="key",binding: binding,revision: c["config_revision"]}
+    oidc_start(c,link)
+  end
+  def link_principal(link,headers,c) do
+    p=if link.legacy do
+      if not methods(c)["key"] or link.binding != D.digest(c["admin_token"]),do: D.fail("FORBIDDEN")
+      %{"id"=>"legacy-admin","role"=>"Admin","provider"=>"key"}
+    else
+      if link.binding != D.digest(cookie(headers,"adhd_session")),do: D.fail("FORBIDDEN")
+      principal(headers,c,false)
+    end
+    if p["id"] != link.admin_id or p["role"] != "Admin",do: D.fail("FORBIDDEN")
+    p
+  end
+  def oidc_callback(params,headers,c) do
+    D.keys(params,~w(state code error error_description),["state"])
+    D.string(params["state"],512)
+    flow=GenServer.call(__MODULE__,{:consume,params["state"]})
+    o=c["auth"]["oidc"]
+    D.check(flow != nil and flow.expires>D.ms() and methods(c)["oidc"] and flow.generation==D.digest(o))
+    D.check(D.same(params["state"],cookie(headers,"adhd_oidc_state")))
+    D.check(not Map.has_key?(params,"error")); D.string(params["code"],8192)
+    body=%{"grant_type"=>"authorization_code","code"=>params["code"],"redirect_uri"=>o["redirect_uri"],"code_verifier"=>flow.verifier}
+    {body,hs}=if o["client_secret"] do
+      credential=URI.encode_www_form(o["client_id"])<>":"<>URI.encode_www_form(o["client_secret"])
+      {body,[{"authorization","Basic "<>Base.encode64(credential)}]}
+    else {Map.put(body,"client_id",o["client_id"]),[]} end
+    result=ADHD.Net.form(flow.metadata["token_endpoint"],URI.encode_query(body),hs,Map.get(o,"timeout_ms",3000))
+    claims=validate_jwt(result["id_token"],o,flow)
+    groups=Map.get(claims,Map.get(o,"groups_claim","groups"),[])
+    D.list(groups,256); Enum.each(groups,&D.string(&1,256))
+    current=ADHD.Config.get()
+    D.check(D.digest(current["auth"]["oidc"])==flow.generation)
+    user=Enum.find(current["users"],fn u->u["provider"]=="oidc" and u["oidc"]["issuer"]==o["issuer"] and u["oidc"]["subject"]==claims["sub"] end)
+    link=Map.get(flow,:link)
+    if link do
+      link_principal(link,headers,current)
+      if user && user["id"] != link.target,do: D.fail("IDENTITY_CONFLICT")
+    end
+    user=if link,do: Enum.find(current["users"],&(&1["id"]==link.target)) || D.fail("NOT_FOUND"),else: user
+    user=Map.merge(user || %{"id"=>D.opaque(),"provider"=>"oidc","role_source"=>"groups","disabled"=>false,"role"=>"Viewer"},%{"oidc"=>%{"issuer"=>o["issuer"],"subject"=>claims["sub"],"provider_id"=>o["provider_id"]},"groups"=>groups,"name"=>Map.get(claims,"name",if(user,do: user["name"],else: "")),"email"=>Map.get(claims,"email",if(user,do: user["email"],else: "")),"oidc_signed_in"=>true,"oidc_binding"=>D.digest(Map.drop(o,["role_groups","default_role"]))})
+    user=if link,do: user |> Map.drop(~w(username password_hash)) |> Map.put("provider","oidc") |> Map.put("role_source","manual"),else: user
+    if is_nil(role(user,current)),do: D.fail("FORBIDDEN")
+    D.string(user["name"],256,true); D.string(user["email"],320,true)
+    user=Map.put(user,"profile_complete",user["name"] != "" and user["email"] != "")
+    committed=case GenServer.call(ADHD.Config,{:oidc_user,user,flow.generation,link,headers},30_000) do
+      {:ok,u}->u
+      {:error,code}->D.fail(code)
+    end
+    GenServer.call(__MODULE__,{:issue,committed["id"],claims["exp"]*1000,ADHD.Config.get()})
+  end
+  def validate_jwt(jwt,o,flow) do
+    D.string(jwt,65536)
+    [h,p,s]=String.split(jwt,".")
+    header=ADHD.JSON.decode!(decode64(h)); claims=ADHD.JSON.decode!(decode64(p)); signature=decode64(s)
+    D.check(header["alg"]=="RS256" and not Map.has_key?(header,"jku") and not Map.has_key?(header,"x5u"))
+    D.string(header["kid"],512)
+    jwks=ADHD.Net.json(:get,flow.metadata["jwks_uri"],nil,[],Map.get(o,"timeout_ms",3000))
+    D.list(jwks["keys"],128,1)
+    keys=Enum.filter(jwks["keys"],&(&1["kid"]==header["kid"]))
+    keys=if keys==[] do
+      refreshed=ADHD.Net.json(:get,flow.metadata["jwks_uri"],nil,[],Map.get(o,"timeout_ms",3000))
+      D.list(refreshed["keys"],128,1)
+      Enum.filter(refreshed["keys"],&(&1["kid"]==header["kid"]))
+    else keys end
+    [key]=keys
+    D.check(key["kty"]=="RSA" and Map.get(key,"use","sig")=="sig" and (is_nil(key["key_ops"]) or "verify" in key["key_ops"]) and Map.get(key,"alg","RS256")=="RS256")
+    modulus=decode64(key["n"]) |> :binary.decode_unsigned()
+    exponent=decode64(key["e"]) |> :binary.decode_unsigned()
+    normalized=:binary.encode_unsigned(modulus)
+    bits=(byte_size(normalized)-1)*8+length(Integer.digits(:binary.first(normalized),2))
+    D.check(bits>=2048)
+    D.check(:public_key.verify(h<>"."<>p,:sha256,signature,{:RSAPublicKey,modulus,exponent}))
+    now=div(D.ms(),1000)
+    D.check(claims["iss"]==o["issuer"] and claims["nonce"]==flow.nonce)
+    aud=if is_binary(claims["aud"]),do: [claims["aud"]],else: claims["aud"]
+    D.list(aud,32,1); D.check(o["client_id"] in aud)
+    D.optional(claims,"azp",&D.check(&1==o["client_id"]))
+    if length(aud)>1,do: D.check(claims["azp"]==o["client_id"])
+    D.integer(claims["exp"],now+1,9_223_372_036_854_775_807)
+    D.integer(claims["iat"],now-3600,now+30)
+    D.optional(claims,"nbf",&D.integer(&1,0,now))
+    D.string(claims["sub"],1024)
+    claims
+  end
+  def decode64(s) do
+    D.check(is_binary(s) and Regex.match?(~r/\A[A-Za-z0-9_-]+\z/,s))
+    decoded=Base.url_decode64!(s,padding: false)
+    D.check(Base.url_encode64(decoded,padding: false)==s)
+    decoded
+  end
+end

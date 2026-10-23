@@ -1,0 +1,1798 @@
+defmodule ADHD.Store do
+  use GenServer
+  alias ADHD.Domain, as: D
+
+  @mutations ~w(replay_retrieval continue_retrieval_replay cancel_retrieval_replay query_archive continue_archive_query cancel_archive_query retrieve continue_retrieval cancel_retrieval query_history continue_history_query cancel_history_query publish_record source_query cancel_source_query subscribe update_subscription unsubscribe publish send ack federated_query cancel_federated_query)
+  def prepare_restore_activation(c, id, token, stage, limits) do
+    existing = writer(c, id)
+
+    prepared =
+      if is_pid(existing) do
+        GenServer.call(existing, {:restore_prepared, token, stage}, 30000)
+      else
+        false
+      end
+
+    if prepared do
+      :ok
+    else
+      path = stage["target"]
+      uid = File.stat!(ADHD.StorageRegistry.current().path).uid
+      cert = stage["closed_checkpoint"] || D.fail("RECOVERY_REQUIRED")
+      {raw, _} = ADHD.RecoveryFiles.read(path, cert["bytes"], uid, cert)
+      {:ok, safe} = ADHD.RecoveryCheckpoint.preflight(raw, limits)
+      validate_move_state(safe, stage)
+      {:ok, tab, state} = ADHD.Storage.open(path, id, limits)
+
+      try do
+        digest = ADHD.RecoveryFiles.sha(ADHD.Storage.bytes(state))
+
+        proof = %{
+          state: state,
+          tab: tab,
+          path: path,
+          digest: digest,
+          checkpoint_sha: cert["sha256"],
+          files: restore_files(path, uid),
+          uid: uid
+        }
+
+        case existing do
+          nil ->
+            config = ADHD.Projects.view(c, id)
+
+            {:ok, _} =
+              GenServer.start(__MODULE__, {:preloaded, config, token, stage, proof},
+                name: ADHD.Projects.store_name(config)
+              )
+
+            :ok
+
+          pid ->
+            GenServer.call(pid, {:adopt_restore, token, stage, proof}, 30000)
+        end
+      after
+        :dets.close(tab)
+      end
+    end
+  end
+
+  defp restore_files(path, uid) do
+    %{
+      "checkpoint" => ADHD.RecoveryFiles.fingerprint(path, uid),
+      "snapshot" => ADHD.RecoveryFiles.fingerprint(ADHD.Storage.snapshot_path(path), uid)
+    }
+  end
+
+  defp prepared_restore?(x, token, stage) do
+    Map.get(x, :move_token) == token and x.path == stage["target"] and
+      x.state[:project_epoch] == stage["project_epoch"] and
+      x.state[:allocation_epoch] == stage["allocation_epoch"] and
+      x.state[:route_generation] == stage["route_generation"] and x.state.seq >= stage["sequence"] and
+      x.state.storage_generation >= stage["generation"] and
+      Map.get(x, :restore_checkpoint_sha) == get_in(stage, ["closed_checkpoint", "sha256"])
+  end
+
+  defp adopt_preloaded(c, token, stage, p) do
+    D.check(p.path == stage["target"] and is_atom(p.tab))
+    D.check(p.state.project == stage["project_id"] and p.state.server_id == stage["server_id"])
+
+    D.check(
+      p.state[:project_epoch] == stage["project_epoch"] and
+        p.state[:allocation_epoch] == stage["allocation_epoch"] and
+        p.state[:route_generation] == stage["route_generation"]
+    )
+
+    D.check(
+      p.state.seq >= stage["sequence"] and p.state.storage_generation >= stage["generation"]
+    )
+
+    D.check(
+      p.checkpoint_sha == get_in(stage, ["closed_checkpoint", "sha256"]) and
+        p.files == restore_files(p.path, p.uid)
+    )
+
+    {:ok, tab} =
+      :dets.open_file(p.tab,
+        file: String.to_charlist(p.path),
+        type: :set,
+        auto_save: :infinity,
+        repair: false
+      )
+
+    ADHD.Scope.put(c["project_id"])
+    ADHD.Scope.put_epoch(p.state.project_epoch)
+
+    %{
+      tab: tab,
+      state: p.state,
+      path: p.path,
+      digest: p.digest,
+      move_token: token,
+      restore_checkpoint_sha: p.checkpoint_sha,
+      restore_files: p.files,
+      restore_uid: p.uid
+    }
+  end
+
+  def init({:preloaded, c, token, stage, p}) do
+    try do
+      {:ok, adopt_preloaded(c, token, stage, p)}
+    rescue
+      _ -> {:stop, :invalid_store}
+    catch
+      _, _ -> {:stop, :invalid_store}
+    end
+  end
+
+  def init(c) do
+    ADHD.Scope.put(c["project_id"])
+
+    if ADHD.Projects.multi?(c) do
+      Process.put(
+        :adhd_store_slot,
+        Enum.find_index(c["projects"], &(&1["id"] == c["project_id"]))
+      )
+    end
+
+    try do
+      {:ok, tab, state} = ADHD.Storage.open(c["store_path"], c["project_id"])
+
+      {:ok,
+       %{
+         tab: tab,
+         state: state,
+         path: c["store_path"],
+         digest: ADHD.RecoveryFiles.sha(ADHD.Storage.bytes(state))
+       }}
+    rescue
+      _ -> {:stop, :invalid_store}
+    catch
+      _, _ -> {:stop, :invalid_store}
+    end
+  end
+
+  def handle_call({:restore_prepared, token, stage}, _, x) do
+    ready =
+      ADHD.StorageRegistry.availability(ADHD.Config.root(), stage["project_id"]) == "ready" and
+        is_nil(Map.get(x, :move_token))
+
+    comparable =
+      if ready do
+        Map.put(x, :move_token, token)
+      else
+        x
+      end
+
+    {:reply, prepared_restore?(comparable, token, stage), x}
+  end
+
+  def handle_call({:adopt_restore, token, stage, p}, _, x) do
+    try do
+      D.check(Map.get(x, :move_token) == token)
+      D.check(p.files == restore_files(p.path, p.uid))
+
+      if not is_nil(x.tab) do
+        :ok = :dets.close(x.tab)
+      end
+
+      try do
+        next = adopt_preloaded(%{"project_id" => stage["project_id"]}, token, stage, p)
+        {:reply, :ok, next}
+      rescue
+        _ -> {:reply, {:error, "RECOVERY_REQUIRED"}, %{x | tab: nil}}
+      catch
+        _, _ -> {:reply, {:error, "RECOVERY_REQUIRED"}, %{x | tab: nil}}
+      end
+    rescue
+      _ -> {:reply, {:error, "RECOVERY_REQUIRED"}, x}
+    catch
+      _, _ -> {:reply, {:error, "RECOVERY_REQUIRED"}, x}
+    end
+  end
+
+  def handle_call(:project_aliases, _, x) do
+    {:reply, x.state.aliases, x}
+  end
+
+  def handle_call({:transaction, _, _, _}, _, %{move_token: token} = x) when not is_nil(token) do
+    {:reply, {:error, "CONFIG_APPLY_IN_PROGRESS"}, x}
+  end
+
+  def handle_call({:transaction, epoch, fences, fun}, _, x) do
+    try do
+      if not is_nil(epoch) and epoch != Map.get(x.state, :project_epoch) do
+        D.fail("RECOVERY_REQUIRED")
+      end
+
+      if not Enum.all?(fences, fn {id, captured} -> captured == ADHD.StorageRegistry.epoch(id) end) do
+        D.fail("RECOVERY_REQUIRED")
+      end
+
+      {result, state} = fun.(x.state)
+
+      state =
+        if state != x.state do
+          state = ADHD.Storage.next(state)
+          :ok = ADHD.Storage.persist(x.tab, x.path, state)
+          state
+        else
+          state
+        end
+
+      digest =
+        if state == x.state do
+          Map.get(x, :digest) || ADHD.RecoveryFiles.sha(ADHD.Storage.bytes(state))
+        else
+          ADHD.RecoveryFiles.sha(ADHD.Storage.bytes(state))
+        end
+
+      {:reply, {:ok, result, Map.get(state, :project_epoch)},
+       Map.merge(x, %{state: state, digest: digest})}
+    rescue
+      _ -> {:reply, {:error, "INTERNAL"}, x}
+    catch
+      {:domain, code} -> {:reply, {:error, code}, x}
+    end
+  end
+
+  def handle_call({:freeze_move, token}, _, x) do
+    if Map.get(x, :move_token) do
+      {:reply, {:error, "CONFIG_APPLY_IN_PROGRESS"}, x}
+    else
+      {:reply, :ok, Map.put(x, :move_token, token)}
+    end
+  end
+
+  def handle_call({:release_move, token}, _, x) do
+    if Map.get(x, :move_token) == token do
+      {:reply, :ok, Map.delete(x, :move_token)}
+    else
+      {:reply, {:error, "CONFIG_APPLY_FAILED"}, x}
+    end
+  end
+
+  def handle_call({:stage_move, token, entry}, _, x) do
+    try do
+      D.check(Map.get(x, :move_token) == token)
+      D.check(Path.expand(x.path) == entry["source"])
+      state = rename(x.state, entry["project_id"]) |> ADHD.Storage.next()
+
+      {:ok, t} =
+        :dets.open_file(:adhd_moving,
+          file: String.to_charlist(entry["stage"]),
+          type: :set,
+          auto_save: :infinity,
+          repair: false
+        )
+
+      try do
+        :ok = File.chmod(entry["stage"], 384)
+        :ok = ADHD.Storage.persist(t, entry["stage"], state)
+      after
+        :dets.close(t)
+      end
+
+      D.check(ADHD.Storage.read_snapshot(entry["stage"]) == state)
+
+      proof =
+        entry
+        |> Map.put("server_id", state.server_id)
+        |> Map.put("generation", state.storage_generation)
+        |> Map.put("sequence", state.seq)
+        |> Map.put(
+          "digest",
+          Base.encode16(:crypto.hash(:sha256, ADHD.Storage.bytes(state)), case: :lower)
+        )
+
+      {:reply, {:ok, proof}, x}
+    rescue
+      _ -> {:reply, {:error, "CONFIG_APPLY_FAILED"}, x}
+    catch
+      _, _ -> {:reply, {:error, "CONFIG_APPLY_FAILED"}, x}
+    end
+  end
+
+  def handle_call({:activate_move, token, entry}, _, x) do
+    try do
+      D.check(Map.get(x, :move_token) == token)
+      validate_move_target(entry)
+      :ok = :dets.close(x.tab)
+      {:ok, tab, state} = ADHD.Storage.open(entry["target"], entry["project_id"])
+      ADHD.Scope.put(entry["project_id"])
+
+      {:reply, :ok,
+       Map.merge(x, %{
+         tab: tab,
+         state: state,
+         path: entry["target"],
+         digest: ADHD.RecoveryFiles.sha(ADHD.Storage.bytes(state))
+       })}
+    rescue
+      _ -> Process.exit(self(), :kill)
+    catch
+      _, _ -> Process.exit(self(), :kill)
+    end
+  end
+
+  def handle_call(:state_proof, _, x) do
+    {:reply, {:ok, state_proof(x)}, x}
+  end
+
+  def handle_call({:activate_restore, token, stage}, _, x) do
+    try do
+      D.check(prepared_restore?(x, token, stage))
+      D.check(x.restore_files == restore_files(x.path, x.restore_uid))
+      {:reply, :ok, x}
+    rescue
+      _ -> {:reply, {:error, "RECOVERY_REQUIRED"}, x}
+    catch
+      _, _ -> {:reply, {:error, "RECOVERY_REQUIRED"}, x}
+    end
+  end
+
+  def handle_call({:freeze_restore, token}, _, x) do
+    existing = Map.get(x, :move_token)
+
+    if existing && existing != token do
+      {:reply, {:error, "CONFIG_APPLY_IN_PROGRESS"}, x}
+    else
+      proof = state_proof(x)
+      {:reply, {:ok, proof}, Map.put(x, :move_token, token)}
+    end
+  end
+
+  def handle_call({:release_restore, token}, _, x) do
+    existing = Map.get(x, :move_token)
+
+    cond do
+      is_nil(existing) -> {:reply, :ok, x}
+      existing == token -> {:reply, :ok, Map.delete(x, :move_token)}
+      true -> {:reply, {:error, "CONFIG_APPLY_FAILED"}, x}
+    end
+  end
+
+  def verify_closed_restore(stage, limits \\ nil) do
+    snapshot = ADHD.Storage.read_snapshot(stage["target"], limits || %{})
+    validate_move_state(snapshot, stage)
+
+    checkpoint =
+      case ADHD.Storage.guard_checkpoint(stage["target"], limits) do
+        {:ok, state} ->
+          state
+
+        {:needs_repair, :not_closed} ->
+          :ok = ADHD.Storage.restore_checkpoint(stage["target"], snapshot)
+          {:ok, state} = ADHD.Storage.guard_checkpoint(stage["target"], limits)
+          state
+      end
+
+    :ok = ADHD.Storage.checkpoint_compatible(checkpoint, snapshot)
+
+    {:ok, table} =
+      :dets.open_file(:adhd_restore_verify,
+        file: String.to_charlist(stage["target"]),
+        access: :read,
+        repair: false
+      )
+
+    try do
+      D.check(:dets.lookup(table, :state) == [state: checkpoint])
+    after
+      :dets.close(table)
+    end
+
+    :ok
+  end
+
+  def start_link(c) do
+    GenServer.start_link(__MODULE__, c, name: ADHD.Projects.store_name(c))
+  end
+
+  def start_selected(c) do
+    case GenServer.start(__MODULE__, c, name: ADHD.Projects.store_name(c)) do
+      {:ok, pid} ->
+        {:ok, pid}
+
+      {:error, _} ->
+        ADHD.StorageRegistry.halt(c["project_id"])
+        {:error, "RECOVERY_REQUIRED"}
+    end
+  end
+
+  def format_status(_reason, [_dictionary, _state]) do
+    [data: [{~c"State", :redacted}]]
+  end
+
+  def format_status(status) do
+    status
+    |> Map.put(:state, :redacted)
+    |> Map.put(:message, :redacted)
+    |> Map.put(:reason, :redacted)
+    |> Map.put(:log, [])
+  end
+
+  def call(fun) do
+    captured = ADHD.Scope.epoch()
+
+    case GenServer.call(target(), {:transaction, captured, ADHD.Scope.fences(), fun}, 30000) do
+      {:ok, result, bound_epoch} ->
+        if is_nil(captured) do
+          ADHD.Scope.put_epoch(bound_epoch)
+        end
+
+        {:ok, result}
+
+      other ->
+        other
+    end
+  end
+
+  def target do
+    id = ADHD.Scope.id()
+    root = ADHD.Config.root()
+
+    if ADHD.StorageRegistry.loaded?() do
+      ADHD.StorageRegistry.admit(root, id || root["project_id"])
+    end
+
+    if is_nil(id) or id == root["project_id"] do
+      __MODULE__
+    else
+      ADHD.Projects.table(id)
+    end
+  end
+
+  def command(actor, mid, c) do
+    call(fn s -> execute(s, ADHD.Config.get(), actor, mid, c) end)
+  end
+
+  def admin(cmd, actor \\ "legacy-admin", headers \\ nil) do
+    call(fn s ->
+      c = ADHD.Config.get()
+
+      principal =
+        if headers do
+          ADHD.Identity.principal(headers, c)
+        else
+          nil
+        end
+
+      if is_map(principal) and
+           c["project_id"] not in ADHD.Projects.user_ids(principal, ADHD.Config.root()) do
+        D.fail("PROJECT_NOT_FOUND")
+      end
+
+      if cmd["op"] != "replay_events" do
+        ADHD.Projects.writable(c, cmd["op"])
+      end
+
+      if is_map(principal) and principal["role"] != "Admin" and
+           cmd["op"] not in ~w(overview publications publication record subscriptions deliveries jobs retrieval_index) do
+        D.fail("FORBIDDEN")
+      end
+
+      admin_execute(
+        s,
+        c,
+        cmd,
+        if principal do
+          principal["id"]
+        else
+          actor
+        end
+      )
+    end)
+  end
+
+  def snapshot do
+    call(fn s -> {s, s} end)
+  end
+
+  def snapshot_current do
+    ADHD.Scope.begin_work()
+    snapshot()
+  end
+
+  def empty(project) do
+    %{
+      schema: 2,
+      project: project,
+      seq: 0,
+      subscriptions: %{},
+      publications: %{},
+      deliveries: %{},
+      jobs: %{},
+      idempotency: %{},
+      sources: %{},
+      admin_idempotency: %{},
+      queries: %{},
+      incoming: %{},
+      aliases: [project],
+      server_id:
+        try do
+          ADHD.Config.root()["server_id"] || ADHD.Directory.server_id()
+        rescue
+          _ -> ADHD.Directory.server_id()
+        end,
+      directory: %{},
+      owner_pins: %{},
+      source_queries: %{},
+      source_incoming: %{},
+      contexts: %{},
+      history_queries: %{},
+      eventing: ADHD.Eventing.empty(),
+      optimization: ADHD.Optimization.empty(),
+      retrieval_selection: ADHD.Selection.empty(),
+      retrieval_index: ADHD.RetrievalIndex.empty(),
+      retrieval_queries: %{},
+      archive_queries: %{},
+      feedback: ADHD.Feedback.empty(),
+      replay_queries: %{},
+      storage_generation: 0
+    }
+  end
+
+  def upgrade(s, project) do
+    D.check(is_map(s) and s[:schema] in [1, 2, 3, 4])
+    D.check(s[:project] == project or project in Map.get(s, :aliases, []))
+
+    if s[:schema] == 4 do
+      D.integer(s[:route_generation], 1, 9_007_199_254_740_991)
+      ADHD.RecoveryFiles.hex(s[:project_epoch], 32)
+      ADHD.RecoveryFiles.hex(s[:allocation_epoch], 32)
+      D.check(s[:project_epoch] != s[:allocation_epoch])
+      D.integer(s[:allocation_counter], 0, 9_007_199_254_740_991)
+    end
+
+    D.check(is_integer(s[:seq]) and s.seq >= 0)
+
+    for k <- [:subscriptions, :publications, :deliveries, :jobs, :idempotency] do
+      D.object(s[k])
+    end
+
+    for k <- [:subscriptions, :publications, :deliveries], {id, row} <- s[k] do
+      D.id(id)
+      D.check(is_map(row) and is_integer(row[:seq]) and row.seq <= s.seq and is_map(row[:value]))
+      D.check(row.value["id"] == id)
+
+      if k == :deliveries do
+        D.boolean(row[:ack])
+      end
+    end
+
+    pubs = Map.new(s.publications, fn {id, row} -> {id, %{row | value: envelope(row.value)}} end)
+
+    deliveries =
+      Map.new(s.deliveries, fn {id, row} ->
+        v = row.value
+
+        v =
+          if v["kind"] == "publication" do
+            p = Map.fetch!(pubs, v["publication_id"]).value
+            Map.merge(v, Map.take(p, ~w(information_type source occurred_at)))
+          else
+            v
+          end
+
+        {id, %{row | value: v}}
+      end)
+
+    result =
+      Map.merge(empty(project), s)
+      |> Map.merge(%{
+        schema:
+          if s[:schema] == 4 do
+            4
+          else
+            2
+          end,
+        publications: pubs,
+        deliveries: deliveries
+      })
+
+    ADHD.Directory.server_id(result.server_id)
+
+    for field <- [:directory, :owner_pins, :source_queries, :source_incoming] do
+      D.object(result[field])
+    end
+
+    D.check(is_integer(result.storage_generation) and result.storage_generation >= 0)
+
+    ADHD.Records.upgrade(result)
+    |> ADHD.History.upgrade()
+    |> ADHD.Selection.upgrade()
+    |> ADHD.RetrievalIndex.upgrade()
+    |> ADHD.RetrievalJobs.upgrade()
+    |> ADHD.Archive.upgrade()
+    |> ADHD.Feedback.upgrade()
+    |> ADHD.Replay.upgrade()
+    |> ADHD.Optimization.upgrade()
+    |> ADHD.Migration.state()
+  end
+
+  def envelope(p) do
+    p
+    |> Map.put_new("information_type", "message")
+    |> Map.put_new("source", %{"kind" => "agent", "id" => p["author_id"]})
+    |> Map.put_new("occurred_at", p["created_at"])
+  end
+
+  def writer(c, id) do
+    move_writer(c, id)
+  end
+
+  def proof(c, id) do
+    case writer(c, id) do
+      nil -> {:error, "RECOVERY_REQUIRED"}
+      pid -> GenServer.call(pid, :state_proof, 30000)
+    end
+  end
+
+  defp state_proof(x) do
+    s = x.state
+
+    %{
+      "server_id" => s.server_id,
+      "project_id" => s.project,
+      "aliases" => Enum.sort(s.aliases -- [s.project]),
+      "sequence" => s.seq,
+      "storage_generation" => s.storage_generation,
+      "state_sha256" => x.digest,
+      "project_epoch" => Map.get(s, :project_epoch),
+      "allocation_epoch" => Map.get(s, :allocation_epoch),
+      "route_generation" => Map.get(s, :route_generation, 0)
+    }
+  end
+
+  def freeze_restore(c, id, token) do
+    case writer(c, id) do
+      nil -> {:ok, nil}
+      pid -> GenServer.call(pid, {:freeze_restore, token}, 30000)
+    end
+  end
+
+  def release_restore(c, id, token) do
+    case writer(c, id) do
+      nil -> :ok
+      pid -> GenServer.call(pid, {:release_restore, token}, 30000)
+    end
+  end
+
+  def activate_restore(c, id, token, stage) do
+    case writer(c, id) do
+      nil -> {:error, "RECOVERY_REQUIRED"}
+      pid -> GenServer.call(pid, {:activate_restore, token, stage}, 30000)
+    end
+  end
+
+  defp move_writer(c, id) do
+    if not ADHD.Projects.multi?(c) or id == c["project_id"] do
+      Process.whereis(__MODULE__)
+    else
+      case :global.whereis_name({__MODULE__, id}) do
+        :undefined -> nil
+        p -> p
+      end
+    end
+  end
+
+  def project_aliases(c, id) do
+    entry = ADHD.StorageRegistry.entry(id)
+
+    if is_map(entry) and ADHD.StorageRegistry.availability(c, id) != "ready" do
+      [id | entry["aliases"]]
+    else
+      live_project_aliases(c, id)
+    end
+  end
+
+  defp live_project_aliases(c, id) do
+    case move_writer(c, id) do
+      pid when is_pid(pid) ->
+        GenServer.call(pid, :project_aliases, 30000)
+
+      _ ->
+        case ADHD.Storage.read_snapshot(ADHD.Projects.view(c, id)["store_path"]) do
+          %{aliases: aliases} -> aliases
+          nil -> []
+        end
+    end
+  end
+
+  def prepare_moves(c, old) do
+    token = D.opaque()
+
+    entries =
+      if c["store_path"] != old["store_path"] do
+        for id <- ADHD.Projects.ids(old), pid = move_writer(old, id), is_pid(pid) do
+          target_id =
+            if ADHD.Projects.multi?(old) do
+              id
+            else
+              c["project_id"]
+            end
+
+          source = Path.expand(ADHD.Projects.view(old, id)["store_path"])
+          target = Path.expand(ADHD.Projects.view(c, target_id)["store_path"])
+
+          {pid,
+           %{
+             "source" => source,
+             "target" => target,
+             "stage" => Path.join(target <> ".move-" <> token, "state.dets"),
+             "stage_dir" => target <> ".move-" <> token,
+             "project_id" => target_id
+           }}
+        end
+      else
+        []
+      end
+
+    moves = %{token: token, entries: entries}
+
+    try do
+      paths =
+        Enum.flat_map(entries, fn {_, e} ->
+          [
+            e["target"],
+            ADHD.Storage.snapshot_path(e["target"]),
+            e["stage"],
+            ADHD.Storage.snapshot_path(e["stage"])
+          ]
+        end)
+
+      D.check(length(paths) == length(Enum.uniq(paths)))
+
+      for path <- paths do
+        case File.lstat(path) do
+          {:error, :enoent} -> :ok
+          _ -> D.fail("CONFIG_APPLY_FAILED")
+        end
+      end
+
+      for {_, e} <- entries do
+        D.check(File.dir?(Path.dirname(c["store_path"])))
+        File.mkdir_p!(Path.dirname(e["target"]))
+      end
+
+      for {_, e} <- entries do
+        :ok = File.mkdir(e["stage_dir"])
+        :ok = File.chmod(e["stage_dir"], 448)
+
+        Process.put({:move_owned, token}, [e["stage_dir"] | Process.get({:move_owned, token}, [])])
+      end
+
+      Process.put({:move_preflight, token}, true)
+
+      for {pid, _} <- entries do
+        :ok = GenServer.call(pid, {:freeze_move, token}, 30000)
+      end
+
+      prepared =
+        for {pid, e} <- entries do
+          {:ok, proof} = GenServer.call(pid, {:stage_move, token, e}, 30000)
+          {pid, proof}
+        end
+
+      %{moves | entries: prepared}
+    rescue
+      _ ->
+        abort_moves(moves, Process.get({:move_owned, token}, []))
+        D.fail("CONFIG_APPLY_FAILED")
+    catch
+      _, _ ->
+        abort_moves(moves, Process.get({:move_owned, token}, []))
+        D.fail("CONFIG_APPLY_FAILED")
+    after
+      Process.delete({:move_preflight, token})
+      Process.delete({:move_owned, token})
+    end
+  end
+
+  def abort_moves(moves, owned \\ :all) do
+    for {pid, e} <- moves.entries do
+      if owned == :all or e["stage_dir"] in owned do
+        for path <- [e["stage"], ADHD.Storage.snapshot_path(e["stage"])] do
+          File.rm(path)
+        end
+
+        File.rmdir(e["stage_dir"])
+      end
+
+      try do
+        GenServer.call(pid, {:release_move, moves.token}, 5000)
+      catch
+        _, _ -> :ok
+      end
+    end
+
+    :ok
+  end
+
+  def move_decision(moves) do
+    Enum.map(moves.entries, &elem(&1, 1))
+  end
+
+  defp sync_move_directory(path) do
+    {:ok, d} = :file.open(String.to_charlist(Path.dirname(path)), [:read, :raw, :directory])
+
+    try do
+      :ok = :file.sync(d)
+    after
+      :file.close(d)
+    end
+  end
+
+  defp validate_move_state(state, e) do
+    D.check(
+      is_map(state) and state[:project] == e["project_id"] and state[:server_id] == e["server_id"]
+    )
+
+    D.check(state.storage_generation >= e["generation"] and state.seq >= e["sequence"])
+
+    if e["project_epoch"] do
+      D.check(
+        state[:schema] == 4 and state[:project_epoch] == e["project_epoch"] and
+          state[:allocation_epoch] == e["allocation_epoch"] and
+          state[:route_generation] == e["route_generation"]
+      )
+    end
+
+    if state.storage_generation == e["generation"] do
+      D.check(
+        Base.encode16(:crypto.hash(:sha256, ADHD.Storage.bytes(state)), case: :lower) ==
+          e["digest"]
+      )
+    end
+
+    state
+  end
+
+  def validate_move_target(e) do
+    validate_move_state(ADHD.Storage.read_snapshot(e["target"]), e)
+  end
+
+  def install_moves(entries) do
+    for e <- entries do
+      for {source, target} <- [
+            {ADHD.Storage.snapshot_path(e["stage"]), ADHD.Storage.snapshot_path(e["target"])},
+            {e["stage"], e["target"]}
+          ] do
+        case File.lstat(target) do
+          {:error, :enoent} ->
+            if source == ADHD.Storage.snapshot_path(e["stage"]) do
+              validate_move_state(ADHD.Storage.read_snapshot(e["stage"]), e)
+            end
+
+            :ok = File.ln(source, target)
+            sync_move_directory(target)
+
+          {:ok, %{type: :regular}} ->
+            complete_owned_install_link(source, target, e)
+            validate_move_target(e)
+
+          _ ->
+            D.fail("CONFIG_APPLY_FAILED")
+        end
+
+        case File.rm(source) do
+          :ok -> sync_move_directory(source)
+          {:error, :enoent} -> :ok
+          _ -> D.fail("CONFIG_APPLY_FAILED")
+        end
+      end
+
+      validate_move_target(e)
+
+      case File.rmdir(e["stage_dir"]) do
+        :ok -> sync_move_directory(e["stage_dir"])
+        {:error, :enoent} -> :ok
+        _ -> D.fail("CONFIG_APPLY_FAILED")
+      end
+    end
+
+    :ok
+  end
+
+  # A crash after link(2) and before unlink(2) leaves exactly these two
+  # decision-owned names. Remove only that proven alias before the ordinary
+  # nlink=1 reader; the retained target is still validated in full afterwards.
+  defp complete_owned_install_link(source, target, e) do
+    case {File.lstat(source), File.lstat(target)} do
+      {{:ok, a}, {:ok, b}} when a.links > 1 or b.links > 1 ->
+        D.check(Path.dirname(source) == e["stage_dir"])
+        D.check(source in [e["stage"], ADHD.Storage.snapshot_path(e["stage"])])
+        D.check(target in [e["target"], ADHD.Storage.snapshot_path(e["target"])])
+        ADHD.RecoveryFiles.ancestors(source)
+        ADHD.RecoveryFiles.ancestors(target)
+        uid = File.stat!(e["stage_dir"]).uid
+        ADHD.RecoveryFiles.private(e["stage_dir"], :directory, uid)
+        D.check(a.type == :regular and b.type == :regular and a.links == 2 and b.links == 2)
+        D.check(a.major_device == b.major_device and a.minor_device == b.minor_device and a.inode == b.inode)
+        D.check(a.uid == uid and b.uid == uid and Bitwise.band(a.mode, 0o077) == 0 and a.mode == b.mode)
+        :ok = File.rm(source)
+        sync_move_directory(source)
+        sync_move_directory(target)
+        ADHD.RecoveryFiles.private(target, :regular, uid)
+        :ok
+
+      _ ->
+        :ok
+    end
+  end
+
+  def activate_moves(moves) do
+    for {pid, e} <- moves.entries do
+      :ok = GenServer.call(pid, {:activate_move, moves.token, e}, 30000)
+    end
+
+    :ok
+  end
+
+  def release_moves(moves) do
+    for {pid, _} <- moves.entries do
+      :ok = GenServer.call(pid, {:release_move, moves.token}, 30000)
+    end
+
+    :ok
+  end
+
+  def fail_stop_moves(moves) do
+    for {pid, _} <- moves.entries do
+      Process.exit(pid, :kill)
+    end
+
+    Process.exit(self(), :kill)
+  end
+
+  def rename(s, p) do
+    %{s | project: p, aliases: Enum.uniq([p | s.aliases])}
+  end
+
+  def terminate(_, x) do
+    if x.tab do
+      :dets.close(x.tab)
+    else
+      :ok
+    end
+  end
+
+  def unwrap({:ok, r}) do
+    r
+  end
+
+  def unwrap({:error, c}) do
+    D.fail(c)
+  end
+
+  def execute(s, config, actor, mid, c) do
+    D.agent(c)
+
+    if not Map.has_key?(config["agents"], actor) do
+      D.fail("FORBIDDEN")
+    end
+
+    ADHD.Projects.writable(config, c["op"])
+
+    if Map.has_key?(c, "project_id") and c["project_id"] != config["project_id"] and
+         c["project_id"] not in s.aliases do
+      D.fail("PROJECT_MISMATCH")
+    end
+
+    key = {actor, mid}
+
+    if c["op"] in @mutations do
+      D.id(mid)
+
+      case s.idempotency[key] do
+        nil ->
+          {r, n} = apply_command(s, config, actor, c)
+          {r, put_in(n, [:idempotency, key], %{command: c, result: r})}
+
+        %{command: ^c, result: result} ->
+          {result, s}
+
+        _ ->
+          D.fail("IDEMPOTENCY_CONFLICT")
+      end
+    else
+      apply_command(s, config, actor, c)
+    end
+  end
+
+  defp alloc(s, prefix) do
+    D.integer(s.seq, 0, 9_007_199_254_740_990)
+    {id, next} = ADHD.Allocator.allocate(s, prefix)
+    {id, %{next | seq: s.seq + 1}}
+  end
+
+  defp put_record(s, collection, v) do
+    put_in(s, [collection, v["id"]], %{seq: s.seq, value: v})
+  end
+
+  defp rows(s, k) do
+    s[k] |> Map.values() |> Enum.sort_by(& &1.seq)
+  end
+
+  defp values(s, k) do
+    Enum.map(rows(s, k), & &1.value)
+  end
+
+  defp owned(s, k, id, a, field) do
+    row = s[k][id] || D.fail("NOT_FOUND")
+
+    if row.value[field] != a do
+      D.fail("FORBIDDEN")
+    end
+
+    row
+  end
+
+  defp project(v, c) do
+    Map.put(v, "project_id", c["project_id"])
+  end
+
+  def apply_command(s, c, actor, %{"op" => op} = cmd)
+      when op in ~w(list_retrieval_attempts get_retrieval_attempt replay_retrieval get_retrieval_replay continue_retrieval_replay cancel_retrieval_replay) do
+    ADHD.Feedback.agent(s, c, actor, cmd)
+  end
+
+  def apply_command(s, c, actor, %{"op" => op} = cmd)
+      when op in ~w(query_archive get_archive_query continue_archive_query cancel_archive_query) do
+    ADHD.Archive.agent(s, c, actor, cmd)
+  end
+
+  def apply_command(s, c, actor, %{"op" => op} = cmd)
+      when op in ~w(federation_directory identity_matches source_query get_source_query cancel_source_query) do
+    ADHD.SourceQueries.agent(s, c, actor, cmd)
+  end
+
+  def apply_command(s, c, actor, %{"op" => op} = cmd)
+      when op in ~w(retrieve get_retrieval continue_retrieval cancel_retrieval retrieval_index) do
+    ADHD.RetrievalJobs.agent(s, c, actor, cmd)
+  end
+
+  def apply_command(s, c, actor, %{"op" => op} = cmd)
+      when op in ~w(query_history get_history_query continue_history_query cancel_history_query) do
+    ADHD.History.agent(s, c, actor, cmd)
+  end
+
+  def apply_command(s, c, _a, %{"op" => "get_record"} = cmd) do
+    {ADHD.Records.read(s, c, cmd), s}
+  end
+
+  def apply_command(s, c, a, %{"op" => "whoami"}) do
+    {%{"agent_id" => a, "project_id" => c["project_id"]}, s}
+  end
+
+  def apply_command(s, c, a, %{"op" => "subscribe"} = cmd) do
+    mode =
+      Map.get(
+        cmd,
+        "mode",
+        if Map.has_key?(cmd, "filter") or Map.has_key?(cmd, "description") do
+          "filtered"
+        else
+          "raw"
+        end
+      )
+
+    if mode == "filtered" and is_nil(c["matcher"]) do
+      D.fail("MODEL_UNAVAILABLE")
+    end
+
+    s =
+      if mode == "filtered" do
+        ADHD.Eventing.remember_adapter(s, c)
+      else
+        s
+      end
+
+    activation = s.seq
+    {id, s} = alloc(s, "subscription")
+
+    v = %{
+      "id" => id,
+      "agent_id" => a,
+      "project_id" => c["project_id"],
+      "mode" => mode,
+      "selectors" => Map.get(cmd, "selectors", %{}),
+      "revision" => 1,
+      "paused" => false,
+      "activation_sequence" => activation,
+      "created_at" => D.now()
+    }
+
+    criterion = cmd["filter"] || cmd["description"]
+
+    v =
+      if mode == "filtered" do
+        v |> Map.put("filter", criterion) |> Map.put("description", criterion)
+      else
+        v
+      end
+
+    {%{"subscription" => v}, put_record(s, :subscriptions, v)}
+  end
+
+  def apply_command(s, c, a, %{"op" => "update_subscription"} = cmd) do
+    row = owned(s, :subscriptions, cmd["subscription_id"], a, "agent_id")
+
+    if Map.get(row.value, "revision", 1) != cmd["expected_revision"] do
+      D.fail("CONFIG_CONFLICT")
+    end
+
+    mode =
+      Map.get(
+        cmd,
+        "mode",
+        if Map.has_key?(cmd, "filter") or Map.has_key?(cmd, "description") do
+          "filtered"
+        else
+          "raw"
+        end
+      )
+
+    if mode == "filtered" and is_nil(c["matcher"]) do
+      D.fail("MODEL_UNAVAILABLE")
+    end
+
+    s =
+      if mode == "filtered" do
+        ADHD.Eventing.remember_adapter(s, c)
+      else
+        s
+      end
+
+    value =
+      row.value
+      |> Map.drop(~w(filter description))
+      |> Map.merge(%{
+        "mode" => mode,
+        "selectors" => Map.get(cmd, "selectors", %{}),
+        "revision" => Map.get(row.value, "revision", 1) + 1,
+        "paused" => Map.get(cmd, "paused", false),
+        "activation_sequence" => s.seq
+      })
+
+    value =
+      if mode == "filtered" do
+        value
+        |> Map.put("filter", cmd["filter"] || cmd["description"])
+        |> Map.put("description", cmd["filter"] || cmd["description"])
+      else
+        value
+      end
+
+    {%{"subscription" => value}, put_in(s, [:subscriptions, value["id"], :value], value)}
+  end
+
+  def apply_command(s, c, a, %{"op" => "list_subscriptions"}) do
+    {%{
+       "subscriptions" =>
+         values(s, :subscriptions)
+         |> Enum.filter(&(&1["agent_id"] == a))
+         |> Enum.map(&project(&1, c))
+     }, s}
+  end
+
+  def apply_command(s, _, a, %{"op" => "unsubscribe", "subscription_id" => id}) do
+    owned(s, :subscriptions, id, a, "agent_id")
+    {%{"unsubscribed" => id}, remove_subscription(s, id)}
+  end
+
+  def apply_command(s, c, a, %{"op" => op} = cmd) when op in ~w(publish publish_record) do
+    source = Map.get(cmd, "source", %{"kind" => "agent", "id" => a})
+
+    if source["kind"] == "agent" and source["id"] != a do
+      D.fail("FORBIDDEN")
+    end
+
+    key = {a, source["kind"], source["id"], source["item_id"]}
+    canonical = Map.drop(cmd, ~w(op project_id))
+
+    case (if source["item_id"] do
+            s.sources[key]
+          else
+            nil
+          end) do
+      %{command: ^canonical, result: r} ->
+        {ADHD.Records.reply(s, c, cmd, r), s}
+
+      nil ->
+        {id, s} = alloc(s, "publication")
+        now = D.now()
+
+        p = %{
+          "id" => id,
+          "project_id" => c["project_id"],
+          "author_id" => a,
+          "text" => Map.get(cmd, "text", ""),
+          "data" => Map.get(cmd, "data", %{}),
+          "created_at" => now,
+          "information_type" => Map.get(cmd, "information_type", "message"),
+          "source" => source,
+          "occurred_at" =>
+            if Map.has_key?(cmd, "occurred_at") do
+              D.datetime(cmd["occurred_at"])
+            else
+              now
+            end
+        }
+
+        s = put_record(s, :publications, p)
+        s = ADHD.Records.attach(s, id, cmd)
+
+        subscriptions =
+          values(s, :subscriptions)
+          |> Enum.filter(fn sub ->
+            Map.has_key?(c["agents"], sub["agent_id"]) and not Map.get(sub, "paused", false)
+          end)
+
+        {metadata, s} =
+          if ADHD.Eventing.config(c)["enabled"] do
+            ADHD.Eventing.enqueue(s, c, p, subscriptions)
+          else
+            next =
+              Enum.reduce(subscriptions, s, fn sub, acc ->
+                if ADHD.Eventing.selected?(sub, p) do
+                  if Map.get(sub, "mode", "filtered") == "raw" do
+                    event_delivery(acc, p, sub, %{
+                      "subscription_id" => sub["id"],
+                      "subscription_revision" => Map.get(sub, "revision", 1),
+                      "mode" => "raw"
+                    })
+                  else
+                    event_job(acc, p, sub, c)
+                  end
+                else
+                  acc
+                end
+              end)
+
+            {nil, next}
+          end
+
+        r = %{"publication" => p, "matching" => "pending"}
+
+        r =
+          if metadata do
+            Map.put(r, "eventing", metadata)
+          else
+            r
+          end
+
+        s =
+          if source["item_id"] do
+            put_in(s, [:sources, key], %{command: canonical, result: r})
+          else
+            s
+          end
+
+        {ADHD.Records.reply(s, c, cmd, r), s}
+
+      _ ->
+        D.fail("SOURCE_CONFLICT")
+    end
+  end
+
+  def apply_command(s, c, a, %{"op" => "send"} = cmd) do
+    recipient = cmd["recipient_id"]
+
+    if not Map.has_key?(c["agents"], recipient) do
+      D.fail("NOT_FOUND")
+    end
+
+    {id, s} = alloc(s, "delivery")
+
+    d = %{
+      "id" => id,
+      "project_id" => c["project_id"],
+      "recipient_id" => recipient,
+      "sender_id" => a,
+      "kind" => "message",
+      "text" => Map.get(cmd, "text", ""),
+      "data" => Map.get(cmd, "data", %{}),
+      "created_at" => D.now()
+    }
+
+    {%{"delivery" => d}, put_in(s, [:deliveries, id], %{seq: s.seq, value: d, ack: false})}
+  end
+
+  def apply_command(s, c, a, %{"op" => "poll"} = cmd) do
+    ds =
+      rows(s, :deliveries)
+      |> Enum.filter(&(not &1.ack and &1.value["recipient_id"] == a))
+      |> Enum.take(Map.get(cmd, "limit", 50))
+      |> Enum.map(&project(&1.value, c))
+
+    {%{"deliveries" => ds}, s}
+  end
+
+  def apply_command(s, _, a, %{"op" => "ack", "delivery_ids" => ids}) do
+    Enum.each(ids, &owned(s, :deliveries, &1, a, "recipient_id"))
+    s = Enum.reduce(ids, s, fn id, acc -> put_in(acc, [:deliveries, id, :ack], true) end)
+    {%{"acknowledged" => ids}, s}
+  end
+
+  def apply_command(s, c, _, %{"op" => "get", "publication_id" => id}) do
+    row = s.publications[id] || D.fail("NOT_FOUND")
+    {%{"publication" => project(row.value, c)}, s}
+  end
+
+  def apply_command(s, c, _, %{"op" => "search"} = cmd) do
+    {%{
+       "publications" =>
+         search(s, cmd) |> Enum.take(Map.get(cmd, "limit", 50)) |> Enum.map(&project(&1, c))
+     }, s}
+  end
+
+  def apply_command(s, c, a, %{"op" => "federated_query"} = cmd) do
+    f = c["federation"] || D.fail("FEDERATION_DISABLED")
+
+    if Enum.count(s.queries, fn {_, q} -> q["status"] == "pending" end) >= 64 do
+      D.fail("RESOURCE_EXHAUSTED")
+    end
+
+    {id, s} = alloc(s, "query")
+
+    peers =
+      Enum.map(f["peers"], fn p ->
+        Map.take(p, ~w(server_id project_id)) |> Map.put("status", "pending")
+      end)
+
+    q = %{
+      "id" => id,
+      "project_id" => c["project_id"],
+      "owner_id" => a,
+      "question" => cmd["question"],
+      "created_at" => D.now(),
+      "deadline_at" =>
+        DateTime.from_unix!(D.ms() + Map.get(cmd, "deadline_ms", 30000), :millisecond)
+        |> DateTime.to_iso8601(),
+      "status" =>
+        if peers == [] do
+          "completed"
+        else
+          "pending"
+        end,
+      "peers" => peers,
+      "responses" => []
+    }
+
+    {%{"query" => q}, put_in(s, [:queries, id], q)}
+  end
+
+  def apply_command(s, _, a, %{"op" => op, "query_id" => id})
+      when op in ["get_federated_query", "cancel_federated_query"] do
+    q = s.queries[id] || D.fail("NOT_FOUND")
+
+    if q["owner_id"] != a do
+      D.fail("FORBIDDEN")
+    end
+
+    q = expire(q)
+
+    q =
+      if op == "cancel_federated_query" and q["status"] == "pending" do
+        Map.put(q, "status", "cancelled")
+      else
+        q
+      end
+
+    {%{"query" => q}, put_in(s, [:queries, id], q)}
+  end
+
+  def remove_subscription(s, id) do
+    jobs =
+      Map.new(s.jobs, fn {k, j} ->
+        {k,
+         if j.subscription_id == id and j.status == :pending do
+           %{j | status: :cancelled}
+         else
+           j
+         end}
+      end)
+
+    %{s | subscriptions: Map.delete(s.subscriptions, id), jobs: jobs}
+  end
+
+  def expire(q) do
+    if q["status"] == "pending" and D.epoch(q["deadline_at"]) <= D.ms() do
+      Map.put(q, "status", "partial")
+    else
+      q
+    end
+  end
+
+  def search(s, cmd) do
+    values(s, :publications)
+    |> Enum.reverse()
+    |> Enum.filter(fn p ->
+      Enum.all?(
+        [
+          {"information_type", p["information_type"]},
+          {"source_kind", p["source"]["kind"]},
+          {"source_id", p["source"]["id"]}
+        ],
+        fn {k, v} -> not Map.has_key?(cmd, k) or cmd[k] == v end
+      ) and
+        (not Map.has_key?(cmd, "query") or
+           Enum.any?(
+             [
+               p["text"],
+               JSON.encode!(p["data"]),
+               p["information_type"],
+               JSON.encode!(p["source"])
+             ],
+             &String.contains?(String.downcase(&1), String.downcase(cmd["query"]))
+           ))
+    end)
+  end
+
+  def complete_job(s, id, ppm, c) do
+    case s.jobs[id] do
+      %{status: :pending} = j ->
+        cond do
+          not Map.has_key?(s.subscriptions, j.subscription_id) ->
+            put_in(s, [:jobs, id, :status], :cancelled)
+
+          not Map.has_key?(c["agents"], j.recipient_id) ->
+            s
+
+          true ->
+            s = put_in(s, [:jobs, id, :status], :done)
+
+            if ppm >= Map.get(j, :threshold_ppm, c["threshold_ppm"]) do
+              p = s.publications[j.publication_id].value
+
+              evidence = %{
+                "subscription_id" => j.subscription_id,
+                "probability_ppm" => ppm,
+                "threshold_ppm" => Map.get(j, :threshold_ppm, c["threshold_ppm"]),
+                "model" =>
+                  get_in(j, [:filter_policy, "matcher", "model"]) || c["matcher"]["model"]
+              }
+
+              evidence =
+                if Map.has_key?(j, :subscription_revision) do
+                  Map.merge(evidence, %{
+                    "subscription_revision" => j.subscription_revision,
+                    "mode" => "filtered"
+                  })
+                else
+                  evidence
+                end
+
+              evidence =
+                if Map.get(j, :replay_id) do
+                  Map.put(evidence, "replay_id", j.replay_id)
+                else
+                  evidence
+                end
+
+              existing =
+                Enum.find(s.deliveries, fn {_, r} ->
+                  r.value["publication_id"] == j.publication_id and
+                    r.value["recipient_id"] == j.recipient_id
+                end)
+
+              if existing do
+                {did, row} = existing
+
+                put_in(
+                  s,
+                  [:deliveries, did, :value, "matches"],
+                  row.value["matches"] ++ [evidence]
+                )
+              else
+                {did, s} = alloc(s, "delivery")
+
+                d =
+                  Map.take(
+                    p,
+                    if Map.has_key?(j, :subscription_revision) do
+                      ~w(project_id author_id text data information_type source occurred_at)
+                    else
+                      ~w(project_id text data information_type source occurred_at)
+                    end
+                  )
+                  |> Map.merge(%{
+                    "id" => did,
+                    "recipient_id" => j.recipient_id,
+                    "sender_id" => p["author_id"],
+                    "kind" => "publication",
+                    "publication_id" => p["id"],
+                    "created_at" => D.now(),
+                    "matches" => [evidence]
+                  })
+
+                put_in(s, [:deliveries, did], %{seq: s.seq, value: d, ack: false})
+              end
+            else
+              s
+            end
+        end
+
+      _ ->
+        s
+    end
+  end
+
+  def event_job(s, p, sub, c \\ ADHD.Config.get()) do
+    policy =
+      sub["_filter_policy"] ||
+        %{
+          "threshold_ppm" => c["threshold_ppm"],
+          "matcher" => Map.take(c["matcher"] || %{}, ~w(model url timeout_ms retry_ms))
+        }
+
+    existing =
+      ADHD.Eventing.existing_filter_job?(s, p["id"], sub["id"], Map.get(sub, "revision", 1))
+
+    if existing do
+      s
+    else
+      {jid, s} = alloc(s, "job")
+
+      job = %{
+        filter_policy: policy,
+        replay_id: sub["_replay_id"],
+        id: jid,
+        seq: s.seq,
+        publication_id: p["id"],
+        subscription_id: sub["id"],
+        recipient_id: sub["agent_id"],
+        description: sub["filter"] || sub["description"],
+        subscription_revision: Map.get(sub, "revision", 1),
+        threshold_ppm: policy["threshold_ppm"],
+        status: :pending,
+        retry_at: 0
+      }
+
+      put_in(s, [:jobs, jid], job) |> ADHD.Eventing.track_filter_job(job)
+    end
+  end
+
+  def event_delivery(s, p, sub, evidence) do
+    existing =
+      Enum.find(s.deliveries, fn {_, row} ->
+        row.value["publication_id"] == p["id"] and row.value["recipient_id"] == sub["agent_id"]
+      end)
+
+    if existing do
+      {id, row} = existing
+      reasons = row.value["matches"]
+
+      next =
+        if evidence in reasons do
+          reasons
+        else
+          reasons ++ [evidence]
+        end
+
+      put_in(s, [:deliveries, id, :value, "matches"], next)
+    else
+      {id, s} = alloc(s, "delivery")
+
+      value =
+        Map.take(p, ~w(project_id author_id text data information_type source occurred_at))
+        |> Map.merge(%{
+          "id" => id,
+          "recipient_id" => sub["agent_id"],
+          "sender_id" => p["author_id"],
+          "kind" => "publication",
+          "publication_id" => p["id"],
+          "created_at" => D.now(),
+          "matches" => [evidence]
+        })
+
+      put_in(s, [:deliveries, id], %{seq: s.seq, value: value, ack: false})
+    end
+  end
+
+  def admin_execute(s, c, cmd, actor \\ "legacy-admin") do
+    D.admin(cmd)
+
+    if is_binary(cmd["agent_id"]) and cmd["op"] != "query_jobs" and
+         not Map.has_key?(c["agents"], cmd["agent_id"]) do
+      D.fail("NOT_FOUND")
+    end
+
+    apply = fn state ->
+      if cmd["op"] in ADHD.Eventing.controls() do
+        ADHD.Eventing.admin(state, c, cmd, actor)
+      else
+        admin_apply(state, c, cmd)
+      end
+    end
+
+    if cmd["op"] in ~w(create_subscription update_subscription remove_subscription retry_jobs cancel_query_job rebuild_index repair_eventing replay_events) do
+      key = {actor, cmd["message_id"]}
+
+      previous =
+        s.admin_idempotency[key] ||
+          if actor == "legacy-admin" do
+            s.admin_idempotency[cmd["message_id"]]
+          end
+
+      case previous do
+        %{command: ^cmd, result: r} ->
+          {r, s}
+
+        nil ->
+          {r, n} = apply.(s)
+          {r, put_in(n, [:admin_idempotency, key], %{command: cmd, result: r})}
+
+        _ ->
+          D.fail("IDEMPOTENCY_CONFLICT")
+      end
+    else
+      apply.(s)
+    end
+  end
+
+  defp page(items, c) do
+    n = Map.get(c, "limit", 50)
+    %{"items" => Enum.take(items, n), "truncated" => length(items) > n}
+  end
+
+  defp admin_apply(s, c, %{"op" => "retrieval_index"}) do
+    {%{"index" => ADHD.RetrievalIndex.read(s, c)}, s}
+  end
+
+  defp admin_apply(s, c, %{"op" => "rebuild_index"} = cmd) do
+    if cmd["expected_revision"] != c["config_revision"] do
+      D.fail("CONFIG_CONFLICT")
+    end
+
+    ADHD.RetrievalIndex.rebuild(s, c)
+  end
+
+  defp admin_apply(s, c, %{"op" => op} = cmd)
+       when op in ~w(query_jobs query_job cancel_query_job) do
+    ADHD.SourceQueries.admin(s, c, cmd)
+  end
+
+  defp admin_apply(s, c, %{"op" => "overview"}) do
+    queued = Enum.filter(Map.values(s.deliveries), &(not &1.ack))
+
+    agents =
+      Enum.map(Enum.sort(Map.keys(c["agents"])), fn a ->
+        %{
+          "agent_id" => a,
+          "subscriptions" => Enum.count(values(s, :subscriptions), &(&1["agent_id"] == a)),
+          "queued_deliveries" => Enum.count(queued, &(&1.value["recipient_id"] == a))
+        }
+      end)
+
+    counts = %{
+      "agents" => length(agents),
+      "publications" => map_size(s.publications),
+      "subscriptions" => map_size(s.subscriptions),
+      "queued_deliveries" => length(queued),
+      "pending_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :pending end),
+      "completed_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :done end),
+      "cancelled_jobs" => Enum.count(s.jobs, fn {_, j} -> j.status == :cancelled end)
+    }
+
+    {%{
+       "project_id" => c["project_id"],
+       "counts" => counts,
+       "agents" => agents,
+       "matcher" => ADHD.Workers.health(c)
+     }, s}
+  end
+
+  defp admin_apply(s, c, %{"op" => "record"} = cmd) do
+    {ADHD.Records.read(s, c, cmd), s}
+  end
+
+  defp admin_apply(s, c, %{"op" => "publication", "publication_id" => id}) do
+    apply_command(s, c, nil, %{"op" => "get", "publication_id" => id})
+  end
+
+  defp admin_apply(s, c, %{"op" => "publications"} = cmd) do
+    {page(Enum.map(search(s, cmd), &project(&1, c)), cmd), s}
+  end
+
+  defp admin_apply(s, c, %{"op" => "subscriptions"} = cmd) do
+    items =
+      values(s, :subscriptions)
+      |> Enum.reverse()
+      |> Enum.filter(&(is_nil(cmd["agent_id"]) or &1["agent_id"] == cmd["agent_id"]))
+      |> Enum.map(&project(&1, c))
+
+    {page(Enum.drop(items, Map.get(cmd, "offset", 0)), cmd), s}
+  end
+
+  defp admin_apply(s, _, %{"op" => "deliveries"} = cmd) do
+    items =
+      rows(s, :deliveries)
+      |> Enum.reverse()
+      |> Enum.filter(&(is_nil(cmd["agent_id"]) or &1.value["recipient_id"] == cmd["agent_id"]))
+      |> Enum.map(fn r ->
+        Map.take(r.value, ~w(recipient_id kind created_at publication_id))
+        |> Map.merge(%{"delivery_id" => r.value["id"], "acknowledged" => r.ack})
+      end)
+
+    {page(items, cmd), s}
+  end
+
+  defp admin_apply(s, _, %{"op" => "jobs"} = cmd) do
+    items =
+      Map.values(s.jobs)
+      |> Enum.sort_by(& &1.seq, :desc)
+      |> Enum.filter(&(is_nil(cmd["status"]) or Atom.to_string(&1.status) == cmd["status"]))
+      |> Enum.map(fn j ->
+        %{
+          "job_id" => j.id,
+          "publication_id" => j.publication_id,
+          "subscription_id" => j.subscription_id,
+          "recipient_id" => j.recipient_id,
+          "status" => Atom.to_string(j.status),
+          "retry_at" => j.retry_at
+        }
+      end)
+
+    {page(items, cmd), s}
+  end
+
+  defp admin_apply(s, c, %{"op" => "update_subscription"} = cmd) do
+    row = s.subscriptions[cmd["subscription_id"]] || D.fail("NOT_FOUND")
+    owner = row.value["agent_id"]
+
+    if not Map.has_key?(c["agents"], owner) do
+      D.fail("NOT_FOUND")
+    end
+
+    apply_command(
+      s,
+      c,
+      owner,
+      Map.take(
+        cmd,
+        ~w(op subscription_id expected_revision mode selectors filter description paused)
+      )
+    )
+  end
+
+  defp admin_apply(s, c, %{"op" => "create_subscription"} = cmd) do
+    apply_command(
+      s,
+      c,
+      cmd["agent_id"],
+      Map.take(cmd, ~w(description filter mode selectors)) |> Map.put("op", "subscribe")
+    )
+  end
+
+  defp admin_apply(s, _, %{"op" => "remove_subscription", "subscription_id" => id}) do
+    if is_nil(s.subscriptions[id]) do
+      D.fail("NOT_FOUND")
+    end
+
+    {%{"removed" => true, "subscription_id" => id}, remove_subscription(s, id)}
+  end
+
+  defp admin_apply(s, _, %{"op" => "retry_jobs"}) do
+    count = Enum.count(s.jobs, fn {_, j} -> j.status == :pending end)
+
+    jobs =
+      Map.new(s.jobs, fn {id, j} ->
+        {id,
+         if j.status == :pending do
+           %{j | retry_at: 0}
+         else
+           j
+         end}
+      end)
+
+    {%{"retried" => count}, %{s | jobs: jobs}}
+  end
+
+  defp admin_apply(s, c, %{"op" => "private_delivery", "delivery_id" => id}) do
+    row = s.deliveries[id] || D.fail("NOT_FOUND")
+    {%{"delivery" => project(row.value, c)}, s}
+  end
+end

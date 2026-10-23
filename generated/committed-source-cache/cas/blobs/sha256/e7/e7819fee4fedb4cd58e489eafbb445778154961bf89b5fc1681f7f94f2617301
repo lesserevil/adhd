@@ -1,0 +1,2504 @@
+defmodule ADHD.ProjectRecoveryProtocol do
+  alias ADHD.Protocol, as: P
+  @authority_sha256 "8c3aeb3d40b9341327ab45628899151ff3ca92834da6f0cab6d3a7253e5e985f"
+  @authority JSON.decode!(~S"""
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:adhd:project-recovery:1",
+  "title": "Future selective project recovery contract; not served by accepted profile2.0 artifacts",
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "x-maxBytes": 128
+    },
+    "Identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "x-maxBytes": 128,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "BackupId": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "not": {
+            "enum": [
+              ".",
+              ".."
+            ]
+          }
+        }
+      ]
+    },
+    "Sha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "x-maxBytes": 64,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Epoch": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "x-maxBytes": 32,
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "Uint": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "x-integerToken": true
+    },
+    "Positive": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "x-integerToken": true
+    },
+    "Time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "Topic": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 249,
+      "x-maxBytes": 249,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "Aliases": {
+      "type": "array",
+      "maxItems": 10000,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/Identifier"
+      }
+    },
+    "RecoveryConfig": {
+      "type": "object",
+      "properties": {
+        "backup_root": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-maxBytes": 4096,
+          "pattern": "^[^\\u0000]+$"
+        },
+        "max_backup_bytes": {
+          "type": "integer",
+          "minimum": 65536,
+          "maximum": 1073741824,
+          "default": 67108864,
+          "x-integerToken": true
+        },
+        "max_records": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "default": 100000,
+          "x-integerToken": true
+        },
+        "scan_batch_records": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096,
+          "default": 256,
+          "x-integerToken": true
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 1800000,
+          "default": 300000,
+          "x-integerToken": true
+        },
+        "plan_ttl_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 86400000,
+          "default": 900000,
+          "x-integerToken": true
+        },
+        "max_operations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "default": 10000,
+          "x-integerToken": true
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "RecoveryMergePatch": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "backup_root": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096,
+                  "x-maxBytes": 4096,
+                  "pattern": "^[^\\u0000]+$"
+                }
+              ]
+            },
+            "max_backup_bytes": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 65536,
+                  "maximum": 1073741824,
+                  "default": 67108864,
+                  "x-integerToken": true
+                }
+              ]
+            },
+            "max_records": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000,
+                  "default": 100000,
+                  "x-integerToken": true
+                }
+              ]
+            },
+            "scan_batch_records": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4096,
+                  "default": 256,
+                  "x-integerToken": true
+                }
+              ]
+            },
+            "timeout_ms": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 1800000,
+                  "default": 300000,
+                  "x-integerToken": true
+                }
+              ]
+            },
+            "plan_ttl_ms": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 86400000,
+                  "default": 900000,
+                  "x-integerToken": true
+                }
+              ]
+            },
+            "max_operations": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000,
+                  "default": 10000,
+                  "x-integerToken": true
+                }
+              ]
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PlanCommand": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RestorePlanCommand"
+        },
+        {
+          "$ref": "#/$defs/InitializePlanCommand"
+        }
+      ]
+    },
+    "ApplyCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "project_restore_apply"
+        },
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/Positive"
+        },
+        "message_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "plan_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "plan_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "confirm": {
+          "const": true
+        }
+      },
+      "required": [
+        "op",
+        "project_id",
+        "expected_revision",
+        "message_id",
+        "plan_id",
+        "plan_sha256",
+        "confirm"
+      ],
+      "additionalProperties": false
+    },
+    "StatusCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "project_restore_status"
+        },
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "required": [
+        "op",
+        "project_id"
+      ],
+      "additionalProperties": false
+    },
+    "AdminCommand": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PlanCommand"
+        },
+        {
+          "$ref": "#/$defs/ApplyCommand"
+        },
+        {
+          "$ref": "#/$defs/StatusCommand"
+        }
+      ]
+    },
+    "Accepted": {
+      "type": "object",
+      "properties": {
+        "accepted": {
+          "const": true
+        },
+        "operation_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "enum": [
+            "plan",
+            "apply"
+          ]
+        },
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "accepted",
+        "operation_id",
+        "kind",
+        "project_id"
+      ],
+      "additionalProperties": false
+    },
+    "FileSnapshot": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "const": "project.snapshot"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 42,
+          "maximum": 1073741824,
+          "x-integerToken": true
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "name",
+        "bytes",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "FileConfiguration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "const": "server-config.json"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 1048576,
+          "x-integerToken": true
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "name",
+        "bytes",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "BackupSource": {
+      "type": "object",
+      "properties": {
+        "route_generation": {
+          "$ref": "#/$defs/Uint"
+        },
+        "project_epoch": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Epoch"
+            }
+          ]
+        },
+        "allocation_epoch": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Epoch"
+            }
+          ]
+        },
+        "storage_generation": {
+          "$ref": "#/$defs/Uint"
+        },
+        "sequence": {
+          "$ref": "#/$defs/Uint"
+        }
+      },
+      "required": [
+        "route_generation",
+        "project_epoch",
+        "allocation_epoch",
+        "storage_generation",
+        "sequence"
+      ],
+      "additionalProperties": false
+    },
+    "BackupManifest": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "adhd/project-backup@1"
+        },
+        "server_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "aliases": {
+          "$ref": "#/$defs/Aliases"
+        },
+        "captured_at": {
+          "$ref": "#/$defs/Time"
+        },
+        "source": {
+          "$ref": "#/$defs/BackupSource"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/FileSnapshot"
+        },
+        "configuration": {
+          "$ref": "#/$defs/FileConfiguration"
+        },
+        "principal_proof": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "configuration-v1"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema",
+        "server_id",
+        "project_id",
+        "aliases",
+        "captured_at",
+        "source",
+        "snapshot",
+        "configuration",
+        "principal_proof"
+      ],
+      "additionalProperties": false
+    },
+    "Watermark": {
+      "type": "object",
+      "properties": {
+        "sequence": {
+          "$ref": "#/$defs/Uint"
+        },
+        "storage_generation": {
+          "$ref": "#/$defs/Uint"
+        },
+        "state_sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Sha256"
+            }
+          ]
+        }
+      },
+      "required": [
+        "sequence",
+        "storage_generation",
+        "state_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "PlanTarget": {
+      "type": "object",
+      "properties": {
+        "availability": {
+          "enum": [
+            "empty",
+            "missing",
+            "uninitialized"
+          ]
+        },
+        "route_generation": {
+          "$ref": "#/$defs/Uint"
+        },
+        "project_epoch": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Epoch"
+            }
+          ]
+        },
+        "watermark": {
+          "$ref": "#/$defs/Watermark"
+        }
+      },
+      "required": [
+        "availability",
+        "route_generation",
+        "project_epoch",
+        "watermark"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "availability": {
+                "enum": [
+                  "missing",
+                  "uninitialized"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "watermark": {
+                "properties": {
+                  "state_sha256": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "watermark": {
+                "properties": {
+                  "state_sha256": {
+                    "$ref": "#/$defs/Sha256"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "availability": {
+                "const": "uninitialized"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "route_generation": {
+                "const": 0
+              },
+              "watermark": {
+                "properties": {
+                  "sequence": {
+                    "const": 0
+                  },
+                  "storage_generation": {
+                    "const": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PlanBackup": {
+      "type": "object",
+      "properties": {
+        "sequence": {
+          "$ref": "#/$defs/Uint"
+        },
+        "storage_generation": {
+          "$ref": "#/$defs/Uint"
+        },
+        "records": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "x-integerToken": true
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824,
+          "x-integerToken": true
+        },
+        "snapshot_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "configuration_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "sequence",
+        "storage_generation",
+        "records",
+        "bytes",
+        "snapshot_sha256",
+        "configuration_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "PlanReferences": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "x-integerToken": true
+        },
+        "agents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "x-integerToken": true
+        },
+        "proof_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "users",
+        "agents",
+        "proof_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "PlanSelection": {
+      "type": "object",
+      "properties": {
+        "route_generation": {
+          "$ref": "#/$defs/Positive"
+        },
+        "project_epoch": {
+          "$ref": "#/$defs/Epoch"
+        },
+        "allocation_epoch": {
+          "$ref": "#/$defs/Epoch"
+        },
+        "transport_enabled": {
+          "type": "boolean"
+        },
+        "topic": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Topic"
+            }
+          ]
+        }
+      },
+      "required": [
+        "route_generation",
+        "project_epoch",
+        "allocation_epoch",
+        "transport_enabled",
+        "topic"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "transport_enabled": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "topic": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "topic": {
+                "$ref": "#/$defs/Topic"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "EventPolicy": {
+      "type": "object",
+      "properties": {
+        "retention_ms": {
+          "type": "integer",
+          "minimum": 3600000,
+          "maximum": 31536000000,
+          "x-integerToken": true
+        },
+        "max_pending_events": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "x-integerToken": true
+        },
+        "max_pending_bytes": {
+          "type": "integer",
+          "minimum": 65536,
+          "maximum": 1099511627776,
+          "x-integerToken": true
+        },
+        "max_pending_filter_jobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "x-integerToken": true
+        },
+        "max_pending_filter_jobs_per_subscription": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "x-integerToken": true
+        },
+        "topic_prefix": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      },
+      "required": [
+        "retention_ms",
+        "max_pending_events",
+        "max_pending_bytes",
+        "max_pending_filter_jobs",
+        "max_pending_filter_jobs_per_subscription",
+        "topic_prefix"
+      ],
+      "additionalProperties": false
+    },
+    "Plan": {
+      "type": "object",
+      "properties": {
+        "plan_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "server_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "aliases": {
+          "$ref": "#/$defs/Aliases"
+        },
+        "backup_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/BackupId"
+            }
+          ]
+        },
+        "manifest_sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Sha256"
+            }
+          ]
+        },
+        "config_revision": {
+          "$ref": "#/$defs/Positive"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Time"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/Time"
+        },
+        "target": {
+          "$ref": "#/$defs/PlanTarget"
+        },
+        "backup": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/PlanBackup"
+            }
+          ]
+        },
+        "references": {
+          "$ref": "#/$defs/PlanReferences"
+        },
+        "selected": {
+          "$ref": "#/$defs/PlanSelection"
+        },
+        "policy": {
+          "$ref": "#/$defs/EventPolicy"
+        },
+        "plan_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "mode": {
+          "enum": [
+            "restore",
+            "initialize"
+          ]
+        }
+      },
+      "required": [
+        "plan_id",
+        "server_id",
+        "project_id",
+        "aliases",
+        "backup_id",
+        "manifest_sha256",
+        "config_revision",
+        "created_at",
+        "expires_at",
+        "target",
+        "backup",
+        "references",
+        "selected",
+        "policy",
+        "plan_sha256",
+        "mode"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "initialize"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "backup_id": {
+                "type": "null"
+              },
+              "manifest_sha256": {
+                "type": "null"
+              },
+              "backup": {
+                "type": "null"
+              },
+              "target": {
+                "properties": {
+                  "availability": {
+                    "const": "uninitialized"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "backup_id": {
+                "$ref": "#/$defs/BackupId"
+              },
+              "manifest_sha256": {
+                "$ref": "#/$defs/Sha256"
+              },
+              "backup": {
+                "$ref": "#/$defs/PlanBackup"
+              },
+              "target": {
+                "properties": {
+                  "availability": {
+                    "enum": [
+                      "empty",
+                      "missing"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Reason": {
+      "enum": [
+        "hash",
+        "schema",
+        "identity",
+        "alias",
+        "owner_missing",
+        "owner_changed",
+        "owner_unprovable",
+        "populated",
+        "missing_admission",
+        "partial_target",
+        "path",
+        "revision",
+        "route",
+        "expired",
+        "limits",
+        "io",
+        "transport",
+        "timeout",
+        "decision_integrity",
+        "snapshot_integrity"
+      ]
+    },
+    "Conflict": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "$ref": "#/$defs/Reason"
+        },
+        "count": {
+          "$ref": "#/$defs/Positive"
+        }
+      },
+      "required": [
+        "reason",
+        "count"
+      ],
+      "additionalProperties": false
+    },
+    "Failure": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "RESTORE_INVALID_BACKUP",
+            "RESTORE_CONFLICT",
+            "RESTORE_STALE_PLAN",
+            "RESTORE_TIMEOUT",
+            "RESTORE_IO_ERROR",
+            "RESTORE_UNAVAILABLE",
+            "RECOVERY_REQUIRED"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/Reason"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "conflicts": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/Conflict"
+          }
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "reason",
+        "retryable",
+        "conflicts",
+        "truncated"
+      ],
+      "additionalProperties": false
+    },
+    "Progress": {
+      "type": "object",
+      "properties": {
+        "bytes_read": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824,
+          "x-integerToken": true
+        },
+        "records_checked": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "x-integerToken": true
+        },
+        "maximum_bytes": {
+          "type": "integer",
+          "minimum": 65536,
+          "maximum": 1073741824,
+          "x-integerToken": true
+        },
+        "maximum_records": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "x-integerToken": true
+        }
+      },
+      "required": [
+        "bytes_read",
+        "records_checked",
+        "maximum_bytes",
+        "maximum_records"
+      ],
+      "additionalProperties": false
+    },
+    "RestoredCounts": {
+      "type": "object",
+      "properties": {
+        "publications": {
+          "$ref": "#/$defs/Uint"
+        },
+        "subscriptions": {
+          "$ref": "#/$defs/Uint"
+        },
+        "deliveries": {
+          "$ref": "#/$defs/Uint"
+        },
+        "acknowledged_deliveries": {
+          "$ref": "#/$defs/Uint"
+        },
+        "pending_jobs": {
+          "$ref": "#/$defs/Uint"
+        },
+        "retained_records": {
+          "$ref": "#/$defs/Uint"
+        }
+      },
+      "required": [
+        "publications",
+        "subscriptions",
+        "deliveries",
+        "acknowledged_deliveries",
+        "pending_jobs",
+        "retained_records"
+      ],
+      "additionalProperties": false
+    },
+    "RestoreResult": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "route_generation": {
+          "$ref": "#/$defs/Positive"
+        },
+        "project_epoch": {
+          "$ref": "#/$defs/Epoch"
+        },
+        "allocation_epoch": {
+          "$ref": "#/$defs/Epoch"
+        },
+        "transport_discontinuity": {
+          "type": "boolean"
+        },
+        "topic": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Topic"
+            }
+          ]
+        },
+        "restored": {
+          "$ref": "#/$defs/RestoredCounts"
+        },
+        "sequence": {
+          "$ref": "#/$defs/Uint"
+        },
+        "storage_generation": {
+          "$ref": "#/$defs/Uint"
+        },
+        "initialized": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "project_id",
+        "route_generation",
+        "project_epoch",
+        "allocation_epoch",
+        "transport_discontinuity",
+        "topic",
+        "restored",
+        "sequence",
+        "storage_generation",
+        "initialized"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "initialized": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "transport_discontinuity": {
+                "const": false
+              },
+              "sequence": {
+                "const": 0
+              },
+              "restored": {
+                "properties": {
+                  "publications": {
+                    "const": 0
+                  },
+                  "subscriptions": {
+                    "const": 0
+                  },
+                  "deliveries": {
+                    "const": 0
+                  },
+                  "acknowledged_deliveries": {
+                    "const": 0
+                  },
+                  "pending_jobs": {
+                    "const": 0
+                  },
+                  "retained_records": {
+                    "const": 0
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "transport_discontinuity": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "plan"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "queued"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "type": "null"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "plan"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "verifying"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "type": "null"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "plan"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "ready"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "plan"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "failed"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "type": "null"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "$ref": "#/$defs/Failure"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "plan"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "expired"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "queued"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "staging"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "decided"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "installing"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "activating"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "complete"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "$ref": "#/$defs/RestoreResult"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "blocked"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/Failure"
+                },
+                {
+                  "properties": {
+                    "code": {
+                      "const": "RECOVERY_REQUIRED"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "apply"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "failed"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "$ref": "#/$defs/Failure"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "const": "plan"
+            },
+            "project_id": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "state": {
+              "const": "stale"
+            },
+            "created_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/Time"
+            },
+            "progress": {
+              "$ref": "#/$defs/Progress"
+            },
+            "plan": {
+              "$ref": "#/$defs/Plan"
+            },
+            "result": {
+              "type": "null"
+            },
+            "failure": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_id",
+            "kind",
+            "project_id",
+            "state",
+            "created_at",
+            "updated_at",
+            "progress",
+            "plan",
+            "result",
+            "failure"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Route": {
+      "type": "object",
+      "properties": {
+        "generation": {
+          "$ref": "#/$defs/Uint"
+        },
+        "project_epoch": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Epoch"
+            }
+          ]
+        },
+        "allocation_epoch": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Epoch"
+            }
+          ]
+        },
+        "topic": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Topic"
+            }
+          ]
+        }
+      },
+      "required": [
+        "generation",
+        "project_epoch",
+        "allocation_epoch",
+        "topic"
+      ],
+      "additionalProperties": false
+    },
+    "Capacity": {
+      "type": "object",
+      "properties": {
+        "operations": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "x-integerToken": true
+        },
+        "max_operations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "x-integerToken": true
+        },
+        "active": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1,
+          "x-integerToken": true
+        }
+      },
+      "required": [
+        "operations",
+        "max_operations",
+        "active"
+      ],
+      "additionalProperties": false
+    },
+    "Status": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "availability": {
+          "enum": [
+            "ready",
+            "uninitialized",
+            "recovery_required",
+            "restoring"
+          ]
+        },
+        "route": {
+          "$ref": "#/$defs/Route"
+        },
+        "capacity": {
+          "$ref": "#/$defs/Capacity"
+        },
+        "operation": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Operation"
+            }
+          ]
+        },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "backup_root": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096,
+              "x-maxBytes": 4096,
+              "pattern": "^[^\\u0000]+$"
+            },
+            "max_backup_bytes": {
+              "type": "integer",
+              "minimum": 65536,
+              "maximum": 1073741824,
+              "default": 67108864,
+              "x-integerToken": true
+            },
+            "max_records": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 100000,
+              "x-integerToken": true
+            },
+            "scan_batch_records": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096,
+              "default": 256,
+              "x-integerToken": true
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 1800000,
+              "default": 300000,
+              "x-integerToken": true
+            },
+            "plan_ttl_ms": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 86400000,
+              "default": 900000,
+              "x-integerToken": true
+            },
+            "max_operations": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 10000,
+              "x-integerToken": true
+            }
+          },
+          "required": [
+            "backup_root",
+            "max_backup_bytes",
+            "max_records",
+            "scan_batch_records",
+            "timeout_ms",
+            "plan_ttl_ms",
+            "max_operations"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "project_id",
+        "availability",
+        "route",
+        "capacity",
+        "operation",
+        "settings"
+      ],
+      "additionalProperties": false
+    },
+    "Error": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "enum": [
+                    "INVALID_PARAMS",
+                    "UNAUTHORIZED",
+                    "FORBIDDEN",
+                    "PROJECT_NOT_FOUND",
+                    "NOT_FOUND",
+                    "IDEMPOTENCY_CONFLICT",
+                    "RESTORE_STALE_PLAN",
+                    "RESTORE_CONFLICT",
+                    "BACKPRESSURE",
+                    "RESTORE_BUSY",
+                    "RECOVERY_REQUIRED",
+                    "CONFIG_APPLY_IN_PROGRESS"
+                  ]
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "x-maxBytes": 128
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ],
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RESTORE_STALE_PLAN"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Recovery plan is stale"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RESTORE_CONFLICT"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Project recovery conflict"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RESTORE_BUSY"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Project recovery is busy"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "code": {
+                        "const": "RECOVERY_REQUIRED"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "message": {
+                        "const": "Project recovery is required"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "required": [
+            "error"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "const": "CONFIG_CONFLICT"
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "x-maxBytes": 128
+                },
+                "current_revision": {
+                  "$ref": "#/$defs/Positive"
+                }
+              },
+              "required": [
+                "code",
+                "message",
+                "current_revision"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "error"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AdminResult": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Accepted"
+        },
+        {
+          "$ref": "#/$defs/Status"
+        }
+      ]
+    },
+    "RestorePlanCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "project_restore_plan"
+        },
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/Positive"
+        },
+        "message_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "backup_id": {
+          "$ref": "#/$defs/BackupId"
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "allow_missing": {
+          "type": "boolean",
+          "default": false
+        },
+        "mode": {
+          "const": "restore"
+        }
+      },
+      "required": [
+        "op",
+        "project_id",
+        "expected_revision",
+        "message_id",
+        "backup_id",
+        "manifest_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "InitializePlanCommand": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "const": "project_restore_plan"
+        },
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/Positive"
+        },
+        "message_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "mode": {
+          "const": "initialize"
+        },
+        "confirm": {
+          "const": true
+        }
+      },
+      "required": [
+        "op",
+        "project_id",
+        "expected_revision",
+        "message_id",
+        "mode",
+        "confirm"
+      ],
+      "additionalProperties": false
+    },
+    "RebindStore": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "store_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-maxBytes": 4096,
+          "pattern": "^/[^\\u0000]*$"
+        },
+        "expected_route_generation": {
+          "$ref": "#/$defs/Positive"
+        },
+        "snapshot_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "checkpoint_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "project_id",
+        "store_path",
+        "expected_route_generation",
+        "snapshot_sha256",
+        "checkpoint_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "RebindRequest": {
+      "type": "object",
+      "properties": {
+        "config_file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "x-maxBytes": 4096,
+          "pattern": "^/[^\\u0000]*$"
+        },
+        "expected_server_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "expected_config_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "expected_config_journal_sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Sha256"
+            }
+          ]
+        },
+        "expected_registry_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "expected_recovery_journal_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "expected_marker_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "stores": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/RebindStore"
+          },
+          "uniqueItems": true,
+          "x-uniqueBy": "project_id"
+        },
+        "message_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "confirm": {
+          "const": true
+        },
+        "confirm_stopped": {
+          "const": true
+        }
+      },
+      "required": [
+        "config_file",
+        "expected_server_id",
+        "expected_config_sha256",
+        "expected_config_journal_sha256",
+        "expected_registry_sha256",
+        "expected_recovery_journal_sha256",
+        "expected_marker_sha256",
+        "stores",
+        "message_id",
+        "confirm",
+        "confirm_stopped"
+      ],
+      "additionalProperties": false
+    },
+    "RebindResult": {
+      "type": "object",
+      "properties": {
+        "rebound": {
+          "const": true
+        },
+        "server_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "registry_revision": {
+          "$ref": "#/$defs/Positive"
+        },
+        "projects": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          }
+        }
+      },
+      "required": [
+        "rebound",
+        "server_id",
+        "registry_revision",
+        "projects"
+      ],
+      "additionalProperties": false
+    },
+    "RebindCLI": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "const": "rebind-storage"
+        },
+        {
+          "$ref": "#/$defs/RebindRequest"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/AdminCommand"
+    },
+    {
+      "$ref": "#/$defs/AdminResult"
+    },
+    {
+      "$ref": "#/$defs/BackupManifest"
+    },
+    {
+      "$ref": "#/$defs/Error"
+    },
+    {
+      "$ref": "#/$defs/RebindCLI"
+    },
+    {
+      "$ref": "#/$defs/RebindResult"
+    }
+  ],
+  "x-projectRecoveryInvariants": [
+    "All x-maxBytes are UTF8 byte constraints.",
+    "Plan.plan_id equals creating Operation.operation_id; all nested project IDs equal command target; server ID is current authenticated server.",
+    "Plan target missing/uninitialized has null watermark digest; initialize watermark counters are zero and backup fields null; restore requires full verified backup.",
+    "Selected route generation is greater than target generation; all new epochs are unique and durably reserved.",
+    "Plan SHA256 is RFC8785 JCS of exact Plan without plan_sha256.",
+    "Progress unique verified dataset counters do not exceed frozen maximums; Capacity.operations may exceed a lowered cap but new admission stops.",
+    "Failure conflicts have unique reasons and sorted order; truncated iff further categories omitted.",
+    "Complete result target/epochs/route match reviewed Plan selection; initialized equals mode initialize."
+  ],
+  "x-applicationProfile": "2.1.0"
+}
+""")
+  @special %{"RecoveryConfig"=>"ProjectRecoveryConfig","RecoveryMergePatch"=>"ProjectRecoveryMergePatch","AdminCommand"=>"ProjectRecoveryCommand","AdminResult"=>"ProjectRecoveryResult"}
+  def authority_sha256, do: @authority_sha256
+  defp name(value), do: Map.get(@special,value,"ProjectRecovery"<>value)
+  defp rename(value) when is_map(value) do
+    Map.new(value, fn {key,item}->
+      item=if key=="$ref" and is_binary(item) and String.starts_with?(item,"#/$defs/"),do: "#/$defs/"<>name(String.replace_prefix(item,"#/$defs/","")),else: rename(item)
+      {key,item}
+    end)
+  end
+  defp rename(value) when is_list(value), do: Enum.map(value,&rename/1)
+  defp rename(value), do: value
+  def extend(defs) do
+    recovery=Map.new(@authority["$defs"],fn {key,value}->{name(key),rename(value)} end)
+    defs=Map.merge(defs,recovery)
+    ops = ~w(project_restore_plan project_restore_apply project_restore_status)
+    request_names = ~w(PlanCommand ApplyCommand StatusCommand)
+    defs=Enum.zip(ops,request_names) |> Enum.reduce(defs,fn {op,shape},acc->Map.put(acc,"admin_"<>op,P.ref(name(shape))) end)
+    accepted=recovery["ProjectRecoveryAccepted"]
+    plan=put_in(accepted,["properties","kind"],%{"const"=>"plan"})
+    apply=put_in(accepted,["properties","kind"],%{"const"=>"apply"})
+    defs=defs |> Map.put("admin_result_project_restore_plan",plan) |> Map.put("admin_result_project_restore_apply",apply) |> Map.put("admin_result_project_restore_status",P.ref("ProjectRecoveryStatus"))
+    defs=Enum.reduce([{"AdminCommand","oneOf","admin_"},{"AdminResult","anyOf","admin_result_"}],defs,fn {key,union,prefix},acc->update_in(acc,[key,union],&Enum.uniq((&1 || [])++Enum.map(ops,fn op->P.ref(prefix<>op) end))) end)
+    defs=put_in(defs,["PublicConfig","properties","recovery"],P.ref("ProjectRecoveryConfig"))
+    defs=put_in(defs,["MergePatch","properties","recovery"],P.ref("ProjectRecoveryMergePatch"))
+    # Preserve every existing error envelope/code while closing the new codes'
+    # message and revision-field behavior to the reviewed recovery contract.
+    conditions=get_in(recovery,["ProjectRecoveryError","oneOf",Access.at(0),"properties","error","allOf"])
+    conditions=Enum.map(conditions,fn condition->put_in(condition,["then","properties","current_revision"],false) end)
+    update_in(defs,["Error","properties","error","allOf"],fn old->(old || [])++conditions end)
+  end
+  def openapi(paths) do
+    update_in(paths,["/admin/api","post","responses","503"],fn response->
+      Map.put(response,"headers",%{"Retry-After"=>%{"description"=>"One second for recovery/configuration admission; retry identical message ID","schema"=>%{"const"=>"1"}}})
+    end)
+  end
+end

@@ -1,0 +1,424 @@
+defmodule ADHD.Tests do
+  alias ADHD.Domain, as: D
+  # Executable vectors are intentionally independent of lifecycle metadata.
+  def cases do
+    [
+      {"acme-status-global",["validate-admin",%{"op"=>"tls_status"}],%{"valid"=>true,"op"=>"tls_status"}},
+      {"acme-renew-confirmed",["validate-admin",%{"op"=>"tls_renew","expected_revision"=>17,"message_id"=>"acme-manual-request-7","confirm"=>true}],%{"valid"=>true,"op"=>"tls_renew"}},
+      {"acme-disabled-settings",["validate-admin",%{"op"=>"config_validate","expected_revision"=>17,"patch"=>%{"tls"=>%{"enabled"=>false}}}],%{"valid"=>true,"op"=>"config_validate"}},
+      {"acme-native-only-settings",["validate-admin",%{"op"=>"config_validate","expected_revision"=>17,"patch"=>%{"tls"=>%{"enabled"=>true,"port"=>18443,"acme"=>%{"enabled"=>false}}}}],%{"valid"=>true,"op"=>"config_validate"}},
+      {"acme-staging-settings",["validate-admin",%{"op"=>"config_validate","expected_revision"=>17,"patch"=>%{"tls"=>%{"enabled"=>true,"acme"=>%{"enabled"=>true,"domains"=>["hub.example.org"],"email"=>"ops@example.org","accept_terms"=>true}}}}],%{"valid"=>true,"op"=>"config_validate"}},
+      {"acme-disable-confirmed",["validate-admin",%{"op"=>"config_update","expected_revision"=>17,"message_id"=>"acme-manual-request-7","confirm"=>true,"patch"=>%{"tls"=>%{"enabled"=>false,"acme"=>%{"enabled"=>false}}}}],%{"valid"=>true,"op"=>"config_update"}},
+      {"acme-domains-confirmed",["validate-admin",%{"op"=>"config_update","expected_revision"=>17,"message_id"=>"acme-manual-request-7","confirm"=>true,"patch"=>%{"tls"=>%{"acme"=>%{"domains"=>["alpha.example.org","beta.example.org"]}}}}],%{"valid"=>true,"op"=>"config_update"}},
+      {"acme-default-reset",["validate-admin",%{"op"=>"config_validate","expected_revision"=>17,"patch"=>%{"tls"=>nil}}],%{"valid"=>true,"op"=>"config_validate"}}
+    ]
+  end
+
+  def smoke do
+    {_,arguments,_}=hd(cases())
+    ADHD.CLI.run(arguments)
+  end
+  def equal(actual,expected) do
+    if actual != expected,do: raise("Native behavior assertion failed")
+    :ok
+  end
+  def rejects(fun,code \\ "INVALID_PARAMS") do
+    result=try do fun.(); :accepted rescue _ -> :rejected catch {:domain,c}-> {:rejected,c} end
+    if result not in [:rejected,{:rejected,code}],do: raise("Invalid input was accepted")
+  end
+  def run do
+    acme_tests()
+    selection_tests()
+    optimization_tests()
+    feedback_tests()
+    archive_tests()
+    retrieval_tests()
+    record_tests()
+    history_tests()
+    directory_tests()
+    domain_tests()
+    transition_tests()
+    durable_tests()
+    results=Enum.map(cases(),fn {id,args,expected}->equal(ADHD.CLI.run(args),expected); %{"case_id"=>id,"outcome"=>"passed"} end)
+    %{"schema"=>"literate-ai/generated-test-results@1","cases"=>results}
+  end
+  def acme_tests do
+    c = ADHD.TLS.normalize(%{}, System.tmp_dir!())
+    equal(c["tls"]["enabled"], false)
+    equal(c["tls"]["acme"]["enabled"], false)
+    equal(c["tls"]["port"], 8443)
+    equal(c["tls"]["challenge_port"], 8080)
+    equal(c["tls"]["acme"]["directory_url"], "https://acme-staging-v02.api.letsencrypt.org/directory")
+    valid = %{"enabled" => true, "acme" => %{"enabled" => true, "accept_terms" => true, "email" => "ops@example.org", "domains" => ["hub.example.org"]}}
+    equal(ADHD.TLS.normalize(%{"tls" => valid}, System.tmp_dir!())["tls"]["acme"]["domains"], ["hub.example.org"])
+    for bad <- [["*.example.org"], ["UPPER.example.org"], ["127.0.0.1"], ["single"], ["hub.example.org", "hub.example.org"], Enum.map(1..21, &("node" <> to_string(&1) <> ".example.org"))] do
+      rejects(fn -> ADHD.TLS.normalize(%{"tls" => put_in(valid, ["acme", "domains"], bad)}, System.tmp_dir!()) end)
+    end
+    for patch <- [%{"email" => ""}, %{"accept_terms" => false}, %{"directory_url" => "http://issuer.example.org/directory"}, %{"directory_url" => "https://a:b@issuer.example.org/directory"}, %{"directory_url" => "https://issuer.example.org/directory?secret=x"}, %{"retry_seconds" => 0}, %{"order_timeout_ms" => 999}, %{"renew_before_days" => 91}, %{"dns_token" => "not-supported"}] do
+      rejects(fn -> ADHD.TLS.normalize(%{"tls" => Map.update!(valid, "acme", &Map.merge(&1, patch))}, System.tmp_dir!()) end)
+    end
+    rejects(fn -> ADHD.TLS.normalize(%{"tls" => Map.put(valid, "enabled", false)}, System.tmp_dir!()) end)
+    rejects(fn -> ADHD.TLS.normalize(%{"tls" => Map.put(valid, "host", "example.org")}, System.tmp_dir!()) end)
+    rejects(fn -> ADHD.TLS.normalize(%{"tls" => Map.merge(valid, %{"port" => 12345, "challenge_port" => 12345})}, System.tmp_dir!()) end)
+    for cmd <- [%{"op" => "tls_status", "project_id" => "secret-project"}, %{"op" => "tls_status", "email" => "ops@example.org"}, %{"op" => "tls_renew", "expected_revision" => 1, "confirm" => false, "message_id" => "confirm-negative"}, %{"op" => "tls_renew", "expected_revision" => 1, "confirm" => true}] do
+      rejects(fn -> D.admin(cmd) end)
+    end
+  end
+  def config do
+    %{"project_id"=>"native-project","agents"=>%{"native-a"=>String.duplicate("a",28),"native-b"=>String.duplicate("b",28)},"admin_token"=>String.duplicate("c",36),"threshold_ppm"=>800000,"matcher"=>%{"url"=>"http://127.0.0.1:9/infer","model"=>"native-model","timeout_ms"=>100,"retry_ms"=>100},"store_path"=>"native.dets","port"=>19876,"public_url"=>"http://127.0.0.1:19876","users"=>[],"agent_owners"=>%{}}
+  end
+  # Pure vectors explicitly model an admitted generation; production never infers these headers.
+  def admitted_empty(project) do
+    ADHD.Store.empty(project) |> Map.merge(%{schema: 4,route_generation: 1,
+      project_epoch: String.duplicate("a",32),allocation_epoch: String.duplicate("b",32),
+      allocation_counter: 0,storage_generation: 0})
+  end
+  def selection_tests do
+    alias ADHD.Selection,as: S
+    alias ADHD.Retrieval,as: X
+    alias ADHD.RetrievalIndex,as: I
+    c=config();s=admitted_empty(c["project_id"])
+    {_,s}=ADHD.Store.execute(s,c,"native-a","selection-original",%{"op"=>"publish_record","text"=>"Native immutable selection evidence."})
+    build=fn state,recipe->
+      cc=ADHD.Replay.config_for(X.resolve(c,state),recipe)
+      prepared=I.begin_build(state,cc);g=prepared.retrieval_index["building"]
+      rows=Map.new(g["target_ids"],fn id->{id,X.make_row(state,cc,id,recipe,g["manifest"]["source_watermark"])} end)
+      g=g |> Map.merge(%{"rows"=>rows,"pending_ids"=>[],"done"=>map_size(rows)}) |> then(&I.refresh_manifest(state,&1)) |> put_in(["manifest","status"],"ready")
+      {g,%{state|allocation_counter: prepared.allocation_counter}}
+    end
+    base=S.base(c);{old,s}=build.(s,base);s=put_in(s,[:retrieval_index,"active"],old)
+    recipe=Map.put(base,"context_depth",min(4,base["context_depth"]+1));{candidate,s}=build.(s,recipe)
+    descriptor=S.descriptor(recipe,c,"native-selection-proof",String.duplicate("f",64),ADHD.Records.watermark(s),ADHD.Records.watermark(s))
+    state=S.activate(s,c,descriptor,candidate)
+    equal(S.view(state,c)["applied"],true);equal(S.view(state,c)["effective_recipe"],recipe)
+    equal(S.view(state,c)["base_recipe"],base);equal(S.view(state,c)["qualification_current"],true)
+    equal(S.base_identity(c),S.base_identity(X.resolve(c,state)));equal(X.config(c)["recipe"],base)
+    equal(X.effective(X.resolve(c,state))["recipe"],recipe);equal(S.protected_previous?(state,c),true)
+    equal(state.retrieval_index["active"]["manifest"]["recipe"],recipe);equal(state.retrieval_index["previous"],old)
+    equal(S.upgrade(state),state);equal(I.upgrade(state),state)
+    ranking=Map.put(recipe,"semantic_window",recipe["semantic_window"]+1)
+    private=%{"winner_identity"=>X.recipe_identity(ranking),"variants"=>[%{"recipe_identity"=>X.recipe_identity(ranking),"recipe"=>ranking}]}
+    {reused,count,counter}=ADHD.OptimizationWorker.prepare_generation(state,c,private)
+    equal(counter,state.allocation_counter+1)
+    equal(count,map_size(candidate["rows"]));equal(reused["pending_ids"],[]);equal(reused["done"],0);equal(reused["manifest"]["recipe"],ranking)
+    {_,published}=ADHD.Store.execute(state,c,"native-a","selection-catchup",%{"op"=>"publish_record","text"=>"A newer contextual original.","context"=>%{"links"=>[%{"relation"=>"reply","publication_id"=>hd(candidate["target_ids"])}]}})
+    {extended,_,counter}=ADHD.OptimizationWorker.prepare_generation(published,c,private)
+    equal(counter,published.allocation_counter+1)
+    equal(length(extended["pending_ids"])>0,true);equal(extended["manifest"]["source_watermark"],ADHD.Records.watermark(published))
+    branch=ADHD.Replay.config_for(X.resolve(c,state),base);equal(X.effective(X.resolve(branch,state))["recipe"],base);equal(branch["__global_retrieval_recipe"],recipe)
+    damaged=put_in(state,[:retrieval_index,"active","rows"],%{"invalid"=>%{}}) |> I.upgrade()
+    equal(damaged.retrieval_index["active"],nil);equal(damaged.retrieval_selection,state.retrieval_selection);equal(S.view(damaged,c)["effective_recipe"],recipe)
+    migrated=put_in(state,[:retrieval_selection,"selected","qualification_runtime"],"another-runtime") |> S.upgrade()
+    equal(S.view(migrated,c)["qualification_current"],false);equal(S.view(migrated,c)["effective_recipe"],recipe)
+    unrelated=Map.put(c,"port",19877);equal(S.applied?(state,unrelated),true)
+    newbase=Map.put(c,"retrieval",%{"recipe"=>Map.put(base,"context_limit",min(64,base["context_limit"]+1))});equal(S.applied?(state,newbase),false)
+    cleared=S.reset(state,"native-reset-decision");equal(cleared.retrieval_selection["revision"],2);equal(S.reset(cleared,"native-reset-decision"),cleared);equal(cleared.retrieval_selection["selected"],nil)
+    equal(cleared.publications,state.publications);equal(cleared.deliveries,state.deliveries)
+    rejects(fn->S.upgrade(put_in(state,[:retrieval_selection,"selected","base_identity"],"invalid")) end)
+  end
+  def optimization_tests do
+    alias ADHD.Optimization,as: O
+    c=config();s=admitted_empty(c["project_id"]);base=ADHD.Retrieval.recipe_defaults()
+    variants=O.neighbors(base,8);equal(length(Enum.uniq(variants)),length(variants));equal(Enum.any?(variants,&(&1==base)),false)
+    Enum.each(variants,&ADHD.Retrieval.validate_recipe/1)
+    rejects(fn->O.config(%{"optimization"=>%{"max_proposals"=>1,"max_active_proposals"=>2}}) end)
+    equal(O.patch(%{"max_proposals"=>1}),:ok)
+    rejects(fn->D.admin(%{"op"=>"index_proposals","status"=>"not-a-status"}) end)
+    rejects(fn->D.admin(%{"op"=>"propose_index","message_id"=>"m","expected_revision"=>1,"confirm"=>true,"requester_kind"=>"optimization"}) end)
+    rejects(fn->D.agent(%{"op"=>"replay_retrieval","attempt_id"=>"a","candidate_recipe"=>%{},"requester_id"=>"forged"}) end)
+    equal(O.upgrade(s),s)
+    assertion=%{"label"=>%{"expectation"=>"supported","tags"=>[]}}
+    control=%{"label"=>%{"expectation"=>"supported","tags"=>["correction"]}}
+    proof=%{"held_out"=>[assertion],"regression"=>[control]}
+    comparison=fn gain->%{"comparison"=>%{"eligible"=>true,"retrieval_gain_ppm"=>gain,"answer_regressions"=>0,"false_supports"=>0,"calls_delta"=>0,"bytes_delta"=>0,"time_ms_delta"=>0},"baseline"=>%{"eligible"=>true,"answer_pass"=>true},"candidate"=>%{"eligible"=>true,"answer_pass"=>true},"group_id"=>Integer.to_string(gain)} end
+    mixed=ADHD.OptimizationWorker.evaluation(s,proof,[comparison.(1000000),comparison.(-500000)],c,false)
+    equal(mixed["mean_recall_gain_ppm"],250000);equal(mixed["answer_failures"],0);equal(mixed["passed"],false)
+    parent=%{"id"=>"native-opt-parent","status"=>"pending","children"=>[%{"replay_id"=>"native-opt-pair","run"=>1}],"base_identity"=>ADHD.Selection.base_identity(c),"selection_revision"=>0,"training"=>[],"held_out"=>[],"regression"=>[],"policy_identity"=>O.policy(c,s)}
+    pair=%{"run"=>1,"requester_kind"=>"optimization","requester_id"=>parent["id"],"children"=>%{"baseline"=>%{"query_id"=>"native-opt-history","run"=>1},"candidate"=>nil}}
+    paused=s |> put_in([:optimization,"proposals",parent["id"]],parent) |> put_in([:replay_queries,"native-opt-pair"],pair)
+    equal(O.history_allowed?(paused,c,%{"id"=>"native-opt-history","run"=>1}),false)
+    equal(O.history_allowed?(paused,c,%{"id"=>"native-opt-history","run"=>2}),true)
+    equal(O.history_allowed?(paused,c,%{"id"=>"independent-history","run"=>1}),true)
+    enabled=Map.put(c,"optimization",%{"enabled"=>true})
+    equal(O.history_allowed?(paused,enabled,%{"id"=>"native-opt-history","run"=>1}),true)
+  end
+  def feedback_tests do
+    alias ADHD.Feedback,as: B
+    alias ADHD.Replay,as: Q
+    alias ADHD.Archive,as: A
+    equal(B.normalize("  Ａgent   REPLY  "),"agent reply")
+    equal(A.blocking_gaps?([%{"reason"=>"cycle","target_id"=>"original-a"}],["original-a"]),false)
+    equal(A.blocking_gaps?([%{"reason"=>"cycle","target_id"=>"original-a"}],[]),true)
+    equal(A.blocking_gaps?([%{"reason"=>"missing","target_id"=>"original-a"}],["original-a"]),true)
+    c=config();s=admitted_empty(c["project_id"])
+    {created,s}=A.agent(s,c,"native-a",%{"op"=>"query_archive","question"=>"Which native reply was recorded?","mode"=>"scan"})
+    id=created["query"]["id"];q=s.archive_queries[id] |> Map.put("intent",ADHD.ArchivePolicy.intent("empty")) |> Map.put("population","scan_only")
+    {s,q}=A.completed(s,q);s=A.put(s,q);a=B.prepare_attempt(s,c,q,1);aid=a["value"]["id"];s=put_in(s,[:feedback,"attempts",aid],a)
+    s=B.upgrade(s);equal(s.feedback["attempts"][aid],a)
+    rejects(fn->B.lookup(s,aid,"native-b") end,"NOT_FOUND")
+    cmd=%{"op"=>"save_retrieval_label","attempt_id"=>aid,"expected_label_revision"=>0,"label"=>%{"expectation"=>"no_evidence","support_ids"=>[],"cohort"=>"held_out","tags"=>[],"note"=>"","confirmed"=>true}}
+    p=%{"id"=>"native-admin"};prepared=B.prepare_label(s,c,cmd,p);{saved,s}=B.admin_apply(s,c,cmd,p,prepared);equal(saved["label"]["revision"],1)
+    rejects(fn->Q.create(s,c,%{"attempt_id"=>aid,"candidate_recipe"=>%{}},"native-a","agent","native-a") end,"BASELINE_UNAVAILABLE")
+    {result,s}=Q.create(s,c,%{"attempt_id"=>aid,"candidate_recipe"=>%{"context_depth"=>2},"baseline"=>"current"},"native-a","agent","native-a")
+    rid=result["query"]["id"];equal(Q.upgrade(s),s);equal(result["query"]["comparison"]["reason"],"incomplete")
+    rejects(fn->Q.create(s,c,%{"attempt_id"=>aid,"candidate_recipe"=>%{"context_depth"=>3},"baseline"=>"current"},"native-a","agent","native-a") end,"HELD_OUT_EXPOSED")
+    {s,stopped}=Q.cancel(s,s.replay_queries[rid]);s=Q.put(s,stopped);{retired,s}=Q.retire(s,c,%{"query_id"=>rid});equal(retired["query"]["evidence_available"],false);equal(Q.upgrade(s),s)
+    rejects(fn->B.config(%{"feedback"=>%{"max_replays"=>1,"max_active_replays"=>2}}) end)
+    rejects(fn->B.validate_label(%{"expectation"=>"no_evidence","support_ids"=>["p"],"cohort"=>"training","tags"=>[],"note"=>"","confirmed"=>true}) end)
+    rejects(fn->Q.validate(%{"op"=>"replay_retrieval","attempt_id"=>"a","candidate_recipe"=>%{"expression"=>"arbitrary"}}) end)
+  end
+  def archive_tests do
+    alias ADHD.Archive,as: A
+    alias ADHD.ArchivePolicy,as: P
+    equal(P.guard("SMALL installation and ALL results"),["all"])
+    equal(P.selected(String.duplicate("0",64),0),false)
+    equal(P.selected(String.duplicate("f",64),1000000),true)
+    equal(P.selected("7"<>String.duplicate("f",63),500000),true)
+    equal(P.selected("8"<>String.duplicate("0",63),500000),false)
+    c=config();s=admitted_empty(c["project_id"])
+    {created,s}=A.agent(s,c,"native-a",%{"op"=>"query_archive","question"=>"Which fixture was reported?"})
+    id=created["query"]["id"];equal(created["query"]["sample"]["draw_hex"],nil);equal(created["query"]["sample"]["probability_numerator"],"11579208923731619542357098500868790785326998466564056403945758400791312963993")
+    equal(A.upgrade(s),s)
+    rejects(fn->A.agent(s,c,"native-b",%{"op"=>"get_archive_query","query_id"=>id}) end,"NOT_FOUND")
+    {cancelled,s}=A.agent(s,c,"native-a",%{"op"=>"cancel_archive_query","query_id"=>id});equal(cancelled["query"]["status"],"cancelled")
+    {restarted,s}=A.agent(s,c,"native-a",%{"op"=>"continue_archive_query","query_id"=>id,"restart"=>true})
+    equal(restarted["query"]["plan_id"]==created["query"]["plan_id"],false);equal(A.upgrade(s),s)
+    rejects(fn->A.config(%{"archive"=>%{"audit_rate_ppm"=>true}}) end)
+    rejects(fn->A.validate(%{"op"=>"query_archive","question"=>"q","mode"=>"approximate"}) end)
+    rejects(fn->A.patch(%{"budget"=>%{"planner"=>%{"calls"=>0}}}) end)
+    rejects(fn->A.upgrade(put_in(s,[:archive_queries,id,"policy","audit_rate_ppm"],999999)) end)
+  end
+  def retrieval_tests do
+    alias ADHD.Retrieval,as: X
+    c=config();s=admitted_empty(c["project_id"])
+    {pub,s}=ADHD.Store.execute(s,c,"native-a","r-original",%{"op"=>"publish_record","text"=>String.duplicate("λ",140),"data"=>nil,"context"=>%{"question"=>"Was this observed?"}})
+    id=pub["record"]["publication"]["id"];recipe=X.recipe_defaults() |> Map.put("chunk_bytes",128)
+    row=X.make_row(s,c,id,recipe,ADHD.Records.watermark(s))
+    equal(row["complete"],true)
+    own=Enum.filter(row["fragments"],&(&1["origin_publication_id"]==id and &1["field"]=="text"))
+    equal(Enum.map_join(own,& &1["text"]),String.duplicate("λ",140));equal(Enum.map(own,& &1["start"]),[0,128,256])
+    equal(Enum.find(row["fragments"],&(&1["field"]=="data"))["text"],"null")
+    {:ok,candidate,payload,bytes}=X.request(row,"Was this observed?",c)
+    equal(byte_size(bytes)<=X.defaults()["request_bytes"],true)
+    equal(payload["state"]["candidate"]["fragments"],Enum.map(candidate["fragments"],&Map.take(&1,~w(origin_publication_id field text))))
+    response=%{"model"=>payload["model"],"answers"=>%{"useful"=>%{"type"=>"noul","noul"=>0.5}}}
+    equal(X.validate_response(response,payload),response)
+    for bad<-[true,-0.01,1.01,"0.9"],do: rejects(fn->X.validate_response(put_in(response,["answers","useful","noul"],bad),payload) end)
+    rejects(fn->X.validate_recipe(%{"semantic_weight"=>0,"lexical_weight"=>0}) end)
+    rejects(fn->X.validate_recipe(%{"tokenizer"=>"executable"}) end)
+    equal(X.effective(c)["url"],c["matcher"]["url"])
+    changed=Map.put(c,"retrieval",%{"timeout_ms"=>200})
+    equal(X.descriptor(changed)["identity"],X.descriptor(c)["identity"])
+    equal(X.descriptor(Map.put(c,"retrieval",%{"operator_version"=>"different"}))["identity"] != X.descriptor(c)["identity"],true)
+  end
+  def history_tests do
+    alias ADHD.History,as: H
+    alias ADHD.HistoryEvaluator,as: E
+    c=config();s=admitted_empty(c["project_id"])
+    {first,s}=ADHD.Store.execute(s,c,"native-a","h-original-a",%{"op"=>"publish","text"=>"Native first original.","occurred_at"=>"2025-01-01T00:00:00.000001Z"})
+    {second,s}=ADHD.Store.execute(s,c,"native-a","h-original-b",%{"op"=>"publish","text"=>"Native second original.","occurred_at"=>"2025-01-01T00:00:00.000002Z"})
+    command=%{"op"=>"query_history","question"=>"Which originals were recorded?","scope"=>%{"occurred_from"=>"2025-01-01T00:00:00.000002Z","occurred_until"=>"2025-01-01T00:00:00.000002Z"}}
+    {created,s}=ADHD.Store.execute(s,c,"native-a","h-create",command);q=created["query"]
+    equal(q["coverage"]["total"],1);equal(q["snapshot"]["watermark"],ADHD.Records.watermark(s));equal(q["status"],"pending")
+    equal(elem(ADHD.Store.execute(s,c,"native-a","h-create",command),0),created)
+    rejects(fn->ADHD.Store.execute(s,c,"native-b","h-other",%{"op"=>"get_history_query","query_id"=>q["id"]}) end,"NOT_FOUND")
+    {_,s}=ADHD.Store.execute(s,c,"native-a","h-later",%{"op"=>"publish","text"=>"A later original.","occurred_at"=>"2025-01-01T00:00:00.000002Z"})
+    equal(s.history_queries[q["id"]]["primary_ids"],[second["publication"]["id"]])
+    changed=Map.put(c,"history",%{"operator_version"=>"native-version-changed"})
+    {invalidated,s}=ADHD.Store.execute(s,changed,"native-a","h-invalidate",%{"op"=>"get_history_query","query_id"=>q["id"]})
+    equal(invalidated["query"]["status"],"invalidated")
+    {cancelled,_}=ADHD.Store.execute(s,changed,"native-a","h-cancel",%{"op"=>"cancel_history_query","query_id"=>q["id"]})
+    equal(cancelled["query"]["status"],"cancelled")
+    record=ADHD.Records.record(s,c,first["publication"]["id"])
+    {payload,bytes}=E.prepare("Which original is available?",[record],c)
+    equal(byte_size(bytes)>0,true)
+    answers=Map.new(payload["questions"],fn {key,value}->
+      chosen=if key=="assessment",do: "direct",else: "quote_0"
+      probabilities=Map.new(value["criteria"],fn {label,_}->{label,if(label==chosen,do: 1.0,else: 0.0)} end)
+      {key,%{"type"=>"choice","choice"=>chosen,"confidence"=>1.0,"probabilities"=>probabilities}}
+    end)
+    response=%{"model"=>payload["model"],"answers"=>answers}
+    equal(E.validate(response,payload),answers)
+    rejects(fn->E.validate(put_in(response,["answers","answer","confidence"],0.25),payload) end)
+    uncertain=answers |> put_in(["answer","choice"],"unknown") |> put_in(["answer","probabilities","quote_0"],0.0) |> put_in(["answer","probabilities","unknown"],1.0)
+    equal(E.decision(uncertain,c)["outcome"],"insufficient")
+    rejects(fn->H.validate_scope(%{"occurred_from"=>"2025-01-01T00:00:00.000002Z","occurred_until"=>"2025-01-01T00:00:00.000001Z"}) end)
+    equal(H.effective(c)["url"],c["matcher"]["url"])
+  end
+  def record_tests do
+    c=config();s=admitted_empty(c["project_id"])
+    cmd=%{"op"=>"publish_record","text"=>"Yes","context"=>%{"question"=>"Was this observed?","subject"=>"native-tree"}}
+    {first,s}=ADHD.Store.execute(s,c,"native-a","record-once",cmd)
+    id=first["record"]["publication"]["id"]
+    {before,s}=ADHD.Store.execute(s,c,"native-a","record-read",%{"op"=>"get_record","publication_id"=>id})
+    mark=before["snapshot"]["watermark"]
+    {_,s}=ADHD.Store.execute(s,c,"native-a","record-sub",%{"op"=>"subscribe","description"=>"Native observations"})
+    equal(ADHD.Records.watermark(s),mark)
+    {_,s}=ADHD.Store.execute(s,c,"native-a","record-correct",%{"op"=>"publish_record","text"=>"Actually, uncertain.","context"=>%{"links"=>[%{"relation"=>"corrects","publication_id"=>id}]}})
+    {old,_}=ADHD.Store.execute(s,c,"native-a","record-old",%{"op"=>"get_record","publication_id"=>id,"watermark"=>mark})
+    equal(old,before)
+    {now,_}=ADHD.Store.execute(s,c,"native-a","record-current",%{"op"=>"get_record","publication_id"=>id})
+    equal(length(now["related"]),1)
+    equal(ADHD.Records.upgrade(s),s)
+    rejects(fn->ADHD.Records.context(%{"external"=>[%{"uri"=>"https://source.example","snapshot"=>"x","sha256"=>String.duplicate("0",64)}]}) end)
+    rejects(fn->D.agent(%{"op"=>"get_record","publication_id"=>id,"watermark"=>1.0}) end)
+  end
+  def directory_tests do
+    alias ADHD.Directory,as: F
+    equal(F.canonical(%{"z"=>[true,nil],"a"=>"λ"}),"{\"a\":\"λ\",\"z\":[true,null]}")
+    equal(F.email_key("  Human+tag@ExAmple.INVALID\n"),"Human+tag@example.invalid")
+    equal(F.email_key("Human@domain") != F.email_key("human@domain"),true)
+    equal(F.email_key("a.b@domain") != F.email_key("ab@domain"),true)
+    for email<-["", "two@@hosts", "space inside@host", "@host"],do: equal(F.email_key(email),nil)
+    scope=%{"provider"=>"github","host"=>"code.example","tenant"=>"native-scope","resource"=>"repo-8"}
+    for host<-["Code.example","https://code.example","code.example:443","bad..example","-bad.example"],do: rejects(fn->F.scope(Map.put(scope,"host",host)) end)
+    rejects(fn->D.agent(%{"op"=>"source_query","question"=>"Ambiguous shape","sources"=>[scope],"aliases"=>[]}) end)
+    rejects(fn->F.entry(%{"scope"=>scope,"description"=>"Derived content","relationship"=>"derived","canonical"=>true},true) end)
+  end
+  def domain_tests do
+    for c <- [%{"op"=>"poll","limit"=>true},%{"op"=>"poll","limit"=>0},%{"op"=>"ack","delivery_ids"=>["x","x"]},%{"op"=>"publish","text"=>" "},%{"op"=>"send","recipient_id"=>"native-b","data"=>[]},%{"op"=>"whoami","actor_id"=>"native-b"},%{"op"=>"publish","data"=>false,"source"=>%{"kind"=>"email","id"=>"x","other"=>true}}],do: rejects(fn->D.agent(c) end)
+    rejects(fn->ADHD.JSON.decode!(~s({"outer":{"x":1,"x":2}})) end)
+    rejects(fn->ADHD.JSON.decode!(~s({"x":1,"\u0078":2})) end)
+    equal(ADHD.JSON.decode!(~s([null,true,{"unicode":"λ"}])),[nil,true,%{"unicode"=>"λ"}])
+    equal(D.datetime("2024-01-02T03:04:05+02:00"),"2024-01-02T01:04:05Z")
+    equal(ADHD.Workers.probability(%{"answers"=>%{"relevance"=>%{"type"=>"noul","noul"=>0.875}}}),875000)
+    for v <- [true,nil,-1,2,"0.9"],do: rejects(fn->ADHD.Workers.probability(%{"answers"=>%{"relevance"=>%{"type"=>"noul","noul"=>v}}}) end)
+    rejects(fn->ADHD.Workers.probability(%{"probability"=>1}) end)
+    c=config()
+    equal(ADHD.Identity.agent(%{"authorization"=>"Bearer "<>c["agents"]["native-a"]},c),"native-a")
+    rejects(fn->ADHD.Identity.agent(%{"authorization"=>"Bearer "<>c["admin_token"]},c) end,"UNAUTHORIZED")
+    rejects(fn->ADHD.Identity.origin(%{"origin"=>"https://foreign.invalid","host"=>"127.0.0.1:19876"},c) end,"FORBIDDEN")
+    equal(ADHD.Config.merge(%{"a"=>%{"b"=>1,"c"=>2},"arr"=>[1]},%{"a"=>%{"b"=>nil},"arr"=>[2,3]}),%{"a"=>%{"c"=>2},"arr"=>[2,3]})
+    # An independent structural validator checks emitted traffic against publication
+    # schemas without importing the application's domain validator.
+    s=ADHD.Protocol.schema()
+    equal(s["$id"],"urn:adhd:protocol:2.2")
+    equal(ADHD.Protocol.openapi()["openapi"],"3.1.0")
+  end
+  def transition_tests do
+    c=config(); s=admitted_empty(c["project_id"])
+    {sub,s}=ADHD.Store.execute(s,c,"native-b","sub-1",%{"op"=>"subscribe","description"=>"Native storage releases"})
+    {sub2,s}=ADHD.Store.execute(s,c,"native-b","sub-2",%{"op"=>"subscribe","description"=>"Native migration notices"})
+    command=%{"op"=>"publish","data"=>[1,nil],"source"=>%{"kind"=>"email","id"=>"native-origin","item_id"=>"native-event"}}
+    {r,s}=ADHD.Store.execute(s,c,"native-a","pub-1",command)
+    {again,same}=ADHD.Store.execute(s,c,"native-a","pub-2",command)
+    equal(again,r); equal(Map.drop(same,[:idempotency]),Map.drop(s,[:idempotency])); equal(same.idempotency[{"native-a","pub-2"}].result,r); equal(map_size(s.jobs),2)
+    rejects(fn->ADHD.Store.execute(s,c,"native-a","pub-3",Map.put(command,"data",[2])) end,"SOURCE_CONFLICT")
+    rejects(fn->ADHD.Store.execute(s,c,"native-a","pub-1",Map.put(command,"data",[3])) end,"IDEMPOTENCY_CONFLICT")
+    [j1,j2]=Map.keys(s.jobs) |> Enum.sort()
+    s=ADHD.Store.complete_job(s,j1,900000,c)
+    {poll,s}=ADHD.Store.execute(s,c,"native-b","poll-1",%{"op"=>"poll"})
+    [delivery]=poll["deliveries"]
+    {_,s}=ADHD.Store.execute(s,c,"native-b","ack-1",%{"op"=>"ack","delivery_ids"=>[delivery["id"]]})
+    s=ADHD.Store.complete_job(s,j2,950000,c)
+    {poll,s}=ADHD.Store.execute(s,c,"native-b","poll-2",%{"op"=>"poll"}); equal(poll,%{"deliveries"=>[]})
+    equal(map_size(s.deliveries),1)
+    equal(length(s.deliveries[delivery["id"]].value["matches"]),2)
+    {private,s}=ADHD.Store.execute(s,c,"native-a","send-1",%{"op"=>"send","recipient_id"=>"native-b","text"=>"Native confidential note"})
+    did=private["delivery"]["id"]
+    rejects(fn->ADHD.Store.execute(s,c,"native-a","bad-ack",%{"op"=>"ack","delivery_ids"=>[did]}) end,"FORBIDDEN")
+    rejects(fn->ADHD.Store.execute(s,c,"native-b","atomic-ack",%{"op"=>"ack","delivery_ids"=>[did,"missing"]}) end,"NOT_FOUND")
+    equal(s.deliveries[did].ack,false)
+    {search,s}=ADHD.Store.execute(s,c,"native-a","search-1",%{"op"=>"search","query"=>"confidential"}); equal(search,%{"publications"=>[]})
+    rejects(fn->ADHD.Store.execute(s,c,"native-a","get-private",%{"op"=>"get","publication_id"=>did}) end,"NOT_FOUND")
+    {admin,s}=ADHD.Store.admin_execute(s,c,%{"op"=>"deliveries"})
+    equal(Enum.any?(admin["items"],&(Map.has_key?(&1,"text") or Map.has_key?(&1,"data"))),false)
+    {removed,s}=ADHD.Store.admin_execute(s,c,%{"op"=>"remove_subscription","subscription_id"=>sub["subscription"]["id"],"confirm"=>true,"message_id"=>"native-admin-remove"})
+    equal(removed,%{"removed"=>true,"subscription_id"=>sub["subscription"]["id"]})
+    {replay,_}=ADHD.Store.admin_execute(s,c,%{"op"=>"remove_subscription","subscription_id"=>sub["subscription"]["id"],"confirm"=>true,"message_id"=>"native-admin-remove"}); equal(replay,removed)
+    rejects(fn->ADHD.Store.execute(s,c,"native-a","unsub-other",%{"op"=>"unsubscribe","subscription_id"=>sub2["subscription"]["id"]}) end,"FORBIDDEN")
+    validate_schema(r["publication"],ADHD.Protocol.schema()["$defs"]["Publication"],ADHD.Protocol.schema()["$defs"])
+    f=Map.put(c,"federation",%{"description"=>"Native project","peers"=>[]})
+    {q,_}=ADHD.Store.execute(s,f,"native-a","query-1",%{"op"=>"federated_query","question"=>"Storage?"})
+    equal(q["query"]["status"],"completed")
+  end
+  def durable_tests do
+    root=Path.join(System.tmp_dir!(),"adhd-native-"<>D.opaque()); File.mkdir_p!(root)
+    c=config() |> Map.put("store_path",Path.join(root,"state.dets"))
+    path=Path.join(root,"config.json"); File.write!(path,JSON.encode!(c))
+    try do
+      File.chmod!(root,0o700);File.chmod!(path,0o600)
+      ADHD.Storage.write_closed(c["store_path"],ADHD.Store.empty(c["project_id"]) |> ADHD.Storage.next())
+      {:ok,_}=ADHD.Config.start_link(path)
+      c=ADHD.Projects.view(ADHD.Config.root(),c["project_id"])
+      {:ok,_}=ADHD.Store.start_link(c)
+      cmd=%{"op"=>"publish","data"=>%{"native"=>true},"source"=>%{"kind"=>"slack","id"=>"native-channel","item_id"=>"native-stable"}}
+      r=ADHD.Store.command("native-a","persistent-1",cmd) |> ADHD.Store.unwrap()
+      GenServer.stop(ADHD.Store)
+      {:ok,_}=ADHD.Store.start_link(c)
+      equal(ADHD.Store.command("native-a","persistent-2",cmd) |> ADHD.Store.unwrap(),r)
+      equal(ADHD.Store.command("native-a","persistent-3",Map.put(cmd,"data",false)),{:error,"SOURCE_CONFLICT"})
+      s=ADHD.Store.snapshot() |> ADHD.Store.unwrap()
+      GenServer.stop(ADHD.Store)
+      saved=File.read!(ADHD.Storage.snapshot_path(c["store_path"]))
+      <<"ADHDSTATE",1,digest::binary-size(32),body::binary>>=saved
+      equal(:crypto.hash(:sha256,body),digest)
+      equal(File.stat!(ADHD.Storage.snapshot_path(c["store_path"])).mode |> Bitwise.band(0o777),0o600)
+      # The durable companion reconstructs a missing checkpoint, preserving all
+      # source receipts rather than creating a fresh empty archive.
+      File.rm!(c["store_path"])
+      {:ok,_}=ADHD.Store.start_link(c)
+      equal(ADHD.Store.command("native-a","persistent-1",cmd) |> ADHD.Store.unwrap(),r)
+      GenServer.stop(ADHD.Store)
+      File.write!(ADHD.Storage.snapshot_path(c["store_path"]),"invalid snapshot")
+      invalid_snapshot=try do
+        ADHD.Storage.read_snapshot(c["store_path"]);:accepted
+      catch {:recovery,"RESTORE_INVALID_BACKUP","snapshot_integrity"}->:rejected end
+      equal(invalid_snapshot,:rejected)
+      File.write!(ADHD.Storage.snapshot_path(c["store_path"]),saved)
+      failed=try do
+        ADHD.Storage.persist(:adhd_closed_native,Path.join(root,"failed.dets"),ADHD.Store.empty(c["project_id"]))
+        :continued
+      catch :exit,:storage_commit_failed->:stopped end
+      equal(failed,:stopped)
+      # Original schema-2 sources entries survive the upgrader exactly.
+      upgraded=ADHD.Store.upgrade(Map.drop(s,[:admin_idempotency,:queries,:incoming,:aliases]),c["project_id"])
+      equal(upgraded.sources,s.sources)
+      {r2,_}=ADHD.Store.execute(upgraded,c,"native-a","schema2-retry",cmd); equal(r2,r)
+      # Seed a true schema-1 disk object, then let the product store open it.
+      # This is an isolated legacy fixture, not a partial restore of a new store.
+      GenServer.stop(ADHD.Config)
+      :persistent_term.erase({ADHD.StorageRegistry,:current});:persistent_term.erase({ADHD.Config,:config})
+      ADHD.Scope.begin_work();ADHD.Scope.put(nil)
+      legacy_root=Path.join(root,"legacy");File.mkdir!(legacy_root);File.chmod!(legacy_root,0o700)
+      legacy_config=config() |> Map.put("store_path",Path.join(legacy_root,"state.dets"))
+      legacy_path=Path.join(legacy_root,"config.json");File.write!(legacy_path,JSON.encode!(legacy_config));File.chmod!(legacy_path,0o600)
+      legacy_pub=Map.drop(r["publication"],~w(information_type source occurred_at))
+      legacy=%{schema: 1,project: c["project_id"],seq: 1,subscriptions: %{},publications: %{legacy_pub["id"]=>%{seq: 1,value: legacy_pub}},deliveries: %{},jobs: %{},idempotency: %{{"native-a","historical"}=>%{command: %{"op"=>"publish","data"=>%{}},result: %{"publication"=>legacy_pub,"matching"=>"pending"}}}}
+      {:ok,t}=:dets.open_file(:adhd_native_fixture,[file: String.to_charlist(legacy_config["store_path"]),type: :set])
+      File.chmod!(legacy_config["store_path"],0o600)
+      :dets.insert(t,{:state,legacy}); :dets.sync(t); :dets.close(t)
+      {:ok,_}=ADHD.Config.start_link(legacy_path)
+      c=ADHD.Projects.view(ADHD.Config.root(),legacy_config["project_id"])
+      {:ok,_}=ADHD.Store.start_link(c)
+      loaded=ADHD.Store.snapshot() |> ADHD.Store.unwrap()
+      equal(loaded.publications[legacy_pub["id"]].value["source"],%{"kind"=>"agent","id"=>"native-a"})
+      historical=ADHD.Store.command("native-a","historical",%{"op"=>"publish","data"=>%{}}) |> ADHD.Store.unwrap()
+      equal(historical,%{"publication"=>legacy_pub,"matching"=>"pending"})
+    after
+      if Process.whereis(ADHD.Store),do: GenServer.stop(ADHD.Store)
+      if Process.whereis(ADHD.Config),do: GenServer.stop(ADHD.Config)
+      File.rm_rf!(root)
+    end
+  end
+  def validate_schema(value,schema,defs) do
+    if schema["$ref"] do
+      validate_schema(value,Map.fetch!(defs,String.replace_prefix(schema["$ref"],"#/$defs/","")),defs)
+    else
+      case schema["type"] do
+        "object"->
+          equal(is_map(value),true)
+          Enum.each(schema["required"] || [],fn k->equal(Map.has_key?(value,k),true) end)
+          for {k,v}<-value do
+            rule=schema["properties"][k]
+            if rule,do: validate_schema(v,rule,defs),else: equal(schema["additionalProperties"] != false,true)
+          end
+        "array"->equal(is_list(value),true); Enum.each(value,&validate_schema(&1,schema["items"],defs))
+        "string"->equal(is_binary(value),true)
+        "integer"->equal(is_integer(value),true)
+        "boolean"->equal(is_boolean(value),true)
+        _->:ok
+      end
+    end
+  end
+end

@@ -1,0 +1,215 @@
+defmodule ADHD.MultiProtocol do
+  alias ADHD.Protocol, as: P
+  defp nullable(s),do: %{"anyOf"=>[s,%{"type"=>"null"}]}
+  defp count,do: P.int(0,9_007_199_254_740_991)
+  defp revision,do: P.int(1,9_007_199_254_740_991)
+  defp ids(max \\ 256,min \\ 0),do: P.array(P.identifier(),max,min) |> Map.put("uniqueItems",true)
+  defp blank(max),do: %{"type"=>"string","maxLength"=>max,"x-maxBytes"=>max}
+  def selectors,do: P.obj(%{"information_type"=>ids(64,1),"source_kind"=>ids(64,1),"source_id"=>P.array(P.str(256),64,1)|>Map.put("uniqueItems",true),"author_id"=>ids(64,1)},[])
+  defp subscription_command(op) do
+    extra=if op=="update_subscription",do: %{"subscription_id"=>P.str(),"expected_revision"=>revision(),"paused"=>P.bool()},else: %{}
+    required=if op=="update_subscription",do: ~w(subscription_id expected_revision),else: []
+    raw=P.command(op,Map.merge(extra,%{"mode"=>%{"const"=>"raw"},"selectors"=>P.ref("SubscriptionSelectors")}),required)
+    filtered=P.command(op,Map.merge(extra,%{"mode"=>%{"const"=>"filtered"},"filter"=>P.str(4096),"description"=>P.str(4096),"selectors"=>P.ref("SubscriptionSelectors")}),required)
+    filtered=Map.put(filtered,"oneOf",[%{"required"=>["filter"],"not"=>%{"required"=>["description"]}},%{"required"=>["description"],"not"=>%{"required"=>["filter"]}}])
+    %{"oneOf"=>[raw,filtered]}
+  end
+  defp partial(%{"$ref"=>"#/$defs/"<>name}=schema,defs) do
+    case defs[name] do
+      %{"type"=>"object"}=value->partial(value,defs)
+      _->schema
+    end
+  end
+  defp partial(%{"type"=>"object","properties"=>props}=schema,defs),do: schema |> Map.put("required",[]) |> Map.put("properties",Map.new(props,fn {k,v}->{k,nullable(partial(v,defs))} end))
+  defp partial(schema,_),do: schema
+  defp project_settings_schema(defs) do
+    props=Map.take(defs["PublicConfig"]["properties"],~w(matcher threshold_ppm federation history retrieval archive feedback optimization eventing))
+    federation=props["federation"] |> update_in(["properties"],&Map.drop(&1,~w(peers))) |> Map.put("required",[])
+    policy=Map.take(eventing_config()["properties"],~w(topic_prefix retention_ms max_pending_events max_pending_bytes max_pending_filter_jobs max_pending_filter_jobs_per_subscription))
+    props=props |> Map.put("eventing",P.obj(policy,[])) |> Map.put("federation",federation)
+    P.obj(Map.new(props,fn {k,v}->{k,nullable(partial(v,defs))} end),[])
+  end
+  defp admin_subscription do
+    subscription_command("subscribe")["oneOf"] |> Enum.map(fn value->
+      value |> update_in(["properties"],&Map.merge(&1,%{"op"=>%{"const"=>"create_subscription"},"agent_id"=>P.identifier(),"message_id"=>P.str()})) |> update_in(["required"],&Enum.uniq(&1++~w(agent_id message_id)))
+    end) |> then(&%{"oneOf"=>&1})
+  end
+  def eventing_config(secret \\ true) do
+    props=%{"enabled"=>P.bool(),"rest_url"=>P.str(2048),"topic_prefix"=>P.str(32)|>Map.put("pattern","^[A-Za-z0-9_-]{1,32}$"),"timeout_ms"=>P.int(100,30000),"retry_ms"=>P.int(100,30000),"tls_ca_pem"=>P.str(65536),"retention_ms"=>P.int(3600000,31536000000),"max_pending_events"=>P.int(1,1000000),"max_pending_bytes"=>P.int(65536,1099511627776),"max_pending_filter_jobs"=>P.int(1,100000),"max_pending_filter_jobs_per_subscription"=>P.int(1,100000)}
+    props=if secret,do: Map.put(props,"bearer_token",P.str(4096)|>Map.put("x-minBytes",24)),else: props
+    P.obj(props,[])
+  end
+  def extend(defs) do
+    project_settings=Map.take(defs["PublicConfig"]["properties"],~w(matcher threshold_ppm federation history retrieval archive feedback optimization eventing))
+    project_settings=update_in(project_settings,["matcher"],&nullable/1)
+    # Project override credentials remain write-only in config patches.
+    private_settings=Map.merge(project_settings,Map.take(defs["MergePatch"]["properties"],~w(federation)))
+    project_props=%{"id"=>P.identifier(),"name"=>P.str(256),"status"=>P.enum(~w(active archived)),"description"=>blank(4096),"settings"=>P.obj(project_settings,[])}
+    project=P.obj(project_props,~w(id name))
+    private_project=put_in(project,["properties","settings"],P.obj(private_settings,[]))
+    project_view=P.obj(Map.delete(project_props,"settings"))
+    selectors=selectors()
+    match_raw=P.obj(%{"subscription_id"=>P.str(),"subscription_revision"=>revision(),"mode"=>%{"const"=>"raw"}})
+    match_filtered=P.obj(%{"subscription_id"=>P.str(),"subscription_revision"=>revision(),"mode"=>%{"const"=>"filtered"},"probability_ppm"=>P.int(0,1000000),"threshold_ppm"=>P.int(1,1000000),"model"=>P.str(512)})
+    sub_props=%{"id"=>P.str(),"agent_id"=>P.identifier(),"project_id"=>P.identifier(),"created_at"=>P.time(),"mode"=>P.enum(~w(raw filtered)),"filter"=>P.str(4096),"description"=>P.str(4096),"selectors"=>P.ref("SubscriptionSelectors"),"revision"=>revision(),"paused"=>P.bool(),"activation_sequence"=>count()}
+    subscription=P.obj(sub_props,~w(id agent_id project_id created_at mode selectors revision paused activation_sequence))
+    subscription=Map.put(subscription,"allOf",[%{"if"=>%{"properties"=>%{"mode"=>%{"const"=>"filtered"}},"required"=>["mode"]},"then"=>%{"required"=>["filter"]},"else"=>%{"not"=>%{"anyOf"=>[%{"required"=>["filter"]},%{"required"=>["description"]}]}}}])
+    event=P.obj(%{"schema_version"=>%{"const"=>1,"type"=>"integer","x-integerToken"=>true},"event_id"=>P.str(),"server_id"=>P.identifier(),"project_id"=>P.identifier(),"project_sequence"=>revision(),"publication_id"=>P.str(),"author_id"=>P.identifier(),"created_at"=>P.time(),"publication"=>P.ref("Publication")})
+    metadata=P.obj(%{"event_id"=>P.str(),"project_sequence"=>revision(),"state"=>P.enum(~w(pending published materialized))})
+    event_error=P.obj(%{"code"=>P.str(),"at"=>P.time()})
+    gap=P.obj(%{"reason"=>P.enum(~w(RETENTION_GAP BROKER_RESTORE)),"from_offset"=>count(),"to_offset"=>count(),"status"=>P.enum(~w(recovering reconciled)),"missing_event_ids"=>P.array(P.str(),1000000),"at"=>P.time()})
+    diagnostics=P.obj(%{"enabled"=>P.bool(),"transport"=>P.enum(~w(kafka-rest-v2 legacy)),"topic"=>nullable(P.str(249)),"accepted_watermark"=>count(),"published_watermark"=>count(),"materialized_watermark"=>count(),"next_offset"=>count(),"pending_events"=>count(),"pending_bytes"=>count(),"quarantined"=>count(),"gap"=>nullable(P.ref("EventingGap")),"last_error"=>nullable(P.ref("EventingError"))})
+    defs=Map.merge(defs,%{"Project"=>project,"ProjectInput"=>private_project,"ProjectView"=>project_view,"ProjectSettings"=>P.obj(project_settings,[]),"SubscriptionSelectors"=>selectors,"EventingConfig"=>eventing_config(),"PublicEventingConfig"=>eventing_config(false),"EventEnvelope"=>event,"EventMetadata"=>metadata,"EventingError"=>event_error,"EventingGap"=>gap,"EventingStatus"=>diagnostics,"RawMatch"=>match_raw,"FilteredMatch"=>match_filtered,"LegacyMatch"=>defs["Match"],"LegacySubscription"=>defs["Subscription"]})
+    defs=defs |> Map.put("Match",%{"oneOf"=>[P.ref("RawMatch"),P.ref("FilteredMatch"),P.ref("LegacyMatch")]}) |> Map.put("Subscription",%{"oneOf"=>[subscription,P.ref("LegacySubscription")]})
+    defs=put_in(defs,["Delivery","properties","author_id"],P.identifier())
+    defs=Enum.reduce(~w(subscribe update_subscription),defs,fn op,acc->Map.put(acc,"agent_"<>op,subscription_command(op)) |> Map.put("result_"<>op,P.obj(%{"subscription"=>P.ref("Subscription")})) end)
+    project_result=P.obj(%{"projects"=>P.array(P.ref("ProjectView"),256,0)})
+    defs=defs |> Map.put("agent_list_projects",P.command("list_projects")) |> Map.put("result_list_projects",project_result) |> Map.put("admin_list_projects",P.admin("list_projects")) |> Map.put("admin_result_list_projects",project_result)
+    defs=defs |> Map.put("admin_eventing_status",P.admin("eventing_status",%{"project_id"=>P.identifier()})) |> Map.put("admin_result_eventing_status",P.ref("EventingStatus"))
+    defs=put_in(defs,["result_whoami"],%{"oneOf"=>[defs["result_whoami"],P.obj(%{"agent_id"=>P.identifier(),"project_ids"=>ids(),"project_id"=>P.identifier()},~w(agent_id project_ids))]})
+    defs=Enum.reduce(~w(result_publish result_publish_record),defs,fn key,acc->
+      if is_map(acc[key]) and is_map(acc[key]["properties"]),do: put_in(acc,[key,"properties","eventing"],P.ref("EventMetadata")),else: acc
+    end)
+    defs=put_in(defs,["User","properties","project_ids"],ids())
+    defs=put_in(defs,["admin_save_user","properties","user","properties","project_ids"],ids())
+    defs=put_in(defs,["admin_create_agent","properties","project_ids"],ids())
+    defs=update_config(defs)
+    # Every Admin operation on project records accepts an explicit project selector.
+    server_ops = ~w(config_get config_validate config_update users agents create_agent save_user update_profile link_oidc test_oidc refresh_federation list_projects)
+    defs=Enum.reduce(Map.keys(defs),defs,fn key,acc->
+      if String.starts_with?(key,"admin_") and not String.starts_with?(key,"admin_result_") and String.replace_prefix(key,"admin_","") not in server_ops and is_map(get_in(acc,[key,"properties"])) do
+        put_in(acc,[key,"properties","project_id"],P.identifier())
+      else acc end
+    end)
+    resource_keys = ~w(model_concurrency project_model_concurrency network_concurrency project_network_concurrency eventing_concurrency project_eventing_concurrency max_waiters)
+    resource_props=Map.new(resource_keys,fn key->{key,P.int(if(key=="max_waiters",do: 0,else: 1),if(key=="max_waiters",do: 4096,else: 256))} end)
+    resource_config=P.obj(resource_props)
+    resource_patch=P.obj(Map.new(resource_props,fn {k,v}->{k,nullable(v)} end),[])
+    by_project=%{"type"=>"object","additionalProperties"=>P.obj(%{"active"=>count(),"queued"=>count()})}
+    lane=P.obj(Map.merge(Map.new(~w(grants queued_timeouts queue_rejections fenced caller_deaths active queued ingress_rejections),&{&1,count()}),%{"projects"=>by_project}))
+    live=P.obj(%{"started"=>%{"const"=>true},"limits"=>P.ref("ResourcesConfig"),"waiting"=>count(),"ingress_tickets"=>count(),"lanes"=>P.obj(Map.new(~w(model network eventing),&{&1,lane}))})
+    stopped=P.obj(%{"started"=>%{"const"=>false},"limits"=>P.ref("ResourcesConfig")})
+    defs=defs |> Map.put("ResourcesConfig",resource_config) |> Map.put("ResourcesConfigPatch",resource_patch) |> Map.put("ResourceStatus",%{"oneOf"=>[live,stopped]})
+    defs=put_in(defs,["PublicConfig","properties","resources"],P.ref("ResourcesConfig"))
+    defs=put_in(defs,["MergePatch","properties","resources"],nullable(P.ref("ResourcesConfigPatch")))
+    defs=defs |> Map.put("admin_resource_status",P.admin("resource_status")) |> Map.put("admin_result_resource_status",P.ref("ResourceStatus"))
+    settings=project_settings_schema(defs)
+    defs=defs |> Map.put("ProjectSettings",settings) |> put_in(["Project","properties","settings"],settings) |> put_in(["ProjectInput","properties","settings"],settings)
+    defs=put_in(defs,["admin_subscriptions","properties","offset"],count())
+    defs=Map.put(defs,"admin_create_subscription",admin_subscription())
+    update_admin=subscription_command("update_subscription")["oneOf"] |> Enum.map(fn schema->schema |> update_in(["properties"],&Map.merge(&1,%{"message_id"=>P.str(),"confirm"=>%{"const"=>true}})) |> update_in(["required"],&Enum.uniq(&1++~w(mode selectors message_id confirm))) end) |> then(&%{"oneOf"=>&1})
+    defs=defs |> Map.put("admin_update_subscription",update_admin) |> Map.put("admin_result_update_subscription",P.obj(%{"subscription"=>P.ref("Subscription")}))
+    defs=put_in(defs,["admin_result_overview","properties","matcher","properties","status"],P.enum(~w(ready unavailable disabled paused)))
+    defs=update_in(defs,["admin_result_overview","properties","matcher","properties","model"],&nullable/1)
+    defs=put_in(defs,["Query","properties","peers","items","properties","server_id"],P.identifier())
+    defs=put_in(defs,["PeerResponse","properties","server_id"],P.identifier())
+    defs=put_in(defs,["agent_source_query","properties","project_ids"],ids(32,1))
+    defs=put_in(defs,["SourceQuery","properties","project_ids"],ids(32,1))
+    defs=put_in(defs,["SourceQuery","properties","coverage","items","properties","server_id"],nullable(P.identifier()))
+    defs=put_in(defs,["IdentityMatches","properties","coverage","items","properties","server_id"],nullable(P.identifier()))
+    defs=extend_controls(defs)
+    defs=extend_peers(defs)
+    defs=Enum.reduce([{"AgentCommand","oneOf","agent_",~w(list_projects update_subscription)},{"AgentResult","anyOf","result_",~w(list_projects update_subscription)},{"AdminCommand","oneOf","admin_",~w(list_projects eventing_status resource_status update_subscription)},{"AdminResult","anyOf","admin_result_",~w(list_projects eventing_status resource_status update_subscription)}],defs,fn {key,union,prefix,ops},acc->
+      update_in(acc,[key,union],fn old->Enum.uniq((old || [])++Enum.map(ops,&P.ref(prefix<>&1))) end)
+    end)
+    defs
+  end
+  defp extend_controls(defs) do
+    target=P.obj(%{"id"=>P.str(),"revision"=>revision()})
+    targets=P.array(target,64,1) |> Map.put("uniqueItems",true) |> Map.put("x-uniqueBy","id")
+    reason=%{"reason"=>P.str(1024),"message_id"=>P.str(),"confirm"=>%{"const"=>true},"project_id"=>P.identifier()}
+    repair=Map.merge(reason,%{"offset"=>count(),"expected_checkpoint"=>count(),"expected_digest"=>P.str(64)|>Map.put("pattern","^[0-9a-f]{64}$"),"action"=>P.enum(~w(retry reconcile))})
+    replay=Map.merge(reason,%{"from_sequence"=>revision(),"to_sequence"=>revision(),"expected_watermark"=>count(),"subscriptions"=>targets})
+    repair_details=P.obj(Map.merge(Map.drop(repair,~w(project_id reason message_id confirm)),%{"missing_logical_proof"=>P.bool()}))
+    replay_details=P.obj(Map.drop(replay,~w(project_id reason message_id confirm)))
+    audit=P.obj(%{"id"=>P.str(),"kind"=>P.enum(~w(repair replay)),"actor_id"=>P.str(),"project_id"=>P.identifier(),"message_id"=>P.str(),"reason"=>P.str(1024),"at"=>P.time(),"details"=>%{"oneOf"=>[repair_details,replay_details]}})
+    audit=Map.put(audit,"allOf",Enum.map([{"repair",repair_details},{"replay",replay_details}],fn {kind,details}->%{"if"=>%{"properties"=>%{"kind"=>%{"const"=>kind}},"required"=>["kind"]},"then"=>%{"properties"=>%{"details"=>details}}} end))
+    plan=P.obj(%{"id"=>P.str(),"status"=>P.enum(~w(pending deferred materialized)),"event_ids"=>P.array(P.str(),1000,1),"subscriptions"=>targets,"created_at"=>P.time()})
+    plan=put_in(plan,["properties","deferred_filter_targets"],count())
+    defs=defs |> Map.put("EventingReplay",plan) |> Map.put("EventingAudit",audit)
+    defs=defs |> Map.put("admin_repair_eventing",P.admin("repair_eventing",repair,Map.keys(Map.delete(repair,"project_id")))) |> Map.put("admin_replay_events",P.admin("replay_events",replay,Map.keys(Map.delete(replay,"project_id")))) |> Map.put("admin_eventing_audit",P.admin("eventing_audit",%{"offset"=>count(),"limit"=>P.int(1,100),"project_id"=>P.identifier()})) |> Map.put("admin_eventing_replay",P.admin("eventing_replay",%{"replay_id"=>P.str(),"project_id"=>P.identifier()},["replay_id"]))
+    defs=defs |> Map.put("admin_result_repair_eventing",P.obj(%{"audit_id"=>P.str(),"control_revision"=>count(),"next_offset"=>count()})) |> Map.put("admin_result_replay_events",P.obj(%{"replay"=>P.ref("EventingReplay")})) |> Map.put("admin_result_eventing_replay",P.obj(%{"replay"=>P.ref("EventingReplay")})) |> Map.put("admin_result_eventing_audit",P.obj(%{"items"=>P.array(P.ref("EventingAudit"),100),"truncated"=>P.bool()}))
+    defs=Enum.reduce(~w(RawMatch FilteredMatch),defs,fn key,acc->put_in(acc,[key,"properties","replay_id"],P.str()) end)
+    quarantine=P.obj(%{"reason"=>P.str(),"digest"=>P.str(64)|>Map.put("pattern","^[0-9a-f]{64}$"),"at"=>P.time(),"offset"=>nullable(count())})
+    defs=put_in(defs,["EventingStatus","properties","quarantines"],P.array(quarantine,1))
+    defs=put_in(defs,["EventingStatus","properties","replay_watermark"],count())
+    defs=put_in(defs,["EventingStatus","properties","control_revision"],count())
+    filter_limits=P.obj(%{"max_pending_filter_jobs"=>P.int(1,100000),"max_pending_filter_jobs_per_subscription"=>P.int(1,100000)})
+    defs=update_in(defs,["EventingStatus","properties"],&Map.merge(&1,%{"pending_filter_jobs"=>count(),"deferred_filter_targets"=>count(),"filtering_paused"=>P.bool(),"filter_queue_limits"=>filter_limits}))
+    defs=update_in(defs,["EventingStatus","required"],&Enum.uniq(&1++~w(quarantines replay_watermark control_revision pending_filter_jobs deferred_filter_targets filtering_paused filter_queue_limits)))
+    defs=put_in(defs,["EventingGap","properties","reason"],P.enum(~w(RETENTION_GAP BROKER_RESTORE TRANSPORT_CUTOVER)))
+    Enum.reduce([{"AdminCommand","oneOf","admin_"},{"AdminResult","anyOf","admin_result_"}],defs,fn {key,union,prefix},acc->update_in(acc,[key,union],&Enum.uniq((&1 || [])++Enum.map(~w(repair_eventing replay_events eventing_audit eventing_replay),fn op->P.ref(prefix<>op) end))) end)
+  end
+  defp update_config(defs) do
+    public=%{"projects"=>P.array(P.ref("Project"),256,1),"agent_projects"=>%{"type"=>"object","additionalProperties"=>ids()},"server_id"=>P.identifier(),"eventing"=>P.ref("PublicEventingConfig"),"host"=>P.enum(["127.0.0.1","0.0.0.0"])}
+    defs=update_in(defs,["PublicConfig","properties"],&Map.merge(&1,public))
+    defs=update_in(defs,["PublicConfig","properties","matcher"],&nullable/1)
+    defs=update_in(defs,["PublicConfig","required"],&Enum.reject(&1,fn k->k in ~w(project_id matcher) end))
+    patch=Map.delete(public,"server_id") |> Map.put("eventing",partial(eventing_config(),defs)) |> Map.put("projects",P.array(P.ref("ProjectInput"),256,1))
+    defs=update_in(defs,["MergePatch","properties"],fn props->Map.merge(props,Map.new(patch,fn {k,v}->{k,nullable(v)} end)) end)
+    pair=P.obj(%{"local_project_id"=>P.identifier(),"remote_project_id"=>P.identifier()})
+    props=%{"server_id"=>P.identifier(),"url"=>P.str(2048),"project_pairs"=>P.array(pair,256,1)|>Map.put("uniqueItems",true)}
+    defs=defs |> Map.put("ServerPeerPublic",P.obj(props)) |> Map.put("ServerPeerInput",P.obj(Map.merge(props,%{"token"=>P.token_schema(24),"inbound_token"=>P.token_schema(24)})))
+    old=get_in(defs,["PublicConfig","properties","federation","properties","peers","items"])
+    if old do
+      defs=put_in(defs,["PublicConfig","properties","federation","properties","peers","items"],%{"oneOf"=>[old,P.ref("ServerPeerPublic")]})
+      patch_fed=get_in(defs,["MergePatch","properties","federation"])
+      defs=if patch_fed do
+        put_in(defs,["MergePatch","properties","federation"],replace_peer_items(patch_fed))
+      else defs end
+      public_fed=defs["PublicConfig"]["properties"]["federation"]
+      defs=put_in(defs,["Project","properties","settings","properties","federation"],public_fed)
+      put_in(defs,["ProjectInput","properties","settings","properties","federation"],defs["MergePatch"]["properties"]["federation"])
+    else defs end
+  end
+  defp replace_peer_items(value) when is_map(value) do
+    if is_map(value["properties"]) and Map.has_key?(value["properties"],"peers") do
+      peers=value["properties"]["peers"]
+      peers=replace_peer_array(peers)
+      put_in(value,["properties","peers"],peers)
+    else Map.new(value,fn {k,v}->{k,replace_peer_items(v)} end) end
+  end
+  defp replace_peer_items(value) when is_list(value),do: Enum.map(value,&replace_peer_items/1)
+  defp replace_peer_items(value),do: value
+  defp replace_peer_array(%{"type"=>"array","items"=>item}=value),do: Map.put(value,"items",%{"oneOf"=>[item,P.ref("ServerPeerInput")]})
+  defp replace_peer_array(value) when is_map(value),do: Map.new(value,fn {k,v}->{k,replace_peer_array(v)} end)
+  defp replace_peer_array(value) when is_list(value),do: Enum.map(value,&replace_peer_array/1)
+  defp replace_peer_array(value),do: value
+  defp extend_peers(defs) do
+    ops = ~w(submit status catalog identities source_submit source_status)
+    defs=Enum.reduce(ops,defs,fn op,acc->
+      request=acc["PeerV1_"<>op]
+      request=request |> put_in(["properties","protocol_version"],%{"const"=>2,"type"=>"integer","x-integerToken"=>true}) |> put_in(["properties","origin_server_id"],P.identifier()) |> put_in(["properties","destination_project_id"],P.identifier()) |> update_in(["required"],&Enum.uniq(&1++~w(origin_server_id destination_project_id)))
+      Map.put(acc,"PeerV2_"<>op,request)
+    end)
+    defs=Map.put(defs,"peer_v2_command",%{"oneOf"=>Enum.map(ops,&P.ref("PeerV2_"<>&1))})
+    # Server-wide catalog discovery is an explicit distinct request alternative.
+    aggregate=defs["PeerV2_catalog"] |> update_in(["properties"],&Map.delete(&1,"destination_project_id")) |> update_in(["required"],&Enum.reject(&1,fn k->k=="destination_project_id" end))
+    defs=Map.put(defs,"PeerV2_server_catalog",aggregate)
+    defs=update_in(defs,["peer_v2_command","oneOf"],&(&1++[P.ref("PeerV2_server_catalog")]))
+    variants=case defs["PeerV1Result"] do %{"anyOf"=>items}->items;value->[value] end
+    defs=Enum.with_index(variants) |> Enum.reduce(defs,fn {value,index},acc->
+      value=if value["$ref"],do: acc[String.replace_prefix(value["$ref"],"#/$defs/","")],else: value
+      value=value |> put_in(["properties","protocol_version"],%{"const"=>2,"type"=>"integer","x-integerToken"=>true}) |> put_in(["properties","server_id"],P.identifier()) |> put_in(["properties","project_id"],P.identifier()) |> update_in(["required"],&Enum.uniq(&1++~w(server_id project_id)))
+      Map.put(acc,"PeerV2Result_"<>Integer.to_string(index),value)
+    end)
+    defs=Map.put(defs,"PeerV2Result",%{"anyOf"=>Enum.map(0..(length(variants)-1),&P.ref("PeerV2Result_"<>Integer.to_string(&1)))})
+    v2error=defs["PeerV1Error"] |> put_in(["properties","protocol_version"],%{"const"=>2,"type"=>"integer","x-integerToken"=>true})
+    defs=Map.put(defs,"PeerV2Error",v2error)
+    digest=P.str(64)|>Map.put("pattern","^[0-9a-f]{64}$")
+    project_catalog=P.obj(%{"project_id"=>P.identifier(),"revision"=>digest,"generated_at"=>P.time(),"expires_at"=>P.time(),"visible"=>P.bool(),"entries"=>P.array(P.ref("CatalogEntry"),256)})
+    aggregate=P.obj(%{"protocol_version"=>%{"const"=>2,"type"=>"integer","x-integerToken"=>true},"server_id"=>P.identifier(),"revision"=>digest,"generated_at"=>P.time(),"max_age_ms"=>%{"const"=>10000,"type"=>"integer","x-integerToken"=>true},"projects"=>P.array(project_catalog,1),"next_cursor"=>nullable(P.str(256))})
+    defs=Map.put(defs,"PeerV2Result_server_catalog",aggregate)
+    defs=update_in(defs,["PeerV2Result","anyOf"],&(&1++[P.ref("PeerV2Result_server_catalog")]))
+    defs=put_in(defs,["UnsupportedVersion","properties","supported"],%{"const"=>[1,2]})
+    defs=put_in(defs,["Descriptor","properties","version"],%{"const"=>2,"type"=>"integer","x-integerToken"=>true})
+    defs=put_in(defs,["Descriptor","properties","federation","properties","versions"],%{"const"=>[1,2]})
+    defs=put_in(defs,["Descriptor","properties","federation","properties","path"],%{"const"=>"/federation/v2"})
+    defs
+  end
+  def extra_paths do
+    response=fn name->%{"description"=>"Project-pair-authorized federation response","content"=>%{"application/json"=>%{"schema"=>%{"$ref"=>"#/components/schemas/"<>name}}}} end
+    responses=Map.new(~w(400 401 403 404 409 413 415 429 500 503),&{&1,response.("PeerV2Error")}) |> Map.put("200",response.("PeerV2Result")) |> Map.put("202",response.("PeerV2Result")) |> Map.put("426",response.("UnsupportedVersion"))
+    %{"/federation/v2"=>%{"post"=>%{"summary"=>"Server-authenticated project-pair federation v2","security"=>[%{"bearer"=>[]}],"requestBody"=>%{"required"=>true,"content"=>%{"application/json"=>%{"schema"=>%{"$ref"=>"#/components/schemas/peer_v2_command"}}}},"responses"=>responses}}}
+  end
+end

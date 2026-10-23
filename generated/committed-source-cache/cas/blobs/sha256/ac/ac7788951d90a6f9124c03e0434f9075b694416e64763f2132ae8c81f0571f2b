@@ -1,0 +1,280 @@
+defmodule ADHD.OptimizationWorker do
+  alias ADHD.Optimization,as: O
+  alias ADHD.Replay,as: Q
+  alias ADHD.Retrieval,as: X
+  alias ADHD.RetrievalIndex,as: I
+  alias ADHD.Selection,as: S
+  alias ADHD.History,as: H
+  alias ADHD.Domain,as: D
+  alias ADHD.Directory,as: F
+  alias ADHD.Records,as: R
+  defp now,do: System.monotonic_time(:millisecond)
+  defp pending?(live,q),do: live != nil and live["run"]==q["run"] and live["status"]=="pending" and live["phase"]==q["phase"] and live["cursor"]==q["cursor"]
+  defp mutate(q,fun) do
+    ADHD.Store.call(fn s->
+      c=ADHD.Config.get();live=s.optimization["proposals"][q["id"]]
+      if pending?(live,q) do
+        {s,live}=O.refresh(s,c,live)
+        cond do
+          live["status"] != "pending"->{true,O.put(s,live)}
+          not O.config(c)["enabled"] and live["operation"] != "rollback"->{false,s}
+          true->
+            {state,next}=fun.(s,c,live)
+            state=O.put(state,next)
+            if O.capacity?(state,c) and native_capacity?(state,c) do {true,state} else
+              # Keep the committed child and all actual charges; stop only parent
+              # progress. No paid experiment can disappear because its parent cap shrank.
+              stopped=O.stop(O.sync(state,next),"partial","RESOURCE_LIMIT",true)
+              {true,O.put(state,Map.put(stopped,"generation",live["generation"]))}
+            end
+        end
+      else {false,s} end
+    end) |> ADHD.Store.unwrap()
+  end
+  def native_bytes(s) do
+    :erlang.external_size(s.retrieval_index)+Enum.sum(for {_,q}<-s.optimization["proposals"],q["generation"] != nil,do: :erlang.external_size(q["generation"]))
+  end
+  def native_capacity?(s,c),do: native_bytes(s)<=X.effective(X.resolve(c,s))["max_index_bytes"]-65536
+  defp budget_error(q) do
+    Enum.find_value(~w(records calls bytes time_ms),fn key->if q["usage"][key]>=q["budget"][key],do: "BUDGET_"<>String.upcase(if(key=="time_ms",do: "time",else: key)) end)
+  end
+  defp branch_budget(q,c) do
+    caps=ADHD.Feedback.config(c)["budget"]
+    result=Map.new(~w(records calls bytes time_ms),fn k->{k,min(caps[k],div(max(0,q["budget"][k]-q["usage"][k]),2))} end)
+    if result["records"]<1 or result["calls"]<1 or result["bytes"]<1024 or result["time_ms"]<100,do: nil,else: result
+  end
+  defp cohort_cases(q),do: if(q["phase"]=="training",do: q["training"],else: q["held_out"]++q["regression"])
+  defp current_variant(q),do: Enum.at(q["variants"],q["cursor"]["variant"])
+  defp current_case(q),do: Enum.at(cohort_cases(q),q["cursor"]["case"])
+  defp child_ref(q,item,variant),do: Enum.find(q["children"],&(&1["attempt_id"]==item["attempt_id"] and &1["variant_identity"]==variant["recipe_identity"]))
+  defp update_ref(q,ref),do: Map.update!(q,"children",fn rows->Enum.map(rows,fn old->if old["replay_id"]==ref["replay_id"],do: ref,else: old end) end)
+  defp create_pair(q,item,variant) do
+    mutate(q,fn s,c,live->
+      caps=branch_budget(live,c)
+      if caps==nil do {s,O.stop(live,"partial",budget_error(live) || "RESOURCE_LIMIT",true)} else
+        cmd=%{"op"=>"replay_retrieval","attempt_id"=>item["attempt_id"],"candidate_recipe"=>variant["recipe"],"baseline"=>"current","corpus"=>"frozen","budget"=>caps}
+        {result,state}=Q.create(s,c,cmd,item["owner_id"],"optimization",q["id"])
+        child=result["query"];ref=%{"replay_id"=>child["id"],"run"=>child["run"],"attempt_id"=>item["attempt_id"],"cohort"=>item["cohort"],"variant_identity"=>variant["recipe_identity"],"last_status"=>child["status"]}
+        next=live |> Map.update!("children",&(&1++[ref])) |> put_in(["variants",Access.at(live["cursor"]["variant"]),"status"],"evaluating")
+        {state,next}
+      end
+    end)
+  end
+  defp record_case(q,child,item,variant) do
+    usage=Q.usage(child);comparison=Q.comparison(child)
+    # Lifetime deltas include failed/restarted work, unlike an experiment's
+    # resettable comparison counters. Qualification cannot erase failed calls.
+    comparison=Enum.reduce(~w(calls bytes time_ms),comparison,fn k,acc->Map.put(acc,k<>"_delta",usage["candidate"]["cumulative_"<>k]-usage["baseline"]["cumulative_"<>k]) end)
+    row=%{"attempt_id"=>item["attempt_id"],"group_id"=>item["group_id"],"cohort"=>item["cohort"],"label_revision"=>item["label"]["revision"],"replay_id"=>child["id"],"run"=>child["run"],"variant_identity"=>variant["recipe_identity"],"policy_identity"=>q["policy_identity"],"comparison"=>comparison,"baseline"=>Q.metrics(child,"baseline"),"candidate"=>Q.metrics(child,"candidate"),"usage"=>usage}
+    q |> Map.update!("cases",&(&1++[row])) |> update_in(["cursor","case"],&(&1+1))
+  end
+  def evaluation(s,q,rows,c,training) do
+    eligible=rows != [] and Enum.all?(rows,&(&1["comparison"]["eligible"] and &1["baseline"]["eligible"] and &1["candidate"]["eligible"]))
+    selected=if training,do: q["training"],else: q["held_out"]++q["regression"]
+    eligible=eligible and length(rows)==length(selected) and length(Enum.uniq_by(rows,& &1["group_id"]))==length(selected)
+    failures=Enum.count(rows,&(&1["candidate"]["answer_pass"] != true or &1["baseline"]["answer_pass"] != true))
+    sums=fn key->if eligible,do: Enum.sum(Enum.map(rows,& &1["comparison"][key])) end
+    gain=if eligible,do: div(sums.("retrieval_gain_ppm"),length(rows))
+    regressions=if eligible,do: sums.("answer_regressions"),else: 0;false_supports=if eligible,do: sums.("false_supports"),else: 0
+    v=O.config(c)
+    no_recall_loss=Enum.all?(rows,&(&1["comparison"]["eligible"] and &1["comparison"]["retrieval_gain_ppm"]>=0))
+    passed=eligible and no_recall_loss and failures==0 and regressions==0 and false_supports==0 and gain>=v["min_recall_gain_ppm"] and sums.("calls_delta")<=v["max_total_calls_delta"] and sums.("bytes_delta")<=v["max_total_bytes_delta"]
+    positive=Enum.count(selected,&(&1["label"]["expectation"] in ~w(supported conflicting)))
+    noev=Enum.count(selected,fn item->item["label"]["expectation"]=="no_evidence" and ADHD.Feedback.lookup(s,item["attempt_id"])["primary_ids"] != [] end)
+    %{"eligible"=>eligible,"reason"=>if(passed,do: nil,else: if(eligible,do: "QUALITY_REGRESSION",else: "INCOMPLETE_EVALUATION")),"cases"=>length(rows),"groups"=>length(Enum.uniq_by(rows,& &1["group_id"])),"positive_groups"=>positive,"no_evidence_groups"=>noev,"negation_groups"=>Enum.count(selected,&("negation" in &1["label"]["tags"])),"correction_groups"=>Enum.count(selected,&("correction" in &1["label"]["tags"])),"mean_recall_gain_ppm"=>gain,"answer_failures"=>failures,"answer_regressions"=>regressions,"false_supports"=>false_supports,"total_calls_delta"=>sums.("calls_delta"),"total_bytes_delta"=>sums.("bytes_delta"),"total_time_ms_delta"=>sums.("time_ms_delta"),"baseline_native_bytes"=>nil,"candidate_native_bytes"=>nil,"passed"=>passed}
+  end
+  defp complete_variant(q) do
+    mutate(q,fn s,c,live->
+      variant=current_variant(live);rows=Enum.filter(live["cases"],&(&1["cohort"]=="training" and &1["variant_identity"]==variant["recipe_identity"]))
+      summary=evaluation(s,live,rows,c,true)
+      next=live |> put_in(["variants",Access.at(live["cursor"]["variant"]),"summary"],summary) |> put_in(["variants",Access.at(live["cursor"]["variant"]),"status"],if(summary["passed"],do: "qualified",else: "rejected")) |> put_in(["cursor"],%{"variant"=>live["cursor"]["variant"]+1,"case"=>0})
+      {s,next}
+    end)
+  end
+  defp freeze_winner(q) do
+    mutate(q,fn s,_,live->
+      winner=live["variants"] |> Enum.filter(&(&1["status"]=="qualified")) |> Enum.sort_by(&{-&1["summary"]["mean_recall_gain_ppm"],&1["summary"]["total_calls_delta"],&1["summary"]["total_bytes_delta"],&1["recipe_identity"]}) |> List.first()
+      if winner do
+        {s,Map.merge(live,%{"winner_identity"=>winner["recipe_identity"],"status"=>"awaiting_evaluation","phase"=>"awaiting_evaluation","updated_at"=>D.now()})}
+      else {s,O.stop(live,"rejected","NO_IMPROVEMENT") |> Map.put("phase","done")} end
+    end)
+  end
+  defp complete_evaluation(q) do
+    mutate(q,fn s,c,live->
+      rows=Enum.filter(live["cases"],&(&1["cohort"] != "training"));summary=evaluation(s,live,rows,c,false)
+      next=Map.put(live,"evaluation",summary)
+      if summary["passed"],do: {s,Map.merge(next,%{"phase"=>"building","cursor"=>%{"variant"=>live["cursor"]["variant"],"case"=>0}})},else: {s,O.stop(next,"rejected",summary["reason"]) |> Map.put("phase","done")}
+    end)
+  end
+  defp pair_step(s,_c,q) do
+    variant=current_variant(q);item=current_case(q)
+    cond do
+      variant==nil->freeze_winner(q)
+      item==nil and q["phase"]=="training"->complete_variant(q)
+      item==nil->complete_evaluation(q)
+      true->
+        ref=child_ref(q,item,variant);child=if ref,do: s.replay_queries[ref["replay_id"]]
+        cond do
+          ref==nil->create_pair(q,item,variant)
+          child==nil or child["run"] != ref["run"]->mutate(q,fn state,_,live->{state,O.stop(live,"invalidated","CHILD_CHANGED")} end)
+          child["status"]=="pending"->false
+          child["status"]=="completed"->mutate(q,fn state,_,live->
+            current=state.replay_queries[ref["replay_id"]]
+            if current["run"]==ref["run"] and current["status"]=="completed",do: {state,record_case(O.sync(state,live),current,item,variant) |> update_ref(Map.put(ref,"last_status","completed"))},else: {state,O.stop(live,"invalidated","CHILD_CHANGED")}
+          end)
+          q["retry_failed"]==true->mutate(q,fn state,current_config,live->
+            caps=branch_budget(live,current_config)
+            if caps do
+              {state,next_child}=Q.continue(state,X.resolve(current_config,state),child,%{"restart"=>true,"budget"=>caps})
+              next=live |> Map.put("retry_failed",false) |> update_ref(Map.merge(ref,%{"run"=>next_child["run"],"last_status"=>next_child["status"]}))
+              {state,next}
+            else {state,O.stop(live,"partial",budget_error(live) || "RESOURCE_LIMIT",true)} end
+          end)
+          true->mutate(q,fn state,_,live->{state,O.stop(O.sync(state,live),"partial",if(child["error"],do: child["error"]["code"],else: "INCOMPLETE_EVALUATION"),true)} end)
+        end
+    end
+  end
+  defp winner(q),do: Enum.find(q["variants"],&(&1["recipe_identity"]==q["winner_identity"]))["recipe"]
+  def prepare_generation(s,c,q) do
+    recipe=winner(q);cc=Q.config_for(X.resolve(c,s),recipe);active=s.retrieval_index["active"]
+    reuse=active != nil and O.structural(active["manifest"]["recipe"])==O.structural(recipe) and active["manifest"]["runtime"]==X.normalization()
+    source=if reuse,do: active |> Map.put("plan_identity",I.plan(cc)) |> put_in(["manifest","recipe"],recipe) |> put_in(["manifest","recipe_identity"],X.recipe_identity(recipe)),else: nil
+    # Reuse only rows whose structural input recipe is unchanged. begin_build
+    # still computes new-publication and incoming-context affected roots.
+    temp=%{s|retrieval_index: Map.put(s.retrieval_index,"active",source)}
+    prepared=I.begin_build(temp,cc);gen=prepared.retrieval_index["building"]
+    {gen,map_size(gen["rows"])-Enum.count(gen["pending_ids"],&Map.has_key?(gen["rows"],&1)),prepared.allocation_counter}
+  end
+  defp build_step(s,c,q) do
+    started=now();recipe=winner(q);cc=Q.config_for(X.resolve(c,s),recipe)
+    {gen,reused,counter}=if q["generation"]==nil,do: prepare_generation(s,c,q),else: {q["generation"],q["build"]["reused"],s.allocation_counter}
+    {gen,reused,counter}=if gen["plan_identity"] != I.plan(cc),do: prepare_generation(s,c,Map.put(q,"generation",nil)),else: {gen,reused,counter}
+    gen=if gen["manifest"]["source_watermark"]<R.watermark(s),do: I.extend(s,cc,gen),else: gen
+    remaining=max(0,q["budget"]["records"]-q["usage"]["records"])
+    todo=Enum.take(gen["pending_ids"],min(O.config(c)["build_batch"],remaining))
+    rows=Map.new(todo,fn id->{id,X.make_row(s,cc,id,recipe,gen["manifest"]["source_watermark"])} end)
+    gen=gen |> Map.update!("rows",&Map.merge(&1,rows)) |> Map.update!("pending_ids",&Enum.drop(&1,length(todo))) |> Map.update!("done",&(&1+length(todo))) |> then(&I.refresh_manifest(s,&1))
+    duration=max(0,now()-started)
+    mutate(q,fn state,current,live->
+      if state[:project_epoch] != s[:project_epoch] or state.allocation_counter != s.allocation_counter or live["generation"] != q["generation"] do {state,live} else
+        state=%{state|allocation_counter: counter}
+        next=live |> Map.put("generation",gen) |> update_in(["usage","records"],&(&1+length(todo))) |> update_in(["usage","time_ms"],&(&1+duration))
+        complete=gen["pending_ids"]==[] and gen["manifest"]["source_watermark"]==R.watermark(state)
+        status=if complete,do: if(gen["manifest"]["excluded"]==0,do: "ready",else: "partial"),else: "building"
+        gen=put_in(gen,["manifest","status"],status)
+        build=%{"status"=>status,"indexed"=>gen["manifest"]["indexed"],"total"=>gen["manifest"]["total"],"processed"=>live["build"]["processed"]+length(todo),"reused"=>reused,"watermark"=>gen["manifest"]["source_watermark"],"native_bytes"=>gen["manifest"]["bytes"],"manifest_identity"=>gen["manifest"]["source_manifest_identity"],"error"=>nil}
+        next=Map.merge(next,%{"generation"=>gen,"build"=>build,"index_manifest"=>gen["manifest"],"watermark"=>gen["manifest"]["source_watermark"],"global_evidence_available"=>true})
+        baseline=state.retrieval_index["active"];baseline_bytes=if baseline,do: baseline["manifest"]["bytes"],else: 0
+        growth=gen["manifest"]["bytes"]*1000000<=max(1,baseline_bytes)*O.config(current)["max_native_growth_ppm"]
+        cond do
+          complete and status != "ready"->{state,O.stop(next,"partial","INDEX_INCOMPLETE",true)}
+          complete and not growth and live["operation"] != "rollback"->{state,O.stop(next,"partial","RESOURCE_LIMIT",true)}
+          complete->
+            summary=if next["evaluation"],do: Map.merge(next["evaluation"],%{"baseline_native_bytes"=>baseline_bytes,"candidate_native_bytes"=>gen["manifest"]["bytes"]})
+            ready=Map.merge(next,%{"evaluation"=>summary,"status"=>"qualified","phase"=>"ready","updated_at"=>D.now()})
+            if live["operation"]=="rollback" or (O.config(current)["mode"]=="automatic" and O.config(current)["enabled"]) do activate(state,current,ready) else {state,ready} end
+          budget_error(next) != nil->{state,O.stop(next,"partial",budget_error(next),true)}
+          true->{state,next}
+        end
+      end
+    end)
+  end
+  defp activate(s,c,q) do
+    if O.guard(s,c,q) != nil or not O.children_current?(s,q),do: D.fail("CONFIG_CONFLICT")
+    gen=q["generation"] || D.fail("GENERATION_UNAVAILABLE")
+    D.check(gen["manifest"]["runtime"]==X.normalization() and gen["manifest"]["recipe"]==winner(q))
+    D.check(gen["manifest"]["source_watermark"]==R.watermark(s) and gen["manifest"]["status"]=="ready")
+    if q["operation"] != "rollback" and (q["evaluation"]==nil or not q["evaluation"]["passed"] or not q["evidence_available"]),do: D.fail("INCOMPLETE_EVALUATION")
+    mark=Enum.reduce(O.selected_cases(q),0,fn item,n->max(n,item["snapshot"]["watermark"]) end)
+    descriptor=S.descriptor(winner(q),c,q["id"],if(q["operation"]=="rollback",do: nil,else: F.digest(q["evaluation"])),mark,R.watermark(s))
+    descriptor=if q["operation"]=="rollback",do: Map.merge(s.retrieval_selection["previous"],%{"selected_at"=>D.now(),"activation_watermark"=>R.watermark(s)}),else: descriptor
+    state=S.activate(s,c,descriptor,gen)
+    next=Map.merge(q,%{"status"=>"promoted","phase"=>"done","generation"=>nil,"updated_at"=>D.now()})
+    state=O.put(state,next)
+    if not native_capacity?(state,c) or not O.capacity?(state,c),do: D.fail("RESOURCE_LIMIT")
+    {state,next}
+  end
+  def promote(s,c,cmd,_p) do
+    if not O.config(c)["enabled"],do: D.fail("UNAVAILABLE")
+    if cmd["expected_selection_revision"] != s.retrieval_selection["revision"],do: D.fail("CONFIG_CONFLICT")
+    q=O.lookup(s,cmd["proposal_id"]);D.check(q["status"]=="qualified" and q["operation"]=="optimize")
+    {state,next}=activate(s,c,q);{%{"proposal"=>O.public(next)},state}
+  end
+  def rollback(s,c,cmd,p) do
+    if cmd["expected_selection_revision"] != s.retrieval_selection["revision"],do: D.fail("CONFIG_CONFLICT")
+    previous=s.retrieval_selection["previous"] || D.fail("NO_PREVIOUS_SELECTION")
+    if not S.applied?(s,c),do: D.fail("NO_PREVIOUS_SELECTION")
+    # A recovery proposal has no learned quality claim and builds under exactly
+    # the same current source/capacity fences before its atomic switch.
+    prepared=%{"base_identity"=>S.base_identity(c),"selection_revision"=>s.retrieval_selection["revision"],"policy"=>O.policy(c,s),"cases"=>[],"baseline"=>X.effective(X.resolve(c,s))["recipe"],"recipes"=>[previous["recipe"]],"signature"=>F.digest(["rollback",s.retrieval_selection["revision"],D.opaque()])}
+    # new/6's eligibility preparation is bypassed only by this trusted recovery
+    # path; its shared storage and concurrency caps still apply.
+    recovery=put_in(c,["optimization","enabled"],true)
+    {result,state}=O.new(s,recovery,cmd,p,Map.put(prepared,"policy",O.policy(recovery,s)))
+    id=result["proposal"]["id"];q=O.lookup(state,id)
+    q=Map.merge(q,%{"operation"=>"rollback","phase"=>"building","winner_identity"=>X.recipe_identity(previous["recipe"]),"policy_identity"=>O.policy(c,s)})
+    {%{"proposal"=>O.public(q)},O.put(state,q)}
+  end
+  defp automatic do
+    s=ADHD.Store.snapshot() |> ADHD.Store.unwrap();c=ADHD.Config.get();v=O.config(c)
+    last=s.optimization["last_proposal_at"]
+    due=last==nil or DateTime.diff(DateTime.utc_now(),DateTime.from_iso8601(last) |> elem(1),:millisecond)>=v["cooldown_ms"]
+    epoch={c["config_revision"],s.feedback["label_epoch"],s.feedback["exposure_epoch"],map_size(s.feedback["attempts"])}
+    if v["enabled"] and v["mode"]=="automatic" and due and Process.get(:optimization_trigger_epoch) != epoch do
+      Process.put(:optimization_trigger_epoch,epoch)
+      try do
+        prepared=O.prepare_proposal(s,c,%{},true)
+        if s.optimization["signatures"][prepared["signature"]] do false else
+          ADHD.Store.call(fn state->
+            current=ADHD.Config.get()
+            if O.config(current)["enabled"] and O.config(current)["mode"]=="automatic" do
+              {_,state}=O.new(state,current,%{},%{"id"=>"optimizer"},prepared);{true,state}
+            else {false,state} end
+          end) |> ADHD.Store.unwrap()
+        end
+      rescue _->false catch _,_->false end
+    else false end
+  end
+  defp automatic_evaluate(q) do
+    c=ADHD.Config.get()
+    if O.config(c)["enabled"] and O.config(c)["mode"]=="automatic" do
+      try do
+        s=ADHD.Store.snapshot() |> ADHD.Store.unwrap()
+        epoch={q["id"],q["run"],c["config_revision"],s.feedback["label_epoch"],s.feedback["exposure_epoch"],map_size(s.feedback["attempts"])}
+        if Process.get({:optimization_evaluation_epoch,q["id"]})==epoch,do: throw(:unchanged_evidence)
+        Process.put({:optimization_evaluation_epoch,q["id"]},epoch)
+        prepared=O.prepare_evaluation(s,c,%{"proposal_id"=>q["id"]})
+        ADHD.Store.call(fn state->current=ADHD.Config.get()
+          if O.config(current)["enabled"] and O.config(current)["mode"]=="automatic" do
+            {_,state}=O.evaluate(state,current,%{"proposal_id"=>q["id"]},prepared);{true,state}
+          else {false,state} end
+        end) |> ADHD.Store.unwrap()
+      rescue _->false catch _,_->false end
+    else false end
+  end
+  def step do
+    s=ADHD.Store.snapshot() |> ADHD.Store.unwrap();c=ADHD.Config.get()
+    pending=s.optimization["proposals"] |> Map.values() |> Enum.filter(&(&1["status"] in ~w(pending awaiting_evaluation qualified) and (O.config(c)["enabled"] or &1["operation"]=="rollback"))) |> Enum.sort_by(& &1["seq"])
+    last=Process.get(:last_optimization_seq,-1);q=Enum.find(pending,&(&1["seq"]>last)) || List.first(pending)
+    if q do
+      Process.put(:last_optimization_seq,q["seq"])
+      try do
+        cond do
+          O.guard(s,c,q) != nil or not O.children_current?(s,q)->ADHD.Store.call(fn state->live=O.lookup(state,q["id"]);{state,live}=O.refresh(state,ADHD.Config.get(),live);{true,O.put(state,live)} end) |> ADHD.Store.unwrap()
+          q["status"]=="awaiting_evaluation"->automatic_evaluate(q)
+          q["status"]=="qualified"->
+            if q["generation"]["manifest"]["source_watermark"]<R.watermark(s) do
+              ADHD.Store.call(fn state->live=O.lookup(state,q["id"]);{true,O.put(state,Map.merge(live,%{"status"=>"pending","phase"=>"building"}))} end) |> ADHD.Store.unwrap()
+            else false end
+          q["phase"] in ~w(training evaluating)->pair_step(s,c,q)
+          q["phase"]=="building"->build_step(s,c,q)
+          true->false
+        end
+      rescue _->mutate(q,fn state,_,live->{state,O.stop(O.sync(state,live),"partial","WORKER_ERROR",true)} end)
+      catch
+        {:domain,code}->mutate(q,fn state,_,live->{state,O.stop(O.sync(state,live),"partial",if(code in ~w(RESOURCE_EXHAUSTED RESOURCE_LIMIT),do: "RESOURCE_LIMIT",else: "WORKER_ERROR"),true)} end)
+        _,_->mutate(q,fn state,_,live->{state,O.stop(O.sync(state,live),"partial","WORKER_ERROR",true)} end)
+      end
+    else automatic() end
+  end
+end

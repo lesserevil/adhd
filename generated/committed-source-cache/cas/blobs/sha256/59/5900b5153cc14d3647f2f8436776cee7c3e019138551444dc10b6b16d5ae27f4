@@ -1,0 +1,75 @@
+defmodule ADHD.CLI do
+  def run(["rebind-storage", request]) do
+    try do
+      ADHD.StorageRebind.run(request)
+    rescue
+      _ -> rebind_error("RESTORE_CONFLICT")
+    catch
+      {:domain, code}
+      when code in ~w(INVALID_PARAMS RESTORE_CONFLICT RECOVERY_REQUIRED IDEMPOTENCY_CONFLICT) ->
+        rebind_error(code)
+
+      _, _ ->
+        rebind_error("RESTORE_CONFLICT")
+    end
+  end
+
+  def run(["describe"]) do
+    %{
+      "name" => "ADHD",
+      "version" => "0.1.0",
+      "protocol" => "1.0",
+      "operations" => ADHD.Domain.operations()
+    }
+  end
+
+  def run(["validate", command]) do
+    ADHD.Domain.agent(command)
+  end
+
+  def run(["validate-admin", command]) do
+    ADHD.Domain.admin(command)
+  end
+
+  def run(["protocol-schema"]) do
+    ADHD.Protocol.schema()
+  end
+
+  def run(["protocol-openapi"]) do
+    ADHD.Protocol.openapi()
+  end
+
+  def run(["serve", path]) when is_binary(path) do
+    {:ok, _} = Application.ensure_all_started(:inets)
+    {:ok, _} = Application.ensure_all_started(:ssl)
+    {:ok, _} = ADHD.Config.start_link(path)
+    c = ADHD.Config.get()
+    {:ok, _} = ADHD.ProjectRestore.start_link(Path.expand(path))
+
+    if c["project_id"] && ADHD.StorageRegistry.availability(c, c["project_id"]) == "ready" do
+      ADHD.Store.start_selected(ADHD.Projects.view(c, c["project_id"]))
+    end
+
+    ADHD.Projects.prepare(c, c)
+    ADHD.StorageRegistry.startup_complete()
+    :ok = ADHD.Config.finish_store_recovery()
+    ADHD.Migration.complete(Path.expand(path))
+    :ok = ADHD.Resources.start()
+    {:ok, _} = ADHD.Identity.start_link()
+    {:ok, _} = ADHD.Server.start_link(c)
+    {:ok, _} = ADHD.TLS.start_link(Path.expand(path), c)
+    ADHD.Projects.workers(c)
+    IO.puts(JSON.encode!(%{"status" => "ready", "url" => c["public_url"]}))
+    Process.sleep(:infinity)
+    :serving
+  end
+
+  def run(_) do
+    ADHD.Domain.fail()
+  end
+
+  defp rebind_error(code) do
+    IO.puts(:stderr, JSON.encode!(ADHD.Server.error(code)))
+    System.halt(1)
+  end
+end

@@ -1,0 +1,301 @@
+defmodule ADHD.Server do
+  use GenServer
+  alias ADHD.Domain, as: D
+  @security [{"cache-control","no-store"},{"x-content-type-options","nosniff"},{"referrer-policy","no-referrer"},{"content-security-policy","default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"}]
+  def start_link(c),do: GenServer.start_link(__MODULE__,c,name: __MODULE__)
+  def prepare(port,host \\ ADHD.Config.root()["host"]),do: GenServer.call(__MODULE__,{:prepare,port,host})
+  def activate(socket),do: GenServer.call(__MODULE__,{:activate,socket})
+  def discard({:ok,socket}),do: :gen_tcp.close(socket)
+  def discard(_),do: :ok
+  defp listen(port,host),do: :gen_tcp.listen(port,[:binary,active: false,reuseaddr: true,reuseport: true,ip: (if host=="0.0.0.0",do: {0,0,0,0},else: {127,0,0,1}),packet: :raw,backlog: 128])
+  def init(c) do
+    case listen(c["port"],c["host"]) do
+      {:ok,socket}->spawn(fn->accept(socket) end); {:ok,%{socket: socket}}
+      _->{:stop,:listener_unavailable}
+    end
+  end
+  def handle_call({:prepare,port,host},_,s),do: {:reply,listen(port,host),s}
+  def handle_call({:activate,{:ok,socket}},_,s) do
+    spawn(fn->accept(socket) end)
+    Process.send_after(self(),{:close,s.socket},200)
+    {:reply,:ok,%{s|socket: socket}}
+  end
+  def handle_info({:close,socket},s),do: (:gen_tcp.close(socket); {:noreply,s})
+  def terminate(_,s),do: :gen_tcp.close(s.socket)
+  defp accept(listener) do
+    case :gen_tcp.accept(listener) do
+      {:ok,socket}->
+        child=spawn(fn->receive do {:socket,s}->connection(s) end end)
+        :ok=:gen_tcp.controlling_process(socket,child)
+        send(child,{:socket,socket})
+        accept(listener)
+      _->:ok
+    end
+  end
+  def connection(socket) do
+    try do
+      request=read(socket,"",D.ms()+5000)
+      {status,headers,body}=if match?({:challenge, _},socket),do: ADHD.TLS.challenge(request),else: route(request)
+      respond(socket,status,headers,body)
+    rescue
+      _->if match?({:challenge,_},socket),do: respond(socket,404,[{"content-type","text/plain"}],{:raw,""}),else: respond(socket,400,[],%{"error"=>%{"code"=>"INVALID_PARAMS","message"=>"Invalid request"}})
+    catch
+      {:http,status}->if match?({:challenge,_},socket),do: respond(socket,404,[{"content-type","text/plain"}],{:raw,""}),else: respond(socket,status,[],error("INVALID_PARAMS"))
+      {:domain,code}->if match?({:challenge,_},socket),do: respond(socket,404,[{"content-type","text/plain"}],{:raw,""}),else: respond(socket,status(code),challenge(code),error(code))
+      _,_->if match?({:challenge,_},socket),do: respond(socket,404,[{"content-type","text/plain"}],{:raw,""}),else: respond(socket,500,[],error("INTERNAL"))
+    after
+      close(socket)
+    end
+  end
+  defp read(socket,buffer,deadline) do
+    case :binary.match(buffer,"\r\n\r\n") do
+      :nomatch ->
+        if byte_size(buffer)>16384,do: throw({:http,431})
+        read(socket,buffer<>recv(socket,deadline),deadline)
+      {at,4}->
+        if at+4>16384,do: throw({:http,431})
+        head=binary_part(buffer,0,at)
+        initial=binary_part(buffer,at+4,byte_size(buffer)-at-4)
+        [line|lines]=String.split(head,"\r\n")
+        [method,target,version]=String.split(line," ")
+        D.check(version in ["HTTP/1.0","HTTP/1.1"])
+        pairs=Enum.map(lines,fn l ->
+          [k,v]=String.split(l,":",parts: 2)
+          D.check(Regex.match?(~r/\A[!#$%&'*+.^_`|~0-9A-Za-z-]+\z/,k))
+          {String.downcase(k),String.trim(v," \t")}
+        end)
+        # String.trim/2 removes an exact substring; trim ASCII OWS explicitly.
+        pairs=Enum.map(pairs,fn {k,v}->{k,Regex.replace(~r/\A[ \t]+|[ \t]+\z/,v,"")} end)
+        D.distinct(Enum.map(pairs,&elem(&1,0)))
+        h=Map.new(pairs)
+        if h["transfer-encoding"],do: throw({:http,400})
+        n=case h["content-length"] do
+          nil->0
+          x->D.check(Regex.match?(~r/\A[0-9]+\z/,x)); String.to_integer(x)
+        end
+        if n>1048576,do: throw({:http,413})
+        body=body(socket,initial,n,deadline)
+        u=URI.parse(target)
+        D.check(is_nil(u.host) and String.starts_with?(target,"/"))
+        %{method: method,path: u.path,query: u.query,target: target,headers: h,body: body}
+    end
+  end
+  defp recv(socket,deadline) do
+    case receive_bytes(socket,max(1,deadline-D.ms())) do
+      {:ok,part}->part
+      _->throw({:http,408})
+    end
+  end
+  defp receive_bytes({:tls,socket},timeout),do: :ssl.recv(socket,0,timeout)
+  defp receive_bytes({:challenge,socket},timeout),do: :gen_tcp.recv(socket,0,timeout)
+  defp receive_bytes(socket,timeout),do: :gen_tcp.recv(socket,0,timeout)
+  defp close({:tls,socket}),do: :ssl.close(socket)
+  defp close({:challenge,socket}),do: :gen_tcp.close(socket)
+  defp close(socket),do: :gen_tcp.close(socket)
+  defp send_bytes({:tls,socket},bytes),do: :ssl.send(socket,bytes)
+  defp send_bytes({:challenge,socket},bytes),do: :gen_tcp.send(socket,bytes)
+  defp send_bytes(socket,bytes),do: :gen_tcp.send(socket,bytes)
+  defp body(_,b,n,_) when byte_size(b)==n,do: b
+  defp body(_,b,n,_) when byte_size(b)>n,do: throw({:http,400})
+  defp body(s,b,n,d),do: body(s,b<>recv(s,d),n,d)
+  defp json(req) do
+    content=Map.get(req.headers,"content-type","") |> String.downcase() |> String.split(";") |> hd() |> String.trim()
+    if content != "application/json",do: throw({:http,415})
+    ADHD.JSON.decode!(req.body)
+  end
+  def route(%{method: "GET",path: "/health"}),do: {200,[],%{"status"=>"ready"}}
+  def route(%{method: "GET",path: "/.well-known/agent-card.json"}),do: {200,[],ADHD.Protocol.card(ADHD.Config.get())}
+  def route(%{method: "GET",path: "/protocol"}),do: {200,[],ADHD.Protocol.descriptor()}
+  def route(%{method: "GET",path: "/protocol/schema"}),do: {200,[],ADHD.Protocol.schema()}
+  def route(%{method: "GET",path: "/protocol/openapi"}),do: {200,[],ADHD.Protocol.openapi()}
+  def route(%{method: "GET",path: path}) when path in ["/","/admin","/admin/"],do: {200,[{"content-type","text/html; charset=utf-8"}],{:raw,ADHD.Web.html()}}
+  def route(%{method: "GET",path: "/admin/assets/app.js"}),do: {200,[{"content-type","text/javascript; charset=utf-8"}],{:raw,ADHD.Web.js()}}
+  def route(%{method: "GET",path: "/admin/assets/app.css"}),do: {200,[{"content-type","text/css; charset=utf-8"}],{:raw,ADHD.Web.css()}}
+  def route(%{method: "GET",path: "/admin/session"}=r),do: {200,[],ADHD.Identity.session(r.headers,ADHD.Config.get())}
+  def route(%{method: "POST",path: "/admin/login"}=r) do
+    c=ADHD.Config.get(); {token,value}=ADHD.Identity.login(json(r),r.headers,c)
+    {200,[{"set-cookie",ADHD.Identity.cookie_header(token,c)}],value}
+  end
+  def route(%{method: "POST",path: "/admin/logout"}=r) do
+    c=ADHD.Config.get(); value=ADHD.Identity.logout(r.headers,c)
+    {200,[{"set-cookie",ADHD.Identity.cookie_header("",c,"adhd_session",true)}],value}
+  end
+  def route(%{method: "GET",path: "/admin/oidc/start"}) do
+    {url,cookie}=ADHD.Identity.oidc_start(ADHD.Config.get())
+    {302,[{"location",url},{"set-cookie",cookie}],{:raw,""}}
+  end
+  def route(%{method: "GET",path: "/admin/oidc/callback"}=r) do
+    c=ADHD.Config.get()
+    try do
+      pairs=URI.query_decoder(r.query || "") |> Enum.to_list()
+      D.distinct(Enum.map(pairs,&elem(&1,0)))
+      {token,_}=ADHD.Identity.oidc_callback(Map.new(pairs),r.headers,c)
+      {302,[{"location","/admin"},{"set-cookie",ADHD.Identity.cookie_header(token,c)},{"set-cookie",ADHD.Identity.cookie_header("",c,"adhd_oidc_state",true)}],{:raw,""}}
+    rescue _->{400,[],error("OIDC_ERROR")} catch
+      {:domain,code} when code in ~w(FORBIDDEN IDENTITY_CONFLICT CONFIG_CONFLICT CONFIG_APPLY_FAILED)->{status(code),[],error(code)}
+      _,_->{400,[],error("OIDC_ERROR")}
+    end
+  end
+  def route(%{method: "POST",path: "/admin/api"}=r) do
+    c=ADHD.Config.get()
+    if is_nil(c["admin_token"]) and is_nil(c["auth"]),do: D.fail("NOT_FOUND")
+    p=ADHD.Identity.principal(r.headers,c)
+    cmd=json(r); D.admin(cmd)
+    if cmd["op"] not in ~w(config_get config_update config_validate save_user update_profile create_agent users agents test_oidc link_oidc list_projects refresh_federation resource_status tls_status tls_renew project_restore_plan project_restore_apply project_restore_status) do
+      id=ADHD.Projects.select(c,ADHD.Projects.user_ids(p,c),cmd["project_id"]);ADHD.Scope.put(id)
+    end
+    c=ADHD.Config.get()
+    reads= ~w(list_projects overview publications publication record subscriptions deliveries jobs users agents retrieval_index)
+    if p["role"] != "Admin" and cmd["op"] not in ["create_agent"|reads],do: D.fail("FORBIDDEN")
+    result=case cmd["op"] do
+      op when op in ~w(project_restore_plan project_restore_apply project_restore_status)->
+        case ADHD.Config.request(cmd,r.headers) do
+          {:ok,value}->value
+          {:error,"BACKPRESSURE"}->throw({:recovery_backpressure})
+          {:error,"CONFIG_CONFLICT"}->throw({:config_conflict,ADHD.Config.root()["config_revision"]})
+          {:error,code}->D.fail(code)
+        end
+      "resource_status"->ADHD.Resources.stats()
+      "list_projects"->ADHD.Projects.list(ADHD.Config.root(),ADHD.Projects.user_ids(p,ADHD.Config.root()))
+      "eventing_status"->ADHD.Store.call(fn s->{ADHD.Eventing.status(s,c),s} end) |> ADHD.Store.unwrap()
+      "federation_directory"->ADHD.Store.call(fn state->{ADHD.Directory.view(state,c),state} end) |> ADHD.Store.unwrap()
+      "identity_matches"->ADHD.Store.call(fn state->{ADHD.Directory.matches(state,c,cmd["user_id"]),state} end) |> ADHD.Store.unwrap()
+      "users"->%{"users"=>Enum.map(c["users"],fn u->v=ADHD.Identity.public(u,c);if p["role"]=="Admin" or p["id"]==u["id"],do: v,else: Map.delete(v,"project_ids") end)}
+      "agents"->%{"agents"=>Enum.sort(Map.keys(c["agents"])) |> Enum.filter(fn a->p["role"]=="Admin" or Enum.any?(ADHD.Projects.agent_ids(a,ADHD.Config.root()),&(&1 in ADHD.Projects.user_ids(p,ADHD.Config.root()))) end) |> Enum.map(&%{"agent_id"=>&1,"owner_user_id"=>c["agent_owners"][&1],"project_ids"=>Enum.filter(ADHD.Projects.agent_ids(&1,ADHD.Config.root()),fn id->id in ADHD.Projects.user_ids(p,ADHD.Config.root()) end),"token_set"=>true})}
+      "link_oidc"->
+        {url,cookie}=ADHD.Identity.link_start(cmd,r.headers,c,p)
+        {:link,url,cookie}
+      "test_oidc"->
+        try do
+          o=cmd["settings"]; m=ADHD.Identity.oidc_metadata(o)
+          keys=ADHD.Net.json(:get,m["jwks_uri"],nil,[],Map.get(o,"timeout_ms",3000))
+          D.list(keys["keys"],128,1)
+          %{"valid"=>true,"issuer"=>o["issuer"],"redirect_uri"=>o["redirect_uri"]}
+        rescue _->D.fail("OIDC_ERROR") catch _,_->D.fail("OIDC_ERROR") end
+      op when op in ~w(config_get config_update config_validate save_user update_profile create_agent refresh_federation tls_status tls_renew)->
+        case ADHD.Config.request(cmd,r.headers) do
+          {:ok,v}->v
+          {:error,"CONFIG_CONFLICT"}->throw({:config_conflict,ADHD.Config.get()["config_revision"]})
+          {:error,code}->D.fail(code)
+        end
+      op when op in ~w(optimization_status index_proposals index_proposal propose_index evaluate_index continue_index_proposal cancel_index_proposal promote_index rollback_index reset_index_selection retire_index_proposal)->ADHD.Optimization.manage(cmd,r.headers)
+      op when op in ~w(feedback_status feedback_attempts feedback_attempt feedback_cohorts feedback_clusters save_retrieval_label replay_attempt retire_replay)->ADHD.Feedback.manage(cmd,r.headers)
+      _->ADHD.Store.admin(cmd,p["id"],r.headers) |> ADHD.Store.unwrap()
+    end
+    case result do
+      {:link,url,cookie}->{200,[{"set-cookie",cookie}],%{"authorization_url"=>url}}
+      _->{200,[],result}
+    end
+  catch
+    {:recovery_backpressure}->{409,[],error("BACKPRESSURE")}
+    {:config_conflict,revision}->{409,[],%{"error"=>%{"code"=>"CONFIG_CONFLICT","message"=>"Configuration changed","current_revision"=>revision}}}
+  end
+  def route(%{method: "POST",path: "/a2a"}=r) do
+    c=ADHD.Config.get(); actor=ADHD.Identity.agent(r.headers,c)
+    # Media-type failures retain HTTP semantics; protocol errors are JSON-RPC.
+    if (Map.get(r.headers,"content-type","") |> String.downcase() |> String.split(";") |> hd() |> String.trim()) != "application/json",do: throw({:http,415})
+    rpc=try do ADHD.JSON.decode!(r.body) rescue _->:bad catch _,_->:bad end
+    id=if is_map(rpc) and (is_binary(rpc["id"]) or is_integer(rpc["id"])),do: rpc["id"],else: nil
+    try do
+      if rpc==:bad,do: throw({:rpc,-32700})
+      if not is_map(rpc) or rpc["jsonrpc"] != "2.0" or not (is_binary(id) or is_integer(id)),do: throw({:rpc,-32600})
+      if rpc["method"] != "SendMessage",do: throw({:rpc,-32601})
+      if Map.get(r.headers,"a2a-version","1.0") != "1.0",do: throw({:rpc,-32602})
+      params=rpc["params"]; D.object(params)
+      msg=params["message"]
+      D.keys(msg,~w(messageId role parts contextId metadata extensions referenceTaskIds),~w(messageId role parts))
+      D.id(msg["messageId"]); D.check(msg["role"]=="ROLE_USER")
+      D.optional(msg,"contextId",&D.string(&1,4096))
+      [part]=msg["parts"]
+      D.keys(part,~w(data text mediaType))
+      command=case part do
+        %{"data"=>value}->D.check(not Map.has_key?(part,"text")); value
+        %{"text"=>text}->ADHD.JSON.decode!(text)
+        _->D.fail()
+      end
+      D.agent(command)
+      result=ADHD.Projects.agent_command(actor,msg["messageId"],command)
+      reply=%{"jsonrpc"=>"2.0","id"=>id,"result"=>%{"message"=>%{"messageId"=>D.opaque(),"contextId"=>Map.get(msg,"contextId",c["project_id"]),"role"=>"ROLE_AGENT","parts"=>[%{"data"=>result}]}}}
+      {200,[],reply}
+    rescue
+      _->{200,[],rpc_error(id,-32602)}
+    catch
+      {:rpc,code}->{200,[],rpc_error(id,code)}
+      {:domain,"INVALID_PARAMS"}->{200,[],rpc_error(id,-32602)}
+      {:domain,code}->{200,challenge(code),rpc_error(id,if(code=="INTERNAL",do: -32603,else: -32000),code)}
+    end
+  end
+  def route(%{method: "POST",path: "/federation/v2"}=r),do: ADHD.FederationV2.handle(r)
+  def route(%{method: "POST",path: path}=r) when path in ["/federation","/federation/v1"] do
+    try do
+    root=ADHD.Config.root()
+    if not is_binary(root["project_id"]),do: D.fail("PROJECT_REQUIRED")
+    ADHD.Projects.scope(root,root["project_id"],fn c->
+    peer=ADHD.Identity.peer(r.headers,c)
+      cmd=json(r)
+      if path=="/federation/v1" do
+        D.check(is_map(cmd) and cmd["protocol_version"]===1)
+      end
+      command=if path=="/federation/v1",do: Map.delete(cmd,"protocol_version"),else: cmd
+      if c["project_status"]=="archived" and command["op"] in ~w(submit source_submit),do: D.fail("PROJECT_ARCHIVED")
+      {status,value}=cond do
+        path=="/federation/v1" and command["op"] in ~w(catalog identities)->ADHD.Directory.wire(command,peer,c)
+        path=="/federation/v1" and command["op"] in ~w(source_submit source_status)->ADHD.SourceQueries.wire(command,peer,c)
+        true->ADHD.Workers.peer(command,peer,c)
+      end
+      value=if path=="/federation/v1",do: Map.put(value,"protocol_version",1),else: value
+      {status,[],value}
+    end)
+    rescue
+      _->{400,[],peer_error(path,"INVALID_PARAMS")}
+    catch
+      {:domain,code}->{status(code),challenge(code),peer_error(path,code)}
+      {:http,status}->{status,[],peer_error(path,"INVALID_PARAMS")}
+    end
+  end
+  def route(%{path: "/federation/v"<>_}),do: {426,[],%{"error"=>%{"code"=>"UNSUPPORTED_VERSION","message"=>"Unsupported version"},"supported"=>[1,2]}}
+  def route(_),do: {404,[],error("NOT_FOUND")}
+  defp peer_error("/federation/v1",code),do: Map.put(error(code),"protocol_version",1)
+  defp peer_error(_,code),do: error(code)
+  def rpc_error(id,code,reason \\ nil) do
+    err=%{"code"=>code,"message"=>"Request failed"}
+    err=if reason,do: Map.put(err,"data",[%{"@type"=>"type.googleapis.com/google.rpc.ErrorInfo","reason"=>reason,"domain"=>"adhd.hub","metadata"=>%{"code"=>reason}}]),else: err
+    %{"jsonrpc"=>"2.0","id"=>id,"error"=>err}
+  end
+  def error(code) do
+    message=case code do
+      "TLS_RENEW_UNAVAILABLE"->"Managed ACME renewal is disabled."
+      "RESTORE_STALE_PLAN"->"Recovery plan is stale"
+      "RESTORE_CONFLICT"->"Project recovery conflict"
+      "RESTORE_BUSY"->"Project recovery is busy"
+      "RECOVERY_REQUIRED"->"Project recovery is required"
+      _->"Request failed"
+    end
+    %{"error"=>%{"code"=>code,"message"=>message}}
+  end
+  def status(code) do
+    case code do
+      "UNAUTHORIZED"->401
+      x when x in ~w(FORBIDDEN PROJECT_ARCHIVED)->403
+      x when x in ~w(NOT_FOUND PROJECT_NOT_FOUND)->404
+      x when x in ~w(IDEMPOTENCY_CONFLICT SOURCE_CONFLICT CONFIG_CONFLICT CONFIG_APPLY_FAILED IDENTITY_CONFLICT SNAPSHOT_CHANGED OWNERSHIP_CHANGED EVENTING_CONFLICT RESTORE_STALE_PLAN RESTORE_CONFLICT TLS_RENEW_UNAVAILABLE)->409
+      "RANGE_TOO_LARGE"->413
+      x when x in ~w(RATE_LIMITED RESOURCE_EXHAUSTED)->429
+      x when x in ~w(CONFIG_WRITE_FAILED DEPENDENCY_UNAVAILABLE MODEL_UNAVAILABLE BACKPRESSURE CONFIG_APPLY_IN_PROGRESS MODEL_BUSY NETWORK_BUSY EVENTING_BUSY CONFIG_CHANGED EVENTING_DISABLED RESTORE_BUSY RECOVERY_REQUIRED)->503
+      "INTERNAL"->500
+      _->400
+    end
+  end
+  defp challenge(code) when code in ~w(CONFIG_APPLY_IN_PROGRESS RESTORE_BUSY RECOVERY_REQUIRED),do: [{"retry-after","1"}]
+  defp challenge("UNAUTHORIZED"),do: [{"www-authenticate","Bearer"}]
+  defp challenge(x) when x in ~w(RATE_LIMITED RESOURCE_EXHAUSTED),do: [{"retry-after","60"}]
+  defp challenge(_),do: []
+  defp respond(socket,status,headers,value) do
+    body=case value do {:raw,v}->v; _->JSON.encode!(value) end
+    hs=@security++headers++[{"content-length",to_string(byte_size(body))},{"connection","close"}]
+    hs=if List.keymember?(hs,"content-type",0),do: hs,else: [{"content-type","application/json"}|hs]
+    reason=case status do 200->"OK"; 202->"Accepted"; 302->"Found"; _->"Request failed" end
+    head="HTTP/1.1 #{status} #{reason}\r\n"<>Enum.map_join(hs,"",fn {k,v}->k<>": "<>v<>"\r\n" end)<>"\r\n"
+    send_bytes(socket,[head,body])
+  end
+end

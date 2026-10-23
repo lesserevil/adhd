@@ -1,0 +1,49 @@
+defmodule ADHD.FeedbackGroups do
+  alias ADHD.Domain,as: D
+  alias ADHD.Directory,as: F
+  def latest(labels,id) do
+    case Map.get(labels,id,[]) do []->nil;rows->List.last(rows) end
+  end
+  def keys(attempt,label) do
+    sources=cond do label==nil->[];label["expectation"]=="no_evidence"->attempt["primary_ids"];true->label["support_ids"] end
+    ["q:"<>attempt["question_key"]|Enum.map(sources,&("s:"<>F.digest([attempt["value"]["snapshot"]["server_id"],&1])))] |> Enum.uniq()
+  end
+  defp root(parents,key) do
+    case Map.get(parents,key,key) do ^key->key;next->root(parents,next) end
+  end
+  defp join(parents,a,b) do
+    a=root(parents,a);b=root(parents,b);if a==b,do: parents,else: Map.put(parents,max(a,b),min(a,b))
+  end
+  def build(feedback,labels \\ nil) do
+    labels=labels || feedback["labels"]
+    keyed=Map.new(feedback["attempts"],fn {id,attempt}->{id,keys(attempt,latest(labels,id))} end)
+    parents=Enum.reduce(keyed,%{},fn {_,[head|rest]},acc->Enum.reduce(rest,acc,&join(&2,head,&1)) end)
+    members=Enum.group_by(Map.keys(keyed),&root(parents,hd(keyed[&1])))
+    Map.new(members,fn {head,ids}->
+      ids=Enum.sort(ids);assertions=Enum.map(ids,&latest(labels,&1)) |> Enum.reject(&is_nil/1)
+      cohorts=Enum.map(assertions,& &1["cohort"]) |> Enum.uniq();if length(cohorts)>1,do: D.fail("COHORT_CONFLICT")
+      group_keys=ids |> Enum.flat_map(&keyed[&1]) |> Enum.uniq() |> Enum.sort()
+      exposures=group_keys |> Enum.flat_map(&Map.get(feedback["exposures"],&1,[])) |> Enum.uniq_by(&{&1["job_id"],&1["kind"],&1["recipe_identity"],&1["policy_identity"]}) |> Enum.sort_by(&{&1["created_at"],&1["job_id"]})
+      D.check(length(exposures)<=256)
+      values=Enum.map(ids,&feedback["attempts"][&1]["value"])
+      id=F.digest(head)
+      value=%{"id"=>id,"cohort"=>List.first(cohorts),"attempt_ids"=>ids,"owners"=>Enum.map(values,& &1["owner_id"]) |> Enum.uniq() |> Enum.sort(),"groups"=>1,"observations"=>length(ids),"plans"=>Enum.map(values,& &1["plan_id"]) |> Enum.uniq() |> length(),"exposed"=>exposures != [],"exposures"=>exposures}
+      {id,%{"value"=>value,"keys"=>group_keys}}
+    end)
+  end
+  def find(feedback,attempt) do
+    qkey="q:"<>attempt["question_key"]
+    Enum.find_value(feedback["cohorts"],fn {_,group}->if qkey in group["keys"],do: group end)
+  end
+  def expose(feedback,attempt,exposure) do
+    group=find(feedback,attempt) || D.fail("COHORT_CONFLICT")
+    existing=group["value"]["exposures"]
+    if group["value"]["cohort"]=="held_out" and Enum.any?(existing,fn row->row["job_id"] != exposure["job_id"] or row["recipe_identity"] != exposure["recipe_identity"] or row["policy_identity"] != exposure["policy_identity"] end),do: D.fail("HELD_OUT_EXPOSED")
+    same=Enum.any?(existing,fn row->Map.take(row,~w(job_id kind recipe_identity policy_identity))==Map.take(exposure,~w(job_id kind recipe_identity policy_identity)) end)
+    if same do feedback else
+      if length(existing)>=256,do: D.fail("RESOURCE_EXHAUSTED")
+      next=Enum.reduce(group["keys"],feedback,fn key,acc->update_in(acc,["exposures",key],fn rows->Enum.uniq((rows || [])++[exposure]) end) end)
+      next=Map.update!(next,"exposure_epoch",&(&1+1));Map.put(next,"cohorts",build(next))
+    end
+  end
+end

@@ -1,0 +1,65 @@
+defmodule ADHD.RecoveryWork do
+  alias ADHD.Domain,as: D
+
+  def prepare(state,c,mode) when mode in ["restore","initialize"] do
+    D.check(state[:schema]==4 and state[:project_epoch]==c["project_epoch"])
+    if mode=="initialize" do state else
+      now=D.ms()
+      semantic=for {field,kind}<-[:history_queries,:retrieval_queries,:archive_queries,:replay_queries] |> Enum.map(&{&1,Atom.to_string(&1)}),
+        {id,q}<-Map.fetch!(state,field),q["status"]=="pending" and not is_nil(q["inflight"]),
+        do: %{"kind"=>kind,"id"=>id,"action"=>"superseded-inflight"}
+      state=state |> Map.update!(:history_queries,fn rows->settle(rows,&ADHD.History.recover_inflight/1) end)
+        |> Map.update!(:retrieval_queries,fn rows->settle(rows,&ADHD.RetrievalJobs.recover_inflight/1) end)
+        |> Map.update!(:archive_queries,fn rows->settle(rows,&ADHD.Archive.settle/1) end)
+        |> Map.update!(:replay_queries,fn rows->settle(rows,&ADHD.Replay.settle/1) end)
+      remote=for field<-[:queries,:source_queries],{id,row}<-Map.fetch!(state,field),
+        value=if(field==:queries,do: row,else: row.value),value["status"]=="pending",
+        do: %{"kind"=>Atom.to_string(field),"id"=>id,"action"=>if(D.epoch(value["deadline_at"])<=now,do: "expired",else: "resume-pinned-idempotent")}
+      state=state |> Map.update!(:queries,fn rows->Map.new(rows,fn {id,value}->{id,ADHD.Store.expire(value)} end) end)
+        |> Map.update!(:source_queries,fn rows->Map.new(rows,fn {id,row}->{id,%{row|value: ADHD.SourceQueries.expire(row.value)}} end) end)
+        |> Map.update!(:incoming,fn rows->expire_incoming(rows,now,fn row->row.deadline end) end)
+        |> Map.update!(:source_incoming,fn rows->expire_incoming(rows,now,fn row->row.command["deadline_at"] end) end)
+      # Disabled models and archival pause the accepted frozen work. Current
+      # owning-feature policies are reconciled only when that feature can run.
+      state=reconcile(state,c)
+      audit=%{"project_epoch"=>state.project_epoch,"at"=>D.now(),"work"=>semantic++remote}
+      Map.update(state,:recovery_work_audit,[audit],&(&1++[audit]))
+    end
+  end
+
+  defp settle(rows,fun),do: Map.new(rows,fn {id,q}->{id,if(q["status"]=="pending",do: fun.(q),else: q)} end)
+  defp expire_incoming(rows,now,deadline) do
+    Map.new(rows,fn {id,row}->
+      next=if row.status=="pending" and D.epoch(deadline.(row))<=now,do: %{row|status: "expired",response: nil},else: row
+      {id,next}
+    end)
+  end
+  defp reconcile(state,c) do
+    history=ADHD.History.effective(c);retrieval=ADHD.Retrieval.effective(c)
+    paused=c["project_status"]=="archived"
+    history_ready=not paused and history["enabled"] and not is_nil(history["url"]) and not is_nil(history["model"])
+    retrieval_ready=not paused and retrieval["enabled"] and not is_nil(retrieval["url"]) and not is_nil(retrieval["model"])
+    state=if history_ready,do: Map.update!(state,:history_queries,fn rows->Map.new(rows,fn {id,q}->{id,ADHD.History.refresh(q,c)} end) end),else: state
+    state=if retrieval_ready,do: Map.update!(state,:retrieval_queries,fn rows->Map.new(rows,fn {id,q}->{id,ADHD.RetrievalJobs.refresh(q,ADHD.Retrieval.resolve(c,state))} end) end),else: state
+    state=if history_ready and retrieval_ready and ADHD.Archive.effective(c)["enabled"],do: refresh(state,c,:archive_queries,&ADHD.Archive.refresh/3),else: state
+    state=if history_ready and retrieval_ready and ADHD.Feedback.config(c)["enabled"],do: refresh(state,c,:replay_queries,&ADHD.Replay.refresh/3),else: state
+    if history_ready and retrieval_ready and ADHD.Optimization.config(c)["enabled"] do
+      Enum.reduce(Map.keys(state.optimization["proposals"]),state,fn id,acc->
+        q=acc.optimization["proposals"][id]
+        if q["status"] in ~w(pending awaiting_evaluation qualified partial) do
+          {acc,next}=ADHD.Optimization.refresh(acc,c,q)
+          ADHD.Optimization.put(acc,next)
+        else acc end
+      end)
+    else state end
+  end
+  defp refresh(state,c,field,fun) do
+    Enum.reduce(Map.keys(Map.fetch!(state,field)),state,fn id,acc->
+      q=Map.fetch!(acc,field)[id]
+      if q["status"]=="pending" do
+        {acc,next}=fun.(acc,c,q)
+        put_in(acc,[field,id],next)
+      else acc end
+    end)
+  end
+end

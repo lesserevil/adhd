@@ -1,0 +1,83 @@
+defmodule ADHD.HistoryProtocol do
+  alias ADHD.Protocol,as: P
+  def nullable(s),do: %{"anyOf"=>[s,%{"type"=>"null"}]}
+  def ids(max \\ 10000),do: P.array(P.str(),max) |> Map.put("uniqueItems",true)
+  def count,do: P.int(0,9007199254740991)
+  def digest,do: P.str(64) |> Map.put("pattern","^[0-9a-f]{64}$")
+  def budget_props,do: %{"records"=>P.int(1,10000),"calls"=>P.int(1,10000),"bytes"=>P.int(1024,16777216),"time_ms"=>P.int(100,120000)}
+  def page_props,do: %{"run"=>P.int(1,16),"offset"=>P.int(0,1000000),"limit"=>P.int(1,64)}
+  def config_props,do: %{"enabled"=>P.bool(),"url"=>nullable(P.str(2048) |> Map.put("format","uri")),"model"=>nullable(P.str(512)),
+    "operator_version"=>P.str(),"max_state_bytes"=>P.int(1048576,268435456),"timeout_ms"=>P.int(100,30000),"request_bytes"=>P.int(1024,65536),
+    "budget"=>P.ref("HistoryBudget"),"min_confidence_ppm"=>P.int(1,1000000),"context_depth"=>P.int(0,4),"context_limit"=>P.int(1,64)}
+  def choice(labels,probabilities) do
+    P.obj(%{"type"=>%{"const"=>"choice"},"choice"=>P.enum(labels),"confidence"=>%{"type"=>"number","minimum"=>0,"maximum"=>1},"probabilities"=>probabilities}) |> Map.put("x-choiceDistribution",true)
+  end
+  def extend(defs) do
+    bp=budget_props()
+    occurrence=P.time() |> Map.put("pattern","^(?!0000-)[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-5][0-9](?:\\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})$")
+    scope_props=%{"information_type"=>P.identifier(),"source_kind"=>P.identifier(),"source_id"=>P.str(256),"occurred_from"=>occurrence,"occurred_until"=>occurrence}
+    scope=P.obj(scope_props,[]) |> Map.put("x-orderedTimes",~w(occurred_from occurred_until))
+    outcomes = ~w(unexamined direct inferred conflicting insufficient no_evidence unavailable)
+    uncertainty=P.array(P.enum(~w(empty_corpus incomplete_primary context_gaps low_confidence interpretation_disagreement background_inference model_error aggregation_limit resource_limit configuration_changed cancelled)),11) |> Map.put("uniqueItems",true)
+    policy=P.obj(%{"enabled"=>P.bool(),"request_bytes"=>P.int(1024,65536),"context_depth"=>P.int(0,4),"context_limit"=>P.int(1,64),"min_confidence_ppm"=>P.int(1,1000000)})
+    evaluator=P.obj(%{"adapter_version"=>P.str(512),"operator_version"=>P.str(),"model"=>P.str(512),"template_sha256"=>digest(),"identity"=>digest(),"policy"=>policy})
+    excerpt=P.obj(%{"publication_id"=>P.str(),"identity"=>defs["ContextualRecord"]["properties"]["identity"],"context_identity"=>digest(),"field"=>P.enum(~w(text data)),"value"=>P.str(65536)})
+    answer=P.obj(%{"assessment"=>P.enum(outcomes),"selection"=>nullable(P.str()),"excerpts"=>P.array(excerpt,128),"support_ids"=>ids(),"contradiction_ids"=>ids(),"uncertainty"=>uncertainty})
+    gap=defs["RecordRead"]["properties"]["gaps"]["items"]
+    coverage=P.obj(%{"total"=>count(),"examined"=>count(),"remaining"=>count(),"groups"=>count(),"expanded_ids"=>ids(),"gaps"=>P.array(gap,128),"truncated"=>P.bool(),"primary_complete"=>P.bool(),"final_complete"=>P.bool()})
+    usage=P.obj(Map.new(~w(records calls bytes time_ms uncertain_calls cumulative_records cumulative_calls cumulative_bytes cumulative_time_ms cumulative_uncertain_calls),&{&1,count()}))
+    error=P.obj(%{"code"=>P.enum(~w(BUDGET_RECORDS BUDGET_CALLS BUDGET_BYTES BUDGET_TIME CONTEXT_LIMIT FINAL_LIMIT MODEL_ERROR CONFIG_CHANGED RESOURCE_LIMIT CANCELLED)),"message"=>P.str(256),"retryable"=>P.bool()})
+    probability=%{"type"=>"number","minimum"=>0,"maximum"=>1}
+    template=ADHD.HistoryEvaluator.template();assessment_labels=Map.keys(template["assessment_criteria"])
+    offered = ~w(joint unknown conflict)++Enum.map(0..127,&("quote_"<>Integer.to_string(&1)))
+    answer_probabilities=%{"type"=>"object","propertyNames"=>P.enum(offered),"minProperties"=>3,"maxProperties"=>131,"additionalProperties"=>probability}
+    typed_answers=P.obj(%{"assessment"=>choice(assessment_labels,P.obj(Map.new(assessment_labels,&{&1,probability}))),"answer"=>choice(offered,answer_probabilities)})
+    fixed=Map.new(template["answer_fixed_criteria"],fn {k,v}->{k,%{"const"=>v}} end)
+    answer_criteria=%{"type"=>"object","properties"=>fixed,"required"=>Map.keys(fixed),"patternProperties"=>%{"^quote_(?:0|[1-9][0-9]{0,2})$"=>P.str(65664)},"additionalProperties"=>false,"propertyNames"=>P.enum(offered),"maxProperties"=>131}
+    model_request=P.obj(%{"model"=>P.str(512),"state"=>P.obj(%{"question"=>P.str(4096),"records"=>P.array(P.ref("ContextualRecord"),128,1)}),"questions"=>P.obj(%{
+      "assessment"=>P.obj(%{"type"=>%{"const"=>"choice"},"instructions"=>%{"const"=>template["instructions"]},"criteria"=>%{"const"=>template["assessment_criteria"]}}),
+      "answer"=>P.obj(%{"type"=>%{"const"=>"choice"},"instructions"=>%{"const"=>template["instructions"]<>template["answer_instructions"]},"criteria"=>answer_criteria})})})
+    model_request=Map.put(model_request,"x-historyChoices",%{"prefix"=>template["answer_quote_prefix"]})
+    recorded=model_request |> Map.delete("x-historyChoices")
+      |> put_in(["properties","questions","properties","assessment","properties","instructions"],P.str(8192))
+      |> put_in(["properties","questions","properties","assessment","properties","criteria"],P.obj(Map.new(assessment_labels,&{&1,P.str(4096)})))
+      |> put_in(["properties","questions","properties","answer","properties","instructions"],P.str(8192))
+      |> put_in(["properties","questions","properties","answer","properties","criteria","properties"],Map.new(Map.keys(fixed),&{&1,P.str(4096)}))
+    telemetry=%{"type"=>"object","additionalProperties"=>P.ref("JSON")}
+    model_response=P.obj(%{"model"=>P.str(512),"answers"=>typed_answers,"usage"=>telemetry,"metrics"=>telemetry,"scoring"=>telemetry},~w(model answers))
+    evaluation=P.obj(%{"stage"=>P.enum(~w(group synthesis)),"primary_ids"=>ids(128),"record_ids"=>ids(128),"context_identities"=>P.array(digest(),128),
+      "request"=>P.ref("HistoryRecordedModelRequest"),"request_json"=>P.str(65536),"request_sha256"=>digest(),"answers"=>typed_answers,"bytes"=>P.int(1,65536),"time_ms"=>count(),"gaps"=>P.array(gap,128),"truncated"=>P.bool()})
+      |> Map.put("x-sha256Of",%{"request_sha256"=>"request_json"}) |> Map.put("x-jsonOf",%{"request_json"=>"request"})
+    query=P.obj(%{"id"=>P.str(),"owner_id"=>P.identifier(),"project_id"=>P.identifier(),"question"=>P.str(4096),"scope"=>P.ref("HistoryScope"),
+      "snapshot"=>defs["RecordRead"]["properties"]["snapshot"],"complete"=>P.bool(),"status"=>P.enum(~w(pending completed partial cancelled invalidated)),"outcome"=>P.enum(outcomes),
+      "created_at"=>P.time(),"updated_at"=>P.time(),"run"=>P.int(1,16),"evaluator"=>evaluator,"budget"=>P.ref("HistoryBudget"),"usage"=>usage,"coverage"=>coverage,
+      "answer"=>answer,"evaluations"=>P.array(P.ref("HistoryEvaluation"),64),"next_offset"=>nullable(P.int(0,1000000)),"evaluation_count"=>count(),
+      "prior_runs"=>P.array(P.int(1,15),15) |> Map.put("uniqueItems",true),"error"=>nullable(error),"continuable"=>P.bool()})
+    hp=config_props()
+    budget_patch=P.obj(Map.new(bp,fn {key,value}->{key,nullable(value)} end),[])
+    config_patch=hp |> Map.put("budget",budget_patch) |> Map.new(fn {k,v}->{k,nullable(v)} end) |> P.obj([])
+    additions=%{"HistoryBudget"=>P.obj(bp),"HistoryBudgetInput"=>P.obj(bp,[]),"HistoryScopeInput"=>scope |> put_in(["properties","watermark"],P.int(0,9007199254740991)),
+      "HistoryScope"=>scope |> put_in(["properties","kind"],%{"const"=>"local_archive"}) |> Map.put("required",["kind"]),"HistoryConfig"=>P.obj(hp),"HistoryConfigPatch"=>config_patch,
+      "HistoryModelRequest"=>model_request,"HistoryRecordedModelRequest"=>recorded,"HistoryModelResponse"=>model_response,"HistoryEvaluation"=>evaluation,"HistoryQuery"=>query,
+      "HistoryRecordedModelExchange"=>P.obj(%{"request"=>P.ref("HistoryRecordedModelRequest"),"response"=>P.ref("HistoryModelResponse")}) |> Map.put("x-choiceExchange",true),
+      "HistoryModelExchange"=>P.obj(%{"request"=>P.ref("HistoryModelRequest"),"response"=>P.ref("HistoryModelResponse")}) |> Map.put("x-choiceExchange",true)}
+    defs=Map.merge(defs,additions)
+    defs=put_in(defs,["PublicConfig","properties","history"],P.ref("HistoryConfig"))
+    defs=put_in(defs,["MergePatch","properties","history"],nullable(P.ref("HistoryConfigPatch")))
+    defs=Enum.reduce(ADHD.History.operations(),defs,fn op,acc->
+      command=case op do
+        "query_history"->P.command(op,%{"question"=>P.str(4096),"scope"=>P.ref("HistoryScopeInput"),"complete"=>P.bool(),"budget"=>P.ref("HistoryBudgetInput")},~w(question))
+        "get_history_query"->P.command(op,Map.put(page_props(),"query_id",P.str()),~w(query_id))
+        "continue_history_query"->P.command(op,%{"query_id"=>P.str(),"budget"=>P.ref("HistoryBudgetInput"),"restart"=>P.bool()},~w(query_id))
+        _->P.command(op,%{"query_id"=>P.str()},~w(query_id))
+      end
+      acc |> Map.put("agent_"<>op,command) |> Map.put("result_"<>op,P.obj(%{"query"=>P.ref("HistoryQuery")}))
+    end)
+    defs=update_in(defs,["AgentResult","anyOf"],&(&1++Enum.map(ADHD.History.operations(),fn op->P.ref("result_"<>op) end)))
+    history_job=P.obj(%{"kind"=>%{"const"=>"history"},"query"=>P.ref("HistoryQuery")})
+    defs=Enum.reduce(~w(admin_result_query_job admin_result_cancel_query_job),defs,fn key,acc->update_in(acc,[key,"oneOf"],&(&1++[history_job])) end)
+    defs=update_in(defs,["admin_result_query_jobs","properties","items","items","oneOf"],&(&1++[history_job]))
+    defs=put_in(defs,["admin_query_jobs","properties","kind"],P.enum(~w(discovery source history)))
+    update_in(defs,["admin_query_job","properties"],&Map.merge(&1,page_props()))
+  end
+end

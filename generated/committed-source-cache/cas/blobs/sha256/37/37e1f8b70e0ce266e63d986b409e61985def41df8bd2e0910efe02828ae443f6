@@ -1,0 +1,672 @@
+defmodule ADHD.TLS do
+  use GenServer
+  alias ADHD.Domain, as: D
+  alias ADHD.ACMEFiles, as: F
+  @status_table Module.concat(__MODULE__, Status)
+  def defaults do
+    %{"enabled" => false, "host" => "0.0.0.0", "port" => 8443,
+      "challenge_host" => "0.0.0.0", "challenge_port" => 8080,
+      "acme" => %{"enabled" => false, "directory_url" => "https://acme-staging-v02.api.letsencrypt.org/directory",
+        "email" => "", "domains" => [], "accept_terms" => false, "renew_before_days" => 30,
+        "retry_seconds" => 300, "order_timeout_ms" => 120000, "ca_cert_file" => nil}}
+  end
+  def normalize(c, base) do
+    supplied = c["tls"] || %{}
+    D.object(supplied)
+    value = Map.merge(defaults(), supplied, fn
+      "acme", old, patch when is_map(patch) -> Map.merge(old, patch)
+      _, _, value -> value
+    end)
+    D.keys(value, ~w(enabled host port challenge_host challenge_port acme), ~w(enabled host port challenge_host challenge_port acme))
+    a = value["acme"]
+    D.keys(a, ~w(enabled directory_url email domains accept_terms renew_before_days retry_seconds order_timeout_ms ca_cert_file), ~w(enabled directory_url email domains accept_terms renew_before_days retry_seconds order_timeout_ms ca_cert_file))
+    for k <- ~w(enabled), do: D.check(is_boolean(value[k]))
+    for k <- ~w(enabled accept_terms), do: D.check(is_boolean(a[k]))
+    for k <- ~w(host challenge_host) do
+      D.string(value[k], 45)
+      D.check(match?({:ok, _}, :inet.parse_address(String.to_charlist(value[k]))))
+    end
+    for k <- ~w(port challenge_port), do: D.integer(value[k], 1, 65535)
+    D.check(value["port"] != value["challenge_port"])
+    D.integer(a["renew_before_days"], 1, 90)
+    D.integer(a["retry_seconds"], 30, 86400)
+    D.integer(a["order_timeout_ms"], 1000, 600000)
+    D.string(a["directory_url"], 2048)
+    uri = URI.parse(a["directory_url"])
+    D.check(uri.scheme == "https" and is_binary(uri.host) and uri.host != "" and is_nil(uri.userinfo) and is_nil(uri.query) and is_nil(uri.fragment))
+    if uri.port, do: D.integer(uri.port, 1, 65535)
+    D.check(not Regex.match?(~r/[\s\x00-\x1f\x7f]/, a["directory_url"]))
+    D.check(is_binary(a["email"]) and byte_size(a["email"]) <= 254)
+    D.check(a["email"] == "" or Regex.match?(~r/\A[^\s@\x00-\x1f\x7f]+@[^\s@\x00-\x1f\x7f]+\.[^\s@\x00-\x1f\x7f]+\z/, a["email"]))
+    D.list(a["domains"], 20); D.distinct(a["domains"])
+    Enum.each(a["domains"], fn name ->
+      D.string(name, 253)
+      D.check(Regex.match?(~r/\A(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?\z/, name))
+    end)
+    D.check(not a["enabled"] or (value["enabled"] and a["accept_terms"] and a["email"] != "" and a["domains"] != []))
+    a = Map.put(a, "domains", Enum.sort(a["domains"]))
+    a = if a["ca_cert_file"] do
+      D.string(a["ca_cert_file"], 4096)
+      D.check(not Regex.match?(~r/[\x00-\x1f\x7f]/, a["ca_cert_file"]))
+      path = Path.expand(a["ca_cert_file"], base)
+      Map.put(a, "ca_cert_file", path)
+    else a end
+    Map.put(c, "tls", Map.put(value, "acme", a))
+  end
+
+  # Syntax normalization remains usable at cold boot when a referenced trust
+  # file has disappeared. Explicit dry validation and hot commit remain strict.
+  def validate_inputs(c) do
+    read_trust(c)
+    :ok
+  rescue _ -> D.fail("CONFIG_APPLY_FAILED")
+  catch _, _ -> D.fail("CONFIG_APPLY_FAILED") end
+
+  def start_link(path, c), do: GenServer.start_link(__MODULE__, {path, c}, name: __MODULE__)
+  def prepare(c) do
+    server = Process.whereis(__MODULE__)
+    ticket = make_ref()
+    if is_pid(server) do
+      try do GenServer.call(server, {:prepare, ticket, c}, 10000)
+      catch :exit, _ -> send(server, {:cancel_prepare, ticket}); {:error, :unavailable} end
+    else {:error, :unavailable} end
+  end
+  def activate(prepared, c), do: GenServer.call(__MODULE__, {:activate, prepared, c}, 10000)
+  def discard({:ok, %{ticket: ticket}}) do
+    if server = Process.whereis(__MODULE__), do: send(server, {:cancel_prepare, ticket})
+    :ok
+  end
+  def discard(prepared) do
+    GenServer.call(__MODULE__, {:discard, prepared})
+  catch :exit, _ -> :ok end
+  def status do
+    [{:state, view}] = :ets.lookup(@status_table, :state)
+    public(view)
+  rescue _ -> D.fail("DEPENDENCY_UNAVAILABLE") end
+  def renew(cmd, user) do
+    GenServer.call(__MODULE__, {:renew, cmd, user}, 10000)
+  catch :exit, _ -> {:error, "DEPENDENCY_UNAVAILABLE"} end
+  def snapshot, do: :persistent_term.get({__MODULE__, :certificate}, nil)
+  def challenge_snapshot, do: :persistent_term.get({__MODULE__, :challenge}, nil)
+  def format_status(status), do: status |> Map.put(:state, :redacted) |> Map.put(:message, :redacted) |> Map.put(:log, [])
+  def init({path, c}) do
+    s = %{path: path, root: Path.join(Path.dirname(path), "acme"), config: c,
+      listeners: %{}, trust: nil, trust_error: false, listener_error: false, recovering: false, certificate: nil, active: nil, owner: nil, job: nil, fingerprint: nil,
+      data: %{"last_attempt_at" => nil, "next_attempt_at" => nil, "last_success_at" => nil, "last_error" => nil, "receipts" => %{}, "active" => nil}}
+    try do
+      s = try do recover(s) rescue _ -> storage_error(s) catch _, _ -> storage_error(s) end
+      s = cold_trust(s, c)
+      s = cold_listeners(s, c)
+      :persistent_term.put({__MODULE__, :certificate}, s.certificate)
+      :persistent_term.put({__MODULE__, :challenge}, nil)
+      Process.send_after(self(), :tick, 100)
+      {:ok, publish_status(s)}
+    rescue _ -> {:stop, :managed_tls_unavailable}
+    catch _, _ -> {:stop, :managed_tls_unavailable} end
+  end
+  defp cold_trust(s, c) do
+    %{s | trust: read_trust(c)}
+  rescue _ -> %{storage_error(s) | trust_error: true}
+  catch _, _ -> %{storage_error(s) | trust_error: true} end
+
+  defp cold_listeners(s, c) do
+    prepared = prepare_listeners(s, c)
+    activate_listeners(s, prepared, c)
+  rescue _ -> %{storage_error(s) | listener_error: true}
+  catch _, _ -> %{storage_error(s) | listener_error: true} end
+
+  def handle_call(:status, _, s), do: {:reply, public(s), s}
+  def handle_call({:prepare, c}, _, s), do: prepare_reply(s, c, nil)
+  def handle_call({:prepare, ticket, c}, _, s), do: prepare_reply(s, c, ticket)
+  defp prepare_reply(s, c, ticket) do
+    try do
+      # No network or order is started during a configuration transaction.
+      trust = read_trust(c)
+      fp = fingerprint(c, trust)
+      # Private initialized state is preflighted before the config decision. This
+      # creates no account/order/challenge and never publishes a certificate.
+      if enabled?(c), do: initialize(s)
+      p = prepare_listeners(s, c)
+      prepared = %{listeners: p, trust: trust, fingerprint: fp}
+      {prepared, next} = if is_reference(ticket) do
+        prepared = Map.put(prepared, :ticket, ticket)
+        {prepared, Map.put(s, :preparations, Map.put(Map.get(s, :preparations, %{}), ticket, prepared))}
+      else {prepared, s} end
+      {:reply, {:ok, prepared}, next}
+    rescue _ -> {:reply, {:error, :unavailable}, s}
+    catch _, _ -> {:reply, {:error, :unavailable}, s} end
+  end
+  def handle_call({:discard, {:ok, p}}, _, s) do
+    if is_nil(p[:ticket]) or Map.has_key?(Map.get(s, :preparations, %{}), p.ticket), do: close_prepared(p)
+    {:reply, :ok, forget_prepared(s, p)}
+  end
+  def handle_call({:activate, {:ok, p}, c}, _, s) do
+    if p[:ticket], do: D.check(Map.get(Map.get(s, :preparations, %{}), p.ticket) == p)
+    s = forget_prepared(s, p)
+    old = s.fingerprint
+    repairing_bootstrap = s.trust_error or s.listener_error
+    s = activate_listeners(%{s | trust: p.trust, trust_error: false, listener_error: false}, p.listeners, c)
+    s = if old != p.fingerprint or repairing_bootstrap do
+      if s.job, do: send(s.job.pid, :cancel)
+      :persistent_term.put({__MODULE__, :challenge}, nil)
+      floor = s.data["issuer_retry_at"] || 0
+      data = Map.merge(s.data, %{"next_attempt_at" => if(floor > D.ms(), do: floor, else: nil), "last_error" => nil})
+      %{s | data: data, fingerprint: p.fingerprint}
+    else s end
+    {:reply, :ok, publish_status(s)}
+  end
+  def handle_call({:renew, cmd, user}, _, s) do
+    try do
+      if user["role"] != "Admin", do: D.fail("FORBIDDEN")
+      key = D.digest([user["id"], cmd["message_id"]]); digest = D.digest(cmd)
+      receipt = s.data["receipts"][key]
+      cond do
+        receipt && receipt["digest"] == digest -> {:reply, {:ok, receipt["result"]}, s}
+        receipt -> D.fail("IDEMPOTENCY_CONFLICT")
+        cmd["expected_revision"] != s.config["config_revision"] -> D.fail("CONFIG_CONFLICT")
+        not enabled?(s.config) -> D.fail("TLS_RENEW_UNAVAILABLE")
+        s.trust_error or s.listener_error or s.recovering -> D.fail("CONFIG_APPLY_FAILED")
+        true ->
+          s = admission_state(s)
+          result = %{"accepted" => true, "config_revision" => s.config["config_revision"]}
+          data = put_in(s.data, ["receipts", key], %{"digest" => digest, "result" => result})
+          # Persist the receipt and due request together before acknowledging it.
+          coalesced = is_map(s.job) and s.job.fingerprint == s.fingerprint
+          data = if coalesced do
+            # This exact in-flight policy already covers the request. Do not
+            # leave another force intent behind if its result is a hard failure.
+            data
+          else
+            rate_due = s.data["issuer_retry_at"] || 0
+            data |> Map.put("next_attempt_at", max(D.ms(), rate_due)) |> Map.put("force_pending", true)
+          end
+          s = save(%{s | data: data})
+          if not coalesced, do: send(self(), :force)
+          {:reply, {:ok, result}, publish_status(s)}
+      end
+    rescue _ -> {:reply, {:error, "CONFIG_WRITE_FAILED"}, s}
+    catch {:domain, code} -> {:reply, {:error, code}, s} end
+  end
+  defp admission_state(s) do
+    s = initialize(s) |> load_retry_floor()
+    if is_nil(s.job) do
+      if not ADHD.ACMEClient.lock_available?(s.root), do: D.fail("CONFIG_APPLY_FAILED")
+      remember_account_keys(s)
+    else
+      s
+    end
+  rescue _ -> D.fail("CONFIG_APPLY_FAILED")
+  catch _, _ -> D.fail("CONFIG_APPLY_FAILED") end
+  def handle_info({:cancel_prepare, ticket}, s) do
+    case Map.get(Map.get(s, :preparations, %{}), ticket) do
+      nil -> {:noreply, s}
+      p -> close_prepared(p); {:noreply, forget_prepared(s, p)}
+    end
+  end
+  def handle_info(:force, s), do: {:noreply, publish_status(maybe_start(s, true))}
+  def handle_info(:tick, s) do
+    Process.send_after(self(), :tick, 1000)
+    {:noreply, publish_status(maybe_start(recover_closed(close_job(s)), false))}
+  end
+  def handle_info({:acme_result, ref, result}, %{job: %{ref: ref} = job} = s) do
+    Process.demonitor(job.monitor, [:flush])
+    :persistent_term.put({__MODULE__, :challenge}, nil)
+    # Port closure on cancellation is not proof the guardian has reaped its group.
+    s = %{s | job: Map.merge(job, %{closure_pending: true, result: result})}
+    {:noreply, publish_status(close_job(s))}
+  end
+  def handle_info({:DOWN, monitor, :process, _, _}, %{job: %{monitor: monitor} = job} = s) do
+    :persistent_term.put({__MODULE__, :challenge}, nil)
+    s = %{s | job: Map.merge(job, %{closure_pending: true, result: {:error, "ACME_PROCESS", nil}})}
+    {:noreply, publish_status(close_job(s))}
+  end
+  def handle_info({:close_listener, socket}, s), do: (:gen_tcp.close(socket); {:noreply, s})
+  def handle_info(_, s), do: {:noreply, s}
+  defp close_prepared(p), do: Enum.each(p.listeners, fn {_, socket} -> if socket, do: :gen_tcp.close(socket) end)
+  defp forget_prepared(s, %{ticket: ticket}), do: Map.put(s, :preparations, Map.delete(Map.get(s, :preparations, %{}), ticket))
+  defp forget_prepared(s, _), do: s
+
+  defp publish_status(s) do
+    # Only redacted public-state inputs enter this read-only snapshot. Status
+    # reads never wait behind certificate validation, fsync or process teardown.
+    if :ets.whereis(@status_table) == :undefined do
+      :ets.new(@status_table, [:named_table, :set, :protected, read_concurrency: true])
+    end
+    cert = if s.certificate, do: Map.take(s.certificate, [:metadata, :domains, :expires]), else: nil
+    t = s.config["tls"]
+    view = %{config: %{"config_revision" => s.config["config_revision"], "tls" => %{"enabled" => t["enabled"], "acme" => Map.take(t["acme"], ~w(enabled domains))}},
+      certificate: cert, data: Map.take(s.data, ~w(last_attempt_at next_attempt_at last_success_at last_error)),
+      listeners: Map.new(Map.keys(s.listeners), &{&1, true}), job: if(s.job, do: :active, else: nil),
+      trust_error: s.trust_error, listener_error: s.listener_error, recovering: s.recovering}
+    :ets.insert(@status_table, {:state, view})
+    s
+  end
+  defp close_job(%{job: %{closure_pending: true} = job} = s) do
+    if ADHD.ACMEClient.lock_available?(s.root) do
+      s = %{s | job: nil}
+      try do
+        F.harden_tree(job.attempt)
+        File.rm_rf!(job.attempt)
+        if job.fingerprint == s.fingerprint and enabled?(s.config) do
+          result = if System.monotonic_time(:millisecond) > job.deadline, do: {:error, "ACME_ORDER_TIMEOUT", nil}, else: job.result
+          finish(s, result)
+        else
+          save(remember_account_keys(%{s | data: Map.put(s.data, "ordering", false)}))
+        end
+      rescue _ -> storage_error(s)
+      catch _, _ -> storage_error(s) end
+    else s end
+  end
+  defp close_job(s), do: s
+
+  defp prepare_listeners(s, c) do
+    t = c["tls"]; old = s.config["tls"]
+    Enum.reduce([:https, :challenge], %{}, fn kind, acc ->
+      wanted = if kind == :https, do: t["enabled"], else: enabled?(c)
+      host = if kind == :https, do: "host", else: "challenge_host"
+      port = if kind == :https, do: "port", else: "challenge_port"
+      changed = is_nil(s.listeners[kind]) or t[host] != old[host] or t[port] != old[port]
+      if wanted and changed do
+        {:ok, address} = :inet.parse_address(String.to_charlist(t[host]))
+        family = if tuple_size(address) == 8, do: :inet6, else: :inet
+        case :gen_tcp.listen(t[port], [:binary, family, active: false, reuseaddr: true, ip: address, packet: :raw, backlog: 128]) do
+          {:ok, socket} -> Map.put(acc, kind, socket)
+          _ -> Enum.each(acc, fn {_, socket} -> :gen_tcp.close(socket) end); D.fail("CONFIG_APPLY_FAILED")
+        end
+      else acc end
+    end)
+  end
+  defp activate_listeners(s, prepared, c) do
+    listeners = Enum.reduce([:https, :challenge], s.listeners, fn kind, acc ->
+      wanted = if kind == :https, do: c["tls"]["enabled"], else: enabled?(c)
+      old = acc[kind]; new = prepared[kind]
+      if old && (not wanted or new), do: :gen_tcp.close(old)
+      serving_kind = if kind == :https, do: {:https, c["tls"]["host"], c["tls"]["port"]}, else: kind
+      if new, do: spawn(fn -> accept(new, serving_kind) end)
+      cond do new -> Map.put(acc, kind, new); not wanted -> Map.delete(acc, kind); true -> acc end
+    end)
+    %{s | listeners: listeners, config: c, fingerprint: fingerprint(c, s.trust)}
+  end
+  defp accept(listener, kind) do
+    case :gen_tcp.accept(listener) do
+      {:ok, socket} ->
+        pid = spawn(fn -> receive do {:socket, socket} -> serve(socket, kind) end end)
+        :ok = :gen_tcp.controlling_process(socket, pid); send(pid, {:socket, socket}); accept(listener, kind)
+      _ -> :ok
+    end
+  end
+  defp serve(socket, {:https, host, port}) do
+    cert = snapshot()
+    t = ADHD.Config.root()["tls"]
+    if t["enabled"] and t["host"] == host and t["port"] == port and ADHD.TLSCertificate.live?(cert) do
+      case :ssl.handshake(socket, ADHD.TLSCertificate.options(cert), 5000) do
+        {:ok, secure} -> ADHD.Server.connection({:tls, secure})
+        _ -> :gen_tcp.close(socket)
+      end
+    else :gen_tcp.close(socket) end
+  rescue _ -> :gen_tcp.close(socket)
+  catch _, _ -> :gen_tcp.close(socket) end
+  defp serve(socket, :challenge), do: ADHD.Server.connection({:challenge, socket})
+
+  def challenge(%{method: method, path: "/.well-known/acme-challenge/" <> token,
+      target: target, query: nil, body: body, headers: headers}) do
+    with true <- target == "/.well-known/acme-challenge/" <> token,
+         true <- byte_size(token) in 22..256,
+         true <- Regex.match?(~r/\A[A-Za-z0-9_-]+\z/, token),
+         %{webroot: root, config: policy} = pending <- challenge_snapshot(),
+         current when is_map(current) <- ADHD.Config.root()["tls"],
+         true <- policy == current and current["enabled"] and current["acme"]["enabled"],
+         true <- challenge_host?(headers["host"], policy) do
+      cond do
+        method != "GET" -> {405, [{"content-type", "text/plain"}], {:raw, ""}}
+        body != "" -> {404, [{"content-type", "text/plain"}], {:raw, ""}}
+        true ->
+          value = challenge_read!(root, token)
+          if challenge_snapshot() == pending and ADHD.Config.root()["tls"] == policy do
+            {200, [{"content-type", "text/plain"}], {:raw, value}}
+          else
+            {404, [{"content-type", "text/plain"}], {:raw, ""}}
+          end
+      end
+    else
+      _ -> {404, [{"content-type", "text/plain"}], {:raw, ""}}
+    end
+  rescue
+    _ -> {404, [{"content-type", "text/plain"}], {:raw, ""}}
+  catch
+    _, _ -> {404, [{"content-type", "text/plain"}], {:raw, ""}}
+  end
+  def challenge(_), do: {404, [{"content-type", "text/plain"}], {:raw, ""}}
+
+  defp challenge_host?(host, policy) when is_binary(host) and byte_size(host) <= 260 do
+    # Hostnames are case-insensitive; all other syntax is closed. No forwarded
+    # host, credentials, trailing dot, whitespace or arbitrary port is accepted.
+    case Regex.run(~r/\A([A-Za-z0-9.-]+)(?::([0-9]{1,5}))?\z/, host, capture: :all_but_first) do
+      [name] -> String.downcase(name) in policy["acme"]["domains"]
+      [name, port] ->
+        String.downcase(name) in policy["acme"]["domains"] and
+          String.to_integer(port) in [80, policy["challenge_port"]]
+      _ -> false
+    end
+  end
+  defp challenge_host?(_, _), do: false
+
+  defp challenge_read!(root, token) do
+    uid = :persistent_term.get({ADHD.ACMEFiles, :uid})
+    root = Path.expand(root)
+    F.parents!(root)
+    root_stat = File.lstat!(root)
+    true = root_stat.type == :directory and root_stat.uid == uid and Bitwise.band(root_stat.mode, 0o077) == 0
+    paths = [root, Path.join(root, ".well-known"), Path.join([root, ".well-known", "acme-challenge"])]
+    parents = Enum.map(paths, fn path ->
+      stat = File.lstat!(path)
+      true = stat.type == :directory and stat.uid == uid and Bitwise.band(stat.mode, 0o022) == 0
+      {path, challenge_identity(stat, false)}
+    end)
+    path = Path.join(List.last(paths), token)
+    before = File.lstat!(path)
+    true = before.type == :regular and before.uid == uid and before.links == 1 and before.size in 1..1024
+    true = Bitwise.band(before.mode, 0o022) == 0
+    {:ok, file} = :file.open(String.to_charlist(path), [:read, :binary, :raw])
+    try do
+      {:ok, opened} = :file.read_file_info(file)
+      true = challenge_identity(File.Stat.from_record(opened), true) == challenge_identity(before, true)
+      {:ok, value} = :file.read(file, 1025)
+      true = byte_size(value) == before.size and byte_size(value) <= 1024
+      :eof = :file.read(file, 1)
+      [^token, thumbprint] = String.split(value, ".", parts: 2)
+      true = Regex.match?(~r/\A[A-Za-z0-9_-]{43}\z/, thumbprint)
+      {:ok, after_handle} = :file.read_file_info(file)
+      true = challenge_identity(File.Stat.from_record(after_handle), true) == challenge_identity(before, true)
+      true = challenge_identity(File.lstat!(path), true) == challenge_identity(before, true)
+      true = Enum.all?(parents, fn {parent, identity} -> challenge_identity(File.lstat!(parent), false) == identity end)
+      F.parents!(root)
+      value
+    after
+      :file.close(file)
+    end
+  end
+
+  defp challenge_identity(stat, content) do
+    keys = ~w(type uid gid mode links inode major_device minor_device)a
+    Map.take(stat, if(content, do: keys ++ ~w(size mtime ctime)a, else: keys))
+  end
+  defp enabled?(c), do: c["tls"]["enabled"] and c["tls"]["acme"]["enabled"]
+  defp read_trust(c) do
+    ca = c["tls"]["acme"]["ca_cert_file"]
+    if ca, do: F.public_ca(ca), else: nil
+  end
+  defp fingerprint(c, trust), do: D.digest([c["tls"], trust])
+  defp iso(nil), do: nil
+  defp iso(ms), do: DateTime.from_unix!(ms, :millisecond) |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+  defp public(s) do
+    t = s.config["tls"]; cert = s.certificate; d = s.data
+    https = cond do not t["enabled"] -> "disabled"; s.listener_error or not Map.has_key?(s.listeners, :https) -> "error"; is_map(s.data["last_error"]) and s.data["last_error"]["code"] == "ACME_STORAGE" and is_nil(cert) -> "error"; is_nil(cert) -> "waiting"; cert.metadata["not_before"] > D.ms() -> "error"; not ADHD.TLSCertificate.live?(cert) -> "expired"; true -> "ready" end
+    acme = cond do not enabled?(s.config) -> "disabled"; s.trust_error or s.listener_error or s.recovering -> "error"; s.job != nil -> "ordering"; d["last_error"] && not d["last_error"]["retryable"] -> "error"; d["last_error"] -> "backoff"; true -> "idle" end
+    metadata = if cert, do: cert.metadata |> Map.update!("not_before", &iso/1) |> Map.update!("not_after", &iso/1), else: nil
+    %{"enabled" => t["enabled"], "https_state" => https, "acme_state" => acme,
+      "domains" => t["acme"]["domains"], "active_domains" => if(https == "ready", do: cert.domains, else: []),
+      "certificate" => metadata, "last_attempt_at" => iso(d["last_attempt_at"]),
+      "next_attempt_at" => if(enabled?(s.config) and is_nil(s.job) and not (s.trust_error or s.listener_error or s.recovering), do: iso(d["next_attempt_at"]), else: nil),
+      "last_success_at" => iso(d["last_success_at"]), "last_error" => d["last_error"], "config_revision" => s.config["config_revision"]}
+  end
+  defp initialize(%{owner: owner} = s) when is_binary(owner) do
+    D.check(File.dir?(s.root))
+    F.directory(s.root)
+    for name <- ~w(accounts attempts generations) do
+      D.check(File.dir?(Path.join(s.root, name)))
+      F.directory(Path.join(s.root, name))
+    end
+    s
+  end
+  defp initialize(s) do
+    F.init_owner(s.path)
+    witness = s.path <> ".acme-owner.json"
+    binding = D.digest(Path.expand(s.path))
+    case File.lstat(witness) do
+      {:ok, _} ->
+        w = F.read(witness) |> ADHD.JSON.decode!()
+        D.keys(w, ~w(config_path owner phase), ~w(config_path owner phase))
+        D.check(w["config_path"] == binding and is_binary(w["owner"]) and Regex.match?(~r/\A[A-Za-z0-9_-]{32}\z/, w["owner"]))
+        if w["phase"] == "initializing" do
+          complete_initialization(s, w)
+        else
+          D.check(w["phase"] == "ready" and File.dir?(s.root))
+          F.directory(s.root)
+          owned = F.read(Path.join(s.root, "owner.json")) |> ADHD.JSON.decode!()
+          D.check(owned == Map.delete(w, "phase"))
+          for name <- ~w(accounts attempts generations) do
+            D.check(File.dir?(Path.join(s.root, name)))
+            F.directory(Path.join(s.root, name))
+          end
+          data = F.read(Path.join(s.root, "state.json")) |> ADHD.JSON.decode!()
+          validate_state(data)
+          %{s | owner: w["owner"], data: data}
+        end
+      {:error, :enoent} ->
+        D.check(match?({:error, :enoent}, File.lstat(s.root)))
+        w = %{"config_path" => binding, "owner" => D.opaque(), "phase" => "initializing"}
+        F.write(witness, JSON.encode!(w))
+        complete_initialization(s, w)
+      _ -> D.fail("CONFIG_APPLY_FAILED")
+    end
+  end
+  defp complete_initialization(s, w) do
+    # Only an explicit durable initializing witness permits crash completion.
+    # No client/order is admitted until the ready witness has been fsynced.
+    F.directory(s.root)
+    for name <- ~w(accounts attempts generations), do: F.directory(Path.join(s.root, name))
+    owner = Map.delete(w, "phase")
+    if File.exists?(Path.join(s.root, "owner.json")), do: D.check(ADHD.JSON.decode!(F.read(Path.join(s.root, "owner.json"))) == owner)
+    F.write(Path.join(s.root, "owner.json"), JSON.encode!(owner))
+    s = save(%{s | owner: w["owner"]})
+    F.write(s.path <> ".acme-owner.json", JSON.encode!(Map.put(w, "phase", "ready")))
+    s
+  end
+  defp ensure_account(s) do
+    a = s.config["tls"]["acme"]
+    id = D.digest([a["directory_url"], a["email"], s.trust])
+    accounts = s.data["accounts"] || %{}
+    root = Path.join([s.root, "accounts", id])
+    owner = %{"owner" => s.owner, "identity" => id}
+    if Map.has_key?(accounts, id) do
+      D.check(File.dir?(root)); F.directory(root)
+      D.check(ADHD.JSON.decode!(F.read(Path.join(root, "owner.json"))) == owner)
+      Enum.each(accounts[id]["keys"] || %{}, fn {relative, digest} ->
+        D.check(not String.starts_with?(relative, "/") and not (".." in Path.split(relative)))
+        validate_account_metadata(Path.join(root, relative))
+        D.check(:crypto.hash(:sha256, F.read(Path.join(root, relative))) |> Base.encode16(case: :lower) == digest)
+      end)
+      s
+    else
+      F.directory(root)
+      existing = File.ls!(root)
+      D.check(existing == [] or (existing == ["owner.json"] and ADHD.JSON.decode!(F.read(Path.join(root, "owner.json"))) == owner))
+      F.write(Path.join(root, "owner.json"), JSON.encode!(owner))
+      save(%{s | data: Map.put(s.data, "accounts", Map.put(accounts, id, %{"keys" => %{}}))})
+    end
+  end
+  defp remember_account_keys(s) do
+    accounts = Map.new(s.data["accounts"] || %{}, fn {id, value} ->
+      root = Path.join([s.root, "accounts", id])
+      D.check(ADHD.JSON.decode!(F.read(Path.join(root, "owner.json"))) == %{"owner" => s.owner, "identity" => id})
+      F.harden_tree(root)
+      keys = Path.wildcard(Path.join(root, "accounts/**/*.key")) |> Map.new(fn path ->
+        validate_account_metadata(path)
+        {Path.relative_to(path, root), :crypto.hash(:sha256, F.read(path)) |> Base.encode16(case: :lower)}
+      end)
+      # Never forget evidence of a previously initialized account key.
+      Enum.each(value["keys"] || %{}, fn {key, digest} -> D.check(keys[key] == digest) end)
+      {id, Map.put(value, "keys", keys)}
+    end)
+    %{s | data: Map.put(s.data, "accounts", accounts)}
+  end
+  defp validate_account_metadata(key_path) do
+    # Lego creates a new private key if account.json disappears, even when its
+    # old key remains. Refuse damaged metadata before admitting that client.
+    value = F.read(Path.join(Path.dirname(key_path), "account.json"), 65536) |> ADHD.JSON.decode!()
+    D.check(is_map(value))
+    D.check(Enum.all?(~w(id email keyType server), fn key -> is_binary(value[key]) and byte_size(value[key]) > 0 end))
+    D.check(Map.has_key?(value, "registration") and (is_nil(value["registration"]) or is_map(value["registration"])))
+    if Map.has_key?(value, "origin"), do: D.check(is_binary(value["origin"]))
+    :ok
+  end
+  defp recover(s) do
+    if File.exists?(s.path <> ".acme-owner.json") or enabled?(s.config) do
+      s = initialize(s)
+      s = if s.data["active"] do
+        id = s.data["active"]; D.check(Regex.match?(~r/\A[A-Za-z0-9_-]+\z/, id))
+        root = Path.join([s.root, "generations", id]); F.directory(root)
+        info = F.read(Path.join(root, "metadata.json")) |> ADHD.JSON.decode!()
+        cert = ADHD.TLSCertificate.load(F.read(Path.join(root, "chain.pem")), F.read(Path.join(root, "key.pem")), info["domains"], true)
+        D.check(cert.metadata == info["certificate"])
+        %{s | certificate: cert, active: id}
+      else s end
+      if s.data["ordering"] == true or not ADHD.ACMEClient.lock_available?(s.root) do
+        %{s | recovering: true, data: Map.put(s.data, "last_error", error("ACME_RECOVERY"))}
+      else
+        # Account bytes are examined only after actual old-writer closure. A
+        # damaged account blocks issuance while retaining the loaded valid leaf.
+        try do remember_account_keys(s) rescue _ -> storage_error(s) catch _, _ -> storage_error(s) end
+      end
+    else s end
+  end
+  defp validate_state(data) do
+    D.keys(data, ~w(last_attempt_at next_attempt_at last_success_at last_error receipts active ordering force_pending accounts issuer_retry_at), ~w(last_attempt_at next_attempt_at last_success_at last_error receipts active))
+    for key <- ~w(last_attempt_at next_attempt_at last_success_at issuer_retry_at) do
+      if data[key] != nil, do: D.integer(data[key], 0, 253402300799000)
+    end
+    if data["active"] != nil, do: D.check(is_binary(data["active"]) and Regex.match?(~r/\A[A-Za-z0-9_-]{32}\z/, data["active"]))
+    for key <- ~w(ordering force_pending), do: D.optional(data, key, &D.check(is_boolean(&1)))
+    if data["last_error"] do
+      value = data["last_error"]
+      D.check(is_map(value) and value["code"] in ~w(ACME_NETWORK ACME_AUTHORIZATION ACME_RATE_LIMIT ACME_ACCOUNT ACME_ORDER_TIMEOUT ACME_PROCESS ACME_CERTIFICATE ACME_STORAGE ACME_CONFIG_CHANGED ACME_RECOVERY))
+      D.check(value == error(value["code"]))
+    end
+    D.object(data["receipts"])
+    Enum.each(data["receipts"], fn {key, receipt} ->
+      digest!(key); D.keys(receipt, ~w(digest result), ~w(digest result)); digest!(receipt["digest"])
+      result = receipt["result"]; D.keys(result, ~w(accepted config_revision), ~w(accepted config_revision))
+      D.check(result["accepted"] == true); D.integer(result["config_revision"], 1, 9007199254740991)
+    end)
+    D.object(data["accounts"] || %{})
+    Enum.each(data["accounts"] || %{}, fn {identity, value} ->
+      digest!(identity); D.keys(value, ~w(keys), ~w(keys)); D.object(value["keys"])
+      Enum.each(value["keys"], fn {path, hash} ->
+        D.check(is_binary(path) and byte_size(path) <= 4096 and not String.starts_with?(path, "/") and not (".." in Path.split(path)))
+        digest!(hash)
+      end)
+    end)
+    :ok
+  end
+  defp digest!(value), do: D.check(is_binary(value) and Regex.match?(~r/\A[0-9a-f]{64}\z/, value))
+  defp save(s) do
+    validate_state(s.data)
+    bytes = JSON.encode!(s.data)
+    if byte_size(bytes) > 2_097_152, do: D.fail("CONFIG_WRITE_FAILED")
+    F.write(Path.join(s.root, "state.json"), bytes); s
+  end
+  defp load_retry_floor(s) do
+    path = Path.join(s.root, "issuer-retry.json")
+    case File.lstat(path) do
+      {:error, :enoent} -> s
+      {:ok, %{size: size}} when size <= 1024 ->
+        value = ADHD.JSON.decode!(F.read(path))
+        D.keys(value, ~w(code retry_at), ~w(code retry_at))
+        D.check(value["code"] in ~w(ACME_PROCESS ACME_RATE_LIMIT))
+        if value["retry_at"] != nil, do: D.integer(value["retry_at"], 0, 253402300799000)
+        floor = max(s.data["issuer_retry_at"] || 0, value["retry_at"] || 0)
+        due = if floor > D.ms(), do: max(s.data["next_attempt_at"] || 0, floor), else: s.data["next_attempt_at"]
+        %{s | data: s.data |> Map.put("issuer_retry_at", floor) |> Map.put("next_attempt_at", due)}
+      _ -> D.fail("CONFIG_APPLY_FAILED")
+    end
+  end
+  defp recover_closed(%{recovering: true} = s) do
+    if ADHD.ACMEClient.lock_available?(s.root), do: finish(%{s | recovering: false}, {:error, "ACME_PROCESS", nil}), else: s
+  end
+  defp recover_closed(s), do: s
+  defp maybe_start(%{trust_error: true} = s, _), do: s
+  defp maybe_start(%{listener_error: true} = s, _), do: s
+  defp maybe_start(%{recovering: true} = s, _), do: s
+  defp maybe_start(s, force) do
+    try do
+      s = if s.owner, do: load_retry_floor(s), else: s
+      due = (s.data["next_attempt_at"] || 0) <= D.ms() and (s.data["issuer_retry_at"] || 0) <= D.ms()
+      force = force or s.data["force_pending"] == true
+      failed = is_map(s.data["last_error"]) and s.data["last_error"]["retryable"] == false
+      needs = is_nil(s.certificate) or s.certificate.domains != s.config["tls"]["acme"]["domains"] or due
+      if enabled?(s.config) and is_nil(s.job) and due and needs and (force or not failed) do
+        s = initialize(s) |> load_retry_floor()
+        if (s.data["issuer_retry_at"] || 0) > D.ms(), do: throw(:client_still_owned)
+        if not ADHD.ACMEClient.lock_available?(s.root), do: throw(:client_still_owned)
+        root = Path.join(s.root, "attempts")
+        for name <- File.ls!(root) do
+          D.check(Regex.match?(~r/\A[A-Za-z0-9_-]+\z/, name))
+          path = Path.join(root, name); F.harden_tree(path); File.rm_rf!(path)
+        end
+        s = ensure_account(s)
+        deadline = System.monotonic_time(:millisecond) + s.config["tls"]["acme"]["order_timeout_ms"]
+        ref = make_ref(); id = D.opaque()
+        root = Path.join([s.root, "attempts", id]) |> F.directory()
+        webroot = Path.join(root, "webroot") |> F.directory()
+        fingerprint = s.fingerprint
+        data = s.data |> Map.put("force_pending", false) |> Map.put("ordering", true) |> Map.put("last_attempt_at", D.ms()) |> Map.put("next_attempt_at", nil)
+        s = save(%{s | data: data})
+        :persistent_term.put({__MODULE__, :challenge}, %{webroot: webroot, generation: id, config: s.config["tls"]})
+        parent = self(); config = s.config; state_root = s.root; trust = s.trust
+        {pid, monitor} = spawn_monitor(fn ->
+          result = ADHD.ACMEClient.run(config, state_root, root, webroot, force, trust, deadline)
+          send(parent, {:acme_result, ref, result})
+        end)
+        %{s | job: %{pid: pid, monitor: monitor, ref: ref, fingerprint: fingerprint, deadline: deadline, attempt: root}}
+      else s end
+    rescue _ -> storage_error(s)
+    catch :client_still_owned -> s; _, _ -> storage_error(s) end
+  end
+  defp storage_error(s) do
+    %{s | data: s.data |> Map.put("ordering", false) |> Map.put("last_error", error("ACME_STORAGE")) |> Map.put("next_attempt_at", nil)}
+  end
+  defp finish(s, {:ok, chain, key}) do
+    try do
+      s = remember_account_keys(s)
+      domains = s.config["tls"]["acme"]["domains"]
+      cert = ADHD.TLSCertificate.load(chain, key, domains)
+      id = D.opaque(); root = Path.join([s.root, "generations", id]) |> F.directory()
+      F.write(Path.join(root, "chain.pem"), chain)
+      F.write(Path.join(root, "key.pem"), key)
+      F.write(Path.join(root, "metadata.json"), JSON.encode!(%{"domains" => domains, "certificate" => cert.metadata}))
+      # Short-lived CA profiles renew after two thirds of their lifetime; ordinary
+      # certificates retain the configured days-before-expiry window.
+      window = min(s.config["tls"]["acme"]["renew_before_days"] * 86_400_000, div(cert.expires - cert.metadata["not_before"], 3))
+      due = max(D.ms() + 1000, cert.expires - window)
+      data = s.data |> Map.merge(%{"active" => id, "ordering" => false, "last_error" => nil, "last_success_at" => D.ms(), "next_attempt_at" => due})
+      s = save(%{s | data: data})
+      :persistent_term.put({__MODULE__, :certificate}, cert)
+      %{s | certificate: cert, active: id}
+    rescue _ -> finish(s, {:error, "ACME_CERTIFICATE", nil})
+    catch _, _ -> finish(s, {:error, "ACME_CERTIFICATE", nil}) end
+  end
+  defp finish(s, {:error, code, retry_at}) do
+    s = try do load_retry_floor(s) rescue _ -> storage_error(s) catch _, _ -> storage_error(s) end
+    failure = error(code)
+    retry_at = max(retry_at || 0, s.data["issuer_retry_at"] || 0)
+    due = if failure["retryable"], do: max(D.ms() + s.config["tls"]["acme"]["retry_seconds"] * 1000, retry_at || 0), else: nil
+    data = s.data |> Map.merge(%{"ordering" => false, "last_error" => failure, "next_attempt_at" => due})
+    try do save(remember_account_keys(%{s | data: data})) rescue _ -> storage_error(s) catch _, _ -> storage_error(s) end
+  end
+  def error(code) do
+    {message, retryable} = case code do
+      "ACME_NETWORK" -> {"Certificate authority connection failed.", true}
+      "ACME_AUTHORIZATION" -> {"Domain authorization failed.", true}
+      "ACME_RATE_LIMIT" -> {"Certificate authority rate limit reached.", true}
+      "ACME_ACCOUNT" -> {"Certificate authority account is unavailable.", false}
+      "ACME_ORDER_TIMEOUT" -> {"Certificate request timed out.", true}
+      "ACME_CERTIFICATE" -> {"Issued certificate validation failed.", false}
+      "ACME_STORAGE" -> {"Managed certificate state is unavailable.", false}
+      "ACME_CONFIG_CHANGED" -> {"Certificate request configuration changed.", true}
+      "ACME_RECOVERY" -> {"Interrupted certificate request requires recovery.", true}
+      _ -> {"Certificate client failed.", true}
+    end
+    %{"code" => code, "message" => message, "retryable" => retryable}
+  end
+end

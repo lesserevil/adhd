@@ -1,0 +1,20 @@
+defmodule ADHD.Allocator do
+  @max_counter 9_007_199_254_740_991
+
+  # This function runs inside the project transaction. Admission/recovery owns
+  # durable epoch selection; an allocator must never fabricate a missing header.
+  def allocate(state, kind) do
+    unless is_binary(kind) and Regex.match?(~r/\A[a-z][a-z0-9]{0,15}\z/, kind),
+      do: ADHD.Domain.fail("INVALID_PARAMS")
+    epoch = Map.get(state, :allocation_epoch)
+    counter = Map.get(state, :allocation_counter)
+    unless state[:schema] == 4 and is_binary(epoch) and
+             Regex.match?(~r/\A[0-9a-f]{32}\z/, epoch) and
+             is_integer(counter) and counter >= 0 and counter <= @max_counter,
+      do: ADHD.Domain.fail("RECOVERY_REQUIRED")
+    if counter == @max_counter, do: ADHD.Domain.fail("RESOURCE_EXHAUSTED")
+    next = counter + 1
+    id = kind <> "_" <> epoch <> "_" <> String.downcase(Integer.to_string(next, 36))
+    {id, Map.put(state, :allocation_counter, next)}
+  end
+end

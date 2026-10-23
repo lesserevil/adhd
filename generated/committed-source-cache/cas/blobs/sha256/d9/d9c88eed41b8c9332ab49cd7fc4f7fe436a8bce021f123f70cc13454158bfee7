@@ -1,0 +1,60 @@
+defmodule ADHD.Selection do
+  alias ADHD.Domain,as: D
+  alias ADHD.Directory,as: F
+  alias ADHD.Retrieval,as: X
+  def empty,do: %{"schema"=>1,"revision"=>0,"selected"=>nil,"previous"=>nil,"last_reset_id"=>nil}
+  def base(c),do: Map.get(c,"__operator_retrieval_recipe") || X.config(c)["recipe"]
+  def base_identity(c),do: F.digest(base(c))
+  def applied?(s,c),do: s.retrieval_selection["selected"] != nil and s.retrieval_selection["selected"]["base_identity"]==base_identity(c)
+  def resolve(c,s) do
+    operator=base(c);selected=if applied?(s,c),do: s.retrieval_selection["selected"]["recipe"],else: operator
+    actual=Map.get(c,"__retrieval_branch_recipe") || selected
+    c |> Map.put("retrieval",Map.put(X.config(c),"recipe",actual)) |> Map.put("__operator_retrieval_recipe",operator)
+      |> Map.put("__global_retrieval_recipe",selected) |> Map.put("__retrieval_selection_revision",s.retrieval_selection["revision"])
+  end
+  def protected_previous?(s,c) do
+    applied?(s,c) and s.retrieval_selection["previous"] != nil and s.retrieval_index["previous"] != nil and s.retrieval_index["previous"]["manifest"]["recipe"]==s.retrieval_selection["previous"]["recipe"]
+  end
+  def view(s,c) do
+    selected=s.retrieval_selection["selected"];applied=applied?(s,c)
+    %{"revision"=>s.retrieval_selection["revision"],"applied"=>applied,"base_identity"=>base_identity(c),"base_recipe"=>base(c),"effective_recipe"=>if(applied,do: selected["recipe"],else: base(c)),"selected"=>selected,"previous"=>s.retrieval_selection["previous"],"rollback_available"=>applied and s.retrieval_selection["previous"] != nil,"current_runtime"=>X.normalization(),"qualification_current"=>applied and selected["qualification_runtime"]==X.normalization() and selected["qualification_identity"] != nil}
+  end
+  def reset(s,id) do
+    D.id(id);old=s.retrieval_selection
+    if old["last_reset_id"]==id do s else
+      if old["revision"]>=9007199254740991,do: D.fail("RESOURCE_EXHAUSTED")
+      %{s|retrieval_selection: empty() |> Map.put("revision",old["revision"]+1) |> Map.put("last_reset_id",id)}
+    end
+  end
+  def operator_descriptor(s,c) do
+    active=s.retrieval_index["active"]
+    %{"recipe"=>X.effective(resolve(c,s))["recipe"],"base_identity"=>base_identity(c),"proposal_id"=>nil,"qualification_runtime"=>nil,"qualification_identity"=>nil,"selected_at"=>D.now(),"activation_watermark"=>if(active,do: active["manifest"]["watermark"],else: 0),"qualification_watermark"=>0}
+  end
+  def activate(s,c,descriptor,generation) do
+    old=s.retrieval_selection
+    if old["revision"]>=9007199254740991,do: D.fail("RESOURCE_EXHAUSTED")
+    D.check(generation["manifest"]["status"]=="ready" and generation["manifest"]["excluded"]==0 and generation["pending_ids"]==[])
+    D.check(generation["manifest"]["recipe"]==descriptor["recipe"] and generation["manifest"]["source_watermark"]==ADHD.Records.watermark(s))
+    previous=if applied?(s,c),do: old["selected"],else: operator_descriptor(s,c)
+    control=Map.merge(old,%{"revision"=>old["revision"]+1,"selected"=>descriptor,"previous"=>previous})
+    index=Map.merge(s.retrieval_index,%{"active"=>generation,"previous"=>s.retrieval_index["active"],"building"=>nil,"error"=>nil,"failed_limits"=>nil,"requested_rebuild"=>nil})
+    %{s|retrieval_selection: control,retrieval_index: index}
+  end
+  def descriptor(recipe,c,proposal_id,qualification_identity,qualification_mark,activation_mark) do
+    %{"recipe"=>recipe,"base_identity"=>base_identity(c),"proposal_id"=>proposal_id,"qualification_runtime"=>X.normalization(),"qualification_identity"=>qualification_identity,"selected_at"=>D.now(),"activation_watermark"=>activation_mark,"qualification_watermark"=>qualification_mark}
+  end
+  def upgrade(s) do
+    value=s.retrieval_selection;fields = ~w(schema revision selected previous last_reset_id);D.keys(value,fields,fields);D.check(value["schema"]==1);D.integer(value["revision"],0,9007199254740991)
+    D.check(value["previous"]==nil or value["selected"] != nil);D.check(value["selected"]==nil or value["revision"]>0)
+    if value["last_reset_id"] != nil,do: D.id(value["last_reset_id"])
+    for item<-[value["selected"],value["previous"]],item != nil do
+      fields = ~w(recipe base_identity proposal_id qualification_runtime qualification_identity selected_at activation_watermark qualification_watermark);D.keys(item,fields,fields);X.validate_recipe(item["recipe"])
+      for key<-~w(base_identity qualification_identity),item[key] != nil,do: D.check(Regex.match?(~r/\A[a-f0-9]{64}\z/,item[key]))
+      D.check(item["base_identity"] != nil);D.check(item["qualification_identity"]==nil or (item["qualification_runtime"] != nil and item["proposal_id"] != nil));D.datetime(item["selected_at"],true)
+      if item["proposal_id"] != nil,do: D.id(item["proposal_id"])
+      if item["qualification_runtime"] != nil,do: D.string(item["qualification_runtime"],128)
+      for key<-~w(activation_watermark qualification_watermark),do: D.integer(item[key],0,ADHD.Records.watermark(s))
+    end
+    s
+  end
+end

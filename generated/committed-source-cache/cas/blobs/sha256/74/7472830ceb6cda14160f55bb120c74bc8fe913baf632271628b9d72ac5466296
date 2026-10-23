@@ -1,0 +1,71 @@
+defmodule ADHD.DirectoryProtocol do
+  alias ADHD.Protocol,as: P
+  def scope do
+    host=P.str(253) |> Map.put("oneOf",[%{"pattern"=>"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$"},%{"format"=>"ipv6","pattern"=>"^[0-9a-f:]+$"}])
+    P.obj(%{"provider"=>P.enum(~w(github slack jira other)),"host"=>host,"tenant"=>P.str(256),"resource"=>P.str(256)})
+  end
+  def alias_selector,do: scope() |> Map.update!("properties",&(&1 |> Map.delete("resource") |> Map.put("alias",P.str(256)))) |> Map.put("required",~w(provider host tenant alias))
+  def unique(schema),do: Map.put(schema,"uniqueItems",true)
+  def entry(private \\ false) do
+    props=%{"scope"=>P.ref("Scope"),"aliases"=>unique(P.array(P.str(256),16)),"description"=>P.str(4096),"relationship"=>P.enum(~w(contained derived referenced)),"canonical"=>P.bool()}
+    props=if private,do: Map.put(props,"export_publication_ids",unique(P.array(P.str(),32))),else: props
+    P.obj(props,~w(scope description relationship canonical)) |> Map.put("allOf",[%{"if"=>%{"properties"=>%{"canonical"=>%{"const"=>true}},"required"=>["canonical"]},"then"=>%{"properties"=>%{"relationship"=>%{"const"=>"contained"}}}}])
+  end
+  def config,do: P.obj(%{"visible"=>P.bool(),"entries"=>P.array(P.ref("CatalogEntryPrivate"),256)})
+  def command(op) do
+    case op do
+      "source_query"->P.command(op,%{"question"=>P.str(4096),"sources"=>unique(P.array(P.ref("Scope"),16,1)),"aliases"=>unique(P.array(P.ref("ScopeAlias"),16,1)),"deadline_ms"=>P.int(1000,120000)},["question"]) |> Map.put("oneOf",[%{"required"=>["sources"],"not"=>%{"required"=>["aliases"]}},%{"required"=>["aliases"],"not"=>%{"required"=>["sources"]}}])
+      x when x in ~w(get_source_query cancel_source_query)->P.command(op,%{"query_id"=>P.str()},["query_id"])
+      _->P.command(op)
+    end
+  end
+  def extend(defs) do
+    card=P.obj(%{"name"=>%{"const"=>"ADHD"},"description"=>P.str(1024),"version"=>%{"const"=>"0.1.0"},"supportedInterfaces"=>P.array(P.obj(%{"url"=>P.str(4096),"protocolBinding"=>%{"const"=>"JSONRPC"},"protocolVersion"=>%{"const"=>"1.0"}}),1,1),"capabilities"=>%{"const"=>%{"streaming"=>false,"pushNotifications"=>false,"extendedAgentCard"=>false}},"defaultInputModes"=>%{"const"=>["application/json"]},"defaultOutputModes"=>%{"const"=>["application/json"]},"securitySchemes"=>%{"const"=>%{"bearer"=>%{"httpAuthSecurityScheme"=>%{"scheme"=>"Bearer"}}}},"securityRequirements"=>%{"const"=>[%{"schemes"=>%{"bearer"=>[]}}]},"skills"=>P.array(P.obj(%{"id"=>%{"const"=>"project-coordination"},"name"=>P.str(256),"description"=>P.str(4096),"tags"=>%{"const"=>["coordination"]}}),1,1)})
+    id=P.str(32) |> Map.put("pattern","^[0-9a-f]{32}$")
+    digest=P.str(64) |> Map.put("pattern","^[0-9a-f]{64}$")
+    nullable=fn schema->%{"oneOf"=>[schema,%{"type"=>"null"}]} end
+    local=P.obj(%{"visible"=>P.bool(),"items"=>P.array(P.ref("CatalogEntry"),256),"revision"=>digest})
+    person=P.obj(%{"user_id"=>P.str(),"name"=>P.str(256),"email"=>P.str(320)})
+    observer=P.obj(%{"project_id"=>P.identifier(),"server_id"=>nullable.(id),"status"=>P.enum(~w(pending ready unavailable withheld identity_conflict)),"revision"=>nullable.(digest),"expires_at"=>nullable.(P.time()),"catalog"=>P.array(P.ref("CatalogEntry"),256)})
+    view=P.obj(%{"server_id"=>id,"project_id"=>P.identifier(),"catalog"=>P.ref("LocalCatalog"),"peers"=>P.array(observer,16)})
+    match=P.obj(Map.merge(person["properties"],%{"server_id"=>id,"project_id"=>P.identifier(),"observed_at"=>P.time(),"expires_at"=>P.time()}))
+    matches=P.obj(%{"user_id"=>P.str(),"matches"=>P.array(match,16000),"coverage"=>P.array(P.obj(%{"project_id"=>P.identifier(),"status"=>P.enum(~w(pending ready unavailable withheld identity_conflict identities_withheld))}),16)})
+    scoped_response=defs["PeerResponse"] |> Map.update!("properties",&Map.merge(&1,%{"server_id"=>id,"scope"=>P.ref("Scope")})) |> Map.update!("required",&(&1++~w(server_id scope)))
+    result=P.obj(%{"requested"=>%{"oneOf"=>[P.ref("Scope"),P.ref("ScopeAlias")]},"scope"=>nullable.(P.ref("Scope")),"status"=>P.enum(~w(pending answered unknown ambiguous conflict unavailable revoked)),"owner_server_id"=>nullable.(id),"owner_project_id"=>nullable.(P.identifier()),"response"=>nullable.(P.ref("SourceResponse"))})
+    query=P.obj(%{"id"=>P.str(),"project_id"=>P.identifier(),"owner_id"=>P.identifier(),"question"=>P.str(4096),"created_at"=>P.time(),"deadline_at"=>P.time(),"status"=>P.enum(~w(pending completed partial cancelled)),"coverage"=>P.array(P.obj(%{"project_id"=>P.identifier(),"status"=>P.enum(~w(pending ready unavailable withheld identity_conflict))}),16),"results"=>P.array(result,16,1)})
+    new=%{"AgentCard"=>card,"Scope"=>scope(),"ScopeAlias"=>alias_selector(),"CatalogEntry"=>entry(),"CatalogEntryPrivate"=>entry(true),"CatalogConfig"=>config(),"IdentityProfile"=>person,"LocalCatalog"=>local,"DirectoryView"=>view,"IdentityMatches"=>matches,"SourceResponse"=>scoped_response,"SourceQuery"=>query}
+    new=Enum.reduce(~w(federation_directory identity_matches source_query get_source_query cancel_source_query),new,fn op,acc->
+      response=case op do
+        "federation_directory"->P.ref("DirectoryView")
+        "identity_matches"->P.ref("IdentityMatches")
+        _->P.obj(%{"query"=>P.ref("SourceQuery")})
+      end
+      acc |> Map.put("agent_"<>op,command(op)) |> Map.put("result_"<>op,response)
+    end)
+    mutation=%{"expected_revision"=>P.int(1,9_223_372_036_854_775_807),"message_id"=>P.str(),"confirm"=>%{"const"=>true}}
+    new=new |> Map.put("admin_federation_directory",P.admin("federation_directory")) |> Map.put("admin_identity_matches",P.admin("identity_matches",%{"user_id"=>P.str()},["user_id"])) |> Map.put("admin_refresh_federation",P.admin("refresh_federation",mutation,Map.keys(mutation)))
+    new=new |> Map.put("admin_result_federation_directory",P.ref("DirectoryView")) |> Map.put("admin_result_identity_matches",P.ref("IdentityMatches")) |> Map.put("admin_result_refresh_federation",P.obj(%{"queued"=>%{"const"=>true},"config_revision"=>P.int(1,9_223_372_036_854_775_807)}))
+    job=%{"oneOf"=>[P.obj(%{"kind"=>%{"const"=>"discovery"},"query"=>P.ref("Query")}),P.obj(%{"kind"=>%{"const"=>"source"},"query"=>P.ref("SourceQuery")})]}
+    new=new |> Map.put("admin_query_jobs",P.admin("query_jobs",%{"limit"=>P.int(1,100),"agent_id"=>P.identifier(),"kind"=>P.enum(~w(discovery source))})) |> Map.put("admin_query_job",P.admin("query_job",%{"query_id"=>P.str()},["query_id"])) |> Map.put("admin_cancel_query_job",P.admin("cancel_query_job",%{"query_id"=>P.str(),"message_id"=>P.str(),"confirm"=>%{"const"=>true}},~w(query_id message_id confirm)))
+    new=new |> Map.put("admin_result_query_jobs",P.obj(%{"items"=>P.array(job,100),"truncated"=>P.bool()})) |> Map.put("admin_result_query_job",job) |> Map.put("admin_result_cancel_query_job",job)
+    base=%{"protocol_version"=>%{"const"=>1,"type"=>"integer","x-integerToken"=>true},"origin_project_id"=>P.identifier()}
+    new=Enum.reduce(~w(catalog identities),new,fn op,acc->
+      request=P.obj(Map.merge(base,%{"op"=>%{"const"=>op},"cursor"=>P.str(256)}),~w(protocol_version op origin_project_id))
+      item=if op=="catalog",do: "CatalogEntry",else: "IdentityProfile"
+      response=P.obj(%{"protocol_version"=>%{"const"=>1,"type"=>"integer","x-integerToken"=>true},"server_id"=>id,"project_id"=>P.identifier(),"revision"=>digest,"generated_at"=>P.time(),"max_age_ms"=>%{"const"=>10000,"type"=>"integer","x-integerToken"=>true},"visible"=>P.bool(),"items"=>P.array(P.ref(item),64),"next_cursor"=>nullable.(P.str(256))})
+      acc |> Map.put("PeerV1_"<>op,request) |> Map.put("PeerV1Result_"<>op,response)
+    end)
+    common=Map.merge(base,%{"origin_server_id"=>id,"query_id"=>P.str(),"scope"=>P.ref("Scope")})
+    submit=P.obj(Map.merge(common,%{"op"=>%{"const"=>"source_submit"},"question"=>P.str(4096),"deadline_at"=>P.time(),"owner_server_id"=>id,"catalog_revision"=>digest}))
+    status=P.obj(Map.put(common,"op",%{"const"=>"source_status"}))
+    response=P.obj(%{"protocol_version"=>%{"const"=>1,"type"=>"integer","x-integerToken"=>true},"query_id"=>P.str(),"scope"=>P.ref("Scope"),"status"=>P.enum(~w(pending completed expired revoked)),"response"=>P.ref("SourceResponse")},~w(protocol_version query_id scope status))
+    response=Map.put(response,"allOf",[%{"if"=>%{"properties"=>%{"status"=>%{"const"=>"completed"}},"required"=>["status"]},"then"=>%{"required"=>["response"]},"else"=>%{"not"=>%{"required"=>["response"]}}}])
+    new=new |> Map.put("PeerV1_source_submit",submit) |> Map.put("PeerV1_source_status",status) |> Map.put("PeerV1Result_source",response)
+    old=Map.fetch!(defs,"PeerV1Result")
+    defs=Map.merge(defs,new)
+    defs=put_in(defs,["peer_v1_command","oneOf"],Enum.map(~w(submit status catalog identities source_submit source_status),&P.ref("PeerV1_"<>&1)))
+    defs=Map.put(defs,"PeerV1Result",%{"anyOf"=>[old,P.ref("PeerV1Result_catalog"),P.ref("PeerV1Result_identities"),P.ref("PeerV1Result_source")]})
+    defs=Enum.reduce([{"AgentResult","anyOf","result_",~w(federation_directory identity_matches source_query get_source_query cancel_source_query)},{"AdminResult","anyOf","admin_result_",~w(federation_directory identity_matches refresh_federation query_jobs query_job cancel_query_job)},{"AdminCommand","oneOf","admin_",~w(federation_directory identity_matches refresh_federation query_jobs query_job cancel_query_job)}],defs,fn {key,union,prefix,ops},acc->update_in(acc,[key,union],&(&1++Enum.map(ops,fn op->P.ref(prefix<>op) end))) end)
+    defs
+  end
+end

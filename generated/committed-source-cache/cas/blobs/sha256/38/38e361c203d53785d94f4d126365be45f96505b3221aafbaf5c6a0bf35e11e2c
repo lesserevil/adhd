@@ -1,0 +1,92 @@
+defmodule ADHD.Migration do
+  alias ADHD.Domain,as: D
+  def config(path,seed) do
+    if not is_list(seed["projects"]) do
+      D.identifier(seed["project_id"])
+      store=Path.expand(seed["store_path"],Path.dirname(path))
+      proof=ADHD.Storage.local_legacy_state(store,seed["project_id"],seed["server_id"],ADHD.LocalLegacy.limits(seed)) |> ADHD.LocalLegacy.validate(seed,seed["project_id"])
+      verified_server=if proof.validated,do: proof.validated.server_id,else: seed["server_id"] || ADHD.Directory.server_id()
+      ADHD.Directory.server_id(verified_server)
+      # Existing accepted state is preserved byte-for-byte before the first
+      # format decision. Immutable backup names make retries fail closed.
+      backups=Enum.filter([path,path<>".journal",store,store<>".snapshot"],&File.exists?/1)
+      prepared=path<>".project-upgrade"
+      marker=if File.exists?(prepared) do
+        ADHD.JSON.decode!(File.read!(prepared))
+      else
+        files=Enum.map(backups,fn file->
+          ADHD.Config.safe_file(file)
+          backup=file<>".before-projects"
+          ADHD.Config.safe_file(backup)
+          content=File.read!(file)
+          if File.exists?(backup) do
+            D.check(File.read!(backup)==content)
+          else ADHD.Config.atomic(backup,content) end
+          %{"source"=>file,"backup"=>backup,"sha256"=>Base.encode16(:crypto.hash(:sha256,content),case: :lower)}
+        end)
+        result=%{"version"=>1,"phase"=>"prepared","project_id"=>seed["project_id"],"files"=>files}
+        ADHD.Storage.verify_local_legacy(proof)
+        ADHD.Config.atomic(prepared,JSON.encode!(result));result
+      end
+      D.check(marker["project_id"]==seed["project_id"])
+      verify_backups(marker)
+      id=seed["project_id"]
+      users=Enum.map(seed["users"] || [],&Map.put_new(&1,"project_ids",[id]))
+      grants=Map.new(seed["agents"],fn {actor,_}->{actor,[id]} end)
+      migrated=seed |> Map.put("projects",[%{"id"=>id,"name"=>id,"status"=>"active","description"=>"","settings"=>%{}}]) |> Map.put("users",users) |> Map.put("agent_projects",grants) |> Map.put("server_id",verified_server)
+      # Persist complete target config in the marker before replacing the file.
+      decision=Map.put(marker,"config",migrated) |> Map.put("phase","decided")
+      ADHD.Storage.verify_local_legacy(proof)
+      ADHD.Config.atomic(prepared,JSON.encode!(decision))
+      ADHD.Config.atomic(path,JSON.encode!(migrated))
+      migrated
+    else seed end
+  end
+  defp verify_backups(marker) do
+    D.list(marker["files"],4,1)
+    Enum.each(marker["files"],fn file->
+      D.keys(file,~w(source backup sha256),~w(source backup sha256))
+      ADHD.Config.safe_file(file["backup"])
+      D.check(Base.encode16(:crypto.hash(:sha256,File.read!(file["backup"])),case: :lower)==file["sha256"])
+    end)
+    :ok
+  end
+  def recover(path) do
+    file=path<>".project-upgrade"
+    if File.exists?(file) do
+      ADHD.Config.safe_file(file)
+      marker=ADHD.JSON.decode!(File.read!(file))
+      D.check(marker["version"]===1 and marker["phase"] in ~w(prepared decided completed))
+      if marker["phase"] != "completed",do: verify_backups(marker)
+      if marker["phase"]=="decided" do
+        current=if File.exists?(path),do: ADHD.JSON.decode!(File.read!(path)),else: %{}
+        # An atomic complete target config may already include the recovered
+        # bootstrap account. Never overwrite that account with an older seed.
+        unless is_list(current["projects"]) and current["server_id"]==marker["config"]["server_id"] do
+          ADHD.Config.atomic(path,JSON.encode!(marker["config"]))
+        end
+      end
+    end
+  end
+  def complete(path) do
+    file=path<>".project-upgrade"
+    if File.exists?(file) do
+      marker=ADHD.JSON.decode!(File.read!(file))
+      if marker["phase"] != "completed",do: verify_backups(marker)
+      if marker["phase"] != "completed",do: ADHD.Config.atomic(file,JSON.encode!(marker |> Map.delete("config") |> Map.put("phase","completed")))
+    end
+  end
+  def state(s) do
+    if ADHD.Projects.multi?(ADHD.Config.root()) do
+      subscriptions=Map.new(s.subscriptions,fn {id,row}->
+        v=row.value
+        v=if Map.has_key?(v,"mode") do v else
+          v |> Map.put("mode","filtered") |> Map.put("filter",v["description"]) |> Map.put("revision",1) |> Map.put("paused",false) |> Map.put("selectors",%{}) |> Map.put("activation_sequence",0)
+        end
+        {id,%{row|value: v}}
+      end)
+      result=s |> Map.put(:schema,if(s[:schema]==4,do: 4,else: 3)) |> Map.put(:subscriptions,subscriptions) |> ADHD.Eventing.upgrade()
+      Map.put_new(result,:project_migration,%{version: 1,legacy_highwater: s.seq,complete: true})
+    else s end
+  end
+end

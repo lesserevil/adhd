@@ -1,0 +1,356 @@
+defmodule ADHD.FederationV2 do
+  alias ADHD.Domain, as: D
+  alias ADHD.Directory, as: F
+  alias ADHD.Store, as: S
+  @ops ~w(submit status catalog identities source_submit source_status)
+  def peer_key(peer) do
+    peer["peer_key"] || if(peer["server_id"],do: F.digest([peer["server_id"],peer["remote_project_id"] || peer["project_id"]]),else: peer["project_id"])
+  end
+  def validate_config(c) do
+    peers=get_in(c,["federation","peers"]) || []
+    D.list(peers,16)
+    local_ids=ADHD.Projects.ids(c)
+    Enum.each(peers,fn peer->
+      if Map.has_key?(peer,"server_id") do
+        D.keys(peer,~w(server_id url token inbound_token project_pairs),~w(server_id url token inbound_token project_pairs))
+        D.identifier(peer["server_id"]);D.check(peer["server_id"] != c["server_id"])
+        D.list(peer["project_pairs"],256,1);D.distinct(peer["project_pairs"])
+        Enum.each(peer["project_pairs"],fn pair->
+          D.keys(pair,~w(local_project_id remote_project_id),~w(local_project_id remote_project_id))
+          D.identifier(pair["local_project_id"]);D.identifier(pair["remote_project_id"])
+          D.check(pair["local_project_id"] in local_ids)
+        end)
+      else
+        D.keys(peer,~w(project_id url token inbound_token),~w(project_id url token inbound_token))
+        D.identifier(peer["project_id"]);D.check(peer["project_id"] != c["project_id"])
+      end
+      D.url(peer["url"],true)
+      for key<-~w(token inbound_token) do
+        D.string(peer[key],4096);D.check(byte_size(peer[key])>=24)
+        D.check(peer[key] not in Map.values(c["agents"]) and peer[key] != c["admin_token"])
+      end
+    end)
+    D.distinct(Enum.map(peers,& &1["inbound_token"]))
+    D.distinct(Enum.map(peers,fn p->if p["server_id"],do: {2,p["server_id"]},else: {1,p["project_id"]} end))
+    :ok
+  end
+  def project_peers(c) do
+    root=ADHD.Config.root();id=c["project_id"]
+    Enum.flat_map(get_in(root,["federation","peers"]) || [],fn peer->
+      if peer["server_id"] do
+        Enum.filter(peer["project_pairs"],&(&1["local_project_id"]==id)) |> Enum.map(fn pair->
+          remote=pair["remote_project_id"]
+          peer |> Map.put("project_id",remote) |> Map.put("remote_project_id",remote) |> Map.put("local_project_id",id) |> Map.put("peer_key",F.digest([peer["server_id"],remote]))
+        end)
+      else
+        if id==root["project_id"],do: [peer],else: []
+      end
+    end)
+  end
+  def authenticate(headers,c) do
+    if is_nil(c["federation"]),do: D.fail("NOT_FOUND")
+    token=ADHD.Identity.bearer(headers)
+    Enum.find(get_in(c,["federation","peers"]) || [],fn p->is_binary(p["server_id"]) and D.same(token,p["inbound_token"]) end) || D.fail("UNAUTHORIZED")
+  end
+  def handle(req) do
+    try do
+      root=ADHD.Config.root()
+      peer=authenticate(req.headers,root)
+      content=Map.get(req.headers,"content-type","") |> String.downcase() |> String.split(";") |> hd() |> String.trim()
+      if content != "application/json",do: throw({:v2_http,415,"INVALID_PARAMS"})
+      command=ADHD.JSON.decode!(req.body)
+      validate(command)
+      if command["origin_server_id"] != peer["server_id"],do: D.fail("FORBIDDEN")
+      origin=command["origin_project_id"];destination=command["destination_project_id"]
+      if is_nil(destination) do
+        if command["op"] != "catalog",do: D.fail()
+        aggregate(peer,root,command)
+      else
+        authorize(peer,origin,destination,root)
+        {status,value}=ADHD.Projects.scope(root,destination,fn c->dispatch(peer,c,command) end)
+        value=Map.merge(value,%{"protocol_version"=>2,"server_id"=>root["server_id"],"project_id"=>destination})
+        D.check(byte_size(JSON.encode!(value))<=262144)
+        ensure_current(peer,root,command)
+        {status,[],value}
+      end
+    rescue _->{400,[],error("INVALID_PARAMS")}
+    catch
+      {:v2_http,status,code}->{status,[],error(code)}
+      {:domain,code}->{http_status(code),error_headers(code),error(code)}
+    end
+  end
+  def validate(command) do
+    base = ~w(protocol_version op origin_server_id origin_project_id destination_project_id)
+    op=command["op"];D.check(op in @ops)
+    extra=case op do
+      "submit"->~w(query_id question deadline_at)
+      "status"->~w(query_id)
+      x when x in ~w(catalog identities)->~w(cursor)
+      "source_submit"->~w(query_id scope question deadline_at owner_server_id catalog_revision)
+      "source_status"->~w(query_id scope)
+    end
+    required=base++case op do
+      "submit"->~w(query_id question deadline_at)
+      "status"->~w(query_id)
+      x when x in ~w(catalog identities)->[]
+      "source_submit"->~w(query_id scope question deadline_at owner_server_id catalog_revision)
+      "source_status"->~w(query_id scope)
+    end
+    required=if op=="catalog",do: List.delete(required,"destination_project_id"),else: required
+    D.keys(command,base++extra,required)
+    D.check(command["protocol_version"]===2)
+    D.identifier(command["origin_server_id"]);D.identifier(command["origin_project_id"])
+    D.optional(command,"destination_project_id",&D.identifier/1)
+    D.optional(command,"query_id",&D.id/1);D.optional(command,"cursor",&D.string(&1,256))
+    D.optional(command,"question",&D.string(&1,4096))
+    D.optional(command,"deadline_at",fn deadline->D.datetime(deadline,true);D.check(D.epoch(deadline)>D.ms() and D.epoch(deadline)<=D.ms()+120000) end)
+    D.optional(command,"scope",&F.scope/1)
+    D.optional(command,"owner_server_id",&D.identifier/1)
+    D.optional(command,"catalog_revision",fn value->D.string(value,64);D.check(Regex.match?(~r/^[0-9a-f]{64}$/,value)) end)
+    :ok
+  end
+  defp ensure_current(peer,root,command) do
+    now=ADHD.Config.root()
+    current=Enum.find(get_in(now,["federation","peers"]) || [],&(&1["server_id"]==peer["server_id"]))
+    if current != peer or now["config_revision"] != root["config_revision"],do: D.fail("FORBIDDEN")
+    if command["destination_project_id"],do: authorize(current,command["origin_project_id"],command["destination_project_id"],now)
+    :ok
+  end
+  defp authorize(peer,origin,destination,root) do
+    if not Enum.any?(peer["project_pairs"],&(&1["remote_project_id"]==origin and &1["local_project_id"]==destination)),do: D.fail("FORBIDDEN")
+    # Grant matching precedes lookup so a remote requester cannot enumerate projects.
+    project=Enum.find(ADHD.Projects.all(root),&(&1["id"]==destination))
+    if is_nil(project),do: D.fail("FORBIDDEN")
+    :ok
+  end
+  def job_allowed?(job,c) do
+    case job[:federation_v2] do
+      nil->true
+      binding->
+        root=ADHD.Config.root()
+        if binding["local_agent_id"] do
+          grants=ADHD.Projects.agent_ids(binding["local_agent_id"],root)
+          Map.has_key?(root["agents"],binding["local_agent_id"]) and binding["origin_server_id"]==root["server_id"] and binding["origin_project_id"] in grants and binding["destination_project_id"] in grants and c["project_id"]==binding["destination_project_id"] and c["project_status"] != "archived"
+        else
+          peer=Enum.find(get_in(root,["federation","peers"]) || [],&(&1["server_id"]==binding["origin_server_id"]))
+          peer != nil and c["project_id"]==binding["destination_project_id"] and c["project_status"] != "archived" and
+            Enum.any?(peer["project_pairs"] || [],&(&1["remote_project_id"]==binding["origin_project_id"] and &1["local_project_id"]==binding["destination_project_id"]))
+        end
+    end
+  end
+  defp bind(command,actor) do
+    binding=Map.take(command,~w(origin_server_id origin_project_id destination_project_id))
+    if actor,do: Map.put(binding,"local_agent_id",actor),else: binding
+  end
+  defp key(command,actor) do
+    key={:v2,command["origin_server_id"],command["origin_project_id"],command["destination_project_id"],command["query_id"]}
+    if actor,do: {:local,actor,key},else: key
+  end
+  defp dispatch(_peer,c,%{"op"=>op}=command) when op in ~w(catalog identities),do: directory(c,command)
+  defp dispatch(_peer,c,%{"op"=>op}=command) when op in ~w(submit status),do: query(c,command)
+  defp dispatch(_peer,c,command),do: source(c,command)
+  defp directory(c,command) do
+    kind=command["op"]
+    snapshot=F.local(c,kind)
+    snapshot=if c["project_status"]=="archived",do: %{"visible"=>false,"items"=>[],"revision"=>F.digest(%{"visible"=>false,"items"=>[]})},else: snapshot
+    revision=snapshot["revision"];identity=F.digest([command["origin_server_id"],command["origin_project_id"],c["project_id"],kind])
+    offset=cursor(command["cursor"],kind,revision,identity,64)
+    rows=snapshot["items"];D.check(offset==0 or offset<length(rows))
+    next=offset+64
+    cursor=if next<length(rows),do: encode_cursor(kind,revision,identity,next),else: nil
+    {200,%{"revision"=>revision,"generated_at"=>D.now(),"max_age_ms"=>10000,"visible"=>snapshot["visible"],"items"=>Enum.slice(rows,offset,64),"next_cursor"=>cursor}}
+  end
+  defp cursor(nil,_,_,_,_),do: 0
+  defp cursor(value,kind,revision,identity,step) do
+    case Base.url_decode64(value,padding: false) do
+      {:ok,decoded}->
+        case String.split(decoded,":") do
+          [^kind,^revision,^identity,n]->
+            case Integer.parse(n) do {offset,""} when offset>0 and rem(offset,step)==0->offset;_->D.fail() end
+          [^kind,_,^identity,_]->D.fail("SNAPSHOT_CHANGED")
+          _->D.fail()
+        end
+      _->D.fail()
+    end
+  end
+  defp encode_cursor(kind,revision,identity,next),do: Base.url_encode64(Enum.join([kind,revision,identity,Integer.to_string(next)],":"),padding: false)
+  defp aggregate(peer,root,command) do
+    origin=command["origin_project_id"]
+    allowed=Enum.filter(peer["project_pairs"],&(&1["remote_project_id"]==origin)) |> Enum.map(& &1["local_project_id"]) |> Enum.uniq()
+    if allowed==[],do: D.fail("FORBIDDEN")
+    projects=Enum.filter(ADHD.Projects.all(root),&(&1["id"] in allowed))
+    snapshots=Enum.map(projects,fn project->
+      c=ADHD.Projects.view(root,project["id"])
+      snapshot=F.local(c,"catalog")
+      snapshot=if project["status"]=="archived",do: %{"visible"=>false,"items"=>[],"revision"=>F.digest(%{"visible"=>false,"items"=>[]})},else: snapshot
+      {project["id"],snapshot}
+    end)
+    revision=F.digest(Enum.map(snapshots,fn {id,snapshot}->%{"project_id"=>id,"revision"=>snapshot["revision"]} end))
+    identity=F.digest([peer["server_id"],origin,root["server_id"]])
+    offset=cursor(command["cursor"],"server_catalog",revision,identity,1)
+    D.check(offset==0 or offset<length(snapshots))
+    now=D.now();expires=D.at(D.ms()+10000)
+    page=Enum.slice(snapshots,offset,1) |> Enum.map(fn {id,snapshot}->%{"project_id"=>id,"revision"=>snapshot["revision"],"generated_at"=>now,"expires_at"=>expires,"visible"=>snapshot["visible"],"entries"=>snapshot["items"]} end)
+    next=if offset+1<length(snapshots),do: encode_cursor("server_catalog",revision,identity,offset+1),else: nil
+    result=%{"protocol_version"=>2,"server_id"=>root["server_id"],"revision"=>revision,"generated_at"=>now,"max_age_ms"=>10000,"projects"=>page,"next_cursor"=>next}
+    D.check(byte_size(JSON.encode!(result))<=262144)
+    ensure_current(peer,root,command)
+    {200,[],result}
+  end
+  defp export_evidence(s,c,ids,description) do
+    pubs=Enum.reduce_while(ids,[],fn id,acc->
+      case s.publications[id] do
+        nil->{:cont,acc}
+        row->
+          next=acc++[row.value]
+          if byte_size(JSON.encode!(%{"description"=>description,"publications"=>next}))<=65536,do: {:cont,next},else: {:halt,acc}
+      end
+    end)
+    %{"project_id"=>c["project_id"],"description"=>description,"publications"=>pubs}
+  end
+  defp query(c,command) do
+    if command["op"]=="submit" do
+      if c["project_status"]=="archived",do: D.fail("PROJECT_ARCHIVED")
+      if is_nil(c["matcher"]),do: D.fail("MODEL_UNAVAILABLE")
+    end
+    local_actor=Process.get(:adhd_fed_local_actor)
+    S.call(fn s->
+      now=ADHD.Config.get();current=key(command,local_actor);existing=s.incoming[current]
+      cond do
+        command["op"]=="status" and existing==nil->D.fail("NOT_FOUND")
+        existing != nil->
+          if command["op"]=="submit" and existing.command != command,do: D.fail("IDEMPOTENCY_CONFLICT")
+          if not job_allowed?(existing,now) or not ADHD.Workers.evidence_allowed?(existing,now),do: D.fail("FORBIDDEN")
+          job=if existing.status=="pending" and D.epoch(existing.deadline)<=D.ms(),do: %{existing|status: "expired"},else: existing
+          result=%{"query_id"=>command["query_id"],"status"=>job.status}
+          result=if job.status=="completed",do: Map.put(result,"response",job.response),else: result
+          {{if(command["op"]=="submit",do: 202,else: 200),result},put_in(s,[:incoming,current],job)}
+        true->
+          if ADHD.SourceQueries.incoming_count(s)>=64,do: D.fail("RESOURCE_EXHAUSTED")
+          f=now["federation"] || D.fail("FEDERATION_DISABLED")
+          evidence=export_evidence(s,now,f["export_publication_ids"] || [],f["description"])
+          job=%{command: command,status: "pending",deadline: command["deadline_at"],evidence: evidence,retry_at: 0,response: nil,federation_v2: bind(command,local_actor)}
+          if not job_allowed?(job,now),do: D.fail("FORBIDDEN")
+          {{202,%{"query_id"=>command["query_id"],"status"=>"pending"}},put_in(s,[:incoming,current],job)}
+      end
+    end) |> S.unwrap()
+  end
+  defp source(c,command) do
+    if command["op"]=="source_submit" do
+      if c["project_status"]=="archived",do: D.fail("PROJECT_ARCHIVED")
+      if is_nil(c["matcher"]),do: D.fail("MODEL_UNAVAILABLE")
+    end
+    local_actor=Process.get(:adhd_fed_local_actor)
+    S.call(fn s->
+      now=ADHD.Config.get();current={key(command,local_actor),F.digest(command["scope"])}
+      s=adopt_legacy_local(s,current,command,local_actor)
+      existing=s.source_incoming[current]
+      cond do
+        command["op"]=="source_status" and existing==nil->D.fail("NOT_FOUND")
+        existing != nil->
+          if command["op"]=="source_submit" and existing.command != command,do: D.fail("IDEMPOTENCY_CONFLICT")
+          if not job_allowed?(existing,now),do: D.fail("FORBIDDEN")
+          job=ADHD.SourceQueries.check_incoming(existing,now)
+          result=%{"query_id"=>command["query_id"],"scope"=>command["scope"],"status"=>job.status}
+          result=if job.status=="completed",do: Map.put(result,"response",job.response),else: result
+          {{if(command["op"]=="source_submit",do: 202,else: 200),result},put_in(s,[:source_incoming,current],job)}
+        true->
+          claim=Enum.find(F.catalog(now)["entries"],&(&1["canonical"]==true and &1["scope"]==command["scope"]))
+          if command["owner_server_id"] != s.server_id or command["catalog_revision"] != F.local(now,"catalog")["revision"] or is_nil(claim) or F.local_conflict?(command["scope"]),do: D.fail("OWNERSHIP_CHANGED")
+          if ADHD.SourceQueries.incoming_count(s)>=64,do: D.fail("RESOURCE_EXHAUSTED")
+          evidence=export_evidence(s,now,claim["export_publication_ids"] || [],claim["description"])
+          job=%{command: command,status: "pending",response: nil,retry_at: 0,evidence: evidence,federation_v2: bind(command,local_actor)}
+          if not job_allowed?(job,now),do: D.fail("FORBIDDEN")
+          {{202,%{"query_id"=>command["query_id"],"scope"=>command["scope"],"status"=>"pending"}},put_in(s,[:source_incoming,current],job)}
+      end
+    end) |> S.unwrap()
+  end
+  defp adopt_legacy_local(s,current,command,actor) do
+    old_key={s.server_id,command["query_id"],F.digest(command["scope"])}
+    old=s.source_incoming[old_key]
+    owner=case s.source_queries[command["query_id"]] do nil->nil;row->row.value["owner_id"] end
+    if actor && actor==owner && old && is_nil(s.source_incoming[current]) && command["op"]=="source_submit" do
+      original=old.command
+      compatible=original["origin_server_id"]==s.server_id and original["origin_project_id"] in s.aliases and command["destination_project_id"]==s.project and
+        Map.drop(original,~w(protocol_version destination_project_id origin_project_id))==Map.drop(command,~w(protocol_version destination_project_id origin_project_id))
+      if compatible do
+        # Preserve accepted retry/deadline/result work instead of scheduling a
+        # second decision solely because the local dispatch key became scoped.
+        job=old |> Map.put(:command,command) |> Map.put(:federation_v2,bind(command,actor))
+        %{s|source_incoming: s.source_incoming |> Map.delete(old_key) |> Map.put(current,job)}
+      else s end
+    else s end
+  end
+  # This wrapper preserves existing strict legacy response validators. It strips
+  # only the v2 envelope after independently checking authenticated server/project.
+  def request(peer,c,command,legacy_path,timeout) do
+    if peer["server_id"] do
+      root=ADHD.Config.root()
+      destination=peer["remote_project_id"] || peer["project_id"]
+      body=command |> Map.put("protocol_version",2) |> Map.put("origin_server_id",root["server_id"]) |> Map.put("origin_project_id",peer["local_project_id"] || c["project_id"]) |> Map.put("destination_project_id",destination)
+      {status,value}=ADHD.Net.request(:post,String.trim_trailing(peer["url"],"/")<>"/federation/v2",JSON.encode!(body),[{"authorization","Bearer "<>peer["token"]}],timeout)
+      D.object(value);D.check(value["protocol_version"]===2)
+      if status in 200..299 do
+        D.check(value["server_id"]==peer["server_id"] and value["project_id"]==destination)
+      else
+        D.keys(value,~w(protocol_version error),~w(protocol_version error))
+        D.keys(value["error"],~w(code message),~w(code message));D.string(value["error"]["code"],128);D.string(value["error"]["message"],256)
+      end
+      value=Map.delete(value,"protocol_version")
+      value=if command["op"] in ~w(submit status source_submit source_status),do: Map.drop(value,~w(server_id project_id)),else: value
+      value=if Map.has_key?(command,"protocol_version"),do: Map.put(value,"protocol_version",1),else: value
+      {status,value}
+    else
+      ADHD.Net.request(:post,String.trim_trailing(peer["url"],"/")<>legacy_path,JSON.encode!(command),[{"authorization","Bearer "<>peer["token"]}],timeout)
+    end
+  end
+  def local_catalogs(c,allowed_project_ids \\ nil) do
+    root=ADHD.Config.root()
+    allowed_project_ids=allowed_project_ids || [c["project_id"]]
+    Enum.flat_map(ADHD.Projects.all(root),fn p->
+      if p["id"] in allowed_project_ids and p["status"]=="active" do
+        view=ADHD.Projects.view(root,p["id"])
+        catalog=F.local(view,"catalog")
+        if catalog["visible"],do: [Map.merge(catalog,%{"server_id"=>root["server_id"],"project_id"=>p["id"],"expires_ms"=>D.ms()+10000})],else: []
+      else [] end
+    end)
+  end
+  def local_request(actor,destination,c,command) do
+    root=ADHD.Config.root();grants=ADHD.Projects.agent_ids(actor,root)
+    if not Map.has_key?(root["agents"],actor) or c["project_id"] not in grants or destination not in grants,do: D.fail("PROJECT_NOT_FOUND")
+    body=command |> Map.put("protocol_version",2) |> Map.put("origin_server_id",root["server_id"]) |> Map.put("origin_project_id",c["project_id"]) |> Map.put("destination_project_id",destination)
+    validate(body)
+    if not ADHD.Scope.current?(),do: D.fail("RECOVERY_REQUIRED")
+    {result,captured}=ADHD.Projects.scope(root,destination,fn view->
+      # The nested Store checks inherited origin dependencies before committing.
+      result=local_command(view,body,actor)
+      {result,ADHD.Scope.epoch()}
+    end)
+    ADHD.Scope.depend(destination,captured)
+    if not ADHD.Scope.current?(),do: D.fail("RECOVERY_REQUIRED")
+    result
+  end
+  defp local_command(c,command,actor) do
+    previous=Process.get(:adhd_fed_local_actor)
+    Process.put(:adhd_fed_local_actor,actor)
+    try do dispatch(nil,c,command) after
+      if is_nil(previous),do: Process.delete(:adhd_fed_local_actor),else: Process.put(:adhd_fed_local_actor,previous)
+    end
+  end
+  def error(code),do: %{"protocol_version"=>2,"error"=>%{"code"=>code,"message"=>"Federation request rejected"}}
+  defp error_headers("UNAUTHORIZED"),do: [{"www-authenticate","Bearer"}]
+  defp error_headers(code) when code in ~w(RECOVERY_REQUIRED CONFIG_APPLY_IN_PROGRESS),do: [{"retry-after","1"}]
+  defp error_headers(_),do: []
+  defp http_status(code) do
+    cond do
+      code=="INTERNAL"->500
+      code=="UNAUTHORIZED"->401
+      code in ~w(FORBIDDEN PROJECT_ARCHIVED)->403
+      code=="NOT_FOUND"->404
+      code in ~w(IDEMPOTENCY_CONFLICT SNAPSHOT_CHANGED OWNERSHIP_CHANGED IDENTITY_CONFLICT)->409
+      code=="RESOURCE_EXHAUSTED"->429
+      code in ~w(MODEL_UNAVAILABLE DEPENDENCY_UNAVAILABLE FEDERATION_DISABLED RECOVERY_REQUIRED CONFIG_APPLY_IN_PROGRESS MODEL_BUSY NETWORK_BUSY EVENTING_BUSY CONFIG_CHANGED)->503
+      true->400
+    end
+  end
+end

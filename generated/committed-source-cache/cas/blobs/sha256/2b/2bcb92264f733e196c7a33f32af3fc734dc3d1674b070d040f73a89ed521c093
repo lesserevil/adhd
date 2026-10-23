@@ -1,0 +1,220 @@
+defmodule ADHD.RetrievalIndex do
+  alias ADHD.Domain,as: D
+  alias ADHD.Records,as: R
+  alias ADHD.Retrieval,as: X
+  alias ADHD.Directory,as: F
+  def empty,do: %{"active"=>nil,"previous"=>nil,"building"=>nil,"error"=>nil,"failed_limits"=>nil,"requested_rebuild"=>nil}
+  def error(code),do: %{"code"=>code,"message"=>case code do
+    "RESOURCE_LIMIT"->"The derived index exceeds its configured resource bound."
+    "INVALID_DERIVED_STATE"->"Derived index state is unavailable and will rebuild from originals."
+    "RECIPE_CHANGED"->"The requested index recipe changed."
+    _->"An interrupted index build will resume from its committed checkpoint."
+  end,"retryable"=>true}
+  defp limits(c),do: F.digest(%{"plan"=>plan(c),"max_index_bytes"=>X.effective(c)["max_index_bytes"]})
+  def plan(c),do: F.digest(%{"recipe_identity"=>X.recipe_identity(X.effective(c)["recipe"]),"max_records"=>X.effective(c)["max_records"]})
+  def manifest(nil),do: nil
+  def manifest(gen),do: gen["manifest"]
+  def read(s,c) do
+    c=X.resolve(c,s)
+    idx=s.retrieval_index;v=X.effective(c);active=manifest(idx["active"]);building=manifest(idx["building"]);mark=R.watermark(s);desired=X.recipe_identity(v["recipe"])
+    status=cond do
+      not v["enabled"]->"disabled"
+      idx["requested_rebuild"] != nil or (building != nil and building["status"]=="building")->"building"
+      active==nil->if(idx["error"],do: "failed",else: "missing")
+      idx["active"]["plan_identity"] != plan(c) or active["recipe_identity"] != desired or active["source_watermark"]<mark->"stale"
+      active["status"]=="partial"->"partial"
+      true->"ready"
+    end
+    %{"selection"=>ADHD.Selection.view(s,c),"enabled"=>v["enabled"],"status"=>status,"desired_recipe_identity"=>desired,"publication_watermark"=>mark,
+      "rebuild_requested"=>idx["requested_rebuild"] != nil,"active"=>active,"previous"=>manifest(idx["previous"]),"building"=>building,"error"=>idx["error"]}
+  end
+  defp originals(s,mark),do: s.publications |> Enum.filter(fn {_,row}->row.seq<=mark end) |> Enum.sort_by(fn {id,row}->{row.seq,id} end) |> Enum.map(&elem(&1,0))
+  defp affected(s,new_ids,depth,mark) do
+    if depth==0,do: MapSet.new(new_ids),else: affected_graph(s,new_ids,depth,mark)
+  end
+  defp affected_graph(s,new_ids,depth,mark) do
+    ids=originals(s,mark)
+    {links,groups,own}=Enum.reduce(ids,{%{},%{},%{}},fn id,{links,groups,own}->
+      envelope=s.contexts[id] || %{"context"=>nil,"links"=>[]};context=envelope["context"] || %{}
+      links=Enum.reduce(envelope["links"],links,fn link,acc->
+        target=link["publication_id"]
+        if link["target_identity"] && Map.has_key?(s.publications,target) && s.publications[target].seq<=mark do
+          acc |> Map.update(id,MapSet.new([target]),&MapSet.put(&1,target)) |> Map.update(target,MapSet.new([id]),&MapSet.put(&1,id))
+        else acc end
+      end)
+      keys=for key<-~w(subject conversation task),is_binary(context[key]),do: {key,context[key]}
+      groups=Enum.reduce(keys,groups,fn key,acc->Map.update(acc,key,MapSet.new([id]),&MapSet.put(&1,id)) end)
+      {links,groups,Map.put(own,id,keys)}
+    end)
+    {seen,_,_}=Enum.reduce(1..depth,{MapSet.new(new_ids),MapSet.new(new_ids),MapSet.new()},fn _,{seen,frontier,expanded}->
+      {neighbors,expanded}=Enum.reduce(frontier,{MapSet.new(),expanded},fn id,{neighbors,expanded}->
+        neighbors=MapSet.union(neighbors,Map.get(links,id,MapSet.new()))
+        Enum.reduce(Map.get(own,id,[]),{neighbors,expanded},fn key,{n,done}->
+          if MapSet.member?(done,key),do: {n,done},else: {MapSet.union(n,Map.get(groups,key,MapSet.new())),MapSet.put(done,key)}
+        end)
+      end)
+      next=MapSet.difference(neighbors,seen)
+      {MapSet.union(seen,next),next,expanded}
+    end)
+    seen
+  end
+  def refresh_manifest(s,gen) do
+    rows=gen["rows"];ids=gen["target_ids"];m=gen["manifest"]
+    ordered=Enum.flat_map(ids,fn id->if rows[id],do: [rows[id]],else: [] end)
+    indexed=Enum.count(ordered,& &1["complete"])
+    # Find the highest contiguous complete prefix, retaining its last sequence.
+    {through,_}=Enum.reduce_while(ids,{0,true},fn id,{last,_}->if rows[id] && rows[id]["complete"],do: {:cont,{s.publications[id].seq,true}},else: {:halt,{last,false}} end)
+    gaps=Enum.flat_map(ordered,& &1["gaps"]) |> Enum.uniq()
+    source_manifest=Enum.map(ordered,fn row->%{"publication_id"=>row["publication_id"],"identity"=>row["identity"],"context_identity"=>row["context_identity"],"input_identity"=>row["input_identity"],"fragment_sha256s"=>Enum.map(row["fragments"],& &1["sha256"])} end)
+    manifest=Map.merge(m,%{"watermark"=>through,"indexed"=>indexed,"excluded"=>m["total"]-indexed,"fragments"=>Enum.sum(Enum.map(ordered,&length(&1["fragments"]))),
+      "bytes"=>byte_size(ADHD.Storage.bytes(rows)),"source_manifest_identity"=>F.digest(source_manifest),"context_gaps"=>Enum.take(gaps,128),
+      "truncated"=>length(gaps)>128 or Enum.any?(ordered,& &1["truncated"]),"updated_at"=>D.now(),"build_processed"=>gen["done"],"build_total"=>gen["done"]+length(gen["pending_ids"])})
+    Map.put(gen,"manifest",manifest)
+  end
+  def begin_build(s,c,force \\ false) do
+    c=X.resolve(c,s)
+    v=X.effective(c);idx=s.retrieval_index;old=idx["active"];mark=R.watermark(s);all=originals(s,mark);target=Enum.take(all,v["max_records"])
+    reuse=not force and old != nil and old["plan_identity"]==plan(c)
+    rows=if reuse,do: Map.take(old["rows"],target),else: %{}
+    delta=if reuse,do: Enum.filter(all,&(s.publications[&1].seq>old["manifest"]["source_watermark"])),else: target
+    impacted=if reuse and v["recipe"]["include_context"],do: affected(s,delta,v["recipe"]["context_depth"],mark),else: MapSet.new(delta)
+    pending=Enum.filter(target,fn id->not Map.has_key?(rows,id) or MapSet.member?(impacted,id) end)
+    now=D.now()
+    {id,s}=ADHD.Allocator.allocate(s,"index")
+    m=%{"id"=>id,"adapter_version"=>X.adapter(),"runtime"=>X.normalization(),"recipe"=>v["recipe"],"recipe_identity"=>X.recipe_identity(v["recipe"]),"server_id"=>s.server_id,
+      "watermark"=>0,"source_watermark"=>mark,"total"=>length(all),"indexed"=>0,"excluded"=>length(all),"fragments"=>0,"bytes"=>0,"source_manifest_identity"=>F.digest([]),"context_gaps"=>[],"truncated"=>false,
+      "created_at"=>now,"updated_at"=>now,"status"=>"building","error"=>nil,"build_processed"=>0,"build_total"=>length(pending)}
+    gen=%{"manifest"=>m,"rows"=>rows,"target_ids"=>target,"pending_ids"=>pending,"done"=>0,"plan_identity"=>plan(c)} |> then(&refresh_manifest(s,&1))
+    %{s|retrieval_index: Map.merge(idx,%{"building"=>gen,"error"=>nil,"failed_limits"=>nil,"requested_rebuild"=>nil})}
+  end
+  defp bounded(s,c,prior) do
+    if ADHD.OptimizationWorker.native_capacity?(s,c) do s else
+      idx=Map.put(prior.retrieval_index,"requested_rebuild",nil)
+      building=if idx["building"],do: put_in(idx["building"],["manifest","status"],"failed") |> put_in(["manifest","error"],error("RESOURCE_LIMIT")),else: nil
+      %{prior|retrieval_index: Map.merge(idx,%{"building"=>building,"error"=>error("RESOURCE_LIMIT"),"failed_limits"=>limits(c)})}
+    end
+  end
+  def rebuild(s,c) do
+    if not X.effective(c)["enabled"],do: D.fail("UNAVAILABLE")
+    {id,s}=ADHD.Allocator.allocate(s,"rebuild")
+    next=%{s|retrieval_index: Map.merge(s.retrieval_index,%{"requested_rebuild"=>id,"building"=>nil,"error"=>nil,"failed_limits"=>nil})}
+    {%{"index"=>read(next,c)},next}
+  end
+  def extend(s,c,gen) do
+    mark=R.watermark(s);v=X.effective(c);all=originals(s,mark);target=Enum.take(all,v["max_records"])
+    delta=Enum.filter(all,&(s.publications[&1].seq>gen["manifest"]["source_watermark"]))
+    impacted=if v["recipe"]["include_context"],do: affected(s,delta,v["recipe"]["context_depth"],mark),else: MapSet.new(delta)
+    pending=Enum.filter(target,fn id->not Map.has_key?(gen["rows"],id) or MapSet.member?(impacted,id) end)
+    gen |> Map.put("pending_ids",pending) |> Map.put("target_ids",target) |> Map.update!("rows",&Map.take(&1,target))
+      |> put_in(["manifest","source_watermark"],mark) |> put_in(["manifest","total"],length(all)) |> then(&refresh_manifest(s,&1))
+  end
+  defp commit(s,c,prepared) do
+    ADHD.Store.call(fn current->
+      now=X.resolve(ADHD.Config.get(),current)
+      if current[:project_epoch]==s[:project_epoch] and current[:allocation_counter]==s[:allocation_counter] and current.retrieval_index==s.retrieval_index and limits(now)==limits(c) and X.effective(now)["enabled"] and now["project_status"] != "archived",
+        do: {:ok,%{current|retrieval_index: prepared.retrieval_index,allocation_counter: prepared.allocation_counter}},else: {:ok,current}
+    end) |> ADHD.Store.unwrap()
+    true
+  end
+  def step do
+    c=ADHD.Config.get();v=X.effective(c)
+    if c["project_status"]=="archived" or not v["enabled"] do false else
+      s=ADHD.Store.snapshot() |> ADHD.Store.unwrap();c=X.resolve(c,s);v=X.effective(c);idx=s.retrieval_index;gen=idx["building"];active=idx["active"]
+      cond do
+        idx["failed_limits"]==limits(c)->false
+        idx["requested_rebuild"] != nil or gen==nil or gen["plan_identity"] != plan(c)->
+          needs=idx["requested_rebuild"] != nil or gen != nil or active==nil or active["plan_identity"] != plan(c) or active["manifest"]["source_watermark"]<R.watermark(s)
+          if needs do
+            prepared=begin_build(s,c,idx["requested_rebuild"] != nil) |> bounded(c,s)
+            commit(s,c,prepared)
+          else false end
+        gen["pending_ids"]==[] and gen["manifest"]["source_watermark"]<R.watermark(s)->
+          prepared=put_in(s,[:retrieval_index,"building"],extend(s,c,gen)) |> bounded(c,s)
+          commit(s,c,prepared)
+        true->
+          todo=Enum.take(gen["pending_ids"],v["build_batch"])
+          rows=Map.new(todo,fn id->{id,X.make_row(s,c,id,gen["manifest"]["recipe"],gen["manifest"]["source_watermark"])} end)
+          next=gen |> put_in(["manifest","status"],"building") |> put_in(["manifest","error"],nil) |> Map.update!("rows",&Map.merge(&1,rows)) |> Map.put("pending_ids",Enum.drop(gen["pending_ids"],length(todo))) |> Map.update!("done",&(&1+length(todo))) |> then(&refresh_manifest(s,&1))
+          staged=%{s|retrieval_index: Map.merge(idx,%{"building"=>next,"error"=>nil,"failed_limits"=>nil})} |> bounded(c,s)
+          if next["pending_ids"]==[] do
+            ready=put_in(next,["manifest","status"],if(next["manifest"]["excluded"]==0,do: "ready",else: "partial"))
+            activated=%{s|retrieval_index: Map.merge(idx,%{"active"=>ready,"previous"=>if(ADHD.Selection.protected_previous?(s,c),do: idx["previous"],else: active),"building"=>nil,"error"=>nil,"failed_limits"=>nil})} |> bounded(c,s)
+            ADHD.Store.call(fn current->
+              now=X.resolve(ADHD.Config.get(),current)
+              if current[:project_epoch]==s[:project_epoch] and current.retrieval_index==idx and limits(now)==limits(c) and X.effective(now)["enabled"] and now["project_status"] != "archived" do
+                prepared=if R.watermark(current)==next["manifest"]["source_watermark"],do: activated,else: staged
+                {:ok,%{current|retrieval_index: prepared.retrieval_index}}
+              else {:ok,current} end
+            end) |> ADHD.Store.unwrap();true
+          else commit(s,c,staged) end
+      end
+    end
+  end
+  def start,do: ADHD.Scope.spawn(fn->loop() end)
+  defp failed_build do
+    try do
+      ADHD.Store.call(fn current->
+        c=X.resolve(ADHD.Config.get(),current);idx=current.retrieval_index;e=error("BUILD_INTERRUPTED")
+        gen=if idx["building"],do: idx["building"] |> put_in(["manifest","status"],"failed") |> put_in(["manifest","error"],e),else: nil
+        {:ok,%{current|retrieval_index: Map.merge(idx,%{"building"=>gen,"requested_rebuild"=>nil,"error"=>e,"failed_limits"=>limits(c)})}}
+      end) |> ADHD.Store.unwrap()
+    rescue _->:unavailable catch _,_->:unavailable end
+    false
+  end
+  defp loop do
+    ADHD.Scope.begin_work()
+    worked=try do step() rescue _->failed_build() catch _,_->failed_build() end
+    Process.sleep(if worked,do: 1,else: 100);loop()
+  end
+  def materialize(s,c,primary,mark,recipe,deadline \\ nil) do
+    desired=X.recipe_identity(recipe)
+    gen=Enum.find([s.retrieval_index["active"],s.retrieval_index["previous"]],fn g->g != nil and g["manifest"]["recipe_identity"]==desired and g["manifest"]["source_watermark"]>=mark end)
+    cond do
+      gen==nil->{:error,if(s.retrieval_index["active"],do: "INDEX_STALE",else: "INDEX_NOT_READY")}
+      not Enum.all?(primary,fn id->gen["rows"][id] && gen["rows"][id]["complete"] end)->{:error,"INDEX_STALE"}
+      true->
+        reconstructed=gen["manifest"]["source_watermark"] != mark
+        rows=Enum.map(primary,fn id->X.check_deadline(deadline);if reconstructed,do: X.make_row(s,c,id,recipe,mark),else: gen["rows"][id] end)
+        {:ok,gen["manifest"],rows,reconstructed,if(reconstructed,do: "reconstructed",else: if(s.retrieval_index["active"] && gen["manifest"]["id"]==s.retrieval_index["active"]["manifest"]["id"],do: "active",else: "previous"))}
+    end
+  end
+  def upgrade(s) do
+    try do
+      idx=s.retrieval_index;D.keys(idx,~w(active previous building error failed_limits requested_rebuild),~w(active previous building error failed_limits requested_rebuild))
+      for gen<-[idx["active"],idx["previous"],idx["building"]],gen != nil do
+        D.keys(gen,~w(manifest rows target_ids pending_ids done plan_identity),~w(manifest rows target_ids pending_ids done plan_identity));D.object(gen["rows"])
+        m=gen["manifest"];D.check(m["server_id"]==s.server_id and m["source_watermark"]<=R.watermark(s));X.validate_recipe(m["recipe"])
+        D.check(m["adapter_version"]==X.adapter() and m["recipe_identity"]==F.digest(%{"adapter_version"=>m["adapter_version"],"runtime"=>m["runtime"],"recipe"=>m["recipe"]}))
+        D.check(gen["done"]>=0 and is_list(gen["pending_ids"]) and is_list(gen["target_ids"]));D.distinct(gen["target_ids"]);D.distinct(gen["pending_ids"])
+        for {id,row}<-gen["rows"] do
+          D.check(id==row["publication_id"] and Map.has_key?(s.publications,id) and row["identity"]==R.identity(s,id))
+          D.check(row["seq"]==s.publications[id].seq and row["context_watermark"]<=m["source_watermark"])
+          D.keys(row,~w(publication_id identity context_identity seq input_identity context_watermark context_ids fragments terms length gaps truncated complete),~w(publication_id identity context_identity seq input_identity context_watermark context_ids fragments terms length gaps truncated complete))
+          D.check(row["context_identity"]==R.record(s,%{},id)["context_identity"]);D.boolean(row["truncated"]);D.boolean(row["complete"])
+          D.object(row["terms"]);D.list(row["fragments"],256);D.list(row["context_ids"],64);D.distinct(row["context_ids"])
+          D.check(List.first(row["context_ids"])==id)
+          records=Enum.map(row["context_ids"],fn origin->
+            D.check(Map.has_key?(s.publications,origin) and s.publications[origin].seq<=row["context_watermark"])
+            R.record(s,%{},origin)
+          end)
+          for fragment<-row["fragments"] do
+            D.keys(fragment,~w(origin_publication_id origin_identity origin_context_identity field start end text sha256),~w(origin_publication_id origin_identity origin_context_identity field start end text sha256))
+            D.integer(fragment["start"],0,9_007_199_254_740_991);D.integer(fragment["end"],fragment["start"],9_007_199_254_740_991)
+            D.check(fragment["sha256"]==X.hash(fragment["text"]) and fragment["end"]-fragment["start"]==byte_size(fragment["text"]))
+            record=Enum.find(records,&(&1["publication"]["id"]==fragment["origin_publication_id"]));D.check(record != nil)
+            D.check(fragment["origin_identity"]==record["identity"] and fragment["origin_context_identity"]==record["context_identity"])
+            D.check(Enum.any?(X.fields(record,m["recipe"]["include_context"]),fn {field,text}->
+              field==fragment["field"] and fragment["end"]<=byte_size(text) and binary_part(text,fragment["start"],fragment["end"]-fragment["start"])==fragment["text"]
+            end))
+          end
+          input=%{"records"=>Enum.map(records,&Map.take(&1,~w(identity context_identity))),"fragments"=>Enum.map(row["fragments"],& &1["sha256"])}
+          D.check(row["input_identity"]==F.digest(input))
+          D.check(row["terms"]== (row["fragments"] |> Enum.flat_map(&X.tokens(&1["text"],m["recipe"])) |> Enum.frequencies()))
+          D.check(row["length"]==Enum.sum(Map.values(row["terms"])))
+        end
+      end
+      s
+    rescue _->%{s|retrieval_index: Map.put(empty(),"error",error("INVALID_DERIVED_STATE"))}
+    catch _,_->%{s|retrieval_index: Map.put(empty(),"error",error("INVALID_DERIVED_STATE"))} end
+  end
+end

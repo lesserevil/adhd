@@ -1,0 +1,280 @@
+defmodule ADHD.Resources do
+  use GenServer
+  alias ADHD.Domain, as: D
+  @gate :adhd_resource_ingress
+  @counters :adhd_resource_ingress_counts
+  @kinds [:model, :network, :eventing]
+  @defaults %{"model_concurrency"=>4,"project_model_concurrency"=>1,"network_concurrency"=>16,"project_network_concurrency"=>4,"eventing_concurrency"=>16,"project_eventing_concurrency"=>1,"max_waiters"=>1024}
+
+  def defaults, do: @defaults
+  def normalize(c) do
+    supplied=Map.get(c,"resources",%{})
+    D.keys(supplied,Map.keys(@defaults))
+    limits=Map.merge(@defaults,supplied)
+    Enum.each(limits,fn {key,value}->D.integer(value,if(key=="max_waiters",do: 0,else: 1),if(key=="max_waiters",do: 4096,else: 256)) end)
+    Map.put(c,"resources",limits)
+  end
+  def start do
+    case GenServer.start(__MODULE__,nil,name: __MODULE__) do
+      {:ok,_}->:ok
+      {:error,{:already_started,_}}->:ok
+      other->other
+    end
+  end
+  def run(kind,timeout,fun) when kind in @kinds and is_integer(timeout) and timeout>0 and is_function(fun,1) do
+    if not ADHD.Scope.current?(),do: D.fail("RECOVERY_REQUIRED")
+    case Process.whereis(__MODULE__) do
+      nil->if(:persistent_term.get({__MODULE__,:required},false),do: D.fail(busy(kind)),else: fun.(timeout))
+      _->
+        deadline=now()+timeout
+        root=ADHD.Config.root()
+        project=ADHD.Scope.id() || "$server"
+        epoch=ADHD.Scope.epoch() || if(project=="$server",do: nil,else: ADHD.StorageRegistry.epoch(project))
+        if project != "$server",do: ADHD.Scope.put_epoch(epoch)
+        ticket=make_ref()
+        slot=ingress(kind,ticket,deadline,limits(root))
+        try do
+          result=try do
+            GenServer.call(__MODULE__,{:acquire,kind,project,ticket,slot,deadline,Map.get(root,"config_revision",0),epoch,ADHD.Scope.fences()},max(1,deadline-now())+50)
+          catch
+            :exit,_ -> GenServer.cast(__MODULE__,{:cancel,ticket}); {:error,busy(kind)}
+          end
+          case result do
+            :granted->
+              left=deadline-now()
+              if left<=0,do: D.fail(busy(kind))
+              previous=Process.put(:adhd_resource_ticket,{kind,ticket,deadline})
+              try do
+                if not ADHD.Scope.current?(),do: D.fail("RECOVERY_REQUIRED")
+                result=fun.(left)
+                if not ADHD.Scope.current?(),do: D.fail("RECOVERY_REQUIRED")
+                result
+              after Process.put(:adhd_resource_ticket,previous) end
+            {:error,code}->D.fail(code)
+          end
+        after
+          try do GenServer.call(__MODULE__,{:release,ticket},1000) catch :exit,_->:ok end
+          drop_gate(slot,ticket)
+        end
+    end
+  end
+  def run(_,_,_),do: D.fail()
+  def track_http(id) when is_reference(id) do
+    case Process.get(:adhd_resource_ticket) do
+      {kind,ticket,deadline}->
+        result=try do
+          if deadline<=now(),do: :error,else: GenServer.call(__MODULE__,{:track_http,ticket,self(),id},max(1,min(1000,deadline-now())))
+        catch :exit,_->:error end
+        if result != :ok do
+          cancel_http(id)
+          D.fail(busy(kind))
+        end
+        :ok
+      nil->
+        if :persistent_term.get({__MODULE__,:required},false) do
+          cancel_http(id)
+          D.fail("NETWORK_BUSY")
+        end
+        :ok
+    end
+  end
+  def track_http(_),do: D.fail()
+  defp cancel_http(nil),do: :ok
+  defp cancel_http(id) do
+    try do :httpc.cancel_request(id) rescue _->:ok catch _,_->:ok end
+    :ok
+  end
+  def stats do
+    case Process.whereis(__MODULE__) do
+      nil->%{"started"=>false,"limits"=>limits(ADHD.Config.root())}
+      _->GenServer.call(__MODULE__,:stats,1000)
+    end
+  end
+  def refresh do
+    case Process.whereis(__MODULE__) do nil->:ok; _->GenServer.call(__MODULE__,:refresh,1000) end
+  end
+  def format_status(_reason,[_dictionary,_state]),do: [data: [{~c"State",:redacted}]]
+  def format_status(status),do: status |> Map.put(:state,:redacted) |> Map.put(:message,:redacted) |> Map.put(:reason,:redacted) |> Map.put(:log,[])
+  defp now,do: System.monotonic_time(:millisecond)
+  defp limits(root),do: Map.merge(@defaults,Map.get(root,"resources",%{}))
+  defp global(limits,kind),do: limits[Atom.to_string(kind)<>"_concurrency"]
+  defp local(limits,kind),do: limits["project_"<>Atom.to_string(kind)<>"_concurrency"]
+  defp busy(:model),do: "MODEL_BUSY"
+  defp busy(:network),do: "NETWORK_BUSY"
+  defp busy(:eventing),do: "EVENTING_BUSY"
+  defp ingress(kind,ticket,deadline,limits) do
+    ingress_slot(kind,ticket,deadline,limits)
+  rescue
+    ArgumentError->D.fail(busy(kind))
+  end
+  defp ingress_slot(kind,ticket,deadline,limits) do
+    count=global(limits,kind)+limits["max_waiters"]
+    first=:erlang.phash2(ticket,count)
+    slot=Enum.reduce_while(0..(count-1),nil,fn offset,_->
+      key={kind,rem(first+offset,count)}
+      if :ets.insert_new(@gate,{key,ticket,self(),deadline}),do: {:halt,key},else: {:cont,nil}
+    end)
+    if is_nil(slot) do
+      :ets.update_counter(@counters,kind,{2,1})
+      D.fail(busy(kind))
+    end
+    slot
+  end
+  defp drop_gate(slot,ticket) do
+    try do :ets.select_delete(@gate,[{{slot,ticket,:_,:_},[],[true]}]) rescue ArgumentError->0 end
+  end
+  def init(_) do
+    :ets.new(@gate,[:named_table,:public,:set,write_concurrency: true,read_concurrency: true])
+    :ets.new(@counters,[:named_table,:public,:set,write_concurrency: true])
+    Enum.each(@kinds,&:ets.insert(@counters,{&1,0}))
+    :persistent_term.put({__MODULE__,:required},true)
+    Process.send_after(self(),:tick,20)
+    {:ok,%{entries: %{},orders: Map.new(@kinds,&{&1,[]}),queues: Map.new(@kinds,&{&1,%{}}),counts: Map.new(@kinds,&{&1,%{"grants"=>0,"queued_timeouts"=>0,"queue_rejections"=>0,"fenced"=>0,"caller_deaths"=>0}})}}
+  end
+  def handle_call({:acquire,kind,project,ticket,slot,deadline,revision,epoch,fences},from,s) do
+    s=clean(s)
+    entry=%{kind: kind,project: project,ticket: ticket,slot: slot,deadline: deadline,revision: revision,epoch: epoch,fences: fences,pid: elem(from,0),from: from,status: :queued,monitor: nil,http_id: nil}
+    case check(entry) do
+      nil->
+        entry=%{entry|monitor: Process.monitor(entry.pid)}
+        s=put_in(s,[:entries,ticket],entry)
+        lim=limits(ADHD.Config.root())
+        # Keep the shared waiting bound, while allowing free independent lanes to run.
+        if waiting(s)>lim["max_waiters"] and not available(s,entry,lim) do
+          {:noreply,s |> finish(ticket,{:error,busy(kind)},"queue_rejections") |> drain()}
+        else
+          s=enqueue(s,entry)
+          {:noreply,drain(s)}
+        end
+      code->
+        drop_gate(slot,ticket)
+        {:reply,{:error,code},count(s,kind,if(code==busy(kind),do: "queued_timeouts",else: "fenced"))}
+    end
+  end
+  def handle_call({:track_http,ticket,pid,id},_from,s) do
+    case s.entries[ticket] do
+      %{status: :active,pid: ^pid,http_id: nil}=entry->
+        {:reply,:ok,put_in(s,[:entries,ticket],%{entry|http_id: id})}
+      _->{:reply,:error,s}
+    end
+  end
+  def handle_call({:release,ticket},_from,s),do: {:reply,:ok,s |> finish(ticket,nil,nil) |> clean() |> drain()}
+  def handle_call(:refresh,_from,s),do: {:reply,:ok,s |> clean() |> drain()}
+  def handle_call(:stats,_from,s) do
+    s=s |> clean() |> drain()
+    lanes=Map.new(@kinds,fn kind->
+      entries=Enum.filter(Map.values(s.entries),&(&1.kind==kind))
+      by=entries |> Enum.group_by(& &1.project) |> Map.new(fn {project,list}->{project,%{"active"=>Enum.count(list,&(&1.status==:active)),"queued"=>Enum.count(list,&(&1.status==:queued))}} end)
+      [{_,rejected}]=:ets.lookup(@counters,kind)
+      {Atom.to_string(kind),Map.merge(s.counts[kind],%{"active"=>Enum.count(entries,&(&1.status==:active)),"queued"=>Enum.count(entries,&(&1.status==:queued)),"projects"=>by,"ingress_rejections"=>rejected})}
+    end)
+    {:reply,%{"started"=>true,"limits"=>limits(ADHD.Config.root()),"waiting"=>waiting(s),"ingress_tickets"=>:ets.info(@gate,:size),"lanes"=>lanes},s}
+  end
+  def handle_cast({:cancel,ticket},s),do: {:noreply,s |> finish(ticket,nil,"queued_timeouts") |> clean() |> drain()}
+  def handle_info({:DOWN,monitor,:process,_pid,_reason},s) do
+    ticket=Enum.find_value(s.entries,fn {ticket,e}->if e.monitor==monitor,do: ticket end)
+    {:noreply,s |> finish(ticket,nil,"caller_deaths") |> clean() |> drain()}
+  end
+  def handle_info(:tick,s) do
+    s=s |> clean() |> drain()
+    Process.send_after(self(),:tick,20)
+    {:noreply,s}
+  end
+  defp count(s,_kind,nil),do: s
+  defp count(s,kind,key),do: update_in(s,[:counts,kind,key],&(&1+1))
+  defp waiting(s),do: Enum.count(s.entries,fn {_,e}->e.status==:queued end)
+  defp check(e) do
+    root=ADHD.Config.root()
+    project=if e.project=="$server",do: %{"status"=>"active"},else: Enum.find(Map.get(root,"projects",[%{"id"=>root["project_id"],"status"=>"active"}]),&(&1["id"]==e.project))
+    cond do
+      not Process.alive?(e.pid)->busy(e.kind)
+      :ets.lookup(@gate,e.slot) != [{e.slot,e.ticket,e.pid,e.deadline}]->busy(e.kind)
+      e.deadline<=now()->busy(e.kind)
+      epoch_changed?(e)->"RECOVERY_REQUIRED"
+      is_nil(project)->"PROJECT_NOT_FOUND"
+      e.project != "$server" and ADHD.StorageRegistry.epoch(e.project) != e.epoch->"RECOVERY_REQUIRED"
+      project["status"]=="archived" and e.kind != :eventing->"PROJECT_ARCHIVED"
+      Map.get(root,"config_revision",0)!=e.revision->"CONFIG_CHANGED"
+      true->nil
+    end
+  end
+  defp epoch_changed?(e) do
+    (e.project != "$server" and ADHD.StorageRegistry.epoch(e.project) != e.epoch) or
+      Enum.any?(e.fences,fn {id,epoch}->ADHD.StorageRegistry.epoch(id) != epoch end)
+  end
+  defp available(s,e,limits) do
+    active=Enum.filter(Map.values(s.entries),&(&1.status==:active and &1.kind==e.kind))
+    length(active)<global(limits,e.kind) and Enum.count(active,&(&1.project==e.project))<local(limits,e.kind)
+  end
+  defp enqueue(s,e) do
+    queue=:queue.in(e.ticket,Map.get(s.queues[e.kind],e.project,:queue.new()))
+    s=put_in(s,[:queues,e.kind,e.project],queue)
+    if e.project in s.orders[e.kind],do: s,else: update_in(s,[:orders,e.kind],&(&1++[e.project]))
+  end
+  defp finish(s,nil,_,_),do: s
+  defp finish(s,ticket,response,metric) do
+    case Map.pop(s.entries,ticket) do
+      {nil,_}->s
+      {e,entries}->
+        cancel_http(e.http_id)
+        # httpc cancellation closes the transport but need not notify its owner.
+        # Wake only a retired active request, using the existing failure path;
+        # ordinary releases must not leave one extra message per HTTP request.
+        if metric=="fenced" and e.status==:active and is_reference(e.http_id),do:
+          send(e.pid,{:http,{e.http_id,{:error,:project_epoch_retired}}})
+        if e.monitor,do: Process.demonitor(e.monitor,[:flush])
+        if response && e.from,do: GenServer.reply(e.from,response)
+        drop_gate(e.slot,e.ticket)
+        %{s|entries: entries} |> count(e.kind,metric)
+    end
+  end
+  defp clean(s) do
+    s=Enum.reduce(Map.values(s.entries),s,fn e,acc->
+      if not Process.alive?(e.pid) do
+        finish(acc,e.ticket,nil,"caller_deaths")
+      else
+      if e.status==:queued do
+        case check(e) do
+          nil->acc
+          code->finish(acc,e.ticket,{:error,code},if(code==busy(e.kind),do: "queued_timeouts",else: "fenced"))
+        end
+      else
+        # A restored target retires its active HTTP ticket as well as waiters.
+        # Other projects keep their slots; late non-HTTP results are fenced by
+        # run/Store before they can export or persist anything.
+        if epoch_changed?(e),do: finish(acc,e.ticket,nil,"fenced"),else: acc
+      end
+      end
+    end)
+    # Also reclaim tickets abandoned before their acquire message was sent.
+    for {slot,ticket,pid,deadline}<-:ets.tab2list(@gate),not Map.has_key?(s.entries,ticket) do
+      if not Process.alive?(pid) or deadline<=now(),do: drop_gate(slot,ticket)
+    end
+    Enum.reduce(@kinds,s,fn kind,acc->
+      queues=Map.new(acc.queues[kind],fn {project,q}->{project,:queue.from_list(Enum.filter(:queue.to_list(q),&Map.has_key?(acc.entries,&1)))} end) |> Enum.reject(fn {_,q}->:queue.is_empty(q) end) |> Map.new()
+      acc |> put_in([:queues,kind],queues) |> put_in([:orders,kind],Enum.filter(acc.orders[kind],&Map.has_key?(queues,&1)))
+    end)
+  end
+  defp drain(s),do: Enum.reduce(@kinds,s,&drain_lane(&2,&1))
+  defp drain_lane(s,kind) do
+    limits=limits(ADHD.Config.root())
+    index=Enum.find_index(s.orders[kind],fn project->
+      {{:value,ticket},_}=:queue.out(s.queues[kind][project])
+      available(s,s.entries[ticket],limits)
+    end)
+    if is_nil(index) do s else
+      project=Enum.at(s.orders[kind],index)
+      {{:value,ticket},queue}=:queue.out(s.queues[kind][project])
+      e=s.entries[ticket]
+      case check(e) do
+        nil->
+          GenServer.reply(e.from,:granted)
+          s=put_in(s,[:entries,ticket],%{e|status: :active,from: nil}) |> count(kind,"grants")
+          order=Enum.drop(s.orders[kind],index+1)++Enum.take(s.orders[kind],index)
+          s=if :queue.is_empty(queue),do: s |> put_in([:queues,kind],Map.delete(s.queues[kind],project)) |> put_in([:orders,kind],order),else: s |> put_in([:queues,kind,project],queue) |> put_in([:orders,kind],order++[project])
+          drain_lane(s,kind)
+        code->s |> finish(ticket,{:error,code},"fenced") |> clean() |> drain_lane(kind)
+      end
+    end
+  end
+end

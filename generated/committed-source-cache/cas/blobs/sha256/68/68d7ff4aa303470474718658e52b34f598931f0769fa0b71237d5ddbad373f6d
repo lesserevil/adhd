@@ -1,0 +1,58 @@
+defmodule ADHD.OptimizationProtocol do
+  alias ADHD.Protocol,as: P
+  alias ADHD.HistoryProtocol,as: H
+  alias ADHD.Optimization,as: O
+  defp n(value),do: H.nullable(value)
+  defp count,do: H.count()
+  defp digest,do: H.digest()
+  defp statuses,do: P.enum(~w(pending awaiting_evaluation qualified promoted rejected partial cancelled invalidated retired))
+  def budget_props,do: Map.new(O.budget_bounds(),fn {key,lo,hi}->{key,P.int(lo,hi)} end)
+  def config_props do
+    integers=[{"max_state_bytes",1048576,268435456},{"max_proposals",1,1024},{"max_active_proposals",1,16},{"max_variants",1,8},{"build_batch",1,64},{"min_recall_gain_ppm",1,1000000},{"max_total_calls_delta",-100000,100000},{"max_total_bytes_delta",-268435456,268435456},{"max_native_growth_ppm",1000000,8000000},{"cooldown_ms",1000,86400000}]
+    thresholds = ~w(recurrence_groups min_training_groups min_held_out_groups min_regression_groups min_positive_training min_positive_held_out min_no_evidence_controls min_negation_controls min_correction_controls)
+    Map.new(integers,fn {k,lo,hi}->{k,P.int(lo,hi)} end) |> Map.merge(Map.new(thresholds,&{&1,P.int(1,64)})) |> Map.merge(%{"enabled"=>P.bool(),"mode"=>P.enum(~w(review automatic)),"budget"=>P.ref("OptimizationBudget")})
+  end
+  def extend(defs) do
+    error=P.obj(%{"code"=>P.enum(~w(MIN_EVIDENCE NO_IMPROVEMENT HELD_OUT_EXPOSED COHORT_CHANGED LABEL_CHANGED POLICY_CHANGED SELECTION_CHANGED BASE_CHANGED CHILD_CHANGED OWNER_REMOVED INCOMPLETE_EVALUATION QUALITY_REGRESSION RESOURCE_LIMIT BUDGET_RECORDS BUDGET_CALLS BUDGET_BYTES BUDGET_TIME WORKER_ERROR CANCELLED INDEX_INCOMPLETE GENERATION_UNAVAILABLE OPTIMIZATION_DISABLED NO_PREVIOUS_SELECTION MISSING_ORIGINALS MODEL_ERROR RETRIEVAL_DISABLED SCAN_DISABLED CONTEXT_LIMIT)),"message"=>P.str(256),"retryable"=>P.bool()})
+    descriptor=P.obj(%{"recipe"=>P.ref("RetrievalRecipe"),"base_identity"=>digest(),"proposal_id"=>n(P.str()),"qualification_runtime"=>n(P.str()),"qualification_identity"=>n(digest()),"selected_at"=>P.time(),"activation_watermark"=>count(),"qualification_watermark"=>count()})
+    selection=P.obj(%{"revision"=>count(),"applied"=>P.bool(),"base_identity"=>digest(),"base_recipe"=>P.ref("RetrievalRecipe"),"effective_recipe"=>P.ref("RetrievalRecipe"),"selected"=>n(P.ref("IndexSelectionDescriptor")),"previous"=>n(P.ref("IndexSelectionDescriptor")),"rollback_available"=>P.bool(),"current_runtime"=>P.str(),"qualification_current"=>P.bool()})
+    evaluation=P.obj(Map.merge(Map.new(~w(cases groups positive_groups no_evidence_groups negation_groups correction_groups answer_failures answer_regressions false_supports),&{&1,count()}),Map.new(~w(mean_recall_gain_ppm total_calls_delta total_bytes_delta total_time_ms_delta),&{&1,n(P.int(-9007199254740991,9007199254740991))})) |> Map.merge(%{"eligible"=>P.bool(),"reason"=>n(error["properties"]["code"]),"baseline_native_bytes"=>n(count()),"candidate_native_bytes"=>n(count()),"passed"=>P.bool()}))
+    build=P.obj(Map.new(~w(indexed total processed reused native_bytes),&{&1,count()}) |> Map.merge(%{"status"=>P.enum(~w(unstarted building ready partial failed)),"watermark"=>n(count()),"manifest_identity"=>n(digest()),"error"=>n(P.ref("OptimizationError"))}))
+    variant=P.obj(%{"recipe"=>P.ref("RetrievalRecipe"),"recipe_identity"=>digest(),"changes_index"=>P.bool(),"status"=>P.enum(~w(pending evaluating qualified rejected)),"summary"=>n(P.ref("OptimizationEvaluation")),"error"=>n(P.ref("OptimizationError"))})
+    child=P.obj(%{"replay_id"=>P.str(),"run"=>P.int(1,16),"attempt_id"=>P.str(),"cohort"=>P.enum(~w(training held_out regression)),"variant_identity"=>digest(),"last_status"=>P.enum(~w(pending completed partial cancelled invalidated))})
+    usage=defs["ReplayQuery"]["properties"]["usage"]
+    case_value=P.obj(%{"attempt_id"=>P.str(),"group_id"=>digest(),"cohort"=>P.enum(~w(training held_out regression)),"label_revision"=>P.int(1,16),"replay_id"=>P.str(),"run"=>P.int(1,16),"variant_identity"=>digest(),"policy_identity"=>digest(),"comparison"=>P.ref("ReplayComparison"),"baseline"=>P.ref("ReplayMetrics"),"candidate"=>P.ref("ReplayMetrics"),"usage"=>usage})
+    summary=%{"id"=>P.str(),"operation"=>P.enum(~w(optimize rollback)),"created_at"=>P.time(),"updated_at"=>P.time(),"requester_kind"=>P.enum(~w(human_session legacy_token automatic)),"requester_id"=>P.str(),"status"=>statuses(),"phase"=>P.enum(~w(training awaiting_evaluation evaluating building ready done)),"run"=>P.int(1,16),"base_identity"=>digest(),"selection_revision"=>count(),"baseline_recipe"=>P.ref("RetrievalRecipe"),"winner_identity"=>n(digest()),"signature"=>digest(),"training_groups"=>count(),"held_out_groups"=>count(),"regression_groups"=>count(),"budget"=>P.ref("OptimizationBudget"),"usage"=>P.ref("HistoryUsage"),"evaluation"=>n(P.ref("OptimizationEvaluation")),"build"=>P.ref("OptimizationBuild"),"evidence_available"=>P.bool(),"error"=>n(P.ref("OptimizationError")),"continuable"=>P.bool()}
+    full=Map.merge(summary,%{"base_recipe"=>P.ref("RetrievalRecipe"),"policy_identity"=>digest(),"runtime"=>P.str(),"training_attempt_ids"=>H.ids(64),"held_out_attempt_ids"=>H.ids(64),"regression_attempt_ids"=>H.ids(64),"variants"=>P.array(P.ref("OptimizationVariant"),8),"children"=>P.array(P.ref("OptimizationChild"),640),"cases"=>P.array(P.ref("OptimizationCase"),64),"case_count"=>count(),"next_offset"=>n(P.int(0,1000000)),"index_manifest"=>n(P.ref("RetrievalIndexManifest")),"watermark"=>n(count()),"global_evidence_available"=>P.bool()})
+    status=P.obj(Map.new(~w(proposals active eligible_training_groups fresh_held_out_groups regression_groups state_bytes),&{&1,count()}) |> Map.merge(%{"enabled"=>P.bool(),"mode"=>P.enum(~w(review automatic)),"last_proposal_at"=>n(P.time()),"last_error"=>n(P.ref("OptimizationError")),"selection"=>P.ref("IndexSelectionView")}))
+    cp=config_props();limits=Enum.map(1..16,fn i->%{"if"=>%{"required"=>["max_active_proposals"],"properties"=>%{"max_active_proposals"=>%{"const"=>i}}},"then"=>%{"properties"=>%{"max_proposals"=>%{"minimum"=>i}}}} end)
+    patch=P.obj(Map.new(cp,fn {key,value}->{key,n(if(key=="budget",do: P.obj(Map.new(budget_props(),fn {k,v}->{k,n(v)} end),[]),else: value))} end),[]) |> Map.put("allOf",limits)
+    defs=Map.merge(defs,%{"HistoryUsage"=>defs["HistoryQuery"]["properties"]["usage"],"OptimizationError"=>error,"OptimizationBudget"=>P.obj(budget_props()),"OptimizationBudgetInput"=>P.obj(budget_props(),[]),"OptimizationConfig"=>P.obj(cp) |> Map.put("allOf",limits),"OptimizationConfigPatch"=>patch,"IndexSelectionDescriptor"=>descriptor,"IndexSelectionView"=>selection,"OptimizationStatus"=>status,"OptimizationEvaluation"=>evaluation,"OptimizationBuild"=>build,"OptimizationVariant"=>variant,"OptimizationChild"=>child,"OptimizationCase"=>case_value,"OptimizationProposalSummary"=>P.obj(summary),"OptimizationProposal"=>P.obj(full) |> Map.put("x-optimizationBindings",true) |> Map.put("x-optimizationUsage",true)})
+    defs=defs |> put_in(["PublicConfig","properties","optimization"],P.ref("OptimizationConfig")) |> put_in(["MergePatch","properties","optimization"],n(P.ref("OptimizationConfigPatch"))) |> put_in(["ReplayQuery","properties","requester_kind"],P.enum(~w(agent human_session legacy_token optimization)))
+    defs=defs |> put_in(["RetrievalIndexRead","properties","selection"],P.ref("IndexSelectionView")) |> update_in(["RetrievalIndexRead","required"],&Enum.uniq(&1++["selection"]))
+    mutation=%{"expected_revision"=>P.int(1,9007199254740991),"message_id"=>P.str(),"confirm"=>%{"const"=>true}}
+    page=%{"offset"=>P.int(0,1000000),"limit"=>P.int(1,64)};proposal=P.obj(%{"proposal"=>P.ref("OptimizationProposal")})
+    defs=Enum.reduce(O.operations(),defs,fn op,acc->
+      {params,required,result}=case op do
+        "optimization_status"->{%{},[],P.obj(%{"status"=>P.ref("OptimizationStatus")})}
+        "index_proposals"->{Map.put(page,"status",statuses()),[],P.obj(%{"items"=>P.array(P.ref("OptimizationProposalSummary"),64),"next_offset"=>n(P.int(0,1000000))})}
+        "index_proposal"->{Map.put(page,"proposal_id",P.str()),~w(proposal_id),P.obj(%{"proposal"=>P.ref("OptimizationProposal")})}
+        "propose_index"->{%{"training_attempt_ids"=>H.ids(64) |> Map.put("minItems",1),"budget"=>P.ref("OptimizationBudgetInput")},[],proposal}
+        "evaluate_index"->{%{"proposal_id"=>P.str(),"held_out_attempt_ids"=>H.ids(64) |> Map.put("minItems",1),"regression_attempt_ids"=>H.ids(64) |> Map.put("minItems",1)},~w(proposal_id held_out_attempt_ids regression_attempt_ids),proposal}
+        "continue_index_proposal"->{%{"proposal_id"=>P.str(),"budget"=>P.ref("OptimizationBudgetInput"),"retry_failed"=>P.bool()},~w(proposal_id),proposal}
+        "promote_index"->{%{"proposal_id"=>P.str(),"expected_selection_revision"=>count()},~w(proposal_id expected_selection_revision),proposal}
+        "rollback_index"->{%{"expected_selection_revision"=>count(),"budget"=>P.ref("OptimizationBudgetInput")},~w(expected_selection_revision),proposal}
+        "reset_index_selection"->{%{"expected_selection_revision"=>count()},~w(expected_selection_revision),P.obj(%{"selection"=>P.ref("IndexSelectionView")})}
+        _->{%{"proposal_id"=>P.str()},~w(proposal_id),proposal}
+      end
+      {params,required}=if op in O.reads(),do: {params,required},else: {Map.merge(params,mutation),required++Map.keys(mutation)}
+      acc |> Map.put("admin_"<>op,P.admin(op,params,required)) |> Map.put("admin_result_"<>op,result)
+    end)
+    defs=update_in(defs,["AdminCommand","oneOf"],&(&1++Enum.map(O.operations(),fn op->P.ref("admin_"<>op) end)))
+    # query_job supplies a full projection; list/cancel return its bounded summary.
+    job=P.obj(%{"kind"=>%{"const"=>"optimization"},"query"=>%{"oneOf"=>[P.ref("OptimizationProposal"),P.ref("OptimizationProposalSummary")]}})
+    defs=Enum.reduce(~w(admin_result_query_job admin_result_cancel_query_job),defs,fn key,acc->update_in(acc,[key,"oneOf"],&(&1++[job])) end)
+    defs=update_in(defs,["admin_result_query_jobs","properties","items","items","oneOf"],&(&1++[job]))
+    put_in(defs,["admin_query_jobs","properties","kind"],P.enum(~w(discovery source history retrieval archive replay optimization)))
+  end
+end

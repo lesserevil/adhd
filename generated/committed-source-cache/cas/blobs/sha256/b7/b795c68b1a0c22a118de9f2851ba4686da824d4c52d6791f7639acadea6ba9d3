@@ -1,0 +1,28 @@
+unless Code.ensure_loaded?(ADHD.CLI) do
+  for file <- ["domain.exs", "allocator.exs", "storage_registry.exs", "project_backup.exs", "project_backup_validation.exs", "recovery_checkpoint.exs", "recovery_work.exs", "storage_rebind.exs", "recovery_coordinator.exs", "project_restore.exs", "projects.exs", "resources.exs", "records.exs", "records_protocol.exs", "history_evaluator.exs", "history.exs", "history_protocol.exs", "retrieval.exs", "selection.exs", "retrieval_index.exs", "retrieval_jobs.exs", "retrieval_protocol.exs", "archive_policy.exs", "archive.exs", "archive_worker.exs", "archive_protocol.exs", "feedback_groups.exs", "feedback.exs", "replay.exs", "replay_worker.exs", "feedback_protocol.exs", "optimization.exs", "optimization_worker.exs", "optimization_protocol.exs", "storage.exs", "directory.exs", "source_queries.exs", "directory_protocol.exs", "multi_protocol.exs", "project_recovery_protocol.exs", "protocol.exs", "eventing.exs", "federation_v2.exs", "migration.exs", "store.exs", "tls_certificate.exs", "acme_client.exs", "tls.exs", "config.exs", "identity.exs", "workers.exs", "web.exs", "server.exs", "cli.exs", "tests/litai_test.exs"] do
+    Code.require_file(file, __DIR__)
+  end
+end
+
+if System.argv() == ["--litai-test"] do
+  IO.puts(JSON.encode!(ADHD.Tests.run()))
+  System.halt(0)
+end
+
+try do
+  result = case System.argv() do
+    ["--litai-test"] -> ADHD.Tests.run()
+    ["--litai-smoke"] -> ADHD.Tests.smoke()
+    [value] ->
+      case ADHD.JSON.decode!(value) do
+        args when is_list(args) -> ADHD.CLI.run(args)
+        _ -> ADHD.Domain.fail()
+      end
+    _ -> ADHD.Domain.fail()
+  end
+  if result != :serving, do: IO.puts(JSON.encode!(result))
+rescue
+  _ -> IO.puts(:stderr, "Invalid request or service unavailable"); System.halt(1)
+catch
+  _, _ -> IO.puts(:stderr, "Invalid request or service unavailable"); System.halt(1)
+end

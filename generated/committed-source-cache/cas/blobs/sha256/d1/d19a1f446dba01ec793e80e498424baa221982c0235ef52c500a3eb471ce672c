@@ -1,0 +1,273 @@
+defmodule ADHD.RetrievalJobs do
+  alias ADHD.Domain,as: D
+  alias ADHD.History,as: H
+  alias ADHD.Records,as: R
+  alias ADHD.Retrieval,as: X
+  alias ADHD.RetrievalIndex,as: I
+  alias ADHD.Directory,as: F
+  @statuses ~w(pending completed partial cancelled invalidated)
+  def active?(q),do: q["status"] in ~w(pending partial invalidated)
+  def put(s,q),do: put_in(s,[:retrieval_queries,q["id"]],q)
+  defp capacity?(s,c),do: byte_size(ADHD.Storage.bytes(s.retrieval_queries))<=X.effective(c)["max_query_bytes"]-65536
+  def error(code,retryable),do: %{"code"=>code,"message"=>case code do
+    "MODEL_ERROR"->"The candidate evaluator did not return a valid decision."
+    "CONFIG_CHANGED"->"Retrieval settings changed; explicitly restart this frozen query."
+    "INDEX_CHANGED"->"The frozen index input is incompatible; explicitly restart."
+    "INDEX_NOT_READY"->"A usable contextual index is not ready."
+    "INDEX_STALE"->"The index does not cover this frozen scope and context."
+    "CONTEXT_LIMIT"->"No complete candidate fragment fits the evaluator request bound."
+    "RESOURCE_LIMIT"->"Retrieval operational state exceeds its resource bound."
+    "CANCELLED"->"Retrieval cancelled."
+    _->"The current retrieval run cannot finish within its "<>String.downcase(String.replace_prefix(code,"BUDGET_",""))<>" budget."
+  end,"retryable"=>retryable}
+  defp charge(q,key,n),do: update_in(q,["usage",key],&(&1+n))
+  def recover_inflight(q),do: if(q["status"]=="pending",do: settle(q),else: q)
+  defp settle(q) do
+    if q["inflight"] do q |> charge("time_ms",q["inflight"]["timeout_ms"]) |> charge("uncertain_calls",1) |> Map.put("inflight",nil) else q end
+  end
+  def stop(q,status,code,retryable),do: Map.merge(q,%{"status"=>status,"error"=>error(code,retryable),"updated_at"=>D.now()})
+  def refresh(q,c) do
+    if q["status"]=="pending" and q["evaluator"]["identity"] != X.descriptor(c)["identity"],do: q |> settle() |> stop("invalidated","CONFIG_CHANGED",false),else: q
+  end
+  def cancel(q),do: if(active?(q),do: q |> settle() |> stop("cancelled","CANCELLED",false),else: q)
+  defp owned(s,actor,id) do
+    q=s.retrieval_queries[id] || D.fail("NOT_FOUND");if q["owner_id"] != actor,do: D.fail("NOT_FOUND");q
+  end
+  defp budget(cmd,c),do: Map.merge(X.effective(c)["budget"],Map.get(cmd,"budget",%{}))
+  def agent(s,c,actor,cmd) do
+    c=X.resolve(c,s)
+    X.validate(cmd)
+    case cmd["op"] do
+      "retrieval_index"->{%{"index"=>I.read(s,c)},s}
+      "retrieve"->
+        if not X.effective(c)["enabled"],do: D.fail("UNAVAILABLE")
+        if map_size(s.retrieval_queries)>=1024 or Enum.count(s.retrieval_queries,fn {_,q}->active?(q) end)>=64,do: D.fail("RESOURCE_EXHAUSTED")
+        scope=Map.get(cmd,"scope",%{});mark=Map.get(scope,"watermark",R.watermark(s));D.check(mark<=R.watermark(s));scope=scope |> Map.delete("watermark") |> Map.put("kind","local_archive")
+        seq=s.seq+1;{id,s}=ADHD.Allocator.allocate(s,"retrieval");now=D.now();v=X.effective(c)
+        q=%{"id"=>id,"seq"=>seq,"owner_id"=>actor,"project_id"=>c["project_id"],"question"=>cmd["question"],"scope"=>scope,"snapshot"=>%{"server_id"=>s.server_id,"watermark"=>mark},
+          "limit"=>Map.get(cmd,"limit",8),"status"=>"pending","created_at"=>now,"updated_at"=>now,"run"=>1,"recipe"=>v["recipe"],"recipe_identity"=>X.recipe_identity(v["recipe"]),"evaluator"=>X.descriptor(c),
+          "index"=>nil,"input_manifest_identity"=>nil,"budget"=>budget(cmd,c),"usage"=>H.usage_zero(),"base_usage"=>H.usage_zero(),"primary_ids"=>H.primary_ids(s,scope,mark),
+          "ranking"=>nil,"window"=>[],"scores"=>%{},"inputs"=>%{},"evaluations"=>[],"expanded_ids"=>[],"gaps"=>[],"truncated"=>false,"reconstructed"=>false,"materialization"=>"active","error"=>nil,"inflight"=>nil,"prior"=>%{}}
+        next=put(%{s|seq: seq},q);if not capacity?(next,c),do: D.fail("RESOURCE_EXHAUSTED")
+        {%{"query"=>public(q,%{"summary"=>true})},next}
+      op->
+        q=owned(s,actor,cmd["query_id"]) |> refresh(c)
+        q=case op do
+          "get_retrieval"->q
+          "cancel_retrieval"->cancel(q)
+          "continue_retrieval"->continue(s,c,q,cmd)
+        end
+        {%{"query"=>public(q,if(op=="get_retrieval",do: cmd,else: %{"summary"=>true}))},put(s,q)}
+    end
+  end
+  defp continue(s,c,q,cmd) do
+    D.check(q["status"] != "pending");if q["run"]>=16,do: D.fail("RESOURCE_EXHAUSTED")
+    restart=Map.get(cmd,"restart",false);D.check(q["status"] not in ~w(completed cancelled invalidated) or restart)
+    if not restart and q["error"] != nil and q["error"]["code"] in ~w(CONTEXT_LIMIT INDEX_CHANGED),do: D.fail()
+    if not restart and q["evaluator"]["identity"] != X.descriptor(c)["identity"] do q |> settle() |> stop("invalidated","CONFIG_CHANGED",false) else
+      if not X.effective(c)["enabled"],do: D.fail("UNAVAILABLE")
+      if not active?(q) and Enum.count(s.retrieval_queries,fn {_,v}->active?(v) end)>=64,do: D.fail("RESOURCE_EXHAUSTED")
+      q=settle(q);prior=Map.drop(q,["prior"])
+      next=q |> Map.put("prior",Map.put(q["prior"],Integer.to_string(q["run"]),prior)) |> Map.put("base_usage",H.usage_add(q["base_usage"],q["usage"]))
+        |> Map.merge(%{"status"=>"pending","run"=>q["run"]+1,"updated_at"=>D.now(),"budget"=>budget(cmd,c),"usage"=>H.usage_zero(),"error"=>nil,"inflight"=>nil})
+      next=if restart do
+        v=X.effective(c)
+        Map.merge(next,%{"recipe"=>v["recipe"],"recipe_identity"=>X.recipe_identity(v["recipe"]),"evaluator"=>X.descriptor(c),"index"=>nil,"input_manifest_identity"=>nil,"ranking"=>nil,"window"=>[],"scores"=>%{},"inputs"=>%{},"evaluations"=>[],"expanded_ids"=>[],"gaps"=>[],"truncated"=>false,"reconstructed"=>false,"materialization"=>"active"})
+      else next end
+      if not capacity?(put(s,next),c),do: D.fail("RESOURCE_EXHAUSTED");next
+    end
+  end
+  defp page(xs,opts) do
+    offset=Map.get(opts,"offset",0);limit=Map.get(opts,"limit",16)
+    {items,_}=Enum.drop(xs,offset) |> Enum.reduce_while({[],0},fn x,{items,bytes}->
+      size=byte_size(JSON.encode!(x));if length(items)>=limit or bytes+size>262144,do: {:halt,{items,bytes}},else: {:cont,{items++[x],bytes+size}}
+    end)
+    next=if offset+length(items)<length(xs),do: offset+length(items),else: nil
+    {items,next,next==offset and items==[] and next != nil}
+  end
+  def candidates(q) do
+    weights=q["recipe"];threshold=q["evaluator"]["policy"]["min_confidence_ppm"]
+    eligible=Enum.filter(q["ranking"] || [],fn r->r["lexical_ppm"]>0 or Map.get(q["scores"],r["publication_id"],-1)>=threshold end)
+    ranked=eligible |> Enum.map(fn r->
+      semantic=q["scores"][r["publication_id"]]
+      score=if weights["semantic"],do: div(r["lexical_ppm"]*weights["lexical_weight"]+(semantic || 0)*weights["semantic_weight"],weights["lexical_weight"]+weights["semantic_weight"]),else: r["lexical_ppm"]
+      Map.merge(r,%{"semantic_ppm"=>semantic,"score_ppm"=>score})
+    end) |> Enum.sort_by(&{-&1["score_ppm"],-&1["lexical_ppm"],-&1["seq"],&1["publication_id"]})
+    items=Enum.take(ranked,q["limit"]) |> Enum.with_index(1) |> Enum.map(fn {r,rank}->
+      input=q["inputs"][r["publication_id"]]
+      D.check(is_map(input))
+      Map.take(r,~w(publication_id identity context_identity lexical_ppm semantic_ppm score_ppm)) |> Map.merge(%{"rank"=>rank,"index_input_identity"=>r["input_identity"],"assessment"=>if(r["semantic_ppm"]==nil,do: "unassessed",else: "scored"),
+        "fragments"=>input["candidate"]["fragments"],"context_gaps"=>input["gaps"],"truncated"=>input["candidate"]["truncated"]})
+    end)
+    {items,length(ranked)>q["limit"]}
+  end
+  def public(q,opts \\ %{}) do
+    run=Map.get(opts,"run",q["run"]);selected=if run==q["run"],do: q,else: q["prior"][Integer.to_string(run)] || D.fail("NOT_FOUND")
+    {evaluations,next,oversized}=if opts["summary"],do: {[],if(selected["evaluations"]==[],do: nil,else: 0),false},else: page(selected["evaluations"],opts)
+    {candidates,limited}=candidates(selected);examined=map_size(selected["scores"])
+    coverage=%{"total"=>length(selected["primary_ids"]),"indexed"=>if(selected["ranking"],do: length(selected["ranking"]),else: 0),"lexically_ranked"=>if(selected["ranking"],do: length(selected["ranking"]),else: 0),
+      "semantic_target"=>length(selected["window"]),"semantic_examined"=>examined,"semantic_remaining"=>length(selected["window"])-examined,"unexamined"=>length(selected["primary_ids"])-examined,"exhaustive"=>false,
+      "expanded_ids"=>selected["expanded_ids"],"reconstructed"=>selected["reconstructed"],"context_gaps"=>selected["gaps"],"truncated"=>selected["truncated"] or limited}
+    selected |> Map.take(~w(id owner_id project_id question scope snapshot input_manifest_identity limit status created_at updated_at run recipe recipe_identity evaluator index budget))
+      |> Map.merge(%{"usage"=>H.usage_public(selected),"coverage"=>coverage,"candidates"=>candidates,"evaluations"=>evaluations,"next_offset"=>next,"evaluation_count"=>length(selected["evaluations"]),
+        "prior_runs"=>Map.keys(q["prior"]) |> Enum.map(&String.to_integer/1) |> Enum.filter(&(&1<run)) |> Enum.sort(),"error"=>if(oversized,do: error("RESOURCE_LIMIT",false),else: selected["error"]),"continuable"=>selected["status"] in ~w(partial cancelled invalidated) and selected["run"]<16})
+  end
+  defp same?(live,q,c),do: live != nil and live["run"]==q["run"] and live["status"]=="pending" and live["evaluator"]["identity"]==X.descriptor(c)["identity"] and Map.has_key?(c["agents"],live["owner_id"])
+  defp stop_current(q,code,retryable,elapsed) do
+    ADHD.Store.call(fn s->
+      c=X.resolve(ADHD.Config.get(),s);live=s.retrieval_queries[q["id"]]
+      if live != nil and live["run"]==q["run"] and live["status"]=="pending" do
+        next=if live["evaluator"]["identity"] != X.descriptor(c)["identity"],do: refresh(live,c),else: live |> charge("time_ms",elapsed) |> stop("partial",code,retryable)
+        {true,put(s,next)}
+      else {false,s} end
+    end) |> ADHD.Store.unwrap()
+  end
+  defp prepare(s,c,q) do
+    started=System.monotonic_time(:millisecond);deadline=started+max(0,q["budget"]["time_ms"]-q["usage"]["time_ms"])
+    result=try do
+      case I.materialize(s,Map.put(c,"project_id",q["project_id"]),q["primary_ids"],q["snapshot"]["watermark"],q["recipe"],deadline) do
+        {:error,code}->{:error,code}
+        {:ok,index,rows,reconstructed,materialization}->
+          ranking=X.rank(rows,q["question"],q["recipe"],deadline);by_id=Map.new(rows,&{&1["publication_id"],&1})
+          window=if q["recipe"]["semantic"],do: Enum.take(ranking,q["recipe"]["semantic_window"]) |> Enum.map(& &1["publication_id"]),else: []
+          pool=Enum.take(ranking,max(q["limit"],length(window)))
+          inputs=Map.new(pool,fn r->
+            X.check_deadline(deadline);row=by_id[r["publication_id"]]
+            selected=case X.request(row,q["question"],c) do
+              {:ok,candidate,_payload,_}->%{"candidate"=>candidate,"limit"=>false}
+              _->fragments=X.fragment_order(row,q["question"],q["recipe"]) |> Enum.take(q["evaluator"]["policy"]["model_fragments"])
+                %{"candidate"=>%{"publication_id"=>row["publication_id"],"identity"=>row["identity"],"context_identity"=>row["context_identity"],"index_input_identity"=>row["input_identity"],"fragments"=>fragments,"truncated"=>true},"limit"=>true}
+            end
+            {r["publication_id"],Map.put(selected,"gaps",row["gaps"])}
+          end)
+          gaps=Enum.flat_map(rows,& &1["gaps"]) |> Enum.uniq();expanded=rows |> Enum.flat_map(& &1["context_ids"]) |> Enum.uniq() |> Enum.reject(&(&1 in q["primary_ids"])) |> Enum.sort_by(&s.publications[&1].seq)
+          manifest=Enum.map(rows,fn row->%{"publication_id"=>row["publication_id"],"identity"=>row["identity"],"context_identity"=>row["context_identity"],"input_identity"=>row["input_identity"],"fragment_sha256s"=>Enum.map(row["fragments"],& &1["sha256"])} end)
+          {:ok,%{"ranking"=>ranking,"window"=>window,"inputs"=>inputs,"index"=>index,"input_manifest_identity"=>F.digest(manifest),"expanded_ids"=>Enum.take(expanded,10000),"gaps"=>Enum.take(gaps,128),"reconstructed"=>reconstructed,"materialization"=>materialization,
+            "truncated"=>Enum.any?(rows,& &1["truncated"]) or Enum.any?(inputs,fn {_,input}->input["candidate"]["truncated"] end) or length(gaps)>128 or length(expanded)>10000}}
+      end
+    catch :retrieval_budget_time->{:error,"BUDGET_TIME"} end
+    elapsed=max(0,System.monotonic_time(:millisecond)-started)
+    case result do
+      {:error,code}->stop_current(q,code,true,elapsed)
+      {:ok,prepared}->
+        ADHD.Store.call(fn current->
+          now=X.resolve(ADHD.Config.get(),current);live=current.retrieval_queries[q["id"]]
+          if same?(live,q,now) and live["ranking"]==nil do
+            next=Map.merge(live,prepared) |> charge("time_ms",elapsed)
+            next=if next["usage"]["time_ms"]>=next["budget"]["time_ms"],do: stop(next,"partial","BUDGET_TIME",true),else: next
+            next=if capacity?(put(current,next),now),do: next,else: live |> charge("time_ms",elapsed) |> stop("partial","RESOURCE_LIMIT",true)
+            {true,put(current,next)}
+          else {false,current} end
+        end) |> ADHD.Store.unwrap()
+    end
+  end
+  defp reserve(q,id) do
+    input=q["inputs"][id]
+    payload=X.model_request(input["candidate"],q["question"],q["evaluator"]["model"]);bytes=JSON.encode!(payload)
+    ADHD.Store.call(fn s->
+      c=X.resolve(ADHD.Config.get(),s);live=s.retrieval_queries[q["id"]]
+      if same?(live,q,c) and live["inflight"]==nil do
+        reason=cond do
+          input["limit"]->"CONTEXT_LIMIT"
+          live["usage"]["records"]+1>live["budget"]["records"]->"BUDGET_RECORDS"
+          live["usage"]["calls"]+1>live["budget"]["calls"]->"BUDGET_CALLS"
+          live["usage"]["bytes"]+byte_size(bytes)>live["budget"]["bytes"]->"BUDGET_BYTES"
+          live["usage"]["time_ms"]>=live["budget"]["time_ms"]->"BUDGET_TIME"
+          true->nil
+        end
+        if reason do {nil,put(s,stop(live,"partial",reason,reason != "CONTEXT_LIMIT"))} else
+          max_timeout=X.effective(c)["timeout_ms"];timeout=min(max_timeout,live["budget"]["time_ms"]-live["usage"]["time_ms"])
+          marker=%{"nonce"=>D.opaque(),"publication_id"=>id,"request"=>payload,"request_json"=>bytes,"request_sha256"=>X.hash(bytes),"timeout_ms"=>timeout,"budget_limited"=>timeout<max_timeout}
+          next=live |> charge("calls",1) |> charge("bytes",byte_size(bytes)) |> Map.put("inflight",marker)
+          if capacity?(put(s,next),c),do: {{marker,c},put(s,next)},else: {nil,put(s,stop(live,"partial","RESOURCE_LIMIT",true))}
+        end
+      else {nil,s} end
+    end) |> ADHD.Store.unwrap()
+  end
+  defp finish(q,marker,result,elapsed) do
+    ADHD.Store.call(fn s->
+      c=X.resolve(ADHD.Config.get(),s);live=s.retrieval_queries[q["id"]]
+      if live != nil and live["run"]==q["run"] and live["status"]=="pending" and live["inflight"] != nil and live["inflight"]["nonce"]==marker["nonce"] and Map.has_key?(c["agents"],live["owner_id"]) do
+        paid=live |> Map.put("inflight",nil) |> charge("time_ms",elapsed)
+        next=cond do
+          paid["evaluator"]["identity"] != X.descriptor(c)["identity"]->refresh(paid,c)
+          result==:failed->stop(paid,"partial",if((marker["budget_limited"] and elapsed+1>=marker["timeout_ms"]) or paid["usage"]["time_ms"]>=paid["budget"]["time_ms"],do: "BUDGET_TIME",else: "MODEL_ERROR"),true)
+          true->
+            {:ok,response}=result;id=marker["publication_id"];candidate=paid["inputs"][id]["candidate"]
+            evaluation=%{"publication_id"=>id,"identity"=>candidate["identity"],"context_identity"=>candidate["context_identity"],"index_input_identity"=>candidate["index_input_identity"],
+              "fragments"=>candidate["fragments"],"request"=>marker["request"],"request_json"=>marker["request_json"],"request_sha256"=>marker["request_sha256"],"response"=>response,"bytes"=>byte_size(marker["request_json"]),"time_ms"=>elapsed,"fragment_truncated"=>candidate["truncated"],"materialization"=>paid["materialization"]}
+            paid |> put_in(["scores",id],round(response["answers"]["useful"]["noul"]*1000000)) |> charge("records",1) |> Map.update!("evaluations",&(&1++[evaluation])) |> Map.put("updated_at",D.now())
+        end
+        next=if capacity?(put(s,next),c),do: next,else: stop(paid,"partial","RESOURCE_LIMIT",true)
+        {true,put(s,next)}
+      else {false,s} end
+    end) |> ADHD.Store.unwrap()
+  end
+  def evaluate do
+    raw=ADHD.Config.get();s=ADHD.Store.snapshot() |> ADHD.Store.unwrap();c=X.resolve(raw,s)
+    pending=s.retrieval_queries |> Map.values() |> Enum.filter(&(&1["status"]=="pending" and Map.has_key?(c["agents"],&1["owner_id"]))) |> Enum.sort_by(& &1["seq"])
+    last=Process.get(:last_retrieval_seq,-1);q=Enum.find(pending,&(&1["seq"]>last)) || List.first(pending)
+    if q do
+      Process.put(:last_retrieval_seq,q["seq"])
+      cond do
+        q["evaluator"]["identity"] != X.descriptor(c)["identity"]->
+          ADHD.Store.call(fn current->live=current.retrieval_queries[q["id"]];if live && live["run"]==q["run"],do: {true,put(current,refresh(live,X.resolve(ADHD.Config.get(),current)))},else: {false,current} end);true
+        q["inflight"] != nil->
+          ADHD.Store.call(fn current->live=current.retrieval_queries[q["id"]];if live && live["run"]==q["run"] and live["status"]=="pending",do: {true,put(current,settle(live))},else: {false,current} end);true
+        q["ranking"]==nil->prepare(s,c,q);true
+        true->
+          id=Enum.find(q["window"],&(not Map.has_key?(q["scores"],&1)))
+          if id==nil do
+            ADHD.Store.call(fn current->
+              now=X.resolve(ADHD.Config.get(),current);live=current.retrieval_queries[q["id"]]
+              if same?(live,q,now),do: {true,put(current,Map.merge(live,%{"status"=>"completed","updated_at"=>D.now(),"error"=>nil}))},else: {false,current}
+            end);true
+          else
+            now=System.monotonic_time(:millisecond)
+            due=Enum.any?(s.jobs,fn {_,j}->j.status==:pending and j.retry_at<=D.ms() and Map.has_key?(c["agents"],j.recipient_id) end)
+            if due and now-Process.get(:last_retrieval_started,now-1000)<1000 do false else
+              case reserve(q,id) do
+                nil->true
+                {marker,config}->
+                  Process.put(:last_retrieval_started,System.monotonic_time(:millisecond));start=System.monotonic_time(:millisecond)
+                  result=try do {:ok,X.call(config,marker["request"],marker["request_json"],marker["timeout_ms"])} rescue _->:failed catch _,_->:failed end
+                  finish(q,marker,result,max(0,System.monotonic_time(:millisecond)-start));true
+              end
+            end
+          end
+      end
+    else false end
+  end
+  def upgrade(s) do
+    D.object(s.retrieval_queries);D.check(map_size(s.retrieval_queries)<=1024)
+    for {id,q}<-s.retrieval_queries do
+      D.check(id==q["id"]);validate_stored(s,q,false)
+      for {run,prior}<-q["prior"] do
+        D.check(run==Integer.to_string(prior["run"]) and prior["run"]<q["run"]);validate_stored(s,prior,true)
+        for key<-~w(id seq owner_id project_id question scope snapshot created_at limit primary_ids),do: D.check(prior[key]==q[key])
+      end
+    end
+    s
+  end
+  defp validate_stored(s,q,prior) do
+    required = ~w(id seq owner_id project_id question scope snapshot limit status created_at updated_at run recipe recipe_identity evaluator index input_manifest_identity budget usage base_usage primary_ids ranking window scores inputs evaluations expanded_ids gaps truncated reconstructed materialization error inflight)
+    fields=if prior,do: required,else: required++["prior"];D.keys(q,fields,fields)
+    D.id(q["id"]);D.identifier(q["owner_id"]);D.identifier(q["project_id"]);D.string(q["question"],4096);D.integer(q["seq"],0,s.seq);D.integer(q["run"],1,16);D.integer(q["limit"],1,64);D.check(q["status"] in @statuses)
+    D.check(q["snapshot"]["server_id"]==s.server_id);D.integer(q["snapshot"]["watermark"],0,R.watermark(s));H.validate_scope(Map.delete(q["scope"],"kind"));D.check(q["scope"]["kind"]=="local_archive")
+    D.check(q["primary_ids"]==H.primary_ids(s,q["scope"],q["snapshot"]["watermark"]));X.validate_recipe(q["recipe"]);H.validate_budget(q["budget"])
+    for key<-~w(usage base_usage) do D.keys(q[key],~w(records calls bytes time_ms uncertain_calls),~w(records calls bytes time_ms uncertain_calls));for value<-Map.values(q[key]),do: D.integer(value,0,9007199254740991) end
+    D.list(q["window"],128);D.distinct(q["window"]);D.object(q["scores"]);D.check(Enum.all?(Map.keys(q["scores"]),&(&1 in q["window"])));for value<-Map.values(q["scores"]),do: D.integer(value,0,1000000)
+    for evaluation<-q["evaluations"] do
+      D.check(evaluation["request_sha256"]==X.hash(evaluation["request_json"]) and evaluation["request"]==ADHD.JSON.decode!(evaluation["request_json"]))
+      X.validate_response(evaluation["response"],evaluation["request"])
+      D.check(evaluation["request"]["state"]["question"]==q["question"] and evaluation["request"]["model"]==q["evaluator"]["model"])
+      candidate=evaluation["request"]["state"]["candidate"];D.check(candidate["publication_id"] in q["primary_ids"] and evaluation["identity"]==R.identity(s,candidate["publication_id"]))
+      D.check(candidate["fragments"]==Enum.map(evaluation["fragments"],&Map.take(&1,~w(origin_publication_id field text))))
+      for fragment<-evaluation["fragments"] do
+        D.check(fragment["sha256"]==X.hash(fragment["text"]) and fragment["end"]-fragment["start"]==byte_size(fragment["text"]))
+        D.check(Map.has_key?(s.publications,fragment["origin_publication_id"]) and s.publications[fragment["origin_publication_id"]].seq<=q["snapshot"]["watermark"])
+      end
+    end
+    if not prior,do: (D.object(q["prior"]);D.check(map_size(q["prior"])<=15))
+  end
+end

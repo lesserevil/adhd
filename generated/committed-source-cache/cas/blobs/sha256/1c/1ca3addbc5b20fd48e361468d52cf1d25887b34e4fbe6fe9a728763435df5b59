@@ -1,0 +1,23 @@
+defmodule ADHD.RecordsProtocol do
+  alias ADHD.Protocol,as: P
+  def read_props,do: %{"publication_id"=>P.str(),"watermark"=>P.int(0,9007199254740991),"max_depth"=>P.int(0,4),"limit"=>P.int(1,64)}
+  def nullable(s),do: %{"oneOf"=>[s,%{"type"=>"null"}]}
+  def extend(defs) do
+    link=P.obj(%{"relation"=>P.enum(~w(reply supports corrects related)),"publication_id"=>P.str()})
+    digest=P.str(64) |> Map.put("pattern","^[0-9a-f]{64}$")
+    identity=P.str(256) |> Map.put("pattern","^urn:adhd:record:[0-9a-f]{32}:.+$")
+    external=P.obj(%{"uri"=>P.str(2048) |> Map.put("format","uri"),"snapshot"=>P.str(4096),"sha256"=>digest},~w(uri)) |> Map.put("dependentRequired",%{"sha256"=>["snapshot"]}) |> Map.put("x-sha256Of",%{"sha256"=>"snapshot"})
+    context=P.obj(%{"question"=>P.str(4096),"subject"=>P.str(512),"conversation"=>P.str(512),"task"=>P.str(512),"links"=>P.array(link,16) |> Map.put("uniqueItems",true),"external"=>P.array(external,4)},[]) |> Map.put("x-maxCanonicalBytes",24576)
+    resolved=link |> Map.update!("properties",&Map.put(&1,"target_identity",nullable(identity))) |> Map.update!("required",&(&1++["target_identity"]))
+    record=P.obj(%{"publication"=>P.ref("Publication"),"identity"=>identity,"context"=>nullable(P.ref("RecordContext")),"context_identity"=>digest,"links"=>P.array(resolved,16)})
+    gap=P.obj(%{"origin_id"=>P.str(),"relation"=>P.enum(~w(reply supports corrects related subject conversation task external)),"target_id"=>P.str(2048),"reason"=>P.enum(~w(unresolved outside_snapshot depth limit cycle missing_snapshot))})
+    result=P.obj(%{"snapshot"=>P.obj(%{"server_id"=>P.str(32) |> Map.put("pattern","^[0-9a-f]{32}$"),"watermark"=>P.int(0,9007199254740991)}),"record"=>P.ref("ContextualRecord"),"related"=>P.array(P.ref("ContextualRecord"),63),"gaps"=>P.array(gap,128),"truncated"=>P.bool()})
+    publish=defs["agent_publish"] |> put_in(["properties","op"],%{"const"=>"publish_record"}) |> put_in(["properties","context"],P.ref("RecordContext"))
+    new=%{"RecordContext"=>context,"ContextualRecord"=>record,"RecordRead"=>result,"agent_publish_record"=>publish,
+      "agent_get_record"=>P.command("get_record",read_props(),["publication_id"]),"result_publish_record"=>P.obj(%{"record"=>P.ref("ContextualRecord"),"matching"=>%{"const"=>"pending"}}),"result_get_record"=>P.ref("RecordRead"),"admin_record"=>P.admin("record",read_props(),["publication_id"]),"admin_result_record"=>P.ref("RecordRead")}
+    defs=Map.merge(defs,new)
+    defs=update_in(defs,["AgentResult","anyOf"],&(&1++Enum.map(~w(publish_record get_record),fn op->P.ref("result_"<>op) end)))
+    defs=update_in(defs,["AdminCommand","oneOf"],&(&1++[P.ref("admin_record")]))
+    update_in(defs,["AdminResult","anyOf"],&(&1++[P.ref("admin_result_record")]))
+  end
+end

@@ -1,0 +1,289 @@
+defmodule ADHD.ArchiveWorker do
+  alias ADHD.Archive,as: A
+  alias ADHD.ArchivePolicy,as: P
+  alias ADHD.Domain,as: D
+  alias ADHD.History,as: H
+  alias ADHD.HistoryEvaluator,as: E
+  alias ADHD.Retrieval,as: X
+  alias ADHD.RetrievalJobs,as: J
+  alias ADHD.Records,as: R
+  def start,do: ADHD.Scope.spawn(fn->loop() end)
+  defp loop do
+    ADHD.Scope.begin_work()
+    worked=try do step() rescue _->false catch _,_->false end
+    Process.sleep(if worked,do: 20,else: 100);loop()
+  end
+  defp valid?(live,q,c),do: live != nil and live["run"]==q["run"] and live["status"]=="pending" and live["phase"]==q["phase"] and Map.has_key?(c["agents"],live["owner_id"])
+  defp fail(q,code,retryable \\ true) do
+    ADHD.Store.call(fn s->
+      c=X.resolve(ADHD.Config.get(),s);live=s.archive_queries[q["id"]]
+      if valid?(live,q,c) do
+        {s,live}=A.refresh(s,c,live)
+        next=if live["status"]=="pending",do: live |> A.settle() |> A.stop("partial",code,retryable),else: live
+        {true,A.put(s,next)}
+      else {false,s} end
+    end) |> ADHD.Store.unwrap()
+  end
+  defp fits?(s,c,old,next),do: A.capacity?(A.put(s,next),c) or (next["status"] != "pending" and :erlang.external_size(next)<=:erlang.external_size(old)+4096)
+  defp mutate(q,fun) do
+    result=ADHD.Store.call(fn s->
+      original=s;c=X.resolve(ADHD.Config.get(),s);live=s.archive_queries[q["id"]]
+      if valid?(live,q,c) do
+        {s,live}=A.refresh(s,c,live)
+        cond do
+          live["status"] != "pending"->{true,A.put(s,live)}
+          not A.consistent_children?(s,live)->{true,A.put(s,A.stop(live,"partial","CHILD_CHANGED",false))}
+          true->
+            {updated,next}=fun.(live,s,c)
+            if fits?(updated,c,live,next) do
+              committed=A.put(updated,next);{committed != original,committed}
+            else
+              usage=Map.new(A.stages(),fn stage->{stage,Map.put(next["usage"][stage],"records",live["usage"][stage]["records"])} end)
+              paid=Map.merge(live,Map.take(next,~w(child_paid inflight))) |> Map.put("usage",usage) |> A.stop("partial","RESOURCE_LIMIT",true)
+              {true,A.put(s,paid)}
+            end
+        end
+      else {false,s} end
+    end)
+    case result do {:ok,value}->value;{:error,"RESOURCE_EXHAUSTED"}->fail(q,"RESOURCE_LIMIT");{:error,_}->fail(q,"WORKER_ERROR") end
+  end
+  defp to_scan(q,reason) do
+    q |> A.reason(reason) |> Map.merge(%{"phase"=>"scanning","population"=>if(q["mode"]=="scan",do: "scan_only",else: "fallback_only"),"error"=>nil,"updated_at"=>D.now()})
+  end
+  defp route_intent(q) do
+    cond do
+      q["intent"]["requires_complete"] and q["mode"]=="search"->A.stop(q,"partial","REQUIRES_SCAN",false)
+      q["intent"]["requires_complete"]->to_scan(q,if(q["mode"]=="scan",do: "requested_scan",else: if(q["intent"]["decision"]=="unknown",do: "uncertain_intent",else: "complete_required")))
+      true->Map.merge(q,%{"phase"=>"searching","error"=>nil,"updated_at"=>D.now()})
+    end
+  end
+  defp failure(q,stage,code) do
+    q=if stage=="planner",do: Map.put(q,"intent",P.failed(A.error(code,true))),else: q
+    reason=cond do stage=="planner"->"planner_error";code=="CONTEXT_LIMIT"->"context_incomplete";true->"assessment_error" end
+    if q["mode"]=="search_then_scan",do: to_scan(q,reason),else: q |> A.reason(reason) |> A.stop("partial",code,code != "CONTEXT_LIMIT")
+  end
+  defp can_infer?,do: ADHD.AnalysisLane.allowed?()
+  defp planning(_s,c,q) do
+    cond do
+      q["primary_ids"]==[]->mutate(q,fn live,state,_->
+        next=live |> A.enter("done","empty") |> Map.put("intent",P.intent("empty")) |> Map.put("answer",E.empty_answer() |> Map.put("assessment","no_evidence")) |> Map.put("population",if(live["mode"]=="scan",do: "scan_only",else: "fallback_only"))
+        A.completed(state,next)
+      end)
+      q["mode"]=="scan" or q["complete"]->mutate(q,fn live,state,_->next=live |> A.enter("planning","plan") |> Map.put("intent",P.intent("requested")) |> route_intent();{state,next} end)
+      P.guard(q["question"]) != []->mutate(q,fn live,state,_->next=live |> A.enter("planning","plan") |> Map.put("intent",P.intent("guard",P.guard(live["question"]))) |> route_intent();{state,next} end)
+      q["intent"] != nil->mutate(q,fn live,state,_-> {state,route_intent(live)} end)
+      not can_infer?()->false
+      true->
+        started=System.monotonic_time(:millisecond);payload=P.request(q["question"],c);bytes=JSON.encode!(payload)
+        if byte_size(bytes)>A.effective(c)["request_bytes"] do mutate(q,fn live,state,_-> {state,live |> A.enter("planning","plan") |> failure("planner","CONTEXT_LIMIT")} end) else
+          infer(q,c,"planner",payload,bytes,[],[],false,max(0,System.monotonic_time(:millisecond)-started))
+        end
+    end
+  end
+  defp child_field("retrieval"),do: "search"
+  defp child_field(stage),do: stage
+  defp child_summary(child,stage),do: if(stage=="retrieval",do: J.public(child,%{"summary"=>true}),else: H.public(child,%{"summary"=>true}))
+  defp child_op(stage,verb),do: if(stage=="retrieval",do: case verb do :create->"retrieve";:continue->"continue_retrieval" end,else: case verb do :create->"query_history";:continue->"continue_history_query" end)
+  defp child_module(stage),do: if(stage=="retrieval",do: J,else: H)
+  defp child(q,s,_c,stage) do
+    ref=q["children"][stage]
+    if ref==nil do
+      mutate(q,fn live,state,current->
+        enabled=if stage=="retrieval",do: X.effective(current)["enabled"],else: H.effective(current)["enabled"]
+        if not enabled do
+          next=if stage=="retrieval" and live["mode"]=="search_then_scan",do: to_scan(live,"retrieval_error"),else: A.stop(live,"partial",if(stage=="retrieval",do: "RETRIEVAL_DISABLED",else: "SCAN_DISABLED"),true)
+          {state,next}
+        else
+          scope=live["scope"] |> Map.delete("kind") |> Map.put("watermark",live["snapshot"]["watermark"])
+          cmd=%{"op"=>child_op(stage,:create),"question"=>live["question"],"scope"=>scope,"budget"=>live["budget"][stage]}
+          cmd=if stage=="retrieval",do: Map.put(cmd,"limit",live["limit"]),else: Map.put(cmd,"complete",true)
+          {result,state}=apply(child_module(stage),:agent,[state,Map.put(current,"project_id",live["project_id"]),live["owner_id"],cmd]);value=result["query"]
+          child_ref=%{"query_id"=>value["id"],"run"=>value["run"],"last_status"=>value["status"]}
+          next=live |> put_in(["children",stage],child_ref) |> Map.put(child_field(stage),value) |> A.enter(live["phase"],if(stage=="retrieval",do: "search",else: stage))
+          {state,next}
+        end
+      end)
+    else
+      {actual,selected}=A.child_state(s,stage,ref)
+      cond do
+        actual==nil or actual["run"] != ref["run"] or actual["status"]=="cancelled"->fail(q,"CHILD_CHANGED",false)
+        selected["status"]=="pending"->
+          # Cost-only polling occurs inside Store; expensive public projections are
+          # prepared outside its serialized transaction.
+          view=child_summary(selected,stage)
+          mutate(q,fn live,state,_->
+            current=elem(A.child_state(state,stage,live["children"][stage]),0)
+            if current==actual,do: {state,live |> Map.put(child_field(stage),view) |> put_in(["children",stage,"last_status"],view["status"])},else: {state,live}
+          end)
+        selected["status"]=="partial" and q[child_field(stage)] != nil and q[child_field(stage)]["run"]==selected["run"] and q[child_field(stage)]["status"]=="partial"->
+          # A user continuation resumes the child only after the parent's own
+          # partial checkpoint has advanced to a new run.
+          if q["error"]==nil do
+            mutate(q,fn live,state,current->
+              cmd=%{"op"=>child_op(stage,:continue),"query_id"=>ref["query_id"],"budget"=>live["budget"][stage]}
+              {result,state}=apply(child_module(stage),:agent,[state,current,live["owner_id"],cmd]);view=result["query"]
+              next=live |> Map.put(child_field(stage),view) |> put_in(["children",stage],%{"query_id"=>view["id"],"run"=>view["run"],"last_status"=>view["status"]})
+              {state,next}
+            end)
+          else false end
+        true->
+          view=child_summary(selected,stage)
+          mutate(q,fn live,state,current->
+            now=elem(A.child_state(state,stage,live["children"][stage]),0)
+            if now != actual do {state,live} else
+              next=live |> Map.put(child_field(stage),view) |> put_in(["children",stage,"last_status"],view["status"])
+              consume_child(state,current,next,stage,view)
+            end
+          end)
+      end
+    end
+  end
+  defp consume_child(s,_c,q,"retrieval",view) do
+    if view["status"]=="completed" and view["coverage"]["indexed"]==view["coverage"]["total"] and view["candidates"] != [] do
+      {s,Map.merge(q,%{"phase"=>"assessing","error"=>nil,"updated_at"=>D.now()})}
+    else
+      code=if view["error"],do: view["error"]["code"],else: if(view["candidates"]==[],do: "NO_CANDIDATES",else: "INDEX_STALE")
+      reason=cond do code=="NO_CANDIDATES"->"no_candidates";code in ~w(INDEX_NOT_READY INDEX_STALE INDEX_CHANGED)->"index_unavailable";code=="MODEL_ERROR"->"retrieval_error";true->"retrieval_partial" end
+      next=if q["mode"]=="search_then_scan",do: to_scan(q,reason),else: q |> A.reason(reason) |> A.stop("partial",if(code=="MODEL_ERROR",do: code,else: "REQUIRES_SCAN"),code=="MODEL_ERROR")
+      {s,next}
+    end
+  end
+  defp consume_child(s,_c,q,stage,view) do
+    comparison=if q["assessment"] do
+      complete=view["status"]=="completed" and view["error"]==nil and view["coverage"]["primary_complete"] and view["coverage"]["final_complete"] and not A.blocking_gaps?(view["coverage"]["gaps"],q["primary_ids"]++view["coverage"]["expanded_ids"]) and not view["coverage"]["truncated"]
+      %{"reference"=>if(stage=="audit",do: "audit",else: "fallback"),"completed_scope"=>complete,"candidate_assessment"=>q["assessment"]["answer"]["assessment"],"scan_assessment"=>view["answer"]["assessment"],"answer_changed"=>if(complete,do: P.signature(q["assessment"]["answer"]) != P.signature(view["answer"]),else: nil),"provisional"=>true}
+    else nil end
+    answer=view["answer"]
+    answer=if stage=="audit" and (comparison==nil or not comparison["completed_scope"]),do: Map.update!(answer,"uncertainty",&Enum.uniq(&1++["incomplete_audit","comparison_unavailable"])),else: answer
+    answer=if stage=="audit" and comparison && comparison["answer_changed"],do: Map.update!(answer,"uncertainty",&Enum.uniq(&1++["audit_changed_answer"])),else: answer
+    next=Map.merge(q,%{"answer"=>answer,"comparison"=>comparison,"updated_at"=>D.now()})
+    if view["status"]=="completed" do A.completed(s,next) else
+      code=if view["error"],do: view["error"]["code"],else: "WORKER_ERROR"
+      code=if code in ~w(FINAL_LIMIT CONTEXT_LIMIT),do: "CONTEXT_LIMIT",else: if(code in ~w(BUDGET_RECORDS BUDGET_CALLS BUDGET_BYTES BUDGET_TIME MODEL_ERROR RESOURCE_LIMIT CONFIG_CHANGED),do: code,else: "CHILD_CHANGED")
+      {s,A.stop(next,"partial",code,code not in ~w(CHILD_CHANGED CONTEXT_LIMIT CONFIG_CHANGED))}
+    end
+  end
+  defp assessment(s,c,q) do
+    if not can_infer?() do false else
+    started=System.monotonic_time(:millisecond);remaining=q["budget"]["assessment"]["time_ms"]-q["usage"]["assessment"]["time_ms"];deadline=started+max(remaining,0)
+    result=try do
+      policy=q["policy"]["history"]["policy"];cc=Map.put(c,"project_id",q["project_id"])
+      reads=Enum.map(q["search"]["candidates"],fn item->X.check_deadline(deadline);R.read(s,cc,%{"publication_id"=>item["publication_id"],"watermark"=>q["snapshot"]["watermark"],"max_depth"=>policy["context_depth"],"limit"=>policy["context_limit"]}) end)
+      ids=reads |> Enum.flat_map(fn read->[read["record"]|read["related"]] end) |> Enum.map(& &1["publication"]["id"]) |> Enum.uniq() |> Enum.sort_by(&{s.publications[&1].seq,&1})
+      gaps=Enum.flat_map(reads,& &1["gaps"]) |> Enum.uniq();truncated=Enum.any?(reads,& &1["truncated"]) or length(gaps)>128
+      cond do
+        length(ids)>128 or A.blocking_gaps?(gaps,ids) or truncated->{:error,"CONTEXT_LIMIT"}
+        true->
+          records=Enum.map(ids,fn id->X.check_deadline(deadline);R.record(s,cc,id) end);{payload,bytes}=E.prepare(q["question"],records,c)
+          if byte_size(bytes)>policy["request_bytes"],do: {:error,"CONTEXT_LIMIT"},else: {:ok,records,payload,bytes,Enum.take(gaps,128),truncated}
+      end
+    catch :retrieval_budget_time->{:error,"BUDGET_TIME"} end
+    elapsed=max(0,System.monotonic_time(:millisecond)-started)
+    case result do
+      {:error,code}->mutate(q,fn live,state,_-> {state,live |> A.enter("assessing","assess") |> A.charge("assessment","time_ms",elapsed) |> failure("assessment",code)} end)
+      {:ok,records,payload,bytes,gaps,truncated}->infer(q,c,"assessment",payload,bytes,records,gaps,truncated,elapsed)
+    end
+  end
+    end
+  defp reserve(q,stage,payload,bytes,records,gaps,truncated,assembly) do
+    ADHD.Store.call(fn s->
+      c=X.resolve(ADHD.Config.get(),s);live=s.archive_queries[q["id"]]
+      if valid?(live,q,c) do
+        {s,live}=A.refresh(s,c,live)
+        cond do
+          live["status"] != "pending"->{nil,A.put(s,live)}
+          not A.consistent_children?(s,live)->{nil,A.put(s,A.stop(live,"partial","CHILD_CHANGED",false))}
+          live["inflight"] != nil->{nil,s}
+          true->
+            live=live |> A.enter(live["phase"],if(stage=="planner",do: "plan",else: "assess")) |> A.charge(stage,"time_ms",assembly)
+            b=live["budget"][stage];u=live["usage"][stage]
+            code=Enum.find_value([{"records",length(records),"BUDGET_RECORDS"},{"calls",1,"BUDGET_CALLS"},{"bytes",byte_size(bytes),"BUDGET_BYTES"},{"time_ms",1,"BUDGET_TIME"}],fn {key,n,code}->if u[key]+n>b[key],do: code end)
+            if code do {nil,A.put(s,failure(live,stage,code))} else
+              configured=if stage=="planner",do: A.effective(c)["timeout_ms"],else: H.effective(c)["timeout_ms"];timeout=min(configured,b["time_ms"]-u["time_ms"])
+              marker=%{"stage"=>stage,"nonce"=>D.opaque(),"request"=>payload,"request_json"=>bytes,"request_sha256"=>X.hash(bytes),"records"=>records,"gaps"=>gaps,"truncated"=>truncated,"timeout_ms"=>timeout,"budget_limited"=>timeout<configured}
+              next=live |> A.charge(stage,"calls",1) |> A.charge(stage,"bytes",byte_size(bytes)) |> Map.put("inflight",marker)
+              if A.capacity?(A.put(s,next),c),do: {{marker,c},A.put(s,next)},else: {nil,A.put(s,A.stop(live,"partial","RESOURCE_LIMIT",true))}
+            end
+        end
+      else {nil,s} end
+    end) |> ADHD.Store.unwrap()
+  end
+  defp infer(q,_c,stage,payload,bytes,records,gaps,truncated,assembly) do
+    if not can_infer?() do
+      mutate(q,fn live,state,_->
+        next=live |> A.enter(live["phase"],if(stage=="planner",do: "plan",else: "assess")) |> A.charge(stage,"time_ms",assembly)
+        next=if next["usage"][stage]["time_ms"]>=next["budget"][stage]["time_ms"],do: failure(next,stage,"BUDGET_TIME"),else: next
+        {state,next}
+      end);false
+    else
+      case reserve(q,stage,payload,bytes,records,gaps,truncated,assembly) do
+        nil->true
+        {marker,c}->
+          ADHD.AnalysisLane.began();started=System.monotonic_time(:millisecond)
+          result=try do
+            response=if stage=="planner",do: P.call(c,payload,bytes,marker["timeout_ms"]),else: %{"model"=>payload["model"],"answers"=>E.call(c,payload,bytes,marker["timeout_ms"])}
+            {:ok,response}
+          rescue _->:failed catch _,_->:failed end
+          finish(q,marker,result,max(0,System.monotonic_time(:millisecond)-started));true
+      end
+    end
+  end
+  defp finish(q,marker,result,elapsed) do
+    ADHD.Store.call(fn s->
+      c=X.resolve(ADHD.Config.get(),s);live=s.archive_queries[q["id"]]
+      if valid?(live,q,c) and live["inflight"] != nil and live["inflight"]["nonce"]==marker["nonce"] do
+        stage=marker["stage"];paid=live |> Map.put("inflight",nil) |> A.charge(stage,"time_ms",elapsed)
+        {state,next}=cond do
+          paid["policy"]["identity"] != P.descriptor(c,paid["mode"],paid["complete"])["identity"]->A.invalidate(s,c,paid)
+          not A.consistent_children?(s,paid)->{s,A.stop(paid,"partial","CHILD_CHANGED",false)}
+          paid["usage"][stage]["time_ms"]>paid["budget"][stage]["time_ms"]+1->{s,failure(paid,stage,"BUDGET_TIME")}
+          result==:failed->
+            code=if marker["budget_limited"] and elapsed+1>=marker["timeout_ms"],do: "BUDGET_TIME",else: "MODEL_ERROR"
+            {s,failure(paid,stage,code)}
+          true->
+            {:ok,response}=result
+            evaluation=%{"stage"=>stage,"request"=>marker["request"],"request_json"=>marker["request_json"],"request_sha256"=>marker["request_sha256"],"response"=>response,"bytes"=>byte_size(marker["request_json"]),"time_ms"=>elapsed}
+            evaluation=if stage=="assessment",do: Map.merge(evaluation,%{"record_ids"=>Enum.map(marker["records"],& &1["publication"]["id"]),"context_identities"=>Enum.map(marker["records"],& &1["context_identity"]),"gaps"=>marker["gaps"],"truncated"=>marker["truncated"]}),else: evaluation
+            paid=paid |> Map.update!("evaluations",&(&1++[evaluation])) |> A.charge(stage,"records",length(marker["records"])) |> Map.put("updated_at",D.now())
+            if stage=="planner" do {s,paid |> Map.put("intent",P.decision(response,c)) |> route_intent()} else
+              decision=E.decision(response["answers"],c);answer=E.answer(marker["records"],decision);ids=evaluation["record_ids"]
+              assessment=%{"answer"=>answer,"record_ids"=>ids,"context_ids"=>Enum.reject(ids,&(&1 in paid["primary_ids"])),"gaps"=>marker["gaps"],"truncated"=>marker["truncated"],"evaluator"=>paid["policy"]["history"]}
+              paid=Map.merge(paid,%{"assessment"=>assessment,"answer"=>answer})
+              if decision["outcome"]=="direct" do
+                paid=Map.put(paid,"audit_eligible",true)
+                if P.selected(paid["audit_draw"],paid["policy"]["audit_rate_ppm"]),do: {s,paid |> A.reason("audit_sample") |> Map.put("phase","auditing")},else: A.completed(s,paid)
+              else
+                reason=if decision["outcome"]=="conflicting",do: "evidence_conflict",else: "evidence_insufficient"
+                if paid["mode"]=="search_then_scan",do: {s,to_scan(paid,reason)},else: {s,paid |> A.reason(reason) |> A.stop("partial","REQUIRES_SCAN",false)}
+              end
+            end
+        end
+        if fits?(state,c,live,next),do: {true,A.put(state,next)},else: {true,A.put(s,A.stop(paid,"partial","RESOURCE_LIMIT",true))}
+      else {false,s} end
+    end) |> ADHD.Store.unwrap()
+  end
+  def step do
+    c=ADHD.Config.get()
+    work=ADHD.Store.call(fn state->{Enum.any?(state.archive_queries,fn {_,job}->job["status"]=="pending" and Map.has_key?(c["agents"],job["owner_id"]) end),state} end) |> ADHD.Store.unwrap()
+    if not work do false else
+    s=ADHD.Store.snapshot() |> ADHD.Store.unwrap();c=X.resolve(c,s)
+    pending=s.archive_queries |> Map.values() |> Enum.filter(&(&1["status"]=="pending" and Map.has_key?(c["agents"],&1["owner_id"]))) |> Enum.sort_by(& &1["seq"])
+    last=Process.get(:last_archive_seq,-1);q=Enum.find(pending,&(&1["seq"]>last)) || List.first(pending)
+    if q do
+      Process.put(:last_archive_seq,q["seq"])
+      try do
+        cond do
+          q["policy"]["identity"] != P.descriptor(c,q["mode"],q["complete"])["identity"]->mutate(q,fn live,state,current->A.invalidate(state,current,live) end)
+          q["inflight"] != nil->mutate(q,fn live,state,_-> {state,A.settle(live)} end)
+          q["phase"]=="planning"->planning(s,c,q)
+          q["phase"]=="searching"->child(q,s,c,"retrieval")
+          q["phase"]=="assessing"->assessment(s,c,q)
+          q["phase"]=="scanning"->child(q,s,c,"scan")
+          q["phase"]=="auditing"->child(q,s,c,"audit")
+          true->fail(q,"WORKER_ERROR")
+        end
+      rescue _->fail(q,"WORKER_ERROR") catch _,_->fail(q,"WORKER_ERROR") end
+    else false end
+    end
+  end
+end

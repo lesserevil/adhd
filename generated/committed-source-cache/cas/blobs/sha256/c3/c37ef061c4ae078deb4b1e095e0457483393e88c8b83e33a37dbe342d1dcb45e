@@ -1,0 +1,748 @@
+defmodule ADHD.Eventing do
+  alias ADHD.Domain, as: D
+  @json "application/vnd.kafka.json.v2+json"
+  @plain "application/vnd.kafka.v2+json"
+  @admin "application/json"
+  def empty, do: %{version: 1,sequence: 0,events: %{},next_offset: 0,quarantine: %{},gap: nil,last_error: nil,binding: nil,control_revision: 0,audit: [],replays: %{},filter_schema: 1,filter_index: :gb_trees.empty(),filter_cursor: 0,filter_jobs: %{},filter_last_adapter: nil,filter_unavailable: 0,filter_ready: MapSet.new(),deferred_filters: 0}
+  def enabled?(c), do: is_map(c["eventing"]) and c["eventing"]["enabled"] == true
+  def normalize(c) do
+    if Map.has_key?(c,"eventing") do
+      v=c["eventing"]
+      D.keys(v,~w(enabled rest_url topic_prefix timeout_ms retry_ms bearer_token tls_ca_pem retention_ms max_pending_events max_pending_bytes max_pending_filter_jobs max_pending_filter_jobs_per_subscription))
+      v=Map.merge(%{"enabled"=>true,"rest_url"=>"http://127.0.0.1:8082","topic_prefix"=>"adhd","timeout_ms"=>3000,"retry_ms"=>1000,"retention_ms"=>604800000,"max_pending_events"=>100000,"max_pending_bytes"=>1073741824,"max_pending_filter_jobs"=>256,"max_pending_filter_jobs_per_subscription"=>64},v)
+      D.boolean(v["enabled"]);D.url(v["rest_url"])
+      uri=URI.parse(v["rest_url"]);D.check(is_nil(uri.userinfo) and is_nil(uri.query) and is_nil(uri.fragment))
+      D.check(is_binary(v["topic_prefix"]) and Regex.match?(~r/^[A-Za-z0-9_-]{1,32}$/,v["topic_prefix"]))
+      for key<-~w(timeout_ms retry_ms),do: D.integer(v[key],100,30000)
+      D.integer(v["retention_ms"],3600000,31536000000)
+      D.integer(v["max_pending_events"],1,1000000)
+      D.integer(v["max_pending_bytes"],65536,1099511627776)
+      for key<-~w(max_pending_filter_jobs max_pending_filter_jobs_per_subscription),do: D.integer(v[key],1,100000)
+      if Map.has_key?(v,"tls_ca_pem"),do: tls_roots(v["tls_ca_pem"])
+      if Map.has_key?(v,"bearer_token"),do: (D.string(v["bearer_token"],4096);D.check(byte_size(v["bearer_token"])>=24))
+      Map.put(c,"eventing",v)
+    else c end
+  end
+  def config(c) do
+    normalize(Map.put_new(c,"eventing",%{"enabled"=>false}))["eventing"]
+  end
+  def project_policy(nil),do: %{}
+  def project_policy(value) do
+    D.keys(value,~w(topic_prefix retention_ms max_pending_events max_pending_bytes max_pending_filter_jobs max_pending_filter_jobs_per_subscription))
+    policy=Map.reject(value,fn {_,v}->is_nil(v) end)
+    config(%{"eventing"=>Map.merge(%{"enabled"=>false},policy)})
+    policy
+  end
+  defp transition_policy(c),do: Map.take(config(c),~w(enabled rest_url topic_prefix bearer_token tls_ca_pem retention_ms))
+  def subscription(cmd) do
+    D.check(not (Map.has_key?(cmd,"filter") and Map.has_key?(cmd,"description")))
+    criterion=cmd["filter"] || cmd["description"]
+    mode=Map.get(cmd,"mode",if(Map.has_key?(cmd,"filter") or Map.has_key?(cmd,"description"),do: "filtered",else: "raw"))
+    D.check(mode in ["raw","filtered"])
+    if mode=="raw" do
+      D.check(not Map.has_key?(cmd,"filter") and not Map.has_key?(cmd,"description"))
+    else D.string(criterion,4096) end
+    if Map.has_key?(cmd,"selectors") do
+      D.keys(cmd["selectors"],~w(information_type source_kind source_id author_id))
+      Enum.each(cmd["selectors"],fn {key,values}->
+        D.list(values,64,1);D.distinct(values)
+        Enum.each(values,fn value->
+          case key do
+            "author_id"->D.identifier(value)
+            "information_type"->D.identifier(value)
+            "source_kind"->D.identifier(value)
+            "source_id"->D.string(value,256)
+          end
+        end)
+      end)
+    end
+    if Map.has_key?(cmd,"paused"),do: D.boolean(cmd["paused"])
+    :ok
+  end
+  def upgrade(s) do
+    e=Map.merge(empty(),Map.get(s,:eventing,%{}))
+    D.check(e.version==1 and is_integer(e.sequence) and e.sequence>=0 and is_integer(e.next_offset) and e.next_offset>=0)
+    D.object(e.events);D.object(e.quarantine)
+    old=Map.get(s,:eventing,%{})
+    e=if Map.has_key?(old,:filter_schema),do: e,else: Map.delete(e,:filter_schema)
+    Map.put(s,:eventing,e) |> filter_upgrade()
+  end
+  def topic(c,s) do
+    prefix=c["eventing"]["topic_prefix"] || "adhd"
+    epoch=c["topic_generation"]
+    suffix=if is_nil(epoch),do: "",else: (D.check(is_binary(epoch) and Regex.match?(~r/\A[0-9a-f]{32}\z/,epoch));".r"<>epoch)
+    prefix<>"."<>hash(s.server_id)<>"."<>hash(s.project)<>suffix<>".events.v1"
+  end
+  def restore_state(state,c,mode) when mode in ["restore","initialize"] do
+    state=upgrade(state)
+    D.check(state[:schema]==4 and state[:project_epoch]==c["project_epoch"] and
+      c["topic_generation"]==state[:project_epoch])
+    old=state.eventing
+    events=Map.new(old.events,fn {id,row}->
+      # Completed recipient choices and logical IDs survive. Only unfinished
+      # accepted transport work is produced into the fresh topic.
+      next=row |> Map.put(:offset,nil) |> Map.put(:broker_observed,false)
+      next=if row.state==:materialized,do: next,else: next |> Map.put(:state,:pending) |> Map.put(:retry_at,0)
+      {id,next}
+    end)
+    history=Map.get(old,:restore_history,[])
+    history=if mode=="restore" do
+      previous=%{binding: old.binding,next_offset: old.next_offset,quarantine: old.quarantine,
+        gap: old.gap,last_error: old.last_error,
+        offsets: Map.new(old.events,fn {id,row}->{id,row.offset} end)}
+      history++[previous]
+    else history end
+    eventing=old |> Map.merge(%{events: events,next_offset: 0,quarantine: %{},gap: nil,
+      last_error: nil,binding: binding(c,state)}) |> Map.put(:restore_history,history)
+    %{state|eventing: eventing}
+  end
+  def preflight_restore(c,state,owning_deadline \\ nil) do
+    D.check(state[:schema]==4 and c["topic_generation"]==state[:project_epoch])
+    if enabled?(c) do
+      deadline=provision_deadline(c,owning_deadline)
+      provision(c,state,true,deadline)
+      offsets=request_until(c,:get,"/topics/"<>topic(c,state)<>"/partitions/0/offsets",nil,@plain,@plain,deadline) |> success()
+      # A fresh namespace cannot adopt even a truncated/reused nonzero log.
+      D.check(offsets["beginning_offset"]===0 and offsets["end_offset"]===0)
+    end
+    :ok
+  end
+  defp hash(value),do: :crypto.hash(:sha256,value) |> Base.encode16(case: :lower) |> binary_part(0,16)
+  defp binding(c,s),do: ADHD.Directory.digest(%{"server_id"=>s.server_id,"project_id"=>s.project,"topic"=>topic(c,s),"rest_url"=>c["eventing"]["rest_url"]})
+  defp consumer_key(c,s),do: {binding(c,s),ADHD.Directory.digest(c["eventing"]),s.eventing.control_revision}
+  defp fence(c),do: ADHD.Directory.digest(%{"eventing"=>c["eventing"],"config_revision"=>c["config_revision"]})
+  def enqueue(s,c,p,subscriptions) do
+    s=upgrade(s) |> remember_adapter(c);e=s.eventing
+    pending=Enum.filter(e.events,fn {_,r}->r.state != :materialized end)
+    bytes=Enum.reduce(pending,0,fn {_,r},n->n+r.bytes end)
+    sequence=s.publications[p["id"]].seq
+    event=%{"schema_version"=>1,"event_id"=>p["id"],"server_id"=>s.server_id,"project_id"=>s.project,"project_sequence"=>sequence,"publication_id"=>p["id"],"author_id"=>p["author_id"],"created_at"=>p["created_at"],"publication"=>p}
+    encoded=JSON.encode!(event)
+    D.check(byte_size(encoded)<=262144)
+    subscriptions=Enum.filter(subscriptions,fn sub->sub["status"] != "paused" and sub["paused"] != true end) |> Enum.map(&freeze(&1,c,s.eventing.filter_last_adapter))
+    cost=byte_size(encoded)+:erlang.external_size(subscriptions)
+    if length(pending)>=c["eventing"]["max_pending_events"] or bytes+cost>c["eventing"]["max_pending_bytes"],do: D.fail("BACKPRESSURE")
+    row=%{filter_registered: 0,filter_done: 0,filter_remaining: 0,filter_next: 0,event: event,subscriptions: subscriptions,state: :pending,offset: nil,bytes: cost,retry_at: 0,broker_observed: false}
+    e=%{e|sequence: sequence,events: Map.put(e.events,event["event_id"],row)}
+    {%{"event_id"=>event["event_id"],"project_sequence"=>sequence,"state"=>"pending"},%{s|eventing: e}}
+  end
+  def status(s,c) do
+    s=upgrade(s);e=s.eventing;rows=Map.values(e.events)
+    pending=Enum.filter(rows,&(&1.state != :materialized))
+    watermark=fn state->rows |> Enum.filter(&(&1.state in state)) |> Enum.map(& &1.event["project_sequence"]) |> Enum.max(fn->0 end) end
+    {ready,_}=ready_counts(s)
+    %{"pending_filter_jobs"=>MapSet.size(ready),"deferred_filter_targets"=>e.deferred_filters,"filtering_paused"=>is_nil(c["matcher"]) or c["project_status"]=="archived","filter_queue_limits"=>Map.take(config(c),~w(max_pending_filter_jobs max_pending_filter_jobs_per_subscription)),"enabled"=>enabled?(c),"transport"=>if(enabled?(c),do: "kafka-rest-v2",else: "legacy"),"topic"=>if(enabled?(c),do: topic(c,s),else: nil),"accepted_watermark"=>e.sequence,"replay_watermark"=>replay_watermark(s),"control_revision"=>e.control_revision,"published_watermark"=>watermark.([:published,:observed,:materialized]),"materialized_watermark"=>watermark.([:materialized]),"next_offset"=>e.next_offset,"pending_events"=>length(pending),"pending_bytes"=>Enum.reduce(pending,0,&(&1.bytes+&2)),"quarantined"=>map_size(e.quarantine),"quarantines"=>Enum.map(Enum.sort(e.quarantine),fn {key,value}->Map.put(value,"offset",case Integer.parse(key) do {offset,""}->offset;_->nil end) end),"gap"=>e.gap,"last_error"=>e.last_error || if(e.filter_unavailable>0,do: %{"code"=>"FILTER_POLICY_UNAVAILABLE","at"=>D.now()},else: nil)}
+  end
+  def start,do: ADHD.Scope.spawn(fn->loop() end)
+  defp loop do
+    ADHD.Scope.begin_work()
+    # A lost/restoring writer may reject even the error-recording callback.
+    # Retire this unit, then let the existing worker begin in the new epoch.
+    try do
+      step()
+    rescue _ -> :ok
+    catch _, _ -> :ok end
+    Process.sleep(100)
+    loop()
+  end
+  def step do
+    c=ADHD.Config.get()
+    if enabled?(c) do
+      try do
+        s=ADHD.Store.call(fn state->next=stage_filters(state,ADHD.Config.get());{next,next} end) |> ADHD.Store.unwrap()
+        ensure_topic(c,s)
+        publish_next(c,s)
+        consume(c)
+      rescue
+        _->failure(c,"BROKER_UNAVAILABLE")
+      catch
+        {:eventing,code}->failure(c,code)
+        _,_->failure(c,"BROKER_UNAVAILABLE")
+      end
+    end
+    :ok
+  end
+  defp failure(c,code) do
+    case Process.delete(:adhd_kafka_consumer) do
+      {_,path,previous}->close_owned_consumer(previous,path)
+      _->:ok
+    end
+    ADHD.Store.call(fn s->
+      s=upgrade(s)
+      if fence(ADHD.Config.get())==fence(c),do: {:ok,put_in(s,[:eventing,:last_error],%{"code"=>code,"at"=>D.now()})},else: {:ok,s}
+    end)
+    # Bounded per-project retry; this worker owns no global capacity while waiting.
+    Process.sleep(c["eventing"]["retry_ms"])
+  end
+  # Cleanup may outlive its target epoch. This sole server-context exception
+  # deletes only the consumer endpoint previously recorded by this worker. It
+  # cannot publish, fetch, commit, mutate project data or clear caller fences.
+  defp close_owned_consumer(config,path) do
+    previous={ADHD.Scope.id(),ADHD.Scope.epoch(),ADHD.Scope.fences()}
+    ADHD.Scope.put(nil);ADHD.Scope.begin_work()
+    try do request(config,:delete,path,nil) rescue _->:ok catch _,_->:ok
+    after
+      {id,epoch,fences}=previous
+      ADHD.Scope.begin_work();ADHD.Scope.put(id);ADHD.Scope.put_epoch(epoch)
+      for {project,captured}<-fences,do: ADHD.Scope.depend(project,captured)
+    end
+  end
+  defp headers(c,accept),do: [{"accept",accept}]++if(c["eventing"]["bearer_token"],do: [{"authorization","Bearer "<>c["eventing"]["bearer_token"]}],else: [])
+  defp request(c,method,path,body,content \\ @plain,accept \\ @plain) do
+    request_until(c,method,path,body,content,accept,provision_deadline(c,nil))
+  end
+  defp request_until(c,method,path,body,content,accept,deadline) do
+    ADHD.Resources.run(:eventing,remaining(deadline),fn granted->
+      timeout=min(granted,remaining(deadline))
+      request_now(c,method,path,body,content,accept,timeout,deadline)
+    end)
+  end
+  defp monotonic_ms,do: System.monotonic_time(:millisecond)
+  defp remaining(deadline) do
+    left=deadline-monotonic_ms()
+    if left<=0,do: throw({:eventing,"BROKER_TIMEOUT"})
+    left
+  end
+  defp provision_deadline(c,nil),do: monotonic_ms()+c["eventing"]["timeout_ms"]
+  defp provision_deadline(c,owner) when is_integer(owner),do: min(provision_deadline(c,nil),owner)
+  defp request_now(c,method,path,body,content,accept,timeout,deadline) do
+    timeout=min(timeout,remaining(deadline))
+    url=String.trim_trailing(c["eventing"]["rest_url"],"/")<>path
+    D.url(url)
+    hs=Enum.map(headers(c,accept),fn {k,v}->{String.to_charlist(k),String.to_charlist(v)} end)
+    req=if method in [:get,:delete],do: {String.to_charlist(url),hs},else: {String.to_charlist(url),hs,String.to_charlist(content),if(is_nil(body),do: "",else: JSON.encode!(body))}
+    ssl=[verify: :verify_peer,reuse_sessions: false,cacerts: if(c["eventing"]["tls_ca_pem"],do: tls_roots(c["eventing"]["tls_ca_pem"]),else: :public_key.cacerts_get()),customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]]
+    # Per-request socket options bypass shared sessions and force Connection: close
+    # in OTP's httpc manager. A project's long poll must not queue another's work.
+    {:ok,id}=:httpc.request(method,req,[timeout: timeout,connect_timeout: timeout,autoredirect: false,ssl: ssl],[sync: false,stream: :self,body_format: :binary,socket_opts: [keepalive: false]])
+    :ok=ADHD.Resources.track_http(id)
+    response(id,deadline,[],0)
+  end
+  defp decode(""),do: nil
+  defp decode(body),do: ADHD.JSON.decode!(body)
+  defp response(id,deadline,chunks,size) do
+    if monotonic_ms()>=deadline,do: (:httpc.cancel_request(id);throw({:eventing,"BROKER_TIMEOUT"}))
+    receive do
+      {:http,{^id,{{_,status,_},_,body}}}->
+        D.check(byte_size(body)<=262144)
+        {status,decode(body)}
+      {:http,{^id,:stream_start,_}}->response(id,deadline,chunks,size)
+      {:http,{^id,:stream,bytes}}->
+        bytes=IO.iodata_to_binary(bytes)
+        if size+byte_size(bytes)>262144,do: (:httpc.cancel_request(id);throw({:eventing,"BROKER_RESPONSE_TOO_LARGE"}))
+        response(id,deadline,[bytes|chunks],size+byte_size(bytes))
+      {:http,{^id,:stream_end,_}}->{200,chunks |> Enum.reverse() |> IO.iodata_to_binary() |> decode()}
+      {:http,{^id,{:error,_}}}->throw({:eventing,"BROKER_UNAVAILABLE"})
+    after max(0,deadline-monotonic_ms())->:httpc.cancel_request(id);throw({:eventing,"BROKER_TIMEOUT"})
+    end
+  end
+  defp success({status,body}) when status in 200..299,do: body
+  defp success(_),do: throw({:eventing,"BROKER_REQUEST_FAILED"})
+  # Preflight performs no backend mutation. Only a durable config decision may
+  # reset physical transport positions, and its ID makes crash recovery repeatable.
+  def preflight(c,old) do
+    try do
+    affected=Enum.filter(ADHD.Projects.ids(c),fn id->
+      view=ADHD.Projects.view(c,id)
+      previous=if id in ADHD.Projects.ids(old),do: ADHD.Projects.view(old,id),else: nil
+      # Existing unavailable projects inherit the new policy for recovery; do
+      # not read their missing Store or accidentally admit them here. A genuinely
+      # new Admin-created project still preflights its fresh topic before commit.
+      (is_nil(previous) or ADHD.StorageRegistry.availability(old,id)=="ready") and
+        enabled?(view) and (is_nil(previous) or transition_policy(view) != transition_policy(previous))
+    end)
+    if affected != [] do
+      for id<-affected do
+        view=ADHD.Projects.view(c,id)
+        state=if id in ADHD.Projects.ids(old) do
+          ADHD.Projects.scope(old,id,fn _->ADHD.Store.snapshot() |> ADHD.Store.unwrap() |> upgrade() end)
+        else %{server_id: c["server_id"],project: id,eventing: empty()} end
+        provision(view,state,false)
+      end
+      %{"id"=>D.opaque()}
+    else nil end
+    rescue _->D.fail("CONFIG_APPLY_FAILED")
+    catch _,_->D.fail("CONFIG_APPLY_FAILED") end
+  end
+  def apply_transition(s,c,id) do
+    s=upgrade(s);e=s.eventing
+    if Map.get(e,:transition_id)==id do s else
+      if enabled?(c),do: provision(c,s)
+      next=if enabled?(c) and is_binary(e.binding) and e.binding != binding(c,s) do
+        pending=e.events |> Enum.filter(fn {_,row}->row.state != :materialized end) |> Enum.map(&elem(&1,0)) |> Enum.sort()
+        rows=Map.new(e.events,fn {key,row}->
+          {key,if(row.state==:materialized,do: row,else: row |> Map.put(:state,:pending) |> Map.put(:offset,nil) |> Map.put(:broker_observed,false) |> Map.put(:retry_at,0))}
+        end)
+        history=Map.get(e,:transitions,[])++[%{"id"=>id,"previous_binding"=>e.binding,"previous_next_offset"=>e.next_offset,"quarantine"=>e.quarantine,"at"=>D.now()}]
+        gap=%{"reason"=>"TRANSPORT_CUTOVER","from_offset"=>e.next_offset,"to_offset"=>0,"status"=>if(pending==[],do: "reconciled",else: "recovering"),"missing_event_ids"=>pending,"at"=>D.now()}
+        %{e|events: rows,next_offset: 0,binding: binding(c,s),quarantine: %{},gap: gap,last_error: nil} |> Map.put(:transitions,history)
+      else e end
+      %{s|eventing: Map.put(next,:transition_id,id)}
+    end
+  end
+  defp provision(c,s,apply_retention \\ true,owning_deadline \\ nil) do
+    deadline=provision_deadline(c,owning_deadline)
+    data=request_until(c,:get,"/v3/clusters",nil,@admin,@admin,deadline) |> success()
+    clusters=data["data"];D.check(is_list(clusters) and length(clusters)==1)
+    cluster=hd(clusters)["cluster_id"];D.check(is_binary(cluster))
+    collection="/v3/clusters/"<>URI.encode(cluster,&URI.char_unreserved?/1)<>"/topics"
+    path=collection<>"/"<>URI.encode(topic(c,s),&URI.char_unreserved?/1)
+    {metadata,visibility}=case request_until(c,:get,path,nil,@admin,@admin,deadline) do
+      {status,metadata} when status in 200..299->{metadata,false}
+      {404,_}->
+        body=%{"topic_name"=>topic(c,s),"partitions_count"=>1,"replication_factor"=>1,"configs"=>[%{"name"=>"cleanup.policy","value"=>"delete"},%{"name"=>"retention.ms","value"=>Integer.to_string(c["eventing"]["retention_ms"])}]}
+        case request_until(c,:post,collection,body,@admin,@admin,deadline) do
+          {status,metadata} when status in 200..299->
+            D.check(is_map(metadata) and metadata["partitions_count"]===1)
+            {nil,true}
+          {400,%{"error_code"=>40002}}->{nil,true}
+          _->throw({:eventing,"TOPIC_CREATE_FAILED"})
+        end
+      _->throw({:eventing,"TOPIC_UNAVAILABLE"})
+    end
+    entries=ready_topic(c,path,metadata,visibility,deadline)
+    retention=Enum.find(entries,&(&1["name"]=="retention.ms"))
+    desired=Integer.to_string(c["eventing"]["retention_ms"])
+    if apply_retention and (not is_map(retention) or retention["value"]!=desired) do
+      request_until(c,:post,path<>"/configs:alter",%{"data"=>[%{"name"=>"retention.ms","value"=>desired,"operation"=>"SET"}]},@admin,@admin,deadline) |> success()
+      verified=ready_topic(c,path,nil,false,deadline)
+      current=Enum.find(verified,&(&1["name"]=="retention.ms"))
+      D.check(is_map(current) and current["value"]==desired)
+    end
+    :ok
+  end
+  defp ready_topic(c,path,metadata,visibility,deadline) do
+    response=if is_nil(metadata),do: request_until(c,:get,path,nil,@admin,@admin,deadline),else: {200,metadata}
+    case response do
+      {404,_} when visibility->wait_topic(c,path,deadline)
+      {status,metadata} when status in 200..299->
+        D.check(is_map(metadata) and metadata["partitions_count"]===1)
+        case request_until(c,:get,path<>"/configs",nil,@admin,@admin,deadline) do
+          {404,_} when visibility->wait_topic(c,path,deadline)
+          {status,configs} when status in 200..299->
+            D.check(is_map(configs));entries=configs["data"]
+            D.check(is_list(entries) and Enum.all?(entries,&is_map/1))
+            cleanup=Enum.filter(entries,&(&1["name"]=="cleanup.policy"))
+            retention=Enum.filter(entries,&(&1["name"]=="retention.ms"))
+            D.check(length(cleanup)==1 and hd(cleanup)["value"]=="delete")
+            D.check(length(retention)==1 and valid_retention?(hd(retention)["value"]))
+            entries
+          _->throw({:eventing,"BROKER_REQUEST_FAILED"})
+        end
+      _->throw({:eventing,"TOPIC_UNAVAILABLE"})
+    end
+  end
+  defp valid_retention?(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer,""}->integer>= -1 and integer<=9223372036854775807 and Integer.to_string(integer)==value
+      _->false
+    end
+  end
+  defp valid_retention?(_),do: false
+  defp wait_topic(c,path,deadline) do
+    Process.sleep(min(50,remaining(deadline)))
+    # Each retry starts a new bounded admission; no HTTP ticket spans this wait.
+    ready_topic(c,path,nil,true,deadline)
+  end
+  defp ensure_topic(c,s) do
+    key=consumer_key(c,s)
+    if Process.get(:adhd_kafka_topic) != key do
+      provision(c,s)
+      ADHD.Store.call(fn current->
+        current=upgrade(current)
+        if fence(ADHD.Config.get())==fence(c) do
+          known=current.eventing.binding
+          D.check(is_nil(known) or known==binding(c,current))
+          {:ok,put_in(current,[:eventing,:binding],binding(c,current))}
+        else {:stale,current} end
+      end) |> ADHD.Store.unwrap()
+      Process.put(:adhd_kafka_topic,key)
+    end
+  end
+  defp publish_next(c,s) do
+    row=s.eventing.events |> Map.values() |> Enum.filter(&(&1.state==:pending and &1.retry_at<=D.ms())) |> Enum.min_by(& &1.event["project_sequence"],fn->nil end)
+    if row do
+      body=%{"records"=>[%{"key"=>s.project,"value"=>row.event,"partition"=>0}]}
+      result=request(c,:post,"/topics/"<>topic(c,s),body,@json,@plain) |> success()
+      offsets=result["offsets"];D.check(is_list(offsets) and length(offsets)==1)
+      offset=hd(offsets);D.check(offset["error_code"]==nil and offset["error"]==nil and offset["partition"]==0)
+      D.integer(offset["offset"],0,9_007_199_254_740_991)
+      ADHD.Store.call(fn current->
+        current=upgrade(current);id=row.event["event_id"]
+        if fence(ADHD.Config.get())==fence(c) and current.eventing.control_revision==s.eventing.control_revision and get_in(current,[:eventing,:events,id,:state])==:pending do
+          e=current.eventing.events[id]
+          {:ok,put_in(current,[:eventing,:events,id],%{e|state: :published,offset: offset["offset"]})}
+        else {:stale,current} end
+      end) |> ADHD.Store.unwrap()
+    end
+  end
+  defp consumer(c,s) do
+    key=consumer_key(c,s)
+    case Process.get(:adhd_kafka_consumer) do
+      {^key,path,_}->path
+      previous->
+        case previous do
+          {_,old_path,old_config}->close_owned_consumer(old_config,old_path)
+          _->:ok
+        end
+        group=topic(c,s)<>".fanout"
+        group_path="/consumers/"<>group
+        name="adhd-"<>D.opaque()
+        body=%{"name"=>name,"format"=>"json","auto.offset.reset"=>"earliest","auto.commit.enable"=>"false"}
+        response=request(c,:post,group_path,body) |> success()
+        D.check(response["instance_id"]==name)
+        path=group_path<>"/instances/"<>name
+        # Never follow response.base_uri, which is not an authorized network origin.
+        request(c,:post,path<>"/assignments",%{"partitions"=>[%{"topic"=>topic(c,s),"partition"=>0}]}) |> success()
+        request(c,:post,path<>"/positions",%{"offsets"=>[%{"topic"=>topic(c,s),"partition"=>0,"offset"=>s.eventing.next_offset}]}) |> success()
+        Process.put(:adhd_kafka_consumer,{key,path,c})
+        path
+    end
+  end
+  defp consume(c) do
+    s=ADHD.Store.snapshot() |> ADHD.Store.unwrap() |> upgrade()
+    if map_size(s.eventing.quarantine)>0,do: throw({:eventing,"QUARANTINED_EVENT"})
+    s=reconcile_retention(c,s)
+    path=consumer(c,s)
+    timeout=min(1000,max(100,c["eventing"]["timeout_ms"]-100))
+    records=request(c,:get,path<>"/records?timeout="<>Integer.to_string(timeout)<>"&max_bytes=262144",nil,@plain,@json) |> success()
+    D.check(is_list(records) and length(records)<=10000)
+    outcome=ADHD.Store.call(fn current->
+      current=upgrade(current)
+      if fence(ADHD.Config.get()) != fence(c) or current.eventing.control_revision != s.eventing.control_revision,do: {:stale,current},else: materialize(current,ADHD.Config.get(),records)
+    end) |> ADHD.Store.unwrap()
+    if outcome==:stale do
+      Process.delete(:adhd_kafka_consumer)
+      try do request(c,:delete,path,nil) rescue _->:ok catch _,_->:ok end
+    end
+    if is_integer(outcome) and outcome>s.eventing.next_offset do
+      request(c,:post,path<>"/offsets",%{"offsets"=>[%{"topic"=>topic(c,s),"partition"=>0,"offset"=>outcome-1}]}) |> success()
+    end
+  end
+  defp reconcile_retention(c,s) do
+    positions=request(c,:get,"/topics/"<>topic(c,s)<>"/partitions/0/offsets",nil) |> success()
+    beginning=positions["beginning_offset"];ending=positions["end_offset"]
+    D.integer(beginning,0,9_007_199_254_740_991);D.integer(ending,beginning,9_007_199_254_740_991)
+    if beginning>s.eventing.next_offset or ending<s.eventing.next_offset do
+      Process.delete(:adhd_kafka_consumer)
+      ADHD.Store.call(fn current->
+        current=upgrade(current)
+        if fence(ADHD.Config.get())==fence(c) and current.eventing.control_revision==s.eventing.control_revision do
+          lost=Enum.filter(current.eventing.events,fn {_,row}->row.state != :materialized and (ending<current.eventing.next_offset or (is_integer(row.offset) and row.offset<beginning)) end)
+          ids=Enum.map(lost,&elem(&1,0))
+          events=Enum.reduce(lost,current.eventing.events,fn {id,row},acc->Map.put(acc,id,row |> Map.put(:state,:pending) |> Map.put(:broker_observed,false)) end)
+          gap=%{"reason"=>if(ending<current.eventing.next_offset,do: "BROKER_RESTORE",else: "RETENTION_GAP"),"from_offset"=>current.eventing.next_offset,"to_offset"=>beginning,"status"=>"recovering","missing_event_ids"=>ids,"at"=>D.now()}
+          e=%{current.eventing|events: events,next_offset: beginning,gap: gap}
+          {%{current|eventing: e},%{current|eventing: e}}
+        else {current,current} end
+      end) |> ADHD.Store.unwrap()
+    else s end
+  end
+  defp materialize(s,c,records) do
+    next=Enum.reduce_while(records,s,fn record,current->
+      offset=record["offset"]
+      if not (is_integer(offset) and offset>=0) do
+        {:halt,quarantine(current,"invalid-offset",record,"INVALID_ENVELOPE")}
+      else
+        cond do
+          offset<current.eventing.next_offset->{:cont,current}
+          valid_record?(current,c,record)->
+            event=record["value"];id=event["event_id"];row=current.eventing.events[id]
+            # A fetched valid record becomes recoverable downstream work before
+            # committing this offset. Fanout stays in ingestion order even when
+            # expired earlier records have to be republished at later offsets.
+            row=Map.put(row,:broker_observed,true)
+            row=if row.state==:materialized,do: row,else: Map.put(row,:state,:observed)
+            current=put_in(current,[:eventing,:events,id],row)
+            current=put_in(current,[:eventing,:next_offset],offset+1)
+            {:cont,current}
+          true->{:halt,quarantine(current,Integer.to_string(offset),record,"INVALID_ENVELOPE")}
+        end
+      end
+    end)
+    next=drain_observed(next,c)
+    next=if is_map(next.eventing.gap) and Enum.all?(next.eventing.gap["missing_event_ids"],fn id->next.eventing.events[id].state==:materialized end) do
+      put_in(next,[:eventing,:gap,"status"],"reconciled")
+    else next end
+    next=if map_size(next.eventing.quarantine)==0,do: put_in(next,[:eventing,:last_error],nil),else: next
+    next=complete_replays(next)
+    {next.eventing.next_offset,next}
+  end
+  defp drain_observed(s,c) do
+    rows=s.eventing.events |> Map.values() |> Enum.reject(&(&1.state==:materialized)) |> Enum.sort_by(& &1.event["project_sequence"])
+    Enum.reduce_while(rows,s,fn row,current->
+      if Map.get(row,:broker_observed,false) do
+        event=row.event;id=event["event_id"]
+        publication=current.publications[event["publication_id"]].value
+        current=Enum.reduce(row.subscriptions++Map.get(row,:replay_targets,[]),current,fn sub,acc->
+          if eligible?(sub,publication,c,acc) do
+            if mode(sub)=="raw" do
+              evidence=%{"subscription_id"=>sub["id"],"subscription_revision"=>Map.get(sub,"revision",1),"mode"=>"raw"}
+              evidence=if sub["_replay_id"],do: Map.put(evidence,"replay_id",sub["_replay_id"]),else: evidence
+              ADHD.Store.event_delivery(acc,publication,sub,evidence)
+            else acc end
+          else acc end
+        end)
+        current=put_in(current,[:eventing,:events,id],%{row|state: :materialized}) |> register_filters(id,publication)
+        {:cont,current}
+      else {:halt,current} end
+    end)
+  end
+  defp valid_record?(s,c,record) do
+    try do
+      D.keys(record,~w(topic key value partition offset),~w(topic key value partition offset))
+      D.check(record["topic"]==topic(c,s) and record["partition"]==0 and record["key"]==s.project)
+      event=record["value"]
+      D.keys(event,~w(schema_version event_id server_id project_id project_sequence publication_id author_id created_at publication),~w(schema_version event_id server_id project_id project_sequence publication_id author_id created_at publication))
+      D.check(event["schema_version"]==1 and event["server_id"]==s.server_id and event["project_id"]==s.project)
+      row=s.eventing.events[event["event_id"]]
+      D.check(is_map(row) and row.event==event)
+      D.check(s.publications[event["publication_id"]].value==event["publication"])
+      true
+    rescue _->false catch _,_->false end
+  end
+  defp quarantine(s,key,record,reason) do
+    item=%{"reason"=>reason,"digest"=>ADHD.Directory.digest(record),"at"=>D.now()}
+    put_in(s,[:eventing,:quarantine,key],item) |> put_in([:eventing,:last_error],%{"code"=>"QUARANTINED_EVENT","at"=>D.now()})
+  end
+  def tls_roots(pem) do
+    D.string(pem,65536)
+    stripped=Regex.replace(~r/-----BEGIN CERTIFICATE-----[A-Za-z0-9+\/=\r\n\t ]+-----END CERTIFICATE-----/,pem,"")
+    D.check(String.trim(stripped)=="")
+    entries=:public_key.pem_decode(pem)
+    D.list(entries,16,1)
+    Enum.map(entries,fn entry->
+      case entry do
+        {:Certificate,der,:not_encrypted}->
+          cert=:public_key.pkix_decode_cert(der,:otp)
+          extensions=elem(elem(cert,1),10)
+          D.check(is_list(extensions) and Enum.any?(extensions,fn extension->case extension do {:Extension,{2,5,29,19},_,{:BasicConstraints,true,_}}->true;_->false end end))
+          der
+        _->D.fail()
+      end
+    end)
+  end
+  defp target_rows(row),do: row.subscriptions++Map.get(row,:replay_targets,[])
+  defp job_key(job),do: {job.publication_id,job.subscription_id,Map.get(job,:subscription_revision,1)}
+  def existing_filter_job?(s,publication,subscription,revision) do
+    if Map.has_key?(s.eventing,:filter_jobs),do: Map.has_key?(s.eventing.filter_jobs,{publication,subscription,revision}),else: Enum.any?(s.jobs,fn {_,j}->job_key(j)=={publication,subscription,revision} end)
+  end
+  def track_filter_job(s,job) do
+    s=upgrade(s)
+    s |> put_in([:eventing,:filter_jobs,job_key(job)],job.id) |> put_in([:eventing,:filter_ready],MapSet.put(s.eventing.filter_ready,job.id))
+  end
+  defp filter_upgrade(s) do
+    if Map.get(s.eventing,:filter_schema)==1 do s else
+      events=Map.new(s.eventing.events,fn {id,row}->
+        n=if row.state==:materialized,do: length(target_rows(row)),else: 0
+        {id,row |> Map.put(:filter_registered,n) |> Map.put(:filter_done,:erlang.bsl(1,n)-1) |> Map.put(:filter_remaining,0) |> Map.put(:filter_next,0)}
+      end)
+      current=try do ADHD.Config.get()["matcher"] rescue _->nil catch _,_->nil end
+      adapter=if is_map(current),do: Map.take(current,~w(model url timeout_ms retry_ms)),else: nil
+      jobs=Map.new(s.jobs,fn {id,job}->{job_key(job),id} end)
+      ready=s.jobs |> Enum.filter(fn {_,job}->job.status==:pending end) |> Enum.map(&elem(&1,0)) |> MapSet.new()
+      e=s.eventing |> Map.put(:filter_schema,1) |> Map.put(:filter_index,:gb_trees.empty()) |> Map.put(:filter_cursor,0) |> Map.put(:filter_jobs,jobs) |> Map.put(:filter_last_adapter,adapter) |> Map.put(:filter_ready,ready) |> Map.put(:deferred_filters,0) |> Map.put(:events,events)
+      %{s|eventing: e}
+    end
+  end
+  defp ready_counts(s) do
+    ready=Enum.filter(s.eventing.filter_ready,fn id->case s.jobs[id] do %{status: :pending}->true;_->false end end) |> MapSet.new()
+    counts=Enum.reduce(ready,%{},fn id,acc->Map.update(acc,s.jobs[id].subscription_id,1,&(&1+1)) end)
+    {ready,counts}
+  end
+  defp register_filters(s,id,publication) do
+    row=s.eventing.events[id];targets=target_rows(row);registered=Map.get(row,:filter_registered,0)
+    {mask,added,unavailable}=targets |> Enum.drop(registered) |> Enum.with_index(registered) |> Enum.reduce({Map.get(row,:filter_done,0),0,0},fn {sub,index},{mask,count,missing}->
+      if mode(sub)=="filtered" and selected?(sub,publication),do: {mask,count+1,missing+if(valid_adapter?(sub),do: 0,else: 1)},else: {:erlang.bor(mask,:erlang.bsl(1,index)),count,missing}
+    end)
+    remaining=Map.get(row,:filter_remaining,0)+added
+    row=row |> Map.put(:filter_registered,length(targets)) |> Map.put(:filter_done,mask) |> Map.put(:filter_remaining,remaining) |> Map.put_new(:filter_next,0)
+    s=put_in(s,[:eventing,:events,id],row)
+    index=if remaining>0,do: :gb_trees.enter(row.event["project_sequence"],id,s.eventing.filter_index),else: s.eventing.filter_index
+    s |> put_in([:eventing,:filter_index],index) |> put_in([:eventing,:deferred_filters],s.eventing.deferred_filters+added) |> put_in([:eventing,:filter_unavailable],s.eventing.filter_unavailable+unavailable)
+  end
+  defp valid_adapter?(sub),do: is_binary(get_in(sub,["_filter_policy","matcher","url"])) and is_binary(get_in(sub,["_filter_policy","matcher","model"]))
+  def remember_adapter(s,c) do
+    s=upgrade(s)
+    if is_map(c["matcher"]),do: put_in(s,[:eventing,:filter_last_adapter],Map.take(c["matcher"],~w(model url timeout_ms retry_ms))),else: s
+  end
+  def stage_filters(s,c) do
+    s=upgrade(s) |> remember_adapter(c);{ready,counts}=ready_counts(s)
+    s=put_in(s,[:eventing,:filter_ready],ready)
+    stage_filter_rows(s,c,counts,s.eventing.filter_cursor,128,64) |> complete_replays()
+  end
+  defp next_filter(index,cursor) do
+    case :gb_trees.next(:gb_trees.iterator_from(cursor,index)) do
+      :none->case :gb_trees.next(:gb_trees.iterator(index)) do :none->nil;{seq,id,_}->{seq,id} end
+      {seq,id,_}->{seq,id}
+    end
+  end
+  defp stage_filter_rows(s,_,_,cursor,positions,rows) when positions<=0 or rows<=0,do: put_in(s,[:eventing,:filter_cursor],cursor)
+  defp stage_filter_rows(s,c,counts,cursor,positions,rows) do
+    case next_filter(s.eventing.filter_index,cursor) do
+      nil->put_in(s,[:eventing,:filter_cursor],0)
+      {seq,id}->
+        row=s.eventing.events[id];targets=target_rows(row) |> List.to_tuple()
+        {next,counts,left,wrapped}=stage_filter_row(s,c,counts,id,targets,positions)
+        row=next.eventing.events[id]
+        index=if row.filter_remaining==0,do: :gb_trees.delete_any(seq,next.eventing.filter_index),else: next.eventing.filter_index
+        next=put_in(next,[:eventing,:filter_index],index)
+        stage_filter_rows(next,c,counts,if(wrapped or row.filter_remaining==0,do: seq+1,else: seq),left,rows-1)
+    end
+  end
+  defp stage_filter_row(s,c,counts,id,targets,budget) do
+    row=s.eventing.events[id];position=Map.get(row,:filter_next,0);registered=row.filter_registered
+    cond do
+      budget<=0->{s,counts,0,false}
+      position>=registered->{put_in(s,[:eventing,:events,id,:filter_next],0),counts,budget,true}
+      true->
+        sub=elem(targets,position);bit=:erlang.bsl(1,position)
+        done=:erlang.band(row.filter_done,bit) != 0
+        existing=existing_filter_job?(s,row.event["publication_id"],sub["id"],Map.get(sub,"revision",1))
+        cancelled=not Map.has_key?(s.subscriptions,sub["id"])
+        allowed=Map.has_key?(c["agents"],sub["agent_id"]) and c["project_status"] != "archived" and is_map(c["matcher"])
+        capacity=MapSet.size(s.eventing.filter_ready)<c["eventing"]["max_pending_filter_jobs"] and Map.get(counts,sub["id"],0)<c["eventing"]["max_pending_filter_jobs_per_subscription"]
+        {next,counts,staged}=cond do
+          done->{s,counts,false}
+          existing or cancelled->{s,counts,true}
+          allowed and capacity and valid_adapter?(sub)->
+            publication=s.publications[row.event["publication_id"]].value
+            next=ADHD.Store.event_job(s,publication,sub,c)
+            {next,Map.update(counts,sub["id"],1,&(&1+1)),true}
+          true->{s,counts,false}
+        end
+        next=if staged do
+          next |> put_in([:eventing,:events,id,:filter_done],:erlang.bor(row.filter_done,bit)) |> put_in([:eventing,:events,id,:filter_remaining],row.filter_remaining-1) |> put_in([:eventing,:deferred_filters],next.eventing.deferred_filters-1) |> put_in([:eventing,:filter_unavailable],next.eventing.filter_unavailable-if(valid_adapter?(sub),do: 0,else: 1))
+        else next end
+        next=put_in(next,[:eventing,:events,id,:filter_next],position+1)
+        stage_filter_row(next,c,counts,id,targets,budget-1)
+    end
+  end
+
+  def controls,do: ~w(repair_eventing replay_events eventing_audit eventing_replay)
+  def replay_watermark(s),do: s.publications |> Map.values() |> Enum.map(& &1.seq) |> Enum.max(fn->0 end)
+  def validate_control(cmd) do
+    op=cmd["op"]
+    if op in ~w(repair_eventing replay_events) do
+      D.string(cmd["reason"],1024);D.check(cmd["confirm"]==true);D.id(cmd["message_id"])
+    end
+    if op=="repair_eventing" do
+      D.integer(cmd["offset"],0,9_007_199_254_740_991);D.integer(cmd["expected_checkpoint"],0,9_007_199_254_740_991)
+      D.check(cmd["action"] in ~w(retry reconcile));D.check(is_binary(cmd["expected_digest"]) and Regex.match?(~r/^[0-9a-f]{64}$/,cmd["expected_digest"]))
+    end
+    if op=="replay_events" do
+      for key<-~w(from_sequence to_sequence),do: D.integer(cmd[key],1,9_007_199_254_740_991)
+      D.integer(cmd["expected_watermark"],0,9_007_199_254_740_991)
+      D.list(cmd["subscriptions"],64,1)
+      Enum.each(cmd["subscriptions"],fn target->D.keys(target,~w(id revision),~w(id revision));D.id(target["id"]);D.integer(target["revision"],1,9_007_199_254_740_991) end)
+      D.distinct(Enum.map(cmd["subscriptions"],& &1["id"]))
+    end
+    if op=="eventing_audit" do
+      if Map.has_key?(cmd,"offset"),do: D.integer(cmd["offset"],0,9_007_199_254_740_991)
+    end
+    if op=="eventing_replay",do: D.id(cmd["replay_id"])
+  end
+  def admin(s,c,cmd,actor) do
+    s=upgrade(s)
+    case cmd["op"] do
+      "eventing_audit"->
+        rows=Enum.drop(s.eventing.audit,Map.get(cmd,"offset",0));limit=Map.get(cmd,"limit",50)
+        {%{"items"=>Enum.take(rows,limit),"truncated"=>length(rows)>limit},s}
+      "eventing_replay"->
+        replay=s.eventing.replays[cmd["replay_id"]] || D.fail("NOT_FOUND")
+        {%{"replay"=>replay},s}
+      "repair_eventing"->repair(s,c,cmd,actor)
+      "replay_events"->replay(s,c,cmd,actor)
+    end
+  end
+  defp audit(s,cmd,actor,kind,extra \\ %{}) do
+    {id,s}=ADHD.Allocator.allocate(s,"audit")
+    details=Map.drop(cmd,~w(op project_id confirm message_id reason)) |> Map.merge(extra)
+    row=%{"id"=>id,"kind"=>kind,"actor_id"=>actor,"project_id"=>s.project,"message_id"=>cmd["message_id"],"reason"=>cmd["reason"],"at"=>D.now(),"details"=>details}
+    {id,put_in(s,[:eventing,:audit],s.eventing.audit++[row])}
+  end
+  defp repair(s,c,cmd,actor) do
+    if not enabled?(c),do: D.fail("EVENTING_DISABLED")
+    key=Integer.to_string(cmd["offset"])
+    key=if Map.has_key?(s.eventing.quarantine,key),do: key,else: "invalid-offset"
+    item=s.eventing.quarantine[key]
+    if not is_map(item) or s.eventing.next_offset != cmd["expected_checkpoint"] or item["digest"] != cmd["expected_digest"],do: D.fail("EVENTING_CONFLICT")
+    if (cmd["action"]=="reconcile" and (cmd["offset"] != s.eventing.next_offset or key=="invalid-offset")) or (key=="invalid-offset" and cmd["offset"] != s.eventing.next_offset),do: D.fail("EVENTING_CONFLICT")
+    linked=Enum.filter(s.eventing.events,fn {_,row}->row.offset==cmd["offset"] and row.state != :materialized end)
+    e=if cmd["action"]=="reconcile" do
+      events=Enum.reduce(linked,s.eventing.events,fn {id,row},acc->Map.put(acc,id,row |> Map.put(:state,:pending) |> Map.put(:offset,nil) |> Map.put(:broker_observed,false)) end)
+      %{s.eventing|events: events,next_offset: cmd["offset"]+1}
+    else s.eventing end
+    e=%{e|quarantine: Map.delete(e.quarantine,key),control_revision: e.control_revision+1,last_error: nil}
+    {audit_id,next}=audit(%{s|eventing: e},cmd,actor,"repair",%{"missing_logical_proof"=>linked==[]})
+    {%{"audit_id"=>audit_id,"control_revision"=>e.control_revision,"next_offset"=>e.next_offset},next}
+  end
+  defp replay(s,c,cmd,actor) do
+    ADHD.Projects.writable(c,"replay_events")
+    if not enabled?(c),do: D.fail("EVENTING_DISABLED")
+    if cmd["expected_watermark"] != replay_watermark(s),do: D.fail("EVENTING_CONFLICT")
+    if cmd["from_sequence"]>cmd["to_sequence"] or cmd["to_sequence"]>replay_watermark(s),do: D.fail("EVENTING_CONFLICT")
+    selected=s.publications |> Map.values() |> Enum.filter(&(&1.seq>=cmd["from_sequence"] and &1.seq<=cmd["to_sequence"])) |> Enum.sort_by(& &1.seq)
+    if selected==[],do: D.fail("NOT_FOUND")
+    if length(selected)>1000,do: D.fail("RANGE_TOO_LARGE")
+    {rid,s}=ADHD.Allocator.allocate(s,"eventreplay")
+    targets=Enum.map(cmd["subscriptions"],fn target->
+      row=s.subscriptions[target["id"]]
+      if is_nil(row),do: D.fail("EVENTING_CONFLICT")
+      sub=row.value
+      if Map.get(sub,"revision",1) != target["revision"] or sub["paused"]==true or sub["status"]=="paused" or not Map.has_key?(c["agents"],sub["agent_id"]),do: D.fail("EVENTING_CONFLICT")
+      if mode(sub)=="filtered" and is_nil(c["matcher"]),do: D.fail("MODEL_UNAVAILABLE")
+      freeze(sub,c) |> Map.put("_replay_id",rid)
+    end)
+    {events,added}=Enum.reduce(selected,{s.eventing.events,0},fn publication,{events,bytes}->
+      p=publication.value;id=p["id"]
+      row=events[id] || %{event: %{"schema_version"=>1,"event_id"=>id,"server_id"=>s.server_id,"project_id"=>s.project,"project_sequence"=>publication.seq,"publication_id"=>id,"author_id"=>p["author_id"],"created_at"=>p["created_at"],"publication"=>p},subscriptions: [],state: :materialized,offset: nil,bytes: 0,retry_at: 0,broker_observed: false}
+      if byte_size(JSON.encode!(row.event))>262144,do: D.fail("RANGE_TOO_LARGE")
+      replay_targets=Map.get(row,:replay_targets,[])++targets
+      cost=byte_size(JSON.encode!(row.event))+:erlang.external_size(row.subscriptions)+:erlang.external_size(replay_targets)
+      extra=if row.state==:materialized,do: cost,else: max(0,cost-row.bytes)
+      row=row |> Map.put(:replay_targets,replay_targets) |> Map.put(:bytes,cost) |> Map.put(:state,:pending) |> Map.put(:offset,nil) |> Map.put(:retry_at,0) |> Map.put(:broker_observed,false)
+      {Map.put(events,id,row),bytes+extra}
+    end)
+    if added>16_777_216,do: D.fail("RANGE_TOO_LARGE")
+    pending=Enum.filter(Map.values(events),&(&1.state != :materialized))
+    if length(pending)>c["eventing"]["max_pending_events"] or Enum.reduce(pending,0,&(&1.bytes+&2))>c["eventing"]["max_pending_bytes"],do: D.fail("BACKPRESSURE")
+    plan=%{"id"=>rid,"status"=>"pending","deferred_filter_targets"=>0,"event_ids"=>Enum.map(selected,& &1.value["id"]),"subscriptions"=>cmd["subscriptions"],"created_at"=>D.now()}
+    e=%{s.eventing|events: events,sequence: max(s.eventing.sequence,List.last(selected).seq),replays: Map.put(s.eventing.replays,rid,plan),control_revision: s.eventing.control_revision+1}
+    {_,next}=audit(%{s|eventing: e},cmd,actor,"replay")
+    {%{"replay"=>plan},next}
+  end
+  defp complete_replays(s) do
+    replays=Map.new(s.eventing.replays,fn {id,plan}->
+      {registered,deferred}=Enum.reduce(plan["event_ids"],{true,0},fn event_id,{registered,deferred}->
+        row=s.eventing.events[event_id]
+        target_positions=target_rows(row) |> Enum.with_index() |> Enum.filter(fn {sub,_}->sub["_replay_id"]==id end)
+        ready=Enum.all?(target_positions,fn {_,position}->position<Map.get(row,:filter_registered,0) end)
+        count=Enum.count(target_positions,fn {_,position}->position<Map.get(row,:filter_registered,0) and :erlang.band(Map.get(row,:filter_done,0),:erlang.bsl(1,position))==0 end)
+        {registered and ready,deferred+count}
+      end)
+      status=cond do not registered->"pending";deferred>0->"deferred";true->"materialized" end
+      {id,plan |> Map.put("status",status) |> Map.put("deferred_filter_targets",deferred)}
+    end)
+    put_in(s,[:eventing,:replays],replays)
+  end
+  def freeze(sub,c,previous_adapter \\ nil) do
+    adapter=if is_map(c["matcher"]),do: Map.take(c["matcher"],~w(model url timeout_ms retry_ms)),else: previous_adapter
+    if mode(sub)=="filtered",do: Map.put(sub,"_filter_policy",%{"threshold_ppm"=>c["threshold_ppm"],"matcher"=>adapter}),else: sub
+  end
+  def mode(sub),do: Map.get(sub,"mode",if(sub["description"] || sub["filter"],do: "filtered",else: "raw"))
+  defp eligible?(sub,p,c,s) do
+    Map.has_key?(c["agents"],sub["agent_id"]) and Map.has_key?(s.subscriptions,sub["id"]) and selected?(sub,p)
+  end
+  def selected?(sub,p) do
+      Enum.all?(Map.get(sub,"selectors",%{}),fn {key,values}->
+        value=case key do
+          "information_type"->p["information_type"]
+          "source_kind"->get_in(p,["source","kind"])
+          "source_id"->get_in(p,["source","id"])
+          "author_id"->p["author_id"]
+        end
+        value in values
+      end)
+  end
+end

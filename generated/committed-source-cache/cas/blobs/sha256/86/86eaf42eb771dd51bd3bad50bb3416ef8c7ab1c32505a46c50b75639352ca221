@@ -1,0 +1,282 @@
+defmodule ADHD.Replay do
+  alias ADHD.Domain,as: D
+  alias ADHD.Directory,as: F
+  alias ADHD.Feedback,as: B
+  alias ADHD.History,as: H
+  alias ADHD.HistoryEvaluator,as: E
+  alias ADHD.Retrieval,as: X
+  alias ADHD.ArchivePolicy,as: P
+  @branches ~w(baseline candidate)
+  def branches,do: @branches
+  def validate(cmd) do
+    case cmd["op"] do
+      "replay_retrieval"->
+        D.id(cmd["attempt_id"]);X.validate_recipe(cmd["candidate_recipe"],false)
+        D.optional(cmd,"baseline",&D.check(&1 in ~w(recorded current)));D.optional(cmd,"corpus",&D.check(&1 in ~w(frozen current)));D.optional(cmd,"limit",&D.integer(&1,1,64));D.optional(cmd,"budget",&H.validate_budget/1)
+      "get_retrieval_replay"->D.id(cmd["query_id"]);H.read_options(cmd)
+      "continue_retrieval_replay"->D.id(cmd["query_id"]);D.optional(cmd,"restart",&D.boolean/1);D.optional(cmd,"budget",&H.validate_budget/1)
+      "cancel_retrieval_replay"->D.id(cmd["query_id"])
+    end
+    :ok
+  end
+  def config_for(c,recipe),do: c |> Map.put("retrieval",Map.put(X.config(c),"recipe",recipe)) |> Map.put("__retrieval_branch_recipe",recipe)
+  def policy(c,baseline,candidate,requires_complete) do
+    value=%{"adapter_version"=>"adhd-paired-replay-v2","runtime"=>X.normalization(),"global_retrieval_identity"=>X.descriptor(c)["identity"],"baseline_evaluator"=>X.descriptor(config_for(c,baseline)),"candidate_evaluator"=>X.descriptor(config_for(c,candidate)),"history_evaluator"=>E.descriptor(c),"archive_policy_identity"=>P.descriptor(c,"search_then_scan",requires_complete)["identity"],"requires_complete"=>requires_complete}
+    Map.put(value,"identity",F.digest(value))
+  end
+  def current_policy(c,q),do: policy(c,q["baseline"]["recipe"],q["candidate"]["recipe"],q["policy"]["requires_complete"] or P.guard(q["question"]) != [])
+  def budget(cmd,c),do: Map.merge(B.config(c)["budget"],Map.get(cmd,"budget",%{}))
+  def coverage(total),do: %{"primary_count"=>total,"indexed"=>0,"semantic_examined"=>0,"returned_ids"=>[],"assessed_ids"=>[],"expanded_ids"=>[],"gaps"=>[],"truncated"=>false,"primary_complete"=>false,"final_complete"=>false,"answer_scope"=>"unexamined"}
+  def new_branch(recipe,total),do: %{"status"=>"pending","phase"=>"building","recipe"=>recipe,"recipe_identity"=>X.recipe_identity(recipe),"indexed"=>0,"total"=>total,"input_manifest_identity"=>nil,"candidates"=>[],"assessment"=>nil,"scan"=>nil,"coverage"=>coverage(total),"answer"=>E.empty_answer(),"usage"=>H.usage_zero(),"base_usage"=>H.usage_zero(),"experiment_base_usage"=>H.usage_zero(),"native_bytes"=>0,"metrics"=>nil,"error"=>nil,"analysis_error"=>nil,"rows"=>[],"ranking"=>nil,"window"=>[],"scores"=>%{},"inputs"=>%{},"child_paid"=>H.usage_zero()}
+  def active?(q),do: q["status"] in ~w(pending partial invalidated)
+  def put(s,q),do: put_in(s,[:replay_queries,q["id"]],q)
+  def lookup(s,id,owner \\ nil) do
+    q=s.replay_queries[id] || D.fail("NOT_FOUND");if owner != nil and q["owner_id"] != owner,do: D.fail("NOT_FOUND");q
+  end
+  def create(s,c,cmd,owner,kind,requester) do
+    c=X.resolve(c,s)
+    validate(Map.put(cmd,"op","replay_retrieval"));a=B.lookup(s,cmd["attempt_id"],owner);original=B.source_run(s,a)
+    if not Map.has_key?(c["agents"],owner),do: D.fail("OWNER_REMOVED")
+    if not B.config(c)["enabled"],do: D.fail("UNAVAILABLE")
+    if map_size(s.replay_queries)>=B.config(c)["max_replays"] or Enum.count(s.replay_queries,fn {_,q}->active?(q) end)>=B.config(c)["max_active_replays"],do: D.fail("RESOURCE_EXHAUSTED")
+    origin=Map.get(cmd,"baseline","recorded");baseline=if origin=="recorded",do: a["value"]["recipe"],else: X.effective(c)["recipe"]
+    if baseline==nil,do: D.fail("BASELINE_UNAVAILABLE")
+    candidate=X.validate_recipe(Map.merge(baseline,cmd["candidate_recipe"]));corpus=Map.get(cmd,"corpus","frozen");mark=if corpus=="frozen",do: original["snapshot"]["watermark"],else: ADHD.Records.watermark(s)
+    primary=if corpus=="frozen",do: a["primary_ids"],else: H.primary_ids(s,original["scope"],mark)
+    requires=original["complete"] or original["intent"]==nil or original["intent"]["requires_complete"] or P.guard(original["question"]) != [] or original["policy"]["planner"]["template_sha256"] != P.planner(c)["template_sha256"]
+    seq=s.seq+1;now=D.now();label=B.latest(s,cmd["attempt_id"])
+    {id,s}=ADHD.Allocator.allocate(s,"replay")
+    q=%{"id"=>id,"seq"=>seq,"owner_id"=>owner,"requester_kind"=>kind,"requester_id"=>requester,"attempt_id"=>cmd["attempt_id"],"question"=>original["question"],"project_id"=>original["project_id"],"scope"=>original["scope"],"snapshot"=>%{"server_id"=>s.server_id,"watermark"=>mark},"original_snapshot"=>original["snapshot"],"corpus"=>corpus,"baseline_origin"=>origin,"created_at"=>now,"updated_at"=>now,"status"=>"pending","phase"=>"baseline","run"=>1,"policy"=>policy(c,baseline,candidate,requires),"budget"=>budget(cmd,c),"label"=>label,"label_revision"=>if(label,do: label["revision"],else: 0),"baseline"=>new_branch(baseline,length(primary)),"candidate"=>new_branch(candidate,length(primary)),"children"=>%{"baseline"=>nil,"candidate"=>nil},"comparison"=>nil,"evaluations"=>[],"evaluation_count"=>0,"evidence_available"=>true,"error"=>nil,"inflight"=>nil,"primary_ids"=>primary,"limit"=>Map.get(cmd,"limit",a["limit"]),"prior"=>%{}}
+    exposure=exposure(s,q)
+    feedback=s.feedback |> Map.put("cohorts",ADHD.FeedbackGroups.build(s.feedback)) |> ADHD.FeedbackGroups.expose(a,exposure)
+    next=put(%{s|seq: seq,feedback: feedback},q);if not B.capacity?(next,c),do: D.fail("RESOURCE_EXHAUSTED")
+    {%{"query"=>public(q,%{"summary"=>true})},next}
+  end
+  # Only trusted internal callers choose requester_kind. Transport commands cannot
+  # supply it. All children of one frozen optimizer share its exposure identity.
+  def exposure(s,q) do
+    if q["requester_kind"]=="optimization" do
+      parent=ADHD.Optimization.lookup(s,q["requester_id"])
+      D.check(q["baseline"]["recipe"]==parent["baseline_recipe"] and q["corpus"]=="frozen")
+      D.check(Enum.any?(parent["variants"],&(&1["recipe_identity"]==q["candidate"]["recipe_identity"])))
+      D.check(Enum.any?(ADHD.Optimization.selected_cases(parent),&(&1["attempt_id"]==q["attempt_id"])))
+      if q["label"]["cohort"]=="held_out",do: D.check(parent["winner_identity"]==q["candidate"]["recipe_identity"])
+      %{"job_id"=>parent["id"],"kind"=>"optimization","recipe_identity"=>q["candidate"]["recipe_identity"],"policy_identity"=>parent["policy_identity"],"created_at"=>D.now()}
+    else
+      %{"job_id"=>q["id"],"kind"=>"replay","recipe_identity"=>q["candidate"]["recipe_identity"],"policy_identity"=>q["policy"]["identity"],"created_at"=>D.now()}
+    end
+  end
+  def admin_create(s,c,cmd,p) do
+    a=B.lookup(s,cmd["attempt_id"]);create(s,c,cmd,a["value"]["owner_id"],if(p["id"]=="legacy-admin",do: "legacy_token",else: "human_session"),p["id"])
+  end
+  def charge(q,branch,key,n),do: update_in(q,[branch,"usage",key],&(&1+n))
+  def settle(q) do
+    if q["inflight"] do
+      m=q["inflight"];q |> charge(m["branch"],"time_ms",m["timeout_ms"]) |> charge(m["branch"],"uncertain_calls",1) |> Map.put("inflight",nil)
+    else q end
+  end
+  def stop(q,status,code,retryable \\ true) do
+    next=Map.merge(q,%{"status"=>status,"error"=>B.error(code,retryable),"updated_at"=>D.now()})
+    if q["phase"] in @branches,do: update_in(next,[q["phase"]],&Map.merge(&1,%{"status"=>status,"error"=>B.error(code,retryable)})),else: next
+  end
+  def consistent?(s,q) do
+    Enum.all?(@branches,fn b->ref=q["children"][b];if ref do
+      child=s.history_queries[ref["query_id"]]
+      child != nil and child["run"]==ref["run"] and child["owner_id"]==q["owner_id"] and child["question"]==q["question"] and child["scope"]==q["scope"] and child["snapshot"]==q["snapshot"] and child["primary_ids"]==q["primary_ids"] and child["status"] != "cancelled"
+    else true end end)
+  end
+  def sync_children(s,q) do
+    Enum.reduce(@branches,q,fn b,acc->
+      ref=acc["children"][b];child=if ref,do: s.history_queries[ref["query_id"]],else: nil
+      if child != nil and child["run"]==ref["run"] do
+        costs=H.usage_public(child)
+        acc=Enum.reduce(Map.keys(H.usage_zero()),acc,fn k,v->charge(v,b,k,max(0,costs["cumulative_"<>k]-acc[b]["child_paid"][k])) end)
+        acc |> put_in([b,"child_paid"],Map.new(Map.keys(H.usage_zero()),&{&1,costs["cumulative_"<>&1]})) |> put_in([b,"scan"],H.public(child,%{"summary"=>true})) |> put_in(["children",b,"last_status"],child["status"])
+      else acc end
+    end)
+  end
+  def cancel_children(s,q) do
+    Enum.reduce(@branches,{s,q},fn b,{state,job}->ref=job["children"][b];child=if ref,do: state.history_queries[ref["query_id"]],else: nil
+      if child != nil and child["run"]==ref["run"] and child["owner_id"]==q["owner_id"] and child["status"] in ~w(pending partial invalidated) do
+        child=H.cancel(child);{H.put(state,child),put_in(job,["children",b,"last_status"],child["status"])}
+      else {state,job} end
+    end)
+  end
+  def cancel(s,q) do
+    if active?(q) do
+      q=sync_children(s,q) |> settle();{state,q}=cancel_children(s,q);q=sync_children(state,q) |> stop("cancelled","CANCELLED",false);{state,q}
+    else {s,q} end
+  end
+  def refresh(s,c,q) do
+    c=X.resolve(c,s)
+    if q["status"]=="pending" do
+      code=cond do
+        not Map.has_key?(c["agents"],q["owner_id"])->"OWNER_REMOVED"
+        current_policy(c,q)["identity"] != q["policy"]["identity"]->"POLICY_CHANGED"
+        B.latest(s,q["attempt_id"]) != q["label"]->"LABEL_CHANGED"
+        not consistent?(s,q)->"CHILD_CHANGED"
+        true->nil
+      end
+      if code do
+        q=sync_children(s,q) |> settle();{s,q}=cancel_children(s,q);q=sync_children(s,q) |> stop(if(code in ~w(POLICY_CHANGED LABEL_CHANGED),do: "invalidated",else: "partial"),code,false);{s,q}
+      else {s,sync_children(s,q)} end
+    else {s,q} end
+  end
+  def continue(s,c,q,cmd) do
+    D.check(q["status"] != "pending" and q["evidence_available"]);if q["run"]>=16,do: D.fail("RESOURCE_EXHAUSTED")
+    restart=Map.get(cmd,"restart",false);D.check(q["status"] not in ~w(completed cancelled invalidated) or restart)
+    if not restart and q["error"] != nil and q["error"]["code"]=="CONTEXT_LIMIT",do: D.fail("INVALID_PARAMS")
+    if not restart and (current_policy(c,q)["identity"] != q["policy"]["identity"] or B.latest(s,q["attempt_id"]) != q["label"] or not consistent?(s,q)),do: D.fail("INVALID_PARAMS")
+    if not active?(q) and Enum.count(s.replay_queries,fn {_,job}->active?(job) end)>=B.config(c)["max_active_replays"],do: D.fail("RESOURCE_EXHAUSTED")
+    q=sync_children(s,q) |> settle();prior=Map.delete(q,"prior");next=q |> Map.put("prior",Map.put(q["prior"],Integer.to_string(q["run"]),prior)) |> Map.merge(%{"run"=>q["run"]+1,"status"=>"pending","error"=>nil,"inflight"=>nil,"updated_at"=>D.now(),"budget"=>budget(cmd,c),"comparison"=>nil})
+    next=Enum.reduce(@branches,next,fn b,acc->
+      branch=if restart,do: new_branch(q[b]["recipe"],length(q["primary_ids"])),else: Map.merge(q[b],%{"status"=>if(q[b]["status"]=="completed",do: "completed",else: "pending"),"error"=>if(q[b]["status"]=="completed",do: q[b]["error"],else: nil),"usage"=>H.usage_zero(),"experiment_base_usage"=>H.usage_add(q[b]["experiment_base_usage"],q[b]["usage"])})
+      put_in(acc,[b],Map.put(branch,"base_usage",H.usage_add(q[b]["base_usage"],q[b]["usage"])))
+    end)
+    next=if restart do
+      label=B.latest(s,q["attempt_id"]);next |> Map.put("phase","baseline") |> Map.put("policy",current_policy(c,q)) |> Map.put("label",label) |> Map.put("label_revision",if(label,do: label["revision"],else: 0)) |> Map.put("children",%{"baseline"=>nil,"candidate"=>nil}) |> Map.put("evaluations",[]) |> Map.put("evaluation_count",0)
+    else next end
+    # A spent held-out group can resume only the same job, candidate and policy.
+    a=B.lookup(s,q["attempt_id"]);exposure=exposure(s,next)
+    feedback=s.feedback |> Map.put("cohorts",ADHD.FeedbackGroups.build(s.feedback)) |> ADHD.FeedbackGroups.expose(a,exposure)
+    state=put(%{s|feedback: feedback},next);if not B.capacity?(state,c),do: D.fail("RESOURCE_EXHAUSTED");{state,next}
+  end
+  def agent(s,c,owner,cmd) do
+    c=X.resolve(c,s)
+    case cmd["op"] do
+      "replay_retrieval"->create(s,c,cmd,owner,"agent",owner)
+      op->
+        q=lookup(s,cmd["query_id"],owner);{s,q}=refresh(s,c,q)
+        {s,q}=case op do
+          "get_retrieval_replay"->{s,q}
+          "cancel_retrieval_replay"->cancel(s,q)
+          "continue_retrieval_replay"->continue(s,c,q,cmd)
+        end
+        {%{"query"=>public(q,if(op=="get_retrieval_replay",do: cmd,else: %{"summary"=>true}))},put(s,q)}
+    end
+  end
+  def metrics(q,b) do
+    if q["evidence_available"],do: compute_metrics(q,b),else: compute_metrics(Map.put(q,"evidence_available",true),b) |> Map.merge(%{"eligible"=>false,"reason"=>"retired"})
+  end
+  defp compute_metrics(q,b) do
+    branch=q[b];label=q["label"];full=branch["coverage"]["primary_complete"] and branch["coverage"]["final_complete"] and not branch["coverage"]["truncated"] and not ADHD.Archive.blocking_gaps?(branch["coverage"]["gaps"],q["primary_ids"]++branch["coverage"]["expanded_ids"])
+    reason=cond do
+      not q["evidence_available"]->"retired"
+      q["corpus"]=="current"->"changed_corpus"
+      label==nil->"unlabeled"
+      q["error"] != nil and q["error"]["code"]=="POLICY_CHANGED"->"policy_changed"
+      q["error"] != nil and q["error"]["code"]=="LABEL_CHANGED"->"label_changed"
+      branch["status"] != "completed" or branch["error"] != nil or branch["analysis_error"] != nil or ((q["policy"]["requires_complete"] or q["children"][b] != nil) and not full)->"incomplete"
+      true->nil
+    end
+    eligible=reason==nil;gold=if label,do: label["support_ids"],else: []
+    retrieved=Enum.count(gold,&(&1 in branch["coverage"]["assessed_ids"]));answer=branch["answer"]["assessment"]
+    answer_ids=if branch["scan"],do: branch["scan"]["answer"]["support_ids"]++branch["scan"]["answer"]["contradiction_ids"],else: branch["coverage"]["assessed_ids"]
+    pass=if eligible do
+      support=Enum.all?(gold,&(&1 in answer_ids));case label["expectation"] do
+        "supported"->answer=="direct" and support
+        "conflicting"->answer=="conflicting" and support
+        "no_evidence"->answer in ~w(insufficient no_evidence) and full
+      end
+    end
+    %{"eligible"=>eligible,"reason"=>reason,"expected_gold"=>if(eligible,do: length(gold)),"retrieved_gold"=>if(eligible,do: retrieved),"retrieval_recall_ppm"=>if(eligible,do: if(gold==[],do: 1000000,else: div(retrieved*1000000,length(gold)))),"answer_pass"=>pass,"false_support"=>if(eligible,do: label["expectation"]=="no_evidence" and answer in ~w(direct inferred conflicting)),"fallback"=>q["children"][b] != nil,"full_scope"=>full}
+  end
+  def comparison(q) do
+    if q["evidence_available"],do: compute_comparison(q),else: compute_comparison(Map.put(q,"evidence_available",true)) |> Map.merge(%{"eligible"=>false,"reason"=>"retired"})
+  end
+  defp compute_comparison(q) do
+    a=metrics(q,"baseline");b=metrics(q,"candidate");ok=a["eligible"] and b["eligible"]
+    value=%{"eligible"=>ok,"reason"=>a["reason"] || b["reason"],"retrieval_gain_ppm"=>if(ok,do: b["retrieval_recall_ppm"]-a["retrieval_recall_ppm"]),"answer_regressions"=>if(ok,do: if(a["answer_pass"] and not b["answer_pass"],do: 1,else: 0)),"false_supports"=>if(ok,do: if(b["false_support"],do: 1,else: 0)),"fallback_delta"=>if(ok,do: bool(b["fallback"])-bool(a["fallback"])),"provisional"=>true}
+    value=Enum.reduce(~w(calls bytes time_ms),value,fn k,acc->Map.put(acc,k<>"_delta",if(ok,do: experiment_usage(q["candidate"])[k]-experiment_usage(q["baseline"])[k])) end)
+    Map.put(value,"native_bytes_delta",if(ok,do: q["candidate"]["native_bytes"]-q["baseline"]["native_bytes"]))
+  end
+  defp bool(true),do: 1
+  defp bool(false),do: 0
+  def experiment_usage(branch),do: H.usage_public(%{"usage"=>H.usage_add(branch["experiment_base_usage"],branch["usage"]),"base_usage"=>H.usage_zero()})
+  def usage(q) do
+    branches=Map.new(@branches,fn b->{b,H.usage_public(q[b])} end)
+    Map.put(branches,"total",Map.new(Map.keys(branches["baseline"]),&{&1,branches["baseline"][&1]+branches["candidate"][&1]}))
+  end
+  def public(q,opts \\ %{}) do
+    run=Map.get(opts,"run",q["run"]);v=if run==q["run"],do: q,else: q["prior"][Integer.to_string(run)] || D.fail("NOT_FOUND")
+    rows=if v["evidence_available"],do: v["evaluations"],else: [];offset=Map.get(opts,"offset",0);limit=Map.get(opts,"limit",16)
+    {page,_}=if opts["summary"],do: {[],0},else: Enum.reduce_while(Enum.drop(rows,offset),{[],0},fn row,{acc,n}->size=byte_size(JSON.encode!(row));if length(acc)>=limit or n+size>262144,do: {:halt,{acc,n}},else: {:cont,{acc++[row],n+size}} end)
+    next=if offset+length(page)<length(rows),do: offset+length(page),else: nil
+    view=Map.take(v,~w(id owner_id requester_kind requester_id attempt_id question project_id scope snapshot original_snapshot corpus baseline_origin created_at updated_at status phase run policy budget label label_revision children evidence_available error evaluation_count))
+    view=Enum.reduce(@branches,view,fn b,acc->
+      branch=Map.take(v[b],~w(status phase recipe recipe_identity indexed total input_manifest_identity candidates assessment scan coverage answer native_bytes error)) |> Map.put("usage",H.usage_public(v[b])) |> Map.put("comparison_usage",experiment_usage(v[b])) |> Map.put("metrics",metrics(v,b));Map.put(acc,b,branch)
+    end)
+    Map.merge(view,%{"usage"=>usage(v),"comparison"=>comparison(v),"evaluations"=>page,"next_offset"=>next,"prior_runs"=>Map.keys(q["prior"]) |> Enum.map(&String.to_integer/1) |> Enum.filter(&(&1<run)) |> Enum.sort(),"continuable"=>v["evidence_available"] and run<16 and v["status"] != "pending"})
+  end
+  def retire(s,_c,cmd) do
+    q=lookup(s,cmd["query_id"]);D.check(q["status"] != "pending" and q["inflight"]==nil)
+    versions=[q|Map.values(q["prior"])]
+    refs=Enum.flat_map(versions,fn v->Map.values(v["children"]) |> Enum.reject(&is_nil/1) end)
+    other_refs=Enum.flat_map(s.replay_queries,fn {id,v}->if id==q["id"],do: [],else: Enum.flat_map([v|Map.values(v["prior"])],fn run->Map.values(run["children"]) |> Enum.reject(&is_nil/1) end) end)
+    archive_refs=Enum.flat_map(s.archive_queries,fn {_,main}->[main|Map.values(main["prior"])] |> Enum.flat_map(fn run->Map.values(run["children"]) |> Enum.reject(&is_nil/1) end) end)
+    other_refs=other_refs++archive_refs
+    history=Enum.reduce(refs,s.history_queries,fn ref,acc->child=acc[ref["query_id"]]
+      if child != nil and child["owner_id"]==q["owner_id"] and child["run"]==ref["run"] and child["status"] != "pending" and not Enum.any?(other_refs,&(&1["query_id"]==ref["query_id"])),do: Map.delete(acc,ref["query_id"]),else: acc
+    end)
+    strip=fn v->Enum.reduce(@branches,Map.merge(v,%{"evidence_available"=>false,"evaluations"=>[]}),fn b,acc->update_in(acc,[b],&Map.merge(&1,%{"rows"=>[],"ranking"=>nil,"inputs"=>%{}})) end) end
+    q=strip.(q) |> Map.put("prior",Map.new(q["prior"],fn {id,v}->{id,strip.(v)} end))
+    {%{"query"=>public(q,%{"summary"=>true})},put(%{s|history_queries: history},q)}
+  end
+  def upgrade(s) do
+    D.object(s.replay_queries);D.check(map_size(s.replay_queries)<=4096)
+    for {id,q}<-s.replay_queries do
+      D.check(id==q["id"]);D.object(q["prior"]);D.check(map_size(q["prior"])<=15)
+      validate_stored(s,q)
+      for {run,v}<-q["prior"] do
+        D.check(run==Integer.to_string(v["run"]) and v["run"]<q["run"]);validate_stored(s,v)
+        for key<-~w(id seq owner_id requester_kind requester_id attempt_id question project_id scope snapshot original_snapshot corpus baseline_origin primary_ids limit created_at),do: D.check(v[key]==q[key])
+        for b<-@branches,do: D.check(v[b]["recipe"]==q[b]["recipe"])
+      end
+    end
+    s
+  end
+  defp validate_stored(s,q) do
+    fields = ~w(id seq owner_id requester_kind requester_id attempt_id question project_id scope snapshot original_snapshot corpus baseline_origin created_at updated_at status phase run policy budget label label_revision baseline candidate children comparison evaluations evaluation_count evidence_available error inflight primary_ids limit prior)
+    D.keys(q,fields,fields--["prior"]);D.id(q["id"]);D.integer(q["seq"],0,s.seq);D.integer(q["run"],1,16);D.integer(q["limit"],1,64)
+    D.check(q["status"] in ~w(pending completed partial cancelled invalidated) and q["phase"] in ~w(baseline candidate done));D.check(q["requester_kind"] in ~w(agent human_session legacy_token optimization));D.id(q["requester_id"])
+    a=B.lookup(s,q["attempt_id"]);v=a["value"]
+    for key<-~w(question owner_id project_id scope),do: D.check(q[key]==v[key])
+    D.check(q["original_snapshot"]==v["snapshot"] and q["snapshot"]["server_id"]==s.server_id);D.integer(q["snapshot"]["watermark"],0,ADHD.Records.watermark(s))
+    D.check(q["corpus"] in ~w(frozen current) and q["baseline_origin"] in ~w(recorded current))
+    if q["corpus"]=="frozen",do: D.check(q["snapshot"]==q["original_snapshot"] and q["primary_ids"]==a["primary_ids"])
+    D.check(q["primary_ids"]==H.primary_ids(s,q["scope"],q["snapshot"]["watermark"]));H.validate_budget(q["budget"])
+    D.check(q["policy"]["identity"]==F.digest(Map.delete(q["policy"],"identity")))
+    D.keys(q["children"],@branches,@branches);D.boolean(q["evidence_available"]);D.integer(q["evaluation_count"],length(q["evaluations"]),9007199254740991)
+    if q["label"] do
+      D.check(q["label"] in Map.get(s.feedback["labels"],q["attempt_id"],[]) and q["label_revision"]==q["label"]["revision"])
+    else D.check(q["label_revision"]==0) end
+    for b<-@branches do
+      branch=q[b];X.validate_recipe(branch["recipe"]);D.check(branch["recipe_identity"]==q["policy"][b<>"_evaluator"]["policy"]["recipe_identity"])
+      D.integer(branch["indexed"],0,length(q["primary_ids"]));D.check(branch["total"]==length(q["primary_ids"]))
+      for kind<-~w(usage base_usage experiment_base_usage child_paid) do
+        D.keys(branch[kind],Map.keys(H.usage_zero()),Map.keys(H.usage_zero()));for n<-Map.values(branch[kind]),do: D.integer(n,0,9007199254740991)
+      end
+      for row<-branch["rows"] do
+        D.check(row["publication_id"] in q["primary_ids"] and row["identity"]==ADHD.Records.identity(s,row["publication_id"]))
+        for fragment<-row["fragments"] do
+          D.check(fragment["sha256"]==X.hash(fragment["text"]) and fragment["end"]-fragment["start"]==byte_size(fragment["text"]))
+          D.check(Map.has_key?(s.publications,fragment["origin_publication_id"]) and s.publications[fragment["origin_publication_id"]].seq<=q["snapshot"]["watermark"])
+        end
+      end
+    end
+    for ev<-q["evaluations"] do
+      D.check(ev["branch"] in @branches and ev["stage"] in ~w(retrieval assessment))
+      D.check(ev["request_sha256"]==X.hash(ev["request_json"]) and ev["request"]==ADHD.JSON.decode!(ev["request_json"]) and ev["bytes"]==byte_size(ev["request_json"]))
+      D.check(ev["request"]["state"]["question"]==q["question"])
+      if ev["stage"]=="retrieval" do
+        X.validate_response(ev["response"],ev["request"]);D.check(ev["request"]["model"]==q["policy"][ev["branch"]<>"_evaluator"]["model"])
+        D.check(ev["publication_id"] in q["primary_ids"] and ev["identity"]==ADHD.Records.identity(s,ev["publication_id"]))
+        D.check(ev["request"]["state"]["candidate"]["fragments"]==Enum.map(ev["fragments"],&Map.take(&1,~w(origin_publication_id field text))))
+      else
+        E.validate(ev["response"],ev["request"]);D.check(ev["request"]["model"]==q["policy"]["history_evaluator"]["model"] and ev["response"]["model"]==ev["request"]["model"])
+        records=ev["request"]["state"]["records"];D.check(ev["record_ids"]==Enum.map(records,& &1["publication"]["id"]) and ev["context_identities"]==Enum.map(records,& &1["context_identity"]))
+      end
+    end
+  end
+
+end

@@ -1,0 +1,479 @@
+defmodule ADHD.Storage do
+  alias ADHD.Domain, as: D
+
+  def local_legacy_state(path, project, server \\ nil, limits \\ nil), do: ADHD.LocalLegacy.read(path,project,server,limits)
+  def verify_local_legacy(proof), do: ADHD.LocalLegacy.verify(proof)
+
+  def bytes(state) do
+    :erlang.term_to_binary(state, [:deterministic, minor_version: 2])
+  end
+
+  def snapshot_path(path) do
+    path <> ".snapshot"
+  end
+
+  def generation(state) do
+    Map.get(state, :storage_generation, 0)
+  end
+
+  def next(state) do
+    Map.put(state, :storage_generation, generation(state) + 1)
+  end
+
+  defp safe(path) do
+    case File.lstat(path) do
+      {:ok, %{type: :regular}} -> :ok
+      {:error, :enoent} -> :ok
+      _ -> D.fail("INTERNAL")
+    end
+  end
+
+  def read_snapshot(path, limits \\ %{}) do
+    path = snapshot_path(path)
+    safe(path)
+
+    if File.exists?(path) do
+      {raw, _} =
+        ADHD.RecoveryFiles.read(
+          path,
+          Map.get(limits || %{}, "max_backup_bytes", File.stat!(path).size),
+          File.stat!("/proc/self").uid
+        )
+
+      state = ADHD.ProjectBackup.decode_snapshot(raw, limits)
+
+      D.check(
+        is_map(state) and is_integer(state[:storage_generation]) and state.storage_generation >= 0
+      )
+
+      state
+    end
+  end
+
+  def guard_checkpoint(path, limits \\ nil) do
+    {raw, _} =
+      ADHD.RecoveryFiles.read(
+        path,
+        Map.get(limits || %{}, "max_backup_bytes", File.stat!(path).size),
+        File.stat!("/proc/self").uid
+      )
+
+    ADHD.RecoveryCheckpoint.preflight(
+      raw,
+      limits ||
+        %{
+          "max_backup_bytes" => byte_size(raw),
+          "deadline_ms" => System.monotonic_time(:millisecond) + 300_000,
+          "scan_batch_records" => 256
+        }
+    )
+  end
+
+  def restore_checkpoint(path, state) do
+    replace_checkpoint(path, state)
+  end
+
+  defp sync_directory(path) do
+    try do
+      {:ok, dir} = :file.open(String.to_charlist(Path.dirname(path)), [:read, :raw, :directory])
+
+      try do
+        :ok = :file.sync(dir)
+      after
+        :file.close(dir)
+      end
+    rescue
+      _ -> exit(:storage_commit_failed)
+    catch
+      _, _ -> exit(:storage_commit_failed)
+    end
+  end
+
+  defp atomic(path, content) do
+    safe(path)
+    temp = path <> ".tmp-" <> D.opaque()
+    {:ok, file} = File.open(temp, [:write, :binary, :exclusive])
+
+    try do
+      :ok = File.chmod(temp, 384)
+      :ok = IO.binwrite(file, content)
+      :ok = :file.sync(file)
+    after
+      File.close(file)
+    end
+
+    File.rename!(temp, path)
+    sync_directory(path)
+  end
+
+  def atomic_private(path, content) do
+    atomic(path, content)
+  end
+
+  def write_closed(path, state) do
+    D.check(not File.exists?(path) and not File.exists?(snapshot_path(path)))
+    File.mkdir_p!(Path.dirname(path))
+    File.chmod!(Path.dirname(path), 448)
+
+    {:ok, tab} =
+      :dets.open_file(:adhd_restore_stage,
+        file: String.to_charlist(path),
+        type: :set,
+        auto_save: :infinity,
+        repair: false
+      )
+
+    try do
+      :ok = File.chmod(path, 384)
+      persist(tab, path, state)
+    after
+      :dets.close(tab)
+    end
+
+    D.check(read_snapshot(path) == state)
+
+    %{
+      "generation" => state.storage_generation,
+      "sequence" => state.seq,
+      "digest" => ADHD.RecoveryFiles.sha(bytes(state)),
+      "server_id" => state.server_id,
+      "project_id" => state.project
+    }
+  end
+
+  def persist(tab, path, state) do
+    body = bytes(state)
+
+    atomic(
+      snapshot_path(path),
+      <<"ADHDSTATE", 1, :crypto.hash(:sha256, body)::binary, body::binary>>
+    )
+
+    outcome =
+      try do
+        :ok = :dets.insert(tab, {:state, state})
+        :ok = :dets.sync(tab)
+        :ok
+      rescue
+        _ -> :error
+      catch
+        _, _ -> :error
+      end
+
+    if outcome != :ok do
+      exit(:storage_commit_failed)
+    end
+
+    :ok
+  end
+
+  defp replace_checkpoint(path, state) do
+    safe(path)
+    temp = path <> ".recover-" <> D.opaque()
+
+    {:ok, tab} =
+      :dets.open_file(:adhd_recovery,
+        file: String.to_charlist(temp),
+        type: :set,
+        auto_save: :infinity,
+        repair: false
+      )
+
+    try do
+      :ok = File.chmod(temp, 384)
+      :ok = :dets.insert(tab, {:state, state})
+      :ok = :dets.sync(tab)
+    after
+      :dets.close(tab)
+    end
+
+    File.rename!(temp, path)
+    sync_directory(path)
+  end
+
+  def checkpoint_compatible(checkpoint, snapshot) do
+    compatible(checkpoint, snapshot)
+  end
+
+  defp compatible(checkpoint, snapshot) do
+    D.check(is_map(checkpoint))
+
+    for key <- [:project_epoch, :allocation_epoch, :route_generation] do
+      D.check(Map.get(checkpoint, key) == Map.get(snapshot, key))
+    end
+
+    D.check(is_integer(checkpoint[:seq]) and checkpoint.seq <= snapshot.seq)
+    D.check(checkpoint[:project] in snapshot.aliases)
+    D.check(is_nil(checkpoint[:server_id]) or checkpoint.server_id == snapshot.server_id)
+    D.check(generation(checkpoint) <= generation(snapshot))
+
+    if generation(checkpoint) == generation(snapshot) do
+      D.check(bytes(checkpoint) == bytes(snapshot))
+    end
+
+    :ok
+  end
+
+  def open(path, project, limits \\ nil) do
+    File.mkdir_p!(Path.dirname(path))
+    safe(path)
+    existed = File.exists?(path)
+
+    entry =
+      if ADHD.StorageRegistry.loaded?() do
+        ADHD.StorageRegistry.entry(project)
+      else
+        nil
+      end
+
+    if entry do
+      D.check(entry["initialized"] and entry["availability"] in ["ready", "restoring"])
+      D.check(Path.expand(path) == Path.expand(entry["storage_anchor"]))
+      D.check(existed or File.exists?(snapshot_path(path)))
+    end
+
+    snapshot = read_snapshot(path, limits || %{})
+
+    if not is_nil(snapshot) and not is_nil(entry) do
+      ADHD.StorageRegistry.check_header(snapshot, entry)
+    end
+
+    if snapshot do
+      ADHD.Store.upgrade(snapshot, project)
+    end
+
+    if not is_nil(snapshot) and not existed do
+      replace_checkpoint(path, snapshot)
+    end
+
+    safe_checkpoint =
+      if File.exists?(path) do
+        case guard_checkpoint(path, limits) do
+          {:ok, value} ->
+            value
+
+          {:needs_repair, :not_closed} ->
+            D.check(not is_nil(snapshot))
+            replace_checkpoint(path, snapshot)
+            {:ok, value} = guard_checkpoint(path, limits)
+            value
+        end
+      else
+        nil
+      end
+
+    options = [file: String.to_charlist(path), type: :set, auto_save: :infinity, repair: false]
+
+    name =
+      if ADHD.Projects.multi?(ADHD.Config.root()) do
+        names =
+          for i <- 0..256 do
+            String.to_atom("adhd_project_store_" <> Integer.to_string(i))
+          end
+
+        Enum.find(names, &(:dets.info(&1) == :undefined)) || D.fail("RESOURCE_EXHAUSTED")
+      else
+        :adhd_state
+      end
+
+    opened = :dets.open_file(name, options)
+
+    case opened do
+      {:ok, tab} ->
+        try do
+          :ok = File.chmod(path, 384)
+
+          original =
+            case :dets.lookup(tab, :state) do
+              [] ->
+                D.check(not existed and is_nil(snapshot))
+                ADHD.Store.empty(project)
+
+              [state: stored] ->
+                if snapshot do
+                  compatible(stored, snapshot)
+                end
+
+                snapshot || stored
+            end
+
+          if safe_checkpoint do
+            D.check(original == (snapshot || safe_checkpoint))
+          end
+
+          if safe_checkpoint do
+            D.check(:dets.lookup(tab, :state) == [state: safe_checkpoint])
+          end
+
+          if entry do
+            ADHD.StorageRegistry.check_header(original, entry)
+          end
+
+          state = ADHD.Store.upgrade(original, project)
+
+          if ADHD.Projects.multi?(ADHD.Config.root()) do
+            D.check(state.server_id == ADHD.Config.root()["server_id"])
+          end
+
+          state =
+            if state != original do
+              next(state)
+            else
+              state
+            end
+
+          persist(tab, path, state)
+          {:ok, tab, state}
+        rescue
+          error ->
+            :dets.close(tab)
+            reraise error, __STACKTRACE__
+        catch
+          kind, reason ->
+            :dets.close(tab)
+            :erlang.raise(kind, reason, __STACKTRACE__)
+        end
+
+      _ ->
+        D.fail("INVALID_STORE")
+    end
+  end
+end
+defmodule ADHD.LocalLegacy do
+  # Local startup only. Imported payloads continue to use RecoveryFiles.read.
+  alias ADHD.RecoveryFiles, as: F
+  alias ADHD.Domain, as: D
+  @maximum 67_108_864
+  def limits(c \\ %{}) do
+    configured = Map.get(c, "recovery") || %{}
+    value = Map.merge(%{"max_backup_bytes" => @maximum,"max_records" => 100_000,
+      "scan_batch_records" => 256,"timeout_ms" => 300_000}, configured)
+    Map.put(value,"deadline_ms",System.monotonic_time(:millisecond)+value["timeout_ms"])
+  end
+  def preflight_seed(config_path,c) do
+    case File.lstat(config_path<>".stores") do
+      {:ok,%{type: :regular}}->:ok
+      {:error,:enoent}->
+        if File.lstat(config_path<>".stores.marker") != {:error,:enoent},do: F.fail("path")
+        if c["server_id"],do: ADHD.Directory.server_id(c["server_id"])
+        proofs=for id<-ADHD.Projects.ids(c) do
+          D.identifier(id)
+          path=ADHD.StorageRegistry.legacy_path(c,id) |> Path.expand(Path.dirname(config_path))
+          read(path,id,c["server_id"],limits(c)) |> validate(c,id)
+        end
+        Enum.each(proofs,&verify/1)
+        :ok
+      _->F.fail("path")
+    end
+  end
+  def read(path, project, server \\ nil, budget \\ nil) do
+    budget = budget || limits()
+    uid=File.stat!("/proc/self").uid
+    checkpoint=read_optional(path,uid,budget)
+    snapshot=read_optional(ADHD.Storage.snapshot_path(path),uid,budget)
+    if is_nil(checkpoint) and is_nil(snapshot) do
+      %{state: nil,files: [],absent: [path,ADHD.Storage.snapshot_path(path)],limits: budget,uid: uid}
+    else
+      if Enum.sum(for item<-[checkpoint,snapshot],item,do: byte_size(item.bytes))>budget["max_backup_bytes"],do: F.fail("limits")
+      snapshot_state=if snapshot,do: ADHD.ProjectBackup.decode_snapshot(snapshot.bytes,budget)
+      parsed=if checkpoint,do: ADHD.RecoveryCheckpoint.preflight(checkpoint.bytes,budget)
+      checkpoint_state=case parsed do
+        {:ok,state}->state
+        {:needs_repair,:not_closed}->if is_nil(snapshot_state),do: F.fail("schema")
+        nil->nil
+      end
+      state=snapshot_state || checkpoint_state
+      for candidate<-[checkpoint_state,snapshot_state],is_map(candidate),do: identity(candidate,project,server)
+      if checkpoint_state && snapshot_state do
+        a=Map.put_new(checkpoint_state,:aliases,[checkpoint_state.project])
+        b=Map.put_new(snapshot_state,:aliases,[snapshot_state.project])
+        :ok=ADHD.Storage.checkpoint_compatible(a,b)
+      end
+      files=Enum.reject([checkpoint,snapshot],&is_nil/1)
+      if Enum.any?([checkpoint_state,snapshot_state],&(is_map(&1) and &1[:schema]==4)) do
+        Enum.each(files,fn f->F.private(f.path,:regular,uid) end)
+      end
+      %{state: state,files: Enum.map(files,&Map.delete(&1,:bytes)),absent: Enum.reject([path,ADHD.Storage.snapshot_path(path)],fn p->Enum.any?(files,&(&1.path==p)) end),limits: budget,uid: uid}
+    end
+  end
+  defp identity(state,project,server) do
+    D.check(is_map(state) and state[:schema] in [1,2,3,4])
+    D.identifier(state[:project])
+    if is_nil(state[:server_id]),do: D.check(state[:schema] in [1,2]),else: ADHD.Directory.server_id(state[:server_id])
+    aliases=Map.get(state,:aliases,[state.project])
+    D.list(aliases,256,1);D.distinct(aliases);Enum.each(aliases,&D.identifier/1)
+    D.check(state.project in aliases and project in aliases)
+    if not is_nil(server) and not is_nil(state[:server_id]),do: D.check(server==state.server_id)
+    D.integer(state[:seq],0,9_007_199_254_740_991)
+    D.integer(Map.get(state,:storage_generation,0),0,9_007_199_254_740_991)
+    :ok
+  end
+  def validate(%{state: nil}=proof,_c,_project),do: Map.put(proof,:validated,nil)
+  def validate(proof,c,project) do
+    raw_server=Map.get(proof.state,:server_id)
+    D.check(is_nil(c["server_id"]) or is_nil(raw_server) or c["server_id"]==raw_server)
+    server=c["server_id"] || raw_server || ADHD.Directory.server_id()
+    current=Map.put(c,"server_id",server)
+    checked=ADHD.ProjectBackupValidation.validate_local(proof.state,current,project,proof.limits,fn _->:ok end)
+    Map.put(proof,:validated,checked.state)
+  end
+  def verify(proof) do
+    Enum.each(proof.absent,fn path->
+      optional_parents(path)
+      if File.lstat(path) != {:error,:enoent},do: F.fail("path")
+    end)
+    Enum.each(proof.files,fn original->
+      current=read_file(original.path,proof.uid,proof.limits)
+      if current.identity != original.identity or current.sha256 != original.sha256,do: F.fail("path")
+    end)
+    :ok
+  end
+  defp metadata(path,uid) do
+    F.ancestors(path)
+    case File.lstat(path) do
+      {:ok,s}->
+        mode=Bitwise.band(s.mode,0o7777)
+        if s.type != :regular or s.uid != uid or s.links != 1 or mode not in [0o600,0o640,0o644,0o660,0o664],do: F.fail("path")
+        s
+      _->F.fail("path")
+    end
+  end
+  defp optional_parents(path) do
+    Enum.reduce_while(Path.split(Path.dirname(Path.expand(path))),nil,fn part,parent->
+      current=if is_nil(parent),do: part,else: Path.join(parent,part)
+      case File.lstat(current) do
+        {:ok,%{type: :directory}}->{:cont,current}
+        {:error,:enoent}->{:halt,nil}
+        _->F.fail("path")
+      end
+    end)
+    :ok
+  end
+  defp read_optional(path,uid,budget) do
+    optional_parents(path)
+    case File.lstat(path) do {:error,:enoent}->nil;_->read_file(path,uid,budget) end
+  end
+  defp read_file(path,uid,budget) do
+    before=metadata(path,uid)
+    if before.size>budget["max_backup_bytes"] or before.size<0,do: F.fail("limits")
+    {:ok,file}=:file.open(String.to_charlist(path),[:read,:binary,:raw])
+    try do
+      {:ok,opened}=:file.read_file_info(file)
+      if F.identity(File.Stat.from_record(opened)) != F.identity(before),do: F.fail("path")
+      bytes=chunks(file,before.size,budget,[])
+      if :file.read(file,1) != :eof,do: F.fail("limits")
+      {:ok,after_handle}=:file.read_file_info(file)
+      if F.identity(File.Stat.from_record(after_handle)) != F.identity(before) or F.identity(metadata(path,uid)) != F.identity(before),do: F.fail("path")
+      %{path: path,identity: F.identity(before),sha256: F.sha(bytes),bytes: bytes}
+    after :file.close(file) end
+  end
+  defp chunks(_file,0,_budget,parts),do: IO.iodata_to_binary(Enum.reverse(parts))
+  defp chunks(file,left,budget,parts) do
+    if System.monotonic_time(:millisecond)>=budget["deadline_ms"],do: throw({:recovery,"RESTORE_TIMEOUT","timeout"})
+    Process.sleep(0)
+    case :file.read(file,min(left,65536)) do
+      {:ok,bytes} when byte_size(bytes)>0->chunks(file,left-byte_size(bytes),budget,[bytes|parts])
+      _->F.fail("io")
+    end
+  end
+end

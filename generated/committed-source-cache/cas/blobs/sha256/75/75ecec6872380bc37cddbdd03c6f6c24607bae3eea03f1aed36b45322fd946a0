@@ -1,0 +1,1648 @@
+defmodule ADHD.ProjectRestore do
+  use GenServer
+  alias ADHD.Domain, as: D
+  @safe 9_007_199_254_740_991
+  @failure_codes ~w(RESTORE_INVALID_BACKUP RESTORE_CONFLICT RESTORE_STALE_PLAN RESTORE_TIMEOUT RESTORE_IO_ERROR RESTORE_UNAVAILABLE RECOVERY_REQUIRED)
+  @reasons ~w(hash schema identity alias owner_missing owner_changed owner_unprovable populated missing_admission partial_target path revision route expired limits io transport timeout decision_integrity snapshot_integrity)
+  @ranges %{
+    "max_backup_bytes" => {65536, 1_073_741_824},
+    "max_records" => {1, 1_000_000},
+    "scan_batch_records" => {1, 4096},
+    "timeout_ms" => {1000, 1_800_000},
+    "plan_ttl_ms" => {1000, 86_400_000},
+    "max_operations" => {1, 1_000_000}
+  }
+  @defaults %{
+    "max_backup_bytes" => 67_108_864,
+    "max_records" => 100_000,
+    "scan_batch_records" => 256,
+    "timeout_ms" => 300_000,
+    "plan_ttl_ms" => 900_000,
+    "max_operations" => 10000
+  }
+  def operations do
+    ~w(project_restore_plan project_restore_apply project_restore_status)
+  end
+
+  def normalize(nil, _) do
+    nil
+  end
+
+  def normalize(value, base) do
+    settings(value, false)
+
+    if value["backup_root"] do
+      Map.put(value, "backup_root", Path.expand(value["backup_root"], base))
+    else
+      value
+    end
+  end
+
+  def patch(nil) do
+    :ok
+  end
+
+  def patch(value) do
+    settings(value, true)
+  end
+
+  defp settings(value, nullable) do
+    D.keys(value, ["backup_root" | Map.keys(@ranges)])
+
+    Enum.each(value, fn {key, v} ->
+      unless nullable and is_nil(v) do
+        if key == "backup_root" do
+          D.string(v, 4096)
+          D.check(not String.contains?(v, <<0>>))
+        else
+          {low, high} = Map.fetch!(@ranges, key)
+          D.integer(v, low, high)
+        end
+      end
+    end)
+
+    :ok
+  end
+
+  def effective(path, c) do
+    supplied = normalize(c["recovery"] || %{}, Path.dirname(Path.expand(path)))
+    @defaults |> Map.put("backup_root", Path.expand(path) <> ".backups") |> Map.merge(supplied)
+  end
+
+  def validate(cmd) do
+    case cmd["op"] do
+      "project_restore_plan" ->
+        if Map.get(cmd, "mode", "restore") == "initialize" do
+          D.keys(
+            cmd,
+            ~w(op project_id expected_revision message_id mode confirm),
+            ~w(op project_id expected_revision message_id mode confirm)
+          )
+
+          D.check(cmd["confirm"] == true)
+        else
+          D.keys(
+            cmd,
+            ~w(op project_id expected_revision message_id mode backup_id manifest_sha256 allow_missing),
+            ~w(op project_id expected_revision message_id backup_id manifest_sha256)
+          )
+
+          D.check(Map.get(cmd, "mode", "restore") == "restore")
+          D.identifier(cmd["backup_id"])
+          D.check(cmd["backup_id"] not in [".", ".."])
+          D.string(cmd["manifest_sha256"], 64)
+          D.check(Regex.match?(~r/\A[0-9a-f]{64}\z/, cmd["manifest_sha256"]))
+
+          if Map.has_key?(cmd, "allow_missing") do
+            D.boolean(cmd["allow_missing"])
+          end
+        end
+
+        D.integer(cmd["expected_revision"], 0, @safe)
+        D.id(cmd["message_id"])
+
+      "project_restore_apply" ->
+        D.keys(
+          cmd,
+          ~w(op project_id expected_revision message_id plan_id plan_sha256 confirm),
+          ~w(op project_id expected_revision message_id plan_id plan_sha256 confirm)
+        )
+
+        D.integer(cmd["expected_revision"], 0, @safe)
+        D.id(cmd["message_id"])
+        D.id(cmd["plan_id"])
+        D.check(cmd["confirm"] == true)
+        D.string(cmd["plan_sha256"], 64)
+        D.check(Regex.match?(~r/\A[0-9a-f]{64}\z/, cmd["plan_sha256"]))
+
+      "project_restore_status" ->
+        D.keys(cmd, ~w(op project_id operation_id), ~w(op project_id))
+
+        if Map.has_key?(cmd, "operation_id") do
+          D.id(cmd["operation_id"])
+        end
+
+      _ ->
+        D.fail()
+    end
+
+    D.identifier(cmd["project_id"])
+    :ok
+  end
+
+  def normalized_command(cmd) do
+    cmd = Map.delete(cmd, "message_id")
+
+    if cmd["op"] == "project_restore_plan" and Map.get(cmd, "mode", "restore") == "restore" do
+      cmd |> Map.put_new("mode", "restore") |> Map.put_new("allow_missing", false)
+    else
+      cmd
+    end
+  end
+
+  def admin(cmd, principal) do
+    ADHD.Config.recovery_request(cmd, principal)
+  end
+
+  def accept(cmd, principal, c, path) do
+    GenServer.call(__MODULE__, {:accept, cmd, principal, c, path}, 30000)
+  end
+
+  def empty_journal(path, c, epochs \\ []) do
+    j = %{
+      "schema" => 1,
+      "config_file" => Path.expand(path),
+      "server_id" => c["server_id"],
+      "allocator_epoch" => ADHD.StorageRegistry.fresh(epochs),
+      "allocator_counter" => 0,
+      "operations" => %{},
+      "jobs" => %{},
+      "receipts" => %{},
+      "reserved_epochs" => epochs
+    }
+
+    Map.put(j, "integrity_sha256", journal_digest(j))
+  end
+
+  def start_link(path) do
+    GenServer.start_link(__MODULE__, Path.expand(path), name: __MODULE__)
+  end
+
+  def format_status(status) do
+    Map.merge(status, %{state: :redacted, message: :redacted, reason: :redacted, log: []})
+  end
+
+  def init(path) do
+    c = ADHD.Config.root()
+    file = ADHD.StorageRegistry.paths(path).journal
+    D.check(File.exists?(file))
+    {bytes, _} = ADHD.RecoveryFiles.read(file, 1_073_741_824, File.stat!(path).uid)
+    j = ADHD.RecoveryFiles.json(bytes)
+    validate_journal(j, path, c)
+    x = %{path: path, journal: j, active: nil, reserved_index: MapSet.new(j["reserved_epochs"])}
+
+    j =
+      Enum.reduce(j["operations"], j, fn {id, o}, acc ->
+        if o["state"] in ~w(queued verifying staging) do
+          failed =
+            o
+            |> Map.put("state", "failed")
+            |> Map.put("updated_at", D.now())
+            |> Map.put("failure", failure("RESTORE_UNAVAILABLE", "io", true))
+
+          put_in(acc, ["operations", id], failed)
+        else
+          acc
+        end
+      end)
+
+    x = %{x | journal: j}
+    save(x)
+    {:ok, x}
+  end
+
+  def validate_metadata(j, path, c) do
+    validate_journal(j, Path.expand(path), c)
+  end
+
+  defp validate_journal(j, path, c) do
+    D.keys(
+      j,
+      ~w(schema config_file server_id allocator_epoch allocator_counter operations jobs receipts reserved_epochs integrity_sha256 rebind_receipts),
+      ~w(schema config_file server_id allocator_epoch allocator_counter operations jobs receipts reserved_epochs integrity_sha256)
+    )
+
+    if Map.has_key?(j, "rebind_receipts") do
+      D.object(j["rebind_receipts"])
+    end
+
+    D.check(j["schema"] == 1 and j["config_file"] == path and j["server_id"] == c["server_id"])
+    ADHD.RecoveryFiles.hex(j["allocator_epoch"], 32)
+    D.integer(j["allocator_counter"], 0, @safe)
+    D.check(j["integrity_sha256"] == journal_digest(j))
+
+    for k <- ~w(operations jobs receipts) do
+      D.object(j[k])
+    end
+
+    D.check(Enum.sort(Map.keys(j["operations"])) == Enum.sort(Map.keys(j["jobs"])))
+    D.list(j["reserved_epochs"], 4 * map_size(j["operations"]) + 1024)
+    D.distinct(j["reserved_epochs"])
+    Enum.each(j["reserved_epochs"], &ADHD.RecoveryFiles.hex(&1, 32))
+
+    for {id, op} <- j["operations"] do
+      D.id(id)
+
+      D.keys(
+        op,
+        ~w(operation_id kind project_id state created_at updated_at progress plan result failure),
+        ~w(operation_id kind project_id state created_at updated_at progress plan result failure)
+      )
+
+      D.check(op["operation_id"] == id and op["kind"] in ~w(plan apply))
+
+      D.check(
+        op["state"] in ~w(queued verifying ready stale expired staging decided installing activating complete blocked failed)
+      )
+
+      D.identifier(op["project_id"])
+      D.datetime(op["created_at"], true)
+      D.datetime(op["updated_at"], true)
+
+      if op["failure"] do
+        f = op["failure"]
+
+        D.keys(
+          f,
+          ~w(code reason retryable conflicts truncated),
+          ~w(code reason retryable conflicts truncated)
+        )
+
+        D.check(f["code"] in @failure_codes and f["reason"] in @reasons)
+        D.boolean(f["retryable"])
+        D.boolean(f["truncated"])
+        D.list(f["conflicts"], 16)
+        D.distinct(f["conflicts"])
+
+        for row <- f["conflicts"] do
+          D.keys(row, ~w(reason count), ~w(reason count))
+          D.check(row["reason"] in @reasons)
+          D.integer(row["count"], 1, @safe)
+        end
+      end
+
+      D.keys(
+        op["progress"],
+        ~w(bytes_read records_checked maximum_bytes maximum_records),
+        ~w(bytes_read records_checked maximum_bytes maximum_records)
+      )
+
+      for {_key, value} <- op["progress"] do
+        D.integer(value, 0, @safe)
+      end
+
+      job = j["jobs"][id]
+
+      D.keys(
+        job,
+        ~w(command actor_id limits plan_private owned_stage_dir),
+        ~w(command actor_id limits plan_private)
+      )
+
+      validate(job["command"])
+      D.id(job["actor_id"])
+
+      D.check(
+        job["command"]["project_id"] == op["project_id"] and
+          job["command"]["op"] == "project_restore_" <> op["kind"]
+      )
+
+      D.keys(job["limits"], ["deadline_ms" | Map.keys(@defaults) ++ ["backup_root"]], [
+        "deadline_ms" | Map.keys(@defaults) ++ ["backup_root"]
+      ])
+
+      D.integer(job["limits"]["deadline_ms"], -@safe, @safe)
+      settings(Map.delete(job["limits"], "deadline_ms"), false)
+      key = ADHD.Directory.digest([job["actor_id"], job["command"]["message_id"]])
+      receipt = j["receipts"][key]
+
+      D.check(
+        is_map(receipt) and
+          receipt["digest"] == ADHD.Directory.digest(normalized_command(job["command"])) and
+          receipt["receipt"] == accepted(op)
+      )
+
+      if is_map(op["plan"]) do
+        p = op["plan"]
+
+        D.check(
+          p["project_id"] == op["project_id"] and p["server_id"] == j["server_id"] and
+            p["plan_sha256"] == ADHD.Directory.digest(Map.delete(p, "plan_sha256"))
+        )
+
+        selected = Enum.map(~w(project_epoch allocation_epoch), &p["selected"][&1])
+
+        D.check(
+          Enum.all?(selected, &(&1 in j["reserved_epochs"])) and length(Enum.uniq(selected)) == 2
+        )
+      end
+    end
+
+    for {key, receipt} <- j["receipts"] do
+      ADHD.RecoveryFiles.hex(key, 64)
+      D.keys(receipt, ~w(digest receipt), ~w(digest receipt))
+      ADHD.RecoveryFiles.hex(receipt["digest"], 64)
+
+      D.keys(
+        receipt["receipt"],
+        ~w(accepted operation_id kind project_id),
+        ~w(accepted operation_id kind project_id)
+      )
+
+      op = j["operations"][receipt["receipt"]["operation_id"]]
+      D.check(is_map(op) and receipt["receipt"] == accepted(op))
+      job = j["jobs"][op["operation_id"]]
+      D.check(receipt["digest"] == ADHD.Directory.digest(normalized_command(job["command"])))
+    end
+
+    :ok
+  end
+
+  defp journal_digest(j) do
+    ADHD.RecoveryFiles.sha(ADHD.Directory.canonical(Map.delete(j, "integrity_sha256")))
+  end
+
+  defp save(x) do
+    j = Map.put(x.journal, "integrity_sha256", journal_digest(x.journal))
+    ADHD.Storage.atomic_private(ADHD.StorageRegistry.paths(x.path).journal, JSON.encode!(j))
+    :ok
+  end
+
+  defp update(x, id, fun) do
+    next = update_in(x.journal, ["operations", id], fun)
+    x = %{x | journal: next}
+    save(x)
+    x
+  end
+
+  defp authorize(p, c) do
+    role =
+      if p["id"] == "legacy-admin" do
+        if ADHD.Identity.methods(c)["key"] do
+          "Admin"
+        else
+          nil
+        end
+      else
+        case Enum.find(c["users"], &(&1["id"] == p["id"])) do
+          nil -> nil
+          u -> ADHD.Identity.role(u, c)
+        end
+      end
+
+    if role != "Admin" do
+      D.fail("FORBIDDEN")
+    end
+  end
+
+  def handle_call({:accept, cmd, p, c, path}, _, x) do
+    try do
+      D.check(path == x.path)
+      authorize(p, c)
+      validate(cmd)
+      ADHD.Projects.find(c, cmd["project_id"])
+
+      if cmd["op"] == "project_restore_status" do
+        {:reply, {:ok, status_value(x, c, cmd)}, x}
+      else
+        digest = ADHD.Directory.digest(normalized_command(cmd))
+        key = ADHD.Directory.digest([p["id"], cmd["message_id"]])
+        previous = x.journal["receipts"][key]
+
+        if previous do
+          if previous["digest"] != digest do
+            D.fail("IDEMPOTENCY_CONFLICT")
+          end
+
+          previous_id = previous["receipt"]["operation_id"]
+
+          if x.journal["operations"][previous_id]["state"] in ["complete", "blocked"] and
+               is_nil(x.active) and own_decision?(x.path, previous_id) do
+            send(self(), {:resume, previous_id})
+          end
+
+          {:reply, {:ok, previous["receipt"]}, x}
+        else
+          limits = effective(path, c)
+
+          if receipt_count(x.journal) >= limits["max_operations"] do
+            D.fail("BACKPRESSURE")
+          end
+
+          existing =
+            if cmd["op"] == "project_restore_apply" do
+              existing_apply(x, cmd)
+            else
+              nil
+            end
+
+          if existing do
+            receipt = accepted(existing)
+            j = put_in(x.journal, ["receipts", key], %{"digest" => digest, "receipt" => receipt})
+            x = %{x | journal: j}
+            save(x)
+
+            if existing["state"] in ["blocked", "complete"] and is_nil(x.active) and
+                 own_decision?(x.path, existing["operation_id"]) do
+              send(self(), {:resume, existing["operation_id"]})
+            end
+
+            {:reply, {:ok, receipt}, x}
+          else
+            if x.active || File.exists?(ADHD.StorageRegistry.paths(path).decision) do
+              D.fail("RESTORE_BUSY")
+            end
+
+            if cmd["expected_revision"] != c["config_revision"] do
+              throw({:config_conflict, c["config_revision"]})
+            end
+
+            entry = ADHD.StorageRegistry.entry(cmd["project_id"]) || D.fail("RECOVERY_REQUIRED")
+            mode = Map.get(cmd, "mode", "restore")
+
+            if cmd["op"] == "project_restore_plan" and mode == "initialize" and
+                 (entry["initialized"] or entry["availability"] != "uninitialized") do
+              D.fail("RESTORE_CONFLICT")
+            end
+
+            plan =
+              if cmd["op"] == "project_restore_apply" do
+                reviewed_plan(x, c, cmd)
+              else
+                nil
+              end
+
+            n = x.journal["allocator_counter"] + 1
+            D.integer(n, 1, @safe)
+
+            kind =
+              if cmd["op"] == "project_restore_plan" do
+                "plan"
+              else
+                "apply"
+              end
+
+            id =
+              if kind == "plan" do
+                "restoreplan"
+              else
+                "restore"
+              end <>
+                "_" <>
+                x.journal["allocator_epoch"] <> "_" <> String.downcase(Integer.to_string(n, 36))
+
+            now = D.now()
+
+            op = %{
+              "operation_id" => id,
+              "kind" => kind,
+              "project_id" => cmd["project_id"],
+              "state" => "queued",
+              "created_at" => now,
+              "updated_at" => now,
+              "progress" => %{
+                "bytes_read" => 0,
+                "records_checked" => 0,
+                "maximum_bytes" => limits["max_backup_bytes"],
+                "maximum_records" => limits["max_records"]
+              },
+              "plan" => plan,
+              "result" => nil,
+              "failure" => nil
+            }
+
+            receipt = accepted(op)
+
+            frozen =
+              Map.put(
+                limits,
+                "deadline_ms",
+                System.monotonic_time(:millisecond) + limits["timeout_ms"]
+              )
+
+            job = %{
+              "command" => cmd,
+              "actor_id" => p["id"],
+              "limits" => frozen,
+              "plan_private" =>
+                if plan do
+                  x.journal["jobs"][plan["plan_id"]]["plan_private"]
+                else
+                  nil
+                end
+            }
+
+            j =
+              x.journal
+              |> Map.put("allocator_counter", n)
+              |> put_in(["operations", id], op)
+              |> put_in(["jobs", id], job)
+              |> put_in(["receipts", key], %{"digest" => digest, "receipt" => receipt})
+
+            x = %{x | journal: j, active: %{id: id}}
+            save(x)
+            send(self(), {:run, id})
+            {:reply, {:ok, receipt}, x}
+          end
+        end
+      end
+    rescue
+      _ -> {:reply, {:error, "CONFIG_WRITE_FAILED"}, x}
+    catch
+      {:domain, code} -> {:reply, {:error, code}, x}
+      {:config_conflict, revision} -> {:reply, {:error, "CONFIG_CONFLICT", revision}, x}
+    end
+  end
+
+  def handle_call(:staging, _, x) do
+    {:reply, not is_nil(x.active) and x.journal["operations"][x.active.id]["kind"] == "apply", x}
+  end
+
+  def handle_call({:reserved_for_plan, id, epochs}, _, x) do
+    op = x.journal["operations"][id]
+
+    selected =
+      if is_map(op) and is_map(op["plan"]) do
+        Enum.map(~w(project_epoch allocation_epoch), &op["plan"]["selected"][&1])
+      else
+        []
+      end
+
+    {:reply,
+     length(epochs) == 2 and epochs == selected and
+       Enum.all?(epochs, &MapSet.member?(x.reserved_index, &1)), x}
+  end
+
+  def handle_call(:reserved_epochs, _, x) do
+    {:reply, x.journal["reserved_epochs"], x}
+  end
+
+  def handle_call({:completed, id, result}, _, x) do
+    op = x.journal["operations"][id]
+    {:reply, is_map(op) and op["state"] == "complete" and op["result"] == result, x}
+  end
+
+  def handle_call({:binding, id}, _, x) do
+    {:reply, binding_value(x.journal, id), x}
+  end
+
+  def handle_call({:transition, id, state, fields}, _, x) do
+    D.check(
+      state in ~w(verifying ready stale expired staging decided installing activating complete blocked failed)
+    )
+
+    D.keys(fields, ~w(plan result failure progress))
+
+    x =
+      update(x, id, fn o ->
+        o |> Map.merge(fields) |> Map.put("state", state) |> Map.put("updated_at", D.now())
+      end)
+
+    {:reply, :ok, x}
+  end
+
+  def handle_call({:reserve, id, extra}, _, x) do
+    D.check(x.active && x.active.id == id)
+    registry = ADHD.StorageRegistry.current().registry
+
+    reserved =
+      Enum.uniq(
+        x.journal["reserved_epochs"] ++
+          registry["reserved_epochs"] ++ Enum.reject(extra, &is_nil/1)
+      )
+
+    project = ADHD.StorageRegistry.fresh(reserved)
+    allocation = ADHD.StorageRegistry.fresh([project | reserved])
+    j = Map.put(x.journal, "reserved_epochs", [project, allocation | reserved])
+    x = %{x | journal: j, reserved_index: MapSet.new(j["reserved_epochs"])}
+    save(x)
+    {:reply, {project, allocation}, x}
+  end
+
+  def handle_call({:job_private, id, fields}, _, x) do
+    j = update_in(x.journal, ["jobs", id], &Map.merge(&1, fields))
+    x = %{x | journal: j}
+    save(x)
+    {:reply, :ok, x}
+  end
+
+  defp receipt_count(j) do
+    map_size(j["receipts"]) + map_size(Map.get(j, "rebind_receipts", %{}))
+  end
+
+  defp accepted(o) do
+    %{
+      "accepted" => true,
+      "operation_id" => o["operation_id"],
+      "kind" => o["kind"],
+      "project_id" => o["project_id"]
+    }
+  end
+
+  defp existing_apply(x, cmd) do
+    Enum.find_value(x.journal["operations"], fn {_, o} ->
+      p = o["plan"]
+
+      if o["kind"] == "apply" and p["plan_id"] == cmd["plan_id"] and
+           o["state"] in ~w(decided installing activating complete blocked) do
+        if o["project_id"] != cmd["project_id"] or p["plan_sha256"] != cmd["plan_sha256"] or
+             p["config_revision"] != cmd["expected_revision"] do
+          D.fail("RESTORE_STALE_PLAN")
+        end
+
+        o
+      end
+    end)
+  end
+
+  defp reviewed_plan(x, c, cmd) do
+    op = x.journal["operations"][cmd["plan_id"]] || D.fail("NOT_FOUND")
+
+    if op["project_id"] != cmd["project_id"] do
+      D.fail("NOT_FOUND")
+    end
+
+    effective = eligible(op, c)
+
+    if effective["state"] != "ready" do
+      D.fail("RESTORE_STALE_PLAN")
+    end
+
+    plan = op["plan"]
+
+    if plan["plan_sha256"] != cmd["plan_sha256"] or
+         plan["config_revision"] != cmd["expected_revision"] do
+      D.fail("RESTORE_STALE_PLAN")
+    end
+
+    if Enum.any?(x.journal["operations"], fn {_, o} ->
+         o["kind"] == "apply" and get_in(o, ["plan", "plan_id"]) == cmd["plan_id"]
+       end) do
+      D.fail("RESTORE_STALE_PLAN")
+    end
+
+    plan
+  end
+
+  defp eligible(%{"kind" => "plan", "state" => "ready"} = op, c) do
+    p = op["plan"]
+    e = ADHD.StorageRegistry.entry(op["project_id"])
+
+    state =
+      cond do
+        D.epoch(p["expires_at"]) <= D.ms() ->
+          "expired"
+
+        is_nil(e) or p["config_revision"] != c["config_revision"] or
+          p["target"]["route_generation"] != e["generation"] or
+            p["target"]["project_epoch"] != e["project_epoch"] ->
+          "stale"
+
+        not target_still_current?(p, c) ->
+          "stale"
+
+        true ->
+          "ready"
+      end
+
+    Map.put(op, "state", state)
+  end
+
+  defp eligible(o, _) do
+    o
+  end
+
+  defp target_still_current?(plan, c) do
+    id = plan["project_id"]
+
+    case plan["target"]["availability"] do
+      "empty" ->
+        case ADHD.Store.proof(c, id) do
+          {:ok, proof} ->
+            Map.take(proof, ~w(sequence storage_generation state_sha256)) ==
+              plan["target"]["watermark"]
+
+          _ ->
+            false
+        end
+
+      "missing" ->
+        ADHD.StorageRegistry.availability(c, id) == "recovery_required"
+
+      "uninitialized" ->
+        ADHD.StorageRegistry.availability(c, id) == "uninitialized"
+    end
+  end
+
+  defp status_value(x, c, cmd) do
+    id = cmd["project_id"]
+    e = ADHD.StorageRegistry.entry(id) || D.fail("RECOVERY_REQUIRED")
+
+    op =
+      if cmd["operation_id"] do
+        value = x.journal["operations"][cmd["operation_id"]] || D.fail("NOT_FOUND")
+
+        if value["project_id"] != id do
+          D.fail("NOT_FOUND")
+        end
+
+        value
+      else
+        x.journal["operations"]
+        |> Map.values()
+        |> Enum.filter(&(&1["project_id"] == id))
+        |> Enum.sort_by(&{&1["created_at"], &1["operation_id"]}, :desc)
+        |> List.first()
+      end
+
+    topic =
+      if e["initialized"] and c["eventing"]["enabled"] do
+        ADHD.Eventing.topic(ADHD.Projects.view(c, id), %{server_id: c["server_id"], project: id})
+      else
+        nil
+      end
+
+    %{
+      "project_id" => id,
+      "availability" => ADHD.StorageRegistry.availability(c, id),
+      "route" => %{
+        "generation" => e["generation"],
+        "project_epoch" => e["project_epoch"],
+        "allocation_epoch" => e["allocation_epoch"],
+        "topic" => topic
+      },
+      "capacity" => %{
+        "operations" => receipt_count(x.journal),
+        "max_operations" => effective(x.path, c)["max_operations"],
+        "active" =>
+          if x.active do
+            1
+          else
+            0
+          end
+      },
+      "settings" => effective(x.path, c),
+      "operation" =>
+        if op do
+          eligible(op, c)
+        else
+          nil
+        end
+    }
+  end
+
+  defp failure(code, reason, retryable) do
+    {code, reason, retryable} =
+      if code in @failure_codes and reason in @reasons do
+        {code, reason, retryable}
+      else
+        {"RESTORE_IO_ERROR", "io", true}
+      end
+
+    %{
+      "code" => code,
+      "reason" => reason,
+      "retryable" => retryable,
+      "conflicts" => [],
+      "truncated" => false
+    }
+  end
+
+  def staging? do
+    GenServer.call(__MODULE__, :staging, 30000)
+  end
+
+  def reserved_for_plan?(id, epochs) do
+    GenServer.call(__MODULE__, {:reserved_for_plan, id, epochs}, 30000)
+  end
+
+  def reserved_epochs do
+    GenServer.call(__MODULE__, :reserved_epochs, 30000)
+  end
+
+  def completed?(id, result) do
+    GenServer.call(__MODULE__, {:completed, id, result}, 30000)
+  end
+
+  def binding(id) do
+    GenServer.call(__MODULE__, {:binding, id}, 30000)
+  end
+
+  def transition(id, state, fields \\ %{}) do
+    GenServer.call(__MODULE__, {:transition, id, state, fields}, 30000)
+  end
+
+  def complete(id, result) do
+    transition(id, "complete", %{"result" => result, "failure" => nil})
+  end
+
+  defp binding_value(j, id) do
+    _o = j["operations"][id] || D.fail("NOT_FOUND")
+    job = j["jobs"][id] || D.fail("NOT_FOUND")
+    key = ADHD.Directory.digest([job["actor_id"], job["command"]["message_id"]])
+    receipt = j["receipts"][key] || D.fail("NOT_FOUND")
+
+    %{
+      "operation_id" => id,
+      "actor_id" => job["actor_id"],
+      "command_sha256" => receipt["digest"],
+      "accepted_receipt" => receipt["receipt"],
+      "job_sha256" => ADHD.Directory.digest(job)
+    }
+  end
+
+  defp read_journal(path) do
+    {raw, _} =
+      ADHD.RecoveryFiles.read(
+        ADHD.StorageRegistry.paths(path).journal,
+        1_073_741_824,
+        File.stat!(path).uid
+      )
+
+    j = ADHD.RecoveryFiles.json(raw)
+    c = ADHD.RecoveryFiles.json(File.read!(path))
+    validate_journal(j, Path.expand(path), c)
+    j
+  end
+
+  def validate_binding(path, binding, plan \\ nil) do
+    {:ok, _} = decision_context(path, binding, plan)
+    :ok
+  end
+
+  def decision_context(path, binding, plan) do
+    try do
+      j = read_journal(path)
+      actual = binding_value(j, binding["operation_id"])
+
+      if not is_nil(plan) do
+        D.check(j["operations"][binding["operation_id"]]["plan"] == plan)
+      end
+
+      D.check(actual == binding)
+      limits = j["jobs"][binding["operation_id"]]["limits"]
+
+      {:ok,
+       Map.put(limits, "deadline_ms", System.monotonic_time(:millisecond) + limits["timeout_ms"])}
+    rescue
+      _ -> throw({:recovery, "RECOVERY_REQUIRED", "decision_integrity"})
+    catch
+      _, _ -> throw({:recovery, "RECOVERY_REQUIRED", "decision_integrity"})
+    end
+  end
+
+  def durable_complete?(path, id, result) do
+    try do
+      o = read_journal(path)["operations"][id]
+      is_map(o) and o["state"] == "complete" and o["result"] == result
+    rescue
+      _ -> false
+    catch
+      _, _ -> false
+    end
+  end
+
+  def offline_transition(path, id, state, fields) do
+    j = read_journal(path)
+    o = j["operations"][id] || throw({:recovery, "RECOVERY_REQUIRED", "decision_integrity"})
+    next = o |> Map.merge(fields) |> Map.put("state", state) |> Map.put("updated_at", D.now())
+    j = put_in(j, ["operations", id], next)
+    save(%{path: path, journal: j})
+  end
+
+  def recover_decision(path, decision) do
+    ADHD.RecoveryCoordinator.recover(path, decision)
+  end
+
+  def recover_rebind(path, decision) do
+    ADHD.RecoveryCoordinator.recover_rebind(path, decision)
+  end
+
+  def handle_info({:run, id}, x) do
+    server = self()
+    job = x.journal["jobs"][id]
+    op = x.journal["operations"][id]
+    path = x.path
+
+    {pid, ref} =
+      spawn_monitor(fn ->
+        result =
+          try do
+            c = ADHD.Config.root()
+
+            if c["config_revision"] != job["command"]["expected_revision"] do
+              throw({:recovery, "RESTORE_STALE_PLAN", "revision"})
+            end
+
+            ADHD.Scope.with_project(op["project_id"], fn ->
+              if op["kind"] == "plan" do
+                prepare_plan(server, path, op, job, c)
+              else
+                prepare_apply(server, path, op, job, c)
+              end
+            end)
+          rescue
+            _ -> {:error, "RESTORE_IO_ERROR", "io"}
+          catch
+            {:recovery, code, reason} ->
+              {:error, code, reason}
+
+            {:domain, code} ->
+              {:error,
+               if code == "RECOVERY_REQUIRED" do
+                 "RESTORE_CONFLICT"
+               else
+                 "RESTORE_IO_ERROR"
+               end,
+               if code == "RECOVERY_REQUIRED" do
+                 "partial_target"
+               else
+                 "io"
+               end}
+
+            _, _ ->
+              {:error, "RESTORE_IO_ERROR", "io"}
+          end
+
+        send(server, {:job_result, id, result})
+      end)
+
+    timer =
+      Process.send_after(
+        self(),
+        {:job_timeout, id},
+        max(1, job["limits"]["deadline_ms"] - System.monotonic_time(:millisecond))
+      )
+
+    phase =
+      if op["kind"] == "plan" do
+        "verifying"
+      else
+        "staging"
+      end
+
+    x = update(x, id, &(&1 |> Map.put("state", phase) |> Map.put("updated_at", D.now())))
+    {:noreply, %{x | active: %{id: id, pid: pid, ref: ref, timer: timer}}}
+  end
+
+  def handle_info({:progress, id, progress}, x) do
+    if x.active && x.active.id == id do
+      x =
+        update(x, id, fn o ->
+          Map.put(
+            o,
+            "progress",
+            Map.merge(o["progress"], Map.new(progress, fn {k, v} -> {to_string(k), v} end))
+          )
+        end)
+
+      {:noreply, x}
+    else
+      {:noreply, x}
+    end
+  end
+
+  def handle_info({:job_result, id, result}, x) do
+    if x.active && x.active.id == id do
+      Process.cancel_timer(x.active.timer)
+      Process.demonitor(x.active.ref, [:flush])
+
+      x =
+        case result do
+          {:plan, plan, private} ->
+            j = put_in(x.journal, ["jobs", id, "plan_private"], private)
+            x = %{x | journal: j}
+
+            update(
+              x,
+              id,
+              &(&1
+                |> Map.put("state", "ready")
+                |> Map.put("plan", plan)
+                |> Map.put("updated_at", D.now()))
+            )
+
+          {:applied, _} ->
+            x
+
+          {:error, code, reason} ->
+            if x.journal["operations"][id]["state"] == "complete" do
+              x
+            else
+              decided = own_decision?(x.path, id)
+
+              if not decided do
+                cleanup_stage(x, id)
+              end
+
+              state =
+                if decided do
+                  "blocked"
+                else
+                  "failed"
+                end
+
+              code =
+                if decided do
+                  "RECOVERY_REQUIRED"
+                else
+                  code
+                end
+
+              update(
+                x,
+                id,
+                &(&1
+                  |> Map.put("state", state)
+                  |> Map.put("updated_at", D.now())
+                  |> Map.put(
+                    "failure",
+                    failure(
+                      code,
+                      reason,
+                      code in ~w(RESTORE_IO_ERROR RESTORE_UNAVAILABLE RESTORE_TIMEOUT RECOVERY_REQUIRED)
+                    )
+                  ))
+              )
+            end
+        end
+
+      {:noreply, %{x | active: nil}}
+    else
+      {:noreply, x}
+    end
+  end
+
+  def handle_info({:job_timeout, id}, x) do
+    if x.active && x.active.id == id do
+      op = x.journal["operations"][id]
+
+      if op["state"] in ~w(decided installing activating complete blocked) or
+           own_decision?(x.path, id) do
+        x =
+          if op["state"] == "complete" do
+            x
+          else
+            update(
+              x,
+              id,
+              &(&1
+                |> Map.put("state", "blocked")
+                |> Map.put("updated_at", D.now())
+                |> Map.put("failure", failure("RECOVERY_REQUIRED", "timeout", true)))
+            )
+          end
+
+        {:noreply, x}
+      else
+        Process.exit(x.active.pid, :kill)
+        Process.cancel_timer(x.active.timer)
+        Process.demonitor(x.active.ref, [:flush])
+        cleanup_stage(x, id)
+
+        x =
+          update(
+            x,
+            id,
+            &(&1
+              |> Map.put("state", "failed")
+              |> Map.put("updated_at", D.now())
+              |> Map.put("failure", failure("RESTORE_TIMEOUT", "timeout", true)))
+          )
+
+        {:noreply, %{x | active: nil}}
+      end
+    else
+      {:noreply, x}
+    end
+  end
+
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, x) do
+    if x.active && x.active.ref == ref do
+      id = x.active.id
+      send(self(), {:job_result, id, {:error, "RESTORE_UNAVAILABLE", "io"}})
+    end
+
+    {:noreply, x}
+  end
+
+  def handle_info({:resume, id}, x) do
+    if is_nil(x.active) and own_decision?(x.path, id) do
+      decision = ADHD.RecoveryFiles.json(File.read!(ADHD.StorageRegistry.paths(x.path).decision))
+      server = self()
+      already_complete = x.journal["operations"][id]["state"] == "complete"
+      limits = x.journal["jobs"][id]["limits"]
+
+      limits =
+        Map.put(limits, "deadline_ms", System.monotonic_time(:millisecond) + limits["timeout_ms"])
+
+      {pid, ref} =
+        spawn_monitor(fn ->
+          result =
+            try do
+              if already_complete do
+                {:ok, :finalized} = ADHD.Config.recovery_finalize(id, decision)
+                {:applied, decision["result"]}
+              else
+                finish_apply(id, decision, limits)
+              end
+            rescue
+              _ -> {:error, "RECOVERY_REQUIRED", "io"}
+            catch
+              _, _ -> {:error, "RECOVERY_REQUIRED", "io"}
+            end
+
+          send(server, {:job_result, id, result})
+        end)
+
+      {:noreply,
+       %{
+         x
+         | active: %{
+             id: id,
+             pid: pid,
+             ref: ref,
+             timer:
+               Process.send_after(
+                 self(),
+                 {:job_timeout, id},
+                 effective(x.path, ADHD.Config.root())["timeout_ms"]
+               )
+           }
+       }}
+    else
+      {:noreply, x}
+    end
+  end
+
+  defp cleanup_stage(x, id) do
+    try do
+      job = x.journal["jobs"][id]
+      op = x.journal["operations"][id]
+      dir = job["owned_stage_dir"]
+
+      if is_binary(dir) do
+        expected =
+          ADHD.StorageRegistry.selected_path(
+            ADHD.Config.root(),
+            op["project_id"],
+            op["plan"]["selected"]["project_epoch"]
+          ) <> ".restore-" <> id
+
+        D.check(dir == expected)
+        uid = File.stat!(x.path).uid
+        ADHD.RecoveryFiles.private(dir, :directory, uid)
+
+        for path <- [Path.join(dir, "state.dets"), Path.join(dir, "state.dets.snapshot")] do
+          if File.exists?(path) do
+            ADHD.RecoveryFiles.private(path, :regular, uid)
+            File.rm!(path)
+          end
+        end
+
+        :ok = File.rmdir(dir)
+      end
+    rescue
+      _ -> :ok
+    catch
+      _, _ -> :ok
+    end
+
+    :ok
+  end
+
+  defp own_decision?(path, id) do
+    try do
+      decision = ADHD.RecoveryFiles.json(File.read!(ADHD.StorageRegistry.paths(path).decision))
+      decision["kind"] == "project_restore" and decision["operation_id"] == id
+    rescue
+      _ -> false
+    catch
+      _, _ -> false
+    end
+  end
+
+  defp prepare_plan(server, path, op, job, c) do
+    cmd = job["command"]
+    id = op["project_id"]
+    mode = Map.get(cmd, "mode", "restore")
+    limits = job["limits"]
+    e = ADHD.StorageRegistry.entry(id)
+    {target, files} = target_proof(path, c, id, e, mode, Map.get(cmd, "allow_missing", false))
+
+    {backup, refs, aliases, bundle_private, extra} =
+      if mode == "initialize" do
+        users = Map.new(c["users"], &{&1["id"], Map.take(&1, ~w(id provider username oidc))})
+        agents = Map.new(c["agents"], fn {a, _} -> {a, c["agent_owners"][a]} end)
+
+        {nil,
+         %{
+           "users" => map_size(users),
+           "agents" => map_size(agents),
+           "proof_sha256" => ADHD.Directory.digest(%{"users" => users, "agents" => agents})
+         }, e["aliases"], nil, []}
+      else
+        bundle =
+          ADHD.ProjectBackup.read_bundle(path, c, cmd, limits, fn progress ->
+            send(server, {:progress, op["operation_id"], progress})
+          end)
+
+        proof =
+          ADHD.ProjectBackupValidation.validate(bundle, c, id, limits, fn progress ->
+            send(server, {:progress, op["operation_id"], progress})
+          end)
+
+        aliases = Enum.sort(Enum.uniq(e["aliases"] ++ proof.aliases))
+
+        other =
+          ADHD.StorageRegistry.current().registry["projects"]
+          |> Enum.reject(fn {key, _} -> key == id end)
+          |> Enum.flat_map(fn {key, value} -> [key | value["aliases"]] end)
+
+        if Enum.any?(aliases, &(&1 in other)) do
+          throw({:recovery, "RESTORE_CONFLICT", "alias"})
+        end
+
+        m = bundle.manifest
+
+        b = %{
+          "sequence" => m["source"]["sequence"],
+          "storage_generation" => m["source"]["storage_generation"],
+          "records" => proof.records,
+          "bytes" => bundle.bytes,
+          "snapshot_sha256" => m["snapshot"]["sha256"],
+          "configuration_sha256" => m["configuration"]["sha256"]
+        }
+
+        private = %{
+          "identities_sha256" =>
+            ADHD.RecoveryFiles.sha(:erlang.term_to_binary(bundle.identities, [:deterministic])),
+          "source_route_generation" => m["source"]["route_generation"]
+        }
+
+        {b, proof.references, aliases, private,
+         [m["source"]["project_epoch"], m["source"]["allocation_epoch"]]}
+      end
+
+    {epoch, allocation} = GenServer.call(server, {:reserve, op["operation_id"], extra}, 30000)
+
+    generation =
+      max(
+        e["generation"],
+        if bundle_private do
+          bundle_private["source_route_generation"]
+        else
+          0
+        end
+      ) + 1
+
+    pc =
+      ADHD.Projects.view(c, id)
+      |> Map.put("project_epoch", epoch)
+      |> Map.put("allocation_epoch", allocation)
+      |> Map.put("topic_generation", epoch)
+
+    selected = %{
+      "route_generation" => generation,
+      "project_epoch" => epoch,
+      "allocation_epoch" => allocation,
+      "transport_enabled" => ADHD.Eventing.enabled?(pc),
+      "topic" =>
+        if ADHD.Eventing.enabled?(pc) do
+          ADHD.Eventing.topic(pc, %{server_id: c["server_id"], project: id})
+        else
+          nil
+        end
+    }
+
+    expires = D.epoch(op["created_at"]) + limits["plan_ttl_ms"]
+
+    plan = %{
+      "mode" => mode,
+      "plan_id" => op["operation_id"],
+      "server_id" => c["server_id"],
+      "project_id" => id,
+      "aliases" => aliases,
+      "backup_id" =>
+        if mode == "restore" do
+          cmd["backup_id"]
+        else
+          nil
+        end,
+      "manifest_sha256" =>
+        if mode == "restore" do
+          cmd["manifest_sha256"]
+        else
+          nil
+        end,
+      "config_revision" => c["config_revision"],
+      "created_at" => op["created_at"],
+      "expires_at" => DateTime.from_unix!(expires, :millisecond) |> DateTime.to_iso8601(),
+      "target" => target,
+      "backup" => backup,
+      "references" => refs,
+      "selected" => selected,
+      "policy" =>
+        Map.take(
+          ADHD.Eventing.config(pc),
+          ~w(topic_prefix retention_ms max_pending_events max_pending_bytes max_pending_filter_jobs max_pending_filter_jobs_per_subscription)
+        )
+    }
+
+    plan = Map.put(plan, "plan_sha256", ADHD.RecoveryFiles.sha(ADHD.Directory.canonical(plan)))
+    {:plan, plan, %{"bundle" => bundle_private, "target_files" => files, "old_entry" => e}}
+  end
+
+  defp target_proof(path, c, id, e, mode, allow_missing) do
+    uid = File.stat!(path).uid
+    anchor = e["storage_anchor"]
+
+    files = %{
+      "checkpoint" => ADHD.RecoveryFiles.fingerprint(anchor, uid),
+      "snapshot" => ADHD.RecoveryFiles.fingerprint(ADHD.Storage.snapshot_path(anchor), uid)
+    }
+
+    availability = ADHD.StorageRegistry.availability(c, id)
+
+    watermark =
+      cond do
+        mode == "initialize" ->
+          if e["initialized"] or availability != "uninitialized" or
+               Enum.any?(files, fn {_, v} -> not is_nil(v) end) do
+            throw({:recovery, "RESTORE_CONFLICT", "missing_admission"})
+          end
+
+          %{"sequence" => 0, "storage_generation" => 0, "state_sha256" => nil}
+
+        Enum.all?(files, fn {_, v} -> is_nil(v) end) ->
+          if not (e["initialized"] and allow_missing) do
+            throw({:recovery, "RESTORE_CONFLICT", "missing_admission"})
+          end
+
+          %{
+            "sequence" => e["sequence"],
+            "storage_generation" => e["storage_generation"],
+            "state_sha256" => nil
+          }
+
+        Enum.any?(files, fn {_, v} -> is_nil(v) end) ->
+          throw({:recovery, "RESTORE_CONFLICT", "partial_target"})
+
+        true ->
+          state =
+            ADHD.Scope.with_project(id, fn -> ADHD.Store.snapshot() |> ADHD.Store.unwrap() end)
+
+          if not logical_empty?(state) do
+            throw({:recovery, "RESTORE_CONFLICT", "populated"})
+          end
+
+          %{
+            "sequence" => state.seq,
+            "storage_generation" => state.storage_generation,
+            "state_sha256" => ADHD.RecoveryFiles.sha(ADHD.Storage.bytes(state))
+          }
+      end
+
+    {%{
+       "availability" =>
+         if mode == "initialize" do
+           "uninitialized"
+         else
+           if Enum.all?(files, fn {_, v} -> is_nil(v) end) do
+             "missing"
+           else
+             "empty"
+           end
+         end,
+       "route_generation" => e["generation"],
+       "project_epoch" => e["project_epoch"],
+       "watermark" => watermark
+     }, files}
+  end
+
+  defp reference_proof(c) do
+    users = Map.new(c["users"], &{&1["id"], Map.take(&1, ~w(id provider username oidc))})
+    agents = Map.new(c["agents"], fn {a, _} -> {a, c["agent_owners"][a]} end)
+
+    %{
+      "users" => map_size(users),
+      "agents" => map_size(agents),
+      "proof_sha256" => ADHD.Directory.digest(%{"users" => users, "agents" => agents})
+    }
+  end
+
+  defp prepare_apply(server, path, op, job, c) do
+    plan = op["plan"]
+    id = op["project_id"]
+    mode = plan["mode"]
+    limits = job["limits"]
+    private = job["plan_private"]
+
+    if D.epoch(plan["expires_at"]) <= D.ms() do
+      throw({:recovery, "RESTORE_STALE_PLAN", "expired"})
+    end
+
+    old = ADHD.StorageRegistry.entry(id)
+
+    if old != private["old_entry"] do
+      throw({:recovery, "RESTORE_STALE_PLAN", "route"})
+    end
+
+    {target, files} =
+      target_proof(path, c, id, old, mode, plan["target"]["availability"] == "missing")
+
+    if target != plan["target"] or files != private["target_files"] do
+      throw({:recovery, "RESTORE_STALE_PLAN", "route"})
+    end
+
+    progress = fn p -> send(server, {:progress, op["operation_id"], p}) end
+
+    {state, refs, source_bytes} =
+      if mode == "initialize" do
+        {ADHD.Store.empty(id), reference_proof(c), 0}
+      else
+        cmd = %{
+          "backup_id" => plan["backup_id"],
+          "manifest_sha256" => plan["manifest_sha256"],
+          "project_id" => id
+        }
+
+        bundle = ADHD.ProjectBackup.read_bundle(path, c, cmd, limits, progress)
+
+        identity =
+          ADHD.RecoveryFiles.sha(:erlang.term_to_binary(bundle.identities, [:deterministic]))
+
+        if identity != private["bundle"]["identities_sha256"] do
+          throw({:recovery, "RESTORE_STALE_PLAN", "hash"})
+        end
+
+        proof = ADHD.ProjectBackupValidation.validate(bundle, c, id, limits, progress)
+
+        if Enum.sort(Enum.uniq(old["aliases"] ++ proof.aliases)) != plan["aliases"] do
+          throw({:recovery, "RESTORE_STALE_PLAN", "alias"})
+        end
+
+        {proof.state, proof.references, bundle.bytes - bundle.manifest["snapshot"]["bytes"]}
+      end
+
+    if refs != plan["references"] do
+      throw({:recovery, "RESTORE_STALE_PLAN", "owner_changed"})
+    end
+
+    selected = plan["selected"]
+    anchor = ADHD.StorageRegistry.selected_path(c, id, selected["project_epoch"])
+
+    entry =
+      old
+      |> Map.merge(%{
+        "initialized" => true,
+        "generation" => selected["route_generation"],
+        "project_epoch" => selected["project_epoch"],
+        "allocation_epoch" => selected["allocation_epoch"],
+        "topic_generation" => selected["project_epoch"],
+        "storage_anchor" => anchor,
+        "aliases" => plan["aliases"],
+        "availability" => "restoring"
+      })
+
+    pc =
+      ADHD.Projects.view(c, id)
+      |> Map.merge(%{
+        "project_epoch" => entry["project_epoch"],
+        "allocation_epoch" => entry["allocation_epoch"],
+        "route_generation" => entry["generation"],
+        "topic_generation" => entry["topic_generation"]
+      })
+
+    state =
+      state
+      |> Map.put(:aliases, Enum.sort(Enum.uniq([id | plan["aliases"]])))
+      |> ADHD.StorageRegistry.headers(entry)
+      |> ADHD.RecoveryWork.prepare(pc, mode)
+      |> ADHD.Eventing.restore_state(pc, mode)
+      |> ADHD.Storage.next()
+
+    checked = ADHD.ProjectBackupValidation.validate_staged(state, pc, id, limits, progress)
+
+    if byte_size(ADHD.Storage.bytes(state)) + 42 + source_bytes > limits["max_backup_bytes"] do
+      throw({:recovery, "RESTORE_INVALID_BACKUP", "limits"})
+    end
+
+    stage_dir = anchor <> ".restore-" <> op["operation_id"]
+
+    GenServer.call(
+      server,
+      {:job_private, op["operation_id"], %{"owned_stage_dir" => stage_dir}},
+      30000
+    )
+
+    ADHD.RecoveryFiles.mkdir_private(stage_dir, File.stat!(path).uid)
+    stage_path = Path.join(stage_dir, "state.dets")
+    proof = ADHD.Storage.write_closed(stage_path, state)
+    uid = File.stat!(path).uid
+    {checkpoint_bytes, _} = ADHD.RecoveryFiles.read(stage_path, limits["max_backup_bytes"], uid)
+    {:ok, checkpoint_state} = ADHD.RecoveryCheckpoint.preflight(checkpoint_bytes, limits)
+    D.check(checkpoint_state == state)
+
+    checkpoint = %{
+      "bytes" => byte_size(checkpoint_bytes),
+      "sha256" => ADHD.RecoveryFiles.sha(checkpoint_bytes),
+      "identity" => ADHD.RecoveryFiles.fingerprint(stage_path, uid)
+    }
+
+    stage =
+      Map.merge(proof, %{
+        "source" => old["storage_anchor"],
+        "target" => anchor,
+        "stage" => stage_path,
+        "stage_dir" => stage_dir,
+        "route_generation" => entry["generation"],
+        "project_epoch" => entry["project_epoch"],
+        "allocation_epoch" => entry["allocation_epoch"],
+        "closed_checkpoint" => checkpoint
+      })
+
+    entry =
+      Map.merge(entry, %{
+        "state_sha256" => proof["digest"],
+        "sequence" => proof["sequence"],
+        "storage_generation" => proof["generation"]
+      })
+
+    :ok = ADHD.Eventing.preflight_restore(pc, state, job["limits"]["deadline_ms"])
+
+    counts = %{
+      "publications" => map_size(state.publications),
+      "subscriptions" => map_size(state.subscriptions),
+      "deliveries" => map_size(state.deliveries),
+      "acknowledged_deliveries" => Enum.count(state.deliveries, fn {_, d} -> d.ack == true end),
+      "pending_jobs" => Enum.count(state.jobs, fn {_, j} -> j.status == :pending end),
+      "retained_records" =>
+        if mode == "initialize" do
+          0
+        else
+          checked.records
+        end
+    }
+
+    result = %{
+      "project_id" => id,
+      "route_generation" => entry["generation"],
+      "project_epoch" => entry["project_epoch"],
+      "allocation_epoch" => entry["allocation_epoch"],
+      "topic" => selected["topic"],
+      "sequence" => state.seq,
+      "storage_generation" => state.storage_generation,
+      "initialized" => mode == "initialize",
+      "transport_discontinuity" => mode == "restore",
+      "restored" => counts
+    }
+
+    prepared = %{
+      "operation_id" => op["operation_id"],
+      "actor_id" => job["actor_id"],
+      "plan" => plan,
+      "old_entry" => old,
+      "new_entry" => entry,
+      "stage" => stage,
+      "result" => result,
+      "references_sha256" => refs["proof_sha256"],
+      "target_files" => files
+    }
+
+    case ADHD.Config.recovery_decide(op["operation_id"], prepared) do
+      {:ok, decision} -> finish_apply(op["operation_id"], decision, limits)
+      {:error, code} -> throw({:recovery, code, "route"})
+    end
+  end
+
+  defp finish_apply(id, decision, limits) do
+    :ok = transition(id, "decided")
+    :ok = ADHD.RecoveryCoordinator.install(decision)
+
+    :ok =
+      ADHD.Store.prepare_restore_activation(
+        ADHD.Config.root(),
+        decision["plan"]["project_id"],
+        decision["token"],
+        decision["stage"],
+        limits
+      )
+
+    :ok = transition(id, "installing")
+    :ok = transition(id, "activating")
+    {:ok, :activated} = ADHD.Config.recovery_activate(id, decision)
+    :ok = complete(id, decision["result"])
+    {:ok, :finalized} = ADHD.Config.recovery_finalize(id, decision)
+    {:applied, decision["result"]}
+  end
+
+  def logical_empty?(state) do
+    base = ADHD.Store.empty(state.project)
+
+    headers =
+      ~w(schema project server_id seq aliases storage_generation project_migration route_generation project_epoch allocation_epoch allocation_counter)a
+
+    eventing = state.eventing
+
+    event_records =
+      Enum.any?(~w(events quarantine replay_ledger replays restore_history)a, fn key ->
+        value = Map.get(eventing, key, %{})
+        value not in [%{}, []]
+      end)
+
+    clean = Map.drop(state, [:eventing | headers])
+    default = Map.drop(base, [:eventing | headers])
+    not event_records and clean == default
+  end
+end

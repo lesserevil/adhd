@@ -1,0 +1,228 @@
+defmodule ADHD.RecoveryCoordinator do
+  alias ADHD.{Domain,RecoveryFiles,StorageRegistry,Storage,Store,ProjectRestore,Directory,Resources}
+
+  # Config serializes these entry points. Verification and staging happen in
+  # the bounded worker; only metadata/frozen-writer proofs are checked here.
+  def decide(x,id,prepared) do
+    file=StorageRegistry.paths(x.path).decision
+    case File.lstat(file) do
+      {:error,:enoent}->decide_new(x,id,prepared,file)
+      _->
+        decision=read_decision(x.path)
+        require!(decision["operation_id"]==id,"CONFIG_APPLY_IN_PROGRESS")
+        {:ok,decision}
+    end
+  end
+
+  defp decide_new(x,id,p,file) do
+    plan=p["plan"];project=plan["project_id"]
+    require!(p["operation_id"]==id,"RESTORE_CONFLICT")
+    require!(x.config["config_revision"]==plan["config_revision"],"RESTORE_STALE_PLAN")
+    require!(File.read!(x.path)==x.raw,"RESTORE_STALE_PLAN")
+    require!(Domain.epoch(plan["expires_at"])>Domain.ms(),"RESTORE_STALE_PLAN")
+    require!(Directory.digest(Map.delete(plan,"plan_sha256"))==plan["plan_sha256"],"RESTORE_CONFLICT")
+    require!(p["references_sha256"]==plan["references"]["proof_sha256"],"RESTORE_STALE_PLAN")
+    authorize(x.config,p["actor_id"])
+    current=StorageRegistry.current()
+    require!(is_map(current) and current.path==Path.expand(x.path),"RECOVERY_REQUIRED")
+    require!(current.registry["projects"][project]==p["old_entry"],"RESTORE_STALE_PLAN")
+    selected=Enum.map(~w(project_epoch allocation_epoch),&plan["selected"][&1])
+    require!(ProjectRestore.reserved_for_plan?(plan["plan_id"],selected),"RESTORE_CONFLICT")
+    require!(Enum.all?(selected,&(&1 not in current.registry["reserved_epochs"])),"RESTORE_CONFLICT")
+    reserved_registry=current.registry |> Map.update!("reserved_epochs",&Enum.uniq(&1++selected)) |> StorageRegistry.seal()
+    check_prepared(x.path,reserved_registry,p)
+    binding=ProjectRestore.binding(id)
+    command=%{"op"=>"project_restore_apply","project_id"=>project,"plan_id"=>plan["plan_id"],
+      "plan_sha256"=>plan["plan_sha256"],"expected_revision"=>plan["config_revision"],"confirm"=>true}
+    require!(binding["command_sha256"]==Directory.digest(command),"RESTORE_CONFLICT")
+    require!(binding["operation_id"]==id and binding["actor_id"]==p["actor_id"],"RESTORE_CONFLICT")
+    require!(binding["accepted_receipt"]==%{"accepted"=>true,"operation_id"=>id,"kind"=>"apply","project_id"=>project},"RESTORE_CONFLICT")
+    token=Domain.opaque()
+    proof=case Store.freeze_restore(x.config,project,token) do
+      {:ok,value}->value
+      {:error,code}->Domain.fail(code)
+    end
+    try do
+      check_frozen(x,p,proof)
+      decision=%{"schema"=>1,"kind"=>"project_restore","config_file"=>Path.expand(x.path),
+        "server_id"=>plan["server_id"],"operation_id"=>id,"token"=>token,
+        "plan"=>plan,"binding"=>binding,"old_entry"=>p["old_entry"],"new_entry"=>p["new_entry"],
+        "stage"=>p["stage"],"result"=>p["result"]} |> seal()
+      Storage.atomic_private(file,JSON.encode!(decision))
+      publish_entry(x.path,reserved_registry,p["new_entry"],"restoring",false)
+      :ok=Resources.refresh()
+      {:ok,decision}
+    rescue
+      error->if absent?(file),do: Store.release_restore(x.config,project,token);reraise error,__STACKTRACE__
+    catch
+      kind,reason->
+        if absent?(file),do: Store.release_restore(x.config,project,token)
+        :erlang.raise(kind,reason,__STACKTRACE__)
+    end
+  end
+
+  def recover_rebind(path,decision),do: ADHD.StorageRebind.recover(path,decision)
+
+  def install(decision) do
+    validate_decision(decision,decision["config_file"])
+    require!(read_decision(decision["config_file"])==decision,"RECOVERY_REQUIRED")
+    :ok=Store.install_moves([decision["stage"]])
+    :ok
+  end
+
+  def activate(x,id,decision) do
+    check_owned(x.path,id,decision)
+    current=StorageRegistry.current().registry
+    entry=current["projects"][decision["plan"]["project_id"]]
+    project=decision["plan"]["project_id"]
+    already_ready=entry==Map.put(decision["new_entry"],"availability","ready") and is_pid(Store.writer(x.config,project))
+    unless already_ready do
+      publish_entry(x.path,current,decision["new_entry"],"restoring",true)
+      :ok=Store.activate_restore(x.config,project,decision["token"],decision["stage"])
+      publish_entry(x.path,StorageRegistry.current().registry,decision["new_entry"],"ready",true)
+    end
+    :ok=Store.release_restore(x.config,project,decision["token"])
+    :ok=Resources.refresh()
+    ADHD.Projects.workers(x.config)
+    {:ok,:activated}
+  end
+
+  def finalize(x,id,decision) do
+    check_owned(x.path,id,decision)
+    require!(ProjectRestore.completed?(id,decision["result"]),"RECOVERY_REQUIRED")
+    delete_owned(x.path,decision)
+    {:ok,:finalized}
+  end
+
+  # Called before any writers open. A valid decision always selects its new
+  # target; damaged installation material blocks that target without rollback.
+  def recover(path,decision) do
+    validate_decision(decision,path)
+    {:ok,limits}=ProjectRestore.decision_context(path,decision["binding"],decision["plan"])
+    registry=read_registry(path,decision["server_id"])
+    require!(compatible_entry?(registry["projects"][decision["plan"]["project_id"]],decision),"RECOVERY_REQUIRED")
+    selected=Enum.map(~w(project_epoch allocation_epoch),&decision["plan"]["selected"][&1])
+    checked_registry=registry |> Map.update!("reserved_epochs",&Enum.uniq(&1++selected)) |> StorageRegistry.seal()
+    check_prepared(path,checked_registry,Map.take(decision,~w(plan old_entry new_entry stage result)))
+    try do
+      :ok=install(decision)
+      :ok=Store.verify_closed_restore(decision["stage"],limits)
+      publish_entry(path,registry,decision["new_entry"],"ready",true)
+      :ok=ProjectRestore.offline_transition(path,decision["operation_id"],"complete",%{"result"=>decision["result"],"failure"=>nil})
+      require!(ProjectRestore.durable_complete?(path,decision["operation_id"],decision["result"]),"RECOVERY_REQUIRED")
+      delete_owned(path,decision)
+      {:ok,:complete}
+    rescue _->blocked(path,registry,decision)
+    catch _,_->blocked(path,registry,decision) end
+  end
+
+  defp blocked(path,registry,decision) do
+    publish_entry(path,registry,decision["new_entry"],"recovery_required",true)
+    failure=%{"code"=>"RECOVERY_REQUIRED","reason"=>"snapshot_integrity","retryable"=>true,"conflicts"=>[],"truncated"=>false}
+    :ok=ProjectRestore.offline_transition(path,decision["operation_id"],"blocked",%{"result"=>nil,"failure"=>failure})
+    {:ok,:blocked}
+  end
+
+  defp check_prepared(path,registry,p) do
+    plan=p["plan"];entry=p["new_entry"];stage=p["stage"]
+    require!(plan["server_id"]==registry["server_id"] and stage["server_id"]==registry["server_id"],"RESTORE_CONFLICT")
+    require!(entry["project_id"]==plan["project_id"] and stage["project_id"]==plan["project_id"],"RESTORE_CONFLICT")
+    require!(entry["aliases"]==plan["aliases"] and entry["topic_generation"]==plan["selected"]["project_epoch"],"RESTORE_CONFLICT")
+    for key<-~w(project_id route_generation project_epoch allocation_epoch topic) do
+      expected=if key=="project_id",do: plan[key],else: plan["selected"][key]
+      require!(p["result"][key]==expected,"RESTORE_CONFLICT")
+    end
+    require!(p["result"]["sequence"]==stage["sequence"] and p["result"]["storage_generation"]==stage["generation"],"RESTORE_CONFLICT")
+    require!(p["result"]["initialized"]==(plan["mode"]=="initialize") and p["result"]["transport_discontinuity"]==(plan["mode"]=="restore"),"RESTORE_CONFLICT")
+    require!(entry["storage_anchor"]==stage["target"] and stage["source"]==p["old_entry"]["storage_anchor"],"RESTORE_CONFLICT")
+    require!(entry["state_sha256"]==stage["digest"] and entry["sequence"]==stage["sequence"] and entry["storage_generation"]==stage["generation"],"RESTORE_CONFLICT")
+    require!(entry["generation"]==plan["selected"]["route_generation"] and stage["route_generation"]==entry["generation"],"RESTORE_CONFLICT")
+    for key<-~w(project_epoch allocation_epoch) do
+      require!(entry[key]==plan["selected"][key] and stage[key]==entry[key] and entry[key] in registry["reserved_epochs"],"RESTORE_CONFLICT")
+    end
+    require!(entry["project_epoch"]!=entry["allocation_epoch"],"RESTORE_CONFLICT")
+    StorageRegistry.validate(registry |> put_in(["projects",plan["project_id"]],entry) |> StorageRegistry.seal(),path,registry["server_id"])
+    :ok
+  end
+
+  defp check_frozen(x,p,proof) do
+    target=p["plan"]["target"];old=p["old_entry"]
+    require!(File.read!(x.path)==x.raw,"RESTORE_STALE_PLAN")
+    uid=File.lstat!(x.path).uid
+    RecoveryFiles.private(p["stage"]["stage_dir"],:directory,uid)
+    checkpoint=RecoveryFiles.fingerprint(p["stage"]["stage"],uid)
+    cert=p["stage"]["closed_checkpoint"]
+    Domain.keys(cert,~w(bytes sha256 identity),~w(bytes sha256 identity))
+    Domain.integer(cert["bytes"],1,9007199254740991);RecoveryFiles.hex(cert["sha256"],64)
+    require!(is_map(checkpoint) and checkpoint==cert["identity"] and checkpoint["size"]==cert["bytes"] and
+      not is_nil(RecoveryFiles.fingerprint(Storage.snapshot_path(p["stage"]["stage"]),uid)),"RESTORE_CONFLICT")
+    files=%{"checkpoint"=>RecoveryFiles.fingerprint(old["storage_anchor"],uid),"snapshot"=>RecoveryFiles.fingerprint(Storage.snapshot_path(old["storage_anchor"]),uid)}
+    require!(files==p["target_files"],"RESTORE_STALE_PLAN")
+    if target["availability"] in ["missing","uninitialized"] do
+      require!(is_nil(proof) and files==%{"checkpoint"=>nil,"snapshot"=>nil},"RESTORE_STALE_PLAN")
+    else
+      require!(is_map(proof) and not is_nil(files["checkpoint"]) and not is_nil(files["snapshot"]),"RESTORE_STALE_PLAN")
+      require!(Map.take(proof,~w(sequence storage_generation state_sha256))==target["watermark"],"RESTORE_STALE_PLAN")
+      require!(proof["project_epoch"]==target["project_epoch"] and proof["route_generation"]==target["route_generation"],"RESTORE_STALE_PLAN")
+    end
+    :ok
+  end
+  defp authorize(c,actor) do
+    if actor=="legacy-admin" do
+      require!(is_binary(c["admin_token"]) and (is_nil(c["auth"]) or Map.get(c["auth"],"allow_admin_token",true)),"FORBIDDEN")
+    else
+      user=Enum.find(c["users"] || [],&(&1["id"]==actor))
+      require!(is_map(user) and user["disabled"]!=true and ADHD.Identity.role(user,c)=="Admin","FORBIDDEN")
+    end
+  end
+  defp publish_entry(path,registry,entry,status,durable) do
+    updated=registry |> put_in(["projects",entry["project_id"]],Map.put(entry,"availability",status))
+      |> Map.update!("reserved_epochs",fn epochs->Enum.uniq(epochs++[entry["project_epoch"],entry["allocation_epoch"]]) end)
+      |> StorageRegistry.seal()
+    if durable,do: StorageRegistry.write(path,updated)
+    StorageRegistry.publish(path,updated)
+  end
+  defp compatible_entry?(entry,d) do
+    # Startup may derive missing availability in memory without rewriting the
+    # old registry. Availability is a serving fence, not route identity: every
+    # old identity/header/path/watermark field must still match the decision.
+    old=d["old_entry"]
+    old_compatible=is_map(entry) and Map.delete(entry,"availability")==Map.delete(old,"availability") and
+      (entry["availability"]==old["availability"] or
+        (old["initialized"] and entry["availability"] in ~w(ready restoring recovery_required) and old["availability"] in ~w(ready restoring recovery_required)))
+    old_compatible or Enum.any?(~w(ready restoring recovery_required),&(entry==Map.put(d["new_entry"],"availability",&1)))
+  end
+  defp checksum(value),do: Directory.digest(Map.delete(value,"integrity_sha256"))
+  defp seal(value),do: Map.put(value,"integrity_sha256",checksum(value))
+  defp validate_decision(d,path) do
+    Domain.keys(d,~w(schema kind config_file server_id operation_id token plan binding old_entry new_entry stage result integrity_sha256),~w(schema kind config_file server_id operation_id token plan binding old_entry new_entry stage result integrity_sha256))
+    require!(is_map(d) and d["schema"]==1 and d["kind"]=="project_restore" and d["config_file"]==Path.expand(path),"RECOVERY_REQUIRED")
+    require!(d["integrity_sha256"]==checksum(d),"RECOVERY_REQUIRED")
+    require!(d["operation_id"]==d["binding"]["operation_id"] and d["server_id"]==d["plan"]["server_id"],"RECOVERY_REQUIRED")
+    :ok
+  end
+  defp check_owned(path,id,d) do
+    require!(d["operation_id"]==id and read_decision(path)==d,"RECOVERY_REQUIRED")
+    entry=StorageRegistry.current().registry["projects"][d["plan"]["project_id"]]
+    require!(compatible_entry?(entry,d),"RECOVERY_REQUIRED")
+  end
+  defp read_decision(path) do
+    {bytes,_}=RecoveryFiles.read(StorageRegistry.paths(path).decision,10485760,File.lstat!(path).uid)
+    decision=RecoveryFiles.json(bytes);validate_decision(decision,path);decision
+  end
+  defp read_registry(path,server) do
+    {bytes,_}=RecoveryFiles.read(StorageRegistry.paths(path).registry,268435456,File.lstat!(path).uid)
+    registry=RecoveryFiles.json(bytes);StorageRegistry.validate(registry,path,server);registry
+  end
+  defp delete_owned(path,d) do
+    require!(read_decision(path)==d,"RECOVERY_REQUIRED")
+    file=StorageRegistry.paths(path).decision
+    :ok=File.rm(file)
+    {:ok,dir}=:file.open(String.to_charlist(Path.dirname(file)),[:read,:raw,:directory])
+    try do :ok=:file.sync(dir) after :file.close(dir) end
+    :ok
+  end
+  defp absent?(path),do: match?({:error,:enoent},File.lstat(path))
+  defp require!(true,_),do: :ok
+  defp require!(_,code),do: Domain.fail(code)
+end

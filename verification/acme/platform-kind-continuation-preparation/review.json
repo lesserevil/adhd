@@ -1,0 +1,118 @@
+{
+  "schema": "adhd/acme-platform-kind-static-audit@1",
+  "runtime_started": false,
+  "prior_actual_failure": "verification/acme/platform-image42-twelfth-negative/review.json",
+  "whole_Compose": "verification/acme/platform-compose-image42-positive/review.json",
+  "cause": "Unknown: originalrollout only0/1replicasavailable/45stimeout; Podstatus/events/logs notretained beforecleanup. No timing/capacity/image/application diagnosis inferred.",
+  "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+  "source_files": {
+    "deploy/k8s/hub.yaml": "20f26eca2660146d35311c83ebaf3c6c9accb9becbc3f82e8f5fa43e77605cb5",
+    "deploy/k8s/acme/hub-listeners.yaml": "a493ce3284bd0304983b5cd40ef0fe1d27a4b8d01e4ff0b3bd19614a7e6d5e39",
+    "deploy/k8s/acme/public-service.yaml": "5223c30ec40d42821fd2af378c2ad9958325b86e5a8cae99467180cd1f4d9e01",
+    "deploy/k8s/events.yaml": "a1aa679c2daf0a4f67c665ec650c75466138fff9c616bb472bf96f46dced4cf0"
+  },
+  "rendered": {
+    "pod_security": {
+      "runAsUser": 10001,
+      "runAsGroup": 10001,
+      "fsGroup": 10001
+    },
+    "init_security": {
+      "allowPrivilegeEscalation": false,
+      "capabilities": {
+        "drop": [
+          "ALL"
+        ]
+      }
+    },
+    "init_command": [
+      "sh",
+      "-ec",
+      "mkdir -p /state/config /state/data; if [ ! -e /state/config/hub.json ]; then umask 077; cp /seed/hub.json /state/config/hub.json; chmod 600 /state/config/hub.json; fi; if [ ! -e /state/config/directory-root.pem ]; then cp /seed/directory-root.pem /state/config/directory-root.pem; chmod 600 /state/config/directory-root.pem; fi"
+    ],
+    "init_mounts": [
+      {
+        "name": "state",
+        "mountPath": "/state"
+      },
+      {
+        "name": "seed",
+        "mountPath": "/seed",
+        "readOnly": true
+      }
+    ],
+    "hub_security": {
+      "readOnlyRootFilesystem": true,
+      "allowPrivilegeEscalation": false,
+      "capabilities": {
+        "drop": [
+          "ALL"
+        ]
+      }
+    },
+    "hub_mounts": [
+      {
+        "name": "state",
+        "mountPath": "/config",
+        "subPath": "config"
+      },
+      {
+        "name": "state",
+        "mountPath": "/data",
+        "subPath": "data"
+      },
+      {
+        "name": "tmp",
+        "mountPath": "/tmp"
+      }
+    ],
+    "hub_readiness_probe": {
+      "httpGet": {
+        "path": "/health",
+        "port": 8766
+      },
+      "periodSeconds": 10
+    },
+    "hub_resources": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "2",
+        "memory": "1Gi"
+      }
+    },
+    "hub_env": [
+      {
+        "name": "ADHD_CONFIG_FILE",
+        "value": "/config/hub.json"
+      }
+    ],
+    "PVC_spec": {
+      "accessModes": [
+        "ReadWriteOnce"
+      ],
+      "resources": {
+        "requests": {
+          "storage": "10Gi"
+        }
+      }
+    },
+    "actual_image_reference": "adhd:acme42-01",
+    "no_default_entrypoint_override": true,
+    "imagePullPolicy": "Never"
+  },
+  "observations": [
+    "Initruns10001/fsGroup10001 withnoCHOWN/FOWNER; createsstate/config+data andcopieshubconfig0600, thenpublictestroot0600. MainmountsPVCsubpathsconfig/data plus scratchtmp; noapp/runtime shadowmount.",
+    "ActualpreviousKind load+crictlinspect admittedimageconfig passedbeforedeployment. No Poduid/image/BEAMcustody wasobservedbeforefailedrollout; newfailurecollector needed.",
+    "ProductionimageCompose9proves actualUID10001/defaultentrypoint/mounts; this doesnotinfer PVCavailability, K8sinit success or Kindruntime.",
+    "Keeporiginal45s rollout andall9scenario unchanged; Kind-onlyselection avoidsrerunningqualifiedCompose."
+  ],
+  "pure_results": {
+    "private_diagnostics": 4,
+    "matrix": 15,
+    "runtime": 33
+  },
+  "no_new_compilers_apps_brokers_or_providers": true
+}

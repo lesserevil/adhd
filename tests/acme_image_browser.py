@@ -153,7 +153,13 @@ def run(plan, target, work):
         except BaseException:
             report['browser_inputs_unchanged'] = False
             report['passed'] = False
-        safe_write(work / 'browser-result.json', report)
+        try:
+            safe_write(work / 'browser-result.json', report)
+        except BaseException as error:
+            if primary:
+                primary.add_note('Browser phase evidence: ' + type(error).__name__)
+            else:
+                raise
         if not primary and not report['passed']:
             raise AssertionError('Owned image browser phase custody/cleanup failed')
     return report

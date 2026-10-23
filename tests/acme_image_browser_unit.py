@@ -7,7 +7,7 @@ from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from acme_image_browser import browser_binding, verify_browser, inspect
+from acme_image_browser import browser_binding, verify_browser, inspect, run
 
 
 class BrowserInputs(unittest.TestCase):
@@ -73,6 +73,32 @@ class BrowserInputs(unittest.TestCase):
             self.assertEqual(events, ['browser-close', 'driver-stop'])
             self.assertTrue(report['playwright_driver_closed'])
             self.assertEqual(report['browser_cleanup_errors'], [{'scope': 'browser', 'type': 'OSError'}])
+
+    def test_evidence_write_failure_preserves_partial_start_error_and_cleanup(self):
+        events = []
+        class Provision:
+            def __init__(self, plan, target, work): self.work = work
+            def start(self):
+                self.work.mkdir()
+                raise ValueError('original-startup-fault')
+            def close(self): events.append('provision-close')
+            def evidence(self): return {}
+        class Observer:
+            def __init__(self, *args): pass
+            def start(self): return self
+            def close(self): events.append('observer-close')
+            def evidence(self): return {}
+        module = ModuleType('acme_image_provision')
+        module.OwnedProvision = Provision
+        with tempfile.TemporaryDirectory() as raw:
+            with patch.dict(sys.modules, {'acme_image_provision': module}), \
+                    patch('acme_image_browser.verify_browser'), \
+                    patch('acme_process_observer.Descendants', Observer), \
+                    patch('acme_browser.safe_write', side_effect=OSError('private-write-fault')):
+                with self.assertRaisesRegex(ValueError, 'original-startup-fault') as caught:
+                    run({'browser': {}}, SimpleNamespace(evidence=lambda: {}), Path(raw) / 'work')
+            self.assertEqual(events, ['provision-close', 'observer-close'])
+            self.assertEqual(caught.exception.__notes__, ['Browser phase evidence: OSError'])
 
 
 if __name__ == '__main__': unittest.main()

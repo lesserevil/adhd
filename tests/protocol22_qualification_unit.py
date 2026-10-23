@@ -33,6 +33,34 @@ class Guards(unittest.TestCase):
             plan['qualified_export_prefix']['prior_false_result_sha256']=q.sha(root/'bound/prior-result.json')
             with self.assertRaises(AssertionError):q.verify_export_prefix(root,plan)
 
+    def test_contract_prefix_excludes_partial_wire_and_requires_whole_26_scope(self):
+        with tempfile.TemporaryDirectory()as raw:
+            root=Path(raw);(root/'bound').mkdir()
+            report={'passed':True,'actual_vectors':[{'passed':True}for _ in range(26)]}
+            q.write(root/'bound/contract-conservation.json',report)
+            frozen={'files':{'tests/acme_protocol_contracts.py':'contract','tests/protocol_scope.py':'scope'}}
+            bound={'files':{n:n for n in ('exports/schema.json','exports/openapi.json','D41-schema.json','D41-openapi.json','scopes22.json')}}
+            before={'artifact_sha256':'actual','qualified_export_prefix':{'actual':'exports'},'frozen':frozen,'bound':bound,
+              'stages':[{'name':n}for n in ('conservation26','scope-inventory','wire8')]}
+            q.write(root/'bound/contract-plan.json',before)
+            result={'passed':False,'cleanup_errors':[],'artifact_sha256':'actual','plan_sha256':q.sha(root/'bound/contract-plan.json'),
+              'stages':[{'name':'conservation26','passed':True,'checks':26,'report_sha256':q.sha(root/'bound/contract-conservation.json')},
+                        {'name':'scope-inventory','passed':True},{'name':'wire8','passed':False}]}
+            q.write(root/'bound/contract-result.json',result)
+            plan={'artifact_sha256':'actual','qualified_export_prefix':before['qualified_export_prefix'],'frozen':copy.deepcopy(frozen),
+              'bound':copy.deepcopy(bound),'stages':[{'name':'wire8'}],
+              'qualified_contract_prefix':{'prior_plan_sha256':q.sha(root/'bound/contract-plan.json'),
+                'prior_false_result_sha256':q.sha(root/'bound/contract-result.json'),'conservation_sha256':q.sha(root/'bound/contract-conservation.json')}}
+            q.verify_contract_prefix(root,plan)
+            for change in [lambda p:p.update(artifact_sha256='other'),lambda p:p['frozen']['files'].update({'tests/protocol_scope.py':'changed'}),
+                           lambda p:p['bound']['files'].update({'exports/schema.json':'changed'}),lambda p:p.update(stages=[{'name':'wire8'},{'name':'extra'}])]:
+                bad=copy.deepcopy(plan);change(bad)
+                with self.assertRaises(AssertionError):q.verify_contract_prefix(root,bad)
+            for change in [lambda r:r['stages'][1].update(passed=False),lambda r:r['stages'][2].update(passed=True),lambda r:r.update(cleanup_errors=['unknown']),lambda r:r['stages'][0].update(checks=25)]:
+                bad=copy.deepcopy(result);change(bad);(root/'bound/contract-result.json').write_text(json.dumps(bad))
+                plan['qualified_contract_prefix']['prior_false_result_sha256']=q.sha(root/'bound/contract-result.json')
+                with self.assertRaises(AssertionError):q.verify_contract_prefix(root,plan)
+
     def test_exact_inventory_rejects_redirect_and_tracks_empty_directory(self):
         with tempfile.TemporaryDirectory()as raw:
             root=Path(raw);(root/'input').write_bytes(b'actual bytes');expected=q.inventory(root)

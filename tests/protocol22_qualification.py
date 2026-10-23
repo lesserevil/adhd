@@ -75,6 +75,7 @@ def verify(work,plan,host,closure):
     socket_path=Path(plan['docker_socket']);assert socket_path.resolve(strict=True)==socket_path
     st=socket_path.stat();assert stat.S_ISSOCK(st.st_mode) and [st.st_dev,st.st_ino]==plan['docker_socket_identity']
     if 'qualified_export_prefix' in plan:verify_export_prefix(work,plan)
+    if 'qualified_contract_prefix' in plan:verify_contract_prefix(work,plan)
 
 
 def verify_export_prefix(work,plan):
@@ -87,11 +88,34 @@ def verify_export_prefix(work,plan):
     assert result['artifact_sha256']==before['artifact_sha256']==plan['artifact_sha256']
     assert [r['name']for r in result['stages']if r['passed'] is True]==['export-schema','export-openapi']
     assert not result['cleanup_errors']
-    assert [r['name']for r in plan['stages']]==['conservation26','scope-inventory','wire8']
+    assert [r['name']for r in plan['stages']]==(['wire8'] if 'qualified_contract_prefix' in plan else ['conservation26','scope-inventory','wire8'])
     for index,name in enumerate(('schema.json','openapi.json')):
         original=before['stages'][index]
         assert original['kind']=='export' and original['name']==result['stages'][index]['name'] and result['stages'][index]['exit_code']==0
         assert sha(original['stdout'])==sha(work/'bound/exports'/name)==prefix['exports'][name]
+
+
+
+def verify_contract_prefix(work,plan):
+    prefix=plan['qualified_contract_prefix']
+    for name,key in [('contract-plan.json','prior_plan_sha256'),('contract-result.json','prior_false_result_sha256'),('contract-conservation.json','conservation_sha256')]:
+        assert sha(work/'bound'/name)==prefix[key]
+    before=json.loads((work/'bound/contract-plan.json').read_bytes())
+    result=json.loads((work/'bound/contract-result.json').read_bytes())
+    report=json.loads((work/'bound/contract-conservation.json').read_bytes())
+    assert result['passed'] is False and result['cleanup_errors']==[]
+    assert result['plan_sha256']==prefix['prior_plan_sha256']
+    assert before['artifact_sha256']==result['artifact_sha256']==plan['artifact_sha256']
+    assert before['qualified_export_prefix']==plan['qualified_export_prefix']
+    assert [r['name']for r in before['stages']]==['conservation26','scope-inventory','wire8']
+    assert [(r['name'],r['passed'])for r in result['stages']]==[('conservation26',True),('scope-inventory',True),('wire8',False)]
+    assert result['stages'][0]['checks']==26 and result['stages'][0]['report_sha256']==prefix['conservation_sha256']
+    assert report['passed'] is True and len(report['actual_vectors'])==26 and all(r['passed'] is True for r in report['actual_vectors'])
+    for name in ('tests/acme_protocol_contracts.py','tests/protocol_scope.py'):
+        assert before['frozen']['files'][name]==plan['frozen']['files'][name]
+    for name in ('exports/schema.json','exports/openapi.json','D41-schema.json','D41-openapi.json','scopes22.json'):
+        assert before['bound']['files'][name]==plan['bound']['files'][name]
+    assert [r['name']for r in plan['stages']]==['wire8']
 
 
 def broker(plan):

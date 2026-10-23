@@ -42,7 +42,7 @@ class Guards(unittest.TestCase):
         self.assertFalse(target['profile22_export_verified'])
     def test_receipt_failures_not_declared_accepted(self):
         args,receipt,build=self.target()
-        changes=[lambda b:b['result'].update(passed=1),lambda b:b['result'].update(receipt_committed=False),
+        changes=[lambda b:b['result'].update(passed=1),lambda b:b['result'].update(receipt_committed=1),
                  lambda b:b['result']['receipt_update'].update(updated=False),lambda b:b['result'].update(lifecycle_result_identity='wrong'),
                  lambda b:b['result'].update(receipt_identity='wrong')]
         for change in changes:
@@ -50,6 +50,28 @@ class Guards(unittest.TestCase):
             with self.assertRaises(AssertionError):m.target_binding(args)
         self.write_target(args,receipt,build);args.receipt_sha256='0'*64
         with self.assertRaises(AssertionError):m.target_binding(args)
+    def test_finalized_candidate_does_not_require_recompilation_or_current_receipt(self):
+        args,receipt,build=self.target()
+        build['result'].update(receipt_committed=False,receipt_update=None,candidate_receipt=args.receipt)
+        self.write_target(args,receipt,build)
+        selected=m.target_binding(args)
+        self.assertFalse(selected['receipt_committed_at_rebuild'])
+        self.assertFalse(selected['project_current_receipt_verified'])
+        self.assertEqual(selected['receipt_identity'],receipt['receipt_identity'])
+        # Some supported candidate output omits the optional update field.
+        del build['result']['receipt_update'];self.write_target(args,receipt,build)
+        self.assertEqual(m.target_binding(args)['receipt_identity'],receipt['receipt_identity'])
+    def test_candidate_path_and_update_evidence_cannot_contradict_original_envelope(self):
+        args,receipt,build=self.target()
+        build['result'].update(receipt_committed=False,receipt_update=None,candidate_receipt=args.receipt)
+        wrong=self.root/'wrong-candidate';wrong.write_bytes(b'{}')
+        for change in [lambda b:b['result'].update(candidate_receipt=str(wrong)),
+                       lambda b:b['result'].update(candidate_receipt=None),
+                       lambda b:b['result'].update(receipt_update={'updated':True,'identity':receipt['receipt_identity']}),
+                       lambda b:b['result'].update(lifecycle_request_identity='wrong'),
+                       lambda b:b['result'].update(project_revision_identity='wrong')]:
+            bad=copy.deepcopy(build);change(bad);self.write_target(args,receipt,bad)
+            with self.assertRaises(AssertionError):m.target_binding(args)
     def test_formal_artifact_bytes_must_equal_selected(self):
         args,receipt,build=self.target();other=self.root/'other';other.write_bytes(b'wrong')
         build['result']['artifact']=str(other);self.write_target(args,receipt,build)

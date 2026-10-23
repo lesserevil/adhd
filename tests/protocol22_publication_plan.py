@@ -61,9 +61,19 @@ def target_binding(args):
     assert receipt['receipt_identity']==rid
     assert build['command']=='rebuild' and build['ok'] is True
     result=build['result']
-    assert result['passed'] is True and result['receipt_committed'] is True
-    assert result['receipt_update']['updated'] is True
-    assert result['receipt_identity']==result['receipt_update']['identity']==rid
+    assert result['passed'] is True and type(result['receipt_committed']) is bool
+    assert result['receipt_identity']==rid
+    if result['receipt_committed']:
+        assert result['receipt_update']['updated'] is True
+        assert result['receipt_update']['identity']==rid
+    else:
+        # Supported finalized candidate output qualifies the artifact without
+        # claiming that the project's current receipt was updated. A later
+        # explicit receipt update remains separate evidence; never rewrite the
+        # original rebuild envelope to pretend it committed the receipt.
+        assert result.get('receipt_update') is None
+        assert isinstance(result.get('candidate_receipt'),str)
+        assert sha(read(result['candidate_receipt'],8*1024*1024))==args.receipt_sha256
     assert result['lifecycle_request_identity']==receipt['lifecycle_request_identity']
     assert result['lifecycle_result_identity']==receipt['receipt']['result']
     assert result['project_revision_identity']==receipt['receipt']['project_revision']
@@ -72,7 +82,10 @@ def target_binding(args):
             'formal_artifact':result['artifact'],'receipt':str(Path(args.receipt).absolute()),
             'receipt_sha256':args.receipt_sha256,'receipt_identity':rid,
             'rebuild':str(Path(args.rebuild).absolute()),'rebuild_sha256':args.rebuild_sha256,
-            'authority':result['project_revision_identity'],'profile22_export_verified':False}
+            'authority':result['project_revision_identity'],'profile22_export_verified':False,
+            'receipt_committed_at_rebuild':result['receipt_committed'],
+            'project_current_receipt_verified':False,
+            'qualification_scope':'Successful artifact lifecycle and exact finalized receipt; no project-current receipt or publication claim'}
 
 
 def scopes22(raw):

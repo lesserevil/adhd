@@ -115,7 +115,7 @@ class PublicClient:
 
             class Connection(http.client.HTTPSConnection):
                 def connect(self):
-                    assert self.host == parsed.hostname and self.port == parsed.port
+                    assert self.host == parsed.hostname and self.port == (parsed.port or 443)
                     sock = socket.create_connection((connect_ip, self.port), self.timeout)
                     try:
                         self.sock = context.wrap_socket(sock, server_hostname=self.host)

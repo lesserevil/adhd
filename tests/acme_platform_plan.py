@@ -80,7 +80,7 @@ def private_port(value):
 def recipe(platform,private_http_port=18766):
  assert platform in ('compose','kind');private_http_port=private_port(private_http_port)
  common={'checks':list(CHECKS),'ordered':True,'public_ca_calls':0,'provider_calls':0,'broker_starts':0,
- 'endpoints':{'private_http':'http://127.0.0.1:'+str(private_http_port),'https':'https://one.acme.test:443',
+ 'endpoints':{'private_http':'http://127.0.0.1:'+str(private_http_port),'https':'https://one.acme.test',
               'https_connect_ip':'127.0.0.2','challenge_relay':'127.0.0.1:8080',
               'relay_upstream':'127.0.0.2:80','issuer':'https://pebble:19104/dir'},
  'tls_public_patch':{'enabled':True,'host':'0.0.0.0','port':8443,'challenge_host':'0.0.0.0','challenge_port':8080,

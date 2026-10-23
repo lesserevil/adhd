@@ -394,8 +394,8 @@ def execute(work,plan):
     assert wait(lambda: __import__('acme_platform_scenario').private_startup_health(admin),45,'Private Admin startup')
     password=adapter.exec(['/bin/cat','/config/initial-admin-password.txt'],sensitive=True).decode()
     password=re.search(r'^Password: (.+)$',password,re.M)[1];admin.login('admin',password)
-    secure=PublicClient('https://one.acme.test:443',trust=work/'bound/issuer_root.pem',connect_ip='127.0.0.2')
-    row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test:443',initialize,password,certificate_facts)
+    secure=PublicClient('https://one.acme.test',trust=work/'bound/issuer_root.pem',connect_ip='127.0.0.2')
+    row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test',initialize,password,certificate_facts)
     row['passed']=row['scenario']['passed']
    except BaseException as error:phase_error=error;row['failure_type']=type(error).__name__;raise
    finally:

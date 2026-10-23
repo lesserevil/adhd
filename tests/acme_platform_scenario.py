@@ -27,7 +27,7 @@ def private_bootstrap_client(client_type,base):
  class ConfiguredOriginClient(client_type):
   configured_origin=None
   def select_configured_origin(self,origin):
-   assert origin=='https://one.acme.test:443'
+   assert origin=='https://one.acme.test'
    self.configured_origin=origin
   def request(self,path,data=None,*,headers=None,timeout=5):
    selected=dict(headers or {})

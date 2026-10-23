@@ -183,6 +183,16 @@ class Deployment(unittest.TestCase):
   self.assertFalse(scenario.managed_health(Client(URLError(ConnectionRefusedError(errno.ECONNREFUSED,'refused')))))
   for error in [URLError(OSError(errno.EHOSTUNREACH,'unreachable')),ValueError('wrong TLS')]:
    with self.assertRaises(type(error)):scenario.managed_health(Client(error))
+ def test_platform_fixed_public_origin_omits_default_443(self):
+  from acme_platform_plan import recipe
+  from urllib.parse import urlsplit
+  for platform in ['compose','kind']:
+   origin=recipe(platform,18866)['endpoints']['https']
+   self.assertEqual(origin,'https://one.acme.test')
+   self.assertEqual(urlsplit(origin).hostname,'one.acme.test')
+   self.assertIsNone(urlsplit(origin).port)
+  for name in ['acme_platform_scenario.py','acme_platform_plan.py','acme_platform_matrix.py']:
+   self.assertNotIn('https://one.acme.test:443',(ROOT/'tests'/name).read_text())
  def test_private_configured_origin_changes_headers_only(self):
   class ActualClient:
    def __init__(self,base):self.base=base;self.cookies=object();self.csrf='actual-csrf';self.calls=[]
@@ -190,11 +200,11 @@ class Deployment(unittest.TestCase):
     self.calls.append((path,data,headers,timeout));return 200,{},{}
   client=scenario.private_bootstrap_client(ActualClient,'http://127.0.0.1:18866')
   cookies=client.cookies;client.request('/admin/session');self.assertEqual(client.calls[-1][2],{})
-  client.select_configured_origin('https://one.acme.test:443')
+  client.select_configured_origin('https://one.acme.test')
   client.request('/admin/api',{'op':'tls_status'},headers={'X-Existing':'kept'},timeout=3)
-  self.assertEqual(client.calls[-1],('/admin/api',{'op':'tls_status'},{'X-Existing':'kept','Origin':'https://one.acme.test:443'},3))
+  self.assertEqual(client.calls[-1],('/admin/api',{'op':'tls_status'},{'X-Existing':'kept','Origin':'https://one.acme.test'},3))
   self.assertIs(client.cookies,cookies);self.assertEqual(client.csrf,'actual-csrf');self.assertEqual(client.base,'http://127.0.0.1:18866')
-  for origin in ['http://one.acme.test:443','https://foreign.test','https://one.acme.test:443/','https://one.acme.test:443\r\nX: y']:
+  for origin in ['https://one.acme.test:443','http://one.acme.test:443','https://foreign.test','https://one.acme.test:443/','https://one.acme.test:443\r\nX: y']:
    with self.assertRaises(AssertionError):client.select_configured_origin(origin)
   for headers in [{'Origin':'https://foreign.test'},{'origin':'https://one.acme.test:443'}]:
    with self.assertRaises(AssertionError):client.request('/admin/api',headers=headers)

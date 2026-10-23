@@ -1,0 +1,28 @@
+{
+  "passed": false,
+  "actual_whole_foundation_checks": 10,
+  "required_whole_foundation_checks": 18,
+  "remaining_checks_not_qualified": 8,
+  "source": "Actual root81779 TERMINAL failure; no rerun or completion inference",
+  "failure_type": "JSONDecodeError",
+  "phase": "First real HTTPS OIDC start redirect after actual trusted issuance/Admin/A2A groups",
+  "diagnosis": "Actual server OIDC start/callback return302 with Location and raw empty body. Generic response Content-Type is application/json. Fixture PublicClient always json.loads even an empty redirect body, failing before OIDC redirect assertions. No product/source correction justified.",
+  "normative_reference": "components/hub/identity/spec.md real start and callback redirect; actual server.exs GET start/callback302 raw empty routes",
+  "bounded_fixture_correction": "Accept emptyJSONbody only on302 with nonemptyLocation; blank200JSON and nonempty malformedJSON remain strict failures. Authentication/CSRF/redirect destination checks remain unchanged.",
+  "known_container_id_name_observations": 6,
+  "known_pid_start_observations": 5,
+  "whole_input_and_host_closure_verified": true,
+  "original_cleanup_errors": [],
+  "scope": "10 observed whole groups only, not full18 or OIDC/federation/rotation/restart/rebind acceptance. Default product ENTRYPOINT with explicit public config command, not production defaultCMD/platformUID qualification.",
+  "private_state": "Original owned root _build/acme/image42-plans02/runtime/foundation remains private/ignored; no private key/account/credential bytes copied.",
+  "audit_helper_sha256": "208099fda17b2699b70b6c83d4a481ff5a2b03a95bf99f28143c9dea9f4cbfb1",
+  "files": {
+    "result.json": "7638807753d23ee3fe474a6bb21d230c76e7e0a857d6312686749d40a295dca7",
+    "report.json": "45c3c8bcc32239e2061d7ea1cdae4fc51ebeea486a2998a56454e4a26a509167",
+    "execution.stderr": "8f34f7433dedbf41ec5e5c482a89e24a90a3fba0e57985648309259e2f64b443",
+    "execution.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "audit.json": "b60cfbb010264eda07e96dfbef4a9e4aae6c4a9418afffe9efe92263d0734753",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout.log": "04c8cbf4947e0c37955628bf1728aaf4025b455fb2d61a9044afc73d14aab2d6"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "adhd/acme-ca03-terminal-audit@1",
+  "owner_tool_handle": 49641,
+  "actual_tool_exit_code": 0,
+  "manifest_sha256": "59612c07ad3ef3993e649415a23ce5f46e03fc3005084d636f4b70cb8c1c9fdc",
+  "cleanup": {
+    "closed": [
+      {
+        "name": "pebble",
+        "pid": 3370240,
+        "exit_code": -15,
+        "absent": true
+      },
+      {
+        "name": "dns",
+        "pid": 3370235,
+        "exit_code": 0,
+        "absent": true
+      }
+    ],
+    "all_absent": true
+  },
+  "checks": [
+    {
+      "role": "owner",
+      "pid": 3370160,
+      "currently_absent": true
+    },
+    {
+      "role": "dns",
+      "pid": 3370235,
+      "currently_absent": true
+    },
+    {
+      "role": "pebble",
+      "pid": 3370240,
+      "currently_absent": true
+    },
+    {
+      "transport": "tcp",
+      "port": 19100,
+      "bindable": true
+    },
+    {
+      "transport": "tcp",
+      "port": 19101,
+      "bindable": true
+    },
+    {
+      "transport": "tcp",
+      "port": 19102,
+      "bindable": true
+    },
+    {
+      "transport": "tcp",
+      "port": 19153,
+      "bindable": true
+    },
+    {
+      "transport": "udp",
+      "port": 19153,
+      "bindable": true
+    }
+  ],
+  "cleanup_file_mtime_utc": "2026-10-23T04:00:20Z",
+  "cause": "No retained termination-signal/reason observation. Owner tool returned0; cleanup records orderly child TERM/wait; earlier than declared10800s. Do not infer operator stop, lease expiry, crash or application defect.",
+  "signals_or_kills_issued_by_this_audit": 0,
+  "old_files_unchanged": {
+    "issuer-root.pem": "3a25759e8023ab73562d9b086b8c42a4f68c514b6d42379c0510d06e64714584",
+    "cleanup.json": "7f094701ec65b5d1141046d0363d3aa16906f66ff97aaa975ac8b7818c701012",
+    "config.json": "44f8cd15e94ad0a278b90e0f1746f326f147fe595ed7db29e331f79ac30e880a",
+    "frontend-cert.pem": "c87fb918d9bac8db11aa54493b5f0cf6e0725a3fe73f617d1c64737e1ab4caf9",
+    "manifest.json": "59612c07ad3ef3993e649415a23ce5f46e03fc3005084d636f4b70cb8c1c9fdc",
+    "frontend-key.pem": "0977979255b0e0721c17335c056b627f66a43cf56e5a52f3cda81fb111ecf00e",
+    "pebble.log": "8a2ecc024028e99d39d3a28f1545e56c0b42babf33976ffd49501b8bd41535b1",
+    "frontend-root.pem": "0c502e52627ff7de972c7e9e065640103b4589b4e2d23d3fcf21bef1e3c8c67c",
+    "dns.log": "90e2b8601cc1b5655e688727c32da8e34e619a27dd1b5c13fb7e8412b52c679d"
+  },
+  "fresh_CA04_authorized": true
+}

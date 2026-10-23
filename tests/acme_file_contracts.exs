@@ -30,6 +30,15 @@ check.("public-ca-valid", fn -> F.public_ca(ca)==File.read!(ca) end)
 for {name,bytes} <- [{"prefix","junk\n"<>File.read!(ca)},{"suffix",File.read!(ca)<>"junk\n"},{"empty",""},{"oversize",:binary.copy("a",1048577)}] do
   check.("public-ca-"<>name<>"-rejected", fn -> p=put.("ca-"<>name,bytes,0o644); reject.(fn->F.public_ca(p) end) and File.read!(p)==bytes end)
 end
+check.("shared-pem-exact32-blocks", fn ->
+ [first|_]=ADHD.TLSCertificate.pem_entries(File.read!(ca)); pem=:public_key.pem_encode([first]); bytes=:binary.copy(pem,32)
+ p=put.("ca-32",bytes,0o644)
+ length(ADHD.TLSCertificate.pem_entries(bytes))==32 and F.public_ca(p)==bytes
+end)
+check.("shared-pem-33-blocks-rejected-early", fn ->
+ [first|_]=ADHD.TLSCertificate.pem_entries(File.read!(ca)); pem=:public_key.pem_encode([first])
+ reject.(fn->ADHD.TLSCertificate.pem_entries(:binary.copy(pem,33)) end)
+end)
 check.("public-ca-link-rejected", fn -> p=Path.join(root,"ca-link"); File.ln_s!(ca,p); reject.(fn->F.public_ca(p) end) end)
 # Clear previous sync observations; retain fresh directory + parent actual fd stats.
 flush = fn f -> receive do {:synced,_}->f.(f) after 0->:ok end end
@@ -52,6 +61,6 @@ check.("write-predecision-target-drift-rejected",fn->
  failed=reject.(fn->F.write(p,"replacement") end)
  failed and File.read!(p)=="other-owner-state" and Enum.all?(File.ls!(root),fn n->not String.starts_with?(n,"write-drift.") end)
 end)
-result=%{"passed"=>true,"checks"=>:ets.tab2list(rows)|>Enum.map(&elem(&1,1)),"scope"=>"module-only real filesystem and actual fsync; no power-cut or malicious same-UID atomic-nofollow proof"}
+result=%{"passed"=>true,"checks"=>:ets.tab2list(rows)|>Enum.map(&elem(&1,1)),"module_sha256"=>Base.encode16(:crypto.hash(:sha256,File.read!(source)),case: :lower),"scope"=>"module-only real filesystem and actual fsync; no power-cut or malicious same-UID atomic-nofollow proof"}
 File.write!(output,JSON.encode!(result))
 IO.puts("file checks #{length(result["checks"])} PASS")

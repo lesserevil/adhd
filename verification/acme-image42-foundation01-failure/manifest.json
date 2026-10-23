@@ -1,0 +1,83 @@
+{
+  "passed": false,
+  "foundation_whole_checks": 0,
+  "foundation_required_unexecuted": 18,
+  "failure_phase": "Initial image startup before health/Admin/init/TLS/order",
+  "cause": "Fixture supplied ADHD_CONFIG_FILE environment and only absolute private bind mount, while image default CMD explicitly serves /config/hub.json. Accepted CLI uses explicit serve path, not that environment variable. Missing /config path on read-only root causes invalid_configuration.",
+  "cause_scope": "Deterministic fixture command/mount mismatch, not an application configuration repair or failed CA order.",
+  "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+  "plan_sha256": "234ec4988d9281545fbfec97fdcda030cb7cba109554df4d6e4331109ec045d5",
+  "private_config_sha256": "db4d921765aa707eec029956ae211dc3ec589bcaec9f614074b4a20aa3308c93",
+  "private_config_retained_ignored": "/home/horde/src/adhd/_build/acme/image42-plans01/runtime/foundation/hub/hub.json",
+  "required_correction": "Retain default product ENTRYPOINT and append exact public serialized [serve,absoluteConfig] command. Offline public rebind must retain its own single serialized command; bind exact expectedCmd in VM custody.",
+  "resource_audit": {
+    "daemon": "unix:///run/docker.sock",
+    "known_id_and_names": [
+      {
+        "identifier": "069ba2608ca114dc19dfab78a9f2d6e613717f9addbc806ff4c33a854ee0df4a",
+        "observed_absent": true,
+        "exit_code": 1,
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "stderr_sha256": "0633f60af5188589d1e9944b421180f252c73409d0293c924d29ad8541d2166b"
+      },
+      {
+        "identifier": "adhd-accept-probe-24f0a905f9644f5a",
+        "observed_absent": true,
+        "exit_code": 1,
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "stderr_sha256": "8e51945962f523a423530f25f4855d1284f4415d23cf75ba854db94553fcd8a4"
+      },
+      {
+        "identifier": "adhd-accept-probe-4aafd6bd76e94f60",
+        "observed_absent": true,
+        "exit_code": 1,
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "stderr_sha256": "82084fcda0a505abf74ea4cea42f1a1a7cd1fc5b61031689013dca3db21e93d5"
+      },
+      {
+        "identifier": "adhd-accept-probe-4dc750c92eac40d2",
+        "observed_absent": true,
+        "exit_code": 1,
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "stderr_sha256": "56fef481e75de153a592a9ee49e42583eaf6e9f1987f22057f8b5024281a13aa"
+      },
+      {
+        "identifier": "adhd-accept-probe-6557ed857b74484a",
+        "observed_absent": true,
+        "exit_code": 1,
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "stderr_sha256": "782df68f83bcb5eaeb6812b9ab54805de51bde492b8335cf4f0a8388150aa0e6"
+      },
+      {
+        "identifier": "adhd-multi-accept-20478b822c5a456e",
+        "observed_absent": true,
+        "exit_code": 1,
+        "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "stderr_sha256": "d4b2b8b379599608a00b7b0dd4dfb65229b91734243d7e0790ab04c1627e2718"
+      }
+    ],
+    "pid_start_identities": [
+      {
+        "pid": 3624911,
+        "start_ticks": "28218270",
+        "original_identity_absent": true
+      },
+      {
+        "pid": 3624830,
+        "start_ticks": "28218247",
+        "original_identity_absent": true
+      }
+    ],
+    "scope": "Only actual recorded VM/client/probe identities; no complete historical process enumeration or global daemon emptiness claimed."
+  },
+  "original_cleanup_errors": [],
+  "files": {
+    "result.json": "dad7b1ce8977350b78d4b1bc7f68aef47d02ddac7fd88a5ee7a0a253139226e0",
+    "report.json": "8a93feee1e355d362c7336a3ab261e2629f07f2e6d838fc5cc8ac6cf96311ea7",
+    "stderr.log": "17b5a19a463cd9ad1036b047794b6318e3717bed8f63b1dc66957ca641ac5e08",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "execution.stderr": "bed3d074a1f5332f74adf29ece927e1fbfdf0ee5880dd4fe646a9c930eb87455",
+    "execution.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "metadata_preflight": "17 preflights remain scoped positives; none exercised serving/configuration startup."
+}

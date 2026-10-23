@@ -1,0 +1,836 @@
+{
+  "passed": true,
+  "case": "issuer-503-timeout",
+  "checks": [
+    {
+      "name": "genuine real-CA baseline and independently trusted active key",
+      "passed": true,
+      "certificate": {
+        "leaf_der_sha256": "996116abb9b8c8608c4a2fa37288f68d88377e62171c6ffc6453986dbc1111b9",
+        "public_key_spki_sha256": "6dc3ac7dd0076cf7b04a8545d7d9f2b21ca7582b1d8c3ccd8fe94ed17dfeb1b1",
+        "serial_number_hex": "41d8d3e4c32c3bbd",
+        "dns_names": [
+          "one.acme.test"
+        ],
+        "not_before": "2026-10-23T03:35:00+00:00",
+        "not_after": "2026-10-23T03:36:29+00:00",
+        "validity_seconds": 89.0,
+        "chain_trust_checked_here": false
+      }
+    },
+    {
+      "case": "issuer-503-timeout",
+      "passed": true,
+      "actual_header_events": [
+        {
+          "at_monotonic": 284401.15848394,
+          "method": "GET",
+          "directory": true,
+          "request_bytes": 0,
+          "fault_status": 503,
+          "upstream_status": null,
+          "retry_seconds": 120,
+          "completed_monotonic": 284401.158810977
+        }
+      ],
+      "durable_floor": {
+        "code": "ACME_PROCESS",
+        "retry_at": 1792726622852
+      },
+      "header_observed_while_writer_lock_busy": true,
+      "issuer_retry_seconds": 120,
+      "request_earliest_wall_ms": 1792726502458,
+      "settled_error": {
+        "code": "ACME_ORDER_TIMEOUT",
+        "message": "Certificate request timed out.",
+        "retryable": true
+      },
+      "accepted_revision": 3,
+      "elapsed_seconds": 8.434673468000256,
+      "guarded_seconds": 3,
+      "public_due_settle_bound_seconds": 2,
+      "public_due_observations": [
+        {
+          "at_monotonic": 284406.144058262,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.148584006,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.253935485,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.359184118,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.464837356,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.56994178,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.678489767,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.783607932,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.888606337,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284406.993701581,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.099369368,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.204246637,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.308948223,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.413850054,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.51889422,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.623857743,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.728549951,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.834398812,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284407.939921324,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.045293731,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.151379597,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.256527102,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.361953791,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.46784702,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.572955672,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.677822534,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.783517221,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.889306893,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284408.995203428,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        },
+        {
+          "at_monotonic": 284409.100392375,
+          "acme_state": "backoff",
+          "public_next_attempt_at": "2026-10-23T03:37:02Z",
+          "public_due_unix_ms": 1792726622000,
+          "private_issuer_floor_unix_ms": 1792726622852,
+          "comparison": "UTC whole seconds; public display truncates milliseconds"
+        }
+      ],
+      "no_requests_before_floor_during_guard": true,
+      "actual_resumed_order": null,
+      "scope": "Real post-floor trusted success only for issuer-floor-resume; other cases qualify their selected bounded transition guard"
+    }
+  ],
+  "scope": "Separate real-CA fault gate; does not qualify the full foundation or other fault selections",
+  "target": {
+    "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+    "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+    "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+    "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+    "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+    "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+    "cache_modules": 64,
+    "packaged_assets": {
+      "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+      "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+      "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+      "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+      "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+      "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+      "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+      "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f"
+    },
+    "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+  },
+  "ca_manifest_sha256": "59612c07ad3ef3993e649415a23ce5f46e03fc3005084d636f4b70cb8c1c9fdc",
+  "public_ca_calls": 0,
+  "primary_failure_type": null,
+  "cleanup_errors": [],
+  "provision": {
+    "certificate": {
+      "leaf_der_sha256": "996116abb9b8c8608c4a2fa37288f68d88377e62171c6ffc6453986dbc1111b9",
+      "public_key_spki_sha256": "6dc3ac7dd0076cf7b04a8545d7d9f2b21ca7582b1d8c3ccd8fe94ed17dfeb1b1",
+      "serial_number_hex": "41d8d3e4c32c3bbd",
+      "dns_names": [
+        "one.acme.test"
+      ],
+      "not_before": "2026-10-23T03:35:00+00:00",
+      "not_after": "2026-10-23T03:36:29+00:00",
+      "validity_seconds": 89.0,
+      "chain_trust_checked_here": false
+    },
+    "baseline": {
+      "acme_state": "idle",
+      "active_domains": [
+        "one.acme.test"
+      ],
+      "certificate": {
+        "not_after": "2026-10-23T03:36:29Z",
+        "not_before": "2026-10-23T03:35:00Z",
+        "serial": "41d8d3e4c32c3bbd",
+        "sha256": "996116abb9b8c8608c4a2fa37288f68d88377e62171c6ffc6453986dbc1111b9"
+      },
+      "config_revision": 2,
+      "domains": [
+        "one.acme.test"
+      ],
+      "enabled": true,
+      "https_state": "ready",
+      "last_attempt_at": "2026-10-23T03:34:59Z",
+      "last_error": null,
+      "last_success_at": "2026-10-23T03:35:01Z",
+      "next_attempt_at": "2026-10-23T03:35:59Z"
+    },
+    "runtime_identities": [
+      {
+        "kind": "compiled-image",
+        "binding": {
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+          "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+          "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+          "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+          "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+          "cache_modules": 64,
+          "packaged_assets": {
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f"
+          },
+          "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+        },
+        "pid": 3824000,
+        "start_ticks": "28438768",
+        "reaped": true,
+        "config_path_sha256": "8fe9f0c1e0e89352b7d7d856e013b2e00fbe5837c2af78dd0a21c78f98ecc049",
+        "started_monotonic": 284387.350378864,
+        "client_pid": 3823928,
+        "client_start_ticks": "28438735",
+        "actual_vm": {
+          "container_id": "3cacbb1530c291d4f1a8801891c7139c3bc4c9d6782097526d8e3724005515bc",
+          "container_name": "adhd-multi-accept-d5ccf32644e94b50",
+          "host_vm_pid": 3824000,
+          "host_vm_start_ticks": "28438768",
+          "pid_namespace": "pid:[4026532560]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "e98b9a8e730efb8d4a570eeef15ee25019c5ede788b73016c9ea12cd35af67c9",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        },
+        "checkpoints": [
+          "initial-ready",
+          "real-provisioned-baseline",
+          "real-fault-baseline"
+        ],
+        "first_health_monotonic": 284396.232901375,
+        "exit_code": 0,
+        "client_original_identity_absent": true,
+        "original_identity_absent": true,
+        "observed_descendants": {
+          "scope": "Observed descendants only; polling cannot prove complete historical issuance of very short-lived children",
+          "rows": [
+            {
+              "pid": 3824057,
+              "start_ticks": "28438790",
+              "state": "S",
+              "parent_pid": 3824000,
+              "executable_basename": "erl_child_setup",
+              "first_observed_monotonic": 284389.151647014,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3824134,
+              "start_ticks": "28438809",
+              "state": "S",
+              "parent_pid": 3824057,
+              "executable_basename": "inet_gethost",
+              "first_observed_monotonic": 284389.15243854,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3824135,
+              "start_ticks": "28438810",
+              "state": "S",
+              "parent_pid": 3824134,
+              "executable_basename": "inet_gethost",
+              "first_observed_monotonic": 284389.153209803,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3826024,
+              "start_ticks": "28439817",
+              "state": "S",
+              "parent_pid": 3824057,
+              "executable_basename": "acme-guard",
+              "first_observed_monotonic": 284398.198932543,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3826025,
+              "start_ticks": "28439817",
+              "state": "R",
+              "parent_pid": 3826024,
+              "executable_basename": "lego",
+              "first_observed_monotonic": 284398.200151982,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3826306,
+              "start_ticks": "28440108",
+              "state": "S",
+              "parent_pid": 3824057,
+              "executable_basename": "acme-guard",
+              "first_observed_monotonic": 284401.125608023,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3826307,
+              "start_ticks": "28440108",
+              "state": "R",
+              "parent_pid": 3826306,
+              "executable_basename": "lego",
+              "first_observed_monotonic": 284401.126271171,
+              "original_identity_absent": true
+            }
+          ],
+          "errors": [],
+          "observer_closed": true
+        },
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "3cacbb1530c291d4f1a8801891c7139c3bc4c9d6782097526d8e3724005515bc",
+            "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+          },
+          {
+            "action": "observed-absent",
+            "container_id": "3cacbb1530c291d4f1a8801891c7139c3bc4c9d6782097526d8e3724005515bc",
+            "observed_absent": true,
+            "exit_code": 0
+          }
+        ],
+        "runtime_custody": [
+          {
+            "container_id": "3cacbb1530c291d4f1a8801891c7139c3bc4c9d6782097526d8e3724005515bc",
+            "container_name": "adhd-multi-accept-d5ccf32644e94b50",
+            "host_vm_pid": 3824000,
+            "host_vm_start_ticks": "28438768",
+            "pid_namespace": "pid:[4026532560]",
+            "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+            "assets_sha256": {
+              "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+              "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+              "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+              "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+              "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+              "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+              "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+              "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f"
+            },
+            "default_entrypoint": true,
+            "default_command": false,
+            "public_command": "serve",
+            "command_sha256": "e98b9a8e730efb8d4a570eeef15ee25019c5ede788b73016c9ea12cd35af67c9",
+            "payload_verified": true,
+            "assets_verified": true,
+            "live_runtime_files_verified": 76,
+            "original_vm_identity_absent": true
+          }
+        ]
+      }
+    ],
+    "issuer": {
+      "requests": 11,
+      "active": 0,
+      "events": [
+        {
+          "at_monotonic": 284398.228745461,
+          "method": "GET",
+          "directory": true,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 632,
+          "response_headers": {
+            "header_bytes": 187,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.282511944
+        },
+        {
+          "at_monotonic": 284398.291193769,
+          "method": "HEAD",
+          "directory": false,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 0,
+          "response_headers": {
+            "header_bytes": 206,
+            "name_counts": {
+              "cache-control": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.346992974
+        },
+        {
+          "at_monotonic": 284398.355080952,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 527,
+          "fault_status": null,
+          "upstream_status": 201,
+          "response_bytes": 327,
+          "response_headers": {
+            "header_bytes": 342,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "location": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 201
+          },
+          "completed_monotonic": 284398.41021723
+        },
+        {
+          "at_monotonic": 284398.422666709,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 405,
+          "fault_status": null,
+          "upstream_status": 201,
+          "response_bytes": 401,
+          "response_headers": {
+            "header_bytes": 367,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "location": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 201
+          },
+          "completed_monotonic": 284398.475508893
+        },
+        {
+          "at_monotonic": 284398.540329037,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1438,
+          "response_headers": {
+            "header_bytes": 275,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.593861572
+        },
+        {
+          "at_monotonic": 284398.603974183,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 387,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 197,
+          "response_headers": {
+            "header_bytes": 366,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 2,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.657770376
+        },
+        {
+          "at_monotonic": 284398.67222233,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 439,
+          "response_headers": {
+            "header_bytes": 274,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.724805276
+        },
+        {
+          "at_monotonic": 284398.736097678,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 823,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 404,
+          "response_headers": {
+            "header_bytes": 290,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "other": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.795737197
+        },
+        {
+          "at_monotonic": 284398.805640584,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 388,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 467,
+          "response_headers": {
+            "header_bytes": 274,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.859540085
+        },
+        {
+          "at_monotonic": 284398.869286295,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 348,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1259,
+          "response_headers": {
+            "header_bytes": 292,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284398.924975545
+        },
+        {
+          "at_monotonic": 284401.15848394,
+          "method": "GET",
+          "directory": true,
+          "request_bytes": 0,
+          "fault_status": 503,
+          "upstream_status": null,
+          "retry_seconds": 120,
+          "completed_monotonic": 284401.158810977
+        }
+      ],
+      "errors": [],
+      "error_total": 0,
+      "failure_checkpoints": [],
+      "accept_thread_alive": false,
+      "worker_threads_alive": 0,
+      "exchange_timers_alive": 0,
+      "lifetime_timer_alive": false,
+      "recorded_worker_threads": 11,
+      "recorded_exchange_timers": 11,
+      "closed": true
+    },
+    "challenge": {
+      "requests": 3,
+      "active": 0,
+      "events": [
+        {
+          "at_monotonic": 284398.670294265,
+          "target_sha256": "566237ef799aaf5f162222a5cdb3c71e7a7d3c3ea20259fc240b1379e5fd243f",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "6e2b0f9af96560d121adec7b5b36e4abd1049f3c76692bc1e437774f13f4dd4d",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284398.67033666
+        },
+        {
+          "at_monotonic": 284398.675978561,
+          "target_sha256": "566237ef799aaf5f162222a5cdb3c71e7a7d3c3ea20259fc240b1379e5fd243f",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "6e2b0f9af96560d121adec7b5b36e4abd1049f3c76692bc1e437774f13f4dd4d",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284398.676085514
+        },
+        {
+          "at_monotonic": 284398.67731618,
+          "target_sha256": "566237ef799aaf5f162222a5cdb3c71e7a7d3c3ea20259fc240b1379e5fd243f",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "6e2b0f9af96560d121adec7b5b36e4abd1049f3c76692bc1e437774f13f4dd4d",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284398.677385125
+        }
+      ],
+      "errors": [],
+      "closed": true
+    },
+    "cleanup_errors": [],
+    "scope": "Actual single default-entrypoint image, real issuer proxy+HTTP01, private pre-TLS Admin and independently trusted HTTPS; no browser or full foundation qualification implied"
+  }
+}

@@ -74,8 +74,10 @@ class BrowserInputs(unittest.TestCase):
         module = ModuleType('playwright.async_api')
         module.async_playwright = Manager
         session = SimpleNamespace(password='private-fixture',
-            admin=SimpleNamespace(mutate=lambda *args, **kwargs: None),
-            runtime=SimpleNamespace(base='http://127.0.0.1:12345'), tls={})
+            admin=SimpleNamespace(mutate=lambda *args, **kwargs: None,
+                api=lambda command:{'config':{'tls':{'acme':{'ca_cert_file':'/owned/hub/directory-root.pem'}}}}),
+            runtime=SimpleNamespace(base='http://127.0.0.1:12345'), hub=Path('/owned/hub'),
+            tls={'acme':{'ca_cert_file':'directory-root.pem'}})
         async def fail(*args, **kwargs): raise ValueError('original-browser-fault')
         with tempfile.TemporaryDirectory() as raw:
             report = {}

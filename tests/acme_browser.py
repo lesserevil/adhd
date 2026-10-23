@@ -48,6 +48,19 @@ API_OPS = {'list_projects', 'project_restore_status', 'overview', 'retrieval_ind
            'config_get', 'config_update', 'tls_status', 'tls_renew'}
 
 
+
+def failure_locations(error):
+    """Static hook function/line only; never exception text, locals or URLs."""
+    rows=[];trace=error.__traceback__;scanned=0
+    while trace is not None and scanned<256:
+        code=trace.tb_frame.f_code
+        if code.co_filename==__file__ and len(rows)<16:
+            name=code.co_name if re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]{0,127}',code.co_name)else 'anonymous'
+            rows.append({'function':name,'line':trace.tb_lineno})
+        trace=trace.tb_next;scanned+=1
+    return rows
+
+
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
@@ -416,6 +429,7 @@ async def run_browser_phase(browser, *, base, credential_files, output_dir,
     except BaseException as exc:
         primary = exc
         report['failure_type'] = type(exc).__name__
+        report['failure_locations'] = failure_locations(exc)
     finally:
         report['script_sha256'] = hashlib.sha256(source_bytes).hexdigest()
         try:

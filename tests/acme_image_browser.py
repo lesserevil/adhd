@@ -5,6 +5,7 @@ complete helper/tool closure and exclusive CA phase before calling run(). This
 phase keeps the original browser assertions and leaves visual approval pending.
 """
 import asyncio
+import copy
 import hashlib
 import json
 import os
@@ -46,10 +47,23 @@ def verify_browser(value):
     assert browser_binding(value['root'], value['executable']) == value, 'Browser input changed'
 
 
+
+def normalized_tls(session):
+    """Observe public normalization; permit only the expected owned CA path."""
+    expected=copy.deepcopy(session.tls)
+    assert expected['acme']['ca_cert_file']=='directory-root.pem'
+    path=Path(session.hub)/'directory-root.pem';assert path.is_absolute()
+    expected['acme']['ca_cert_file']=str(path)
+    actual=session.admin.api({'op':'config_get'})['config']['tls']
+    assert actual==expected,'Unexpected TLS normalization or configuration drift'
+    return actual
+
+
 async def inspect(session, plan, work, report):
     from playwright.async_api import async_playwright
     from acme_browser import run_browser_phase, safe_write
 
+    expected_tls = normalized_tls(session)
     credentials = work / 'browser-credentials'
     credentials.mkdir(mode=0o700)
     paths = {}
@@ -75,13 +89,13 @@ async def inspect(session, plan, work, report):
             headless=True, args=['--no-sandbox'], timeout=30000)
         report['browser'] = await asyncio.wait_for(run_browser_phase(browser,
             base=session.runtime.base, credential_files=paths,
-            output_dir=work / 'browser-captures', expected_tls=session.tls,
+            output_dir=work / 'browser-captures', expected_tls=expected_tls,
             serial_id={'image': plan['target']['image'], 'work': str(work)},
             custody_check=custody), timeout=240)
         assert report['browser']['passed'] is True
         assert report['browser']['manual_visual_review'] == 'pending'
         await custody()
-        assert session.admin.api({'op': 'config_get'})['config']['tls'] == session.tls
+        assert session.admin.api({'op': 'config_get'})['config']['tls'] == expected_tls
     except BaseException as error:
         primary = error
         raise

@@ -115,8 +115,35 @@ class IssuerFaultRelay:
             self.files[name]=str(path)
         self.port,self.max_requests,self.lifetime=port,max_requests,lifetime_seconds
         self.server=self.thread=None;self.lock=threading.Lock();self.close_lock=threading.Lock();self.closing=threading.Event()
-        self.sockets=set();self.active=self.requests=0;self.events=[];self.errors=[]
+        self.sockets=set();self.active=self.requests=0;self.events=[];self.errors=[];self.error_total=0;self.workers=[];self.exchange_timers=[]
         self.mode='pass';self.retry_seconds=120;self.started=None;self.lifetime_timer=None
+
+    def _error_locked(self,kind):
+        self.error_total+=1
+        if len(self.errors)<128:self.errors.append(kind[:64])
+
+    def _claim_request(self,request):
+        with self.lock:
+            if self.active>=4 or self.requests>=self.max_requests or self.closing.is_set()or time.monotonic()-self.started>=self.lifetime:
+                self._error_locked('scope-cap');request.close();return False
+            self.active+=1;self.requests+=1;self.sockets.add(request)
+            return True
+
+    def _run_worker(self,run,request,address):
+        try:run(request,address)
+        finally:
+            request.close()
+            with self.lock:
+                self.sockets.discard(request)
+                self.active-=1
+
+    def _spawn_worker(self,run,request,address):
+        worker=threading.Thread(target=self._run_worker,args=(run,request,address),daemon=True)
+        with self.lock:self.workers.append(worker)
+        try:worker.start()
+        except BaseException:
+            with self.lock:self.active-=1;self.sockets.discard(request)
+            request.close();raise
 
     def set_fault(self,status=None,retry_seconds=120):
         assert status is None or status in (429,503)
@@ -134,16 +161,10 @@ class IssuerFaultRelay:
         class Server(socketserver.ThreadingTCPServer):
             allow_reuse_address=False;daemon_threads=True;block_on_close=False
             def process_request(self,request,address):
-                with owner.lock:
-                    if owner.active>=4 or owner.requests>=owner.max_requests or owner.closing.is_set()or time.monotonic()-owner.started>=owner.lifetime:
-                        request.close();owner.errors.append('scope-cap');return
-                    owner.active+=1;owner.requests+=1;owner.sockets.add(request)
-                try:super().process_request(request,address)
-                except BaseException:
-                    with owner.lock:owner.active-=1;owner.sockets.discard(request)
-                    request.close();raise
+                if owner._claim_request(request):
+                    owner._spawn_worker(super().process_request_thread,request,address)
             def handle_error(self,request,address):
-                with owner.lock:owner.errors.append('handler-error')
+                with owner.lock:owner._error_locked('handler-error')
         class Handler(socketserver.BaseRequestHandler):
             def handle(self):
                 sockets=[self.request];deadline=time.monotonic()+10
@@ -153,7 +174,9 @@ class IssuerFaultRelay:
                         except OSError:pass
                         try:sock.close()
                         except OSError:pass
-                timer=threading.Timer(10,abort);timer.daemon=True;timer.start()
+                timer=threading.Timer(10,abort);timer.daemon=True
+                with owner.lock:owner.exchange_timers.append(timer)
+                timer.start()
                 try:
                     self.request.settimeout(3)
                     client=server_context.wrap_socket(self.request,server_side=True,do_handshake_on_connect=False)
@@ -190,12 +213,13 @@ class IssuerFaultRelay:
                     event['completed_monotonic']=time.monotonic()
                     with owner.lock:owner.events.append(event)
                 except BaseException as error:
-                    with owner.lock:owner.errors.append(type(error).__name__)
+                    with owner.lock:owner._error_locked(type(error).__name__)
                 finally:
                     timer.cancel();abort()
+                    timer.join(timeout=2)
+                    assert not timer.is_alive(),'Owned exchange timer not closed'
                     with owner.lock:
                         for sock in sockets:owner.sockets.discard(sock)
-                        owner.active-=1
         self.started=time.monotonic()
         self.server=Server(('127.0.0.1',self.port),Handler)
         self.thread=threading.Thread(target=self.server.serve_forever,kwargs={'poll_interval':.05},daemon=True)
@@ -209,22 +233,54 @@ class IssuerFaultRelay:
             raise
 
     def snapshot(self):
-        with self.lock:return {'requests':self.requests,'active':self.active,'events':list(self.events),
-          'errors':list(self.errors),'closed':self.closing.is_set()and not(self.thread and self.thread.is_alive())and self.active==0}
+        with self.lock:
+            accept_alive=bool(self.thread and self.thread.is_alive())
+            workers_alive=sum(thread.is_alive()for thread in self.workers)
+            timers_alive=sum(thread.is_alive()for thread in self.exchange_timers)
+            lifetime_alive=bool(self.lifetime_timer and self.lifetime_timer.is_alive())
+            return {'requests':self.requests,'active':self.active,'events':list(self.events),
+              'errors':list(self.errors),'error_total':self.error_total,
+              'accept_thread_alive':accept_alive,'worker_threads_alive':workers_alive,
+              'exchange_timers_alive':timers_alive,'lifetime_timer_alive':lifetime_alive,
+              'recorded_worker_threads':len(self.workers),'recorded_exchange_timers':len(self.exchange_timers),
+              'closed':self.closing.is_set()and not accept_alive and not workers_alive and not timers_alive
+                and not lifetime_alive and self.active==0 and not self.sockets}
+
+    def _join(self,threads,deadline):
+        current=threading.current_thread()
+        for thread in threads:
+            if thread is current:
+                assert thread is self.lifetime_timer,'Unexpected relay close from owned worker'
+                continue
+            if thread.is_alive():thread.join(timeout=max(0,deadline-time.monotonic()))
+            assert not thread.is_alive(),'Owned relay thread did not exit'
 
     def close(self):
+        deadline=time.monotonic()+12
         with self.close_lock:
             self.closing.set()
             if self.lifetime_timer:self.lifetime_timer.cancel()
-            with self.lock:sockets=list(self.sockets)
+            with self.lock:
+                sockets=list(self.sockets)
+                timers=list(self.exchange_timers)
+            for timer in timers:timer.cancel()
             for sock in sockets:
                 try:sock.shutdown(socket.SHUT_RDWR)
                 except OSError:pass
             if self.server:
                 if self.thread and self.thread.is_alive():self.server.shutdown()
                 self.server.server_close()
-            if self.thread:self.thread.join(timeout=2);assert not self.thread.is_alive()
-            deadline=time.monotonic()+12
-            while self.active:
-                assert time.monotonic()<deadline,'Owned HTTPS fault handlers not closed'
-                time.sleep(.02)
+            if self.thread:self._join([self.thread],deadline)
+            # Shutdown the accept loop first; its complete retained worker set
+            # cannot grow. A worker may still register its exchange timer, so
+            # join workers before taking the final timer set.
+            with self.lock:workers=list(self.workers)
+            self._join(workers,deadline)
+            with self.lock:timers=list(self.exchange_timers)
+            for timer in timers:timer.cancel()
+            self._join(timers,deadline)
+            assert self.active==0 and not self.sockets,'Owned relay connections not closed'
+        # A lifetime callback may itself be waiting for close_lock. Join it
+        # outside the lock; the callback skips only its own join. Snapshot keeps
+        # reporting false until that callback actually returns.
+        if self.lifetime_timer:self._join([self.lifetime_timer],deadline)

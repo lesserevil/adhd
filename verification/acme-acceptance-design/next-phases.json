@@ -8,8 +8,8 @@
     "sha256": "32de5a2259d2f3dabc3ee49ca584ba79621ab344a7b0d75440f8b2f2df61a495"
   },
   "helpers": {
-    "tests/acme_issuer_fault_relay.py": "a8d55cd290484108ac045a325a80765c8858af7ed64a2f9132f400e25856ad38",
-    "tests/acme_issuer_fault_relay_unit.py": "ecd419551cb68663505fac547fa212570b631f2e9d652379460cae7d14601755",
+    "tests/acme_issuer_fault_relay.py": "39c2f8ba02a9078d54054a5696f919cb94df80a98b76d942ca30ee6cfbaf34e3",
+    "tests/acme_issuer_fault_relay_unit.py": "e781fe867b877d9dd71966d147d7a6bca335372b67caef5cef33afc9f34fef96",
     "tests/acme_continuity.py": "7eb24cdd5036d130503071d3f281d4799ee305ca57ff1f6fb8d9eaceb96be483",
     "tests/acme_fault_cases.py": "5f26ff4132c0cdb3b413170936423fd3edd9a5f7405e264e255900019ecef800",
     "tests/acme_image_runtime.py": "e36015a96528712d0ea63ceee05f11ff4ee537c4fca91b09fccebfc93c4b586f",
@@ -38,7 +38,13 @@
       "header_bytes": 16384,
       "body_bytes": 1048576
     },
-    "evidence": "Method/directory bool/status/integer delay/byte counts/timestamps only; no URLs, JWS bodies, nonces, keys or headers in log"
+    "evidence": "Method/directory bool/status/integer delay/byte counts/timestamps only; no URLs, JWS bodies, nonces, keys or headers in log",
+    "review_corrections": {
+      "retained_errors": 128,
+      "total_counter": "all errors including cap rejection after request count exhausted",
+      "closure": "accept thread, actual retained workers, per-exchange timers and lifetime timer allobservednotalive; no selfjoin lifetime callback; thread existence never inferred from activecounter",
+      "pure_checks": "1000caprejections, joinedworker+both timerkinds, hungworker denial, lifetime selfjoin denial, worker-start failure rollback; no threads/resources started"
+    }
   },
   "ordered_phases": [
     {

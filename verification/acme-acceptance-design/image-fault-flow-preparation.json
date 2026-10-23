@@ -1,0 +1,81 @@
+{
+  "schema": "adhd/acme-fault-flow-preparation@1",
+  "status": "inert preparation; no actual target/plan or runtime acceptance",
+  "files": {
+    "tests/acme_image_fault_flow.py": "1ec706b27dad097f8fafdc9b183962f1d67b64d3581046b1ef0dc506ddf4ee6a",
+    "tests/acme_image_faults.py": "4a4d16f531e855e9cfb143c99bf120fc81d95775794607dd841711f8596ecaca",
+    "tests/acme_image_provision.py": "4d484453c5806c5d63d7c2142d27e013a047b780a3a2c60010cabecd8c0d4d65",
+    "tests/acme_image_faults_unit.py": "1c3763501cbfd666ea4bc8fad5d06fb3f3c3a6f69d23854d52c273be3037d227"
+  },
+  "independent_cases": [
+    "issuer-503-timeout",
+    "issuer-429-timeout",
+    "issuer-floor-manual-edit",
+    "issuer-floor-cancel",
+    "issuer-floor-cold",
+    "issuer-floor-resume",
+    "late-domains",
+    "hot-disable",
+    "parent-loss",
+    "client-loss",
+    "guardian-loss",
+    "bad-challenge",
+    "issuer-refusal",
+    "untrusted-issuer",
+    "real-expiry"
+  ],
+  "case_count": 15,
+  "fixed_per_case_seconds": 600,
+  "foundation_scope": "Separate unchanged full foundation/rebind/account controller; --continuity additionally executes original signed OIDC and real HTTPS peer flows. None run against image yet.",
+  "premises": [
+    "Actual proper source and compiled admission, source export, receipt, context, complete helper/tool hashes, actual CA process/root identity required before owned session",
+    "Genuine real issuer proxy/HTTP01 baseline and independent hostname/root/expiry/key-pair validation before selected fault",
+    "Timeout fault order policy5000ms distinct from original foundation30000ms; no original deadline extension",
+    "Directory503/429 preserves real header floor while client lock held; timeout outcome ORDER_TIMEOUT is distinct from issuer floor code",
+    "Different-MID/config cancellation occurs while order is live after durable floor; current normalized retry edit31",
+    "Process faults force real new-domain challenge on same account, PID/start/executable SHA fences, paired writer gone and lock free before teardown",
+    "Real expiry uses CA-issued time, retained pre-TLS private Admin session and independent TLS rejection; no fake clock or cookie rewrite"
+  ],
+  "pending": [
+    "Actual final image/CA generation binding and independently reviewed frozen full input closure",
+    "Every listed actual fault runtime remains unexecuted",
+    "Browser supplied independently by root; no browser launched",
+    "Additional cold malformed/missing trust/private Admin repair and late directory/bind edge qualification remain tracked separately; this preparatory code does not close ACME001"
+  ],
+  "checks": {
+    "pure_acme_checks": 56,
+    "passed": true,
+    "resources_started": false
+  },
+  "documentation_review": {
+    "reviewed": [
+      "docs/admin/acme.md",
+      "README.md",
+      "docs/README.md",
+      "components/hub/acme/spec.md (actual root)"
+    ],
+    "conclusion": "Current guide explicitly retains experimental/unqualified image scope. This test-only preparation changes no accepted product behavior or claims. Root owns final documentation review/lifecycle."
+  },
+  "independent_review": "Contracts reviewed actual current provisioning, fault controller/phases and pure checks; no concrete blocker. Final tiny strengthening requires full Retry-After120s lower bound, not merely a future deadline.",
+  "reusable_api": {
+    "context": "with OwnedProvision(plan,target,fresh_absent_work) as session",
+    "members": [
+      "runtime",
+      "admin",
+      "secure",
+      "hub",
+      "password(memory only)",
+      "tls",
+      "certificate",
+      "ca",
+      "challenge",
+      "issuer"
+    ],
+    "verifier": "verify(path,sha,profile='browser',driver_path=Path(__file__)) -> plan,target,work,marker",
+    "browser_required_files": [
+      "acme_browser.py",
+      "acme_browser_flow.py",
+      "acme_image_browser.py"
+    ]
+  }
+}

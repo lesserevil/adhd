@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/peer-env03/probe.py", line 7, in <module>
+    target=AcceptedImageTarget(plan);image=target.image(root);image.image_id=target.value['image']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/tests/acme_image_target.py", line 60, in __init__
+    path=Path(__file__).with_name(name);regular(path);assert sha(path)==digest,'Compiled reader dependency changed'
+                                        ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/config-acceptance/tests/acme_runtime.py", line 33, in regular
+    value = Path(path).lstat()
+            ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 849, in lstat
+    return self.stat(follow_symlinks=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 842, in stat
+    return os.stat(self, follow_symlinks=follow_symlinks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/horde/src/adhd/.worktrees/config-acceptance/tests/image_compiled_inputs.py'

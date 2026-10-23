@@ -1,0 +1,47 @@
+{
+  "scope": "Source-unchanged network-none Elixir namespace probe only, no hub dispatch, HTTP request, orders or issuer mutation. Not ACME/federation qualification.",
+  "actual_image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+  "same_fixture_uid_gid": [
+    1003,
+    1003
+  ],
+  "flags_and_readonly_mount": "Original foundation03 hub paths/ERL_FLAGS retained; isolated probe uses same owned UID/GID, network:none, readonly filesystem and readonly phase-root mount.",
+  "findings": {
+    "cacerts_path_and_inetrc": "Exact intended charlists, no observed quoting defect",
+    "loaded_root_count": 1,
+    "loaded_root_der_sha256": "7cff1a7decd59dbe4b3239a34d1b0364040145a42811ceac72b86994ba3023dc",
+    "independent_ca_pem_der_sha256": "7cff1a7decd59dbe4b3239a34d1b0364040145a42811ceac72b86994ba3023dc",
+    "one_acme_test": "nxdomain",
+    "two_acme_test": "127.0.0.1",
+    "actual_inetrc": "Two host rows with identical IP and separate one-name lists; later same-IP row displaces first lookup.",
+    "proposed_fixture_fix": "Single host row includes both exact fixture names as aliases; keep file-only lookup and verified trust/SAN unchanged."
+  },
+  "earlier_probe_limits": [
+    "Two Python constructor/import errors before Docker invocation are retained.",
+    "Initial actual namespace probe omitted --user, therefore imageUID10001 could not read fixtureUID1003 files. EACCES/nxdomain/root exception from that probe are invalid premises, not original runtime cause. Final probe uses exactUID1003/GID1003."
+  ],
+  "cleanup": [
+    {
+      "owned_name": "adhd-accept-probe-c1d61622e5f1424f",
+      "container_id": null,
+      "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "entrypoint": "/usr/local/bin/elixir",
+      "run_exit_code": 0,
+      "run_failure_type": null,
+      "foreign_object_not_removed": false,
+      "observed_absent": true,
+      "cleanup_failure_types": []
+    }
+  ],
+  "original_failure": "Foundation03 remains false with11 wholegroups; no successful outbound federation or whole18 claim.",
+  "files": {
+    "default-user.stdout": "57e8ed04d88c405af6d7dfb49e4a4a67a4997a2d1ce9ea057642ae2f700cc6c9",
+    "local-reader-error.stderr": "6e6fcc12b61335a9c7df9ea6f79b7be491c89db1268a352981a5048d866ca822",
+    "result.json": "b680ba35fcab1d46bc594915fa9026eac936d9f09d97e16e9b71862c5d08f30f",
+    "constructor-error.stderr": "047860439da9b14a6c241153c94b31af35a93a6e1ec4e059d78f7b5a97c08219",
+    "probe.py": "744c38afb103f91d22de68a1922de42673c8424a9422aeceafd7212025a44800",
+    "default-user-result.json": "e1a4699fcac8488eacb30fe40870fa1528eb4901e77b11f558d02df9b9113e04",
+    "stdout": "e73b5fc8dfe5d5f92d948fec396157dd16167f053cc47efbb1c2bb7d05e81a20",
+    "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

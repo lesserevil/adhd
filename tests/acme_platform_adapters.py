@@ -349,7 +349,7 @@ class Kind:
   self.name=name;self.node=name+'-control-plane';self.node_image=node_image;self.node_config=identity(node_config_identity)
   self.network_id=network_id;self.network_name=network_name;self.gateway=bridge_gateway(gateway);self.seed=seed
   self.kubeconfig=self.work/'kubeconfig';self.lease=NamespaceLease('adhd-final-'+name,uuid4().hex,prefix='adhd-final-')
-  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None;self.kubeconfig_sha=None;self.api_endpoint=None;self.kube_node_uid=None;self.node_readiness=[];self.node_readiness_count=0;self.node_readiness_last=None;self.node_readiness_successes=[]
+  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None;self.kubeconfig_sha=None;self.api_endpoint=None;self.kube_node_uid=None;self.node_readiness=[];self.node_readiness_count=0;self.node_readiness_last=None;self.node_readiness_successes=[];self.system_uids={};self.storage_readiness=[];self.storage_readiness_count=0;self.storage_readiness_last=None
  def cmd(self,args,**kw):
   if self.cleanup_deadline is not None:
    remaining=self.cleanup_deadline-time.monotonic();assert remaining>0,'Kind cleanup deadline'
@@ -415,6 +415,54 @@ class Kind:
     return summary
    remaining=deadline-time.monotonic();assert remaining>0,'Owned node infrastructure deadline'
    time.sleep(min(.5,remaining))
+ def system_identity(self,value,kind,name,namespace=None):
+  assert self.node_id and self.kube_node_uid and value['kind']==kind
+  metadata=value['metadata'];assert metadata['name']==name
+  if namespace is not None:assert metadata['namespace']==namespace
+  uid=metadata['uid'];assert isinstance(uid,str) and re.fullmatch('[a-zA-Z0-9-]{1,128}',uid)
+  key=(kind,namespace,name)
+  if not hasattr(self,'system_uids'):self.system_uids={}
+  assert key not in self.system_uids or self.system_uids[key]==uid,'Owned infrastructure UID changed'
+  self.system_uids[key]=uid
+  assert not metadata.get('deletionTimestamp')
+  return uid
+ def storage_summary(self,value):
+  uid=self.system_identity(value,'Deployment','local-path-provisioner','local-path-storage')
+  generation=value['metadata']['generation'];replicas=value['spec'].get('replicas',1);status=value.get('status',{})
+  assert type(generation) is int and generation>0 and type(replicas) is int and replicas==1
+  observed=status.get('observedGeneration',0)
+  assert type(observed) is int and observed>=0 and observed<=generation
+  counts={}
+  for key in ('replicas','updatedReplicas','readyReplicas','availableReplicas'):
+   count=status.get(key,0);assert type(count) is int and count>=0;counts[key]=count
+  unavailable=status.get('unavailableReplicas',0);assert type(unavailable) is int and unavailable>=0
+  return {'uid':uid,'generation':generation,'observed_generation':observed,**counts,'unavailable_replicas':unavailable,
+          'ready':observed==generation and unavailable==0 and all(v==replicas for v in counts.values())}
+ def ready_storage(self,deadline):
+  # No extra PVC probe: this fences only the shipped controller, not provisioning.
+  while True:
+   def read(*args):
+    remaining=deadline-time.monotonic();assert remaining>0,'Owned storage infrastructure deadline'
+    response=self.kubectl(*args,'-o','json',capture=True,sensitive=True,timeout=min(30,remaining))
+    assert len(response.stdout)<=4*1024*1024
+    return response,json.loads(response.stdout)
+   _,namespace=read('get','namespace','local-path-storage')
+   self.system_identity(namespace,'Namespace','local-path-storage')
+   assert namespace.get('status',{}).get('phase')=='Active','Owned storage namespace unavailable'
+   response,deployment=read('-n','local-path-storage','get','deployment','local-path-provisioner')
+   summary=self.storage_summary(deployment);summary['private_json_sha256']=hashlib.sha256(response.stdout).hexdigest()
+   self.storage_readiness_count+=1;self.storage_readiness_last=summary
+   if len(self.storage_readiness)<128:
+    file(self.work/('storage-readiness-'+str(len(self.storage_readiness))+'.json'),response.stdout)
+    self.storage_readiness.append(summary)
+   if summary['ready']:
+    _,node=read('get','node',self.node)
+    current=self.node_summary(node)
+    assert current['conditions'].count({'type':'Ready','status':'True'})==1 and not current['taints'] and not current['unschedulable']
+    assert time.monotonic()<=deadline,'Owned storage infrastructure deadline'
+    return summary
+   remaining=deadline-time.monotonic();assert remaining>0,'Owned storage infrastructure deadline'
+   time.sleep(min(.5,remaining))
  def start(self):
   assert not self.issued and self.node_state() is None
   network=json.loads(self.cmd(['docker','network','inspect',self.network_id],capture=True).stdout)[0]
@@ -446,6 +494,7 @@ class Kind:
   cached=json.loads(self.cmd(['docker','exec',self.node_id,'crictl','inspecti',self.reference],capture=True).stdout)
   assert cached['status']['id']==self.image
   self.ready_node(bootstrap_deadline)
+  self.ready_storage(bootstrap_deadline)
   document=self.lease.document()
   created=json.loads(self.kubectl('create','-f','-','-o','json',input=json.dumps(document).encode(),capture=True).stdout)
   self.lease.observe(created)
@@ -554,6 +603,54 @@ class Kind:
   self.namespaced('rollout','status','deployment/hub','--timeout=45s',timeout=50)
   assert self.observe()['metadata']['uid']!=old
   self.start_forward()
+ def system_diagnostics(self,fetch,result):
+  """Only exact dedicated-cluster namespaces; UID-check before dependent reads."""
+  result['system']={'pods':[],'event_reasons':[]}
+  allowed={'Pending','Running','Succeeded','Failed','Unknown','ContainerCreating','CrashLoopBackOff','OOMKilled',
+           'Error','Completed','FailedScheduling','FailedMount','ProvisioningFailed','ExternalProvisioning',
+           'WaitForFirstConsumer','Scheduled','Pulling','Pulled','Created','Started','BackOff'}
+  def reason(value):return value if type(value) is str and value in allowed else 'OTHER'
+  def obj(label,args):
+   response=fetch(label,args);assert response.returncode==0
+   return json.loads(response.stdout)
+  for namespace in ('local-path-storage','kube-system'):
+   prefix='storage' if namespace=='local-path-storage' else 'scheduler'
+   try:
+    ns=obj(prefix+'-namespace',['get','namespace',namespace,'-o','json'])
+    self.system_identity(ns,'Namespace',namespace)
+    if namespace=='local-path-storage':
+     deployment=obj('storage-controller',['-n',namespace,'get','deployment','local-path-provisioner','-o','json'])
+     result['system']['controller']=self.storage_summary(deployment)
+    selector='app=local-path-provisioner' if namespace=='local-path-storage' else 'component=kube-scheduler'
+    # Include provisioner-created helper Pods, whose labels need not match the controller.
+    args=['-n',namespace,'get','pods']
+    if namespace=='kube-system':args+=['-l',selector]
+    pods=obj(prefix+'-pods',args+['-o','json'])['items'];assert len(pods)<=32
+    selected=[]
+    for pod in pods:
+     name=pod['metadata']['name']
+     if namespace=='local-path-storage':
+      if not (pod['metadata'].get('labels',{}).get('app')=='local-path-provisioner' or re.fullmatch('helper-pod-[a-zA-Z0-9-]{1,200}',name)):continue
+     else:assert name=='kube-scheduler-'+self.node
+     uid=self.system_identity(pod,'Pod',name,namespace)
+     assert pod['spec'].get('nodeName') in (None,self.node)
+     result['system']['pods'].append({'uid':uid,'role':prefix if not name.startswith('helper-pod-') else 'storage-helper','phase':reason(pod.get('status',{}).get('phase'))})
+     selected.append((name,uid,pod))
+    events=obj(prefix+'-events',['-n',namespace,'get','events','-o','json'])
+    result['system']['event_reasons'] += [reason(v.get('reason')) for v in events.get('items',[])][:128]
+    for index,(name,uid,pod) in enumerate(selected[:4]):
+     try:
+      current=obj(prefix+'-pod-'+str(index),['-n',namespace,'get','pod',name,'-o','json'])
+      assert self.system_identity(current,'Pod',name,namespace)==uid
+      containers=current['spec']['containers'];assert len(containers)<=4
+      for cindex,container in enumerate(containers):
+       # Names are validated from the bound Pod, never a shell expression.
+       cname=container['name'];assert re.fullmatch('[a-z0-9-]{1,63}',cname)
+       fetch(prefix+'-log-'+str(index)+'-'+str(cindex),['-n',namespace,'logs','pod/'+name,'-c',cname,'--tail=80','--timestamps=true'])
+      current=obj(prefix+'-pod-after-'+str(index),['-n',namespace,'get','pod',name,'-o','json'])
+      assert self.system_identity(current,'Pod',name,namespace)==uid
+     except BaseException as error:result['errors'].append({'label':prefix+'-pod-log','failure_type':type(error).__name__})
+   except BaseException as error:result['errors'].append({'label':prefix+'-diagnostics','failure_type':type(error).__name__})
  def failure_diagnostics(self):
   """Private bounded reads of only our UID-bound namespace, before deletion."""
   node_observed=bool(getattr(self,'node_id',None) and getattr(self,'kube_node_uid',None) and self.kubeconfig_sha)
@@ -574,7 +671,9 @@ class Kind:
   if node_observed:
    response=fetch('node',['get','node',self.node,'-o','json'])
    assert response.returncode==0;result['safe_node']=self.node_summary(json.loads(response.stdout))
-  if not namespace_observed:return result
+  if not namespace_observed:
+   if node_observed:self.system_diagnostics(fetch,result)
+   return result
   # Never collect a replacement/foreign namespace, even after ambiguous create.
   response=fetch('namespace',['get','namespace',self.lease.name,'-o','json'])
   assert response.returncode==0;self.lease.observe(json.loads(response.stdout))
@@ -602,6 +701,7 @@ class Kind:
       result['safe_pods'].append(summary)
     if label=='events':result['safe_event_reasons']=[reason(v.get('reason')) for v in json.loads(response.stdout).get('items',[])][:256]
    except BaseException as error:result['errors'].append({'label':label,'failure_type':type(error).__name__})
+  if node_observed:self.system_diagnostics(fetch,result)
   return result
  def close(self):
   self.cleanup_deadline=time.monotonic()+180

@@ -50,7 +50,7 @@ class Ready(unittest.TestCase):
    row['spec']['taints']=[{'key':'node.kubernetes.io/not-ready','effect':'NoSchedule','value':'private-secret'},
                          {'key':'private-secret','effect':'NoExecute'}]
    result=value.failure_diagnostics()
-   self.assertTrue(result['attempted']);self.assertEqual(len(calls),2)
+   self.assertTrue(result['attempted']);self.assertEqual(len(calls),4)
    self.assertFalse(value.lease.issued);self.assertIn('safe_node',result)
    self.assertNotIn('private-secret',json.dumps(result));self.assertEqual(result['safe_node']['taints'][0]['key'],'node.kubernetes.io/not-ready')
    self.assertEqual(result['safe_node']['taints'][1]['key'],'OTHER')

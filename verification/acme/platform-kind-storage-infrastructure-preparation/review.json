@@ -1,0 +1,33 @@
+{
+  "scope": "test-only Kind infrastructure readiness and private failure diagnostics; not app or PVC qualification",
+  "runtime_started": false,
+  "original_infrastructure_deadline_seconds": 180,
+  "original_app_rollout_seconds": 45,
+  "original_app_checks": 9,
+  "readiness": "Active exact-UID local-path-storage namespace; exact-UID local-path-provisioner deployment current observed generation, exactly one updated/ready/available/current replica and zero unavailable replicas; same Node UID ready/untainted/schedulable recheck before app namespace",
+  "limitations": [
+    "Controller readiness does not prove helper success or PVC provisioning.",
+    "Actual Kind15 PVC selected-node/pending negative remains unchanged.",
+    "No new plan frozen and no runtime started."
+  ],
+  "diagnostics": "Existing shared 20-second collector; bounded private status/events/logs from UID-bound local-path-storage controller/helper Pods and exact owned-node kube-scheduler Pod; UID checked before logs and after, safe public reasons/hashes only; no Secrets",
+  "pure_validation": {
+    "passed": true,
+    "tests": 84,
+    "command": "PYTHONPATH=tests /home/horde/src/adhd/.venv/bin/python -B -m unittest acme_platform_storage_ready_test acme_platform_node_ready_test acme_platform_diagnostics_test acme_platform_runtime_test acme_platform_matrix_test acme_platform_vm_test acme_platform_plan_test acme_deploy_templates_test"
+  },
+  "files": {
+    "tests/acme_platform_adapters.py": "119e8f956795dbcd507799ca0160f7bb110ab64009d6fc88051a4145da280bc2",
+    "tests/acme_platform_matrix.py": "d20357da898a7197f9b0f610f10f95f12eefab5c325cdd78b2d1aa3623bf820e",
+    "tests/acme_platform_storage_ready_test.py": "2081976db5cdf3f977f3696ebf64ae867407d9e1deda571aa1bac85e8d0391ab",
+    "tests/acme_platform_node_ready_test.py": "413bb1be4813eec2e0c870e8c78edbbc184a5b0e98081b6b10a1fec64beb52b7"
+  },
+  "documentation_review": {
+    "reviewed": [
+      "docs/admin/acme.md",
+      "deploy/k8s/hub.yaml",
+      "docs/user/documentation-policy.md"
+    ],
+    "disposition": "No product behavior, shipped manifests, supported deployment instructions or accepted platform claims change. Parent owns pending final operator-doc review and authority refresh. This fixture fence preserves application bounds and preserves all earlier negative evidence."
+  }
+}

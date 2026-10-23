@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import Mock,patch
-from acme_issuer_fault_relay import IssuerFaultRelay,Wire,headers,fault_bytes,MAX_BODY
+from acme_issuer_fault_relay import IssuerFaultRelay,Wire,headers,fault_bytes,MAX_BODY,header_checkpoint,selected_response_fields
 
 class IssuerFaultChecks(unittest.TestCase):
     def test_429_and_503_are_explicit_retry_only_failures(self):
@@ -23,6 +23,34 @@ class IssuerFaultChecks(unittest.TestCase):
                     b'GET https://foreign/dir HTTP/1.1\r\nHost: localhost:19103\r\n\r\n',
                     b'GET /dir HTTP/1.1\r\nX: '+b'a'*17000+b'\r\n\r\n']:
             with self.assertRaises(AssertionError):headers(raw)
+
+    def test_response_link_fields_preserve_original_order_and_bytes(self):
+        raw=(b'HTTP/1.1 200 OK\r\nLink: </issuer>;rel="up"\r\n'
+          b'Content-Type: application/pem-certificate-chain\r\nLink: </alternate>;rel="alternate"\r\n'
+          b'Replay-Nonce: public-nonce\r\nContent-Length: 0\r\n\r\n')
+        status,h=headers(raw,response=True)
+        self.assertEqual(status,200)
+        self.assertEqual(selected_response_fields(h),
+          b'link: </issuer>;rel="up"\r\ncontent-type: application/pem-certificate-chain\r\n'
+          b'link: </alternate>;rel="alternate"\r\nreplay-nonce: public-nonce\r\n')
+        self.assertEqual(header_checkpoint(raw,response=True)['name_counts']['link'],2)
+        for name in [b'Replay-Nonce',b'Location',b'Content-Length',b'Transfer-Encoding',b'Unknown']:
+            with self.assertRaises(AssertionError):headers(b'HTTP/1.1 200 OK\r\n'+name+b': a\r\n'+name+b': b\r\n\r\n',response=True)
+        with self.assertRaises(AssertionError):headers(b'GET / HTTP/1.1\r\nLink: a\r\nLink: b\r\n\r\n')
+
+    def test_failure_checkpoint_is_value_free_bounded_and_survives_parse_failure(self):
+        raw=b'HTTP/1.1 200 OK\r\nReplay-Nonce: PRIVATEVALUE\r\nReplay-Nonce: SECRETVALUE\r\nsecret-header-name: PRIVATEVALUE\r\n\r\n'
+        checkpoint={'stage':'response-headers','response_headers':header_checkpoint(raw,response=True)}
+        with self.assertRaises(AssertionError):headers(raw,response=True)
+        relay=IssuerFaultRelay.__new__(IssuerFaultRelay);relay.errors=[];relay.error_total=0;relay.failure_checkpoints=[]
+        for _ in range(1000):relay._failure_locked(AssertionError('PRIVATEVALUE'),checkpoint)
+        self.assertEqual(relay.error_total,1000);self.assertEqual(len(relay.failure_checkpoints),128)
+        self.assertEqual(relay.failure_checkpoints[0]['response_headers']['name_counts'],{'replay-nonce':2,'other':1})
+        import json
+        retained=json.dumps(relay.failure_checkpoints)
+        for secret in ['PRIVATEVALUE','SECRETVALUE','secret-header-name']:self.assertNotIn(secret,retained)
+        oversized=header_checkpoint(b'PRIVATEVALUE'*2000,response=True)
+        self.assertEqual(oversized,{'header_bytes':24000,'name_counts':{}})
 
     def test_bounded_chunk_and_body_parser(self):
         sock=Mock();wire=Wire(sock,10**12)

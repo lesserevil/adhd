@@ -20,16 +20,47 @@ MAX_HEADER=16384
 MAX_BODY=1048576
 
 
+
+class HeaderFields(dict):
+    """Singleton lookup plus exact ordered wire fields (repeatable Link only)."""
+    def __init__(self):super().__init__();self.fields=[]
+
+
+def header_checkpoint(raw, *, response=False):
+    """Bounded fixed-vocabulary names/counts only; never header values."""
+    known={b'link',b'content-length',b'transfer-encoding',b'content-type',b'replay-nonce',
+      b'location',b'connection',b'date',b'cache-control',b'content-encoding',b'host',
+      b'user-agent',b'accept',b'accept-encoding'}
+    result={'header_bytes':len(raw),'name_counts':{}}
+    if len(raw)>MAX_HEADER:return result
+    rows=raw.split(b'\r\n')
+    if response:
+        status=re.fullmatch(rb'HTTP/1\.[01] ([2-5][0-9][0-9])(?: [^\r\n]*)?',rows[0])
+        if status:result['status']=int(status[1])
+    for row in rows[1:65]:
+        if not row:continue
+        name,sep,_=row.partition(b':');name=name.lower()
+        label=name.decode('ascii')if sep and name in known else 'other'
+        counts=result['name_counts'];counts[label]=counts.get(label,0)+1
+    return result
+
+
+def selected_response_fields(fields):
+    allowed=(b'content-type',b'location',b'replay-nonce',b'link',b'retry-after')
+    return b''.join(k+b': '+v+b'\r\n'for k,v in fields.fields if k in allowed)
+
+
 def headers(raw, response=False):
     assert len(raw)<=MAX_HEADER and raw.endswith(b'\r\n\r\n')
     rows=raw[:-4].split(b'\r\n');assert len(rows)<=65
-    first=rows.pop(0);result={}
+    first=rows.pop(0);result=HeaderFields()
     for row in rows:
         name,sep,value=row.partition(b':')
         assert sep and re.fullmatch(rb'[!#$%&\'*+.^_`|~0-9A-Za-z-]+',name)
         name=name.lower();value=value.strip()
-        assert name not in result and all(c==9 or 32<=c<127 for c in value)
-        result[name]=value
+        assert (name not in result or response and name==b'link')and all(c==9 or 32<=c<127 for c in value)
+        result.fields.append((name,value))
+        if name not in result:result[name]=value
     assert not (b'transfer-encoding'in result and b'content-length'in result)
     if response:
         status=re.fullmatch(rb'HTTP/1\.[01] ([2-5][0-9][0-9])(?: [^\r\n]*)?',first)
@@ -115,12 +146,16 @@ class IssuerFaultRelay:
             self.files[name]=str(path)
         self.port,self.max_requests,self.lifetime=port,max_requests,lifetime_seconds
         self.server=self.thread=None;self.lock=threading.Lock();self.close_lock=threading.Lock();self.closing=threading.Event()
-        self.sockets=set();self.active=self.requests=0;self.events=[];self.errors=[];self.error_total=0;self.workers=[];self.exchange_timers=[]
+        self.sockets=set();self.active=self.requests=0;self.events=[];self.errors=[];self.error_total=0;self.failure_checkpoints=[];self.workers=[];self.exchange_timers=[]
         self.mode='pass';self.retry_seconds=120;self.started=None;self.lifetime_timer=None
 
     def _error_locked(self,kind):
         self.error_total+=1
         if len(self.errors)<128:self.errors.append(kind[:64])
+
+    def _failure_locked(self,error,checkpoint):
+        self._error_locked(type(error).__name__)
+        if len(self.failure_checkpoints)<128:self.failure_checkpoints.append(dict(checkpoint))
 
     def _claim_request(self,request):
         with self.lock:
@@ -179,14 +214,18 @@ class IssuerFaultRelay:
                 timer=threading.Timer(10,abort);timer.daemon=True
                 with owner.lock:owner.exchange_timers.append(timer)
                 timer.start()
+                checkpoint={'stage':'client-handshake'}
                 try:
                     self.request.settimeout(3)
                     client=server_context.wrap_socket(self.request,server_side=True,do_handshake_on_connect=False)
                     sockets.append(client)
                     with owner.lock:owner.sockets.add(client)
                     client.do_handshake();wire=Wire(client,deadline)
-                    method,target,h=headers(wire.head())
+                    checkpoint['stage']='request-headers'
+                    raw_head=wire.head();checkpoint['request_headers']=header_checkpoint(raw_head)
+                    method,target,h=headers(raw_head)
                     assert h.get(b'host')==b'localhost:19103'
+                    checkpoint['stage']='request-body'
                     body=wire.body({b'content-length':h.get(b'content-length',b'0')})
                     assert not wire.buffer,'Unexpected request pipeline/trailing bytes'
                     with owner.lock:mode,retry=owner.mode,owner.retry_seconds
@@ -195,27 +234,34 @@ class IssuerFaultRelay:
                     if mode!='pass'and method==b'GET'and target==b'/dir':
                         client.sendall(fault_bytes(mode,retry));event.update(fault_status=mode,retry_seconds=retry)
                     else:
+                        checkpoint['stage']='upstream-connect'
                         raw=socket.create_connection(('127.0.0.1',19100),timeout=min(3,max(.001,deadline-time.monotonic())))
                         sockets.append(raw)
                         upstream=upstream_context.wrap_socket(raw,server_hostname='localhost',do_handshake_on_connect=False);sockets.append(upstream)
                         with owner.lock:owner.sockets.update([raw,upstream])
+                        checkpoint['stage']='upstream-handshake'
                         upstream.do_handshake()
                         allowed=(b'host',b'content-type',b'accept',b'user-agent')
                         request=method+b' '+target+b' HTTP/1.1\r\n'+b''.join(k+b': '+v+b'\r\n'for k,v in h.items()if k in allowed)
                         request+=b'Content-Length: '+str(len(body)).encode()+b'\r\nConnection: close\r\nAccept-Encoding: identity\r\n\r\n'+body
+                        checkpoint['stage']='upstream-send'
                         upstream.sendall(request);response=Wire(upstream,deadline)
-                        status,rh=headers(response.head(),response=True)
+                        checkpoint['stage']='response-headers'
+                        raw_head=response.head();checkpoint['response_headers']=header_checkpoint(raw_head,response=True)
+                        status,rh=headers(raw_head,response=True)
                         assert rh.get(b'content-encoding',b'identity').lower()==b'identity'
+                        checkpoint['stage']='response-body'
                         payload=response.body(rh,head=method==b'HEAD')
-                        selected=(b'content-type',b'location',b'replay-nonce',b'link',b'retry-after')
-                        head=f'HTTP/1.1 {status} Upstream\r\n'.encode()+b''.join(k+b': '+v+b'\r\n'for k,v in rh.items()if k in selected)
+                        head=f'HTTP/1.1 {status} Upstream\r\n'.encode()+selected_response_fields(rh)
                         head+=b'Content-Length: '+str(len(payload)).encode()+b'\r\nConnection: close\r\n\r\n'
-                        client.sendall(head+payload);event.update(upstream_status=status,response_bytes=len(payload))
+                        checkpoint['stage']='response-send'
+                        client.sendall(head+payload);event.update(upstream_status=status,response_bytes=len(payload),response_headers=checkpoint['response_headers'])
+                    checkpoint['stage']='exchange-deadline'
                     assert time.monotonic()<=deadline
                     event['completed_monotonic']=time.monotonic()
                     with owner.lock:owner.events.append(event)
                 except BaseException as error:
-                    with owner.lock:owner._error_locked(type(error).__name__)
+                    with owner.lock:owner._failure_locked(error,checkpoint)
                 finally:
                     timer.cancel();abort()
                     timer.join(timeout=2)
@@ -241,7 +287,7 @@ class IssuerFaultRelay:
             timers_alive=sum(thread.is_alive()for thread in self.exchange_timers)
             lifetime_alive=bool(self.lifetime_timer and self.lifetime_timer.is_alive())
             return {'requests':self.requests,'active':self.active,'events':list(self.events),
-              'errors':list(self.errors),'error_total':self.error_total,
+              'errors':list(self.errors),'error_total':self.error_total,'failure_checkpoints':list(self.failure_checkpoints),
               'accept_thread_alive':accept_alive,'worker_threads_alive':workers_alive,
               'exchange_timers_alive':timers_alive,'lifetime_timer_alive':lifetime_alive,
               'recorded_worker_threads':len(self.workers),'recorded_exchange_timers':len(self.exchange_timers),

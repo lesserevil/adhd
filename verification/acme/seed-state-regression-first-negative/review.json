@@ -1,0 +1,38 @@
+{
+  "schema": "adhd/acme-seed-state-regression-negative@1",
+  "passed": false,
+  "scope": "Root-authorized owned network:none fixture setup only; no app/order/relay",
+  "actual_image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+  "owned_helpers": 1,
+  "StateProbe_unrun": true,
+  "actual_host_metadata_after": [
+    {
+      "path_suffix": "state",
+      "uid": 1003,
+      "gid": 1003,
+      "mode": "0o700"
+    },
+    {
+      "path_suffix": "state/config",
+      "uid": 0,
+      "gid": 0,
+      "mode": "0o700"
+    },
+    {
+      "path_suffix": "state/data",
+      "uid": 0,
+      "gid": 0,
+      "mode": "0o700"
+    }
+  ],
+  "diagnosis": "Modes-before-finalchown still attempts chmod of initial bindroot owned hostUID1003 as rootUID0 withoutFOWNER. Temporarily chown owned empty root/tree to0:0 using existingCHOWN, apply private modes asowner0, then final10001:10001.",
+  "helper_fullCID_name_and_hostPID_absent": true,
+  "CLI_all_closed": true,
+  "controller_private_path": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/seed-state-regression01/run.py",
+  "controller_sha256": "a93ea0de2a3395df3a6c83e885c2b0c015f31eb261c5b61df499297d3c15f4b1",
+  "no_broad_controller_parentdeath_claim": true,
+  "files": {
+    "result.json": "bf48eb701348d6e0d9884df8470576ae20a81238ae2a5a10bdc52beb9ca55e41",
+    "stderr.txt": "0a1effa130485a3a7ba78a4499145fa5254ce787386f68f1733cfbac5dc873cc"
+  }
+}

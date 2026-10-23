@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/seed-state-regression01/run.py", line 60, in <module>
+    setup=SeedProbe(command,image,w/'seed',w/'state');setup.initialize()
+                                                      ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/tests/acme_platform_adapters.py", line 582, in initialize
+    self.probe('/bin/sh','-ec',
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/tests/container_fixture.py", line 58, in probe
+    result = self.docker("run", "--rm", "--name", name, "--network", "none", "--read-only",
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/tests/acme_platform_adapters.py", line 578, in docker
+    return self.command(['docker',*args],capture=True,check=check,sensitive=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/seed-state-regression01/run.py", line 53, in command
+    value=runner(actual,**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/tests/acme_platform_commands.py", line 138, in __call__
+    if check:assert result.returncode==0,'Owned CLI failed: '+argv[0]
+                    ^^^^^^^^^^^^^^^^^^^^
+AssertionError: Owned CLI failed: docker
+Payload probe cleanup: observed_absent=True; failures=

@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/_build/acme/image42-plans08/frozen/tests/acme_image_fault_flow.py", line 161, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans08/frozen/tests/acme_image_fault_flow.py", line 157, in main
+    if args.execute:execute(plan,target,work,marker,args.plan_sha256)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans08/frozen/tests/acme_image_fault_flow.py", line 129, in execute
+    try:run(plan,target,work)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans08/frozen/tests/acme_image_fault_flow.py", line 99, in run
+    result=basic_phase(case,admin=admin,secure=secure,hub=hub,challenge=challenge,issuer_root=ca['issuer_root'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans08/frozen/tests/acme_image_faults.py", line 412, in basic_phase
+    elif case=='issuer-refusal':result=directory_connection_refusal(admin,secure)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans08/frozen/tests/acme_fault_cases.py", line 72, in directory_connection_refusal
+    failed=wait_failure(admin,before,'ACME_PROCESS',accepted['config_revision'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans08/frozen/tests/acme_fault_cases.py", line 36, in wait_failure
+    raise AssertionError('Actual failed order did not settle within original bounded observation')
+AssertionError: Actual failed order did not settle within original bounded observation

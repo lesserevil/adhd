@@ -1,0 +1,134 @@
+{
+  "D41_actual_baseline": {
+    "openapi": "c81e2a670bdf89ceefc719f53a61e04c6c1a2ee7071355520d4f522e32f35fba",
+    "schema": "826a4763f524249fac76605a78aa195c5073163d5c81d8bf30ad1da164c71bd3"
+  },
+  "authority_mutations": 0,
+  "commands": [
+    {
+      "argv_template": [
+        "<PINNED_ELIXIR>",
+        "<ACTUAL_ACCEPTED_ARTIFACT>",
+        "[\"protocol-schema\"]"
+      ],
+      "name": "actual-schema-export",
+      "stdout": "exports/protocol-schema.stdout"
+    },
+    {
+      "argv_template": [
+        "<PINNED_ELIXIR>",
+        "<ACTUAL_ACCEPTED_ARTIFACT>",
+        "[\"protocol-openapi\"]"
+      ],
+      "name": "actual-openapi-export",
+      "stdout": "exports/protocol-openapi.stdout"
+    },
+    {
+      "argv_template": [
+        "<PINNED_PYTHON>",
+        "frozen/tests/acme_protocol_contracts.py",
+        "--schema",
+        "exports/protocol-schema.stdout",
+        "--baseline",
+        "baseline/schema.json",
+        "--openapi",
+        "exports/protocol-openapi.stdout",
+        "--baseline-openapi",
+        "baseline/openapi.json",
+        "--authority",
+        "frozen/components/hub/acme/interface.schema.json",
+        "--report",
+        "conservation.json"
+      ],
+      "name": "schema-conservation26"
+    },
+    {
+      "argv_template": [
+        "<PINNED_PYTHON>",
+        "frozen/tests/protocol_scope.py",
+        "--schema",
+        "exports/protocol-schema.stdout",
+        "--inventory",
+        "scopes-candidate.json"
+      ],
+      "name": "complete-scopes"
+    },
+    {
+      "argv_template": [
+        "<PINNED_PYTHON>",
+        "frozen/tests/protocol_acceptance.py",
+        "--command",
+        "<JSON_PINNED_ELIXIR_AND_ACTUAL_ARTIFACT>",
+        "--profile-version",
+        "2.2.0",
+        "--published-schema",
+        "exports/protocol-schema.stdout",
+        "--published-openapi",
+        "exports/protocol-openapi.stdout",
+        "--eventing-rest-url",
+        "<REVIEWED_OWNED_KAFKA_REST>",
+        "--port-lock",
+        "<SHARED_ABSOLUTE_FOUNDATION_LOCK>",
+        "--report",
+        "wire.json"
+      ],
+      "name": "actual-wire8"
+    }
+  ],
+  "conservation": {
+    "actual_schema_vectors": 26,
+    "actual_wire_groups": 8,
+    "only_changed_old_definitions": [
+      "AdminCommand",
+      "AdminResult",
+      "PublicConfig",
+      "MergePatch",
+      "Error"
+    ],
+    "unchanged_old_definitions": 421
+  },
+  "driver_sha256": "d2f6ad327004bf67f3c046e1b12e010a7cfa0dcd1bc83fe3c5dab1d3facabc3c",
+  "execution_ready": false,
+  "execution_supported": false,
+  "frozen_helpers": {
+    "components/hub/acme/interface.schema.json": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60",
+    "tests/acme_protocol_contracts.py": "5c325294b074f7fed454ea80c742b24076fe213be3d2970019a001da80da4f9f",
+    "tests/foundation_acceptance.py": "87b670a0d4725755278125f1de394f64b0ef651dc937fe6e598661b8c9247388",
+    "tests/protocol_acceptance.py": "3d4573e6eb2698a7c4d077cc79fb4d611a4ddbb7d14ab404184a5ed8811d6f8f",
+    "tests/protocol_scope.py": "c201e58c8beb06185726d4538544fde2c51eeed5bfef80277a0f9198f5603670"
+  },
+  "future_export_environment": {
+    "ERL_FLAGS": "+S 2:2",
+    "PATH": "/home/horde/src/adhd/_build/federation/native/elixir/bin:/home/horde/src/adhd/_build/federation/native/erlang/bin:/usr/bin:/bin"
+  },
+  "historical": {
+    "docs/protocol/README.md": "92514ac5d909acccd93f78f8dfb42c7ccb8bf1c5b0b817967159dcecb127501b",
+    "docs/protocol/event-recovery.md": "776c007de9c28d04060a3e6459d40bba97052d5e6556192bea08508a0f2b8244",
+    "docs/protocol/examples.json": "cf593b235cc2866f00b46d253bc373caa73198216feb3f9c992292a29b6ffa69",
+    "docs/protocol/foundation-v1.md": "474f515f5b3830594ee1367d8c421ff3e886c76ef42f2398aa80337e16340c46",
+    "docs/protocol/multi-eventing-examples.json": "dda0ddc201c0df5d398724899dc7727c1674763930100b694edf5c30eb251d6a",
+    "docs/protocol/multi-eventing.md": "0ce03556df09e883d3daacdb84aa84d82865d99d7a39208398b40f300c8f646c",
+    "docs/protocol/openapi.json": "0213447f4cb3ca41479e807ab2cee4b1833864ac293f3d1b5f9fc8c7ddd02c6a",
+    "docs/protocol/schema.json": "7165e4f0b36fd0d502b7b0e3e046dd423a80a48fa1ee57d4e4478b55140c8cf3",
+    "docs/protocol/scopes.json": "90085fa8fe83d8a79a2776922aa41deba2a4b4b1715e7965cd0caa126b723940",
+    "docs/protocol/v2.0/openapi.json": "e2ddd6e5f838b92c912239a6aecd3339a49e1ddd52d5857fe1d05793c67f0d73",
+    "docs/protocol/v2.0/schema.json": "bbdb1bb52c6b35a9c903231090726c4d686c7ec422ceaac5750e0fc00cbec9d0"
+  },
+  "publication_after_all_actual_gates": [
+    "Create NEW docs/protocol/v2.1 containing old schema/openapi/scopes exact bytes; retain current2.1 README provenance in historical evidence and author corrected relative index.",
+    "Keep existing v2.0 tree, legacy1.7 examples and all historical verification bytes unchanged.",
+    "Replace current schema/openapi ONLY with exact actual accepted CLI stdout; do not generate them from authority or reformat them.",
+    "Publish reviewed scopes candidate only after complete operation/config inventory check against actual exported schema. No scopes CLI operation exists.",
+    "Update current/historical indexes and separate2.2 ACME examples with actual qualification/receipt links; root coordinates authority and final proper receipt bridge."
+  ],
+  "published_writes": 0,
+  "required_before_any_execution": [
+    "Actual accepted artifact+hash+proper receipt+rebuild complete binding.",
+    "Root review and fresh closed execution driver (full transitive fixture/tool/socket/owned Kafka/input closure, exclusive once, cleanup); this plan has no executor.",
+    "Actual2.2 schema/OpenAPI checks and no unexpected421-definition or old-route changes; no arbitrary array sorting to hide differences."
+  ],
+  "runtime_exports": 0,
+  "schema": "adhd/protocol22-inert-publication-plan@1",
+  "scopes_candidate_sha256": "e1cab33cf5751eef9521ee1b805be8213235323c9d9313ca0f359c3c249947e0",
+  "target": null
+}

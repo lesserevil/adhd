@@ -232,6 +232,28 @@ class Deployment(unittest.TestCase):
   # Existing trusted-HTTPS helper still propagates both raw and wrapped resets.
   for error in [ConnectionResetError(errno.ECONNRESET,'reset'),URLError(ConnectionResetError(errno.ECONNRESET,'reset'))]:
    with self.assertRaises(type(error)):scenario.managed_health(Client(error))
+ def test_replacement_tls_pending_is_exact_transport_only(self):
+  class Client:
+   base='https://one.acme.test'
+   def __init__(self,result):self.result=result
+   def request(self,path):
+    assert path=='/health'
+    if isinstance(self.result,BaseException):raise self.result
+    return self.result,{},{}
+  self.assertTrue(scenario.replacement_https_health(Client(200)))
+  for number in [errno.ECONNREFUSED,errno.ECONNRESET]:
+   for error in [OSError(number,'new replacement'),URLError(OSError(number,'new replacement'))]:
+    self.assertFalse(scenario.replacement_https_health(Client(error)))
+  for error in [ssl.SSLCertVerificationError(1,'untrusted/name mismatch'),ssl.SSLError(errno.ECONNRESET,'TLS protocol error'),
+                URLError(ssl.SSLCertVerificationError(1,'wrong hostname')),URLError(ssl.SSLError(1,'TLS failure')),
+                OSError(errno.ETIMEDOUT,'timeout'),URLError(OSError(errno.EHOSTUNREACH,'unreachable')),
+                HTTPError(Client.base+'/health',503,'HTTP error',{},None)]:
+   with self.subTest(error=error),self.assertRaises(type(error)):scenario.replacement_https_health(Client(error))
+  for status in [302,403,500,503]:
+   with self.assertRaises(AssertionError):scenario.replacement_https_health(Client(status))
+  for base in ['http://127.0.0.1:18866','https://other.acme.test','https://one.acme.test:443']:
+   value=Client(200);value.base=base
+   with self.assertRaises(AssertionError):scenario.replacement_https_health(value)
  def test_per_resource_absence_does_not_accept_case_or_mixed_failures(self):
   for kind,message in [('volume','Error response from daemon: get MiXeD: no such volume'),('network','Error response from daemon: network MiXeD not found')]:
    good=subprocess.CompletedProcess([],1,b'[]',message.encode())

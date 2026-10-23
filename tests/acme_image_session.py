@@ -1,6 +1,6 @@
 """Concrete image runtime for unchanged ACME scenarios; inert until start/run.
 
-Uses admitted default ENTRYPOINT and actual inspected BEAM PID. Popen.pid remains
+Uses admitted default ENTRYPOINT, explicit public configuration command and actual inspected BEAM PID. Popen.pid remains
 its real Docker-client PID; it is never disguised as the VM. No native cache or
 module replacement is used, including the offline public rebind CLI.
 """
@@ -65,7 +65,9 @@ def runtime_class(target,mount_root):
                     with os.fdopen(fd,'w')as stream:stream.write(text)
                 assert re.fullmatch('[A-Za-z0-9_./-]+',str(inetrc))
                 flags+=' -kernel inetrc '+"'"+json.dumps(str(inetrc))+"'"
-            return argv[:-1]+['--env','ERL_FLAGS='+flags]+argv[-1:]
+            assert argv.count(self.image.image_id)==1
+            position=argv.index(self.image.image_id)
+            return argv[:position]+['--env','ERL_FLAGS='+flags]+argv[position:]
 
         def _observe(self,image,process,deadline):
             while time.monotonic()<deadline:
@@ -166,7 +168,7 @@ def runtime_class(target,mount_root):
             try:
                 serialized=json.dumps(['rebind-storage',request])
                 image.expected_cmd=[serialized];image.expected_network='none'
-                argv=image.argv(self.file);argv[argv.index('--network')+1]='none';argv.append(serialized)
+                argv=image.argv(self.file);argv[argv.index('--network')+1]='none'
                 with Path(stdout).open('xb')as out,Path(stderr).open('xb')as err:
                     Path(stdout).chmod(0o600);Path(stderr).chmod(0o600)
                     deadline=time.monotonic()+timeout

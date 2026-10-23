@@ -41,7 +41,7 @@ class FlowChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory()as d:
             root=Path(d);(root/'hub.json').write_text('{"port":18001}')
             image=SimpleNamespace(verify=Mock(),argv=Mock(return_value=['/owned/docker','run','image']),
-              env={},name=None,stop=Mock(),events=[],runtime_rows=[])
+              env={},name=None,image_id='image',stop=Mock(),events=[],runtime_rows=[])
             target=Mock();target.image.return_value=image;target.evidence.return_value={}
             runtime=runtime_class(target,root)(root,None,None,None,None,erlang=None)
             failure=OSError('owned Popen failed')

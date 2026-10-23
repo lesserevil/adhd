@@ -5,6 +5,7 @@ come from the future reviewed admission/plan. Default product ENTRYPOINT is kept
 this adapter does not load diagnostic source, replace ACME, or compile modules.
 """
 import json
+import hashlib
 import os
 from pathlib import Path,PurePosixPath
 import re
@@ -79,8 +80,18 @@ class OwnedACMEImage(OwnedImage):
         result=super().argv(config_file)
         result[0]=self.docker_path
         result.remove('--rm')
+        config_file=Path(config_file).absolute()
+        assert config_file==config_file.resolve(strict=True)and config_file.is_relative_to(self.root)
         self.config_file=str(config_file)
-        return result
+        if self.expected_cmd is None:self.expected_cmd=[json.dumps(['serve',self.config_file])]
+        assert len(self.expected_cmd)==1 and isinstance(self.expected_cmd[0],str)
+        public=json.loads(self.expected_cmd[0])
+        assert isinstance(public,list)and len(public)==2 and public[0]in ('serve','rebind-storage')
+        if public[0]=='serve':assert public[1]==self.config_file
+        self.public_command=public[0]
+        # Retain normal product ENTRYPOINT; only the supported public command
+        # supplies the actual absolute mounted configuration or offline request.
+        return result+self.expected_cmd
 
     def checked_row(self):
         value=self.docker('inspect',self.name,check=False)
@@ -114,7 +125,8 @@ class OwnedACMEImage(OwnedImage):
             self.runtime_rows.append({'container_id':row['Id'],'container_name':self.name,
               'host_vm_pid':pid,'host_vm_start_ticks':start,'pid_namespace':namespace,'image':row['Image'],
               'assets_sha256':{k:v['sha256']for k,v in self.assets.items()},
-              'default_entrypoint':True,'payload_verified':self.verified,'assets_verified':self.assets_verified})
+              'default_entrypoint':True,'default_command':False,'public_command':self.public_command,
+              'command_sha256':hashlib.sha256(json.dumps(self.expected_cmd,separators=(',',':')).encode()).hexdigest(),'payload_verified':self.verified,'assets_verified':self.assets_verified})
             files={**self.runtime_files,**{v['path']:v['sha256']for v in self.assets.values()}}
             self.check_hash_output(self.docker('exec',row['Id'],'sha256sum',*sorted(files)).stdout,files)
             again=self.checked_row()

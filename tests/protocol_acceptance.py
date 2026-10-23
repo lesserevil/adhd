@@ -392,12 +392,12 @@ def main():
     p.add_argument('--image',help='Run HTTP and CLI checks against this immutable container image')
     p.add_argument('--eventing-rest-url', default='http://127.0.0.1:18082', help='Actual Kafka REST service for profile 2')
     p.add_argument('--port-lock', type=Path, default=Path('_build/roadmap/foundation-port.lock'))
-    p.add_argument('--profile-version', choices=['1.7.0','2.0.0','2.1.0'], default='2.1.0', help='Exact application profile expected; legacy 1.7 requires explicit selection')
+    p.add_argument('--profile-version', choices=['1.7.0','2.0.0','2.1.0','2.2.0'], default='2.1.0', help='Exact application profile expected; legacy 1.7 requires explicit selection')
     p.add_argument('--published-schema', type=Path, default=Path('docs/protocol/schema.json'))
     p.add_argument('--published-openapi', type=Path, default=Path('docs/protocol/openapi.json'))
     p.add_argument('--report',default='verification/protocol-acceptance.json')
     args=p.parse_args();command=json.loads(args.command)
-    multi_profile=args.profile_version in ('2.0.0','2.1.0')
+    multi_profile=args.profile_version in ('2.0.0','2.1.0','2.2.0')
     args.port_lock.parent.mkdir(parents=True,exist_ok=True)
     port_lock=args.port_lock.open('a')
     fcntl.flock(port_lock,fcntl.LOCK_EX)
@@ -472,7 +472,7 @@ def main():
         for name,value,expected in vectors:valid(name,value,expected)
         fixtures=json.loads(Path('docs/protocol/examples.json').read_text())
         assert json.loads(args.published_openapi.read_text())['info']['version']==args.profile_version
-        assert fixtures['profile_version'] in ({'1.7.0','2.0.0','2.1.0'} if args.profile_version=='2.1.0' else {'1.7.0','2.0.0'} if multi_profile else {'1.7.0'})
+        assert fixtures['profile_version'] in ({'1.7.0','2.0.0','2.1.0','2.2.0'} if args.profile_version=='2.2.0' else {'1.7.0','2.0.0','2.1.0'} if args.profile_version=='2.1.0' else {'1.7.0','2.0.0'} if multi_profile else {'1.7.0'})
         for example in fixtures['cases']:valid(example['definition'],example['body'],example['valid'])
         record('independent-draft202012-schema-and-positive-negative-vectors')
         password=(runtime.root/'initial-admin-password.txt').read_text().split('Password: ')[1].strip()
@@ -599,8 +599,8 @@ def main():
                 assert 'agent_'+op in schema['$defs'] and 'result_'+op in schema['$defs']
             for op in ('list_projects','resource_status','eventing_status','repair_eventing','replay_events','eventing_replay','eventing_audit'):
                 assert 'admin_'+op in schema['$defs'] and 'admin_result_'+op in schema['$defs']
-        if args.profile_version=='2.1.0':
-            assert schema['$id']=='urn:adhd:protocol:2.1'
+        if args.profile_version in ('2.1.0','2.2.0'):
+            assert schema['$id']=='urn:adhd:protocol:'+args.profile_version.rsplit('.',1)[0]
             for op in ('project_restore_plan','project_restore_apply','project_restore_status'):
                 assert 'admin_'+op in schema['$defs'] and 'admin_result_'+op in schema['$defs']
             assert 'ProjectRecoveryRebindCLI' in schema['$defs']

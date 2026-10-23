@@ -1,0 +1,84 @@
+{
+  "artifacts": {
+    "certificates.json": {
+      "bytes": 6782,
+      "sha256": "f2cffe5e1dbb1595c4413148f975d7cf87673e234a1aa2c15075165b250e2b09"
+    },
+    "files.json": {
+      "bytes": 1341,
+      "sha256": "aa876c35e96f24847e2e68d8158d712ad2ee486df2bc357a7a6bb6af89e01b27"
+    },
+    "status.json": {
+      "bytes": 691387,
+      "sha256": "99f46785723284305189d2847b4579f2b41209eb5a957d6f132363d0f6a2ab10"
+    }
+  },
+  "baselines": {
+    "tls.exs": "531311faf73972655ba6b3fe9e736e124b0a19eb178905ddbf2509d9d1049e9f",
+    "tls_certificate.exs": "f9043644891cdba975fbde64e1a3ac61350cdc1db4280bd1c60230d0fe2cf66d"
+  },
+  "changes": [
+    "Bound private file reads to 2MiB and public CA reads to 1MiB before and during FD I/O; compare before/after FD/path and observed parent identity.",
+    "Private writes exclusive temporary, chmod before content, FD/path identity, pre-rename target identity, data fsync and parent-directory fsync.",
+    "Fresh directory sync followed by parent sync; harden client files and sync contents/modes before descendant-parent directory sync.",
+    "Strict full-consumption PEM blocks for chain, key and public CA; retain valid PEM whitespace.",
+    "Future notBefore projects HTTPS error rather than expired; certificate remains unavailable for TLS."
+  ],
+  "checks": {
+    "actual_signed_certificate_load": 42,
+    "cold_callback_guards": 21,
+    "file_io_actual_fsync": 23,
+    "invalid_ordering_backoff_schema_rows_rejected": 2,
+    "schema_valid_status_projections": 1536
+  },
+  "inputs": {
+    "_build/acme-safe-files/domain.exs": {
+      "bytes": 24018,
+      "sha256": "a8d9fb89f272984ddd2473d2c1253a64d4cf224e9814da18a817cca5158eeaa4"
+    },
+    "components/hub/acme/interface.schema.json": {
+      "bytes": 18192,
+      "sha256": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60"
+    },
+    "tests/acme_certificate_contracts.exs": {
+      "bytes": 1523,
+      "sha256": "bb85a924a2089655cab6f9324513529f9d17870dc75c8bb1ad794a3e6b27c198"
+    },
+    "tests/acme_certificate_vectors.py": {
+      "bytes": 8785,
+      "sha256": "eb01b5eb20686db220397ca0ee047628d2aacacd8379d8f14ae613e7e044c7dc"
+    },
+    "tests/acme_cold_bootstrap_contracts.exs": {
+      "bytes": 9312,
+      "sha256": "6e739a2455ee829a9ffd654f83face1d91c68d278dfcee063429d041be80b290"
+    },
+    "tests/acme_file_contracts.exs": {
+      "bytes": 5954,
+      "sha256": "f70796d9225d6b7a3e2bd9d3367c5ed62cfa43c17e94a8990ad89702983397d5"
+    },
+    "tests/acme_status_schema.py": {
+      "bytes": 1293,
+      "sha256": "1bd84a3bdceb968345910436b6b0f3033f669c913b5f990759249beebd1f6a17"
+    },
+    "tests/fixtures/acme-safe-files.patch": {
+      "bytes": 12551,
+      "sha256": "bac591803351c43ca276c057eb3ef11b5d43001b4c9fd94ec8a44a0f63bbf3a0"
+    }
+  },
+  "limits": [
+    "Pure OTP pre/post identity and observed-symlink guards are not atomic O_NOFOLLOW isolation against a malicious process owning the same private root/config UID.",
+    "Two deterministic test-only hooks expose read pathname drift and write target drift; fsync observation executes real fsync calls.",
+    "No actual power interruption, public CA issuance, complete application cold restart or HTTPS handshake is claimed.",
+    "Known account metadata cold-revalidation and active-order renewal coalescing are excluded and parent-owned followups."
+  ],
+  "passed": true,
+  "patched": {
+    "tls.exs": "70bffabf01fee9cd470b810c08e32058649ef4f03dd3d314f75996c3df001edf",
+    "tls_certificate.exs": "fda4896fe1481f932b9789f7e706becd7d183ad31f6cc636721c85e3a82ab1f2"
+  },
+  "preserved_first_failure": {
+    "classification": "capsule relative-vs-expanded existing-directory comparison; application private I/O had completed; assertion fixed without changing module semantics",
+    "work": "_build/acme-files01"
+  },
+  "scope": "Isolated two-module patch; no shared candidate changes, application/listener/CA/guardian/provider executions or power-cut qualification."
+}

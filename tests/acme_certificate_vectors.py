@@ -51,14 +51,20 @@ def main():
     inter=cert('intermediate','root',ca=True,pathlen=1)
     leaf=cert()
     rows=[]
-    def add(name,chain,key='leaf',accepted=False,live=True,recovery=False,extra=b''):
+    def add(name,chain,key='leaf',accepted=False,live=True,recovery=False,extra=b'',prefix=b'',key_prefix=b'',key_suffix=b''):
         folder=work/name;folder.mkdir(mode=0o700)
-        chain_bytes=b''.join(c.public_bytes(serialization.Encoding.PEM) for c in chain)+extra
-        private=keys[key].private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())
+        chain_bytes=prefix+b''.join(c.public_bytes(serialization.Encoding.PEM) for c in chain)+extra
+        private=key_prefix+keys[key].private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())+key_suffix
         for name_,data in [('chain.pem',chain_bytes),('key.pem',private)]:
             (folder/name_).write_bytes(data);(folder/name_).chmod(0o600)
         rows.append({'case':name,'chain':str(folder/'chain.pem'),'key':str(folder/'key.pem'),'domains':['hub.example.org'],'allow_expired':recovery,'accepted':accepted,'live':live,'serial':'abcdef'})
     add('valid-rsa-full-chain',[leaf,root],accepted=True)
+    add('raw-chain-prefix',[leaf,root],prefix=b'junk\n')
+    add('raw-chain-suffix',[leaf,root],extra=b'junk\n')
+    add('raw-chain-interleaved',[leaf],extra=b'junk\n'+root.public_bytes(serialization.Encoding.PEM))
+    add('raw-key-prefix',[leaf,root],key_prefix=b'junk\n')
+    add('raw-key-suffix',[leaf,root],key_suffix=b'junk\n')
+    add('valid-pem-whitespace',[leaf,root],prefix=b' \r\n',extra=b' \t\n',key_suffix=b' \n',accepted=True)
     add('valid-single-supplied-leaf',[leaf],accepted=True)
     add('valid-root-omitted',[cert(issuer='intermediate'),inter],accepted=True)
     add('valid-intermediate-chain',[cert(issuer='intermediate'),inter,root],accepted=True)

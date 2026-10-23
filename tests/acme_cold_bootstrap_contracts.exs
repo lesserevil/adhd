@@ -92,16 +92,16 @@ end
 # Exhaustive nullable status cross-product: real projection/date/live functions,
 # no network or actual certificate-handshake claim. Every row is schema-checked
 # independently after this process by the Python wrapper.
-projections=for enabled<-[false,true],issuance<-[false,true],kind<-[:none,:valid,:expired],job<-[nil,%{}],error<-[nil,ADHD.TLS.error("ACME_NETWORK"),ADHD.TLS.error("ACME_STORAGE")],dates<-[nil,0,now,253402300799000],trust_error<-[false,true],listener_error<-[false,true] do
+projections=for enabled<-[false,true],issuance<-[false,true],kind<-[:none,:valid,:expired,:future],job<-[nil,%{}],error<-[nil,ADHD.TLS.error("ACME_NETWORK"),ADHD.TLS.error("ACME_STORAGE")],dates<-[nil,0,now,253402300799000],trust_error<-[false,true],listener_error<-[false,true] do
   c=ready.config |> put_in(["tls","enabled"],enabled) |> put_in(["tls","acme","enabled"],issuance and enabled)
-  certificate=case kind do :none->nil;:valid->cert;:expired->%{cert | expires: now-1,metadata: Map.put(cert.metadata,"not_after",now-1)} end
+  certificate=case kind do :none->nil;:valid->cert;:expired->%{cert | expires: now-1,metadata: Map.put(cert.metadata,"not_after",now-1)};:future->%{cert | expires: now+7200000,metadata: Map.merge(cert.metadata,%{"not_before"=>now+3600000,"not_after"=>now+7200000})} end
   # An ordering row has a durable attempt timestamp; a backoff row has a
   # durable retry date. Keep all other nullable combinations unchanged.
   attempt=if job != nil and dates==nil,do: now,else: dates
   next_due=if dates==nil and is_map(error) and error["retryable"],do: now+300000,else: dates
   state=%{ready | config: c,certificate: certificate,job: job,trust_error: trust_error,listener_error: listener_error,data: Map.merge(ready.data,%{"last_error"=>error,"last_attempt_at"=>attempt,"last_success_at"=>dates,"next_attempt_at"=>next_due})}
   p=project.(state)
-  expected_https=cond do not enabled->"disabled";listener_error->"error";is_map(error) and error["code"]=="ACME_STORAGE" and kind==:none->"error";kind==:none->"waiting";kind==:expired->"expired";true->"ready" end
+  expected_https=cond do not enabled->"disabled";listener_error->"error";is_map(error) and error["code"]=="ACME_STORAGE" and kind==:none->"error";kind==:none->"waiting";kind==:expired->"expired";kind==:future->"error";true->"ready" end
   expected_acme=cond do not(enabled and issuance)->"disabled";trust_error or listener_error->"error";job != nil->"ordering";is_map(error) and not error["retryable"]->"error";error != nil->"backoff";true->"idle" end
   true=p["https_state"]==expected_https and p["acme_state"]==expected_acme
   true=(p["active_domains"]!=[])==(expected_https=="ready")

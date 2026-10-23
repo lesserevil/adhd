@@ -1,0 +1,61 @@
+{
+  "actual_prepare_timeout_ms": 10001,
+  "checkpoint_tls_sha256": "c775a54deadde2247e587b5413efdf7fbdeeaaf7b825edf8eb438c6638e58f33",
+  "checks": 17,
+  "inputs": {
+    "_build/acme-control-plane01/domain.exs": {
+      "bytes": 24018,
+      "sha256": "a8d9fb89f272984ddd2473d2c1253a64d4cf224e9814da18a817cca5158eeaa4"
+    },
+    "_build/acme-control-plane01/tls.exs": {
+      "bytes": 35439,
+      "sha256": "c775a54deadde2247e587b5413efdf7fbdeeaaf7b825edf8eb438c6638e58f33"
+    },
+    "_build/acme-control-plane01/tls_certificate.exs": {
+      "bytes": 14763,
+      "sha256": "c359608d76b5ae5a39c2b2d1702f91b39611f417ca6d46d6fdabce51c43504e9"
+    },
+    "components/hub/acme/interface.schema.json": {
+      "bytes": 18192,
+      "sha256": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60"
+    },
+    "tests/acme_control_plane_contracts.exs": {
+      "bytes": 9679,
+      "sha256": "0f5ff81d897f0bbe0f66201cf9b0cd4d5b288369245b19ee98bd92bc642340d5"
+    }
+  },
+  "limits": [
+    "This demonstrates eventual queued cancellation after a late callback, not atomic cancellation while that callback is executing.",
+    "Successful-listener control-plane test uses symbolic handles; actual network port binding and complete configuration transaction integration remain separate tests.",
+    "Snapshot certificates are metadata placeholders; no actual certificate/TLS handshake claim."
+  ],
+  "passed": true,
+  "properties": [
+    "Status reads real protected ETS and does not call a registered unresponsive manager.",
+    "Snapshot omits private config/key/chain/receipt/root markers and rejects writes by nonowner.",
+    "Read-time notBefore and expiry alter status/active_domains without depending on manager progress.",
+    "Owner death deletes status table and direct call yields typed DEPENDENCY_UNAVAILABLE rather than stale readiness.",
+    "Missing/crashing renew callee produces bounded error without caller death; missing prepare/discard contained.",
+    "Actual10s prepare timeout returns unavailable, late fake prebind is closed by the actual queued cancel message and old listener state preserved.",
+    "Cancelled reservation cannot activate, duplicate cancel is idempotent, consumed activation ticket cannot later close active symbolic handle.",
+    "All three named fixture processes were observed exited; no manager registered afterward."
+  ],
+  "raw": {
+    "result.json": {
+      "bytes": 2593,
+      "sha256": "5e9f851547c87cee3e934e73bbe9c2151ad0556abcf6aba81abdc1c6a0db0e48"
+    },
+    "stdout.txt": {
+      "bytes": 29,
+      "sha256": "0d4fb71aed99f973d55931455805f534cca6923400a504ffc5ab33438be64d0c"
+    }
+  },
+  "schema_valid_public_statuses": 3,
+  "scope": "Actual TLS module public APIs, callbacks, protected ETS, caller timeouts and raw BEAM fixture processes only. No full app/Config server/OS listener/CA/client/guardian/provider execution.",
+  "test_seams": [
+    "Replace prepare_listeners with one declared symbolic handle.",
+    "Replace activate_listeners with symbolic handle/state update and activation observation.",
+    "Replace gen_tcp.close calls with symbolic-close observations.",
+    "Expose actual private publish_status through one added test-only wrapper; no implementation replacement."
+  ]
+}

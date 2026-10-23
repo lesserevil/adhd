@@ -52,6 +52,11 @@ def verify(path,expected,*,profile='fault',driver_path=None):
     # Imports happen only after the complete declared frozen helper set matches.
     if str(driver.parent)not in sys.path:sys.path.insert(0,str(driver.parent))
     from acme_image_faults import CASES
+    if plan.get('tool_roots')or plan.get('frozen'):
+        assert str(driver.with_name('acme_image_plan_prepare.py'))in plan['files']
+        from acme_image_plan_prepare import verify_tool_roots
+        verify_tool_roots(plan)
+    for key,value in plan.get('execution_env',{}).items():assert os.environ.get(key)==value,'Reviewed execution environment changed'
     from acme_image_target import AcceptedImageTarget
     if profile=='fault':assert plan['case']in CASES
     else:assert 'case'not in plan and isinstance(plan['browser'],dict)

@@ -52,6 +52,11 @@ def verify(plan_path,expected):
     # declared helper closure have been authenticated with stdlib operations.
     helpers=str(driver.parent)
     if helpers not in sys.path:sys.path.insert(0,helpers)
+    if plan.get('tool_roots')or plan.get('frozen'):
+        assert str(driver.with_name('acme_image_plan_prepare.py'))in plan['files']
+        from acme_image_plan_prepare import verify_tool_roots
+        verify_tool_roots(plan)
+    for key,value in plan.get('execution_env',{}).items():assert os.environ.get(key)==value,'Reviewed execution environment changed'
     from acme_image_target import AcceptedImageTarget
     target=AcceptedImageTarget(plan)
     return plan,target,work,marker

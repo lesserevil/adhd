@@ -1,0 +1,81 @@
+{
+  "confirmed": [
+    "Cold/manual remember_account_keys skips exact account owner.json; ensure_account already checks this witness.",
+    "All three cold/manual/preworker paths skip client sibling account.json, including missing, malformed, nonobject, empty object and invalid registration scalar.",
+    "Known key bytes missing/changed already fail closed.",
+    "Busy guardian returns recovering without any account read/harden, and only after simulated actual closure proceeds to remember."
+  ],
+  "control_plane_integration_review": [
+    "Admin tls_status is serialized through Config; TLS activate publishes snapshot before successful Config mutation returns. No additional stale hot-config status defect found in this path.",
+    "Preparation ticket captured by API is stored and must match on activation; queued cancel closes reserved handles, consumed ticket prevents later cancellation from closing active listener. Manager death releases owned listen sockets. Cancellation is eventual after callback completion, not interruption during a running callback.",
+    "accounts/**/*.key matches exact maintained nested account path, unlike the previous keys/*.key assumption."
+  ],
+  "controller_check_scope": "Cold recover, manual admission_state and preworker ensure_account use real filesystem/private read/hash/harden/fsync. Two initialize clauses return supplied initialized state; guardian closure predicate is a declared stub. Certificate is a preservation placeholder; no real cert, listener, application, client, CA or worker launched.",
+  "first_instrumentation_attempt": {
+    "path": "_build/acme-cold-account01",
+    "result": "Test-only Macro.prewalk observer recursion; exact owned capsule BEAM terminated, then fixed to postwalk. No application process involved."
+  },
+  "inputs": {
+    "_build/acme-control-plane01/domain.exs": {
+      "bytes": 24018,
+      "sha256": "a8d9fb89f272984ddd2473d2c1253a64d4cf224e9814da18a817cca5158eeaa4"
+    },
+    "_build/acme-control-plane01/tls.exs": {
+      "bytes": 35439,
+      "sha256": "c775a54deadde2247e587b5413efdf7fbdeeaaf7b825edf8eb438c6638e58f33"
+    },
+    "_build/acme-control-plane01/tls_certificate.exs": {
+      "bytes": 14763,
+      "sha256": "c359608d76b5ae5a39c2b2d1702f91b39611f417ca6d46d6fdabce51c43504e9"
+    },
+    "tests/acme_account_metadata_contracts.exs": {
+      "bytes": 7285,
+      "sha256": "5e9297f4e0ccac022ac476a56d30bf9cca6a9d3c9e657fff85690f20f7cb439f"
+    }
+  },
+  "observed_checks": 14,
+  "observed_failed_requirements": 9,
+  "primary_sources": {
+    "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/lego-patched/certcrypto/keytypes.go": {
+      "line_references": {
+        "EC256": "17"
+      },
+      "sha256": "0528be92487a72f67085b1e7f0fae2612d1ff0576c4160d070c6061f5b2753b3"
+    },
+    "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/lego-patched/cmd/internal/storage/account.go": {
+      "line_references": {
+        "Account": "23-36",
+        "ReadJSONFile": "101-117"
+      },
+      "sha256": "2631e276abd60cebed931a051a9df258d5e1c299e6e9c4fc45fc7488c8ce54ae"
+    },
+    "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/lego-patched/cmd/internal/storage/storage_accounts.go": {
+      "line_references": {
+        "existing-account-read": "181-201",
+        "host-normalization": "330-332",
+        "missing-account-creates": "140-159",
+        "nil-registration-recovery": "233-241",
+        "sibling-key-and-json": "307-318"
+      },
+      "sha256": "2fc02792ed58b5588e6daa4355cb8851acea0068279e79b7045d68b98bdc93ed"
+    }
+  },
+  "raw": {
+    "result.json": {
+      "bytes": 3543,
+      "sha256": "8e217b22eb7b1b1827a7dd5313a4ef0c9e30b4ea93323bf6c9e4f2f494710922"
+    },
+    "stdout.txt": {
+      "bytes": 271,
+      "sha256": "9b20869dedc2f19464a93a57989a3dedc8a7ab5286a9261687ac0d6deac7b03b"
+    }
+  },
+  "required_minimum": [
+    "Check owner.json exactly {owner:s.owner,identity:id} before account hardening/scanning after guardian closure.",
+    "For each witnessed account key and each discovered real client account key, bound-read dirname(key)/account.json as owned/private regular file, decode nonempty object.",
+    "Pinned emitted field spellings id,email,keyType,server,registration; keyType EC256. Require expected string shapes and registration key present nil|object; allow null interrupted registration.",
+    "Never immutable-hash mutable account.json or reject CA registration extensions; keep client reconciliation delegated to maintained protocol implementation."
+  ],
+  "review_result": "CONFIRMED_GAPS; expected red against c775 checkpoint, not a passing qualification.",
+  "source_cause": "Pinned Get() missing account.json invokes createAccount(), which generates/saves private key even if old key file exists. Preflight must stop this before invoking the worker."
+}

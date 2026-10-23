@@ -429,7 +429,7 @@ def execute(work,plan):
     if relay:row['relay']=relay.snapshot()
     if adapter:
      row['runtime_custody']=getattr(adapter,'ledger',getattr(adapter,'pods',[]))
-     if isinstance(adapter,Kind):row['kind_ownership']={'node_id':adapter.node_id,'node_config':adapter.node_config,'volume_proofs':adapter.volume_proofs,'namespace':adapter.lease.evidence(),'api_endpoint':adapter.api_endpoint,'kubeconfig_sha256':adapter.kubeconfig_sha,'image_proofs':adapter.image_proofs}
+     if isinstance(adapter,Kind):row['kind_ownership']={'node_id':adapter.node_id,'node_config':adapter.node_config,'kube_node_uid':adapter.kube_node_uid,'node_readiness':adapter.node_readiness,'volume_proofs':adapter.volume_proofs,'namespace':adapter.lease.evidence(),'api_endpoint':adapter.api_endpoint,'kubeconfig_sha256':adapter.kubeconfig_sha,'image_proofs':adapter.image_proofs}
      row['state_probes']=getattr(getattr(adapter,'state_probe',None),'probe_events',getattr(adapter,'probes',[]))
      if getattr(adapter,'state_probe',None) is not None:
       row['state_probe_cleanup_blocked']=adapter.state_probe.probe_cleanup_blocked

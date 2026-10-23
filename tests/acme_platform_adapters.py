@@ -349,7 +349,7 @@ class Kind:
   self.name=name;self.node=name+'-control-plane';self.node_image=node_image;self.node_config=identity(node_config_identity)
   self.network_id=network_id;self.network_name=network_name;self.gateway=bridge_gateway(gateway);self.seed=seed
   self.kubeconfig=self.work/'kubeconfig';self.lease=NamespaceLease('adhd-final-'+name,uuid4().hex,prefix='adhd-final-')
-  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None;self.kubeconfig_sha=None;self.api_endpoint=None
+  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None;self.kubeconfig_sha=None;self.api_endpoint=None;self.kube_node_uid=None;self.node_readiness=[]
  def cmd(self,args,**kw):
   if self.cleanup_deadline is not None:
    remaining=self.cleanup_deadline-time.monotonic();assert remaining>0,'Kind cleanup deadline'
@@ -379,6 +379,29 @@ class Kind:
   assert self.volume_proofs is None or proof==self.volume_proofs,'Owned node volume identity changed'
   self.volume_proofs=proof
   return row
+ def node_summary(self,value):
+  assert self.node_id and value['metadata']['name']==self.node
+  uid=value['metadata']['uid'];assert isinstance(uid,str) and re.fullmatch('[a-zA-Z0-9-]{1,128}',uid)
+  assert self.kube_node_uid is None or uid==self.kube_node_uid,'Owned Kubernetes Node UID changed'
+  self.kube_node_uid=uid
+  conditions=[]
+  for item in value.get('status',{}).get('conditions',[]):
+   if item.get('type') in ('Ready','MemoryPressure','DiskPressure','PIDPressure','NetworkUnavailable'):
+    conditions.append({'type':item['type'],'status':item.get('status') if item.get('status') in ('True','False','Unknown') else 'OTHER'})
+  taints=[]
+  for item in value.get('spec',{}).get('taints') or []:
+   key=item.get('key','');known=isinstance(key,str) and re.fullmatch(r'(?:node[.]kubernetes[.]io|node-role[.]kubernetes[.]io|node[.]cloudprovider[.]kubernetes[.]io)/[a-z-]+',key)
+   taints.append({'key':key if known else 'OTHER','key_sha256':hashlib.sha256(str(key).encode()).hexdigest(),'effect':item.get('effect') if item.get('effect') in ('NoSchedule','PreferNoSchedule','NoExecute') else 'OTHER'})
+  return {'uid':uid,'conditions':conditions,'taints':taints,'unschedulable':value.get('spec',{}).get('unschedulable',False) is not False}
+ def ready_node(self):
+  response=self.kubectl('get','node',self.node,'-o','json',capture=True,sensitive=True)
+  value=json.loads(response.stdout);summary=self.node_summary(value)
+  path=self.work/('node-readiness-'+str(len(self.node_readiness))+'.json');file(path,response.stdout)
+  summary['private_json_sha256']=hashlib.sha256(response.stdout).hexdigest();self.node_readiness.append(summary)
+  ready=[c for c in summary['conditions'] if c['type']=='Ready']
+  assert ready==[{'type':'Ready','status':'True'}],'Owned node is not Ready'
+  assert not summary['unschedulable'] and value.get('spec',{}).get('taints',[])==[],'Owned node is not untainted/schedulable'
+  return summary
  def start(self):
   assert not self.issued and self.node_state() is None
   network=json.loads(self.cmd(['docker','network','inspect',self.network_id],capture=True).stdout)[0]
@@ -392,7 +415,7 @@ class Kind:
   assert len(original)==1 and original[0]['Id']==self.node_config
   self.preexisting_volumes=set(self.cmd(['docker','volume','ls','-q'],capture=True).stdout.decode().split())
   file(self.work/'kind.yaml',yaml.safe_dump(config).encode());self.issued=True
-  self.cmd(['kind','create','cluster','--name',self.name,'--config',str(self.work/'kind.yaml'),'--kubeconfig',str(self.kubeconfig)],
+  self.cmd(['kind','create','cluster','--name',self.name,'--config',str(self.work/'kind.yaml'),'--kubeconfig',str(self.kubeconfig),'--wait','60s'],
            env={'KIND_EXPERIMENTAL_DOCKER_NETWORK':self.network_name},timeout=180)
   node=self.node_state();assert node
   assert self.kubeconfig.resolve(strict=True)==self.kubeconfig and not self.kubeconfig.is_symlink()
@@ -401,11 +424,13 @@ class Kind:
   ports=node['NetworkSettings']['Ports']['6443/tcp']
   assert ports==[{'HostIp':self.api_endpoint['host'],'HostPort':str(self.api_endpoint['port'])}]
   self.kubeconfig_sha=hashlib.sha256(self.kubeconfig.read_bytes()).hexdigest()
+  self.ready_node()
   local=json.loads(self.cmd(['docker','image','inspect',self.reference],capture=True).stdout)
   assert len(local)==1 and local[0]['Id']==self.image
   self.cmd(['kind','load','docker-image',self.reference,'--name',self.name],timeout=120)
   cached=json.loads(self.cmd(['docker','exec',self.node_id,'crictl','inspecti',self.reference],capture=True).stdout)
   assert cached['status']['id']==self.image
+  self.ready_node()
   document=self.lease.document()
   created=json.loads(self.kubectl('create','-f','-','-o','json',input=json.dumps(document).encode(),capture=True).stdout)
   self.lease.observe(created)
@@ -516,7 +541,9 @@ class Kind:
   self.start_forward()
  def failure_diagnostics(self):
   """Private bounded reads of only our UID-bound namespace, before deletion."""
-  if not self.lease.issued or not self.kubeconfig_sha:return {'attempted':False,'reason':'owned_namespace_not_observed'}
+  node_observed=bool(getattr(self,'node_id',None) and getattr(self,'kube_node_uid',None) and self.kubeconfig_sha)
+  namespace_observed=bool(self.lease.issued and self.kubeconfig_sha)
+  if not node_observed and not namespace_observed:return {'attempted':False,'reason':'owned_node_or_namespace_not_observed'}
   directory=self.work/'failure-diagnostics';directory.mkdir(mode=0o700)
   result={'attempted':True,'files':[],'safe_pods':[],'safe_event_reasons':[],'errors':[]}
   deadline=time.monotonic()+20
@@ -529,6 +556,10 @@ class Kind:
     path=directory/(label+'.'+key);file(path,raw)
     record[key+'_sha256']=hashlib.sha256(raw).hexdigest();record[key+'_bytes']=len(raw)
    result['files'].append(record);return response
+  if node_observed:
+   response=fetch('node',['get','node',self.node,'-o','json'])
+   assert response.returncode==0;result['safe_node']=self.node_summary(json.loads(response.stdout))
+  if not namespace_observed:return result
   # Never collect a replacement/foreign namespace, even after ambiguous create.
   response=fetch('namespace',['get','namespace',self.lease.name,'-o','json'])
   assert response.returncode==0;self.lease.observe(json.loads(response.stdout))

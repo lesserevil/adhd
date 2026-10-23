@@ -114,6 +114,24 @@ class Deployment(unittest.TestCase):
    self.assertIn('ports: !override ["127.0.0.1:18766:8766", "127.0.0.2:80:8080", "127.0.0.2:443:8443"]',text)
    self.assertIn('pebble:172.30.0.1',text);self.assertNotIn('user:',text);self.assertNotIn('entrypoint:',text)
    self.assertEqual(len(argv),6)
+ def test_nondefault_private_port_changes_only_host_admin_boundary(self):
+  from acme_platform_plan import recipe,private_port
+  with tempfile.TemporaryDirectory() as raw:
+   work=Path(raw);calls=[]
+   def command(*args,**kw):raise AssertionError('No resources')
+   compose=adapters.Compose(command,ROOT,work,'sha256:'+'a'*64,'adhd-acme-test',work/'seed',work/'state','172.30.0.1',18866)
+   self.assertEqual(compose.env['ADHD_PORT'],'18866')
+   adapters.render_compose(ROOT,work,'172.30.0.1',18866)
+   text=(work/'fixture.compose.yaml').read_text()
+   self.assertIn('127.0.0.1:18866:8766',text);self.assertNotIn('18766',text)
+   self.assertIn('127.0.0.2:80:8080',text);self.assertIn('127.0.0.2:443:8443',text)
+   kind=adapters.Kind(command,ROOT,work,'sha256:'+'a'*64,'adhd-acme-test','kindest/node@sha256:'+'b'*64,'172.30.0.1','c'*64,'owned-acme-network',{},'adhd-hub:actual','sha256:'+'d'*64,18866)
+   kind.command=SimpleNamespace(start=lambda argv:calls.append(argv) or 'owned-forward')
+   kind.start_forward();self.assertEqual(calls[0][-1],'18866:8766');self.assertIn('--address=127.0.0.1',calls[0])
+   for platform in ['compose','kind']:
+    self.assertEqual(recipe(platform,18866)['endpoints']['private_http'],'http://127.0.0.1:18866')
+   for value in [True,'18866',0,80,443,8080,8443,8766,18770,19100,19104,65536]:
+    with self.assertRaises(AssertionError):private_port(value)
  def test_kind_shipped_security_pvc_and_public_private_ports_preserved(self):
   docs=adapters.render_kind(ROOT,'adhd-final-acme-test','sha256:'+'a'*64,{'hub.json':json.dumps({'host':'0.0.0.0','port':8766,'store_path':'/data/hub.dets','matcher':None,'eventing':{'enabled':False},'projects':[{'settings':{}}]}),'directory-root.pem':'testCA'},'172.30.0.1','adhd-hub:actual')
   self.assertEqual(len(docs),5);self.assertNotIn('kafka',str([d['metadata']['name'] for d in docs]))

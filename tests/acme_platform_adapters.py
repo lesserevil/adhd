@@ -19,6 +19,7 @@ from kafka_oauth_custody import NamespaceLease
 import kafka_platform_vm as vm
 import network_policy_image_custody as image_custody
 from kube_qualification_inputs import validate_kube_endpoint
+from acme_platform_plan import private_port
 
 
 def identity(image):
@@ -74,12 +75,13 @@ def validate_seed(raw):
  return config
 
 
-def render_compose(root,work,gateway):
+def render_compose(root,work,gateway,private_http_port=18766):
+ private_http_port=private_port(private_http_port)
  # Only host-bind addresses change; actual shipped target/listener ports stay80/443→8080/8443.
  bridge_gateway(gateway)
  fixture={'services':{'hub':{'extra_hosts':['pebble:'+gateway]}}}
  text=yaml.safe_dump(fixture)
- text+='    ports: !override '+json.dumps(['127.0.0.1:18766:8766','127.0.0.2:80:8080','127.0.0.2:443:8443'])+'\n'
+ text+='    ports: !override '+json.dumps(['127.0.0.1:'+str(private_http_port)+':8766','127.0.0.2:80:8080','127.0.0.2:443:8443'])+'\n'
  file(work/'fixture.compose.yaml',text.encode())
  return ['-f',str(root/'deploy/app.compose.yaml'),'-f',str(root/'deploy/app.acme.compose.yaml'),'-f',str(work/'fixture.compose.yaml')]
 
@@ -151,12 +153,13 @@ class StateProbe(OwnedImage):
 
 class Compose:
  challenge_get=staticmethod(challenge_get)
- def __init__(self,command,root,work,image,name,seed_dir,state_dir,gateway):
+ def __init__(self,command,root,work,image,name,seed_dir,state_dir,gateway,private_http_port=18766):
+  self.private_http_port=private_port(private_http_port)
   self.command=command;self.root=Path(root);self.work=Path(work);self.image=identity(image)
   assert re.fullmatch('adhd-acme-[a-z0-9-]{1,40}',name)
   self.name=name;self.seed=Path(seed_dir);self.state=Path(state_dir);self.gateway=bridge_gateway(gateway)
   self.ids=[];self.ledger=[];self.issued=False;self.networks=[];self.volumes=[];self.options=None;self.state_probe=StateProbe(self.cmd,self.image,self.state/'config')
-  self.env={'ADHD_HUB_IMAGE':image,'ADHD_UID':'10001','ADHD_GID':'10001','ADHD_PORT':'18766',
+  self.env={'ADHD_HUB_IMAGE':image,'ADHD_UID':'10001','ADHD_GID':'10001','ADHD_PORT':str(self.private_http_port),
             'ADHD_CONFIG_DIR':str(self.state/'config'),'ADHD_DATA_DIR':str(self.state/'data')}
  def cmd(self,argv,**kw):return self.command(argv,env=self.env,**kw)
  def dc(self,*args,**kw):
@@ -170,7 +173,7 @@ class Compose:
  def start(self):
   assert not self.issued
   assert not self.cmd(['docker','ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+self.name],capture=True).stdout.strip()
-  self.options=render_compose(self.root,self.work,self.gateway)
+  self.options=render_compose(self.root,self.work,self.gateway,self.private_http_port)
   # Parent creates/configures this complete private state using a separately owned seed probe.
   # Refuse host-owner fallback: actual runtime must always remain productionUID10001.
   for p in [self.state/'config',self.state/'data']:assert p.is_dir() and p.stat().st_uid==10001
@@ -195,7 +198,7 @@ class Compose:
    assert mounts[target]['Source']==str(source) and mounts[target]['RW']
   assert set(mounts)=={'/config','/data','/tmp'} and not any(p.startswith(('/runtime','/app')) for p in mounts)
   ports=row['NetworkSettings']['Ports']
-  assert ports['8766/tcp']==[{'HostIp':'127.0.0.1','HostPort':'18766'}]
+  assert ports['8766/tcp']==[{'HostIp':'127.0.0.1','HostPort':str(self.private_http_port)}]
   assert ports['8080/tcp']==[{'HostIp':'127.0.0.2','HostPort':'80'}]
   assert ports['8443/tcp']==[{'HostIp':'127.0.0.2','HostPort':'443'}]
   if row['Id'] not in self.ids:self.ids.append(row['Id'])
@@ -262,7 +265,8 @@ def anonymous_volume_proof(node,volumes,preexisting):
 
 class Kind:
  challenge_get=staticmethod(challenge_get)
- def __init__(self,command,root,work,image,name,node_image,gateway,network_id,network_name,seed,image_reference,node_config_identity):
+ def __init__(self,command,root,work,image,name,node_image,gateway,network_id,network_name,seed,image_reference,node_config_identity,private_http_port=18766):
+  self.private_http_port=private_port(private_http_port)
   self.command=command;self.root=Path(root);self.work=Path(work);self.image=identity(image)
   assert re.fullmatch('adhd-acme-[a-z0-9-]{1,40}',name)
   assert re.fullmatch('[a-z0-9./_:-]+@sha256:[a-f0-9]{64}',node_image) and re.fullmatch('[a-f0-9]{64}',network_id)
@@ -356,7 +360,7 @@ class Kind:
  def start_forward(self):
   assert self.forward is None
   self.forward=self.command.start(['kubectl','--kubeconfig',str(self.kubeconfig),'-n',self.lease.name,
-      'port-forward','--address=127.0.0.1','service/hub','18766:8766'])
+      'port-forward','--address=127.0.0.1','service/hub',str(self.private_http_port)+':8766'])
  def stop_forward(self):
   if self.forward:
    self.command.stop(self.forward);self.forward=None

@@ -71,10 +71,16 @@ def ca_binding(path,expected):
          'actual_live_lease_revalidated':False}
 
 
-def recipe(platform):
- assert platform in ('compose','kind')
+def private_port(value):
+ assert type(value) is int and 1024<=value<=65535
+ assert value not in {8080,8443,8766,18082,18085,18088,18089,18443,18770,19100,19101,19102,19103,19104,19153},'Reserved service port'
+ return value
+
+
+def recipe(platform,private_http_port=18766):
+ assert platform in ('compose','kind');private_http_port=private_port(private_http_port)
  common={'checks':list(CHECKS),'ordered':True,'public_ca_calls':0,'provider_calls':0,'broker_starts':0,
- 'endpoints':{'private_http':'http://127.0.0.1:18766','https':'https://one.acme.test:443',
+ 'endpoints':{'private_http':'http://127.0.0.1:'+str(private_http_port),'https':'https://one.acme.test:443',
               'https_connect_ip':'127.0.0.2','challenge_relay':'127.0.0.1:8080',
               'relay_upstream':'127.0.0.2:80','issuer':'https://pebble:19104/dir'},
  'tls_public_patch':{'enabled':True,'host':'0.0.0.0','port':8443,'challenge_host':'0.0.0.0','challenge_port':8080,
@@ -104,7 +110,7 @@ def recipe(platform):
    preparation=['docker compose -f deploy/app.compose.yaml -f deploy/app.acme.compose.yaml -f fixture.compose.yaml config --format json'],
    commands=[['docker','compose','--project-name','adhd-acme-platform-compose01','-f','deploy/app.compose.yaml','-f','deploy/app.acme.compose.yaml','-f','fixture.compose.yaml','up','-d','--no-deps','hub'],
              ['docker','compose','--project-name','adhd-acme-platform-compose01','-f','deploy/app.compose.yaml','-f','deploy/app.acme.compose.yaml','-f','fixture.compose.yaml','up','-d','--no-deps','--force-recreate','hub']],
-   fixture_changes={'ports_override':['127.0.0.1:18766:8766','127.0.0.2:80:8080','127.0.0.2:443:8443'],
+   fixture_changes={'ports_override':['127.0.0.1:'+str(private_http_port)+':8766','127.0.0.2:80:8080','127.0.0.2:443:8443'],
      'extra_hosts':['pebble:<ACTUAL_OWNED_BRIDGE_HOST_IP>'],
      'mounts':'Same complete private config/data across replacement; frontend trust under config. No mount over/runtime/adhd.',
      'eventing':'disabled in own fresh seed; --no-deps must start only hub; no broker/REST containers'},
@@ -120,7 +126,7 @@ def recipe(platform):
    fixture_changes={'kind_published_ports':[{'listenAddress':'127.0.0.2','hostPort':80,'containerPort':32080},
        {'listenAddress':'127.0.0.2','hostPort':443,'containerPort':32443}],
      'public_service':'Shipped LoadBalancer type80/443/targetPort retained; assign explicit owned nodePorts32080/32443 for Kind TCP mapping. No cloud-provider LB provisioning claim.',
-     'private_access':'Only owned kubectl port-forward loopback18766→private ClusterIP8766; public Service must not contain8766.',
+     'private_access':'Only owned kubectl port-forward loopback'+str(private_http_port)+'→private ClusterIP8766; public Service must not contain8766.',
      'hostAliases':'pebble maps exact reachable owned bridge-host issuer gateway, no hostDNS edits.',
      'volume':'Original Recreate1/PVC/UID10001/RO-root/cap-drop/security retained; only owned PVC seeded once, retained across pod replacement.'},
    custody='New owned nodeCID/image/starttime/APIbinding and loaded CRI config digest; actual hub PodUID/containerID/manifest-config/BEAM process custody; same PVCUID, new PodUID after preconditioned delete.',
@@ -136,7 +142,7 @@ def prepare(args):
  files={name:digest(regular(root/name)) for name in FILES}
  plan={'schema':'adhd/acme-platform-inert-preparation@1','execution_ready':False,'execution_supported':False,
        'target_binding':None,'source_count_or_native_count_frozen':False,'ca':ca,'files':files,
-       'platforms':[recipe('compose'),recipe('kind')],
+       'platforms':[recipe('compose',args.private_http_port),recipe('kind',args.private_http_port)],
        'serial_only':True,'relay_owner_count':1,'public_ca_calls':0,'provider_calls':0,
        'scope':'New managed ACME platform gates only; not Kafka/model/federation or providerLoadBalancer/CNI qualification.',
        'required_before_freeze':['Actual proper receipt/export/context/admission and compiled image/tool/cache identity.',
@@ -155,6 +161,7 @@ def prepare(args):
 def main():
  parser=argparse.ArgumentParser(description=__doc__)
  parser.add_argument('--repo-root',type=Path,required=True);parser.add_argument('--work',type=Path,required=True)
+ parser.add_argument('--private-http-port',type=int,default=18766)
  parser.add_argument('--ca-manifest',type=Path,required=True);parser.add_argument('--ca-manifest-sha256',required=True)
  prepare(parser.parse_args())
 

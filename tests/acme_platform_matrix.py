@@ -51,6 +51,18 @@ def verify_tree(path,expected):
  assert directories==wanted,'Input directory SET changed'
 
 
+def private_port(value):
+ assert type(value) is int and 1024<=value<=65535
+ assert value not in {8080,8443,8766,18082,18085,18088,18089,18443,18770,19100,19101,19102,19103,19104,19153},'Reserved service port'
+ return value
+
+
+def private_port_preflight(value):
+ port=private_port(value);probe=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+ try:probe.bind(('127.0.0.1',port))
+ finally:probe.close()
+
+
 def validate_request(request):
  assert set(request)=={'schema','target','toolchain','daemon','networks','ownership','ca','protected'}
  assert request['schema']=='adhd/acme-platform-request@1'
@@ -69,7 +81,8 @@ def validate_request(request):
   assert gateway in subnet and gateway not in (subnet.network_address,subnet.broadcast_address) and not gateway.is_loopback
  assert not ipaddress.ip_network(request['networks']['compose']['subnet']).overlaps(ipaddress.ip_network(request['networks']['kind']['subnet']))
  assert request['networks']['compose']['name']!=request['networks']['kind']['name']
- owner=request['ownership'];assert set(owner)=={'compose_project','kind_cluster','kind_namespace','node_image','node_config_identity','relay_lock'}
+ owner=request['ownership'];assert set(owner)-{'private_http_port'}=={'compose_project','kind_cluster','kind_namespace','node_image','node_config_identity','relay_lock'}
+ private_port(owner.get('private_http_port',18766))
  for name in ['compose_project','kind_cluster']:assert re.fullmatch('adhd-acme-[a-z0-9-]{1,40}',owner[name])
  assert owner['compose_project']!=owner['kind_cluster']
  assert owner['kind_namespace']=='adhd-final-'+owner['kind_cluster']
@@ -184,7 +197,7 @@ def prepare(args):
        'owned_allowlist':{'compose_project':request['ownership']['compose_project'],'kind_cluster':request['ownership']['kind_cluster'],
         'kind_namespace':request['ownership']['kind_namespace'],'networks':request['networks'],
         'probe_prefix':'adhd-accept-probe-','maximum_compose_probes':3,'pod_probe_prefix':'acme-state-',
-        'relay_bind':'127.0.0.1:8080','issuer_gateway_port':19104,'private_http':'127.0.0.1:18766','public_bind':'127.0.0.2:80/443'},
+        'relay_bind':'127.0.0.1:8080','issuer_gateway_port':19104,'private_http':'127.0.0.1:'+str(request['ownership'].get('private_http_port',18766)),'public_bind':'127.0.0.2:80/443'},
        'bootstrap_argv':[tools['python']['path'],'-I','-S','-B','-X','pycache_prefix='+str(work/'parent-pycache'),str(work/'driver.py'),'--execute','--work',str(work),'--plan-sha256','<ACTUAL_PLAN_SHA256>']}
  dump(work/'plan.json',plan)
  print(json.dumps({'prepared':True,'executed':False,'plan_sha256':sha(work/'plan.json')}))
@@ -330,13 +343,14 @@ def execute(work,plan):
  primary=None
  try:
   claim(work)
+  private_port_preflight(request['ownership'].get('private_http_port',18766))
   assert json.loads(command(['docker','info','--format','{{json .ID}}'],capture=True).stdout)==request['daemon']['id']
   image=json.loads(command(['docker','image','inspect',target['image_reference']],capture=True).stdout)[0]
   assert image['Id']==target['image'] and image['Config']['User']=='10001:10001'
   assert image['Config']['Entrypoint']==['elixir','/runtime/adhd/boot.exs','/app/hub.exs'] and image['Config']['Cmd']==['["serve","/config/hub.json"]']
   before=json.loads((work/'bound/protected.json').read_bytes());protected(command,before)
   for platform in plan['order']:
-   verify(work,plan);ca=check_ca(plan)
+   verify(work,plan);ca=check_ca(plan);private_port_preflight(request['ownership'].get('private_http_port',18766))
    adapter=gateway=relay=seed_probe=None;netid=None;phase_error=None;cleanup=[];netledger={'issued':False,'id':None}
    row={'platform':platform,'passed':False,'cleanup_errors':cleanup};report['platforms'].append(row);report['unrun'].remove(platform)
    local=work/'runtime'/platform;local.mkdir(mode=0o700)
@@ -344,26 +358,26 @@ def execute(work,plan):
    try:
     netid=network(command,spec,owner,netledger)
     seed={'server_id':uuid4().hex,'project_id':'default','projects':[{'id':'default','name':'Default','status':'active','description':'Owned ACME fixture','settings':{}}],
-          'host':'0.0.0.0','port':8766,'public_url':'http://127.0.0.1:18766','store_path':'/data/hub.dets','agents':{},'matcher':None,'eventing':{'enabled':False}}
+          'host':'0.0.0.0','port':8766,'public_url':'http://127.0.0.1:'+str(request['ownership'].get('private_http_port',18766)),'store_path':'/data/hub.dets','agents':{},'matcher':None,'eventing':{'enabled':False}}
     trust=regular(work/'bound/frontend_root.pem').read_text()
     if platform=='compose':
      (local/'seed').mkdir(mode=0o700);(local/'state').mkdir(mode=0o700)
      dump(local/'seed/hub.json',seed);(local/'seed/directory-root.pem').write_text(trust);(local/'seed/directory-root.pem').chmod(0o600)
      seed_probe=SeedProbe(command,target['image'],local/'seed',local/'state');initialize_seed(row,seed_probe)
-     adapter=Compose(command,work/'frozen',local,target['image'],owner,local/'seed',local/'state',spec['gateway'])
+     adapter=Compose(command,work/'frozen',local,target['image'],owner,local/'seed',local/'state',spec['gateway'],request['ownership'].get('private_http_port',18766))
     else:
      adapter=Kind(command,work/'frozen',local,target['image'],owner,request['ownership']['node_image'],spec['gateway'],netid,spec['name'],
-        {'hub.json':json.dumps(seed),'directory-root.pem':trust},target['image_reference'],request['ownership']['node_config_identity'])
+        {'hub.json':json.dumps(seed),'directory-root.pem':trust},target['image_reference'],request['ownership']['node_config_identity'],request['ownership'].get('private_http_port',18766))
      adapter.lease=NamespaceLease(request['ownership']['kind_namespace'],spec['nonce'],prefix='adhd-final-')
     adapter.start()
     gateway=IssuerGateway(spec['gateway'],spec['subnet'],[adapter.client_ip()]);gateway.start()
     relay=ChallengeRelay(upstreams={'one.acme.test':('127.0.0.2',80)});relay.start()
-    admin=PublicClient('http://127.0.0.1:18766')
+    admin=PublicClient('http://127.0.0.1:'+str(request['ownership'].get('private_http_port',18766)))
     assert wait(lambda: __import__('acme_platform_scenario').managed_health(admin),45,'Private Admin startup')
     password=adapter.exec(['/bin/cat','/config/initial-admin-password.txt'],sensitive=True).decode()
     password=re.search(r'^Password: (.+)$',password,re.M)[1];admin.login('admin',password)
     secure=PublicClient('https://one.acme.test:443',trust=work/'bound/issuer_root.pem',connect_ip='127.0.0.2')
-    row['scenario']=run(adapter,admin,secure,relay,recipe(platform)['tls_public_patch'],'https://one.acme.test:443',initialize,password,certificate_facts)
+    row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test:443',initialize,password,certificate_facts)
     row['passed']=row['scenario']['passed']
    except BaseException as error:phase_error=error;row['failure_type']=type(error).__name__;raise
    finally:

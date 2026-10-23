@@ -9,7 +9,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 spec=importlib.util.spec_from_file_location('matrix',Path(__file__).with_name('acme_platform_matrix.py'))
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
@@ -113,6 +113,18 @@ class Guards(unittest.TestCase):
   # Phase finally refreshes the ledger even if later independent cleanup adds facts.
   probe.probe_events.append({'cleanup':'unknown'});m.seed_evidence(row,probe)
   self.assertEqual(len(row['seed_probe']),2)
+ def test_nondefault_port_request_and_occupied_preflight_fail_closed(self):
+  value=request();value['ownership']['private_http_port']=18866;m.validate_request(value)
+  for port in [True,'18866',80,443,8080,8443,8766,18770,18082,19100,65536]:
+   value['ownership']['private_http_port']=port
+   with self.assertRaises(AssertionError):m.validate_request(value)
+  for error in [None,OSError('occupied')]:
+   stream=SimpleNamespace(bind=Mock(side_effect=error),close=Mock())
+   with patch.object(m.socket,'socket',return_value=stream):
+    if error:
+     with self.assertRaises(OSError):m.private_port_preflight(18866)
+    else:m.private_port_preflight(18866)
+   stream.bind.assert_called_once_with(('127.0.0.1',18866));stream.close.assert_called_once()
  def test_template_declares_new_adapter_transitive_shipped_service(self):
   path=Path(__file__).with_name('acme_platform_plan.py')
   spec=importlib.util.spec_from_file_location('recipe',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)

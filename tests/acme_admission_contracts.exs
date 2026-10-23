@@ -21,6 +21,10 @@ defmodule ACMEAdmissionSpy do
     event({:read, path})
     ADHD.ACMEFiles.read(path)
   end
+  def read(path, maximum) do
+    event({:read, path})
+    ADHD.ACMEFiles.read(path, maximum)
+  end
   def directory(path) do
     event({:directory, path})
     ADHD.ACMEFiles.directory(path)
@@ -74,6 +78,9 @@ defmodule ACMEAdmissionContracts do
     config = put_in(config, ["tls", "enabled"], true)
     config = put_in(config, ["tls", "acme", "enabled"], true)
     config = put_in(config, ["tls", "acme", "domains"], ["one.acme.test"])
+    config = put_in(config, ["tls", "acme", "email"], "fixture@example.invalid")
+    config = put_in(config, ["tls", "acme", "accept_terms"], true)
+    config = TLS.normalize(config, base)
     state = %{path: Path.join(base, "config.json"), root: Path.join(base, "acme"),
       config: config, owner: nil, job: nil, fingerprint: "current", trust: nil,
       trust_error: false, listener_error: false, recovering: false, certificate: nil,
@@ -131,10 +138,13 @@ defmodule ACMEAdmissionContracts do
     s = TLS.capsule_account(s)
     [{id, _}] = Map.to_list(s.data["accounts"])
     root = Path.join([s.root, "accounts", id])
-    key = "accounts/issuer/keys/account.key"
+    key = "accounts/issuer/fixture@example.invalid/fixture@example.invalid.key"
     File.mkdir_p!(Path.dirname(Path.join(root, key)))
-    for dir <- [Path.join(root, "accounts"), Path.join(root, "accounts/issuer"), Path.join(root, "accounts/issuer/keys")], do: File.chmod!(dir, 0o700)
+    for dir <- [Path.join(root, "accounts"), Path.join(root, "accounts/issuer"), Path.join(root, "accounts/issuer/fixture@example.invalid")], do: File.chmod!(dir, 0o700)
     ADHD.ACMEFiles.write(Path.join(root, key), "original witnessed key")
+    ADHD.ACMEFiles.write(Path.join(Path.dirname(Path.join(root, key)), "account.json"), JSON.encode!(%{
+      "id" => "fixture@example.invalid", "email" => "fixture@example.invalid", "keyType" => "EC256",
+      "server" => s.config["tls"]["acme"]["directory_url"], "registration" => nil}))
     digest = :crypto.hash(:sha256, "original witnessed key") |> Base.encode16(case: :lower)
     s = %{s | data: put_in(s.data, ["accounts", id, "keys"], %{key => digest})} |> TLS.capsule_save()
     {s, root, Path.join(root, key)}

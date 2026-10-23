@@ -19,7 +19,7 @@ ast=Code.string_to_quoted!(input)
       {:initialize,_,_} -> {{:defp,meta,[head,[do: {:s,[],nil}]]},[:initialize|acc]}
       _ -> {node,acc}
     end
-  {{:.,_,[{:__aliases__,_,[:F]},name]},_,[path]}=node,acc when name in [:read,:harden_tree] ->
+  {{:.,_,[{:__aliases__,_,[:F]},name]},_,[path|_]}=node,acc when name in [:read,:harden_tree] ->
     observation={:{},[],[:account_io,name,path]}
     {{:__block__,[],[{:send,[],[{:self,[],[]},observation]},node]},[name|acc]}
   node,acc -> {node,acc}
@@ -60,6 +60,7 @@ build=fn label,mode->
   :malformed_client -> F.write(metadata_path,"{invalid")
   :empty_client -> F.write(metadata_path,"{}")
   :invalid_registration -> F.write(metadata_path,JSON.encode!(Map.put(metadata,"registration","invalid")))
+  :oversized_client -> F.write(metadata_path,JSON.encode!(Map.put(metadata,"padding",String.duplicate("x",65536))))
   :registered_client -> F.write(metadata_path,JSON.encode!(Map.put(metadata,"registration",%{"status"=>"valid","accountURL"=>"https://fixture.invalid/acme/acct/1","orders"=>"https://fixture.invalid/acme/orders"})))
   _ -> F.write(metadata_path,JSON.encode!(metadata))
  end
@@ -70,7 +71,7 @@ build=fn label,mode->
  {s,account}
 end
 reject=fn f->try do f.();false rescue _->true catch _,_->true end end
-rows=for {label,mode} <- [{"valid-owner-registration-null",:valid},{"valid-registered-metadata",:registered_client},{"missing-client-metadata",:missing_client},{"nonobject-client-metadata",:nonobject_client},{"malformed-client-metadata",:malformed_client},{"empty-client-metadata",:empty_client},{"invalid-registration-value",:invalid_registration},{"missing-owner",:missing_owner},{"changed-owner",:changed_owner},{"malformed-owner",:malformed_owner},{"missing-key",:missing_key},{"changed-key",:changed_key}] do
+rows=for {label,mode} <- [{"valid-owner-registration-null",:valid},{"valid-registered-metadata",:registered_client},{"missing-client-metadata",:missing_client},{"nonobject-client-metadata",:nonobject_client},{"malformed-client-metadata",:malformed_client},{"empty-client-metadata",:empty_client},{"invalid-registration-value",:invalid_registration},{"oversized-valid-client-metadata",:oversized_client},{"missing-owner",:missing_owner},{"changed-owner",:changed_owner},{"malformed-owner",:malformed_owner},{"missing-key",:missing_key},{"changed-key",:changed_key}] do
  {s,_}=build.(label,mode);flush.(flush,[]);Process.put(:guardian_closed,true)
  observed=ADHD.TLS.account_recover(s);messages=flush.(flush,[])
  error=observed.data["last_error"]

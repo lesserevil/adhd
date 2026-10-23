@@ -1,25 +1,48 @@
 {
-  "passed": true,
-  "checks": 14,
-  "scope": "Actual cold recover/remember callbacks and private file/hash/fsync; initialized-state and guardian probe seams; certificate metadata placeholder, no actual app or cert recovery",
+  "admission_failures": 0,
+  "admission_tests": 8,
+  "baseline_mirror_commit_do_not_import": "2aef5c2; root already owns this exact initial admission file. Import only followup commit.",
   "files": {
-    "_build/acme/source42-01/tls.exs": "37e1f8b70e0ce266e63d986b409e61985def41df8bd2e0910efe02828ae443f6",
-    "_build/acme/source42-01/tls_certificate.exs": "00a1465469f29cf7d31f23c1aa4e7b05e20a48b3eb80811ca432f611e9f4ca76",
-    "tests/fixtures/acme-account-metadata.patch": "f4da068c0b8beae7fac7d036457d676f7c3cb9272280e5a326a0c5b363228587",
-    "tests/acme_account_metadata_contracts.exs": "5e9297f4e0ccac022ac476a56d30bf9cca6a9d3c9e657fff85690f20f7cb439f",
-    "_build/acme/diagnostic-ebin/sources.json": "c3d117914f6df3af7aad7f0c5a97e544a14692ad4561a0503933d652ff58df75"
+    "/home/horde/src/adhd/_build/acme/source42-01/tls.exs": {
+      "bytes": 36313,
+      "sha256": "37e1f8b70e0ce266e63d986b409e61985def41df8bd2e0910efe02828ae443f6"
+    },
+    "/home/horde/src/adhd/_build/acme/source42-01/tls_certificate.exs": {
+      "bytes": 14901,
+      "sha256": "00a1465469f29cf7d31f23c1aa4e7b05e20a48b3eb80811ca432f611e9f4ca76"
+    },
+    "tests/acme_account_metadata_contracts.exs": {
+      "bytes": 7457,
+      "sha256": "42026cfc3616fbfd26a63c8c5b3c85430520004b69ab02a4481f99fdf2e5f2a2"
+    },
+    "tests/acme_admission_contracts.exs": {
+      "bytes": 9536,
+      "sha256": "b7df40f3da64ebc3ff2b6e323849caf928bc278dd0da853e01d10c193ebbb2c5"
+    }
   },
-  "limits": [
-    "Synthetic account key and certificate placeholders; no live app/client/CA/real certificate claim.",
-    "Mutable account.json is shape-checked, not hashed as immutable registration state."
+  "fixture_changes": [
+    "Add Spy.read/2 forwarding exact actual bounded reader and same read observation.",
+    "Known account uses maintained nested accounts/issuer/id/id.key shape plus real sibling account.json emitted fields including valid registration:null.",
+    "Setup TLS config now includes explicit consent/contact and real TLS.normalize; no invalid-config shortcut."
   ],
-  "intermediate_fix_failure": {
-    "passed": false,
-    "failed": [
-      "valid-owner-registration-null",
-      "valid-registered-metadata"
-    ],
-    "cause": "Initial validator called missing ACMEFiles.read/2. Added guarded public overload to existing FD-identity/size-bounded private reader.",
-    "raw_sha256": "66ac96c76e92dcb3fd18898e8057d9a0e990ab3f10a366d3971a0aa1c48d645b"
-  }
+  "metadata_checks": 15,
+  "new_negative": "Structurally valid client account.json with65536-byte extra padding field exceeds private65536 metadata bound; cold/manual/preworker all reject.",
+  "original_assertion_lines_preserved": true,
+  "original_negative_immutable": "verification/acme/account-metadata-negative/result.json remains passed:false with original c775 evidence.",
+  "passed": true,
+  "raw": {
+    "admission.stdout.txt": {
+      "bytes": 140,
+      "sha256": "5674fe1f848108c39d418d958946822ade0be8c42efb06ac160c85dc3d2c75fb"
+    },
+    "metadata.json": {
+      "bytes": 3871,
+      "sha256": "6dab461b275f4d0090066cca0203649aa3674a72887c891c328d8b6339bd6a04"
+    },
+    "metadata.stdout.txt": {
+      "bytes": 40,
+      "sha256": "171ef7ae18bc5289da06da6f4cf85a6855fa4c361bdb4a67699fc23b0c23db7b"
+    }
+  },
+  "scope": "Module/callback and actual private file/hash/fsync only, declared initialized-state/guardian/certificate seams. No application/client/CA/listener/provider starts."
 }

@@ -112,4 +112,56 @@ class SystemDiagnostics(unittest.TestCase):
   value.system_diagnostics(expired,result)
   self.assertEqual(calls,['storage-namespace','scheduler-namespace']);self.assertEqual(len(result['errors']),2)
 
+class ProxyDiagnostics(unittest.TestCase):
+ fixture=SystemDiagnostics.fixture
+ def network_fixture(self):
+  value,original,calls=self.fixture();network={}
+  def fetch(label,args):
+   response=original(label,args)
+   if label=='scheduler-pods':
+    body=json.loads(response.stdout);scheduler=body['items'][0]
+    for role in ('kindnet','kube-proxy'):
+     pod=copy.deepcopy(scheduler);pod['metadata'].update(name=role+'-owned',uid=role+'-uid',labels={'k8s-app':role});pod['spec']['containers']=[{'name':role}];network[pod['metadata']['name']]=pod;body['items'].append(pod)
+    response.stdout=json.dumps(body).encode()
+   elif label.startswith('scheduler-pod-'):
+    name=args[4]
+    if name in network:response.stdout=json.dumps(network[name]).encode()
+   return response
+  return value,fetch,calls,network
+ def test_proxy_current_previous_before_kindnet_before_scheduler(self):
+  value,fetch,calls,_=self.network_fixture();result={'errors':[]};value.system_diagnostics(fetch,result)
+  self.assertEqual(result['errors'],[])
+  logs=[(label,args) for label,args in calls if '-log-' in label]
+  self.assertEqual([label for label,args in logs],['storage-log-0-0','proxy-log-0-0','proxy-previous-log-0-0','kindnet-log-1-0','kindnet-previous-log-1-0','scheduler-log-2-0'])
+  self.assertEqual([args[-1] for label,args in logs if 'previous' in label],['--previous=true','--previous=true'])
+  self.assertNotIn('private-secret',json.dumps(result))
+  self.assertEqual([p['role'] for p in result['system']['pods']],['storage','scheduler','kindnet','proxy'])
+ def test_changed_proxy_uid_blocks_both_current_and_previous_logs(self):
+  value,fetch,calls,_=self.network_fixture();result={'errors':[]}
+  def changed(label,args):
+   response=fetch(label,args)
+   if label=='scheduler-pod-0':
+    body=json.loads(response.stdout);body['metadata']['uid']='foreign';response.stdout=json.dumps(body).encode()
+   return response
+  value.system_diagnostics(changed,result)
+  self.assertFalse(any(label.startswith('proxy-') for label,args in calls));self.assertTrue(result['errors'])
+ def test_network_role_must_have_expected_name_and_owned_node(self):
+  for field,bad in [('name','unrelated'),('node','foreign-node')]:
+   value,fetch,calls,_=self.network_fixture();result={'errors':[]}
+   def forged(label,args):
+    response=fetch(label,args)
+    if label=='scheduler-pods':
+     body=json.loads(response.stdout);proxy=body['items'][-1]
+     if field=='name':proxy['metadata']['name']=bad
+     else:proxy['spec']['nodeName']=bad
+     response.stdout=json.dumps(body).encode()
+    return response
+   value.system_diagnostics(forged,result)
+   self.assertFalse(any(label.startswith('proxy-') for label,args in calls));self.assertTrue(result['errors'])
+ def test_shared_collector_deadline_and_private_output_guard_unchanged(self):
+  import inspect
+  source=inspect.getsource(Kind.failure_diagnostics)
+  self.assertIn('deadline=time.monotonic()+20',source);self.assertIn('timeout=min(4,remaining)',source)
+  self.assertIn('sensitive=True',source);self.assertIn('4*1024*1024',source)
+
 if __name__=='__main__':unittest.main()

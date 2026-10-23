@@ -621,24 +621,32 @@ class Kind:
     if namespace=='local-path-storage':
      deployment=obj('storage-controller',['-n',namespace,'get','deployment','local-path-provisioner','-o','json'])
      result['system']['controller']=self.storage_summary(deployment)
-    selector='app=local-path-provisioner' if namespace=='local-path-storage' else 'component=kube-scheduler'
     # Include provisioner-created helper Pods, whose labels need not match the controller.
     args=['-n',namespace,'get','pods']
-    if namespace=='kube-system':args+=['-l',selector]
     pods=obj(prefix+'-pods',args+['-o','json'])['items'];assert len(pods)<=32
     selected=[]
     for pod in pods:
      name=pod['metadata']['name']
      if namespace=='local-path-storage':
       if not (pod['metadata'].get('labels',{}).get('app')=='local-path-provisioner' or re.fullmatch('helper-pod-[a-zA-Z0-9-]{1,200}',name)):continue
-     else:assert name=='kube-scheduler-'+self.node
+      role='storage-helper' if name.startswith('helper-pod-') else 'storage'
+     else:
+      labels=pod['metadata'].get('labels',{})
+      if labels.get('k8s-app')=='kube-proxy':
+       assert re.fullmatch('kube-proxy-[a-z0-9-]{1,100}',name);role='proxy'
+      elif labels.get('k8s-app')=='kindnet':
+       assert re.fullmatch('kindnet-[a-z0-9-]{1,100}',name);role='kindnet'
+      elif name=='kube-scheduler-'+self.node:role='scheduler'
+      else:continue
+      assert pod['spec'].get('nodeName')==self.node
      uid=self.system_identity(pod,'Pod',name,namespace)
      assert pod['spec'].get('nodeName') in (None,self.node)
-     result['system']['pods'].append({'uid':uid,'role':prefix if not name.startswith('helper-pod-') else 'storage-helper','phase':reason(pod.get('status',{}).get('phase'))})
-     selected.append((name,uid,pod))
+     result['system']['pods'].append({'uid':uid,'role':role,'phase':reason(pod.get('status',{}).get('phase'))})
+     selected.append((name,uid,pod,role))
     events=obj(prefix+'-events',['-n',namespace,'get','events','-o','json'])
     result['system']['event_reasons'] += [reason(v.get('reason')) for v in events.get('items',[])][:128]
-    for index,(name,uid,pod) in enumerate(selected[:4]):
+    selected.sort(key=lambda item: {'proxy':0,'kindnet':1,'scheduler':2}.get(item[3],0))
+    for index,(name,uid,pod,role) in enumerate(selected[:4]):
      try:
       current=obj(prefix+'-pod-'+str(index),['-n',namespace,'get','pod',name,'-o','json'])
       assert self.system_identity(current,'Pod',name,namespace)==uid
@@ -646,7 +654,11 @@ class Kind:
       for cindex,container in enumerate(containers):
        # Names are validated from the bound Pod, never a shell expression.
        cname=container['name'];assert re.fullmatch('[a-z0-9-]{1,63}',cname)
-       fetch(prefix+'-log-'+str(index)+'-'+str(cindex),['-n',namespace,'logs','pod/'+name,'-c',cname,'--tail=80','--timestamps=true'])
+       log_prefix=role if role in ('proxy','kindnet') else prefix
+       args=['-n',namespace,'logs','pod/'+name,'-c',cname,'--tail=80','--timestamps=true']
+       fetch(log_prefix+'-log-'+str(index)+'-'+str(cindex),args)
+       if role in ('proxy','kindnet'):
+        fetch(log_prefix+'-previous-log-'+str(index)+'-'+str(cindex),[*args,'--previous=true'])
       current=obj(prefix+'-pod-after-'+str(index),['-n',namespace,'get','pod',name,'-o','json'])
       assert self.system_identity(current,'Pod',name,namespace)==uid
      except BaseException as error:result['errors'].append({'label':prefix+'-pod-log','failure_type':type(error).__name__})

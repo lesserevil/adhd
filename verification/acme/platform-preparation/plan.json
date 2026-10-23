@@ -1,0 +1,326 @@
+{
+  "schema": "adhd/acme-platform-inert-preparation@1",
+  "execution_ready": false,
+  "execution_supported": false,
+  "target_binding": null,
+  "source_count_or_native_count_frozen": false,
+  "ca": {
+    "manifest_sha256": "5efcedcbff7175ff976f43415d64df6338f62022e2fc409e199a23c5892698f6",
+    "generation_issuer_root_sha256": "3ee67d528285b2164d090a51921592d982dcf65de94340b8845e73f9bfa60a29",
+    "frontend_root_sha256": "0c502e52627ff7de972c7e9e065640103b4589b4e2d23d3fcf21bef1e3c8c67c",
+    "owner_pid": 1746474,
+    "processes": [
+      {
+        "name": "dns",
+        "pid": 1746540,
+        "start_ticks": "27151112"
+      },
+      {
+        "name": "pebble",
+        "pid": 1746541,
+        "start_ticks": "27151112"
+      }
+    ],
+    "lifetime_seconds": 10800,
+    "actual_live_lease_revalidated": false
+  },
+  "files": {
+    "deploy/app.compose.yaml": "caae0b621b7b380fad3d509dd6c09aa50b5b68b2d6f10c32f8a0929cb487934a",
+    "deploy/app.acme.compose.yaml": "b473d20d04d154cc335ea0fcf40a54e802a9720376820b4af5af3975642a9a6e",
+    "deploy/events.compose.yaml": "ab3190f570f9b894fd2a6dddde0aba2172aca07f95e2f5ab1700ae39797ba53b",
+    "deploy/k8s/hub.yaml": "20f26eca2660146d35311c83ebaf3c6c9accb9becbc3f82e8f5fa43e77605cb5",
+    "deploy/k8s/private.yaml": "bb2c39acf279a30bfe9f21c0df1ff4672872e8403a52cf3176efacd3e661940a",
+    "deploy/k8s/kustomization.yaml": "4315d349139ac21ab3475230951b8eb602ee04db1f5f256b0e90a54239d83fcd",
+    "deploy/k8s/acme/kustomization.yaml": "682ef918d62afeb6f5dd6f211c9c65b9bb5ec516f5aca182cccf6620fa5ac46f",
+    "deploy/k8s/acme/hub-listeners.yaml": "a493ce3284bd0304983b5cd40ef0fe1d27a4b8d01e4ff0b3bd19614a7e6d5e39",
+    "deploy/k8s/acme/public-service.yaml": "5223c30ec40d42821fd2af378c2ad9958325b86e5a8cae99467180cd1f4d9e01",
+    "deploy/init-config.py": "6e559cb28078757c67d04908b2f45fe93f94668d6d64d6305172732dbf281d5c",
+    "tests/acme_challenge_relay.py": "cf6dc719f9d9e756f0808d92571846d590e465d7c90d190c2846a5f184308718",
+    "tests/acme_runtime.py": "31870f98f15cd5dd72a433c4c60dd8487ad82db7abbe3149ffa325679c24b9c2",
+    "tests/acme_acceptance_fixtures.py": "7ec676ee3be26eb48fbe31f4e640c76b83db436ad929650f10ec4e4b73f68fff",
+    "tests/acme_process_observer.py": "087c45696bf8acb99ca3f6edcf240565a8109e0d25bba6bc366f56ceb9532ecb",
+    "tests/image_compiled_inputs.py": "b452bfa61154e838ea0cda4853df8c1a53c4e137b21ba20b78735697dd6b0324",
+    "tests/kafka_oauth_custody.py": "0a29938d81f6419940fa5b6ed14c522428d49e057335fa5ee8d77bc4524e90f3",
+    "tests/container_fixture.py": "3928ec329ce3f3cf62b8867ba3b6945972aa5e4012d9e5056570cca2c660dde0"
+  },
+  "platforms": [
+    {
+      "checks": [
+        "actual_admitted_image_source_cache_tool_identity",
+        "shipped_public_80_443_mappings_private_8766_boundary",
+        "single_writer_private_config_and_data_mounts",
+        "default_disabled_public_admin_initialization",
+        "real_ca_http01_token_host_proof",
+        "challenge_non_token_and_private_http_not_public",
+        "trusted_hostname_verified_https_and_admin",
+        "manual_real_renew_receipt_replay_same_vm",
+        "scheduled_real_renew_without_manual_request_same_vm",
+        "managed_account_active_key_and_leaf_private_state",
+        "replacement_new_container_or_pod_same_volume_account_leaf",
+        "replacement_trusted_https_no_reissue_required",
+        "strict_all_owned_resource_cleanup_protected_resources_unchanged"
+      ],
+      "ordered": true,
+      "public_ca_calls": 0,
+      "provider_calls": 0,
+      "broker_starts": 0,
+      "endpoints": {
+        "private_http": "http://127.0.0.1:18766",
+        "https": "https://one.acme.test:443",
+        "https_connect_ip": "127.0.0.2",
+        "challenge_relay": "127.0.0.1:8080",
+        "relay_upstream": "127.0.0.2:80",
+        "issuer": "https://pebble:19104/dir"
+      },
+      "tls_public_patch": {
+        "enabled": true,
+        "host": "0.0.0.0",
+        "port": 8443,
+        "challenge_host": "0.0.0.0",
+        "challenge_port": 8080,
+        "acme": {
+          "enabled": true,
+          "directory_url": "https://pebble:19104/dir",
+          "email": "operator@one.acme.test",
+          "domains": [
+            "one.acme.test"
+          ],
+          "accept_terms": true,
+          "renew_before_days": 1,
+          "retry_seconds": 30,
+          "order_timeout_ms": 30000,
+          "ca_cert_file": "directory-root.pem"
+        }
+      },
+      "bounds": {
+        "startup_seconds": 45,
+        "initial_issuance_seconds": 35,
+        "manual_renewal_seconds": 40,
+        "scheduled_renewal_seconds": 100,
+        "relay_requests": 128,
+        "relay_concurrency": 8,
+        "replacement_seconds": 45,
+        "cleanup_seconds": 180
+      },
+      "scenario": [
+        "Public Admin login with own initial password; publicly initialize only unknown projects; eventing false and matcher null.",
+        "Assert disabled TLS and private HTTP health; observe actual immutable runtime custody before enabling TLS.",
+        "Submit confirmed public config_update with the declared TLS patch and HTTPS public_url; real CA GET must match a real active token proof.",
+        "Verify wrong token/foreign Host/non-challenge paths do not expose application data on public80; only native TLS on443.",
+        "Verify real issuer chain plus one.acme.test hostname via trusted HTTPS; Admin session uses Secure cookie on HTTPS.",
+        "Submit one public tls_renew; observe changed serial/leaf/SPKI and identical VM; replay exact receipt without second operation.",
+        "Make no further renewal request; observe actual scheduled generation rotation in100s and same VM.",
+        "Gracefully stop only own hub; fingerprint actual private account/current generation/leaf/key and config identity without logging secret bytes.",
+        "Replace container or pod, never delete/reseed its config/data volume; require new immutable runtime identity and exact retained account/current leaf/key.",
+        "Verify trusted HTTPS/public status on replacement before any scheduled transition; if real leaf expired/due, report timing failure rather than weaken equality.",
+        "Finally independently close relay/issuer gateway/clients/owned deployment; qualify only after all recorded resources absent and protected snapshot unchanged."
+      ],
+      "relay_ownership": "One explicit exclusive relay owner, coordinated with acceptance at quiet boundary; no native/fault/browser overlap.",
+      "issuer_gateway": "New test-only byte-transparent TCP gateway bound to exact owned bridge-host IP19104, source-restricted to actual owned app/node IP. Forward unchanged TLS to127.0.0.1:19100. CA frontend SAN already includes pebble. No TLS termination/header/body rewriting, no0.0.0.0 bind.",
+      "state_evidence": "Hash-only stopped account/current certificate/private-key inventory with exact modes/UID, no private key/account content in durable report.",
+      "owned_project": "adhd-acme-platform-compose01",
+      "preparation": [
+        "docker compose -f deploy/app.compose.yaml -f deploy/app.acme.compose.yaml -f fixture.compose.yaml config --format json"
+      ],
+      "commands": [
+        [
+          "docker",
+          "compose",
+          "--project-name",
+          "adhd-acme-platform-compose01",
+          "-f",
+          "deploy/app.compose.yaml",
+          "-f",
+          "deploy/app.acme.compose.yaml",
+          "-f",
+          "fixture.compose.yaml",
+          "up",
+          "-d",
+          "--no-deps",
+          "hub"
+        ],
+        [
+          "docker",
+          "compose",
+          "--project-name",
+          "adhd-acme-platform-compose01",
+          "-f",
+          "deploy/app.compose.yaml",
+          "-f",
+          "deploy/app.acme.compose.yaml",
+          "-f",
+          "fixture.compose.yaml",
+          "up",
+          "-d",
+          "--no-deps",
+          "--force-recreate",
+          "hub"
+        ]
+      ],
+      "fixture_changes": {
+        "ports_override": [
+          "127.0.0.1:18766:8766",
+          "127.0.0.2:80:8080",
+          "127.0.0.2:443:8443"
+        ],
+        "extra_hosts": [
+          "pebble:<ACTUAL_OWNED_BRIDGE_HOST_IP>"
+        ],
+        "mounts": "Same complete private config/data across replacement; frontend trust under config. No mount over/runtime/adhd.",
+        "eventing": "disabled in own fresh seed; --no-deps must start only hub; no broker/REST containers"
+      },
+      "custody": "Exact project/service labels, image config/source/cache/tool hashes, Docker host PID/startticks/BEAM argv, read-only root, user10001, cap-drop/no-new-privileges; replacement CID/PID must differ.",
+      "cleanup": "Inspect exact labels/IDs before down; preserve private stopped state as evidence. Remove only own containers/networks, no -v against unrelated state; strict ID+name absence and project census. No Kafka/proxy start permitted."
+    },
+    {
+      "checks": [
+        "actual_admitted_image_source_cache_tool_identity",
+        "shipped_public_80_443_mappings_private_8766_boundary",
+        "single_writer_private_config_and_data_mounts",
+        "default_disabled_public_admin_initialization",
+        "real_ca_http01_token_host_proof",
+        "challenge_non_token_and_private_http_not_public",
+        "trusted_hostname_verified_https_and_admin",
+        "manual_real_renew_receipt_replay_same_vm",
+        "scheduled_real_renew_without_manual_request_same_vm",
+        "managed_account_active_key_and_leaf_private_state",
+        "replacement_new_container_or_pod_same_volume_account_leaf",
+        "replacement_trusted_https_no_reissue_required",
+        "strict_all_owned_resource_cleanup_protected_resources_unchanged"
+      ],
+      "ordered": true,
+      "public_ca_calls": 0,
+      "provider_calls": 0,
+      "broker_starts": 0,
+      "endpoints": {
+        "private_http": "http://127.0.0.1:18766",
+        "https": "https://one.acme.test:443",
+        "https_connect_ip": "127.0.0.2",
+        "challenge_relay": "127.0.0.1:8080",
+        "relay_upstream": "127.0.0.2:80",
+        "issuer": "https://pebble:19104/dir"
+      },
+      "tls_public_patch": {
+        "enabled": true,
+        "host": "0.0.0.0",
+        "port": 8443,
+        "challenge_host": "0.0.0.0",
+        "challenge_port": 8080,
+        "acme": {
+          "enabled": true,
+          "directory_url": "https://pebble:19104/dir",
+          "email": "operator@one.acme.test",
+          "domains": [
+            "one.acme.test"
+          ],
+          "accept_terms": true,
+          "renew_before_days": 1,
+          "retry_seconds": 30,
+          "order_timeout_ms": 30000,
+          "ca_cert_file": "directory-root.pem"
+        }
+      },
+      "bounds": {
+        "startup_seconds": 45,
+        "initial_issuance_seconds": 35,
+        "manual_renewal_seconds": 40,
+        "scheduled_renewal_seconds": 100,
+        "relay_requests": 128,
+        "relay_concurrency": 8,
+        "replacement_seconds": 45,
+        "cleanup_seconds": 180
+      },
+      "scenario": [
+        "Public Admin login with own initial password; publicly initialize only unknown projects; eventing false and matcher null.",
+        "Assert disabled TLS and private HTTP health; observe actual immutable runtime custody before enabling TLS.",
+        "Submit confirmed public config_update with the declared TLS patch and HTTPS public_url; real CA GET must match a real active token proof.",
+        "Verify wrong token/foreign Host/non-challenge paths do not expose application data on public80; only native TLS on443.",
+        "Verify real issuer chain plus one.acme.test hostname via trusted HTTPS; Admin session uses Secure cookie on HTTPS.",
+        "Submit one public tls_renew; observe changed serial/leaf/SPKI and identical VM; replay exact receipt without second operation.",
+        "Make no further renewal request; observe actual scheduled generation rotation in100s and same VM.",
+        "Gracefully stop only own hub; fingerprint actual private account/current generation/leaf/key and config identity without logging secret bytes.",
+        "Replace container or pod, never delete/reseed its config/data volume; require new immutable runtime identity and exact retained account/current leaf/key.",
+        "Verify trusted HTTPS/public status on replacement before any scheduled transition; if real leaf expired/due, report timing failure rather than weaken equality.",
+        "Finally independently close relay/issuer gateway/clients/owned deployment; qualify only after all recorded resources absent and protected snapshot unchanged."
+      ],
+      "relay_ownership": "One explicit exclusive relay owner, coordinated with acceptance at quiet boundary; no native/fault/browser overlap.",
+      "issuer_gateway": "New test-only byte-transparent TCP gateway bound to exact owned bridge-host IP19104, source-restricted to actual owned app/node IP. Forward unchanged TLS to127.0.0.1:19100. CA frontend SAN already includes pebble. No TLS termination/header/body rewriting, no0.0.0.0 bind.",
+      "state_evidence": "Hash-only stopped account/current certificate/private-key inventory with exact modes/UID, no private key/account content in durable report.",
+      "owned_cluster": "adhd-acme-platform01",
+      "owned_namespace": "adhd-acme-platform01",
+      "preparation": [
+        "kubectl kustomize deploy/k8s/acme; select shipped hub/PVC/private/public Service only; exclude event resources from AUTH-only fixture explicitly"
+      ],
+      "commands": [
+        [
+          "kind",
+          "create",
+          "cluster",
+          "--name",
+          "adhd-acme-platform01",
+          "--config",
+          "fixture-kind.yaml"
+        ],
+        [
+          "kind",
+          "load",
+          "docker-image",
+          "<ACTUAL_ACCEPTED_TAG>",
+          "--name",
+          "adhd-acme-platform01"
+        ],
+        [
+          "kubectl",
+          "--kubeconfig",
+          "<OWN_INLINE_KUBECONFIG>",
+          "create",
+          "-f",
+          "owned-namespace.json",
+          "-o",
+          "json"
+        ],
+        [
+          "kubectl",
+          "--kubeconfig",
+          "<OWN_INLINE_KUBECONFIG>",
+          "apply",
+          "-f",
+          "owned-rendered-acme.yaml"
+        ]
+      ],
+      "fixture_changes": {
+        "kind_published_ports": [
+          {
+            "listenAddress": "127.0.0.2",
+            "hostPort": 80,
+            "containerPort": 32080
+          },
+          {
+            "listenAddress": "127.0.0.2",
+            "hostPort": 443,
+            "containerPort": 32443
+          }
+        ],
+        "public_service": "Shipped LoadBalancer type80/443/targetPort retained; assign explicit owned nodePorts32080/32443 for Kind TCP mapping. No cloud-provider LB provisioning claim.",
+        "private_access": "Only owned kubectl port-forward loopback18766\u2192private ClusterIP8766; public Service must not contain8766.",
+        "hostAliases": "pebble maps exact reachable owned bridge-host issuer gateway, no hostDNS edits.",
+        "volume": "Original Recreate1/PVC/UID10001/RO-root/cap-drop/security retained; only owned PVC seeded once, retained across pod replacement."
+      },
+      "custody": "New owned nodeCID/image/starttime/APIbinding and loaded CRI config digest; actual hub PodUID/containerID/manifest-config/BEAM process custody; same PVCUID, new PodUID after preconditioned delete.",
+      "cleanup": "Namespace issued nonce before create; observe UID even ambiguous create; delete with UID precondition; independent namespace/PVC/PV absence. Delete only exact owned Kind node/network/anonymous volumes, strict ID/name absence. Protected existing clusters and all original namespaceUIDs unchanged."
+    }
+  ],
+  "serial_only": true,
+  "relay_owner_count": 1,
+  "public_ca_calls": 0,
+  "provider_calls": 0,
+  "scope": "New managed ACME platform gates only; not Kafka/model/federation or providerLoadBalancer/CNI qualification.",
+  "required_before_freeze": [
+    "Actual proper receipt/export/context/admission and compiled image/tool/cache identity.",
+    "Root-reviewed bounded issuer-gateway implementation with actual owned bridge IP/client-source restrictions.",
+    "Concrete adapters for exact Compose rendered config and fresh Kind lifecycle/public scenario; all checks run as named, no declaration-as-pass.",
+    "Closed full helper/deployment/host tools/socket/kubeconfig/fresh resource identity and once-marker snapshot.",
+    "Actual CA02 process/starttick/trust/remaining lease check at quiet boundary; acceptance relay ownership release.",
+    "Root GO of fresh fully bound executable plan; no tool in this program starts any runtime."
+  ]
+}

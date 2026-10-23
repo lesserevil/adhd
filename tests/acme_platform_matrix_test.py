@@ -2,6 +2,7 @@
 import copy
 import importlib.util
 import json
+import ipaddress
 from pathlib import Path
 import socket
 import subprocess
@@ -125,6 +126,25 @@ class Guards(unittest.TestCase):
      with self.assertRaises(OSError):m.private_port_preflight(18866)
     else:m.private_port_preflight(18866)
    stream.bind.assert_called_once_with(('127.0.0.1',18866));stream.close.assert_called_once()
+ def test_nullable_host_none_IPAM_accepted_without_mutation(self):
+  values=[{'Id':'a'*64,'Driver':'host','IPAM':{'Config':None}},{'Id':'b'*64,'Driver':'null','IPAM':{'Config':None}},
+          {'Id':'c'*64,'Driver':'bridge','IPAM':{'Config':[{'Subnet':'172.18.0.0/16'},{'Subnet':'fd00::/64'}]}}]
+  calls=[]
+  def command(argv,**kw):
+   calls.append(argv)
+   if argv[2]=='ls':body='\n'.join(r['Id'] for r in values).encode()
+   else:
+    self.assertEqual(argv[2],'inspect');body=json.dumps([next(r for r in values if r['Id']==argv[-1])]).encode()
+   return subprocess.CompletedProcess(argv,0,body,b'')
+  rows=m.scan_networks(command,ipaddress.ip_network('10.231.240.0/24'))
+  self.assertEqual([r['null_config'] for r in rows],[True,True,False])
+  self.assertEqual(len(calls),4);self.assertFalse(any('create' in a for a in calls))
+ def test_IPAM_malformed_types_subnets_and_overlap_still_reject(self):
+  for config in [{},False,0,'bad',[None],[False],[{'Subnet':False}],[{'Subnet':0}],[{'Subnet':''}],[{'Subnet':'not-a-subnet'}],[{'Subnet':'10.0.0.1/24'}]]:
+   with self.assertRaises((AssertionError,ValueError)):m.network_subnets({'IPAM':{'Config':config}})
+  row={'Id':'a'*64,'Driver':'bridge','IPAM':{'Config':[{'Subnet':'10.231.0.0/16'}]}}
+  def command(argv,**kw):return subprocess.CompletedProcess(argv,0,('a'*64).encode() if argv[2]=='ls' else json.dumps([row]).encode(),b'')
+  with self.assertRaisesRegex(AssertionError,'overlaps'):m.scan_networks(command,ipaddress.ip_network('10.231.240.0/24'))
  def test_template_declares_new_adapter_transitive_shipped_service(self):
   path=Path(__file__).with_name('acme_platform_plan.py')
   spec=importlib.util.spec_from_file_location('recipe',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)

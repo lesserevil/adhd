@@ -255,18 +255,36 @@ def check_ca(plan):
  return manifest
 
 
+def network_subnets(existing):
+ ipam=existing['IPAM'];assert type(ipam) is dict,'Malformed Docker IPAM'
+ config=ipam.get('Config');assert config is None or type(config) is list,'Malformed Docker IPAM.Config'
+ result=[]
+ for address in config or []:
+  assert type(address) is dict,'Malformed Docker IPAM address'
+  subnet=address.get('Subnet')
+  if subnet is not None:
+   assert type(subnet) is str and subnet,'Malformed Docker subnet'
+   result.append(ipaddress.ip_network(subnet,strict=True))
+ return result
+
+
+def scan_networks(command,proposed):
+ observations=[]
+ for identifier in command(['docker','network','ls','-q','--no-trunc'],capture=True).stdout.decode().split():
+  assert re.fullmatch('[a-f0-9]{64}',identifier)
+  rows=json.loads(command(['docker','network','inspect',identifier],capture=True).stdout);assert len(rows)==1
+  existing=rows[0];assert existing['Id']==identifier
+  for subnet in network_subnets(existing):
+   assert subnet.version!=4 or not proposed.overlaps(subnet),'Owned subnet overlaps existing network'
+  observations.append({'id':identifier,'driver':existing['Driver'],'null_config':existing['IPAM'].get('Config') is None})
+ return observations
+
+
 def network(command,spec,owner,ledger):
  from acme_platform_adapters import resource_absent
  p=command(['docker','network','inspect',spec['name']],capture=True,check=False)
  assert resource_absent(p,spec['name'],'network'),'Never adopt existing network'
- proposed=ipaddress.ip_network(spec['subnet'])
- for identifier in command(['docker','network','ls','-q','--no-trunc'],capture=True).stdout.decode().split():
-  assert re.fullmatch('[a-f0-9]{64}',identifier)
-  existing=json.loads(command(['docker','network','inspect',identifier],capture=True).stdout)[0]
-  for address in existing['IPAM'].get('Config',[]):
-   if address.get('Subnet'):
-    subnet=ipaddress.ip_network(address['Subnet'])
-    assert subnet.version!=4 or not proposed.overlaps(subnet),'Owned subnet overlaps existing network'
+ scan_networks(command,ipaddress.ip_network(spec['subnet'],strict=True))
  ledger['issued']=True
  argv=['docker','network','create','--driver','bridge','--subnet',spec['subnet'],'--gateway',spec['gateway'],
        '--label','adhd.acme.owner='+owner,'--label','adhd.acme.nonce='+spec['nonce']]

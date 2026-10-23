@@ -6,6 +6,14 @@ import hashlib
 import json
 from pathlib import Path
 import jsonschema
+from protocol_acceptance import normalized_schema_required
+
+
+def conservation_delta(schema, baseline):
+    raw = {name for name, value in baseline['$defs'].items() if value != schema['$defs'].get(name)}
+    current, prior = normalized_schema_required(schema), normalized_schema_required(baseline)
+    semantic = {name for name, value in prior['$defs'].items() if value != current['$defs'].get(name)}
+    return raw, semantic, current, prior
 
 
 def verify(schema, baseline, openapi, baseline_openapi, authority):
@@ -13,10 +21,10 @@ def verify(schema, baseline, openapi, baseline_openapi, authority):
     assert schema['$id'] == 'urn:adhd:protocol:2.2'
     assert openapi['info']['version'] == '2.2.0'
     allowed = {'AdminCommand', 'AdminResult', 'PublicConfig', 'MergePatch', 'Error'}
-    changed = {name for name, value in baseline['$defs'].items() if value != schema['$defs'].get(name)}
+    raw_changed, changed, semantic_schema, semantic_baseline = conservation_delta(schema, baseline)
     assert changed == allowed, changed
     for name in set(baseline['$defs']) - allowed:
-        assert baseline['$defs'][name] == schema['$defs'][name], name
+        assert semantic_baseline['$defs'][name] == semantic_schema['$defs'][name], name
     for name, union, prefix in [('AdminCommand', 'oneOf', 'admin_'), ('AdminResult', 'anyOf', 'admin_result_')]:
         assert schema['$defs'][name][union] == baseline['$defs'][name][union] + [
             {'$ref': '#/$defs/' + prefix + op} for op in ['tls_status', 'tls_renew']]
@@ -90,7 +98,7 @@ def verify(schema, baseline, openapi, baseline_openapi, authority):
     case('renew-error-private-message-reject', 'Error', bad, False)
     bad = copy.deepcopy(error); bad['error']['current_revision'] = 3
     case('renew-error-extra-revision-reject', 'Error', bad, False)
-    return {'passed': True, 'schema_only': True, 'unchanged_baseline_definitions': len(baseline['$defs']) - len(changed), 'changed_old_definitions': sorted(changed), 'added_definitions': len(schema['$defs']) - len(baseline['$defs']), 'actual_vectors': rows, 'runtime_started': False}
+    return {'passed': True, 'schema_only': True, 'unchanged_baseline_definitions': len(baseline['$defs']) - len(changed), 'changed_old_definitions': sorted(changed), 'raw_changed_old_definitions': sorted(raw_changed), 'required_order_only_old_definitions': sorted(raw_changed-changed), 'comparison': 'Existing protocol_acceptance JSON Schema required-name order rule only; raw exports remain untouched; membership, constraints, literals, annotations and all other array order remain strict', 'added_definitions': len(schema['$defs']) - len(baseline['$defs']), 'actual_vectors': rows, 'runtime_started': False}
 
 
 def main():

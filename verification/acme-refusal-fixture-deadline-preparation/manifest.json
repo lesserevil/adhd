@@ -1,0 +1,125 @@
+{
+  "scope": "Fixture-only bounded refusal preparation; no app/source/image/client change and no runtime/tool probe. Platform09 ownsHTTP01 independently.",
+  "retained_failure": "verification/acme-image42-refusal08-observation-failure",
+  "source_findings": {
+    "client_retry_max": 5,
+    "default_backoff_seconds": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "sum_seconds": 31,
+    "meaning": "Immediate recoverable refusal retries require at least31s backoff; original order30s and observation30s race. This does not reconstruct the historical exact socketerror.",
+    "pinned_retry_source_sha256_matches": true,
+    "sources": [
+      {
+        "path": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/lego-patched/cmd/internal/retryable.go",
+        "sha256": "ac101a818f199b27e96fa769781a56025bcaeff773f1ef970654b254893197fb",
+        "lines_17_26": [
+          "func NewRetryableClient(client *http.Client) *http.Client {",
+          "\tretryClient := retryablehttp.NewClient()",
+          "\tretryClient.RetryMax = 5",
+          "\tretryClient.HTTPClient = client",
+          "\tretryClient.CheckRetry = checkRetry",
+          "\tretryClient.Logger = nil",
+          "",
+          "\tif _, v := os.LookupEnv(\"LEGO_DEBUG_ACME_HTTP_CLIENT\"); v {",
+          "\t\tretryClient.Logger = log.Default()",
+          "\t}"
+        ]
+      },
+      {
+        "path": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/go-mod/pkg/mod/github.com/hashicorp/go-retryablehttp@v0.7.8/client.go",
+        "sha256": "d47f16eac843ac3fed104521497c80c721d52e3fa75fba70668c0abe0bb16dde",
+        "lines_49_51": [
+          "\tdefaultRetryWaitMin = 1 * time.Second",
+          "\tdefaultRetryWaitMax = 30 * time.Second",
+          "\tdefaultRetryMax     = 4"
+        ],
+        "retry_transport_lines_493_526": [
+          "}",
+          "",
+          "func baseRetryPolicy(resp *http.Response, err error) (bool, error) {",
+          "\tif err != nil {",
+          "\t\tif v, ok := err.(*url.Error); ok {",
+          "\t\t\t// Don't retry if the error was due to too many redirects.",
+          "\t\t\tif redirectsErrorRe.MatchString(v.Error()) {",
+          "\t\t\t\treturn false, v",
+          "\t\t\t}",
+          "",
+          "\t\t\t// Don't retry if the error was due to an invalid protocol scheme.",
+          "\t\t\tif schemeErrorRe.MatchString(v.Error()) {",
+          "\t\t\t\treturn false, v",
+          "\t\t\t}",
+          "",
+          "\t\t\t// Don't retry if the error was due to an invalid header.",
+          "\t\t\tif invalidHeaderErrorRe.MatchString(v.Error()) {",
+          "\t\t\t\treturn false, v",
+          "\t\t\t}",
+          "",
+          "\t\t\t// Don't retry if the error was due to TLS cert verification failure.",
+          "\t\t\tif notTrustedErrorRe.MatchString(v.Error()) {",
+          "\t\t\t\treturn false, v",
+          "\t\t\t}",
+          "\t\t\tif isCertError(v.Err) {",
+          "\t\t\t\treturn false, v",
+          "\t\t\t}",
+          "\t\t}",
+          "",
+          "\t\t// The error is likely recoverable so retry.",
+          "\t\treturn true, nil",
+          "\t}",
+          "",
+          "\t// 429 Too Many Requests is recoverable. Sometimes the server puts"
+        ],
+        "default_backoff_lines_550_569": [
+          "// seconds the server states it may be ready to process more requests from this client.",
+          "func DefaultBackoff(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {",
+          "\tif resp != nil {",
+          "\t\tif resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {",
+          "\t\t\tif sleep, ok := parseRetryAfterHeader(resp.Header[\"Retry-After\"]); ok {",
+          "\t\t\t\treturn sleep",
+          "\t\t\t}",
+          "\t\t}",
+          "\t}",
+          "",
+          "\tmult := math.Pow(2, float64(attemptNum)) * float64(min)",
+          "\tsleep := time.Duration(mult)",
+          "\tif float64(sleep) != mult || sleep > max {",
+          "\t\tsleep = max",
+          "\t}",
+          "\treturn sleep",
+          "}",
+          "",
+          "// parseRetryAfterHeader parses the Retry-After header and returns the",
+          "// delay duration according to the spec: https://httpwg.org/specs/rfc7231.html#header.retry-after"
+        ]
+      }
+    ]
+  },
+  "closed_directory_ipv4_validation": {
+    "schema_sha256": "b5acef3f7fed86bc494f3e517b0f2eae0eeff3b66cb967fc77ed6d7a0c0b8a60",
+    "url": "https://127.0.0.1:19991/dir",
+    "DirectoryURL_closed_schema_passed": true,
+    "source_TLS_normalize": "URIhttps/nonemptyhost/no user/query/fragment; IPban applies certificate domains separately, not directory host."
+  },
+  "amendment": [
+    "Keep actual AF_INET reservation bound and unlistened; require SO_ACCEPTCONN0 and real connect_ex ECONNREFUSED before config mutation and after failure settles.",
+    "LiteralIPv4 excludes unreserved localhostIPv6. Never touch persistent CA or foreign endpoint.",
+    "Same mutation sets order_timeout_ms5000 and refused directory URL. Expected public outcome ACME_ORDER_TIMEOUT, actual typed product deadline; original wait_failure30 unchanged.",
+    "Prior valid certificate/HTTPS/hash/backoff guards remain unchanged. No expected-code parsing from untyped client text."
+  ],
+  "pure_test_methods": 93,
+  "checks": [
+    "Actual refusal helper checks exactIPv4 refused before mutation and with reservation held through settlement.",
+    "Public patch exact5s; actual wait_failure receives expectedORDER_TIMEOUT and no seconds override.",
+    "Nonrefusal mocked0 fails before any mutation."
+  ],
+  "files": {
+    "tests/acme_fault_cases.py": "1cc23f96ab443968a2dd21117cf2512046e66eea47c063548374dc1f73a7ea33",
+    "tests/acme_refusal_unit.py": "e5d681f777f8b0fafd67812af3856630f758de84fa9c921027e01f7f0e8126bd",
+    "/home/horde/src/adhd/deploy/runtime/acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f"
+  }
+}

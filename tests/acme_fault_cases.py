@@ -5,6 +5,7 @@ Fault scopes and observations are separate from successful issuer foundations.
 """
 from datetime import datetime, timezone
 import socket
+import errno
 import time
 
 
@@ -68,9 +69,23 @@ def directory_connection_refusal(admin, secure):
     with socket.socket() as reservation:
         reservation.bind(('127.0.0.1',0))
         port=reservation.getsockname()[1]
-        accepted,_=admin.mutate('config_update',patch={'tls':{'acme':{'directory_url':f'https://localhost:{port}/dir'}}})
-        failed=wait_failure(admin,before,'ACME_PROCESS',accepted['config_revision'])
+        assert reservation.getsockopt(socket.SOL_SOCKET,socket.SO_ACCEPTCONN)==0
+        def refused():
+            with socket.socket(socket.AF_INET,socket.SOCK_STREAM)as probe:
+                probe.settimeout(1)
+                observed=probe.connect_ex(('127.0.0.1',port))
+                assert observed==errno.ECONNREFUSED,'Owned IPv4 endpoint must actually refuse connections'
+                return observed
+        initial=refused()
+        accepted,_=admin.mutate('config_update',patch={'tls':{'acme':{
+          'directory_url':f'https://127.0.0.1:{port}/dir','order_timeout_ms':5000}}})
+        # Maintained transport retry backoff totals31s; deliberately require
+        # the product's5s order deadline inside the unchanged30s observation.
+        failed=wait_failure(admin,before,'ACME_ORDER_TIMEOUT',accepted['config_revision'])
+        final=refused()
         assert secure.request('/health')[0]==200
         return {'name':'owned refused directory endpoint preserves prior valid certificate',
                 'passed':True,'prior_leaf_sha256':leaf,'last_error':failed['last_error'],
-                'persistent_testca_untouched':True}
+                'owned_ipv4_port':port,'initial_refusal_errno':initial,'final_refusal_errno':final,
+                'reservation_held_through_settlement':True,'order_timeout_ms':5000,
+                'original_failure_observation_seconds':30,'persistent_testca_untouched':True}

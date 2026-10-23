@@ -254,6 +254,36 @@ class Deployment(unittest.TestCase):
   for base in ['http://127.0.0.1:18866','https://other.acme.test','https://one.acme.test:443']:
    value=Client(200);value.base=base
    with self.assertRaises(AssertionError):scenario.replacement_https_health(value)
+ def test_replacement_exact_unexpected_eof_is_bounded_pending_not_success(self):
+  class Client:
+   base='https://one.acme.test'
+   def __init__(self,error):self.error=error
+   def request(self,path):
+    if self.error:raise self.error
+    return 200,{},{}
+  def eof(code=ssl.SSL_ERROR_EOF,reason='UNEXPECTED_EOF_WHILE_READING',kind=ssl.SSLEOFError):
+   value=kind(code,'private error text must not leave');value.reason=reason;return value
+  for error in [eof(),URLError(eof())]:
+   ledger={'events':[],'pending_count':0,'ready_monotonic':None}
+   self.assertFalse(scenario.replacement_https_health(Client(error),ledger));self.assertEqual(ledger['pending_count'],1)
+   self.assertIsNone(ledger['ready_monotonic']);self.assertEqual(ledger['events'][0]['type'],'SSLEOFError')
+   self.assertEqual(set(ledger['events'][0]),{'type','code','reason','at_monotonic'})
+   self.assertNotIn('private error',repr(ledger))
+   self.assertTrue(scenario.replacement_https_health(Client(None),ledger));self.assertIsNotNone(ledger['ready_monotonic'])
+  class ForgedEOF(ssl.SSLEOFError):pass
+  for error in [eof(reason='OTHER_REASON'),eof(code=ssl.SSL_ERROR_SSL),eof(kind=ForgedEOF),
+                eof(kind=ssl.SSLError),eof(kind=ssl.SSLCertVerificationError)]:
+   with self.subTest(error=error),self.assertRaises(type(error)):scenario.replacement_https_health(Client(error))
+  ledger={'events':[],'pending_count':0,'ready_monotonic':None}
+  for _ in range(200):self.assertFalse(scenario.replacement_https_health(Client(eof()),ledger))
+  self.assertEqual(len(ledger['events']),128);self.assertEqual(ledger['pending_count'],200)
+  self.assertIsNone(ledger['ready_monotonic'])
+  # A persistent exactEOF never satisfies readiness or extends the original45s.
+  ledger={'events':[],'pending_count':0,'ready_monotonic':None}
+  with patch.object(scenario.time,'monotonic',side_effect=[0,0,1,45]),patch.object(scenario.time,'sleep'):
+   with self.assertRaisesRegex(AssertionError,'Permanent EOF'):
+    scenario.wait(lambda:scenario.replacement_https_health(Client(eof()),ledger),45,'Permanent EOF')
+  self.assertEqual(ledger['pending_count'],1);self.assertIsNone(ledger['ready_monotonic'])
  def test_per_resource_absence_does_not_accept_case_or_mixed_failures(self):
   for kind,message in [('volume','Error response from daemon: get MiXeD: no such volume'),('network','Error response from daemon: network MiXeD not found')]:
    good=subprocess.CompletedProcess([],1,b'[]',message.encode())

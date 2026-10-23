@@ -50,16 +50,26 @@ def private_startup_health(client):
  return True
 
 
-def replacement_https_health(secure):
+def replacement_https_health(secure,evidence=None):
  # Only a newly replaced platform container's published TLS socket may be pending.
  assert secure.base=='https://one.acme.test'
+ def pending(kind,code,reason):
+  if evidence is not None:
+   evidence['pending_count']+=1
+   if len(evidence['events'])<128:
+    evidence['events'].append({'type':kind,'code':code,'reason':reason,'at_monotonic':time.monotonic()})
+  return False
  try:status=secure.request('/health')[0]
  except HTTPError:raise
  except (URLError,OSError) as error:
   reason=error.reason if isinstance(error,URLError) else error
-  if isinstance(reason,OSError) and not isinstance(reason,ssl.SSLError) and reason.errno in (errno.ECONNREFUSED,errno.ECONNRESET):return False
+  if type(reason) is ssl.SSLEOFError and getattr(reason,'reason',None)=='UNEXPECTED_EOF_WHILE_READING' and reason.errno==ssl.SSL_ERROR_EOF:
+   return pending('SSLEOFError',ssl.SSL_ERROR_EOF,'UNEXPECTED_EOF_WHILE_READING')
+  if isinstance(reason,OSError) and not isinstance(reason,ssl.SSLError) and reason.errno in (errno.ECONNREFUSED,errno.ECONNRESET):
+   return pending('OSError',reason.errno,'ECONNREFUSED' if reason.errno==errno.ECONNREFUSED else 'ECONNRESET')
   raise
  assert status==200,'Replacement HTTPS health status must be200'
+ if evidence is not None:evidence['ready_monotonic']=time.monotonic()
  return True
 
 
@@ -85,7 +95,7 @@ def renewal_due_ms(certificate):
  return after-min(86400000,(after-before)//3)
 
 
-def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password,certificate_facts):
+def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password,certificate_facts,replacement_readiness=None):
  """Adapters/clients are real callers, never an injected ACME/client substitute."""
  checks=[];records=[]
  def check(name,**facts):checks.append({'name':name,'passed':True,**facts})
@@ -147,9 +157,9 @@ def run(adapter,admin,secure,relay,tls_patch,public_url,initialize,password,cert
   adapter.stop_hub();before_state=adapter.private_state()
   assert before_state
   adapter.replace()
-  # Only refused/reset TCP on the new replacement is pending; verified TLS/name errors fail;
-  # TLS trust/name failures or HTTP errors must remain immediate failures.
-  restarted=wait(lambda: replacement_https_health(secure),max(0,deadline-time.monotonic()),'Replacement trusted HTTPS')
+  # Only refused/reset TCP or exact pre-certificate unexpectedEOF is pending;
+  # TLS trust/name failures and every other SSL/HTTP error remain fatal.
+  restarted=wait(lambda: replacement_https_health(secure,replacement_readiness),max(0,deadline-time.monotonic()),'Replacement trusted HTTPS')
   assert restarted
   secure.login('admin',password)
   persisted=status();assert persisted['certificate']['sha256']==automatic['certificate']['sha256']

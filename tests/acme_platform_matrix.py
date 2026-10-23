@@ -395,7 +395,8 @@ def execute(work,plan):
     password=adapter.exec(['/bin/cat','/config/initial-admin-password.txt'],sensitive=True).decode()
     password=re.search(r'^Password: (.+)$',password,re.M)[1];admin.login('admin',password)
     secure=PublicClient('https://one.acme.test',trust=work/'bound/issuer_root.pem',connect_ip='127.0.0.2')
-    row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test',initialize,password,certificate_facts)
+    row['replacement_readiness']={'events':[],'pending_count':0,'ready_monotonic':None}
+    row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test',initialize,password,certificate_facts,replacement_readiness=row['replacement_readiness'])
     row['passed']=row['scenario']['passed']
    except BaseException as error:phase_error=error;row['failure_type']=type(error).__name__;raise
    finally:

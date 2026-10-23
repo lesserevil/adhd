@@ -57,6 +57,13 @@ def verify(plan_path,expected):
         from acme_image_plan_prepare import verify_tool_roots
         verify_tool_roots(plan)
     for key,value in plan.get('execution_env',{}).items():assert os.environ.get(key)==value,'Reviewed execution environment changed'
+    if plan.get('host_closure'):
+        helper=driver.with_name('image_host_dependencies.py');closure_path=plan['host_closure']
+        assert str(helper)in plan['files']and closure_path in plan['files']
+        import image_host_dependencies as host
+        closure=json.loads(Path(closure_path).read_bytes())
+        host.verify(closure)
+        assert Path(closure['python_executable']).resolve(strict=True)==Path(sys.executable).resolve(strict=True)
     from acme_image_target import AcceptedImageTarget
     target=AcceptedImageTarget(plan)
     return plan,target,work,marker

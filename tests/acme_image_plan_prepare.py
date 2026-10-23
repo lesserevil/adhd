@@ -65,6 +65,7 @@ def prepare(root,output,ca_path,ca_sha,source_path,source_sha,python,tools,tool_
     source=json.loads(source_raw);assert source['passed']is True and re.fullmatch('[0-9a-f]{64}',source['artifact_sha256'])
     for name in ['receipt.json','rebuild.json']:
         assert sha(read(Path(source_path).with_name(name)))==source['files'][name]
+    if host_closure_path:assert sha(read(host_closure_path))==host_closure_sha
     browser=json.loads(read(browser_path))if browser_path else None
     if browser is not None:
         assert host_closure_path and sha(read(host_closure_path))==host_closure_sha
@@ -113,8 +114,11 @@ def prepare(root,output,ca_path,ca_sha,source_path,source_sha,python,tools,tool_
         relay[name+'_file']=str(path);relay[name+'_sha256']=sha(body);external[str(path)]=sha(body)
     for name,digest in source['files'].items():
         path=Path(source_path).absolute().with_name(name);assert sha(read(path))==digest;external[str(path)]=digest
+    if host_closure_path:
+        external[str(Path(host_closure_path).absolute())]=host_closure_sha
+        assert 'tests/image_host_dependencies.py'in inputs
     if browser is not None:
-        for path in [browser_path,host_closure_path]:external[str(Path(path).absolute())]=sha(read(path))
+        external[str(Path(browser_path).absolute())]=sha(read(browser_path))
         assert all('tests/'+name in inputs for name in ['acme_browser.py','acme_browser_flow.py','acme_image_browser.py','image_host_dependencies.py'])
     if target is not None:
         external[str(Path(target_path).absolute())]=sha(read(target_path))
@@ -134,6 +138,7 @@ def prepare(root,output,ca_path,ca_sha,source_path,source_sha,python,tools,tool_
       'execution_env':{'PATH':'/usr/bin:/bin','PYTHONDONTWRITEBYTECODE':'1'},
       'preparation_scope':'Bound input preparation only; target:null is deliberately non-executable',
       'source_admission_sha256':source_sha,'ca_manifest_sha256':ca_sha}
+    if host_closure_path:common['host_closure']=str(Path(host_closure_path).absolute())
     schema=frozen/'components/hub/acme/interface.schema.json';configure=frozen/'scripts/configure_hub.py'
     argv=['--execute','--phase','full','--work',str(output/'runtime'/'foundation'),
       '--ca-manifest',str(ca_copy),'--ca-manifest-sha256',ca_sha,'--schema',str(schema),'--configure',str(configure),

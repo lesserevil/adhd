@@ -1,0 +1,70 @@
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/urllib/request.py", line 1344, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+  File "/usr/lib/python3.12/http/client.py", line 1365, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.12/http/client.py", line 1411, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.12/http/client.py", line 1360, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.12/http/client.py", line 1120, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.12/http/client.py", line 1064, in send
+    self.connect()
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/frozen/tests/acme_runtime.py", line 121, in connect
+    self.sock = context.wrap_socket(sock, server_hostname=self.host)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/ssl.py", line 1042, in _create
+    self.do_handshake()
+  File "/usr/lib/python3.12/ssl.py", line 1320, in do_handshake
+    self._sslobj.do_handshake()
+ssl.SSLEOFError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/driver.py", line 455, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/driver.py", line 452, in main
+    else:execute(work,plan)
+         ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/driver.py", line 436, in execute
+    if primary:raise primary
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/driver.py", line 398, in execute
+    row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test',initialize,password,certificate_facts)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/frozen/tests/acme_platform_scenario.py", line 152, in run
+    restarted=wait(lambda: replacement_https_health(secure),max(0,deadline-time.monotonic()),'Replacement trusted HTTPS')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/frozen/tests/acme_platform_scenario.py", line 18, in wait
+    value=test()
+          ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/frozen/tests/acme_platform_scenario.py", line 152, in <lambda>
+    restarted=wait(lambda: replacement_https_health(secure),max(0,deadline-time.monotonic()),'Replacement trusted HTTPS')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/frozen/tests/acme_platform_scenario.py", line 56, in replacement_https_health
+    try:status=secure.request('/health')[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/frozen/tests/acme_runtime.py", line 149, in request
+    response = self.opener.open(Request(self.base + path, data=raw, headers=hs), timeout=timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 515, in open
+    response = self._open(req, data)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 532, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-11/frozen/tests/acme_runtime.py", line 132, in https_open
+    return self.do_open(Connection, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 1347, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>

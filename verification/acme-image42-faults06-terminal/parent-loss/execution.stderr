@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/_build/acme/image42-plans06/frozen/tests/acme_image_fault_flow.py", line 161, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans06/frozen/tests/acme_image_fault_flow.py", line 157, in main
+    if args.execute:execute(plan,target,work,marker,args.plan_sha256)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans06/frozen/tests/acme_image_fault_flow.py", line 129, in execute
+    try:run(plan,target,work)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans06/frozen/tests/acme_image_fault_flow.py", line 97, in run
+    result=loss_phase(case,**common,challenge=challenge,issuer_root=ca['issuer_root'],password=password,target=target)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans06/frozen/tests/acme_image_faults.py", line 313, in loss_phase
+    receipt,_=admin.mutate('tls_renew');assert receipt['accepted']is True
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans06/frozen/tests/acme_runtime.py", line 180, in mutate
+    revision = self.api({'op': 'config_get'})['config_revision']
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/_build/acme/image42-plans06/frozen/tests/acme_runtime.py", line 167, in api
+    assert status == expected, ('Admin API status', command['op'], status, expected)
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: ('Admin API status', 'config_get', 401, 200)

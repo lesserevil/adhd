@@ -1,0 +1,30 @@
+{
+  "passed": false,
+  "case": "parent-loss",
+  "actual_terminal": "Root89252 actualTERMINAL1; serialrunner records hot-disableEXIT0 then parent-lossEXIT1.",
+  "whole_checks": 1,
+  "selected_transition_qualified": false,
+  "input_and_host_closure_unchanged": true,
+  "recorded_container_id_name_absences": 12,
+  "recorded_pid_start_absences": 14,
+  "resource_audit_passed": true,
+  "cleanup_errors": [],
+  "scope": "Only genuinebaseline1wholecheck; actual loss/restart path is partial and excluded from whole qualification. No product change/rerun inferred.",
+  "files": {
+    "plan.json": "e0979fb0ab76c1d33db2591571d033abbda37d8797dba61f0d4604a59c3ba9f6",
+    "report.json": "a18804ed61bff0d5818d29f99a6ba5132dde60be3a667ad6d8f8bccb841f7053",
+    "result.json": "99cad8ae7edb4ea84ec3beda7a06493efa3fe894cad0c6d5217cc12674ad01a7",
+    "audit.json": "57eb5c63f2222117a8fb82ef1a1e289d115098172934f74225a4cb3189116a1d",
+    "execution.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "execution.stderr": "590ed714ccf48a69cf78aefbbcdbd578126f12faedbd8d94b190eb8b41d3fb84"
+  },
+  "diagnosis": "Fixture reused old Admin cookie after actual process restart; server sessions are in memory. Postrestart config_get returned401 before extra manual tls_renew. Supported reauthentication must use independently verified HTTPS; no plaintext fallback or cookie rewrite.",
+  "remaining_faults_unstarted": [
+    "client-loss",
+    "guardian-loss",
+    "bad-challenge",
+    "issuer-refusal",
+    "untrusted-issuer",
+    "real-expiry"
+  ]
+}

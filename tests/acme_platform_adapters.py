@@ -349,7 +349,7 @@ class Kind:
   self.name=name;self.node=name+'-control-plane';self.node_image=node_image;self.node_config=identity(node_config_identity)
   self.network_id=network_id;self.network_name=network_name;self.gateway=bridge_gateway(gateway);self.seed=seed
   self.kubeconfig=self.work/'kubeconfig';self.lease=NamespaceLease('adhd-final-'+name,uuid4().hex,prefix='adhd-final-')
-  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None;self.kubeconfig_sha=None;self.api_endpoint=None;self.kube_node_uid=None;self.node_readiness=[]
+  self.issued=False;self.node_id=None;self.pods=[];self.pvc_uid=None;self.pv_name=None;self.probes=[];self.volume_names=[];self.forward=None;self.cleanup_deadline=None;self.kubeconfig_sha=None;self.api_endpoint=None;self.kube_node_uid=None;self.node_readiness=[];self.node_readiness_count=0;self.node_readiness_last=None;self.node_readiness_successes=[]
  def cmd(self,args,**kw):
   if self.cleanup_deadline is not None:
    remaining=self.cleanup_deadline-time.monotonic();assert remaining>0,'Kind cleanup deadline'
@@ -393,15 +393,28 @@ class Kind:
    key=item.get('key','');known=isinstance(key,str) and re.fullmatch(r'(?:node[.]kubernetes[.]io|node-role[.]kubernetes[.]io|node[.]cloudprovider[.]kubernetes[.]io)/[a-z-]+',key)
    taints.append({'key':key if known else 'OTHER','key_sha256':hashlib.sha256(str(key).encode()).hexdigest(),'effect':item.get('effect') if item.get('effect') in ('NoSchedule','PreferNoSchedule','NoExecute') else 'OTHER'})
   return {'uid':uid,'conditions':conditions,'taints':taints,'unschedulable':value.get('spec',{}).get('unschedulable',False) is not False}
- def ready_node(self):
-  response=self.kubectl('get','node',self.node,'-o','json',capture=True,sensitive=True)
-  value=json.loads(response.stdout);summary=self.node_summary(value)
-  path=self.work/('node-readiness-'+str(len(self.node_readiness))+'.json');file(path,response.stdout)
-  summary['private_json_sha256']=hashlib.sha256(response.stdout).hexdigest();self.node_readiness.append(summary)
-  ready=[c for c in summary['conditions'] if c['type']=='Ready']
-  assert ready==[{'type':'Ready','status':'True'}],'Owned node is not Ready'
-  assert not summary['unschedulable'] and value.get('spec',{}).get('taints',[])==[],'Owned node is not untainted/schedulable'
-  return summary
+ def ready_node(self,deadline):
+  while True:
+   remaining=deadline-time.monotonic();assert remaining>0,'Owned node infrastructure deadline'
+   response=self.kubectl('get','node',self.node,'-o','json',capture=True,sensitive=True,timeout=min(30,remaining))
+   assert len(response.stdout)<=4*1024*1024
+   value=json.loads(response.stdout);summary=self.node_summary(value)
+   summary['private_json_sha256']=hashlib.sha256(response.stdout).hexdigest()
+   self.node_readiness_count+=1
+   # Keep bounded private files/safe ledger plus the latest observation/count.
+   if len(self.node_readiness)<128:
+    path=self.work/('node-readiness-'+str(len(self.node_readiness))+'.json');file(path,response.stdout)
+    self.node_readiness.append(summary)
+   self.node_readiness_last=summary
+   ready=[c for c in summary['conditions'] if c['type']=='Ready']
+   if ready==[{'type':'Ready','status':'True'}] and not summary['unschedulable'] and value.get('spec',{}).get('taints',[])==[]:
+    assert time.monotonic()<=deadline,'Owned node infrastructure deadline'
+    assert len(self.node_readiness_successes)<2
+    file(self.work/('node-ready-success-'+str(len(self.node_readiness_successes))+'.json'),response.stdout)
+    self.node_readiness_successes.append(summary)
+    return summary
+   remaining=deadline-time.monotonic();assert remaining>0,'Owned node infrastructure deadline'
+   time.sleep(min(.5,remaining))
  def start(self):
   assert not self.issued and self.node_state() is None
   network=json.loads(self.cmd(['docker','network','inspect',self.network_id],capture=True).stdout)[0]
@@ -415,6 +428,7 @@ class Kind:
   assert len(original)==1 and original[0]['Id']==self.node_config
   self.preexisting_volumes=set(self.cmd(['docker','volume','ls','-q'],capture=True).stdout.decode().split())
   file(self.work/'kind.yaml',yaml.safe_dump(config).encode());self.issued=True
+  bootstrap_deadline=time.monotonic()+180
   self.cmd(['kind','create','cluster','--name',self.name,'--config',str(self.work/'kind.yaml'),'--kubeconfig',str(self.kubeconfig),'--wait','60s'],
            env={'KIND_EXPERIMENTAL_DOCKER_NETWORK':self.network_name},timeout=180)
   node=self.node_state();assert node
@@ -424,13 +438,14 @@ class Kind:
   ports=node['NetworkSettings']['Ports']['6443/tcp']
   assert ports==[{'HostIp':self.api_endpoint['host'],'HostPort':str(self.api_endpoint['port'])}]
   self.kubeconfig_sha=hashlib.sha256(self.kubeconfig.read_bytes()).hexdigest()
-  self.ready_node()
+  self.ready_node(bootstrap_deadline)
   local=json.loads(self.cmd(['docker','image','inspect',self.reference],capture=True).stdout)
   assert len(local)==1 and local[0]['Id']==self.image
-  self.cmd(['kind','load','docker-image',self.reference,'--name',self.name],timeout=120)
+  remaining=bootstrap_deadline-time.monotonic();assert remaining>0,'Owned node infrastructure deadline'
+  self.cmd(['kind','load','docker-image',self.reference,'--name',self.name],timeout=min(120,remaining))
   cached=json.loads(self.cmd(['docker','exec',self.node_id,'crictl','inspecti',self.reference],capture=True).stdout)
   assert cached['status']['id']==self.image
-  self.ready_node()
+  self.ready_node(bootstrap_deadline)
   document=self.lease.document()
   created=json.loads(self.kubectl('create','-f','-','-o','json',input=json.dumps(document).encode(),capture=True).stdout)
   self.lease.observe(created)

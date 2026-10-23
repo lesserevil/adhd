@@ -1,0 +1,220 @@
+{
+  "passed": true,
+  "case": "parent-loss",
+  "plan_sha256": "e6655ce68b6d2b60ea76758d43bbdcd4bd02815e2dc66c832d53a366cbcf2afc",
+  "primary_failure_type": null,
+  "cleanup_errors": [],
+  "target": {
+    "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+    "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+    "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+    "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+    "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+    "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+    "cache_modules": 64,
+    "packaged_assets": {
+      "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+      "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+      "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+      "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+      "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+      "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+      "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+      "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb"
+    },
+    "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+  },
+  "runtime_sessions": [
+    {
+      "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "payload_verified": true,
+      "assets_verified": true,
+      "name": null,
+      "container_id": null,
+      "events": [
+        {
+          "action": "started",
+          "container_id": "42cc784a4f9268a33ae6f3e6c5f50c0007bb8e98d3762afebe709d9221923a4e",
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+        },
+        {
+          "action": "observed-absent",
+          "container_id": "42cc784a4f9268a33ae6f3e6c5f50c0007bb8e98d3762afebe709d9221923a4e",
+          "observed_absent": true,
+          "exit_code": 137
+        }
+      ],
+      "actual_vms": [
+        {
+          "container_id": "42cc784a4f9268a33ae6f3e6c5f50c0007bb8e98d3762afebe709d9221923a4e",
+          "container_name": "adhd-multi-accept-785df5ec097444f5",
+          "host_vm_pid": 4086140,
+          "host_vm_start_ticks": "28574184",
+          "pid_namespace": "pid:[4026533600]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "584f8b7217dccac37892ae7a8dee355dae3f191239b23429883a758e071113bf",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        }
+      ],
+      "probes": [
+        {
+          "owned_name": "adhd-accept-probe-420b65a080ae458c",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-f05dc1cd68a74bff",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-c85b7de427454e07",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-9772f7254e9448bd",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false
+    },
+    {
+      "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+      "payload_verified": true,
+      "assets_verified": true,
+      "name": null,
+      "container_id": null,
+      "events": [
+        {
+          "action": "started",
+          "container_id": "3e142b2dc90f5651477a53f1548e3de8fefeec0120adc166497dc9a75dae768d",
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+        },
+        {
+          "action": "observed-absent",
+          "container_id": "3e142b2dc90f5651477a53f1548e3de8fefeec0120adc166497dc9a75dae768d",
+          "observed_absent": true,
+          "exit_code": 0
+        }
+      ],
+      "actual_vms": [
+        {
+          "container_id": "3e142b2dc90f5651477a53f1548e3de8fefeec0120adc166497dc9a75dae768d",
+          "container_name": "adhd-multi-accept-4752039f32cd474d",
+          "host_vm_pid": 4095014,
+          "host_vm_start_ticks": "28577072",
+          "pid_namespace": "pid:[4026533600]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "584f8b7217dccac37892ae7a8dee355dae3f191239b23429883a758e071113bf",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        }
+      ],
+      "probes": [
+        {
+          "owned_name": "adhd-accept-probe-bbccbce7daf4492e",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "cat",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-2a09db2c1d8942ff",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-184affec92cb4607",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        },
+        {
+          "owned_name": "adhd-accept-probe-30e3d8e96be84c01",
+          "container_id": null,
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "entrypoint": "sha256sum",
+          "run_exit_code": 0,
+          "run_failure_type": null,
+          "foreign_object_not_removed": false,
+          "observed_absent": true,
+          "cleanup_failure_types": []
+        }
+      ],
+      "probe_cleanup_blocked": false
+    }
+  ],
+  "report_sha256": "af2ceee0d9bbdfd7a7522c53ddc9337054d3c4bfed34a03e4ebfdd463995d504"
+}

@@ -1,0 +1,83 @@
+{
+  "schema": "adhd/acme-passive-causal-diagnostic@1",
+  "passed": false,
+  "whole_groups": 6,
+  "scope": "Native source/cache diagnostic only, not artifact/image/package acceptance;07 remains false independently",
+  "observer_commit": "04ed2fd",
+  "source_cache_sha256": "6c155afd0d6a2ccc34e73984c7ac12b55da575a19447106cfd6fc4d6c8edc411",
+  "ca_manifest_sha256": "5efcedcbff7175ff976f43415d64df6338f62022e2fc409e199a23c5892698f6",
+  "actual_pair": {
+    "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20",
+    "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb"
+  },
+  "observed_failure": {
+    "operation": "tls_status",
+    "elapsed_seconds": 5.010457354015671,
+    "exception_type": "TimeoutError",
+    "config_failure": "GenServer.call(ADHD.TLS,:status,5000) exit terminated Config"
+  },
+  "causal_observation": {
+    "tls_busy_first_sample_ms": -576460715918,
+    "tls_busy_last_sample_ms": -576460711009,
+    "sampled_span_ms": 4909,
+    "tls_queued_requests": "1 then2",
+    "config_observed": "waiting gen:do_call/4 during interval",
+    "progressing_stack_paths": [
+      "TLS.close_job -> ACMEFiles.harden_tree -> harden/sync_directory/fileIO",
+      "File.rm_rf",
+      "TLS.remember_account_keys -> ACMEFiles.harden_tree -> file/sync IO",
+      "TLS.finish -> TLSCertificate.load -> code loading/path validation",
+      "TLS.finish -> ACMEFiles.directory -> sync_directory"
+    ],
+    "interpretation": "Synchronous closure/publication processing occupied TLS while status queued; Config failed on its bounded synchronous status call",
+    "limits": [
+      "Sampled stacks establish progress, not exact time attributed to each syscall",
+      "No evidence of Config/TLS cyclic call or one deadlocked syscall; no CPU claim",
+      "100ms target polling has scheduling gaps including1.618s; not a latency benchmark",
+      "BEAM and Python monotonic epochs differ; spans are derived within each clock, not submillisecond crossclock alignment"
+    ]
+  },
+  "cleanup": {
+    "identities": [
+      {
+        "pid": 1957763,
+        "start_ticks": "27225495",
+        "exit_code": 1,
+        "observed_children": 7,
+        "all_absent": true
+      }
+    ],
+    "relay_closed": true,
+    "active_handlers": 0,
+    "errors": [],
+    "descendants_scope": "Only identities actually observed by the original passive descendant ledger, not complete historical short-lived issuance"
+  },
+  "files": {
+    "report.json": "620e239cebc159a7f3427eed3a9649fd7ef2dab41befe3495c1e0183ee646933",
+    "requests.jsonl": "d6a35958e37b13567039ff2eef5051f8279d032085d200f367fef8b0ab8074ca",
+    "passive.jsonl": "9ce53344ed4bd2f5e973b05b39d881e8a8821e764f2cfd60f2ec89b665defa4f",
+    "diagnostic.json": "a8f854b13b9bce1e5e65deca7a38faf4b189c3f402044370732c19ed2a7efe49"
+  },
+  "private_logs": [
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance08/hub/stdout.log",
+      "bytes": 798,
+      "sha256": "a4335d0a5da77b30acea8f0c5a43a8c46f5991ffea5654cc74c7e59781b575ae"
+    },
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance08/hub/stderr.log",
+      "bytes": 103,
+      "sha256": "169b2b5a73092d71099232016d917f79026dd5bfe3fd53fd83273d3a92a92870"
+    },
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance08/hub/acme/state.json",
+      "bytes": 255,
+      "sha256": "776e284681f4ef7b87975683ca0734b6c8b25109a8801c247a09ba9b3bc5f799"
+    },
+    {
+      "path": "/home/horde/src/adhd/.worktrees/config-acceptance/_build/acme/issuance08.stderr",
+      "bytes": 3813,
+      "sha256": "4a1d5c6153568929e9edf9587aca2357bfe5cc4f7da3d49b44b395ca6038784b"
+    }
+  ]
+}

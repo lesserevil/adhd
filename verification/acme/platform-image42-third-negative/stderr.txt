@@ -1,0 +1,29 @@
+Traceback (most recent call last):
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/driver.py", line 455, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/driver.py", line 452, in main
+    else:execute(work,plan)
+         ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/driver.py", line 436, in execute
+    if primary:raise primary
+               ^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/driver.py", line 384, in execute
+    seed_probe=SeedProbe(command,target['image'],local/'seed',local/'state');initialize_seed(row,seed_probe)
+                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/driver.py", line 332, in initialize_seed
+    try:probe.initialize()
+        ^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/frozen/tests/acme_platform_adapters.py", line 582, in initialize
+    self.probe('/bin/sh','-ec',
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/frozen/tests/container_fixture.py", line 58, in probe
+    result = self.docker("run", "--rm", "--name", name, "--network", "none", "--read-only",
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/frozen/tests/acme_platform_adapters.py", line 578, in docker
+    return self.command(['docker',*args],capture=True,check=check,sensitive=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/frozen/tests/acme_platform_commands.py", line 138, in __call__
+    if check:assert result.returncode==0,'Owned CLI failed: '+argv[0]
+                    ^^^^^^^^^^^^^^^^^^^^
+AssertionError: Owned CLI failed: docker
+Payload probe cleanup: observed_absent=True; failures=

@@ -1,0 +1,28 @@
+{
+  "schema": "adhd/acme-platform-image42-third-negative@1",
+  "passed": false,
+  "authoritative_exit_code": 1,
+  "plan_private_path": "/home/horde/src/adhd/.worktrees/acme-deploy/_build/acme/platform-image42-03/plan.json",
+  "plan_sha256": "b23c341b760b9bbc701aff5a85951790e9e961687c3928508ebbed8cbe30b934",
+  "failure_phase": "Root-only fixed seed permission setup before app deployment",
+  "observed": "Seed Docker command exit1; issued-name cleanup absent; state root reached uid/gid10001 mode0700. Original sensitive stderr retained by hash only, not reconstructed.",
+  "static_diagnosis": "Seed script chowns files away from UID0 before chmod, while explicit restricted capabilities omitFOWNER. Reorder modes before finalchown; no extra capability or productionUID change.",
+  "state_root_metadata": {
+    "uid": 10001,
+    "gid": 10001,
+    "mode": "0o700"
+  },
+  "stderr_hash_from_operation": "e7340ea6f33893bab536341e20540b4b9653615d1ac8856527d223f257ce38b8",
+  "whole_platforms": 0,
+  "kind_unrun": true,
+  "apps_orders_or_relays_started": 0,
+  "CLI_current_absent": 96,
+  "lease_released_and_independently_acquired": true,
+  "prior_failed_private_state_preserved": true,
+  "no_automatic_retry": true,
+  "files": {
+    "result.json": "262be436a77cd09afd562ebba6f6d90298b1eab845520aaba8e21b421686da0c",
+    "independent-cleanup.json": "df1e834cf4183d37249774069c2ab68253d4f1804ae13e7f250900c84a2d8fae",
+    "stderr.txt": "8c567d78ba73bcd649a758ea6a2891f0179c164658ea8712c546f008982e44a1"
+  }
+}

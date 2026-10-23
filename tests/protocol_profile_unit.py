@@ -40,9 +40,15 @@ class ProfileSelection(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 exec(compile(ast.Module([branch], type_ignores=[]), str(SOURCE), 'exec'), env)
     def test_only_target_selection_changed(self):
+        # Undo the separately reviewed method-only PathItem traversal repair.
+        tree = ast.parse(self.text)
+        helper = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name=='validate_operation_security')
+        source_lines = self.text.splitlines(keepends=True)
+        s = ''.join(source_lines[:helper.lineno-1]+source_lines[helper.end_lineno:])
+        s = s.replace('        validate_operation_security(api)', "        for path in api['paths'].values():\n            for operation in path.values():\n                for requirement in operation.get('security',[]):\n                    assert set(requirement)<=set(api['components']['securitySchemes'])")
         # Undo only the five reviewed target-selection edits, then bind the whole
         # original syntax tree: assertions, calls, deadlines, group order stay.
-        s = self.text.replace("choices=['1.7.0','2.0.0','2.1.0','2.2.0']", "choices=['1.7.0','2.0.0','2.1.0']")
+        s = s.replace("choices=['1.7.0','2.0.0','2.1.0','2.2.0']", "choices=['1.7.0','2.0.0','2.1.0']")
         s = s.replace("multi_profile=args.profile_version in ('2.0.0','2.1.0','2.2.0')", "multi_profile=args.profile_version in ('2.0.0','2.1.0')")
         s = s.replace("({'1.7.0','2.0.0','2.1.0','2.2.0'} if args.profile_version=='2.2.0' else ", '(')
         s = s.replace("if args.profile_version in ('2.1.0','2.2.0'):\n            assert schema['$id']=='urn:adhd:protocol:'+args.profile_version.rsplit('.',1)[0]", "if args.profile_version=='2.1.0':\n            assert schema['$id']=='urn:adhd:protocol:2.1'")

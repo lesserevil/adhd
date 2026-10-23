@@ -14,6 +14,17 @@ import jsonschema
 from openapi_spec_validator import validate as validate_openapi
 from foundation_acceptance import Runtime, Client, ModelFixture
 
+def validate_operation_security(api):
+    # PathItem metadata is not an Operation: visit only standard HTTP methods.
+    methods = ('get','put','post','delete','options','head','patch','trace')
+    for path in api['paths'].values():
+        for method in methods:
+            if method not in path:
+                continue
+            operation = path[method]
+            for requirement in operation.get('security',[]):
+                assert set(requirement)<=set(api['components']['securitySchemes'])
+
 def max_bytes(validator,bound,instance,schema):
     if isinstance(instance,str) and len(instance.encode('utf-8'))>bound:
         yield jsonschema.ValidationError('UTF-8 byte bound exceeded')
@@ -584,10 +595,7 @@ def main():
         record('actual-http-rejects-duplicates-unknown-fields-bool-integers-and-versions')
         status,api,_=client.get('/protocol/openapi');assert status==200
         validate_openapi(api)
-        for path in api['paths'].values():
-            for operation in path.values():
-                for requirement in operation.get('security',[]):
-                    assert set(requirement)<=set(api['components']['securitySchemes'])
+        validate_operation_security(api)
         assert normalized_openapi_required(api)==normalized_openapi_required(json.loads(args.published_openapi.read_text()))
         assert api==json.loads(subprocess.check_output(cli+[json.dumps(['protocol-openapi'])],text=True))
         assert api['openapi']=='3.1.0' and api['info']['version']==args.profile_version

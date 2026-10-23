@@ -38,9 +38,11 @@ def free_port():
 
 
 class Runtime:
-    def __init__(self, root, command, image=None, *, initialize_projects=True):
+    def __init__(self, root, command, image=None, *, initialize_projects=True, initialization_schema="urn:adhd:protocol:2.1"):
         self.root, self.command, self.image = root, command, image
+        assert initialization_schema in ("urn:adhd:protocol:2.1", "urn:adhd:protocol:2.2")
         self.initialize_projects = initialize_projects
+        self.initialization_schema = initialization_schema
         root.mkdir(mode=0o700)
         self.file = root / 'hub.json'
         self.base = 'http://127.0.0.1:8766'
@@ -86,7 +88,7 @@ class Runtime:
         if not self.initialize_projects:
             return
         status, schema, _ = Client(self).get('/protocol/schema')
-        if status != 200 or schema.get('$id') != 'urn:adhd:protocol:2.1':
+        if status != 200 or schema.get('$id') != self.initialization_schema:
             return
         client = Client(self, self.config.get('admin_token'))
         if not client.bearer:

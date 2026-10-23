@@ -403,7 +403,7 @@ def main():
     fcntl.flock(port_lock,fcntl.LOCK_EX)
     parent=Path('_build/roadmap/tests').resolve();parent.mkdir(parents=True,exist_ok=True)
     root=Path(tempfile.mkdtemp(prefix='protocol-',dir=parent))
-    runtime=Runtime(root/'hub',command,args.image);model=ModelFixture();cases=[]
+    runtime=Runtime(root/'hub',command,args.image,initialization_schema='urn:adhd:protocol:2.2' if args.profile_version=='2.2.0' else 'urn:adhd:protocol:2.1');model=ModelFixture();cases=[]
     cli=['docker','run','--rm','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges',args.image] if args.image else command
     def record(name):cases.append({'case':name,'passed':True});print('PASS',name,flush=True)
     try:

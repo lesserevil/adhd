@@ -46,6 +46,7 @@ class ProfileSelection(unittest.TestCase):
         s = s.replace("multi_profile=args.profile_version in ('2.0.0','2.1.0','2.2.0')", "multi_profile=args.profile_version in ('2.0.0','2.1.0')")
         s = s.replace("({'1.7.0','2.0.0','2.1.0','2.2.0'} if args.profile_version=='2.2.0' else ", '(')
         s = s.replace("if args.profile_version in ('2.1.0','2.2.0'):\n            assert schema['$id']=='urn:adhd:protocol:'+args.profile_version.rsplit('.',1)[0]", "if args.profile_version=='2.1.0':\n            assert schema['$id']=='urn:adhd:protocol:2.1'")
+        s = s.replace("runtime=Runtime(root/'hub',command,args.image,initialization_schema='urn:adhd:protocol:2.2' if args.profile_version=='2.2.0' else 'urn:adhd:protocol:2.1');model=ModelFixture();cases=[]", "runtime=Runtime(root/'hub',command,args.image);model=ModelFixture();cases=[]")
         self.assertEqual(hashlib.sha256(ast.dump(ast.parse(s)).encode()).hexdigest(), '00a770e42c733590ef88cdea3276d8001404b82ec05746bd635e7189684a8667')
         records = [n for n in ast.walk(self.tree) if isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='record']
         self.assertEqual(len(records),8)

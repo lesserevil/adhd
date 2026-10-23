@@ -12,6 +12,37 @@ import acme_image_fault_flow
 
 
 class FaultGuards(unittest.TestCase):
+    def test_hot_disable_uses_valid_dual_policy_and_keeps_postcommit_fences(self):
+        import inspect
+        import acme_image_faults as module
+        from datetime import datetime,timedelta,timezone
+        from urllib.error import URLError
+        def exercise(function):
+            state={'disabled':False};calls=[]
+            before={'https_state':'ready','certificate':{'not_after':(datetime.now(timezone.utc)+timedelta(seconds=90)).isoformat()}}
+            disabled={'enabled':False,'https_state':'disabled','active_domains':[]}
+            def api(command):return disabled if state['disabled']else before
+            def mutate(op,*,patch):
+                calls.append(patch)
+                if patch['tls'].get('enabled')is False:
+                    self.assertIs(patch['tls']['acme']['enabled'],False,'ACME requires TLS; disable both atomically')
+                    state['disabled']=True
+            admin=SimpleNamespace(api=api,mutate=mutate)
+            challenge=SimpleNamespace(snapshot=lambda:{'active':0},set_mode=Mock(),held=SimpleNamespace(wait=Mock(return_value=True)),
+              held_proof=('/.well-known/acme-challenge/owned','one.acme.test:8080',b'real-held-proof'),release=Mock())
+            secure=SimpleNamespace(request=Mock(side_effect=URLError(ConnectionRefusedError())))
+            private=Mock();private.request.return_value=(200,{}, {})
+            with patch.object(module,'PublicClient',return_value=private),patch.object(module,'wait',side_effect=lambda predicate,*args:predicate()),                 patch.object(module.time,'monotonic',side_effect=[0,0,1,2,3]),patch.object(module.time,'sleep'):
+                result=function('hot-disable',admin=admin,secure=secure,runtime=SimpleNamespace(base='http://owned'),
+                  hub=Path('/owned'),challenge=challenge,issuer_root='/owned/root')
+            self.assertTrue(result['passed']);self.assertEqual(result['current_active_domains'],[])
+            self.assertEqual(private.request.call_count,3);secure.request.assert_called_once_with('/health')
+            self.assertEqual(calls[-1],{'tls':{'enabled':False,'acme':{'enabled':False}}})
+        exercise(module.policy_phase)
+        source=inspect.getsource(module.policy_phase).replace("{'tls':{'enabled':False,'acme':{'enabled':False}}}","{'tls':{'enabled':False}}")
+        namespace=dict(vars(module));exec(compile(source,'historical-disable-vector','exec'),namespace)
+        with self.assertRaises(KeyError):exercise(namespace['policy_phase'])
+
     def test_real_floor_shape_and_future_integer_not_arbitrary_private_state(self):
         with tempfile.TemporaryDirectory()as directory:
             root=Path(directory);(root/'acme').mkdir();path=root/'acme'/'issuer-retry.json'

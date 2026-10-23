@@ -240,7 +240,7 @@ def policy_phase(case,*,admin,secure,runtime,hub,challenge,issuer_root):
         path,host,body=challenge.held_proof
         assert host.split(':')[0]=='one.acme.test'and body
         if case=='hot-disable':
-            admin.mutate('config_update',patch={'tls':{'enabled':False}})
+            admin.mutate('config_update',patch={'tls':{'enabled':False,'acme':{'enabled':False}}})
             value=admin.api({'op':'tls_status'})
             assert value['enabled']is False and value['https_state']=='disabled'
         else:

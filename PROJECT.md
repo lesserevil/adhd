@@ -278,8 +278,33 @@ adding new wire behavior; distinguish implemented contracts from planned ones.
 [PROTO-001](docs/roadmap/active-work.md#proto-001--specify-and-verify-every-federated-system-wire-protocol-rigorously)
 records this requirement across federation, A2A, admin, OIDC and model interfaces.
 
+### Managed HTTPS and certificates
+
+The hub must obtain and renew its own TLS certificates through ACME and use them
+for native HTTPS. Admin controls must configure hostnames, contact, issuer,
+challenge listeners, consent and renewal policy without restarting the hub.
+Hostnames and contact details are explicit configuration, not installation-time
+constants. Certificate management is server-local and restricted to Admins.
+
+Persist account keys and complete certificate generations privately, reuse them
+after restart, reload valid replacements atomically and retain a usable prior
+certificate when renewal fails. Respect issuer retry limits across crashes.
+Before first issuance and after expiry, new HTTPS connections must fail closed.
+Preserve existing A2A, OIDC and federation authentication and origin rules.
+
+The first supported challenge is HTTP-01, with a token-only listener and durable,
+least-privilege Compose and Kubernetes packaging. External TLS termination remains
+an operator option. Public issuance requires configured owned DNS names and public
+port routing; an isolated test CA does not prove those prerequisites.
+[ACME-001](docs/roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
+records implementation and qualification; the [operator guide](docs/admin/acme.md)
+states the current supported scope.
+
 ## Acceptance scenarios
 
+- An Admin configures an issuer, contact and owned hostnames, obtains a certificate
+  and renews native HTTPS without restarting the hub. Failed renewal preserves a
+  valid prior certificate; restart reuses private account and certificate state.
 - Two agents working on one project publish work updates and subscribe using
   plain-text descriptions. Relevant updates from each are queued for the other,
   and both agents can search earlier published project information.

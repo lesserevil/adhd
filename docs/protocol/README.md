@@ -17,8 +17,9 @@ The earlier failed fixture attempts remain recorded as failures.
 
 Profile 2.2 adds the global Admin TLS operations and TLS configuration described
 in the [managed HTTPS wire contract](acme.md). This is protocol qualification:
-**overall ACME deployment, fault and browser qualification remains in progress**.
-It does not claim that every platform or operational failure path has passed.
+certificate, fault, browser and Compose checks have also passed. Kubernetes and
+the final authority bridge remain pending. Protocol qualification alone does not
+claim those separate runtime scopes.
 The [active work queue](../roadmap/active-work.md) owns that completion status.
 
 ## Interfaces and versions

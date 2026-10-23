@@ -15,7 +15,9 @@ The overlay adds TCP80→8080 (token-only HTTP-01) and TCP443→8443 (native TLS
 The base mapping for HTTP8766 remains loopback-only. Do not expose8766 as a public
 fallback. If a reverse proxy already owns80/443, omit this overlay and configure
 that proxy's equivalent token route/TCP forwarding explicitly. Merely forwarding
-public8080 does not satisfy public HTTP-01 validation.
+public8080 does not satisfy public HTTP-01 validation. Preserve the original
+`Host` header and exact challenge path when proxying; forwarded host headers are
+not trusted as a replacement.
 
 For Kubernetes, select the admitted immutable image in the base kustomization as
 usual, inspect `kubectl kustomize deploy/k8s/acme`, then apply that directory. It
@@ -23,6 +25,12 @@ retains the original single-writer Deployment/PVC/security settings and adds a
 LoadBalancer Service for only80/443. The provider must forward TCP to the named
 ports; this template does not terminate TLS, create DNS records or claim enforcing
 NetworkPolicy. Keep the base hub ClusterIP/private access boundary for8766.
+
+The overlay and Service use the default internal listener ports, 8080 and 8443.
+If an Admin changes either listener port, update the corresponding Compose mapping
+or Kubernetes port/Service target as well. Hot application settings do not rewrite
+deployment manifests or external forwarding rules. Keep a private Admin repair
+connection available while changing these routes.
 
 In both deployments, retain the entire durable configuration mount across hub
 replacement. The config-adjacent `acme/` directory contains private account keys,

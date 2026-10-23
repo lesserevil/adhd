@@ -126,9 +126,15 @@ certificate state, native HTTPS and hot Admin settings. The
 [operator guide](../admin/acme.md) and optional deployment instructions in
 `deploy/runtime/acme-deployment.md` describe
 setup and limits. Profile 2.1 acceptance above remains scoped to its existing
-artifact. Current ACME source and isolated-CA checks are development evidence;
-full lifecycle, packaged-image, browser and platform qualification remain open
-in the [active queue](../roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme).
+artifact. The ACME [source lifecycle](../../verification/acme/source-lifecycle05/manifest.json),
+[image payload audit](../../verification/acme/image42-offline-admission/review.json),
+[cache checks](../../verification/acme/image42-cache22-positive/review.json),
+[compatibility checks](../../verification/acme/image42-abi19-positive/review.json)
+and [protocol conformance](../../verification/acme/protocol22-qualified-positive/manifest.json)
+have passed. Certificate lifecycle/recovery, all fifteen fault scenarios, browser
+review and the [whole Compose deployment](../../verification/acme/platform-compose-image42-positive/review.json)
+have also passed. Kubernetes and the final authority bridge remain open in the
+[active queue](../roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme).
 
 ## Historical integration checkpoints
 

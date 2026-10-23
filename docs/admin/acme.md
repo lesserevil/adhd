@@ -3,8 +3,9 @@
 [Project guide](../README.md) → managed HTTPS
 
 ACME-001 adds application-managed certificates and native HTTPS to application
-profile 2.2. Implementation qualification is in progress; the accepted profile
-2.1 artifacts do not provide these controls. See the
+profile 2.2. Its [wire contracts and conformance](../protocol/README.md) are
+qualified. Certificate recovery, fault, browser and Compose qualification have
+passed; Kubernetes and the final authority bridge remain in progress. Earlier profile 2.1 artifacts do not provide these controls. See the
 [roadmap evidence](../roadmap/active-work.md#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
 for the current qualification boundary.
 
@@ -30,13 +31,17 @@ switch to production.
 2. Route public TCP port **80** to the configured challenge listener (default
    **8080**). This listener serves only active HTTP-01 token proofs. It cannot serve
    Admin, A2A, health or project data. Merely opening external port 8080 is not enough:
-   public ACME authorities validate HTTP-01 on port 80.
+   public ACME authorities validate HTTP-01 on port 80. A reverse proxy must
+   preserve the original `Host` and exact challenge path. Forwarded host headers
+   do not substitute for the configured domain.
 3. Route public TCP port **443** to the native HTTPS listener (default **8443**) if
    you want conventional HTTPS URLs. Keep the private HTTP listener (default 8766)
    behind its existing private access boundary. Do not publish private HTTP as a
    fallback when HTTPS is unavailable.
 4. In **TLS**, enter the issuer directory URL, your contact email and explicit
-   hostnames. Accept that issuer's account terms, enable native HTTPS and enable
+   hostnames. Supply one to twenty unique lowercase ASCII DNS names, converting
+   international names to IDNA A-labels first; omit trailing dots and wildcards.
+   Accept that issuer's account terms, enable native HTTPS and enable
    ACME issuance. Save the confirmed settings. No hostname or contact address is
    inferred from the machine, another project or a test fixture.
 5. Refresh certificate status. Check active hostnames, certificate expiry and any
@@ -50,8 +55,11 @@ switch to production.
 Production use requires an explicit issuer change and terms acceptance for the
 production account. Issuer/contact/trust changes select isolated account state;
 never copy a staging certificate into a production claim. HTTP-01 is the supported
-challenge method. DNS-01, DNS provider credentials, external account binding and
-operator-supplied arbitrary client flags/hooks are not supported in this profile.
+challenge method. DNS-01, TLS-ALPN-01, DNS provider credentials, external account
+binding and operator-supplied arbitrary client flags/hooks are not supported in
+this profile. Automatic revocation and account-key rollover are also unsupported.
+Renewing or replacing a certificate does not revoke the previous certificate; use
+the issuer's documented operator procedure when revocation is necessary.
 
 ## Renewal and failure behavior
 
@@ -80,11 +88,21 @@ names and expired certificates fail new handshakes. Disabling issuance retains a
 valid certificate for HTTPS; disabling TLS closes new HTTPS admissions. Neither
 case silently enables public HTTP.
 
+Changing certificate hostnames does not rewrite `public_url`, OIDC redirect
+registrations or peer URLs. Update those independent settings and registrations
+when moving the advertised endpoint.
+
+When disabling TLS, disable ACME issuance in the same save. Issuance cannot remain
+enabled while TLS is disabled; that combination is rejected without changing the
+active configuration.
+
 An occupied replacement listener rejects the configuration change and preserves
 the old settings and listener. A CA outage, rejected challenge or invalid issuance
 is an asynchronous error, with sanitized status and retry timing. Private issuer
 CA trust is frozen per attempt and applies only to the directory connection; it
-does not grant browsers or federated peers trust in the issued certificate.
+does not grant browsers or federated peers trust in the issued certificate. Relative
+trust-file paths resolve against the configuration file's directory, not the
+process working directory. The runtime identity must be able to read that file.
 
 If a referenced CA file disappears or a native listener is occupied at startup,
 private HTTP/Admin remains available and status reports the managed error. Issuance
@@ -95,8 +113,12 @@ a port conflict, saving the same listener settings can repair the failed bind.
 
 ## Private state and recovery
 
-The only startup configuration location is `CONFIG_FILE`. Managed state lives in
-its adjacent `acme/` directory, with accounts, transient attempts, immutable
+`CONFIG_FILE` means the configuration path selected by the public `serve`
+command. The packaged image's default command selects `/config/hub.json`; mount
+the private configuration directory there, or supply the explicit public command
+when using another path. Setting `ADHD_CONFIG_FILE` alone does not override that
+command. Managed state lives in the selected file's adjacent `acme/` directory,
+with accounts, transient attempts, immutable
 certificate generations and a durable scheduler/publication pointer. The adjacent
 `CONFIG_FILE.acme-owner.json` witness binds initialized state to that configuration.
 Directories are owner-only (0700); private files are owner-only (0600). Symlink
@@ -104,12 +126,18 @@ or foreign-owner state is rejected. Keys, token proofs, account URLs and raw cli
 output never appear in public or Admin status.
 
 A stopped full-server backup must include the configuration and its journals,
-ACME owner witness and entire managed directory. Preserve ownership and file modes.
+ACME owner witness and entire managed directory. Preserve the runtime UID ownership
+and file modes; symlinks and hard-linked private files are rejected.
 Project-only restore never rolls back server certificates or accounts. Do not delete
 an initialized directory to recover from an error: losing state is reported rather
 than silently registering replacement accounts. Restore the matching stopped
-backup and follow the existing offline metadata-rebind procedure when moving the
-installation. Keep backups confidential because they contain account and leaf keys.
+backup when moving the installation. Before starting the moved copy, use the
+public CLI `rebind-storage` operation with an explicit
+[RebindRequest](../../components/hub/project-recovery/interface.schema.json):
+bind the complete copied metadata and store hashes, server identity and new paths,
+and confirm both the old owner and copied server are stopped. This is a local
+whole-server operation, not an Admin API or selective project restore. Keep backups
+confidential because they contain account and leaf keys.
 
 Restart revalidates complete persisted generations, retires interrupted challenges
 and reconciles client state. It never treats a client working file or saved success

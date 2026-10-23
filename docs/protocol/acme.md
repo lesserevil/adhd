@@ -1,13 +1,14 @@
 # Managed HTTPS wire extension
 
 Application profile **2.2.0** adds server-wide TLS configuration and two global
-Admin operations. The [ACME component contract](../../components/hub/acme/spec.md)
+Admin operations. The ACME component contract, `components/hub/acme/spec.md`,
 and its [closed interface input](../../components/hub/acme/interface.schema.json)
 own the behavior. The published [schema](schema.json), [OpenAPI](openapi.json)
 and [scope inventory](scopes.json) are the client-facing profile. The
 [actual protocol proof](../../verification/acme/protocol22-qualified-positive/manifest.json)
-covers their accepted source and HTTP correspondence; overall ACME platform,
-fault and browser qualification remains in progress.
+covers their accepted source and HTTP correspondence. Certificate, fault, browser
+and Compose checks have passed; Kubernetes and the final authority bridge remain
+in progress in the [active queue](../roadmap/active-work.md).
 
 ## Configuration and listeners
 

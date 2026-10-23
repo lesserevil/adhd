@@ -26,8 +26,10 @@ queue item or let `docs/roadmap/` become a plan archive.
 ## Authorized implementation batches
 
 **Current status:** [ACME-001](#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
-is in progress. Its current action is to qualify real HTTP-01 issuance, hot
-renewal and stopped-copy recovery, then the final container/platform package. The previous
+is in progress. Real HTTP-01 issuance, renewal, stopped-copy recovery, all fifteen
+fault scenarios, browser review and the whole Compose deployment have passed.
+Its next action is the whole Kubernetes deployment qualification, followed by final
+documentation review and the current-authority build/receipt/context bridge. The previous
 implementation program's 47 parents and 271 subtasks are complete. Its six final
 parents closed through the proper CLI after accepted runtime composition. The
 substantial completed plans are archived with compatibility links. The
@@ -1434,7 +1436,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Priority:** P2
 - **Owner:** hub HTTPS listener and certificate lifecycle; hot Admin configuration; Compose/Kubernetes packaging
 - **Direction:** Add ACME support directly to ADHD so the application can obtain and manage its own SSL/TLS certificates.
-- **Conclusion:** Plan built-in ACME account, issuance and renewal management with native HTTPS certificate use. All setup, policy and status belong in Admin and take effect without restarting the hub, consistent with CONFIG-002. Preserve existing external TLS termination as an optional deployment choice. The first implementation selects HTTP-01 with a packaged pinned Lego client, a separate token-only challenge listener and native hot-reloaded HTTPS. DNS-01/provider integrations are outside this first supported profile. Implementation and acceptance are in progress; no completed capability is claimed.
+- **Conclusion:** Plan built-in ACME account, issuance and renewal management with native HTTPS certificate use. All setup, policy and status belong in Admin and take effect without restarting the hub, consistent with CONFIG-002. Preserve existing external TLS termination as an optional deployment choice. The first implementation selects HTTP-01 with a packaged pinned Lego client, a separate token-only challenge listener and native hot-reloaded HTTPS. DNS-01/provider integrations are outside this first supported profile. Source, protocol, certificate lifecycle/recovery, fault and browser qualification and the [whole Compose deployment](../../verification/acme/platform-compose-image42-positive/review.json) have passed. Kubernetes qualification and the final documentation/authority bridge remain open; original failed attempts retain their false results.
 - **Depends on:** CONFIG-002, ROLE-001, KAFKA-007
 - **Implementation:**
   - [ ] Define the server/listener/domain certificate model, issuer directory and contact settings, supported ACME challenge methods (including the HTTP-01/DNS-01 choice), staging/production separation and public DNS/network prerequisites. Specify ACME and Admin interfaces, errors, ownership and compatibility rigorously.

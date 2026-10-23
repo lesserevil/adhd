@@ -126,7 +126,15 @@ def bootstrap(work,plan):
  sys.path.insert(1,str(sites[0]))
 
 
+def platform_order(value=None):
+ if value is None:return ['compose','kind']
+ assert type(value) is list and value and all(type(v) is str and v in ('compose','kind') for v in value)
+ assert len(value)==len(set(value)),'Duplicate platform'
+ return [v for v in ['compose','kind'] if v in value]
+
+
 def prepare(args):
+ order=platform_order(getattr(args,'platforms',None))
  request=validate_request(json.loads(regular(args.request).read_bytes()))
  root=Path(args.repo_root).absolute();assert root.resolve(strict=True)==root
  assert Path(request['ownership']['relay_lock'])==root/'_build/acme/http01.lane.lock'
@@ -192,7 +200,7 @@ def prepare(args):
  plan={'schema':'adhd/acme-platform-once-plan@1','target':target,'request':request,'execution_ready':True,
        'root_GO_required':True,'work':str(work),'driver_sha256':sha(work/'driver.py'),'frozen':inventory,
        'bound':tree(work/'bound'),'client':tree(client),'tools':tools,'ca_generation':ca,'ca_owner_start_ticks':ca_owner_start,
-       'order':['compose','kind'],'automatic_retries':0,'relay_owners':1,'provider_calls':0,'public_ca_calls':0,
+       'selection':order,'order':order,'automatic_retries':0,'relay_owners':1,'provider_calls':0,'public_ca_calls':0,
        'scope':'Actual ACME-only packaged Compose/Kind; no broker/model/CNI/providerLoadBalancer qualification',
        'owned_allowlist':{'compose_project':request['ownership']['compose_project'],'kind_cluster':request['ownership']['kind_cluster'],
         'kind_namespace':request['ownership']['kind_namespace'],'networks':request['networks'],
@@ -207,7 +215,8 @@ def verify(work,plan):
  work_binding(work,plan)
  assert plan['schema']=='adhd/acme-platform-once-plan@1' and plan['execution_ready'] is True
  validate_request(plan['request']);assert plan['target']==plan['request']['target']
- assert plan['order']==['compose','kind'] and plan['automatic_retries']==0 and plan['relay_owners']==1
+ assert plan['order']==platform_order(plan['selection']) and plan['selection']==plan['order']
+ assert plan['automatic_retries']==0 and plan['relay_owners']==1
  verify_tree(work/'frozen',plan['frozen']);verify_tree(work/'bound',plan['bound'])
  verify_tree(work/'runtime/docker-config',plan['client'])
  assert sha(regular(__file__))==plan['driver_sha256']
@@ -357,7 +366,7 @@ def execute(work,plan):
  try:command=Commands({k:plan['tools'][k]['path'] for k in ['docker','kind','kubectl']},env,work/'runtime')
  except BaseException:
   os.close(descriptor);raise
- report={'schema':'adhd/acme-platform-result@1','passed':False,'platforms':[],'unrun':['compose','kind'],'cleanup_errors':[]}
+ report={'schema':'adhd/acme-platform-result@1','passed':False,'platforms':[],'unrun':list(plan['order']),'unselected':[v for v in ['compose','kind'] if v not in plan['order']],'requested_platforms':list(plan['order']),'cleanup_errors':[]}
  primary=None
  try:
   claim(work)
@@ -398,7 +407,14 @@ def execute(work,plan):
     row['replacement_readiness']={'events':[],'pending_count':0,'ready_monotonic':None}
     row['scenario']=run(adapter,admin,secure,relay,recipe(platform,request['ownership'].get('private_http_port',18766))['tls_public_patch'],'https://one.acme.test',initialize,password,certificate_facts,replacement_readiness=row['replacement_readiness'])
     row['passed']=row['scenario']['passed']
-   except BaseException as error:phase_error=error;row['failure_type']=type(error).__name__;raise
+   except BaseException as error:
+    phase_error=error;row['failure_type']=type(error).__name__
+    if isinstance(adapter,Kind):
+     try:row['failure_diagnostics']=adapter.failure_diagnostics()
+     except BaseException as diagnostic_error:
+      row['failure_diagnostics']={'collector_failure_type':type(diagnostic_error).__name__}
+      error.add_note('Private Kind diagnostics failed: '+type(diagnostic_error).__name__)
+    raise
    finally:
     for name,close in [('relay',relay.close if relay else lambda:None),('gateway',gateway.close if gateway else lambda:None),
                        ('adapter',adapter.close if adapter else lambda:None),('network',lambda:close_network(command,spec,owner,netledger['id']) if netledger['issued'] else None),
@@ -420,7 +436,7 @@ def execute(work,plan):
       row['state_preflight_proven']=adapter.state_probe.preflight_proven
     if cleanup:row['passed']=False
     if cleanup and phase_error is None:raise AssertionError('Owned platform cleanup incomplete')
-  report['passed']=len(report['platforms'])==2 and all(r['passed'] for r in report['platforms']) and not report['unrun']
+  report['passed']=len(report['platforms'])==len(plan['order']) and all(r['passed'] for r in report['platforms']) and not report['unrun']
  except BaseException as error:primary=error;report['failure_type']=type(error).__name__
  finally:
   try:command.close()
@@ -441,8 +457,9 @@ def execute(work,plan):
 def main():
  parser=argparse.ArgumentParser(description=__doc__);mode=parser.add_mutually_exclusive_group(required=True)
  for flag in ['template','prepare','execute','verify-only']:mode.add_argument('--'+flag,action='store_true')
- parser.add_argument('--work',type=Path,required=True);parser.add_argument('--repo-root',type=Path);parser.add_argument('--request',type=Path);parser.add_argument('--plan-sha256')
+ parser.add_argument('--work',type=Path,required=True);parser.add_argument('--repo-root',type=Path);parser.add_argument('--request',type=Path);parser.add_argument('--plan-sha256');parser.add_argument('--platforms',nargs='+')
  args=parser.parse_args()
+ assert args.prepare or args.platforms is None,'Platform selection belongs to new preparation only'
  if args.template:
   assert not args.work.exists();args.work.mkdir(parents=True,mode=0o700);dump(args.work/'request-template.json',template());return
  if args.prepare:prepare(args);return

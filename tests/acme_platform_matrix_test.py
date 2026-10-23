@@ -36,6 +36,16 @@ class Guards(unittest.TestCase):
   self.forbid=[patch.object(subprocess,'Popen',side_effect=AssertionError('No process')),
                patch.object(socket,'socket',side_effect=AssertionError('No listener'))]
   for p in self.forbid:p.start();self.addCleanup(p.stop)
+ def test_platform_selection_defaults_and_exact_kind_continuation(self):
+  self.assertEqual(m.platform_order(),['compose','kind'])
+  self.assertEqual(m.platform_order(['kind']),['kind'])
+  self.assertEqual(m.platform_order(['kind','compose']),['compose','kind'])
+  for value in [[],['kind','kind'],['unknown'],'kind',[True],None]:
+   if value is None:continue
+   with self.assertRaises(AssertionError):m.platform_order(value)
+  with patch.object(sys,'argv',['driver.py','--execute','--work','/not-read','--platforms','kind']),patch.object(m,'regular') as read:
+   with self.assertRaisesRegex(AssertionError,'preparation only'):m.main()
+   read.assert_not_called()
  def test_target_null_template_cannot_prepare_or_launch(self):
   example=m.template();self.assertIsNone(example['target'])
   example.pop('instruction')

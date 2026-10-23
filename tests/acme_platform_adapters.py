@@ -514,6 +514,49 @@ class Kind:
   self.namespaced('rollout','status','deployment/hub','--timeout=45s',timeout=50)
   assert self.observe()['metadata']['uid']!=old
   self.start_forward()
+ def failure_diagnostics(self):
+  """Private bounded reads of only our UID-bound namespace, before deletion."""
+  if not self.lease.issued or not self.kubeconfig_sha:return {'attempted':False,'reason':'owned_namespace_not_observed'}
+  directory=self.work/'failure-diagnostics';directory.mkdir(mode=0o700)
+  result={'attempted':True,'files':[],'safe_pods':[],'safe_event_reasons':[],'errors':[]}
+  deadline=time.monotonic()+20
+  def fetch(label,args):
+   remaining=deadline-time.monotonic();assert remaining>0,'Diagnostic deadline'
+   response=self.kubectl(*args,capture=True,check=False,sensitive=True,timeout=min(4,remaining))
+   record={'label':label,'exit_code':response.returncode}
+   for key,raw in [('stdout',response.stdout),('stderr',response.stderr)]:
+    assert len(raw)<=4*1024*1024
+    path=directory/(label+'.'+key);file(path,raw)
+    record[key+'_sha256']=hashlib.sha256(raw).hexdigest();record[key+'_bytes']=len(raw)
+   result['files'].append(record);return response
+  # Never collect a replacement/foreign namespace, even after ambiguous create.
+  response=fetch('namespace',['get','namespace',self.lease.name,'-o','json'])
+  assert response.returncode==0;self.lease.observe(json.loads(response.stdout))
+  allowed={'Pending','Running','Succeeded','Failed','Unknown','ContainerCreating','PodInitializing','CrashLoopBackOff',
+   'ImagePullBackOff','ErrImagePull','CreateContainerConfigError','CreateContainerError','RunContainerError','Error',
+   'Completed','OOMKilled','StartError','InvalidImageName','Unschedulable','FailedScheduling','FailedMount',
+   'ProvisioningFailed','FailedAttachVolume','BackOff','Pulling','Pulled','Created','Started','Scheduled','Provisioning','WaitForFirstConsumer'}
+  def reason(value):return value if type(value) is str and value in allowed else 'OTHER'
+  queries=[('pods',['get','pods','-o','json']),('pvc',['get','pvc','-o','json']),('events',['get','events','-o','json']),
+   ('hub-log',['logs','deployment/hub','-c','hub','--tail=120','--timestamps=true']),
+   ('init-log',['logs','deployment/hub','-c','config-seed','--tail=120','--timestamps=true'])]
+  for label,args in queries:
+   try:
+    response=fetch(label,['-n',self.lease.name,*args])
+    if response.returncode!=0:continue
+    if label=='pods':
+     for pod in json.loads(response.stdout).get('items',[]):
+      assert pod['metadata']['namespace']==self.lease.name
+      status=pod.get('status',{});summary={'uid':pod['metadata']['uid'],'phase':reason(status.get('phase')),'containers':[]}
+      for entry in status.get('initContainerStatuses',[])+status.get('containerStatuses',[]):
+       for state,facts in entry.get('state',{}).items():
+        if state not in ('waiting','running','terminated'):continue
+        code=facts.get('exitCode');assert code is None or type(code) is int
+        summary['containers'].append({'name':entry['name'] if entry['name'] in ('hub','config-seed') else 'OTHER','state':state,'reason':reason(facts.get('reason')),'exit_code':code})
+      result['safe_pods'].append(summary)
+    if label=='events':result['safe_event_reasons']=[reason(v.get('reason')) for v in json.loads(response.stdout).get('items',[])][:256]
+   except BaseException as error:result['errors'].append({'label':label,'failure_type':type(error).__name__})
+  return result
  def close(self):
   self.cleanup_deadline=time.monotonic()+180
   errors=[]

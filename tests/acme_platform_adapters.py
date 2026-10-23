@@ -580,7 +580,7 @@ class SeedProbe(OwnedImage):
   validate_seed((self.seed/'hub.json').read_bytes())
   assert not list(self.state.iterdir()),'Fresh owned state only'
   self.probe('/bin/sh','-ec',
-   'set -eu; test ! -e /state/config/hub.json; mkdir -p /state/config /state/data; '
+   'set -eu; test ! -e /state/config/hub.json; chown -R 0:0 /state; mkdir -p /state/config /state/data; '
    'cp /seed/hub.json /seed/directory-root.pem /state/config/; '
    'if [ -f /seed/initial-admin-password.txt ]; then cp /seed/initial-admin-password.txt /state/config/; fi; '
    'find /state -type d -exec chmod 700 {} +; find /state -type f -exec chmod 600 {} +; '

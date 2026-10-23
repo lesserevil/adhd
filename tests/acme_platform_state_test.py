@@ -76,6 +76,7 @@ class State(unittest.TestCase):
    run=calls[0];caps=[run[i+1] for i,v in enumerate(run) if v=='--cap-add']
    self.assertEqual(caps,['CHOWN','DAC_OVERRIDE']);self.assertIn('--cap-drop',run);self.assertNotIn('FOWNER',run)
    program=run[-1]
+   self.assertLess(program.index('chown -R 0:0 /state'),program.index('find /state -type d -exec chmod 700'))
    self.assertLess(program.index('find /state -type d -exec chmod 700'),program.index('chown -R 10001:10001'))
    self.assertLess(program.index('find /state -type f -exec chmod 600'),program.index('chown -R 10001:10001'))
    self.assertTrue(program.endswith('chown -R 10001:10001 /state'));self.assertTrue(probe.probe_events[0]['observed_absent'])

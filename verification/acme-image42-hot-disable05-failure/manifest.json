@@ -1,0 +1,36 @@
+{
+  "passed": false,
+  "actual_terminal": "Root67523 actual exit1 chunk04e760.",
+  "whole_preceding_fault_cases": 7,
+  "failed_case": "hot-disable",
+  "failed_case_whole_checks": 1,
+  "failed_selected_transition_qualified": false,
+  "remaining_faults_unstarted": [
+    "parent-loss",
+    "client-loss",
+    "guardian-loss",
+    "bad-challenge",
+    "issuer-refusal",
+    "untrusted-issuer",
+    "real-expiry"
+  ],
+  "failure_type": "AssertionError",
+  "phase": "Selected hot disable config_update400 after genuine baseline certificate and held real challenge.",
+  "diagnosis": "Fixture disables tls.enabled only, retaining acme.enabled:true. Canonical ACME spec65 requires ACMEenabled implyTLSenabled. Invalid400 is required behavior; no product/image fix justified.",
+  "approved_fixture_correction": "Disable both tls.enabled and tls.acme.enabled together. Keep actual held-proof fence, HTTPS connection refusal, privateHTTP health and disabled active-domain assertions/bounds.",
+  "source_image_unchanged": true,
+  "independent_closure_unchanged": true,
+  "resource_audit_passed": true,
+  "recorded_container_id_name_absences": 6,
+  "recorded_pid_start_absences": 9,
+  "cleanup_errors": [],
+  "scope": "False15batch preserved;7 earlier wholecases retained separately. No later-case/browser/platform/public issuer claim.",
+  "files": {
+    "plan.json": "300c1e2b072706e2c6c51211c62882ed0a86aad3165d3d8de8104b8e1d860cc6",
+    "report.json": "0c8b083077885230bf7a29272f78e557a8ba3393a7573b43416e30962d9e4c49",
+    "result.json": "00052424047adc29b311ec7a795f4e69298c3e7bc348aa134ab555ba84370912",
+    "audit.json": "eabbd303f28ee877f89a0a15ae8195f573020d1bbb4da4c4e0dbd8025005f380",
+    "execution.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "execution.stderr": "2c14e17ce82e8220367edf273faf9e8de2dd033d3a4abe45dd79b4213048bd85"
+  }
+}

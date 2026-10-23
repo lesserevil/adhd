@@ -1,0 +1,1010 @@
+{
+  "passed": true,
+  "case": "late-domains",
+  "checks": [
+    {
+      "name": "genuine real-CA baseline and independently trusted active key",
+      "passed": true,
+      "certificate": {
+        "leaf_der_sha256": "0d34237f30c097ae78598d5dd7ea93608a7c873033bb4df338c7c7d2cbb944c7",
+        "public_key_spki_sha256": "3aaf68081869af1c40937f094a0542ae35bfb4e04a265fb2823c0f7e612b8eb8",
+        "serial_number_hex": "1324aa04cce637fc",
+        "dns_names": [
+          "one.acme.test"
+        ],
+        "not_before": "2026-10-23T03:40:36+00:00",
+        "not_after": "2026-10-23T03:42:05+00:00",
+        "validity_seconds": 89.0,
+        "chain_trust_checked_here": false
+      }
+    },
+    {
+      "case": "late-domains",
+      "passed": true,
+      "late_old_proof_released_after_commit": true,
+      "proof_bytes": 87,
+      "current_active_domains": [
+        "two.acme.test"
+      ]
+    }
+  ],
+  "scope": "Separate real-CA fault gate; does not qualify the full foundation or other fault selections",
+  "target": {
+    "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+    "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+    "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+    "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+    "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+    "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+    "cache_modules": 64,
+    "packaged_assets": {
+      "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+      "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+      "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+      "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+      "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+      "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+      "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+      "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20"
+    },
+    "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+  },
+  "ca_manifest_sha256": "59612c07ad3ef3993e649415a23ce5f46e03fc3005084d636f4b70cb8c1c9fdc",
+  "public_ca_calls": 0,
+  "primary_failure_type": null,
+  "cleanup_errors": [],
+  "provision": {
+    "certificate": {
+      "leaf_der_sha256": "0d34237f30c097ae78598d5dd7ea93608a7c873033bb4df338c7c7d2cbb944c7",
+      "public_key_spki_sha256": "3aaf68081869af1c40937f094a0542ae35bfb4e04a265fb2823c0f7e612b8eb8",
+      "serial_number_hex": "1324aa04cce637fc",
+      "dns_names": [
+        "one.acme.test"
+      ],
+      "not_before": "2026-10-23T03:40:36+00:00",
+      "not_after": "2026-10-23T03:42:05+00:00",
+      "validity_seconds": 89.0,
+      "chain_trust_checked_here": false
+    },
+    "baseline": {
+      "acme_state": "idle",
+      "active_domains": [
+        "one.acme.test"
+      ],
+      "certificate": {
+        "not_after": "2026-10-23T03:42:05Z",
+        "not_before": "2026-10-23T03:40:36Z",
+        "serial": "1324aa04cce637fc",
+        "sha256": "0d34237f30c097ae78598d5dd7ea93608a7c873033bb4df338c7c7d2cbb944c7"
+      },
+      "config_revision": 2,
+      "domains": [
+        "one.acme.test"
+      ],
+      "enabled": true,
+      "https_state": "ready",
+      "last_attempt_at": "2026-10-23T03:40:35Z",
+      "last_error": null,
+      "last_success_at": "2026-10-23T03:40:37Z",
+      "next_attempt_at": "2026-10-23T03:41:35Z"
+    },
+    "runtime_identities": [
+      {
+        "kind": "compiled-image",
+        "binding": {
+          "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "artifact_sha256": "ffb14b231c59c44a517e0553d320ffaed7fc2c8ffe1682a19d356f6f82dc6d2a",
+          "canonical_manifest_sha256": "c67533217dee5357bf4380fc3d86e9e14b2d1715d4cfd78518a64529859179db",
+          "admission_sha256": "bde0ac4318642e13d79d1ea65f16a468d97ee74b51037a10934ca8f22d97a4d2",
+          "source_admission_sha256": "e5a577c19bce64c6f1747e31d70fdd76df1cea959670877b739e2d078e1b4c6f",
+          "cache_manifest_sha256": "f140723920c64c64ea3e0ef05b449d5d7ddbf4c1322e8d7149d614b4eda14c5d",
+          "cache_modules": 64,
+          "packaged_assets": {
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20"
+          },
+          "scope": "Actual proper source/compiled admission bindings; runtime qualification remains required"
+        },
+        "pid": 3859242,
+        "start_ticks": "28472329",
+        "reaped": true,
+        "config_path_sha256": "5a41ea97e726769d8474bd1fdfb4b7cd7d9c4d42af122bc76ec78b21223cf52e",
+        "started_monotonic": 284722.860448792,
+        "client_pid": 3859141,
+        "client_start_ticks": "28472286",
+        "actual_vm": {
+          "container_id": "4919311742d54ae8638a74a0f4d73f8027f82c565ffbe3bd2d4df74693df38db",
+          "container_name": "adhd-multi-accept-d528cef89f994e8c",
+          "host_vm_pid": 3859242,
+          "host_vm_start_ticks": "28472329",
+          "pid_namespace": "pid:[4026532560]",
+          "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+          "assets_sha256": {
+            "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+            "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+            "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+            "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+            "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+            "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+            "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+            "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20"
+          },
+          "default_entrypoint": true,
+          "default_command": false,
+          "public_command": "serve",
+          "command_sha256": "a74c5005631f588789491138b5e1ad08ee074ddb4883ac6d1fa2463f4952e758",
+          "payload_verified": true,
+          "assets_verified": true,
+          "live_runtime_files_verified": 76,
+          "original_vm_identity_absent": true
+        },
+        "checkpoints": [
+          "initial-ready",
+          "real-provisioned-baseline",
+          "real-fault-baseline"
+        ],
+        "first_health_monotonic": 284732.216735156,
+        "exit_code": 0,
+        "client_original_identity_absent": true,
+        "original_identity_absent": true,
+        "observed_descendants": {
+          "scope": "Observed descendants only; polling cannot prove complete historical issuance of very short-lived children",
+          "rows": [
+            {
+              "pid": 3859280,
+              "start_ticks": "28472354",
+              "state": "S",
+              "parent_pid": 3859242,
+              "executable_basename": "erl_child_setup",
+              "first_observed_monotonic": 284725.030347647,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3859319,
+              "start_ticks": "28472384",
+              "state": "S",
+              "parent_pid": 3859280,
+              "executable_basename": "inet_gethost",
+              "first_observed_monotonic": 284725.030577587,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3859320,
+              "start_ticks": "28472384",
+              "state": "S",
+              "parent_pid": 3859319,
+              "executable_basename": "inet_gethost",
+              "first_observed_monotonic": 284725.030761603,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3860401,
+              "start_ticks": "28473402",
+              "state": "S",
+              "parent_pid": 3859280,
+              "executable_basename": "acme-guard",
+              "first_observed_monotonic": 284734.060155407,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3860402,
+              "start_ticks": "28473402",
+              "state": "R",
+              "parent_pid": 3860401,
+              "executable_basename": "lego",
+              "first_observed_monotonic": 284734.061754482,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3860693,
+              "start_ticks": "28473702",
+              "state": "S",
+              "parent_pid": 3859280,
+              "executable_basename": "acme-guard",
+              "first_observed_monotonic": 284737.077595897,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3860694,
+              "start_ticks": "28473702",
+              "state": "D",
+              "parent_pid": 3860693,
+              "executable_basename": "lego",
+              "first_observed_monotonic": 284737.078263233,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3861082,
+              "start_ticks": "28473923",
+              "state": "S",
+              "parent_pid": 3859280,
+              "executable_basename": "acme-guard",
+              "first_observed_monotonic": 284739.280131371,
+              "original_identity_absent": true
+            },
+            {
+              "pid": 3861083,
+              "start_ticks": "28473923",
+              "state": "S",
+              "parent_pid": 3861082,
+              "executable_basename": "lego",
+              "first_observed_monotonic": 284739.280922225,
+              "original_identity_absent": true
+            }
+          ],
+          "errors": [],
+          "observer_closed": true
+        },
+        "container_lifecycle": [
+          {
+            "action": "started",
+            "container_id": "4919311742d54ae8638a74a0f4d73f8027f82c565ffbe3bd2d4df74693df38db",
+            "image_config_identity": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c"
+          },
+          {
+            "action": "observed-absent",
+            "container_id": "4919311742d54ae8638a74a0f4d73f8027f82c565ffbe3bd2d4df74693df38db",
+            "observed_absent": true,
+            "exit_code": 0
+          }
+        ],
+        "runtime_custody": [
+          {
+            "container_id": "4919311742d54ae8638a74a0f4d73f8027f82c565ffbe3bd2d4df74693df38db",
+            "container_name": "adhd-multi-accept-d528cef89f994e8c",
+            "host_vm_pid": 3859242,
+            "host_vm_start_ticks": "28472329",
+            "pid_namespace": "pid:[4026532560]",
+            "image": "sha256:3f82e4c4cefd0ebd539dc7b98f599d12f2d67d71439e9b0c623d44cd6fbd040c",
+            "assets_sha256": {
+              "acme-guard": "0c46294e6ea4ad905143b8fd712656bcefad59733adf8bcd5c49def815ecf9eb",
+              "LICENSE.lego": "bf12923e71046c564f4163c00c3aa6b3581b51858f099a035f5baf2216addf6e",
+              "acme-pins.json": "8ca9507b5f2076a94b46267caa1a4bc2c8c705bb176916d14146af42dd81a49f",
+              "lego-sbom.json": "caa026f1789d890308e082a2883582a5951c0f621441d72afcbd2e4ea21a62fd",
+              "LICENSE.musl": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b",
+              "acme-build.json": "385df3a88b9d0c62bb0b1ff56d27d55ddef767236374f59b7002b56a24dc4e1f",
+              "acme-bundle.json": "8064e0a1277e5e8ccdcc3ef617b40e9f92dc741989ed590645e82f850ab3ac2d",
+              "lego": "29a0ae29da0bd38c4bbd5670fcf95b026f35753ab28abd3a2c12144281dccc20"
+            },
+            "default_entrypoint": true,
+            "default_command": false,
+            "public_command": "serve",
+            "command_sha256": "a74c5005631f588789491138b5e1ad08ee074ddb4883ac6d1fa2463f4952e758",
+            "payload_verified": true,
+            "assets_verified": true,
+            "live_runtime_files_verified": 76,
+            "original_vm_identity_absent": true
+          }
+        ]
+      }
+    ],
+    "issuer": {
+      "requests": 26,
+      "active": 0,
+      "events": [
+        {
+          "at_monotonic": 284734.100224924,
+          "method": "GET",
+          "directory": true,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 632,
+          "response_headers": {
+            "header_bytes": 187,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.155227374
+        },
+        {
+          "at_monotonic": 284734.165146589,
+          "method": "HEAD",
+          "directory": false,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 0,
+          "response_headers": {
+            "header_bytes": 206,
+            "name_counts": {
+              "cache-control": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.219653971
+        },
+        {
+          "at_monotonic": 284734.230514418,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 527,
+          "fault_status": null,
+          "upstream_status": 201,
+          "response_bytes": 327,
+          "response_headers": {
+            "header_bytes": 342,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "location": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 201
+          },
+          "completed_monotonic": 284734.284832846
+        },
+        {
+          "at_monotonic": 284734.295877188,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 405,
+          "fault_status": null,
+          "upstream_status": 201,
+          "response_bytes": 401,
+          "response_headers": {
+            "header_bytes": 367,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "location": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 201
+          },
+          "completed_monotonic": 284734.348428012
+        },
+        {
+          "at_monotonic": 284734.415549924,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1438,
+          "response_headers": {
+            "header_bytes": 275,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.468489764
+        },
+        {
+          "at_monotonic": 284734.479758507,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 387,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 197,
+          "response_headers": {
+            "header_bytes": 366,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 2,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.534633288
+        },
+        {
+          "at_monotonic": 284734.550045438,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 439,
+          "response_headers": {
+            "header_bytes": 274,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.604099894
+        },
+        {
+          "at_monotonic": 284734.615336569,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 823,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 404,
+          "response_headers": {
+            "header_bytes": 318,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "other": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.668029707
+        },
+        {
+          "at_monotonic": 284734.678878543,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 388,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 467,
+          "response_headers": {
+            "header_bytes": 274,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.731221822
+        },
+        {
+          "at_monotonic": 284734.739836904,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 348,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1263,
+          "response_headers": {
+            "header_bytes": 292,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284734.792598403
+        },
+        {
+          "at_monotonic": 284737.091526511,
+          "method": "GET",
+          "directory": true,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 632,
+          "response_headers": {
+            "header_bytes": 187,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284737.138558134
+        },
+        {
+          "at_monotonic": 284737.145170786,
+          "method": "HEAD",
+          "directory": false,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 0,
+          "response_headers": {
+            "header_bytes": 206,
+            "name_counts": {
+              "cache-control": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284737.195746136
+        },
+        {
+          "at_monotonic": 284737.202781071,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 567,
+          "fault_status": null,
+          "upstream_status": 201,
+          "response_bytes": 357,
+          "response_headers": {
+            "header_bytes": 342,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "location": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 201
+          },
+          "completed_monotonic": 284737.252902147
+        },
+        {
+          "at_monotonic": 284737.260807993,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 405,
+          "fault_status": null,
+          "upstream_status": 201,
+          "response_bytes": 401,
+          "response_headers": {
+            "header_bytes": 367,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "location": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 201
+          },
+          "completed_monotonic": 284737.310727959
+        },
+        {
+          "at_monotonic": 284737.373069851,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1438,
+          "response_headers": {
+            "header_bytes": 275,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284737.419034828
+        },
+        {
+          "at_monotonic": 284737.425608971,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 387,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 197,
+          "response_headers": {
+            "header_bytes": 366,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 2,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284737.476878374
+        },
+        {
+          "at_monotonic": 284737.484697274,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1487,
+          "response_headers": {
+            "header_bytes": 291,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "other": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284737.531598895
+        },
+        {
+          "at_monotonic": 284739.318700097,
+          "method": "GET",
+          "directory": true,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 632,
+          "response_headers": {
+            "header_bytes": 187,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.372505007
+        },
+        {
+          "at_monotonic": 284739.382749846,
+          "method": "HEAD",
+          "directory": false,
+          "request_bytes": 0,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 0,
+          "response_headers": {
+            "header_bytes": 206,
+            "name_counts": {
+              "cache-control": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.437549368
+        },
+        {
+          "at_monotonic": 284739.449205119,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 405,
+          "fault_status": null,
+          "upstream_status": 201,
+          "response_bytes": 401,
+          "response_headers": {
+            "header_bytes": 367,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "location": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 201
+          },
+          "completed_monotonic": 284739.503863134
+        },
+        {
+          "at_monotonic": 284739.56898627,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1438,
+          "response_headers": {
+            "header_bytes": 275,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.622645137
+        },
+        {
+          "at_monotonic": 284739.633419488,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 387,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 197,
+          "response_headers": {
+            "header_bytes": 366,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 2,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.689078468
+        },
+        {
+          "at_monotonic": 284739.704779582,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 384,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 439,
+          "response_headers": {
+            "header_bytes": 274,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.758378865
+        },
+        {
+          "at_monotonic": 284739.767725759,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 824,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 404,
+          "response_headers": {
+            "header_bytes": 318,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "other": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.822162509
+        },
+        {
+          "at_monotonic": 284739.831752426,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 388,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 467,
+          "response_headers": {
+            "header_bytes": 274,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.886277719
+        },
+        {
+          "at_monotonic": 284739.898554393,
+          "method": "POST",
+          "directory": false,
+          "request_bytes": 348,
+          "fault_status": null,
+          "upstream_status": 200,
+          "response_bytes": 1259,
+          "response_headers": {
+            "header_bytes": 292,
+            "name_counts": {
+              "cache-control": 1,
+              "content-type": 1,
+              "link": 1,
+              "replay-nonce": 1,
+              "date": 1,
+              "content-length": 1,
+              "connection": 1
+            },
+            "status": 200
+          },
+          "completed_monotonic": 284739.952110455
+        }
+      ],
+      "errors": [],
+      "error_total": 0,
+      "failure_checkpoints": [],
+      "accept_thread_alive": false,
+      "worker_threads_alive": 0,
+      "exchange_timers_alive": 0,
+      "lifetime_timer_alive": false,
+      "recorded_worker_threads": 26,
+      "recorded_exchange_timers": 26,
+      "closed": true
+    },
+    "challenge": {
+      "requests": 9,
+      "active": 0,
+      "events": [
+        {
+          "at_monotonic": 284734.55390079,
+          "target_sha256": "be85aaa214c89c09e63e041c48b49c27425b6684935bf319e68872dac27b0187",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "a225fe94e8533e9f29c2b2a680ea082df9048ef0ccb935d16a48999b3dbeabf3",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284734.553983472
+        },
+        {
+          "at_monotonic": 284734.55689157,
+          "target_sha256": "be85aaa214c89c09e63e041c48b49c27425b6684935bf319e68872dac27b0187",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "a225fe94e8533e9f29c2b2a680ea082df9048ef0ccb935d16a48999b3dbeabf3",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284734.55696522
+        },
+        {
+          "at_monotonic": 284734.558154379,
+          "target_sha256": "be85aaa214c89c09e63e041c48b49c27425b6684935bf319e68872dac27b0187",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "a225fe94e8533e9f29c2b2a680ea082df9048ef0ccb935d16a48999b3dbeabf3",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284734.55822637
+        },
+        {
+          "at_monotonic": 284737.493827662,
+          "target_sha256": "84172e954d5c180915bc80db1ac41e461f7f546e133f554fd8c26823983931b0",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "6e2407551c4055bbc61abb5d3085c67108bc874935f23366084f7f4e242e0374",
+          "proof_bytes": 87,
+          "mode": "hold",
+          "hold_released": true,
+          "downstream_status": 200,
+          "completed_monotonic": 284737.675303116
+        },
+        {
+          "at_monotonic": 284737.497292238,
+          "target_sha256": "84172e954d5c180915bc80db1ac41e461f7f546e133f554fd8c26823983931b0",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "6e2407551c4055bbc61abb5d3085c67108bc874935f23366084f7f4e242e0374",
+          "proof_bytes": 87,
+          "mode": "hold",
+          "hold_released": true,
+          "downstream_status": 200,
+          "completed_monotonic": 284737.67565421
+        },
+        {
+          "at_monotonic": 284737.499605284,
+          "target_sha256": "84172e954d5c180915bc80db1ac41e461f7f546e133f554fd8c26823983931b0",
+          "host_sha256": "560996a87f076dd4c1ffa147876a2f5c7d49359f8ae511e7cdc00338d7905f7a",
+          "upstream_status": 200,
+          "proof_sha256": "6e2407551c4055bbc61abb5d3085c67108bc874935f23366084f7f4e242e0374",
+          "proof_bytes": 87,
+          "mode": "hold",
+          "hold_released": true,
+          "downstream_status": 200,
+          "completed_monotonic": 284737.675115179
+        },
+        {
+          "at_monotonic": 284739.710961525,
+          "target_sha256": "a55499b3ede2a03eaddcb2634b314e8fb08b58bd64981fdbdcd9a115466df873",
+          "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+          "upstream_status": 200,
+          "proof_sha256": "c34bd5aa7db519d770a0f98915526a5ffad7ac66f708ae9408554b4535b828ca",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284739.711073378
+        },
+        {
+          "at_monotonic": 284739.711849141,
+          "target_sha256": "a55499b3ede2a03eaddcb2634b314e8fb08b58bd64981fdbdcd9a115466df873",
+          "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+          "upstream_status": 200,
+          "proof_sha256": "c34bd5aa7db519d770a0f98915526a5ffad7ac66f708ae9408554b4535b828ca",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284739.711908565
+        },
+        {
+          "at_monotonic": 284739.712801419,
+          "target_sha256": "a55499b3ede2a03eaddcb2634b314e8fb08b58bd64981fdbdcd9a115466df873",
+          "host_sha256": "e269da5addb4c3272f79076aa3b03ce0a21c832854988c98076b5d920b793088",
+          "upstream_status": 200,
+          "proof_sha256": "c34bd5aa7db519d770a0f98915526a5ffad7ac66f708ae9408554b4535b828ca",
+          "proof_bytes": 87,
+          "mode": "pass",
+          "downstream_status": 200,
+          "completed_monotonic": 284739.712878052
+        }
+      ],
+      "errors": [],
+      "closed": true
+    },
+    "cleanup_errors": [],
+    "scope": "Actual single default-entrypoint image, real issuer proxy+HTTP01, private pre-TLS Admin and independently trusted HTTPS; no browser or full foundation qualification implied"
+  }
+}

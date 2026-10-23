@@ -114,6 +114,22 @@ class Deployment(unittest.TestCase):
    self.assertIn('ports: !override ["127.0.0.1:18766:8766", "127.0.0.2:80:8080", "127.0.0.2:443:8443"]',text)
    self.assertIn('pebble:172.30.0.1',text);self.assertNotIn('user:',text);self.assertNotIn('entrypoint:',text)
    self.assertEqual(len(argv),6)
+ def test_compose_actual_bind_and_separate_tmpfs_custody(self):
+  state=Path('/owned/private/state')
+  row={'Mounts':[{'Type':'bind','Source':str(state/name),'Destination':'/'+name,'RW':True} for name in ['config','data']],
+       'HostConfig':{'Tmpfs':{'/tmp':'rw,nosuid,noexec,size=64m'}}}
+  self.assertEqual(set(adapters.compose_mounts(row,state)),{'/config','/data'})
+  bad=[]
+  for destination in ['/tmp','/app','/runtime/adhd','/extra']:
+   value=copy.deepcopy(row);value['Mounts'].append({'Type':'bind','Source':'/foreign','Destination':destination,'RW':True});bad.append(value)
+  for field,value in [('Source','/foreign'),('Type','volume'),('RW',False),('RW',1)]:
+   value_row=copy.deepcopy(row);value_row['Mounts'][0][field]=value;bad.append(value_row)
+  value=copy.deepcopy(row);value['Mounts'][1]=copy.deepcopy(value['Mounts'][0]);bad.append(value)
+  for tmpfs in [None,{}, {'/tmp':'rw,nosuid,exec,size=64m'}, {'/tmp':'rw,nosuid,noexec,size=128m'},
+                {'/tmp':'rw,nosuid,noexec,size=64m','/extra':'rw'}]:
+   value=copy.deepcopy(row);value['HostConfig']['Tmpfs']=tmpfs;bad.append(value)
+  for value in bad:
+   with self.subTest(value=value),self.assertRaises(AssertionError):adapters.compose_mounts(value,state)
  def test_nondefault_private_port_changes_only_host_admin_boundary(self):
   from acme_platform_plan import recipe,private_port
   with tempfile.TemporaryDirectory() as raw:

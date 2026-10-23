@@ -185,6 +185,18 @@ class StateProbe(OwnedImage):
 
 
 
+def compose_mounts(row,state):
+ """Docker reports bind mounts and HostConfig tmpfs in distinct fields."""
+ mounts=row['Mounts'];assert isinstance(mounts,list) and len(mounts)==2
+ assert all(isinstance(m,dict) for m in mounts)
+ selected={m['Destination']:m for m in mounts}
+ assert set(selected)=={'/config','/data'}
+ for target,source in [('/config',state/'config'),('/data',state/'data')]:
+  assert selected[target]['Type']=='bind' and selected[target]['Source']==str(source) and selected[target]['RW'] is True
+ assert row['HostConfig']['Tmpfs']=={'/tmp':'rw,nosuid,noexec,size=64m'}
+ return selected
+
+
 def compose_vm_custody(command,row,image):
  # Production UID10001 host /proc/exe is ptrace-protected from observerUID1003.
  # Read exact container PID1 as the unchanged production UID instead; bind that
@@ -259,10 +271,7 @@ class Compose:
   assert row['Config']['Labels']['com.docker.compose.service']=='hub'
   assert row['Config']['User']=='10001:10001' and row['HostConfig']['ReadonlyRootfs'] and row['RestartCount']==0
   assert row['HostConfig']['CapDrop']==['ALL'] and 'no-new-privileges:true' in row['HostConfig']['SecurityOpt']
-  mounts={m['Destination']:m for m in row['Mounts']}
-  for target,source in [('/config',self.state/'config'),('/data',self.state/'data')]:
-   assert mounts[target]['Source']==str(source) and mounts[target]['RW']
-  assert set(mounts)=={'/config','/data','/tmp'} and not any(p.startswith(('/runtime','/app')) for p in mounts)
+  mounts=compose_mounts(row,self.state)
   ports=row['NetworkSettings']['Ports']
   assert ports['8766/tcp']==[{'HostIp':'127.0.0.1','HostPort':str(self.private_http_port)}]
   assert ports['8080/tcp']==[{'HostIp':'127.0.0.2','HostPort':'80'}]

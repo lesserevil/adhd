@@ -211,7 +211,9 @@ class NativeDiagnostic:
                 st = os.fstat(fd)
                 assert stat.S_ISREG(st.st_mode) and st.st_nlink == 1 and st.st_uid == os.getuid()
                 self.log_ids.append((path, st.st_dev, st.st_ino))
-            code = '[payload] = System.argv(); ADHD.CLI.run(JSON.decode!(payload))'
+            code = getattr(self, 'diagnostic_prefix', '') + '[payload] = System.argv(); ADHD.CLI.run(JSON.decode!(payload))'
+            if hasattr(self, 'diagnostic_binding'):
+                binding['passive_observer'] = self.diagnostic_binding
             command = [str(self.elixir), '-pa', str(self.cache), '-e', code, '--', json.dumps(['serve', str(self.file)])]
             env = {'PATH': str(self.elixir.parent) + ':' + str(self.erlang.parent) + ':/usr/bin:/bin', 'HOME': str(self.root),
                    'LANG': 'C.UTF-8', 'ERL_FLAGS': '+S 2:2'}

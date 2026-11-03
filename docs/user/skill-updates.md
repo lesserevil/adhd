@@ -7,6 +7,21 @@ release source and one coherent installed revision, even when it works in severa
 projects. The bootstrap reports adoption to its configured project; additional
 projects can retrieve their own independently published release announcements.
 
+## Delivery after enrollment
+
+Enrollment must establish the agent's own authenticated receive/fetch/install
+path. After enrollment, ADHD must not use SSH, SCP or remote file copying for
+skill delivery, bootstrap upgrades, setup artifacts or recovery. Coordination
+travels through ADHD; authorized artifact retrieval and installation run on the
+receiving agent. If the path cannot perform an operation, report a capability gap
+and repair that path rather than bypassing it.
+
+Current shared Markdown releases already use this path. The initial rollout used
+SSH/SCP for post-enrollment bootstrap changes; that procedure does not meet this
+requirement. Bootstrap self-upgrade is not implemented yet and remains an open
+ONBOARD-018 prerequisite. Until it is implemented, an incompatible bootstrap must
+stay explicitly blocked; remote file copying is not a supported fallback.
+
 ## Initial installation and trust
 
 Install `adhd_skill_update.py` and `adhd_setup.py` beneath the profile's `scripts/`.
@@ -32,8 +47,8 @@ insufficient: the installer checks the server-assigned author and project too.
 SHA-256 binds the manifest and every file. This trusts the authenticated HTTPS hub
 and release publisher; it is not independent artifact signing against their
 compromise. The fixed bootstrap is installed by the operator, not downloaded as
-executable code from a peer. Incompatible bootstrap versions require an explicit
-bootstrap upgrade.
+executable code from a peer. Incompatible bootstrap versions require an authenticated agent-executed
+bootstrap upgrade. That upgrade path is currently an open implementation gap.
 
 Preserve local skill text and add a startup/safe-boundary instruction to run:
 

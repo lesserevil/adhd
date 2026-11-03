@@ -14,3 +14,10 @@ and during work. Use the identity in that private client file with
 context, and poll before dependent decisions. Publish meaningful work updates and
 acknowledge deliveries after processing them. Report connection failures; never
 expose credentials or claim background synchronization.
+
+After an agent is enrolled in ADHD, ADHD must not use SSH, SCP, or another remote
+file-copy mechanism to deliver or repair that agent's files. Setup requests and
+update notices travel through ADHD; the receiving agent retrieves authorized
+artifacts and installs them within its own permissions. Enrollment must establish
+that path. A missing post-enrollment delivery or bootstrap-upgrade capability is
+an implementation gap, not permission to fall back to remote file copying.

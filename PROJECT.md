@@ -24,6 +24,19 @@ Elixir is the project's default implementation language. ADHD expands to
 Agentic Distributed Harness Depot; Depot is the agreed product name. The `adhd`
 namespace, configuration paths and protocol identifiers remain unchanged.
 
+## Agent delivery boundary
+
+After an agent is enrolled in ADHD, ADHD must not use SSH, SCP, or another remote
+file-copy mechanism to deliver or repair that agent's files. Setup requests and
+update notices travel through ADHD; the receiving agent retrieves authorized
+artifacts and installs them within its own permissions. Enrollment must establish
+that path. A missing post-enrollment delivery or bootstrap-upgrade capability is
+an implementation gap, not permission to fall back to remote file copying.
+
+This applies to skill releases, bootstrap upgrades, setup artifacts and recovery.
+It does not turn an update message into a permission grant. Preserve an explicit
+blocked state when the agent cannot receive, verify or install an artifact.
+
 ## First working version
 
 The first use case is two agents working on the same project and keeping each

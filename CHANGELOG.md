@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Agent onboarding: require hello/reply exchanges initiated by both the new agent and an existing project peer, with correlated replies and acknowledgements before claiming connectivity.
+
+- Agent setup: add dedicated Claude Code, Cursor CLI, OpenCode, standalone Codex
+  and Pi guides; factor shared A2A setup and OpenShell execution into reusable
+  layers, with explicit manual/unattended and live-qualification boundaries.
+
+- Agent onboarding: distinguish manual connectivity from unattended receipt; add a Hermes inbox monitor with bounded retries, durable reply/ack guidance, and a deployed recipient scheduled reply check.
+
 - HTTPS: add native TLS with hot Admin ACME setup, pinned HTTP-01 issuance,
   automatic renewal and private account/certificate recovery. Application profile
   2.2 publishes the exact management contracts. The [runtime qualification](verification/acme/final-composition/manifest.json)

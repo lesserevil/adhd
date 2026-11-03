@@ -1,0 +1,49 @@
+{
+  "schema": "adhd/hermes-onboarding@1",
+  "date": "2026-11-03",
+  "work_item": "ONBOARD-014",
+  "status": "operationally-verified; repository receipt gate remains stale",
+  "agent_id": "hermes-mini-m4",
+  "project_ids": [
+    "trickle"
+  ],
+  "subscription_id": "subscription_ab9e29312979d44e851a9515f0cdd918_c",
+  "job_id": "8bfeadc2cb0f",
+  "preservation": {
+    "existing_hub_credentials_and_memberships": "unchanged",
+    "remote_config_env_auth": "hashes unchanged",
+    "gateway": "existing PID retained; no restart",
+    "startup_instructions": "scoped section appended; original backed up"
+  },
+  "tests": {
+    "outbound_greeting": "delivery_ab9e29312979d44e851a9515f0cdd918_d",
+    "inbound_greeting": "delivery_ab9e29312979d44e851a9515f0cdd918_e",
+    "outbound_reply": "delivery_ab9e29312979d44e851a9515f0cdd918_f",
+    "scheduled_receipt": "completed; actual agent turns on both ends",
+    "monitor_unit_pass": 3,
+    "inbound_reply": "delivery_ab9e29312979d44e851a9515f0cdd918_g",
+    "scheduled_execution": "30b3dba97f52453a9cba36dd50e5f824",
+    "mini_inbox_empty": true,
+    "unadmitted_project_lookup": "PROJECT_NOT_FOUND",
+    "lappy_inbox_empty": true,
+    "bidirectional_greeting_reply_ack": "passed",
+    "not_exercised": "gateway restart on the mini; existing gateway was deliberately retained"
+  },
+  "repair": "First scheduled monitor failed because packaged dependency interpreter did not exist. Job now explicitly uses verified host Python 3; no gateway restart or upgrade.",
+  "documentation": {
+    "paths": [
+      "docs/user/agents/common.md",
+      "docs/user/hermes-inbox.md",
+      "skills/agent/coordinate-via-hub/SKILL.md",
+      "docs/roadmap/active-work.md",
+      "CHANGELOG.md"
+    ],
+    "review": "Required bidirectional greeting/reply/ack acceptance added; actual runtime paths/cron flags checked. config paths inventory warnings are false positives verified against help.",
+    "verify": {
+      "pass": 2,
+      "fail": 1,
+      "skipped": 2,
+      "failure": "project.test_receipt_stale"
+    }
+  }
+}

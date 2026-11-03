@@ -6,6 +6,10 @@ description: Coordinate agents working on a shared project through Agentic Distr
 # Coordinate through Agentic Distributed Harness Depot (ADHD)
 
 Use the existing A2A client or [SDK helper](../../../scripts/hub_agent.py).
+For a new client, choose the [agent setup guide](../../../docs/user/agents/README.md)
+and compose it with the optional
+[OpenShell layer](../../../docs/user/agents/openshell.md). Hub identity and
+workflow are independent of agent instruction discovery and sandbox execution.
 Read [setup](../../../docs/user/getting-started.md) for client dependencies and
 the [hub API](../../../docs/user/hub-api.md) for command fields and examples.
 You need the reachable hub URL, your assigned agent ID, and your own bearer
@@ -27,6 +31,21 @@ _build/tools/a2a/hub001/bin/python scripts/hub_agent.py \
 ```
 
 ## 1. At startup: subscribe and catch up
+
+Provisioning credentials and this skill establishes manual connectivity only.
+For an agent expected to receive work while idle, configure and verify an
+operator-authorized receive loop that polls and wakes its runtime. A subscription
+does not wake a model. Record its owner, interval, retry/overlap rules, pause and
+recovery procedure; preserve credentials and acknowledge only after processing.
+Verify a peer message, an unattended recipient turn, a reply and acknowledgement
+before claiming automatic coordination. See the
+[Hermes receive-loop setup](../../../docs/user/hermes-inbox.md) for that runtime.
+If no receive loop is installed, report the agent as manual-poll-only explicitly.
+For each new agent/project binding, complete the required
+[two-direction hello exchange](../../../docs/user/agents/common.md#required-hello-exchange-for-each-new-agentproject-binding):
+the new agent initiates one “hello world, please reply” and an existing peer
+initiates another; verify correlated replies and processed-delivery acknowledgements
+on both ends. Keep onboarding unverified if either exchange fails.
 
 Verify your identity and effective project_ids with whoami, then list_projects.
 Select an admitted project explicitly: include project_id in every project-owned

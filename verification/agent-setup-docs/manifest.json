@@ -1,0 +1,78 @@
+{
+  "schema": "adhd/agent-setup-docs@1",
+  "date": "2026-11-03",
+  "work_item": "ONBOARD-013",
+  "scope": "Documentation-only CLI onboarding and OpenShell composition; no live client provisioning or hub image change",
+  "guides": {
+    "docs/user/agents/README.md": "2a55e03c11fe62662633ce55314ec94b96df0abf190f55aac92910d3019bfb89",
+    "docs/user/agents/claude-code.md": "41ef57f33ddf41388506dd710f37b2ce93c68cc582bc68bd519790493d2c8f46",
+    "docs/user/agents/codex.md": "6c7aebd13cc0e92eb47b8026da740baba6457de47b838d6b407c9ee6bc2225ac",
+    "docs/user/agents/common.md": "dfe25ae7015891cb201345d065a0fbf407bfd4726f279c919e7fe21d29ca99a2",
+    "docs/user/agents/cursor.md": "faaaa001f9edadcbdd7190c9e3559937123d5405cedc544b3f9f40ba67e37cd7",
+    "docs/user/agents/opencode.md": "cb02d0eb80fe5544111324b113a868ddcaec42366693d6c6ab6617d14c3e0d85",
+    "docs/user/agents/openshell.md": "330ac0e9c3d1bcd0af991f0be62b9b53b26b628ef0542108b8d738ec92fe40e1",
+    "docs/user/agents/pi.md": "8b45a7cacf96da1db553374410b3476413e099d2e4503245586a1f64eca315c3"
+  },
+  "reviewed_surfaces": [
+    "README.md",
+    "docs/README.md",
+    "docs/user/using-the-hub.md",
+    "docs/user/hermes-inbox.md",
+    "skills/agent/coordinate-via-hub/SKILL.md",
+    "docs/roadmap/active-work.md",
+    "CHANGELOG.md",
+    "PROJECT.md",
+    "scripts/hub_agent.py",
+    "tests/requirements.txt"
+  ],
+  "checks": {
+    "relative_links": "passed for all eight guides",
+    "fenced_examples": "13 shell/JSON/Python blocks passed syntax checks",
+    "wrapper_fixture": "executed against isolated stub; exact JSON and stable message ID forwarded without expansion",
+    "instruction_download_fixture": "executed with mock HTTP; auth applied only to authenticated route, exact document bytes written, file modes 0600",
+    "dependency_setup": "documented venv creation and pinned requirements installation succeeded",
+    "sdk_helper_help": "passed using the documented SDK environment",
+    "codex_cli": "0.164.0; help and exec help checked, no new model turn",
+    "openshell_cli": "0.1.2; sandbox create/exec and policy get/update help checked; no policy or sandbox changes",
+    "peer_survey": "no open issues/reviews or collectable candidates; existing dirty worktrees preserved",
+    "documentation_plan": "invalid cross-root skill hyperlink corrected to canonical path; two known config paths inventory false positives remain; review marker recorded"
+  },
+  "unverified": [
+    "Claude Code live model/tool session",
+    "Cursor CLI live model/tool session",
+    "OpenCode live model/tool session",
+    "Pi live model/tool session",
+    "New standalone Codex live exchange",
+    "New OpenShell/client runtime-provider-image combinations",
+    "Unattended receive adapters for the five CLI agents"
+  ],
+  "sources": [
+    "https://code.claude.com/docs/en/memory",
+    "https://code.claude.com/docs/en/skills",
+    "https://code.claude.com/docs/en/cli-reference",
+    "https://code.claude.com/docs/en/setup",
+    "https://cursor.com/docs/cli/using",
+    "https://cursor.com/docs/cli/installation",
+    "https://cursor.com/docs/rules",
+    "https://cursor.com/docs/skills",
+    "https://opencode.ai/docs/rules/",
+    "https://opencode.ai/docs/skills/",
+    "https://opencode.ai/docs/cli/",
+    "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+    "https://learn.chatgpt.com/docs/build-skills",
+    "https://learn.chatgpt.com/docs/codex/cli",
+    "https://github.com/earendil-works/pi/tree/main/packages/coding-agent",
+    "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/skills.md",
+    "https://docs.nvidia.com/openshell/latest/about/run-your-first-agent"
+  ],
+  "verification": {
+    "pass": 2,
+    "fail": 1,
+    "skipped": 2,
+    "failure": "project.test_receipt_stale",
+    "skips": [
+      "source-intelligence disabled",
+      "no declared HTML artifacts"
+    ]
+  }
+}

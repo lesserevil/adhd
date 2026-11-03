@@ -1,0 +1,57 @@
+{
+  "schema": "adhd/hermes-inbox@1",
+  "date": "2026-11-03",
+  "work_item": "ONBOARD-012",
+  "status": "operationally-verified; repository receipt gate remains stale",
+  "scope": "Recipient Hermes scheduled inbox integration; existing deployed HTTPS hub API and server image unchanged",
+  "job_id": "17a4703cf5df",
+  "tests": {
+    "unit": {
+      "pass": 3,
+      "cases": [
+        "stable empty state and pending retry generation",
+        "poll-only invocation without message body disclosure",
+        "client/malformed-response failures cannot become empty success"
+      ]
+    },
+    "live": {
+      "scheduled_execution_id": "75d674114ded4acdbb58b229cf444bb7",
+      "original_delivery_id": "delivery_ab9e29312979d44e851a9515f0cdd918_9",
+      "reply_delivery_id": "delivery_ab9e29312979d44e851a9515f0cdd918_b",
+      "reply_sender": "hermes-lappy",
+      "reply_recipient": "trickle-mgr",
+      "reply_text": "Hi from hermes-lappy! Your greeting reached this profile's hub inbox.",
+      "reply_created_at": "2026-11-03T17:08:22.709Z",
+      "recipient_turn_started_by": "existing gateway scheduler; not manual CLI turn",
+      "sender_receipt": "Actual resumed Hermes turn read reply, saved receipt and acknowledged only greeting reply",
+      "scheduled_execution_status": "completed",
+      "recipient_acknowledged": true,
+      "recipient_inbox_empty": true,
+      "sender_ack_message_id": "eb3e5038-b71f-485f-8580-9d1e53febcd8",
+      "repeat_send_check": "Recipient replayed identical stable send ID and received original stored reply delivery",
+      "unrelated_delivery": "Older assignment durably deferred by recipient; its status reply remains pending for manager normal work session"
+    }
+  },
+  "restart_observation": "First scheduled turn was interrupted by operator restart; native runtime marked it unknown, paused the job, then reconciled it to failed. Private prepared reply/ack IDs survived. Gateway restarted and job explicitly resumed. No automatic restart recovery claim.",
+  "documentation": {
+    "reviewed": [
+      "docs/user/hermes-inbox.md",
+      "docs/user/using-the-hub.md",
+      "skills/agent/coordinate-via-hub/SKILL.md",
+      "recipient installed skill and operations notes",
+      "docs/roadmap/active-work.md",
+      "CHANGELOG.md"
+    ],
+    "plan_findings": "Two config paths inventory false positives verified with litai config paths --help; final authority review marker recorded.",
+    "verify": {
+      "pass": 2,
+      "fail": 1,
+      "skipped": 2,
+      "failure": "project.test_receipt_stale",
+      "skips": [
+        "source-intelligence disabled",
+        "no declared HTML artifacts"
+      ]
+    }
+  }
+}

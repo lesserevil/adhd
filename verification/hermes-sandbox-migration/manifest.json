@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-03",
+  "work_item": "ONBOARD-009",
+  "result": "live",
+  "source": {
+    "hermes_commit": "26f9fd10359ca0b70dcede197a067dfb4879a3b7",
+    "source_sha256": "2b9556ea84733e127c31e67da50297b5e2914e5757bdd7cc2f33402da66f3508",
+    "python": "3.14.7",
+    "dependencies": "uv sync --frozen --no-dev --extra telegram"
+  },
+  "scope": "Replace existing sandbox Telegram bridge with Hermes; retain project-scoped hub identity and dedicated live hub",
+  "changes": [
+    "Pinned clean upstream source and frozen Telegram dependencies installed in preserved sandbox workspace",
+    "Hermes home with project working directory, handover identity, current hub skill and existing private hub client",
+    "NVIDIA inference credential supplied through OpenShell provider substitution, scoped endpoint policy",
+    "Native foreground Hermes gateway managed by a dedicated enabled user service; Codex service disabled with mutual exclusion",
+    "Telegram cold boot preserves pending updates; direct-IP fallback disabled to use existing hostname enforcement",
+    "Codex historical messages retained and exported as a readable private migration archive; rollback source/config/databases retained"
+  ],
+  "checks": {
+    "model_inference": "HERMES_INFERENCE_OK",
+    "model_tool_check": {
+      "runtime": "Hermes",
+      "working_directory_correct": true,
+      "whoami": true,
+      "project_peer_discovery": true,
+      "existing_raw_subscriptions": 1,
+      "mutating_hub_commands": 0
+    },
+    "telegram": {
+      "getMe": true,
+      "command_menu_registered_scopes": 3,
+      "actual_getUpdates_progress": true,
+      "managed_restart": true,
+      "allowed_user_accepted": true,
+      "unknown_user_rejected": true,
+      "outbound_test_message_sent": false
+    },
+    "preservation": {
+      "codex_session_auth_and_hub_credential_hashes_unchanged": true,
+      "historical_messages_exported": 124,
+      "codex_processes_after_cutover": 0
+    },
+    "doctor": "Python, SQLite, packages and config checks pass; generic missing API-key/full-tool-access guidance remains because credentials are injected for a named custom provider and optional tools are unconfigured. Actual model/provider and hub tests pass."
+  },
+  "limitations": [
+    "Historical Codex transcript is a reference archive, not native Hermes conversation resumption.",
+    "No end-to-end inbound Telegram user-message roundtrip was sent during testing.",
+    "Runtime/config survive sandbox stop/start; no immutable image rebuild. Private state restoration remains required for deletion/recreation.",
+    "Hub synchronization remains explicit; no background hub loop installed.",
+    "Codex-specific Mini App features are not ported."
+  ],
+  "documentation": {
+    "reviewed": [
+      "docs/roadmap/active-work.md",
+      "CHANGELOG.md",
+      "AGENTS.md",
+      "private active and former operator runbooks"
+    ],
+    "scope": "No change to hub protocol, public onboarding contract, dedicated server deployment or other Hermes agents. Earlier Codex evidence remains historical.",
+    "plan": "Current marker and receipt; two known config command inventory false positives",
+    "verify": {
+      "pass": 3,
+      "fail": 0,
+      "skipped": 2,
+      "skips": [
+        "source-intelligence disabled",
+        "no declared HTML artifacts"
+      ]
+    }
+  }
+}

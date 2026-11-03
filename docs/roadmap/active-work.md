@@ -1456,3 +1456,49 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Verify rejected challenges, invalid domains, CA outages, retry/rate limits and failed renewals preserve healthy service and valid prior certificates; test private-key/credential permissions, redacted diagnostics and unauthorized Admin access.
   - [x] Exercise initial Admin setup, live policy changes and certificate replacement without hub restart using independent HTTPS clients; verify A2A, OIDC and federation continue to enforce their current authentication and origin rules.
   - [x] Qualify documented Compose and Kubernetes challenge/storage configurations and review setup/recovery documentation. Record issuer-staging validation and owned-domain/network prerequisites separately from deterministic test-CA results; do not claim public issuance from a fixture alone.
+
+### [ ] ONBOARD-012 — Wake Hermes for pending hub deliveries
+
+- **Priority:** P1
+- **Owner:** Hermes agent integration operations
+- **Direction:** Automatically receive and process A2A messages instead of requiring manual inbox checks
+- **Conclusion:** Use the existing Hermes scheduler and private hub client on the recipient; preserve credentials, bounded work and acknowledgement after processing. Verify an actual agent reply through the deployed HTTPS hub. The setup gap is client wake-up: require explicit manual-only versus unattended onboarding and a real scheduled round trip. The hub API and server image are unchanged.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Install and document a bounded inbox monitor with retry-safe pending delivery handling
+- **Evidence:**
+  - [x] Verify stable empty polling and retry/failure unit checks, scheduled recipient hello reply, durable reply/ack replay and sender Hermes acknowledgement
+  - [ ] Restore a current project test receipt and rerun the full repository verification gate; current receipt is stale
+
+- **Operational evidence:** [Hermes inbox](../../verification/hermes-inbox/manifest.json). Recipient native scheduled run completed through the established HTTPS hub; the sender Hermes received and acknowledged its greeting reply. Existing credentials and hub image retained. Three monitor tests pass. A restart interrupted the initial run and paused the job; prepared IDs were reconciled before resuming, and the subsequent scheduled run completed without duplicate replies. Onboarding now distinguishes manual-only from unattended receipt, with recovery instructions. Documentation review recorded; full verification has two passes, two declared skips and one stale project-test-receipt failure. The item remains open for that repository gate.
+
+### [ ] ONBOARD-013 — Document CLI agents independently of OpenShell
+
+- **Priority:** P1
+- **Owner:** Hub client onboarding documentation
+- **Direction:** Add Claude Code, Cursor, OpenCode, standalone Codex and Pi setup guides; make OpenShell a reusable execution layer
+- **Conclusion:** Factor common A2A provisioning and verification from agent instruction discovery and sandbox transport/credentials. Document supported composition without claiming untested agent or unattended combinations.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Write five dedicated guides, shared client setup, generic OpenShell guide and discovery links
+- **Evidence:**
+  - [x] Check official agent sources, isolated runnable examples, dependency installation and local CLI help; review documentation
+  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+
+- **Documentation evidence:** [Agent setup guides](../../verification/agent-setup-docs/manifest.json). Five dedicated CLI guides compose with one common client and one OpenShell layer. Official instruction/skill discovery sources reviewed; eight guides passed link checks, thirteen code blocks passed syntax checks, isolated wrapper/download examples and the documented SDK environment/helper succeeded. Local Codex/OpenShell command help checked. New model sessions and client/image combinations remain explicitly unverified rather than implied by historical Codex/Hermes reports. The existing stale project receipt remains a separate verification gate; no server behavior or deployed image changed.
+
+### [ ] ONBOARD-014 — Enroll another remote Hermes agent in Trickle
+
+- **Priority:** P1
+- **Owner:** Hermes agent onboarding operations
+- **Direction:** Connect the additional operator-specified host and add its Hermes profile to the existing Trickle project
+- **Conclusion:** Inspect and reuse any existing profile binding; otherwise create a dedicated project-scoped identity, install private client and coordination guidance, configure an unattended receive loop and verify a real peer round trip. The corrected hostname and operator-confirmed SSH account now connect. Require two correlated hello exchanges, initiated once by the new agent and once by an existing peer, and document that acceptance for every new agent/project binding.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Inspect remote Hermes profile and enroll it with dedicated credentials and an inbox receive loop
+  - [x] Require two-direction hello/reply acceptance in shared onboarding and coordination instructions
+- **Evidence:**
+  - [x] Verify identity, project isolation, reused subscription, scheduled message reply and preserved existing integrations
+  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+
+- **Operational evidence:** [Additional Hermes onboarding](../../verification/hermes-mini-m4-onboarding/manifest.json). Dedicated identity and raw subscription verified; two greetings initiated through actual Hermes sessions received correlated replies and acknowledgements through native scheduled inbox turns. Both inboxes are empty. Initial packaged-interpreter failure was fixed by selecting the verified host Python for the monitor; gateway was not restarted, and existing model/environment/auth files are unchanged. Shared setup now requires this two-direction acceptance for each new binding. Documentation reviewed; three monitor tests pass. Repository verification retains two passes, two skips and the existing stale receipt failure.

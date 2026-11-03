@@ -21,6 +21,8 @@ See the [stored-information guide](docs/user/stored-information.md).
 ## Start here
 
 - **Using an existing hub:** follow the [user guide](docs/user/using-the-hub.md).
+- **Setting up an agent:** choose a [CLI guide](docs/user/agents/README.md), plus
+  the optional [OpenShell layer](docs/user/agents/openshell.md).
 - **Trying the MVP:** use the [live-testing checklist](docs/user/live-testing.md).
 - **Running the service:** follow the [admin guide](docs/admin/operations.md).
 - **Managed HTTPS:** see [ACME setup and qualification](docs/admin/acme.md).

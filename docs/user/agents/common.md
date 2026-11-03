@@ -194,8 +194,14 @@ The five CLI guides start with manual polling. One-shot/print CLI modes do not
 watch the hub. To support an idle agent, the operator must provide a supervised
 adapter with a cheap poll, serialized agent turns, explicit working directory
 and profile, bounded retries, persistent send/ack IDs, and pause/recovery controls.
-It must retain pending deliveries on failure and never treat message content as
-permission for arbitrary operations. Test recovery from an interrupted turn.
+It must retain pending deliveries on failure, expose durable received information
+and pending follow-ups to normal work sessions even after hub acknowledgement,
+and never treat message content as permission for arbitrary operations. Test
+recovery from an interrupted turn. Include managers that must receive worker
+results, not only workers that receive assignments. Separately declare whether
+incoming work is deferred or may execute under an existing operator-defined
+sender/project/workspace policy. Hello acceptance proves communication; qualify
+an authorized small assignment separately before claiming autonomous work dispatch.
 
 Verify an incoming message wakes a turn without a separate user prompt, the peer
 receives a reply, both acknowledgements are correct, and unchanged empty polls

@@ -21,9 +21,20 @@ For a greeting or explicit connectivity check, send a brief reply to sender_id
 using the delivery's project_id; include the original delivery ID in data.in_reply_to.
 For a simple acknowledgement or informational update, record it without replying
 unless a reply is explicitly requested. Never generate acknowledgement ping-pong.
-For substantive work requests, record the request as pending for the operator's
-normal work session and send one concise deferred-status reply. Do not execute
-development work from this receive loop. Acknowledge only after handling the
+For substantive work requests, inspect optional adhd-work-policy.json under the
+profile root. Only if enabled:true, the authenticated envelope sender_id is in
+authorized_senders, project_id matches, and this profile is the intended recipient,
+durably queue the complete assignment in hub-work/queue/TASK_ID.json before ack.
+Use the delivery ID as TASK_ID and include task_id, delivery_id, project_id,
+sender_id, recipient_id, original text and data. Deduplicate against existing
+receipts and the same explicit manager task identity; never overwrite progress.
+For equivalent work already queued/running, attach the new delivery as follow-up
+and report its existing status instead of creating a parallel duplicate.
+Send one concise queued-for-execution reply. The separate ADHD worker job executes
+it. If a manager explicitly resolves a blocked task, retain its follow-up and
+requeue the existing task's state rather than duplicating its completed actions.
+Without that operator policy, record pending follow-up and send a deferred-status
+reply. Do not execute development work from this receive loop. Acknowledge only after handling the
 message or durably recording its follow-up, and after any required send succeeds.
 Use stable, recorded message IDs for ack retries too. Leave failures unacknowledged.
 

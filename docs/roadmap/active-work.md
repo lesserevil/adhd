@@ -1519,3 +1519,19 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 - **Operational evidence:** [Native Windows Hermes](../../verification/hermes-windows-onboarding/manifest.json). Project-scoped identity, raw subscription and private ACL-checked client verified. Both greeting directions received correlated replies and acknowledgements. Windows boot task starts under the existing user in noninteractive session 0, with a fresh scheduler heartbeat and a successful post-task message round trip. The machine itself was not rebooted. The installed login-task helper failed account-name resolution; registration uses the actual SID and a synchronous launcher with failure recovery. Existing model/environment/auth configuration retained. Native profile paths, boot-versus-login semantics and recovery reviewed in the Hermes inbox guide. Documentation review passes; repository verification retains two passes, two skips and the existing stale receipt failure.
 
+### [ ] ONBOARD-016 — Diagnose systemic Trickle communication issues
+
+- **Priority:** P1
+- **Owner:** Agent receive-loop integration operations
+- **Direction:** Monitor project communication and fix obvious systemic failures
+- **Conclusion:** Audit queues, scheduled receive turns and durable receipts across enrolled agents; correlate delivery latency, duplicate replies, wake failures and empty polling. Preserve identities and in-flight work, fix clear integration defects and retest before claiming healthy communication.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Inspect fleet communication and repair confirmed integration defects
+- **Evidence:**
+  - [x] Observe bounded monitoring window, correlate deliveries with replies and acknowledgements, document limitations and run relevant checks
+  - [x] Confirm the desired worker execution policy separately from message receipt
+  - [x] Enable a separate durable worker queue for manager-assigned Trickle development, activate previously deferred assignments and verify execution starts
+  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+
+- **Operational evidence:** [Communication monitoring](../../verification/trickle-communication/manifest.json) and [30-minute observations](../../verification/trickle-communication/observation.json). All four agents completed 152 queue probes without a poll failure or a new failed/unknown execution; all queues were empty at the end of the window. The manager now has unattended receipt. Wall-clock schedules corrected approximately two-minute interval drift to approximately 60-second idle checks. Each worker replied once to the manager-driven fleet greeting; replies arrived in 84–117 seconds and were acknowledged. All four profiles have one active raw subscription, and normal sessions reconcile durable receipts after acknowledgement. After explicit operator authorization, a separate policy-scoped work queue was installed on each worker and the preserved node-readiness assignments activated. All three emitted correlated started status acknowledged by the manager; actual inventory exposed missing source access. Verified current-main Git bundles now provide isolated clean checkouts on all three hosts, with manager follow-ups to requeue the original tasks. Direct worker forge access remains unavailable. Node readiness completion is not claimed. Five monitor tests pass. Documentation reviewed; the existing stale project-test-receipt gate remains open.

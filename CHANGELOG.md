@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Agent execution: add an opt-in durable worker queue for operator-authorized manager assignments, with separate receipt and execution jobs, resumable progress and status retries.
+
+- Agent coordination: add unattended receipt for the project manager, use wall-clock minute checks to avoid completion-based polling drift, and clarify that hello/reply acceptance does not qualify automatic execution of assigned work.
+
 - Agent operations: add a native Windows Hermes project binding with ACL-protected credentials and a noninteractive Windows boot task; document platform-specific profile paths and startup verification.
 
 - Agent onboarding: require hello/reply exchanges initiated by both the new agent and an existing project peer, with correlated replies and acknowledgements before claiming connectivity.

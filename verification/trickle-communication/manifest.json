@@ -1,0 +1,121 @@
+{
+  "schema": "adhd/communication-monitor@1",
+  "date": "2026-11-03",
+  "work_item": "ONBOARD-016",
+  "status": "communication verified; authorized worker execution active; repository receipt gate remains stale",
+  "window": {
+    "started_at": "2026-11-03T20:10:16.416167+00:00",
+    "ends_at": "2026-11-03T20:40:16.416167+00:00",
+    "duration_seconds": 1800
+  },
+  "observed_agents": [
+    "trickle-mgr",
+    "hermes-lappy",
+    "hermes-mini-m4",
+    "hermes-windows11"
+  ],
+  "findings": [
+    {
+      "issue": "Manager lacked unattended receipt",
+      "fix": "Installed bounded native inbox job b3a9db46f826 without restart",
+      "test": "Scheduled hello reply and pending status acknowledgements passed"
+    },
+    {
+      "issue": "One-minute interval scheduled from completion missed the next 60-second tick",
+      "fix": "All four inbox jobs use wall-clock * * * * *",
+      "test": "Observed check spacing fell from about 120 to 60 seconds"
+    },
+    {
+      "issue": "Acknowledged messages can be absent from later normal-session hub polls",
+      "fix": "All four installed skills now require reconciliation of durable local receipts and pending follow-ups",
+      "test": "Existing deferred work remains in local receipts; not treated as completed"
+    },
+    {
+      "issue": "Workers deferred manager development assignments under coordination-only policy",
+      "fix": "Operator explicitly authorized Execute manager-assigned Trickle work. Installed separate policy-scoped work queues and native worker jobs on all three workers; activated the original preserved node-readiness assignments.",
+      "test": "All three sent correlated started status; real local inventory observed; task completion is not claimed"
+    }
+  ],
+  "manager_round_trip": {
+    "greeting": "delivery_ab9e29312979d44e851a9515f0cdd918_19",
+    "reply": "delivery_ab9e29312979d44e851a9515f0cdd918_1a",
+    "execution": "1165c767d913459fa79ef4d06cf352ca",
+    "acknowledged_both_ends": true
+  },
+  "limits": [
+    "Sampling observes pending queues, not a complete server message audit log",
+    "Empty-poll no-change runs suppress model execution; a transition to empty may invoke one short turn",
+    "Work-execution authorization is distinct from transport success",
+    "The 30-minute observation predates the final worker-policy rollout. Worker startup/status checks are separate follow-up evidence; full node-readiness completion is not claimed."
+  ],
+  "documentation": [
+    "docs/user/hermes-inbox.md",
+    "docs/user/agents/common.md",
+    "docs/roadmap/active-work.md",
+    "CHANGELOG.md",
+    "scripts/hermes_hub_inbox.txt",
+    "scripts/hermes_hub_worker.txt"
+  ],
+  "subscription_audit": {
+    "result": "exactly one unpaused raw subscription per agent",
+    "agent_ids": {
+      "trickle-mgr": "subscription_ab9e29312979d44e851a9515f0cdd918_4",
+      "hermes-lappy": "subscription_ab9e29312979d44e851a9515f0cdd918_2",
+      "hermes-mini-m4": "subscription_ab9e29312979d44e851a9515f0cdd918_c",
+      "hermes-windows11": "subscription_ab9e29312979d44e851a9515f0cdd918_h"
+    }
+  },
+  "verification": {
+    "documentation_review": "current authority marker recorded; two config paths inventory false positives checked against CLI help",
+    "repository_gates": {
+      "pass": 2,
+      "fail": 1,
+      "skipped": 2,
+      "failure": "project.test_receipt_stale"
+    },
+    "server_changes": "none; existing dedicated hub image and credentials retained",
+    "scope": "Installed client integration, explicit worker execution policy and operating guidance. Development is now owned by worker jobs; no claim that node-readiness assignments are complete.",
+    "unit_tests": {
+      "passed": 5,
+      "coverage": [
+        "inbox empty/pending/retry/failure semantics",
+        "worker policy disabled or missing",
+        "unauthorized sender/project/recipient excluded",
+        "terminal task states and status-send-only retry",
+        "malformed policy cannot become empty success"
+      ]
+    }
+  },
+  "observation": "observation.json",
+  "worker_jobs": {
+    "hermes-mini-m4": "411ff211187e",
+    "hermes-lappy": "8ee3f60d096c",
+    "hermes-windows11": "e7004c7e97f6"
+  },
+  "worker_started_deliveries": {
+    "hermes-lappy": "delivery_ab9e29312979d44e851a9515f0cdd918_1h",
+    "hermes-windows11": "delivery_ab9e29312979d44e851a9515f0cdd918_1i",
+    "hermes-mini-m4": "delivery_ab9e29312979d44e851a9515f0cdd918_1j"
+  },
+  "worker_started_acknowledged": true,
+  "worker_execution_evidence": {
+    "hermes-mini-m4": "Native scheduled worker active; real Darwin CPU/memory/storage inventory recorded in durable state",
+    "hermes-windows11": "Native scheduled worker active; initial node/repository inventory saved in task logs; independent inbox turns continued completing",
+    "hermes-lappy": "Native scheduled worker active; node inventory, access-prerequisite and repository-discovery logs saved; started status accepted and acknowledged"
+  },
+  "source_access_followup": {
+    "finding": "All workers reached real source-access blockers after executing inventory",
+    "fix": "Operator transferred a verified Git bundle into isolated clean checkouts on all three hosts; no worker credentials changed",
+    "commit": "3dbb273cd1e975fe3d531d6fb0d17e8ee6a767c8",
+    "bundle_sha256": "a254a9a157e79f77d8f317c14d5e5d1bb655974c785d62eab8909af12223dbc9",
+    "verification": "Authorized host SSH ls-remote and manager authenticated API agreed on main; each checkout HEAD matches and status was clean before requeue",
+    "followup_delivery_suffixes": [
+      "1o",
+      "1p",
+      "1q"
+    ],
+    "windows": "Verified and stopped five owned stalled credential-helper processes; repository-local core.longpaths enabled to restore five long-path files in new checkout",
+    "limits": "Direct worker forge permissions remain unavailable; dependencies, builds, tests and debugger qualification remain assigned work, not completed by this monitoring session.",
+    "requeue_verified": "All three existing task states changed from blocked to queued through their scheduled inbox handlers; no duplicate task IDs created."
+  }
+}

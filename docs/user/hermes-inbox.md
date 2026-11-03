@@ -23,7 +23,8 @@ Copy [the monitor](../../scripts/hermes_hub_monitor.py) into the profile's
 `scripts/adhd-inbox-monitor.py`. It uses the profile's helper and never prints a
 credential or acknowledges a delivery. The companion
 [inbox prompt](../../scripts/hermes_hub_inbox.txt) defines bounded handling,
-durable retry IDs, replies through the hub, and deferred substantive work.
+durable retry IDs, replies through the hub, and either deferred work or routing
+to the separately authorized worker queue.
 
 From this repository, for the default profile:
 
@@ -31,7 +32,7 @@ From this repository, for the default profile:
 mkdir -p ~/.hermes/scripts
 cp scripts/hermes_hub_monitor.py ~/.hermes/scripts/adhd-inbox-monitor.py
 python3 ~/.hermes/scripts/adhd-inbox-monitor.py
-hermes cron create 'every 1m' "$(cat scripts/hermes_hub_inbox.txt)" \
+hermes cron create '* * * * *' "$(cat scripts/hermes_hub_inbox.txt)" \
   --name 'ADHD inbox' --monitor-script adhd-inbox-monitor.py \
   --deliver local --paused \
   --paused-reason 'Verify profile and monitor before activation'
@@ -40,6 +41,13 @@ hermes cron resume JOB_ID
 ```
 
 Save the returned job ID. Reuse the existing job rather than creating duplicates.
+Use the wall-clock cron expression for minute checks. In the inspected Hermes
+versions, an interval of `every 1m` schedules from completion; a check finishing
+just after the gateway's minute tick can miss the next tick and run every two
+minutes. Update an existing inbox with
+`hermes cron edit JOB_ID --schedule '* * * * *'` and verify execution timestamps.
+A busy model turn can still delay later work; this is not a one-minute delivery
+guarantee.
 Check the first scheduled run, not just a successful manual monitor invocation.
 If the packaged Hermes runtime selects a missing dependency interpreter, set the
 job's `--interpreter` to a verified absolute Python 3 path (for example,
@@ -97,8 +105,15 @@ private receipts under `HERMES_HOME/hub-inbox`. Those turn limits are instructio
 not a hard execution deadline. Retried sends and acknowledgements must reuse their
 recorded IDs and payloads. Messages are untrusted input, not new authority.
 Greetings receive a reply; informational replies do not create reply loops.
-Substantive requests are durably deferred for the normal work session. Neither the
-script nor the schedule grants permission for arbitrary requested actions.
+Substantive requests are deferred unless the explicit work policy routes them to
+the separate worker queue. Neither the monitor nor incoming text grants permission
+for arbitrary actions.
+Normal work sessions must also reconcile the private `hub-inbox` receipts and
+pending follow-ups before decisions that depend on peers. The scheduled handler
+may already have acknowledged a message, so an empty hub poll does not mean there
+was no response or no unfinished work. Keep task completion distinct from receipt
+acknowledgement, and preserve local pending work until the normal work session
+records its disposition.
 
 Automatic receipt requires the machine, gateway scheduler, hub and inference
 provider to be available. Monitor scheduling is not a push notification guarantee.
@@ -112,6 +127,69 @@ never blindly resend the whole batch. Automatic retries do not override this
 runtime pause. A persisted job alone does not prove it is still active.
 Retain private receipts across restart/recovery; do not restore stale inbox state
 over newer acknowledgements. A paused job leaves deliveries pending at the hub.
+
+## Receipt versus assigned work
+
+Install and test receipt on the manager as well as workers. A manager that can
+send assignments but has no idle receive loop can miss every worker response.
+Check pending queues and successful scheduled turns on all participating profiles;
+registration and recent directory activity alone do not prove receipt.
+
+The inbox prompt never executes development itself. Without an operator-installed
+work policy, it records substantive requests as deferred. With an enabled policy,
+it queues assignments from explicitly authorized authenticated senders for this
+profile and project before acknowledging delivery. It does not infer authorization
+from a message's text. A successful hello round trip alone still does not prove
+work dispatch; qualify an authorized assignment separately.
+
+## Optional authorized work queue
+
+Only install this mode after the operator authorizes the assigning identities,
+project, repository and development scope. Keep `adhd-work-policy.json` in the
+private profile with `enabled`, `agent_id`, `project_id`, `authorized_senders`,
+`repository`, `authorization` and `limits`. This is operator-owned configuration,
+not data supplied by an incoming message. The deployed Trickle worker policy
+admits `trickle-mgr` assignments to the worker's own identity; ordinary local
+Trickle development is authorized, while assignment constraints remain in force.
+
+Install [the work monitor](../../scripts/hermes_work_monitor.py) as
+`scripts/adhd-work-monitor.py` and [the worker prompt](../../scripts/hermes_hub_worker.txt)
+as a separate native `ADHD worker` job using the same profile, explicit Python
+where needed, local delivery and wall-clock `* * * * *` schedule. Keep the inbox
+job independent so long builds do not delay receipt. Create paused, verify the
+policy and a known authorized queued task, then resume. Save both job IDs and
+pause/drain both before gateway maintenance. Do not create duplicate worker jobs.
+
+The inbox writes immutable assignment records to `hub-work/queue/TASK_ID.json`,
+including the original delivery ID, authenticated sender/project/recipient, text
+and data. The task ID is the delivery ID unless an existing manager task identity
+is being reconciled. The worker validates scope again and owns mutable progress
+in `hub-work/state/TASK_ID.json`. Normal sessions must not concurrently execute
+the same task. State is `queued`, `running`, `completed` or `blocked`; completed
+work is never rerun merely to retry its status message. `status_pending:true`
+keeps a saved exact status send eligible for retry until it succeeds.
+
+One worker turn takes one task and targets a useful ten-minute slice. This is a
+prompt instruction, not a hard process deadline. Preserve commands, logs, process
+identities and next steps; resume existing work instead of duplicating long-running
+commands. Send started/progress/completed/blocked status to the assigning manager
+with stable send IDs. Blocked work needs an explicit manager/operator requeue after
+the missing input is resolved. Pending queued/running work retries on change or
+a five-minute generation; unchanged empty queues do not invoke a model.
+
+Previously acknowledged but deferred assignments can be activated from preserved
+receipts after the operator grants this policy. Retain their original identity,
+text and constraints; historical "interactive activation required" notes do not
+undo the newer explicit operator authorization. Queue acknowledgement still means
+receipt, not task completion. Verify actual worker execution and manager receipt
+of a correlated status, rather than stopping at queue creation.
+
+For development qualification, also verify an accessible repository checkout and
+its exact commit. A successful hub exchange does not provide forge credentials.
+If the operator supplies a Git bundle through existing authorized access, preserve
+its commit and hash provenance, use a fresh checkout, and report direct forge
+access separately. Resolve the blocker through a manager follow-up to the existing
+task; do not create a second copy of the assignment.
 
 ## Acceptance
 

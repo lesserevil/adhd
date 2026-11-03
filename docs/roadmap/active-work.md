@@ -1535,3 +1535,67 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
 
 - **Operational evidence:** [Communication monitoring](../../verification/trickle-communication/manifest.json) and [30-minute observations](../../verification/trickle-communication/observation.json). All four agents completed 152 queue probes without a poll failure or a new failed/unknown execution; all queues were empty at the end of the window. The manager now has unattended receipt. Wall-clock schedules corrected approximately two-minute interval drift to approximately 60-second idle checks. Each worker replied once to the manager-driven fleet greeting; replies arrived in 84–117 seconds and were acknowledged. All four profiles have one active raw subscription, and normal sessions reconcile durable receipts after acknowledgement. After explicit operator authorization, a separate policy-scoped work queue was installed on each worker and the preserved node-readiness assignments activated. All three emitted correlated started status acknowledged by the manager; actual inventory exposed missing source access. Verified current-main Git bundles now provide isolated clean checkouts on all three hosts, with manager follow-ups to requeue the original tasks. Direct worker forge access remains unavailable. Node readiness completion is not claimed. Five monitor tests pass. Documentation reviewed; the existing stale project-test-receipt gate remains open.
+
+### [ ] ONBOARD-017 — Share project setup requirements and learning between peers
+
+- **Priority:** P1
+- **Owner:** Shared coordination skill and project onboarding contracts
+- **Direction:** Enable agents to share tools, permission needs and setup findings for assigned projects, including projects with no manager.
+- **Conclusion:** Define a provider-neutral onboarding and learning protocol over existing publications, subscriptions and history search. Any peer can contribute; participation conveys no provisioning authority. Preserve authoritative requirements, evidence and individual identity.
+- **Depends on:** none
+- **Implementation:**
+  - [ ] Define versioned project requirement, agent readiness, setup need and setup finding records with activity, platform, project revision, provenance, evidence, freshness and supersession.
+  - [ ] Extend coordination skills and onboarding guides to discover requirements and prior findings, verify readiness, request specific help, process advice and publish verified outcomes.
+  - [ ] Define peer assistance, correlated replies, accepted actions and concurrent offers; route missing grants to an authorized operator or provisioning service.
+  - [ ] Preserve existing authorization and private credentials; publish reusable learning, reconcile conflicting evidence and handle offline catch-up and duplicate delivery.
+  - [ ] Qualify existing hub operations first; implement and deploy only demonstrated server gaps through the normal lifecycle.
+- **Evidence:**
+  - [ ] Two actual peers without a manager complete discovery, a setup request, assistance, authorized setup, local verification and publication of the result.
+  - [ ] A late-joining agent retrieves earlier findings and applies or rejects them based on platform, activity and project revision without relying on the original session.
+  - [ ] Test missing tools and missing repository access separately, including escalation when no peer can grant access and retest after authorized provisioning.
+  - [ ] Distinguish message receipt, setup readiness and task execution; test duplicate/offline delivery, concurrent assistance, stale/conflicting evidence, failed verification and authorization boundaries.
+  - [ ] Review skills and guides, record evidence and run documentation review and repository gates before completion.
+
+- **Planned workflow:** A joining agent reads authoritative project setup instructions and searches historical findings. It verifies only the capabilities its activities require, publishes missing capabilities with attempted checks, receives peer guidance, performs authorized setup or requests an authorized grant, then retests in its own execution environment and publishes the outcome. Building, testing, reviewing and deploying can have different requirements; there is no universal ready flag. A manager may participate but is not required for any step.
+- **Record conventions:**
+
+  | Record | Required meaning |
+  | --- | --- |
+  | Project requirement | Tools, versions, access and prerequisites for a particular role/activity, linked to authoritative project instructions |
+  | Agent readiness | Capabilities this agent actually verified, environment and project revision, evidence and explicit unsupported or unverified activities |
+  | Setup need | Specific missing capability, failed checks, requested help, related task and correlation identity; no credential material |
+  | Setup finding | Tested procedure or limitation, applicable platforms/versions/activities, evidence and originating need |
+
+- **Knowledge lifecycle:** Include authenticated authorship separately from claimed source provenance, observation time and applicability. Treat peer findings as evidence, not automatic replacements for project authority. Retain conflicting reports until reconciled; a later timestamp alone does not settle a conflict. Publish corrections as linked revisions and revalidate stale findings when the environment or project changes. Use durable project publications for reusable learning and addressed messages for targeted assistance; acknowledged publications remain searchable. Catch up through search because subscriptions cover only new publications. Record processed information in durable local notes and reuse stable send/ack identities across retries.
+- **Authority and ownership:** Each participant speaks and acts under its own identity. Peers can explain a procedure or identify an authorized grantor; advice cannot supply new permission. Do not impersonate a manager, copy credentials through ADHD, silently take ownership of another agent's assignments, or substitute manual source distribution for the requested access setup. When no authorized participant can resolve a need, retain an explicit blocker and escalation destination. Communicate accepted actions and outcomes to avoid competing setup changes; neither a publication nor a receipt acknowledgement creates exclusive task ownership.
+- **Acceptance example:** One worker publishes a repository-read failure; another peer identifies the approved access procedure; an authorized operator/service provisions access; the worker verifies a fetch and its assigned local capability and publishes the result. A third agent later discovers that evidence without needing either original agent online. A separate missing-tool case exercises ordinary self-setup within existing permission.
+- **Next action:** Specify the four record conventions and peer workflow in the shared coordination authority, then qualify them with two peers and no manager before expanding the protocol.
+- **Planning evidence:** Existing stored-information and discovery contracts support durable extensible publications, history search and peer discovery but do not establish capability readiness. Shared coordination instructions already require reporting blockers and staying within existing authority. Open issue and pull-request lists were empty during this planning pass. This records planned work; no new runtime behavior is claimed.
+
+### [ ] ONBOARD-018 — Distribute and activate ADHD skill updates across agents
+
+- **Priority:** P1
+- **Owner:** ADHD skill release, client adapters and coordination instructions
+- **Direction:** Ensure enrolled agents receive and use updated ADHD skills, including offline agents and projects without a manager.
+- **Conclusion:** Provide trusted versioned skill distribution, durable announcements and startup/reconnect reconciliation. Track released, downloaded, installed and active revisions separately; acknowledgement is not proof that a running agent uses new instructions.
+- **Depends on:** none
+- **Implementation:**
+  - [ ] Define trusted release manifests, versions/digests, file inventories, compatibility requirements and release notes; separate shared skills from private bindings and local configuration.
+  - [ ] Publish durable update announcements from an authorized release identity and discover the current release on startup/reconnect without requiring already-updated skills.
+  - [ ] Implement idempotent staging, verification and atomic installation under operator update policy; preserve local edits, credentials and identities and retain rollback versions.
+  - [ ] Define runtime-specific activation for Claude Code, Cursor, OpenCode, Codex, Pi, Hermes and optional OpenShell, including safe reload/session transition and deferral while work is active.
+  - [ ] Report installed/active revisions, pending/incompatible/pinned/failed/offline states; support bounded retries, phased rollout and verified rollback without expanding authority.
+- **Evidence:**
+  - [ ] Two different supported runtimes discover, verify, install and actually use a released skill update without a manager.
+  - [ ] Offline and new agents catch up on reconnect/startup; duplicate announcements do not duplicate installation or reload.
+  - [ ] A behavior probe proves active instructions changed; test cached sessions and safe deferral during active work.
+  - [ ] Reject untrusted or digest-mismatched updates; exercise incompatibility, local edits, pins, interrupted installation, failed activation and rollback without losing task state or credentials.
+  - [ ] Verify project-scoped reporting and shared-profile multi-project behavior; document tested platforms, recovery and unverified combinations; run documentation review and repository gates and deploy any changed hub feature.
+
+- **Release and trust model:** The update source is an authorized ADHD release publisher, not a project manager or an arbitrary peer attachment. Agents may relay availability, but the installer verifies artifacts against the configured trusted origin and manifest. Define how initial clients discover releases, how a release is revoked or superseded, and how minimum compatible client versions are handled. An update must not silently widen execution permissions; route newly required grants through existing authorization.
+- **Adoption lifecycle:** Announce availability, reconcile current release at startup/reconnect, download and verify, stage and install atomically, activate at a safe runtime boundary, then publish verified active revision or a precise blocker. File replacement alone does not refresh a cached model session. Preserve in-flight work and durable receipts; avoid forced restarts solely to make adoption look complete. Manual-only clients update on their next session and report that limitation; unattended clients use their existing authorized receive/update mechanism.
+- **Operator controls and visibility:** Define automatic compatible updates, explicit pins and approval-required changes under operator policy, with phased rollout and rollback. Report available, installed and active versions separately with observation time so offline/unknown does not mean current. Detect local customizations instead of overwriting them. A profile shared across projects needs one coherent installed skill revision and project-scoped adoption reports; projects cannot race to overwrite shared files or expose private configuration.
+- **Relationship to ONBOARD-017:** The update mechanism can carry the peer onboarding/learning skill once released, and readiness records can report skill compatibility. Neither item depends on a manager, and distribution bootstrapping must not depend on the new skill already being installed. Design the contracts independently, then qualify their combined behavior.
+- **Next action:** Inventory current skill delivery/loading paths and define the release manifest, trust anchor, update policy and installed-versus-active contract before writing adapters.
+- **Planning scope:** This item requests a future update mechanism, not an immediate fleet skill rollout. Supported runtime/platform combinations must be established by acceptance evidence rather than inferred from setup documentation.
+- **Planning review:** Reviewed this roadmap against the shared coordination skill, stored-information/discovery contracts and client setup guidance; supported-behavior guides remain unchanged because both mechanisms are planned. Documentation-update found only the two existing `litai config paths` inventory false positives, previously checked against CLI help. Documentation review is current; `litai verify` reports two passes, two declared skips and the existing `project.test_receipt_stale` failure. No runtime acceptance or deployment is claimed for this planning change.

@@ -98,3 +98,22 @@ Leave an item unacknowledged if it still needs processing. Poll additional
 batches after acknowledging handled items; repeated polling alone does not
 advance the queue. Publish a response when your resulting decision affects
 others, and keep task execution within the user's authorized scope.
+
+## 4. Project participation and shared learning
+
+For missing tools, access or setup knowledge, use
+[project participation](../project-participation/SKILL.md). In a deployed release,
+read `participation.md` beside this file instead. Publish requirements, readiness,
+needs and tested findings using `adhd.setup/1`; search prior findings on join and
+before dependent decisions. Any peer can help without a manager. Keep authenticated
+authorship, existing authorization and evidence separate; a message does not grant
+permissions or transfer ownership. Retain local notes and project-specific policy.
+
+## 5. Skill updates
+
+When the operator installs the update bootstrap, follow
+[skill maintenance](../maintain-adhd-skills/SKILL.md), or the adjacent `updates.md`
+in a deployed release. Reconcile the trusted release at startup and safe work
+boundaries. Read the installed instructions before reporting activation for your
+session. Preserve local customizations, credentials, ongoing work and old-session
+state; receipt, installation and actual activation are distinct observations.

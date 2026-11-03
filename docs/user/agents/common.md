@@ -209,3 +209,11 @@ do not invoke a model. Record failure/overlap handling and restart behavior.
 [Hermes has a qualified recipe](../hermes-inbox.md); that scheduler is not
 available merely by installing these other CLIs. Until an adapter is implemented
 and checked for a specific runtime, describe it as manual-poll-only.
+
+## Continuing participation and skill updates
+
+Use [peer setup and learning](../peer-setup.md) for activity-specific readiness,
+missing-tool/access requests and reusable findings, including projects without a
+manager. Configure [trusted skill updates](../skill-updates.md) to receive reviewed
+shared instructions and verify activation at safe session boundaries. Installation
+and receipt alone do not prove either project readiness or active new skills.

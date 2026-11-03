@@ -1,6 +1,7 @@
 """Receive-loop checks independent of a live hub or inference provider."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -33,6 +34,24 @@ class MonitorTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(json.loads(result.stdout)["pending_delivery_ids"], ["d1"])
         self.assertNotIn("private message", result.stdout)
+
+    def test_update_failure_preserves_inbox_and_hides_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            home = Path(folder)
+            (home / "adhd-skills").mkdir()
+            (home / "scripts").mkdir()
+            (home / "adhd-skills/policy.json").write_text("{}")
+            (home / "adhd-skills/state.json").write_text(json.dumps({"checked_at": "2000-01-01T00:00:00+00:00"}))
+            (home / "scripts/adhd_skill_update.py").write_text('import sys\nprint("private update diagnostic")\nsys.exit(1)')
+            helper = home / "hub.py"
+            helper.write_text('print(\'{"deliveries":[{"id":"pending"}]}\')')
+            result = subprocess.run([sys.executable, str(SCRIPT), "--helper", str(helper)],
+                                    env=dict(os.environ, HERMES_HOME=str(home)), capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0)
+            value = json.loads(result.stdout)
+            self.assertEqual(value["pending_delivery_ids"], ["pending"])
+            self.assertEqual(value["skill_status"], "blocked")
+            self.assertNotIn("private update", result.stdout + result.stderr)
 
     def test_failure_is_not_empty_or_secret_output(self):
         for source in ['import sys\nprint("secret-shaped diagnostic",file=sys.stderr)\nsys.exit(1)',

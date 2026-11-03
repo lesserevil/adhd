@@ -1,0 +1,107 @@
+{
+  "schema": "adhd/peer-skills-qualification@1",
+  "work_items": [
+    "ONBOARD-017",
+    "ONBOARD-018"
+  ],
+  "status": "implementation and fleet rollout verified; live external grant acceptance and pre-existing repository receipt gate remain open",
+  "release": {
+    "publication_id": "publication_ab9e29312979d44e851a9515f0cdd918_6z",
+    "revision": "0af3c61431c58ac5652b4a8e70e0c6798e7c619ad4e848272689bb89779df50e",
+    "sequence": 3
+  },
+  "fleet": "adoption.json",
+  "scope": {
+    "enrolled_agents": [
+      "trickle-mgr",
+      "hermes-lappy",
+      "hermes-mini-m4",
+      "hermes-windows11"
+    ],
+    "separate_publisher": "adhd-maintainer",
+    "runtime_targets": [
+      "Hermes on Linux, macOS and native Windows",
+      "Codex maintenance session"
+    ],
+    "hub_changes": "No server implementation/image changes; existing authenticated publications/search/get carry client protocol and releases. Dedicated maintenance identity provisioned through Admin API; existing identities retained."
+  },
+  "peer_exchange": {
+    "requester": "hermes-mini-m4",
+    "helper": "adhd-maintainer (Codex, own identity)",
+    "manager_involved": false,
+    "missing_tool_need": "publication_ab9e29312979d44e851a9515f0cdd918_6b",
+    "missing_access_need": "publication_ab9e29312979d44e851a9515f0cdd918_6h",
+    "tested_peer_finding": "publication_ab9e29312979d44e851a9515f0cdd918_7z",
+    "requester_readiness": "publication_ab9e29312979d44e851a9515f0cdd918_9q",
+    "requester_finding": "publication_ab9e29312979d44e851a9515f0cdd918_9w",
+    "requester_resolution": "publication_ab9e29312979d44e851a9515f0cdd918_9x",
+    "result": "Requester searched peer finding, tested an isolated Python tool in its own environment with exact stdout, empty stderr and exit 0, and resolved only that need. Direct repository access remains blocked; no credential or grant fabricated.",
+    "late_reader": {
+      "agent": "hermes-lappy",
+      "publication_id": "publication_ab9e29312979d44e851a9515f0cdd918_ab",
+      "result": "Fresh session searched and retrieved original need, peer procedure and requester resolution, assessed Linux applicability without claiming local execution, and kept direct repository access blocked."
+    }
+  },
+  "update_evidence": {
+    "initial_install": "Verified exact manifest and all file digests using authenticated publisher/project identity; config/model/auth baselines preserved",
+    "subsequent_release": "Release sequence 3 reached all four agents through normal polling/history reconciliation, without SSH-copying release files",
+    "activation": "Actual scheduled Hermes turns read instructions, published own setup evidence and recorded session activation; current Codex session did the same",
+    "behavioral_limit": "Session attestation and retrieved publication, not proof that every historical conversation refreshed",
+    "rollback": "Unit fixture selects verified retained revision, pins it and clears activation; production rollback not needed",
+    "interruption": "Unit fixtures cover failure before pointer switch and after pointer switch/before state write",
+    "loop_fix": "Observed repeated per-turn activation notices; shared release 3 and bootstrap idempotence suppress repeated reporting for an already-observed revision",
+    "rate_limit": "Provider HTTP429 interrupted some probes; successful scheduled activation was subsequently observed for all enrolled agents",
+    "preservation": "Final source hashes and retained local notes match on all four profiles. Model config/environment hashes match. Windows auth.json matched at installation but changed during subsequent Hermes runtime use; no final byte-preservation claim for that model-auth file, and it was not restored or overwritten by the updater."
+  },
+  "tests": {
+    "unit_command": "python3 -m unittest tests.adhd_skills_unit tests.hermes_hub_monitor_unit tests.hermes_work_monitor_unit",
+    "count": 16,
+    "skill_validation": "Both new skills pass quick_validate.py",
+    "coverage": [
+      "publisher/project trust",
+      "manifest/file hashes and path inventory",
+      "local-edit preservation",
+      "pins/manual approval/incompatible bootstrap",
+      "offline outbox stable retries",
+      "revocations/sequence conflicts/regression",
+      "installation versus activation and duplicate activation",
+      "interrupted pointer selection recovery",
+      "peer demonstration must belong to current agent",
+      "record evidence/UTC validation",
+      "update failure leaves pending inbox intact"
+    ]
+  },
+  "limitations": [
+    "Direct repository permissions were not granted by this rollout; the real access need remains explicitly blocked.",
+    "Claude Code, Cursor, OpenCode and Pi instruction-entry adapters are documented, but no corresponding enrolled runtime was available for live qualification.",
+    "Existing project.test_receipt_stale repository gate remains separate."
+  ],
+  "documentation": [
+    "docs/user/peer-setup.md",
+    "docs/user/skill-updates.md",
+    "docs/user/agents/common.md",
+    "docs/user/hermes-inbox.md",
+    "skills/agent/coordinate-via-hub/SKILL.md",
+    "skills/agent/project-participation/SKILL.md",
+    "skills/agent/maintain-adhd-skills/SKILL.md"
+  ],
+  "release_artifact": "release.json",
+  "release_source_context": "Reviewed working-tree coordination skill includes pre-existing discovery/authentication guidance. Exact deployed Markdown is retained in release.json; unrelated repository changes are not swept into the implementation commit.",
+  "decision_handling": {
+    "artifact": "decision-cases.json",
+    "kind": "actual Hermes model assessment of explicitly simulated cases",
+    "result": "Concurrent shared changes deferred until actor/scope agreement; newer build evidence cannot resolve direct access; an authorized grant must be followed by an actual authenticated check; cross-project credential transfer rejected. No simulated grant was presented as a real one."
+  },
+  "verification": {
+    "documentation": "Reviewed peer setup, updates, common setup, Hermes monitor and shared skill claims against code and live evidence; documentation authority marker current",
+    "repository_gates": {
+      "pass": 2,
+      "fail": 1,
+      "skipped": 2,
+      "failure": "project.test_receipt_stale"
+    },
+    "planning_findings": "Three existing config-path command inventory findings checked against installed CLI help; no change required",
+    "peer_work": "Start/end surveys found no open issues or reviews; unrelated dirty worktrees and unmerged branches retained"
+  },
+  "preservation": "preservation.json"
+}

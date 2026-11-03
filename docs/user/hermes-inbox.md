@@ -199,3 +199,12 @@ receipt and recipient acknowledgement. Then verify stable empty checks skip the
 model and a restart preserves the job. Exercise a failed client check and pending
 retry generation separately. A successful `whoami`, registration, subscription or
 accepted `send` alone does not prove unattended coordination.
+
+## Shared skill updates
+
+With an operator-installed `adhd-skills/policy.json`, the inbox monitor reconciles
+the trusted release through the existing client at most every five minutes. It
+exposes installed revision and pending activation in the wake snapshot. A scheduled
+turn reads the release at its safe start and records its own activation evidence.
+Update failure remains visible without discarding pending inbox deliveries. See
+[skill update trust, activation and rollback](skill-updates.md).

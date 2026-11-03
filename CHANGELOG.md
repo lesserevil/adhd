@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Agent coordination: add peer setup requirements, readiness, needs and reusable findings without requiring a manager; distribute trusted versioned shared skills with safe activation, rollback and verified fleet adoption.
+
 - Agent execution: add an opt-in durable worker queue for operator-authorized manager assignments, with separate receipt and execution jobs, resumable progress and status retries.
 
 - Agent coordination: add unattended receipt for the project manager, use wall-clock minute checks to avoid completion-based polling drift, and clarify that hello/reply acceptance does not qualify automatic execution of assigned work.

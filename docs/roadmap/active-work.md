@@ -1502,3 +1502,20 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
 
 - **Operational evidence:** [Additional Hermes onboarding](../../verification/hermes-mini-m4-onboarding/manifest.json). Dedicated identity and raw subscription verified; two greetings initiated through actual Hermes sessions received correlated replies and acknowledgements through native scheduled inbox turns. Both inboxes are empty. Initial packaged-interpreter failure was fixed by selecting the verified host Python for the monitor; gateway was not restarted, and existing model/environment/auth files are unchanged. Shared setup now requires this two-direction acceptance for each new binding. Documentation reviewed; three monitor tests pass. Repository verification retains two passes, two skips and the existing stale receipt failure.
+
+### [ ] ONBOARD-015 — Enroll native Windows Hermes in Trickle
+
+- **Priority:** P1
+- **Owner:** Hermes agent onboarding operations
+- **Direction:** Add the operator-specified Windows agent to the existing project
+- **Conclusion:** Reuse the installed native Hermes profile, provision a dedicated scoped binding, adapt private client permissions and scheduler paths to Windows, and verify hello exchanges initiated in both directions.
+- **Depends on:** none
+- **Implementation:**
+  - [x] Verify or configure Windows boot startup under the existing agent profile, including recovery and no interactive-login dependency
+  - [x] Inspect native profile and install scoped client, instructions and receive loop without replacing existing integrations
+- **Evidence:**
+  - [x] Verify identity, project scope, preserved configuration and two correlated greeting/reply/ack exchanges through actual agent turns
+  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+
+- **Operational evidence:** [Native Windows Hermes](../../verification/hermes-windows-onboarding/manifest.json). Project-scoped identity, raw subscription and private ACL-checked client verified. Both greeting directions received correlated replies and acknowledgements. Windows boot task starts under the existing user in noninteractive session 0, with a fresh scheduler heartbeat and a successful post-task message round trip. The machine itself was not rebooted. The installed login-task helper failed account-name resolution; registration uses the actual SID and a synchronous launcher with failure recovery. Existing model/environment/auth configuration retained. Native profile paths, boot-versus-login semantics and recovery reviewed in the Hermes inbox guide. Documentation review passes; repository verification retains two passes, two skips and the existing stale receipt failure.
+

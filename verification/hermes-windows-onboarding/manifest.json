@@ -1,0 +1,77 @@
+{
+  "schema": "adhd/hermes-onboarding@1",
+  "date": "2026-11-03",
+  "work_item": "ONBOARD-015",
+  "status": "operationally-verified; repository receipt gate remains stale",
+  "agent_id": "hermes-windows11",
+  "project_ids": [
+    "trickle"
+  ],
+  "runtime": "Native Windows Hermes 0.22.6; existing profile retained",
+  "subscription_id": "subscription_ab9e29312979d44e851a9515f0cdd918_h",
+  "job_id": "ad5a0e837f3f",
+  "profile_adaptations": [
+    "Explicit LOCALAPPDATA profile home and installed Python interpreter",
+    "Credential ACL limited to owner, SYSTEM and Administrators; checked by client",
+    "UTF-8 JSON command files avoid PowerShell argument quoting"
+  ],
+  "installed_files_sha256": {
+    "hub.py": "8572025f6d1c407ffbc61eb41db8a0456efab7959fb295fdf799028c15dbccf0",
+    "adhd-inbox-monitor.py": "87fab4c59519448139f6d922a4341c8e97997cb86684895da392990a66fd2545",
+    "SKILL.md": "5da253258e387a1f6863aeebf4aab2d60d7417ac57c8bc8897585928231147a6",
+    "inbox-prompt.txt": "f40670def5584dd0730b356176a109dbe2ff2199aa0cff4ee59f73f216e0b427"
+  },
+  "preservation": {
+    "config_env_auth": "hashes unchanged before boot handoff",
+    "hub_credentials_and_memberships": "prior agents unchanged; private rollback snapshot retained"
+  },
+  "boot": {
+    "task": "Hermes_Gateway",
+    "trigger": "BootTrigger; 30 second delay",
+    "principal": "existing profile user; S4U; limited run level",
+    "interactive_login_required": false,
+    "single_instance": "IgnoreNew",
+    "execution_limit": "none",
+    "restart": "every minute up to 999 failed exits",
+    "launcher": "synchronous copy of generated launcher; exit status propagated to scheduler",
+    "installer_failure": "stock installer account name could not be mapped to SID; task registered using actual account SID",
+    "handoff": "paused inbox; waited for running turn to complete; gateway stopped with clean drain; task started",
+    "machine_reboot_tested": false,
+    "task_launch_verified": true,
+    "gateway_process_session": 0,
+    "gateway_process_owner": "existing profile user",
+    "heartbeat": "fresh after task launch",
+    "template_drift": "Expected warning for deliberate BootTrigger/synchronous launcher; private operations warns against unreviewed installer repair"
+  },
+  "tests": {
+    "outbound_greeting": "delivery_ab9e29312979d44e851a9515f0cdd918_j",
+    "inbound_greeting": "delivery_ab9e29312979d44e851a9515f0cdd918_i",
+    "inbound_reply": "delivery_ab9e29312979d44e851a9515f0cdd918_k",
+    "first_scheduled_execution": "93b20ed84fb4420fb0c8a28afede4c3b",
+    "first_execution_status": "completed",
+    "project_negative_check": "PROJECT_NOT_FOUND",
+    "outbound_reply": "delivery_ab9e29312979d44e851a9515f0cdd918_l",
+    "mini_inbox_empty": true,
+    "post_task_greeting": "delivery_ab9e29312979d44e851a9515f0cdd918_m",
+    "post_task_execution": "5faeef7390ce479fb51c300795c7d9ca",
+    "post_task_status": "completed",
+    "post_task_reply": "delivery_ab9e29312979d44e851a9515f0cdd918_16",
+    "bidirectional_greeting_reply_ack": "passed; both endpoints empty after processing",
+    "post_task_round_trip": "passed in noninteractive session 0"
+  },
+  "documentation": {
+    "paths": [
+      "docs/user/hermes-inbox.md",
+      "docs/roadmap/active-work.md",
+      "CHANGELOG.md"
+    ],
+    "plan_findings": "config paths inventory false positives checked against installed help; review marker pending",
+    "verify": {
+      "pass": 2,
+      "fail": 1,
+      "skipped": 2,
+      "failure": "project.test_receipt_stale"
+    },
+    "review": "Current authority marker recorded; native paths, permission boundary, boot-vs-login and task ownership reviewed against installed runtime and live checks"
+  }
+}

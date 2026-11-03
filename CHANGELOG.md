@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Agent operations: add a native Windows Hermes project binding with ACL-protected credentials and a noninteractive Windows boot task; document platform-specific profile paths and startup verification.
+
 - Agent onboarding: require hello/reply exchanges initiated by both the new agent and an existing project peer, with correlated replies and acknowledgements before claiming connectivity.
 
 - Agent setup: add dedicated Claude Code, Cursor CLI, OpenCode, standalone Codex

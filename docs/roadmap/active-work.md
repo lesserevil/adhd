@@ -32,7 +32,14 @@ operator's direction on 2026-11-04: ADHD is not using Kafka, and a Kafka compari
 is not remaining roadmap work. Completed embedded-eventing adoption and historical
 prototype evidence are retained in the [source-review archive](../history/roadmap/beam-eventing.md)
 and [prototype archive](../history/roadmap/beam-queue-prototype.md). The removed
-investigation creates no follow-up research obligation.
+investigation creates no follow-up research obligation. Documentation must match
+implementation and scoped deployment evidence: correct the stale Kafka-only
+direction in `PROJECT.md`, retain the legacy missing-backend fallback, and keep
+older Kafka qualification distinct from current embedded operation. Review checked `deploy/init-config.py`, the embedded contract and the
+2026-10-25 local rollout manifest. Documentation review passes; `litai verify`
+reports two passes, two skips and the existing stale test-receipt failure. The
+documentation planner's `litai config paths` warnings are false positives: its
+installed command help succeeds.
 
 **Previous completed work:** [ACME-001](#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
 implementation and runtime qualification are complete. The

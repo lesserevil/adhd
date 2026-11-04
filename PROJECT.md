@@ -120,34 +120,35 @@ avoid duplicate records and deliveries. Status updates form an immutable history
 Published project information remains searchable after delivery acknowledgement;
 private addressed messages remain outside project search and public-ID retrieval.
 
-### Kafka pub/sub direction
+### Project event transport
 
-Use Kafka for project event pub/sub, with one Kafka service per logical ADHD
-server serving its local projects. Agents continue using A2A to publish,
-subscribe, poll and acknowledge; they do not connect directly to brokers.
-An agent can subscribe to all project-published events across all agents without
-any inference, and optionally add a plain-text Jev-like filter to narrow the
-stream. This supersedes mandatory model matching for every subscription.
+New installations select embedded Broadway/CubDB event transport. Agents use A2A
+to publish, subscribe, poll and acknowledge; they do not access the transport
+directly. An agent can subscribe to all project-published events without inference
+and optionally add a plain-text semantic filter. Original facts and provenance
+remain searchable independently of delivery filters and transport retention.
+Literal/metadata search works without a model.
 
-Original facts and provenance remain searchable in the backend independently
-of delivery filters or Kafka retention. Literal/metadata search works without a
-model; semantic filtering and search/answer workflows may use an optional model.
-Deploy a hub plus its own Kafka service as a Kubernetes application or equivalent
-plain containers, with both Kubernetes and Compose packaging implemented and the
-model service optional. Preserve project admission, server-local roles, durable
+The setup helper (`deploy/init-config.py`) explicitly defaults `eventing.backend`
+to `beam`. Existing configurations without that key retain the Kafka compatibility
+fallback; removing the key does not select embedded transport. Kafka remains in
+the implementation for compatibility and rollback, but is not required by the
+embedded deployment. Preserve project admission, server-local roles, durable
 acknowledgements, hot Admin configuration and canonical federation routing.
 
-[KAFKA-001 through KAFKA-009](docs/roadmap/active-work.md) and the
-[Kafka pub/sub plan](docs/roadmap/kafka-pubsub.md) scope contracts, Kafka handoff,
-A2A delivery, optional filters, fact search, Admin controls, deployments,
-migration and qualification. Integrate these with MULTI-001 through MULTI-008.
-The qualified multi-project implementation uses Kafka streams with optional model
-filtering. Model-free and optional-model Compose/Kubernetes integration, topic
-readiness and successor recovery have scoped qualification evidence in the
-[final property composition](verification/ownedMULTI008/source41-final-composition-after-full25/review.json).
-The enforcing network-policy check qualifies its separate network fixture; it
-does not substitute for actual hub/Kafka deployment checks. Earlier model-matched
-local-queue results remain historical evidence for their original runtime.
+The local rollout recorded in `verification/beam-production-rollout/manifest.json`
+on 2026-10-25 selected `beam` and stopped Kafka services, retaining their data for
+rollback. That record covers the local installation, not a fresh health check of
+the dedicated hub. The owning embedded contract is
+`components/hub/eventing/embedded.md`; operating instructions are in
+`docs/admin/native-eventing.md`.
+
+[KAFKA-001 through KAFKA-009](docs/roadmap/active-work.md), the
+[Kafka pub/sub plan](docs/roadmap/kafka-pubsub.md), and the
+[earlier property composition](verification/ownedMULTI008/source41-final-composition-after-full25/review.json)
+retain the scope and evidence of the Kafka implementation. Their qualification
+results do not imply that the current installation uses Kafka or qualify a later
+embedded artifact. BEAM-001 is retired; no Kafka comparison remains planned.
 
 ### Optional plain-text semantic subscriptions
 

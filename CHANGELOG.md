@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Verification: requalify the retained hub source and refresh the project receipt, closing the verification-only onboarding items ONBOARD-012 through ONBOARD-016.
+
+- Agent maintenance: add authenticated agent-side bootstrap upgrades, retained recovery independent of the installed updater, and isolated multi-project adoption reporting with durable retries.
+
 - Documentation: correct the project event-transport summary to reflect embedded defaults, the scoped local rollout, and the retained legacy Kafka fallback.
 
 - Agent coordination: add peer setup requirements, readiness, needs and reusable findings without requiring a manager; distribute trusted versioned shared skills with safe activation, rollback and verified fleet adoption.

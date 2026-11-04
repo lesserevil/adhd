@@ -25,9 +25,18 @@ queue item or let `docs/roadmap/` become a plan archive.
 
 ## Authorized implementation batches
 
-**Current priorities:** Complete agent-owned bootstrap upgrades and recovery under
+The operator requested completion of all remaining roadmap work on 2026-11-04.
+Execute ONBOARD-012 through ONBOARD-018 through their evidence gates, including
+a fresh lifecycle receipt, authenticated bootstrap recovery, fleet adoption and
+real access-grant retesting. Preserve unrelated work and existing agent identity.
+Open tracker issues and reviews were empty at this execution pass.
+
+
+**Current priorities:** Complete fleet adoption of the implemented bootstrap
+upgrade/recovery path under
 [ONBOARD-018](#onboard-018-distribute-and-activate-adhd-skill-updates-across-agents)
-and the remaining onboarding verification gates. BEAM-001 was removed at the
+and the real repository-grant retest under ONBOARD-017. Repository verification
+now passes. BEAM-001 was removed at the
 operator's direction on 2026-11-04: ADHD is not using Kafka, and a Kafka comparison
 is not remaining roadmap work. Completed embedded-eventing adoption and historical
 prototype evidence are retained in the [source-review archive](../history/roadmap/beam-eventing.md)
@@ -1473,7 +1482,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Exercise initial Admin setup, live policy changes and certificate replacement without hub restart using independent HTTPS clients; verify A2A, OIDC and federation continue to enforce their current authentication and origin rules.
   - [x] Qualify documented Compose and Kubernetes challenge/storage configurations and review setup/recovery documentation. Record issuer-staging validation and owned-domain/network prerequisites separately from deterministic test-CA results; do not claim public issuance from a fixture alone.
 
-### [ ] ONBOARD-012 — Wake Hermes for pending hub deliveries
+### [x] ONBOARD-012 — Wake Hermes for pending hub deliveries
 
 - **Priority:** P1
 - **Owner:** Hermes agent integration operations
@@ -1484,11 +1493,11 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Install and document a bounded inbox monitor with retry-safe pending delivery handling
 - **Evidence:**
   - [x] Verify stable empty polling and retry/failure unit checks, scheduled recipient hello reply, durable reply/ack replay and sender Hermes acknowledgement
-  - [ ] Restore a current project test receipt and rerun the full repository verification gate; current receipt is stale
+  - [x] Restore a current project test receipt and rerun the full repository verification gate — completed by the [current lifecycle requalification](../../verification/roadmap-completion/manifest.json); repository verification passes three gates with two declared skips.
 
 - **Operational evidence:** [Hermes inbox](../../verification/hermes-inbox/manifest.json). Recipient native scheduled run completed through the established HTTPS hub; the sender Hermes received and acknowledged its greeting reply. Existing credentials and hub image retained. Three monitor tests pass. A restart interrupted the initial run and paused the job; prepared IDs were reconciled before resuming, and the subsequent scheduled run completed without duplicate replies. Onboarding now distinguishes manual-only from unattended receipt, with recovery instructions. Documentation review recorded; full verification has two passes, two declared skips and one stale project-test-receipt failure. The item remains open for that repository gate.
 
-### [ ] ONBOARD-013 — Document CLI agents independently of OpenShell
+### [x] ONBOARD-013 — Document CLI agents independently of OpenShell
 
 - **Priority:** P1
 - **Owner:** Hub client onboarding documentation
@@ -1499,11 +1508,11 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Write five dedicated guides, shared client setup, generic OpenShell guide and discovery links
 - **Evidence:**
   - [x] Check official agent sources, isolated runnable examples, dependency installation and local CLI help; review documentation
-  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+  - [x] Resolve the existing stale project-test-receipt gate and rerun full verification — completed by the [current lifecycle requalification](../../verification/roadmap-completion/manifest.json); repository verification passes three gates with two declared skips.
 
 - **Documentation evidence:** [Agent setup guides](../../verification/agent-setup-docs/manifest.json). Five dedicated CLI guides compose with one common client and one OpenShell layer. Official instruction/skill discovery sources reviewed; eight guides passed link checks, thirteen code blocks passed syntax checks, isolated wrapper/download examples and the documented SDK environment/helper succeeded. Local Codex/OpenShell command help checked. New model sessions and client/image combinations remain explicitly unverified rather than implied by historical Codex/Hermes reports. The existing stale project receipt remains a separate verification gate; no server behavior or deployed image changed.
 
-### [ ] ONBOARD-014 — Enroll another remote Hermes agent in Trickle
+### [x] ONBOARD-014 — Enroll another remote Hermes agent in Trickle
 
 - **Priority:** P1
 - **Owner:** Hermes agent onboarding operations
@@ -1515,11 +1524,11 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Require two-direction hello/reply acceptance in shared onboarding and coordination instructions
 - **Evidence:**
   - [x] Verify identity, project isolation, reused subscription, scheduled message reply and preserved existing integrations
-  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+  - [x] Resolve the existing stale project-test-receipt gate and rerun full verification — completed by the [current lifecycle requalification](../../verification/roadmap-completion/manifest.json); repository verification passes three gates with two declared skips.
 
 - **Operational evidence:** [Additional Hermes onboarding](../../verification/hermes-mini-m4-onboarding/manifest.json). Dedicated identity and raw subscription verified; two greetings initiated through actual Hermes sessions received correlated replies and acknowledgements through native scheduled inbox turns. Both inboxes are empty. Initial packaged-interpreter failure was fixed by selecting the verified host Python for the monitor; gateway was not restarted, and existing model/environment/auth files are unchanged. Shared setup now requires this two-direction acceptance for each new binding. Documentation reviewed; three monitor tests pass. Repository verification retains two passes, two skips and the existing stale receipt failure.
 
-### [ ] ONBOARD-015 — Enroll native Windows Hermes in Trickle
+### [x] ONBOARD-015 — Enroll native Windows Hermes in Trickle
 
 - **Priority:** P1
 - **Owner:** Hermes agent onboarding operations
@@ -1531,11 +1540,11 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Inspect native profile and install scoped client, instructions and receive loop without replacing existing integrations
 - **Evidence:**
   - [x] Verify identity, project scope, preserved configuration and two correlated greeting/reply/ack exchanges through actual agent turns
-  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+  - [x] Resolve the existing stale project-test-receipt gate and rerun full verification — completed by the [current lifecycle requalification](../../verification/roadmap-completion/manifest.json); repository verification passes three gates with two declared skips.
 
 - **Operational evidence:** [Native Windows Hermes](../../verification/hermes-windows-onboarding/manifest.json). Project-scoped identity, raw subscription and private ACL-checked client verified. Both greeting directions received correlated replies and acknowledgements. Windows boot task starts under the existing user in noninteractive session 0, with a fresh scheduler heartbeat and a successful post-task message round trip. The machine itself was not rebooted. The installed login-task helper failed account-name resolution; registration uses the actual SID and a synchronous launcher with failure recovery. Existing model/environment/auth configuration retained. Native profile paths, boot-versus-login semantics and recovery reviewed in the Hermes inbox guide. Documentation review passes; repository verification retains two passes, two skips and the existing stale receipt failure.
 
-### [ ] ONBOARD-016 — Diagnose systemic Trickle communication issues
+### [x] ONBOARD-016 — Diagnose systemic Trickle communication issues
 
 - **Priority:** P1
 - **Owner:** Agent receive-loop integration operations
@@ -1548,7 +1557,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] Observe bounded monitoring window, correlate deliveries with replies and acknowledgements, document limitations and run relevant checks
   - [x] Confirm the desired worker execution policy separately from message receipt
   - [x] Enable a separate durable worker queue for manager-assigned Trickle development, activate previously deferred assignments and verify execution starts
-  - [ ] Resolve the existing stale project-test-receipt gate and rerun full verification
+  - [x] Resolve the existing stale project-test-receipt gate and rerun full verification — completed by the [current lifecycle requalification](../../verification/roadmap-completion/manifest.json); repository verification passes three gates with two declared skips.
 
 - **Operational evidence:** [Communication monitoring](../../verification/trickle-communication/manifest.json) and [30-minute observations](../../verification/trickle-communication/observation.json). All four agents completed 152 queue probes without a poll failure or a new failed/unknown execution; all queues were empty at the end of the window. The manager now has unattended receipt. Wall-clock schedules corrected approximately two-minute interval drift to approximately 60-second idle checks. Each worker replied once to the manager-driven fleet greeting; replies arrived in 84–117 seconds and were acknowledged. All four profiles have one active raw subscription, and normal sessions reconcile durable receipts after acknowledgement. After explicit operator authorization, a separate policy-scoped work queue was installed on each worker and the preserved node-readiness assignments activated. All three emitted correlated started status acknowledged by the manager; actual inventory exposed missing source access. Verified current-main Git bundles now provide isolated clean checkouts on all three hosts, with manager follow-ups to requeue the original tasks. Direct worker forge access remains unavailable. Node readiness completion is not claimed. Five monitor tests pass. Documentation reviewed; the existing stale project-test-receipt gate remains open.
 
@@ -1570,7 +1579,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
   - [x] A late-joining agent retrieves earlier findings and applies or rejects them based on platform, activity and project revision without relying on the original session.
   - [ ] Test missing tools and missing repository access separately, including escalation when no peer can grant access and retest after authorized provisioning.
   - [x] Distinguish message receipt, setup readiness and task execution; test duplicate/offline delivery, concurrent assistance, stale/conflicting evidence, failed verification and authorization boundaries.
-  - [ ] Review skills and guides, record evidence and run documentation review and repository gates before completion.
+  - [x] Review skills and guides, record evidence and run documentation review and repository gates before completion. [Fresh review and repository gates](../../verification/roadmap-completion/manifest.json) pass; real external grant/retest remains open.
 
 - **Planned workflow:** A joining agent reads authoritative project setup instructions and searches historical findings. It verifies only the capabilities its activities require, publishes missing capabilities with attempted checks, receives peer guidance, performs authorized setup or requests an authorized grant, then retests in its own execution environment and publishes the outcome. Building, testing, reviewing and deploying can have different requirements; there is no universal ready flag. A manager may participate but is not required for any step.
 - **Record conventions:**
@@ -1585,7 +1594,7 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Knowledge lifecycle:** Include authenticated authorship separately from claimed source provenance, observation time and applicability. Treat peer findings as evidence, not automatic replacements for project authority. Retain conflicting reports until reconciled; a later timestamp alone does not settle a conflict. Publish corrections as linked revisions and revalidate stale findings when the environment or project changes. Use durable project publications for reusable learning and addressed messages for targeted assistance; acknowledged publications remain searchable. Catch up through search because subscriptions cover only new publications. Record processed information in durable local notes and reuse stable send/ack identities across retries.
 - **Authority and ownership:** Each participant speaks and acts under its own identity. Peers can explain a procedure or identify an authorized grantor; advice cannot supply new permission. Do not impersonate a manager, copy credentials through ADHD, silently take ownership of another agent's assignments, or substitute manual source distribution for the requested access setup. When no authorized participant can resolve a need, retain an explicit blocker and escalation destination. Communicate accepted actions and outcomes to avoid competing setup changes; neither a publication nor a receipt acknowledgement creates exclusive task ownership.
 - **Acceptance example:** One worker publishes a repository-read failure; another peer identifies the approved access procedure; an authorized operator/service provisions access; the worker verifies a fetch and its assigned local capability and publishes the result. A third agent later discovers that evidence without needing either original agent online. A separate missing-tool case exercises ordinary self-setup within existing permission.
-- **Next action:** Verify a real external access grant when its authorized grantor is available, and resolve the pre-existing repository receipt gate. The protocol and runtime integration are implemented.
+- **Next action:** Verify a real external access grant when its authorized grantor and approved mechanism are available. The repository receipt gate now passes. The protocol and runtime integration are implemented.
 - **Planning evidence:** Existing stored-information and discovery contracts support durable extensible publications, history search and peer discovery but do not establish capability readiness. Shared coordination instructions already require reporting blockers and staying within existing authority. Open issue and pull-request lists were empty during this planning pass. That planning pass recorded intent without claiming runtime behavior; implementation evidence follows below.
 
 - **Implementation evidence:** [Peer setup and skill rollout](../../verification/peer-skills/manifest.json). Shared skills, record validator, update bootstrap and native receive integration are implemented. A real macOS requester published separate tool/access needs; an independent Codex peer published a tested procedure, and the requester verified the tool locally and resolved only that need. A fresh Linux reader retrieved the need, procedure and resolution from history and published its own applicability assessment. The existing repository grant remains blocked. All four previously enrolled agents and the separate maintenance publisher have activated the current shared release. No manager identity was borrowed and no repository credentials were distributed. An independent Hermes assessment of labeled simulated cases passed concurrent-offer, conflicting evidence, grant-verification and cross-project credential boundaries; the simulation is not a real access grant. Remaining boxes retain the actual external grant/retest and stale receipt gate.
@@ -1598,25 +1607,26 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 - **Conclusion:** Provide trusted versioned skill distribution, durable announcements and startup/reconnect reconciliation. Track released, downloaded, installed and active revisions separately; acknowledgement is not proof that a running agent uses new instructions.
 - **Depends on:** none
 - **Implementation:**
-  - [ ] Establish the authenticated agent-executed bootstrap upgrade and recovery path before enrollment is considered complete; after enrollment, never use SSH/SCP or remote file copying to deliver agent files.
+  - [x] Establish the authenticated agent-executed bootstrap upgrade and recovery path before enrollment is considered complete; after enrollment, never use SSH/SCP or remote file copying to deliver agent files.
   - [x] Define trusted release manifests, versions/digests, file inventories, compatibility requirements and release notes; separate shared skills from private bindings and local configuration.
   - [x] Publish durable update announcements from an authorized release identity and discover the current release on startup/reconnect without requiring already-updated skills.
   - [x] Implement idempotent staging, verification and atomic installation under operator update policy; preserve local edits, credentials and identities and retain rollback versions.
   - [x] Define runtime-specific activation for Claude Code, Cursor, OpenCode, Codex, Pi, Hermes and optional OpenShell, including safe reload/session transition and deferral while work is active.
   - [x] Report installed/active revisions, pending/incompatible/pinned/failed/offline states; support bounded retries, phased rollout and verified rollback without expanding authority.
 - **Evidence:**
-  - [ ] Qualify initial enrollment followed by a bootstrap upgrade, skill update and failed-update recovery entirely through ADHD coordination and agent-originated artifact retrieval; verify no SSH/SCP or remote file-copy step is required.
+  - [x] Qualify initial enrollment followed by a bootstrap upgrade, skill update and failed-update recovery entirely through ADHD coordination and agent-originated artifact retrieval; verify no SSH/SCP or remote file-copy step is required.
   - [x] Two different supported runtimes discover, verify, install and actually use a released skill update without a manager.
   - [x] Offline and new agents catch up on reconnect/startup; duplicate announcements do not duplicate installation or reload.
   - [x] A behavior probe proves active instructions changed; test cached sessions and safe deferral during active work.
   - [x] Reject untrusted or digest-mismatched updates; exercise incompatibility, local edits, pins, interrupted installation, failed activation and rollback without losing task state or credentials.
-  - [ ] Verify project-scoped reporting and shared-profile multi-project behavior; document tested platforms, recovery and unverified combinations; run documentation review and repository gates and deploy any changed hub feature.
+  - [x] Verify project-scoped reporting and shared-profile multi-project behavior; document tested platforms, recovery and unverified combinations; run documentation review and repository gates and deploy any changed hub feature. [Isolated native hub qualification and fresh gates](../../verification/roadmap-completion/manifest.json) pass; no hub implementation changed.
+  - [ ] Complete bootstrap v2 installation and shared release4 activation on all four enrolled Hermes profiles after bounded maintenance authority is established through their existing operator channels; their explicit deferred replies are retained in the evidence.
 
 - **Release and trust model:** The update source is an authorized ADHD release publisher, not a project manager or an arbitrary peer attachment. Agents may relay availability, but the installer verifies artifacts against the configured trusted origin and manifest. Define how initial clients discover releases, how a release is revoked or superseded, and how minimum compatible client versions are handled. An update must not silently widen execution permissions; route newly required grants through existing authorization.
 - **Adoption lifecycle:** Announce availability, reconcile current release at startup/reconnect, download and verify, stage and install atomically, activate at a safe runtime boundary, then publish verified active revision or a precise blocker. File replacement alone does not refresh a cached model session. Preserve in-flight work and durable receipts; avoid forced restarts solely to make adoption look complete. Manual-only clients update on their next session and report that limitation; unattended clients use their existing authorized receive/update mechanism.
 - **Operator controls and visibility:** Define automatic compatible updates, explicit pins and approval-required changes under operator policy, with phased rollout and rollback. Report available, installed and active versions separately with observation time so offline/unknown does not mean current. Detect local customizations instead of overwriting them. A profile shared across projects needs one coherent installed skill revision and project-scoped adoption reports; projects cannot race to overwrite shared files or expose private configuration.
 - **Relationship to ONBOARD-017:** The update mechanism can carry the peer onboarding/learning skill once released, and readiness records can report skill compatibility. Neither item depends on a manager, and distribution bootstrapping must not depend on the new skill already being installed. Design the contracts independently, then qualify their combined behavior.
-- **Next action:** Implement the agent-executed bootstrap upgrade/recovery path. Existing Markdown release distribution is operational, but the previous post-enrollment SSH/SCP bootstrap rollout violates the newly explicit delivery boundary. Retain the stale project-test-receipt gate separately.
+- **Next action:** Obtain bounded executable-maintenance authorization through the four agents' existing operator channels, then verify their own bootstrap retrieval, installation and new-session activation. All four inboxes explicitly deferred the trusted publisher request under local execution policy; do not bypass that policy or use SSH/SCP. Implementation and isolated authenticated upgrade/recovery qualification pass. Repository receipt requalification now passes.
 - **Authorized implementation:** The operator subsequently requested implementation and updates for every enrolled agent. Bootstrap and trusted policy are installed on all four Hermes profiles plus the independent Codex maintenance profile; automatic subsequent release delivery and actual session activation are verified. Claude Code, Cursor, OpenCode and Pi use the documented instruction-entry adapter but have no enrolled runtime for live qualification.
 - **Planning review:** Reviewed this roadmap against the shared coordination skill, stored-information/discovery contracts and client setup guidance; supported-behavior guides remain unchanged because both mechanisms are planned. Documentation-update found only the two existing `litai config paths` inventory false positives, previously checked against CLI help. Documentation review is current; `litai verify` reports two passes, two declared skips and the existing `project.test_receipt_stale` failure. No runtime acceptance or deployment is claimed for this planning change.
 
@@ -1626,3 +1636,18 @@ Qualified profile-1.1 completion evidence: see the directory-batch evidence abov
 
 - **Operator correction:** Once admitted, an agent must receive setup/update coordination through ADHD and retrieve/install authorized files itself. This applies equally to bootstrap code, skills, artifacts and recovery. Initial trust establishment must provide this capability; missing functionality is a tracked defect, never an SSH/SCP fallback. The earlier rollout is retained as historical evidence, not a compliant future procedure.
 - **Correction review:** Updated `AGENTS.md`, `PROJECT.md` and the skill-update guide with this boundary; reviewed current release behavior and retained historical rollout evidence. Documentation review passes. Repository verification retains two passes, two skips and the existing stale receipt failure; no runtime bootstrap-upgrade implementation or fleet activation is claimed by this documentation correction.
+
+- **Roadmap-completion execution evidence (2026-11-04):**
+  [Bootstrap and reporting qualification](../../verification/roadmap-completion/manifest.json)
+  records 22 updater/bootstrap unit tests, four inbox tests and three real isolated
+  hub acceptance groups. The flow covers initial trust, agent-originated bootstrap
+  retrieval, upgrade, skill sync, a deliberately failing executable probe and
+  independent recovery, plus one shared profile reporting to two projects. A
+  reporting-only project cannot replace the configured release source. The live
+  maintenance Codex profile installed bootstrap v2 and observed skill release4.
+  All four Hermes profiles deferred maintenance pending local operator authority;
+  no fleet activation is claimed. The secondary live project returned
+  `RECOVERY_REQUIRED`; its reports remain queued without resetting project data.
+  The real repository-grant retest under ONBOARD-017 remains unverified.
+
+- **Fresh repository gates:** The retained accepted hub source was requalified without regeneration using the existing pinned CLI. `litai verify` now passes authority, locks and current receipt, with the two declared skips. ONBOARD-012 through ONBOARD-016 can close; ONBOARD-017 and ONBOARD-018 retain their actual grant and fleet-authorization blockers.

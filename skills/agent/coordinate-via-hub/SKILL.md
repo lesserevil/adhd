@@ -74,7 +74,7 @@ are visible across the project. Share useful changes rather than narrating
 every tool call, and avoid publishing replies that merely echo an update.
 
 Poll between meaningful work steps and before decisions that depend on another
-agent's work. Publishing does not notify peers immediately: Kafka transport, optional
+agent's work. Publishing does not notify peers immediately: Event transport, optional
 filtering and durable A2A fanout are asynchronous, and recipients must poll.
 A model outage pauses filtered decisions but does not block raw subscriptions. If the hub is unavailable, continue
 independent work when possible, retain unsent updates for retry, and report the

@@ -14,7 +14,7 @@ import sys
 import tempfile
 import uuid
 
-BOOTSTRAP = 1
+BOOTSTRAP = 2
 FILES = {'coordination.md', 'participation.md', 'updates.md'}
 ANSWERS = {'peer_can_grant_permission': False, 'receipt_proves_readiness': False,
            'manager_required': False, 'activation_requires_read': True}
@@ -88,6 +88,41 @@ def build(sequence, root, notes, revoked=()):
     return validate_release(result)
 
 
+def write_bytes(path, data):
+    if path.is_symlink():
+        raise ValueError('Refusing symbolic link target')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp = tempfile.mkstemp(prefix='.bootstrap-', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'wb') as f:
+            f.write(data); f.flush(); os.fsync(f.fileno())
+        os.replace(temp, path)
+    finally:
+        if os.path.exists(temp): os.unlink(temp)
+
+
+def validate_bootstrap(m):
+    if not isinstance(m, dict) or m.get('schema') != 'adhd.bootstrap/1':
+        raise ValueError('Invalid bootstrap schema')
+    if m.get('revision') != digest({k: v for k, v in m.items() if k != 'revision'}):
+        raise ValueError('Bootstrap manifest digest mismatch')
+    if len(encoded(m)) > 60000 or not isinstance(m.get('text'), str):
+        raise ValueError('Invalid bootstrap payload')
+    if hashlib.sha256(m['text'].encode('utf-8')).hexdigest() != m.get('sha256'):
+        raise ValueError('Bootstrap payload digest mismatch')
+    if any(type(m.get(k)) is not int or m[k] < 1 for k in ('sequence', 'version')):
+        raise ValueError('Invalid bootstrap version')
+    if not isinstance(m.get('channel'), str) or not m['channel']:
+        raise ValueError('Invalid bootstrap channel')
+    if not isinstance(m.get('predecessors'), list) or not all(isinstance(x, str) and re.fullmatch('[0-9a-f]{64}', x) for x in m['predecessors']):
+        raise ValueError('Invalid bootstrap predecessors')
+    try:
+        compile(m['text'], 'adhd_skill_update.py', 'exec')
+    except SyntaxError:
+        raise ValueError('Invalid bootstrap Python syntax') from None
+    return m
+
+
 class Updater:
     def __init__(self, home, transport=None):
         self.home = Path(home)
@@ -144,27 +179,49 @@ class Updater:
 
     def report(self):
         body = {k: self.state.get(k) for k in ('available', 'installed', 'status', 'error', 'sessions')}
-        body.update(schema='adhd.skills.adoption/1', runtime=self.policy['runtime'])
-        fingerprint = digest(body)
+        body.update(schema='adhd.skills.adoption/1', runtime=self.policy['runtime'],
+                    bootstrap_version=BOOTSTRAP,
+                    bootstrap_sha256=hashlib.sha256((self.home / 'scripts' / 'adhd_skill_update.py').read_bytes()).hexdigest() if (self.home / 'scripts' / 'adhd_skill_update.py').is_file() else None)
+        projects = self.policy.get('report_projects', [self.policy['project_id']])
+        if (not isinstance(projects, list) or not projects or
+            any(not isinstance(x, str) or not x for x in projects) or
+            len(set(projects)) != len(projects)):
+            raise ValueError('Invalid adoption reporting projects')
+        fingerprint = digest({'body': body, 'projects': projects})
         if self.state.get('last_report') != fingerprint:
-            cmd = {'op': 'publish', 'project_id': self.policy['project_id'],
-                   'information_type': 'adhd.skills.adoption', 'text': 'ADHD skill adoption: ' + str(body['status']),
-                   'data': dict(body, observed_at=now()),
-                   'source': {'kind': 'agent', 'id': self.policy['agent_id'], 'item_id': 'skills-' + uuid.uuid4().hex}}
             outbox = self.root / 'outbox'
             outbox.mkdir(exist_ok=True)
-            atomic(outbox / (cmd['source']['item_id'] + '.json'), {'command': cmd, 'message_id': cmd['source']['item_id']})
+            for project in projects:
+                scoped = dict(body, observed_at=now())
+                if project != self.policy['project_id']:
+                    # Session demonstrations reference source-project publications.
+                    # Other projects receive version observations, never those IDs/data.
+                    scoped['sessions'] = {k: {f: v.get(f) for f in ('revision', 'observed_at')}
+                        for k, v in (body.get('sessions') or {}).items()}
+                cmd = {'op': 'publish', 'project_id': project,
+                       'information_type': 'adhd.skills.adoption',
+                       'text': 'ADHD skill adoption: ' + str(body['status']), 'data': scoped,
+                       'source': {'kind': 'agent', 'id': self.policy['agent_id'],
+                                  'item_id': 'skills-' + uuid.uuid4().hex}}
+                atomic(outbox / (cmd['source']['item_id'] + '.json'),
+                       {'command': cmd, 'message_id': cmd['source']['item_id']})
             self.state['last_report'] = fingerprint
             self.save()
         self.flush()
 
     def flush(self):
+        failed = False
         for p in sorted((self.root / 'outbox').glob('*.json')):
             entry = read_json(p)
-            result = self.transport(entry['command'], entry['message_id'])
-            if not isinstance(result.get('publication', {}).get('id'), str):
-                raise RuntimeError('Adoption publication was not accepted')
-            p.unlink()
+            try:
+                result = self.transport(entry['command'], entry['message_id'])
+                if not isinstance(result.get('publication', {}).get('id'), str):
+                    raise RuntimeError('Adoption publication was not accepted')
+                p.unlink()
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError):
+                failed = True
+        if failed:
+            raise RuntimeError('Adoption reports remain pending')
 
     def sync(self, approved=False):
         result = self.transport({'op': 'search', 'project_id': self.policy['project_id'],
@@ -249,6 +306,7 @@ class Updater:
         publication = self.transport({'op': 'get', 'project_id': self.policy['project_id'], 'publication_id': demo['publication_id']}).get('publication', {})
         if publication.get('author_id') != self.policy['agent_id'] or publication.get('project_id') != self.policy['project_id'] or publication.get('information_type') != 'adhd.setup':
             raise ValueError('Activation demonstration must be this agent\'s setup publication')
+        sys.path.insert(0, str(self.home / 'scripts'))
         from adhd_setup import validate
         validate(publication.get('data'))
         sessions = self.state.setdefault('sessions', {})
@@ -261,6 +319,100 @@ class Updater:
         self.state.update(status='active_session_observed', error=None)
         self.save(); self.report()
         return self.state
+
+    def bootstrap_sync(self, approved=False):
+        """Install only the fixed updater entry point from the trusted release origin."""
+        policy = self.policy.get('bootstrap_mode', 'manual')
+        if policy not in ('auto', 'manual'):
+            raise ValueError('Invalid bootstrap update policy')
+        result = self.transport({'op': 'search', 'project_id': self.policy['project_id'],
+            'information_type': 'adhd.bootstrap.release', 'source_kind': 'agent',
+            'source_id': self.policy['publisher_id'], 'limit': 100})
+        candidates = []
+        for publication in result.get('publications', []):
+            if (publication.get('author_id') != self.policy['publisher_id'] or
+                publication.get('project_id') != self.policy['project_id'] or
+                publication.get('information_type') != 'adhd.bootstrap.release'):
+                continue
+            manifest = publication.get('data', {})
+            if manifest.get('channel') != self.policy['channel']:
+                continue
+            validate_bootstrap(manifest)
+            candidates.append(manifest)
+        if not candidates:
+            raise ValueError('No trusted bootstrap release')
+        m = max(candidates, key=lambda x: x['sequence'])
+        if any(x['sequence'] == m['sequence'] and x['revision'] != m['revision'] for x in candidates):
+            raise ValueError('Conflicting bootstrap release sequence')
+        state_path = self.root / 'bootstrap.json'
+        state = read_json(state_path, {})
+        if m['sequence'] < state.get('highest_sequence', 0):
+            raise ValueError('Bootstrap release history regressed')
+        if m['sequence'] == state.get('highest_sequence') and m['revision'] != state.get('available'):
+            raise ValueError('Bootstrap sequence reused')
+        state.update(highest_sequence=m['sequence'], available=m['revision'])
+        atomic(state_path, state)
+        if policy == 'manual' and not approved:
+            return dict(state, status='approval_required')
+        if self.policy.get('bootstrap_pin') and self.policy['bootstrap_pin'] != m['sha256']:
+            return dict(state, status='pinned')
+        target = self.home / 'scripts' / 'adhd_skill_update.py'
+        if target.is_symlink() or not target.is_file():
+            raise ValueError('Bootstrap entry point must be a regular file')
+        old = target.read_bytes()
+        old_hash = hashlib.sha256(old).hexdigest()
+        if old_hash == m['sha256']:
+            state.update(installed=m['sha256'], status='installed')
+            state.pop('installing', None)
+            atomic(state_path, state)
+            return state
+        # The release explicitly admits each reviewed predecessor; local edits fail closed.
+        if old_hash not in m['predecessors']:
+            raise ValueError('Unrecognized bootstrap predecessor or local edits')
+        backup = self.root / 'bootstraps' / old_hash
+        backup.mkdir(parents=True, exist_ok=True)
+        retained = backup / 'adhd_skill_update.py'
+        if retained.exists() and retained.read_bytes() != old:
+            raise ValueError('Recovery copy was modified')
+        write_bytes(retained, old)
+        text = m['text'].encode('utf-8')
+        stage = target.with_name('.adhd-updater-stage.py')
+        if stage.is_symlink():
+            raise ValueError('Unsafe bootstrap stage')
+        write_bytes(stage, text)
+        try:
+            probe = subprocess.run([sys.executable, str(stage), 'bootstrap-version'],
+                capture_output=True, text=True, timeout=15)
+            if probe.returncode or json.loads(probe.stdout) != {'bootstrap': m['version']}:
+                raise ValueError('Bootstrap probe failed')
+            # Persist the rollback identity before the one atomic executable replacement.
+            state.update(previous=old_hash, installing=m['sha256'])
+            atomic(state_path, state)
+            os.replace(stage, target)
+            state.update(installed=m['sha256'], status='installed')
+            state.pop('installing', None)
+            atomic(state_path, state)
+        finally:
+            if stage.exists(): stage.unlink()
+        return state
+
+    def bootstrap_recover(self, revision):
+        if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{64}', revision):
+            raise ValueError('Invalid bootstrap recovery identity')
+        retained = self.root / 'bootstraps' / revision / 'adhd_skill_update.py'
+        if retained.is_symlink() or not retained.is_file():
+            raise ValueError('Missing bootstrap recovery copy')
+        data = retained.read_bytes()
+        if hashlib.sha256(data).hexdigest() != revision:
+            raise ValueError('Modified bootstrap recovery copy')
+        # Pin before replacement so a restart cannot immediately reinstall a bad release.
+        self.policy['bootstrap_pin'] = revision
+        atomic(self.root / 'policy.json', self.policy)
+        write_bytes(self.home / 'scripts' / 'adhd_skill_update.py', data)
+        state = read_json(self.root / 'bootstrap.json', {})
+        state.update(installed=revision, status='rolled_back')
+        atomic(self.root / 'bootstrap.json', state)
+        return state
 
     def rollback(self, revision):
         self.verify_installed(revision)
@@ -280,10 +432,14 @@ def main():
     sub = p.add_subparsers(dest='command', required=True)
     b = sub.add_parser('build'); b.add_argument('--root', type=Path, default=Path.cwd()); b.add_argument('--sequence', type=int, required=True); b.add_argument('--notes', required=True); b.add_argument('--output', type=Path, required=True); b.add_argument('--revoke', action='append', default=[])
     s = sub.add_parser('sync'); s.add_argument('--approve', action='store_true')
-    sub.add_parser('read'); sub.add_parser('status')
+    sub.add_parser('read'); sub.add_parser('status'); sub.add_parser('bootstrap-version')
+    bs = sub.add_parser('bootstrap-sync'); bs.add_argument('--approve', action='store_true')
+    br = sub.add_parser('bootstrap-recover'); br.add_argument('--revision', required=True)
     a = sub.add_parser('activate'); a.add_argument('--evidence', type=Path, required=True); a.add_argument('--probe', action='store_true')
     r = sub.add_parser('rollback'); r.add_argument('--revision', required=True)
     args = p.parse_args()
+    if args.command == 'bootstrap-version':
+        print(json.dumps({'bootstrap': BOOTSTRAP})); return 0
     if args.command == 'build':
         m = build(args.sequence, args.root, args.notes, args.revoke); atomic(args.output, m)
         print(json.dumps({'revision': m['revision'], 'bytes': len(encoded(m))})); return
@@ -296,7 +452,9 @@ def main():
     try:
         connection.execute('BEGIN IMMEDIATE')
         updater = Updater(args.home)
-        if args.command == 'sync': value = updater.sync(args.approve)
+        if args.command == 'bootstrap-sync': value = updater.bootstrap_sync(args.approve)
+        elif args.command == 'bootstrap-recover': value = updater.bootstrap_recover(args.revision)
+        elif args.command == 'sync': value = updater.sync(args.approve)
         elif args.command == 'read': value = updater.read()
         elif args.command == 'activate': value = updater.activate(read_json(args.evidence), args.probe)
         elif args.command == 'rollback': value = updater.rollback(args.revision)

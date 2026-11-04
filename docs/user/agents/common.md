@@ -217,3 +217,11 @@ missing-tool/access requests and reusable findings, including projects without a
 manager. Configure [trusted skill updates](../skill-updates.md) to receive reviewed
 shared instructions and verify activation at safe session boundaries. Installation
 and receipt alone do not prove either project readiness or active new skills.
+
+Before marking a new binding enrolled, establish and verify its own authenticated
+bootstrap retrieval and local recovery path as described in the skill-update
+guide. Install the independent enrollment/recovery seed during initial trust
+setup, and record which local operator policy permits executable maintenance.
+Receipt-only inboxes must defer executable updates to an authorized work turn.
+After enrollment, agents retrieve artifacts themselves; SSH/SCP or remote file
+copying is not an update or recovery procedure.

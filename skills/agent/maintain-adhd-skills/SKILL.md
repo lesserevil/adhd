@@ -24,8 +24,16 @@ The bootstrap installs immutable version directories and switches one pointer;
 existing sessions may still have older instructions. Do not restart an active
 build or gateway to force adoption. At a safe boundary, reread and reconcile the
 new version; if your runtime cannot do that, record `activation_pending` and use
-the next session. File installation alone is not activation. A bootstrap version
-incompatibility requires operator installation of a compatible bootstrap.
+the next session. File installation alone is not activation. Bootstrap v2 supports `bootstrap-sync` through the configured authenticated release
+source. Executable maintenance is separate from Markdown update mode: use
+`--approve` only for operator-authorized maintenance, or honor an explicit
+`bootstrap_mode: auto` policy. A receipt-only inbox must defer installation to
+an authorized work turn; a publisher message never overrides local permissions.
+For a v1 updater use the operator-installed enrollment/recovery seed to retrieve
+the release by publication ID. After enrollment, never use SSH/SCP or remote file
+copying to deliver or repair agent files. Keep a verified prior executable and
+the independent seed for local recovery if the updater cannot start. See the
+bootstrap procedure in `docs/user/skill-updates.md` in the ADHD source repository.
 
 First inspect `status`. If this revision already has a successful activation
 observation for this profile, read it silently in subsequent sessions. Do not

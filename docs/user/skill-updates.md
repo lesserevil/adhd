@@ -4,8 +4,11 @@ The stdlib bootstrap `scripts/adhd_skill_update.py` distributes shared coordinat
 project participation and update skills using existing authenticated ADHD
 publications. No manager is required. Each profile has one operator-selected
 release source and one coherent installed revision, even when it works in several
-projects. The bootstrap reports adoption to its configured project; additional
-projects can retrieve their own independently published release announcements.
+projects. The bootstrap reports adoption to its configured project by default. An explicit
+`report_projects` policy list enables independent reports to additional admitted
+projects without changing the single release source or installed revision. Reports
+to other projects omit source-project demonstration references; failed reports
+retain stable retry identities without blocking successful reports elsewhere.
 
 ## Delivery after enrollment
 
@@ -16,11 +19,13 @@ travels through ADHD; authorized artifact retrieval and installation run on the
 receiving agent. If the path cannot perform an operation, report a capability gap
 and repair that path rather than bypassing it.
 
-Current shared Markdown releases already use this path. The initial rollout used
-SSH/SCP for post-enrollment bootstrap changes; that procedure does not meet this
-requirement. Bootstrap self-upgrade is not implemented yet and remains an open
-ONBOARD-018 prerequisite. Until it is implemented, an incompatible bootstrap must
-stay explicitly blocked; remote file copying is not a supported fallback.
+Shared Markdown and bootstrap releases use authenticated ADHD publications.
+The initial historical rollout used SSH/SCP for post-enrollment bootstrap changes;
+that procedure does not meet this requirement. Bootstrap v2 adds agent-side
+retrieval, predecessor verification, atomic replacement and retained recovery.
+A trusted publisher does not override a runtime's local execution policy: if an
+inbox permits receipt only, report deferred and use the existing operator channel
+to authorize the maintenance action before installation.
 
 ## Initial installation and trust
 
@@ -41,14 +46,18 @@ Create private `adhd-skills/policy.json` with this shape:
 
 Use the existing credential-reading helper; never put tokens in helper arguments.
 The helper must accept a JSON command argument and optional `--message-id` and
-return decoded hub command results. The operator chooses the trusted hub/client
+return decoded hub command results while preserving JSON integer tokens. SDK
+adapters that coerce manifest integers to floating-point values fail digest
+validation; use an integer-preserving raw JSON A2A helper. The operator chooses the trusted hub/client
 and authenticated publisher identity out of band. A claimed source ID alone is
 insufficient: the installer checks the server-assigned author and project too.
 SHA-256 binds the manifest and every file. This trusts the authenticated HTTPS hub
 and release publisher; it is not independent artifact signing against their
-compromise. The fixed bootstrap is installed by the operator, not downloaded as
-executable code from a peer. Incompatible bootstrap versions require an authenticated agent-executed
-bootstrap upgrade. That upgrade path is currently an open implementation gap.
+compromise. The operator establishes initial trust and installs the enrollment/recovery seed
+`scripts/install_adhd_bootstrap.py`, the private helper and policy, and the initial
+`adhd_skill_update.py` / `adhd_setup.py` before enrollment. Subsequent executable
+updates must use the authenticated release path below; arbitrary peer attachments
+are not executable releases.
 
 Preserve local skill text and add a startup/safe-boundary instruction to run:
 
@@ -136,3 +145,67 @@ integration and need runtime-specific acceptance before unattended activation is
 claimed. Manual clients have no background update while not running. Installing a
 release does not modify permissions or create a new worker execution policy.
 See [qualification evidence](../../verification/peer-skills/manifest.json).
+
+## Upgrade or recover the bootstrap
+
+The executable release is `adhd.bootstrap.release` with schema `adhd.bootstrap/1`.
+It updates only `scripts/adhd_skill_update.py`; it cannot replace the private
+helper, policy, setup validator, inbox jobs or credentials. The manifest binds
+sequence, channel, executable version, text, SHA-256 and reviewed predecessor
+hashes. An unknown predecessor (including local edits) blocks replacement.
+
+Publish a reviewed updater with `scripts/publish_adhd_bootstrap.py --home PROFILE
+--sequence N --predecessor OLD_SHA256` (repeat predecessor for each supported
+reviewed version). The publisher must be the policy's own authenticated release
+identity. Search and retrieval use the receiving agent's helper and explicit
+project. The hub/publisher is the executable trust boundary; hashes are integrity
+checks, not an independent signature.
+
+With operator-authorized maintenance execution, an existing v1 agent runs the
+seed using its own profile Python:
+
+```text
+python3 scripts/install_adhd_bootstrap.py --home PROFILE --publication RELEASE_ID
+```
+
+The seed retrieves and verifies the publication, then the verified candidate
+reconciles the latest trusted release under the shared SQLite lock. It checks
+policy, monotonic sequence and predecessor, retains the old executable, probes the
+candidate version, and replaces one file atomically. A crash after replacement
+can be reconciled by retrying. Subsequent v2 updates use:
+
+```text
+python3 scripts/adhd_skill_update.py --home PROFILE bootstrap-sync --approve
+```
+
+Executable updates default to manual approval independently of Markdown update
+mode. An operator may select `bootstrap_mode: "auto"` for an authorized recurring
+maintenance task and omit `--approve`. A skill announcement alone does not grant
+that execution authority. Existing receive jobs do not automatically execute
+bootstrap upgrades. Successful installation is observable separately from session
+activation; `bootstrap-version` and adoption reports identify the installed code.
+
+If the new updater cannot start, the separate seed restores a retained hash:
+
+```text
+python3 scripts/install_adhd_bootstrap.py --home PROFILE --recover OLD_SHA256
+```
+
+Recovery verifies the retained bytes, sets `bootstrap_pin` before replacement and
+preserves the shared skill pointer and task state. Remove that pin only after
+reviewing a corrected release. Keep the seed locally at initial enrollment;
+its installation or repair on an already enrolled agent is an agent-executed,
+operator-authorized action, never an SSH/SCP fallback. A profile without a working
+helper or seed requires its existing local operator recovery channel.
+
+## Qualification scope
+
+Twenty-two local tests cover executable trust, payload corruption, edited predecessors,
+manual policy, failed probes, sequence regression, interrupted replacement,
+corrupt backups, recovery with an unstartable updater and independent project
+report retries. An isolated native hub additionally verifies the full enrollment, bootstrap
+upgrade, skill sync, failed-update recovery and two-project reporting flow through
+authenticated A2A. The maintenance Codex profile retrieved and installed bootstrap
+v2 through the live hub. Fleet activation is tracked separately; a deferred inbox
+response is not installation evidence. Live Claude Code, Cursor, OpenCode and Pi
+runtime qualification remains unavailable without enrolled instances.

@@ -25,7 +25,16 @@ queue item or let `docs/roadmap/` become a plan archive.
 
 ## Authorized implementation batches
 
-**Current status:** [ACME-001](#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
+**Current priorities:** Complete agent-owned bootstrap upgrades and recovery under
+[ONBOARD-018](#onboard-018-distribute-and-activate-adhd-skill-updates-across-agents)
+and the remaining onboarding verification gates. BEAM-001 was removed at the
+operator's direction on 2026-11-04: ADHD is not using Kafka, and a Kafka comparison
+is not remaining roadmap work. Completed embedded-eventing adoption and historical
+prototype evidence are retained in the [source-review archive](../history/roadmap/beam-eventing.md)
+and [prototype archive](../history/roadmap/beam-queue-prototype.md). The removed
+investigation creates no follow-up research obligation.
+
+**Previous completed work:** [ACME-001](#acme-001-obtain-and-renew-tls-certificates-through-built-in-acme)
 implementation and runtime qualification are complete. The
 [runtime composition](../../verification/acme/final-composition/manifest.json)
 binds real HTTP-01 issuance and renewal, stopped-copy recovery, all fifteen fault
